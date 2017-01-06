@@ -16,7 +16,7 @@
       <param name="id" value="2"/>
       <param name="order_by" value="reliability,quality"/>
     </profile>
-<!-- 
+<!--
   Some samples of how to do custom SQL:
 
     =============================================================

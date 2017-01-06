@@ -39,12 +39,12 @@ FSXML::~FSXML(void)
 {
 	if (!_rootObject) {
 		/* This is the root object */
-			
+
 		/* Free the xml struct if it still exists */
 		if (_xml) {
 			switch_xml_free(_xml);
 		}
-		
+
 		/* Free all sub-objects in the hash and destroy the hash */
 		DestroyHash();
 	} else if (_rootObject && _xml && _rootObject->_obj_hash) {
@@ -118,7 +118,7 @@ Handle<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::Functi
 	} else {
 		rootObj = _rootObject;
 	}
-		
+
 	if (!rootObj) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find XML root node\n");
 		return Handle<Value>();
@@ -140,9 +140,9 @@ Handle<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::Functi
 			newObj->RegisterInstance(info.GetIsolate(), "", true);
 		}
 	}
-		
+
 	if (newObj) {
-		return newObj->GetJavaScriptObject(); 
+		return newObj->GetJavaScriptObject();
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new object - memory error?\n");
@@ -345,7 +345,7 @@ JS_XML_IMPL_STATIC(Remove)
 	JS_CHECK_SCRIPT_STATE();
 
 	FSXML *obj = JSBase::GetInstance<FSXML>(info);
-	
+
 	if (obj) {
 		switch_xml_remove(obj->_xml);
 		if (!obj->_rootObject) {

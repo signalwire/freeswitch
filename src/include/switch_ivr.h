@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
@@ -31,7 +31,7 @@
  * switch_ivr.h -- IVR Library
  *
  */
-/** 
+/**
  * @file switch_ivr.h
  * @brief IVR Library
  * @see switch_ivr
@@ -75,7 +75,7 @@ typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
 /**
  * @defgroup switch_ivr IVR Library
  * @ingroup core1
- *	A group of core functions to do IVR related functions designed to be 
+ *	A group of core functions to do IVR related functions designed to be
  *	building blocks for a higher level IVR interface.
  * @{
  */
@@ -179,8 +179,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
   \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session, 
-																  const char *file, 
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session,
+																  const char *file,
 																  const char *mod_name,
 																  const char *grammar,
 																  char **result,
@@ -585,7 +585,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, const char *
   \param originator_uuid the uuid of the originator
   \param originatee_uuid the uuid of the originator
   \remark Any custom state handlers on both channels will be deleted
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid);
 
@@ -670,11 +670,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 SWITCH_DECLARE(void) switch_ivr_broadcast_in_thread(switch_core_session_t *session, const char *app, int flags);
 
 /*!
-  \brief Transfer variables from one session to another 
+  \brief Transfer variables from one session to another
   \param sessa the original session
   \param sessb the new session
   \param var the name of the variable to transfer (NULL for all)
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var);
 
@@ -689,14 +689,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
   \brief Create a digit stream parser object
   \param pool the pool to use for the new hash
   \param parser a pointer to the object pointer
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t ** parser);
 
 /*!
   \brief Destroy a digit stream parser object
   \param parser a pointer to the parser object
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser);
 
@@ -720,7 +720,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
   \param digits a string of digits to associate with an action
   \param data consumer data attached to this digit string
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t *parser, char *digits, void *data);
 
@@ -728,7 +728,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
   \brief Delete a string to action mapping
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
   \param digits the digit string to be removed from the map
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser, char *digits);
 
@@ -744,7 +744,7 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 /*!
   \brief Reset the collected digit stream to nothing
   \param stream a pointer to the parser stream object created by switch_ivr_digit_stream_new
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream);
 
@@ -752,7 +752,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_s
   \brief Set a digit string terminator
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
   \param digit the terminator digit
-  \return SWITCH_STATUS_SUCCESS if all is well 
+  \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser, char digit);
 
@@ -766,7 +766,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  * @defgroup switch_ivr_menu IVR Menu Library
  * @ingroup switch_ivr
  *	IVR menu functions
- *	
+ *
  * @{
  */
 
@@ -918,9 +918,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, 
-												switch_size_t digit_buffer_length, 
-												uint32_t timeout, 
+												char *digit_buffer,
+												switch_size_t digit_buffer_length,
+												uint32_t timeout,
 												const char *valid_terminators,
 												uint32_t digit_timeout);
 
@@ -977,7 +977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_last_ping(switch_ivr_dmachin
 SWITCH_DECLARE(const char *) switch_ivr_dmachine_get_name(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t nonmatch_callback);
-SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p,
 														   const char *name,
 														   switch_memory_pool_t *pool,
 														   uint32_t digit_timeout, uint32_t input_timeout,
@@ -987,10 +987,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 
 SWITCH_DECLARE(void) switch_ivr_dmachine_destroy(switch_ivr_dmachine_t **dmachine);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *dmachine, 
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *dmachine,
 														 const char *realm,
-														 const char *digits, 
-                             switch_byte_t is_priority, 
+														 const char *digits,
+                             switch_byte_t is_priority,
 														 int32_t key,
 														 switch_ivr_dmachine_callback_t callback,
 														 void *user_data);
@@ -1019,7 +1019,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_sessi
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_video_write_overlay_session(switch_core_session_t *session);
-SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path, 
+SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path,
 																	   switch_img_position_t pos, uint8_t alpha);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on);

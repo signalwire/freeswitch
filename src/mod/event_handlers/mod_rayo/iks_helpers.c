@@ -541,7 +541,7 @@ void iks_sha_print_base64(iksha *sha, char *buf)
 		hex_digit[1] = hex_buf[i + 1];
 		bin_buf[i / 2] = strtol(hex_digit, NULL, 16);
 	}
-	
+
 	switch_b64_encode(bin_buf, SHA_1_HASH_BUF_SIZE / 2, (unsigned char *)buf, SHA_1_HASH_BUF_SIZE);
 }
 

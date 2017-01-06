@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2010, James Martelletti <james@nerdc0re.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * James Martelletti <james@nerdc0re.com>
  *
  *

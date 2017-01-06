@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -107,7 +107,7 @@ static void process_mp(switch_core_session_t *session, switch_stream_handle_t *s
 			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(dval), dval + 1);
 		} else {
 			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, dname, strlen(dval) + 1, dval);
-		}							
+		}
 	}
 }
 

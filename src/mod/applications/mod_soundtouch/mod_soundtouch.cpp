@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_soundtouch.cpp -- Example of writeable media bugs
@@ -293,7 +293,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 				n++;
 			} else if (strchr(argv[x], 's')) {
 				/*12.0f taken from soundtouch conversion to octaves*/
-				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) ); 
+				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) );
 				n++;
 			} else if (strchr(argv[x], 't')) {
 				sth->tempo = normalize_soundtouch_value('t', atof(argv[x]));
@@ -405,7 +405,7 @@ SWITCH_STANDARD_API(soundtouch_api_function)
 			n++;
 		} else if (strchr(argv[x], 's')) {
 			/*12.0f taken from soundtouch conversion to octaves*/
-			sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) ); 
+			sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) );
 			n++;
 		} else if (strchr(argv[x], 't')) {
 			sth->tempo = normalize_soundtouch_value('t', atof(argv[x]));
@@ -450,9 +450,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 	switch_api_interface_t *api_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname); 
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream pitch/rate/tempo", 
+	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream pitch/rate/tempo",
                    soundtouch_start_function, "[send_leg] [hook_dtmf] [-]<X>s [-]<X>o <X>p <X>r <X>t", SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "soundtouch", "soundtouch", soundtouch_api_function, SOUNDTOUCH_API_SYNTAX);

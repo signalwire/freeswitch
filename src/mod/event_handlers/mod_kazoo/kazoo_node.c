@@ -207,7 +207,7 @@ SWITCH_DECLARE(switch_status_t) kazoo_api_execute(const char *cmd, const char *a
 
 	cmd_used = (char *) cmd;
 	arg_used = (char *) arg;
-			
+
 
 	if (!stream->param_event) {
 		switch_event_create(&stream->param_event, SWITCH_EVENT_API);
@@ -246,7 +246,7 @@ SWITCH_DECLARE(switch_status_t) kazoo_api_execute(const char *cmd, const char *a
 	if (cmd_used != cmd) {
 		switch_safe_free(cmd_used);
 	}
-	
+
 	if (arg_used != arg) {
 		switch_safe_free(arg_used);
 	}

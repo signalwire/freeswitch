@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  *
@@ -133,7 +133,7 @@ SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *na
 SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *p;
-	
+
 	arg_recursion_check_start(args);
 
 	for (p = tosay; p && *p; p++) {

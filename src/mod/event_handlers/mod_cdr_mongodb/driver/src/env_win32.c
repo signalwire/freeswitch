@@ -154,7 +154,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
     if ( ! conn->connected ) {
         conn->err = MONGO_CONN_FAIL;
         return MONGO_ERROR;
-    } 
+    }
     else {
         mongo_clear_errors( conn );
         return MONGO_OK;

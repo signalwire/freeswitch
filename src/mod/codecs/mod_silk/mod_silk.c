@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Brian K. West <brian@freeswitch.org>
  *
@@ -36,7 +36,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load);
 SWITCH_MODULE_DEFINITION(mod_silk, mod_silk_load, NULL, NULL);
 
-#define MAX_BYTES_PER_FRAME		250 
+#define MAX_BYTES_PER_FRAME		250
 #define MAX_INPUT_FRAMES		5
 #define MAX_LBRR_DELAY			2
 #define MAX_FRAME_LENGTH		480
@@ -158,8 +158,8 @@ static switch_status_t switch_silk_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 
 
-static switch_status_t switch_silk_init(switch_codec_t *codec, 
-										switch_codec_flag_t freeswitch_flags, 
+static switch_status_t switch_silk_init(switch_codec_t *codec,
+										switch_codec_flag_t freeswitch_flags,
 										const switch_codec_settings_t *codec_settings)
 {
 	struct silk_context *context = NULL;
@@ -177,7 +177,7 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &silk_codec_settings;
 	switch_silk_fmtp_parse(codec->fmtp_in, &codec_fmtp);
-	
+
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "useinbandfec=%s; usedtx=%s; maxaveragebitrate=%d",
 										  silk_codec_settings.useinbandfec ? "1" : "0",
 										  silk_codec_settings.usedtx ? "1" : "0",
@@ -187,13 +187,13 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 		if (SKP_Silk_SDK_Get_Encoder_Size(&encSizeBytes)) {
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		context->enc_state = switch_core_alloc(codec->memory_pool, encSizeBytes);
 
 		if (SKP_Silk_SDK_InitEncoder(context->enc_state, &context->encoder_object)) {
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 
 		context->encoder_object.API_sampleRate = codec->implementation->actual_samples_per_second;
 		context->encoder_object.maxInternalSampleRate = codec->implementation->actual_samples_per_second;
@@ -208,7 +208,7 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	if (decoding) {
 
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_PLC);
-		
+
 		if (SKP_Silk_SDK_Get_Decoder_Size(&decSizeBytes)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -236,25 +236,25 @@ void printSilkError(SKP_int16 ret){
 	switch (ret) {
 		case SKP_SILK_NO_ERROR: message = "No errors";
 			break;
-		case SKP_SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES: 
+		case SKP_SILK_ENC_INPUT_INVALID_NO_OF_SAMPLES:
 			message = "Input length is not multiplum of 10 ms, or length is longer than the packet length";
 			break;
-		case SKP_SILK_ENC_FS_NOT_SUPPORTED: 
+		case SKP_SILK_ENC_FS_NOT_SUPPORTED:
 			message = "Sampling frequency not 8000 , 12000, 16000 or 24000 Hertz";
 			break;
 		case SKP_SILK_ENC_PACKET_SIZE_NOT_SUPPORTED:
 			message ="Packet size not 20, 40 , 60 , 80 or 100 ms ";
-			break; 
-		case SKP_SILK_ENC_PAYLOAD_BUF_TOO_SHORT: 
+			break;
+		case SKP_SILK_ENC_PAYLOAD_BUF_TOO_SHORT:
 			message = "Allocated payload buffer too short";
 			break;
-		case SKP_SILK_ENC_INVALID_LOSS_RATE: 
+		case SKP_SILK_ENC_INVALID_LOSS_RATE:
 			message = " Loss rate not between  0 and 100 % ";
 			break;
 		case SKP_SILK_ENC_INVALID_COMPLEXITY_SETTING:
 			message = "Complexity setting not valid, use 0 ,1 or 2";
 			break;
-		case SKP_SILK_ENC_INVALID_INBAND_FEC_SETTING: 
+		case SKP_SILK_ENC_INVALID_INBAND_FEC_SETTING:
 			message = "Inband FEC setting not valid, use 0 or 1	";
 			break;
 		case SKP_SILK_ENC_INVALID_DTX_SETTING:
@@ -266,7 +266,7 @@ void printSilkError(SKP_int16 ret){
 		case SKP_SILK_DEC_INVALID_SAMPLING_FREQUENCY:
 			message = "Output sampling frequency lower than internal decoded sampling frequency";
 			break;
-		case SKP_SILK_DEC_PAYLOAD_TOO_LARGE: 
+		case SKP_SILK_DEC_PAYLOAD_TOO_LARGE:
 			message = "Payload size exceeded the maximum allowed 1024 bytes";
 			break;
 		case  SKP_SILK_DEC_PAYLOAD_ERROR	:
@@ -288,7 +288,7 @@ static switch_status_t switch_silk_encode(switch_codec_t *codec,
 	struct silk_context *context = codec->private_info;
 	SKP_int16 ret;
 	SKP_int16 pktsz  = (SKP_int16)context->encoder_object.packetSize;
-	SKP_int16 nBytes = MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES; 
+	SKP_int16 nBytes = MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES;
 	SKP_int16 *lindata = (SKP_int16 *)decoded_data;
 	SKP_int16 samples = (SKP_int16)(decoded_data_len /sizeof(SKP_int16));
 	*encoded_data_len = 0;
@@ -299,7 +299,7 @@ static switch_status_t switch_silk_encode(switch_codec_t *codec,
 							  pktsz,
 							  encoded_data,
 							  &nBytes);
-	
+
 		if (ret) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SKP_Silk_Encode returned %d!\n", ret);
 			printSilkError(ret);
@@ -323,7 +323,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	struct silk_context *context = codec->private_info;
-	SKP_int16 ret, len; 
+	SKP_int16 ret, len;
 	int16_t *target = decoded_data;
 	switch_core_session_t *session = codec->session;
 	switch_jb_t *jb = NULL;

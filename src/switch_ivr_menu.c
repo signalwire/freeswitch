@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  *
@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 		}
 
 		action->function = function;
-		
+
 		if (menu->actions) {
 			for(ap = menu->actions; ap && ap->next; ap = ap->next);
 			ap->next = action;
@@ -432,15 +432,15 @@ static void exec_app(switch_core_session_t *session, char *app_str)
 	char *app = switch_core_session_strdup(session, app_str);
 	char *data = strchr(app, ' ');
 	char *expanded = NULL;
-	
+
 	if (data) {
 		*data++ = '\0';
 	}
-	
+
 	expanded = switch_channel_expand_variables(channel, data);
-	
+
 	switch_core_session_execute_application(session, app, expanded);
-	
+
 	if (expanded && expanded != data) {
 		free(expanded);
 	}
@@ -490,7 +490,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		char *digits_regex = switch_core_session_sprintf(session, "^%s$", menu->pin);
 
 		if (switch_play_and_get_digits(session, (uint32_t)strlen(menu->pin), (uint32_t)strlen(menu->pin), 3, 3000, "#",
-									   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer), 
+									   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer),
 									   digits_regex, 10000, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -870,7 +870,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *pin = switch_xml_attr_soft(xml_menu, "pin");
 		const char *prompt_pin_file = switch_xml_attr_soft(xml_menu, "pin-file");
 		const char *bad_pin_file = switch_xml_attr_soft(xml_menu, "bad-pin-file");
-		
+
 		switch_ivr_menu_t *menu = NULL;
 
 		if (zstr(max_timeouts)) {

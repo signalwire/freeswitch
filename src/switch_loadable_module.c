@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -52,7 +52,7 @@ typedef struct switch_codec_node_s {
 	const char *interface_name;
 	struct switch_codec_node_s *next;
 } switch_codec_node_t;
-				
+
 
 struct switch_loadable_module {
 	char *key;
@@ -195,7 +195,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					if (impl->decoded_bytes_per_packet > SWITCH_RECOMMENDED_BUFFER_SIZE) {
 						load_interface = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-										  "Failed to load codec interface %s from %s due to bytes per frame %d exceeding buffer size %d.\n", 
+										  "Failed to load codec interface %s from %s due to bytes per frame %d exceeding buffer size %d.\n",
 										  ptr->interface_name,
 										  key, impl->decoded_bytes_per_packet, SWITCH_RECOMMENDED_BUFFER_SIZE);
 						break;
@@ -207,7 +207,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 											  "Adding Codec %s %d %s %dhz %dms %dch %dbps\n",
 											  impl->iananame, impl->ianacode,
-											  ptr->interface_name, impl->actual_samples_per_second, 
+											  ptr->interface_name, impl->actual_samples_per_second,
 											  impl->microseconds_per_packet / 1000, impl->number_of_channels, impl->bits_per_second);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
@@ -617,13 +617,13 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 
 	/*
 
-	const char *from; 
+	const char *from;
 	const char *to;
 	const char *subject;
 	const char *body;
 	const char *type;
 	const char *hint;
-	*/		
+	*/
 
 	dest_proto = switch_event_get_header(message_event, "dest_proto");
 
@@ -652,18 +652,18 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_mutex_lock(loadable_modules.mutex);
 		for (hi = switch_core_hash_first(loadable_modules.chat_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
-			
+
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
-					
+
 					if (status == SWITCH_STATUS_SUCCESS) {
 						if (switch_true(switch_event_get_header(message_event, "final_delivery"))) {
-							/* The event was handled by an extension in the chatplan, 
-							 * so the event will be duplicated, modified and queued again, 
+							/* The event was handled by an extension in the chatplan,
+							 * so the event will be duplicated, modified and queued again,
 							 * but it won't be processed by the chatplan again.
 							 * So this copy of the event can be destroyed by the caller.
-							 */ 
+							 */
 							do_skip = 1;
 						}
 					} else if (status == SWITCH_STATUS_BREAK) {
@@ -681,7 +681,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_safe_free(hi);
 		switch_mutex_unlock(loadable_modules.mutex);
 	}
-	
+
 
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
@@ -743,7 +743,7 @@ void *SWITCH_THREAD_FUNC chat_thread_run(switch_thread_t *thread, void *obj)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Chat Thread Ended\n");
 
-	return NULL;	
+	return NULL;
 }
 
 
@@ -755,7 +755,7 @@ static void chat_thread_start(int idx)
 	}
 
 	switch_mutex_lock(chat_globals.mutex);
-	
+
 	if (idx >= chat_globals.msg_queue_len) {
 		int i;
 		chat_globals.msg_queue_len = idx + 1;
@@ -768,10 +768,10 @@ static void chat_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, chat_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				switch_thread_create(&chat_globals.msg_queue_thread[i], 
-									 thd_attr, 
-									 chat_thread_run, 
-									 chat_globals.msg_queue[i], 
+				switch_thread_create(&chat_globals.msg_queue_thread[i],
+									 thd_attr,
+									 chat_thread_run,
+									 chat_globals.msg_queue[i],
 									 chat_globals.pool);
 			}
 		}
@@ -790,7 +790,7 @@ static void chat_queue_message(switch_event_t **eventp)
 
 	event = *eventp;
 	*eventp = NULL;
-	
+
 	if (chat_globals.running == 0) {
 		chat_process_event(&event);
 		return;
@@ -800,10 +800,10 @@ static void chat_queue_message(switch_event_t **eventp)
 
 	switch_mutex_lock(chat_globals.mutex);
 	idx = IDX;
-	IDX++; 
+	IDX++;
 	if (IDX >= chat_globals.msg_queue_len) IDX = 0;
 	switch_mutex_unlock(chat_globals.mutex);
-	
+
 	chat_thread_start(idx);
 
 	if (switch_queue_trypush(chat_globals.msg_queue[idx], event) != SWITCH_STATUS_SUCCESS) {
@@ -838,7 +838,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *mes
 	}
 
 	expanded = switch_event_expand_headers(message, data);
-	
+
 	status = cai->chat_application_function(message, expanded);
 
 	if (expanded != data) {
@@ -872,19 +872,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 		if (blocking) {
 			switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "blocking", "true");
 		}
-		
+
 		if (body) {
 			switch_event_add_body(message_event, "%s", body);
 		}
 	} else {
 		abort();
-	}	
+	}
 
 	if (dest_proto) {
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
-	
+
 	if (blocking) {
 		status = chat_process_event(&message_event);
 	} else {
@@ -893,7 +893,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 	}
 
 	return status;
-	
+
 }
 
 
@@ -1898,7 +1898,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 					continue;
 				}
 				global = switch_true(sglobal);
-				
+
 				if (path && zstr(path)) {
 					path = SWITCH_GLOBAL_dirs.mod_dir;
 				}
@@ -2056,7 +2056,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 
 	chat_globals.running = 0;
 
-	for (i = 0; i < chat_globals.msg_queue_len; i++) {	
+	for (i = 0; i < chat_globals.msg_queue_len; i++) {
 		switch_queue_push(chat_globals.msg_queue[i], NULL);
 	}
 
@@ -2141,7 +2141,7 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
 	}
 
 	switch_mutex_unlock(loadable_modules.mutex);
-	
+
 	if (i) PROTECT_INTERFACE(i);
 
 	return i;
@@ -2153,7 +2153,7 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 	switch_codec_node_t *node, *head;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	
+
 	if ((head = switch_core_hash_find(loadable_modules.codec_hash, name))) {
 		if (modname) {
 			for (node = head; node; node = node->next) {
@@ -2214,7 +2214,7 @@ static void do_print(const switch_codec_implementation_t **array, int arraylen)
 	int i;
 
 	for(i = 0; i < arraylen; i++) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "DEBUG %d %s:%d %d\n", i, array[i]->iananame, array[i]->ianacode, array[i]->microseconds_per_packet / 1000);
 	}
 
@@ -2241,7 +2241,7 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 
 	for (i = 0; i < arraylen; i++) {
 		int this_ptime = array[i]->microseconds_per_packet / 1000;
-		
+
 		if (!strcasecmp(array[i]->iananame, "ilbc")) {
 			this_ptime = 20;
 		}
@@ -2308,14 +2308,14 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	for (hi = switch_core_hash_first(loadable_modules.codec_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		head = (switch_codec_node_t *) val;
-		
+
 		for (node = head; node; node = node->next) {
 			codec_interface = (switch_codec_interface_t *) node->ptr;
 
 			/* Look for the default ptime of the codec because it's the safest choice */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
-				
+
 				if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
 					array[i++] = imp;
 					goto found;
@@ -2326,11 +2326,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		}
 
 	found:
-			
+
 		if (i > arraylen) {
 			break;
 		}
-		
+
 	}
 	switch_safe_free(hi);
 
@@ -2375,7 +2375,7 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 		}
 		cur = next;
 	}
-	
+
 	if ((p = strchr(name, '.'))) {
 		*p++ = '\0';
 		*modname = name;
@@ -2415,7 +2415,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			if (ointerval == 0) {
 				ointerval = switch_default_ptime(name, 0);
 			}
-			
+
 			if (orate == 0) {
 				orate = switch_default_rate(name, 0);
 			}
@@ -2423,7 +2423,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			if (ochannels == 0) {
 				ochannels = 1;
 			}
-			
+
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
 			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit, &jchannels, &jmodname, &jfmtp);
 
@@ -2439,7 +2439,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				jchannels = 1;
 			}
 
-			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate && ochannels == jchannels && 
+			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate && ochannels == jchannels &&
 				!strcasecmp(switch_str_nil(fmtp), switch_str_nil(jfmtp))) {
 				goto next_x;
 			}
@@ -2450,7 +2450,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
 				uint32_t default_rate = switch_default_rate(imp->iananame, imp->ianacode);
-				
+
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
 
@@ -2458,7 +2458,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
-					
+
 					if (((!rate && crate != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
 						continue;
 					}
@@ -2499,7 +2499,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 					if (channels && imp->number_of_channels != channels) {
 						continue;
-					}					
+					}
 				}
 
 				array[i++] = imp;
@@ -2547,7 +2547,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		cmd_used = (char *) cmd;
 		arg_used = (char *) arg;
 	}
-			
+
 
 	if (!stream->param_event) {
 		switch_event_create(&stream->param_event, SWITCH_EVENT_API);
@@ -2580,7 +2580,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	if (cmd_used != cmd) {
 		switch_safe_free(cmd_used);
 	}
-	
+
 	if (arg_used != arg) {
 		switch_safe_free(arg_used);
 	}
@@ -2598,7 +2598,7 @@ SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core
 
 	function = cJSON_GetObjectItem(json, "command");
 
-	if (function && function->valuestring 
+	if (function && function->valuestring
 		&& cJSON_GetObjectItem(json, "data") && (json_api = switch_loadable_module_get_json_api_interface(function->valuestring)) != 0) {
 		if ((status = json_api->function(json, session, &json_reply)) != SWITCH_STATUS_SUCCESS) {
 			cJSON_AddItemToObject(json, "status", cJSON_CreateString("error"));
@@ -2606,7 +2606,7 @@ SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core
 		} else {
 			cJSON_AddItemToObject(json, "status", cJSON_CreateString("success"));
 		}
-		
+
 		if (!json_reply) {
 			json_reply = cJSON_CreateNull();
 		}
@@ -2616,7 +2616,7 @@ SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core
 		} else {
 			cJSON_AddItemToObject(json, "response", json_reply);
 		}
-		
+
 		UNPROTECT_INTERFACE(json_api);
 	} else {
 		status = SWITCH_STATUS_FALSE;
@@ -2723,7 +2723,7 @@ struct switch_say_file_handle {
 	struct switch_stream_handle stream;
 	switch_event_t *param_event;
 };
-	
+
 SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var)
 {
 	char *ret = NULL;
@@ -2733,7 +2733,7 @@ SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handl
 	}
 
 	return ret;
-	
+
 }
 
 SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh)
@@ -2744,7 +2744,7 @@ SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t 
 SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle_t *sh)
 {
 	char *path;
-	
+
 	switch_assert(sh);
 	path = (char *) sh->stream.data;
 	sh->stream.data = NULL;
@@ -2755,7 +2755,7 @@ SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle
 SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh)
 {
 	switch_assert(sh);
-	
+
 	switch_safe_free((*sh)->stream.data);
 	switch_safe_free((*sh)->ext);
 
@@ -2778,7 +2778,7 @@ SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_ha
 	memset(*sh, 0, sizeof(**sh));
 
 	SWITCH_STANDARD_STREAM((*sh)->stream);
-	
+
 	if (var_event) {
 		(*sh)->param_event = *var_event;
 		*var_event = NULL;
@@ -2796,7 +2796,7 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 	va_list ap;
 
 	va_start(ap, fmt);
-	
+
 	if ((ret = switch_vsnprintf(buf, sizeof(buf), fmt, ap)) > 0) {
 		if (!sh->cnt++) {
 			sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
@@ -2807,7 +2807,7 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 		}
 
 	}
-	
+
 	va_end(ap);
 }
 

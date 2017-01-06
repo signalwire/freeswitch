@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -26,7 +26,7 @@
  * Contributor(s):
  * Daniel Swarbrick <daniel.swarbrick@gmail.com>
  * Stefan Knoblich <s.knoblich@axsentis.de>
- * 
+ *
  * mod_snmp.c -- SNMP AgentX Subagent Module
  *
  */

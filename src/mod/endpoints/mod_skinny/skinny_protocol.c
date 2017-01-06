@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2010, Mathieu Parent <math.parent@gmail.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Parent <math.parent@gmail.com>
  *
  *
@@ -556,7 +556,7 @@ switch_status_t perform_send_start_tone(listener_t *listener,
 	message->data.start_tone.call_id = call_id;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Sending Start Tone with Tone (%s), Line Instance (%d), Call ID (%d)\n", 
+		"Sending Start Tone with Tone (%s), Line Instance (%d), Call ID (%d)\n",
 		skinny_tone2str(tone), line_instance, call_id);
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
@@ -610,7 +610,7 @@ switch_status_t perform_send_forward_stat(listener_t *listener,
 	skinny_message_t *message;
 
 	skinny_create_message(message, FORWARD_STAT_MESSAGE, forward_stat);
-	
+
 	if ( number && number[0] )
 	{
 		message->data.forward_stat.active_forward = 1;
@@ -672,7 +672,7 @@ switch_status_t perform_send_set_speaker_mode(listener_t *listener,
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
-switch_status_t perform_send_srvreq_response(listener_t *listener, 
+switch_status_t perform_send_srvreq_response(listener_t *listener,
 		const char *file, const char *func, int line,
 		char *ip, uint32_t port)
 {
@@ -720,7 +720,7 @@ switch_status_t perform_send_start_media_transmission(listener_t *listener,
 	/* ... */
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Start Media Transmission with Conf ID(%d), Passthrough Party ID (%d), ...\n", 
+		"Send Start Media Transmission with Conf ID(%d), Passthrough Party ID (%d), ...\n",
 		conference_id, pass_thru_party_id);
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
@@ -742,7 +742,7 @@ switch_status_t perform_send_stop_media_transmission(listener_t *listener,
 	/* ... */
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Stop Media Transmission with Conf ID (%d), Passthrough Party ID (%d), Conf ID2 (%d)\n", 
+		"Send Stop Media Transmission with Conf ID (%d), Passthrough Party ID (%d), Conf ID2 (%d)\n",
 		conference_id, pass_thru_party_id, conference_id2);
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
@@ -832,7 +832,7 @@ switch_status_t perform_send_define_time_date(listener_t *listener,
 
 	if ( listener->profile->debug >= 9 ) {
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-			"Send Define Time Date with %.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d, Timestamp (%d), DOW (%d)\n", 
+			"Send Define Time Date with %.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d, Timestamp (%d), DOW (%d)\n",
 			year, month, day, hour, minute, seconds, milliseconds, timestamp, day_of_week);
 	}
 
@@ -1036,7 +1036,7 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 	tmp = skinny_format_message(display);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n", 
+		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n",
 		timeout, tmp, line_instance, call_id);
 
 	switch_safe_free(tmp);
@@ -1066,7 +1066,7 @@ switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
 	message->data.display_prompt_status.call_id = call_id;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n", 
+		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n",
 		timeout, skinny_textid2str(display_textid), line_instance, call_id);
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
@@ -1166,7 +1166,7 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 	tmp = skinny_format_message(notify);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Display Pri Notify with Timeout (%d), Priority (%d), Message (%s)\n", 
+		"Send Display Pri Notify with Timeout (%d), Priority (%d), Message (%s)\n",
 		message_timeout, priority, tmp);
 
 	switch_safe_free(tmp);
@@ -1175,7 +1175,7 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 }
 
 
-switch_status_t perform_send_reset(listener_t *listener, 
+switch_status_t perform_send_reset(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t reset_type)
 {
@@ -1227,7 +1227,7 @@ switch_status_t perform_send_data(listener_t *listener,
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
-switch_status_t perform_send_extended_data(listener_t *listener, 
+switch_status_t perform_send_extended_data(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t message_type,
 		uint32_t application_id,
@@ -1268,7 +1268,7 @@ switch_status_t perform_send_extended_data(listener_t *listener,
 	switch_copy_string(message->data.extended_data.data, data, data_length);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Extended Data with Application ID (%d), Line Instance (%d), Call ID (%d), ...\n", 
+		"Send Extended Data with Application ID (%d), Line Instance (%d), Call ID (%d), ...\n",
 		application_id, line_instance, call_id );
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
@@ -1314,7 +1314,7 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	ptr = (char *) reply;
 
 	if (listener_is_ready(listener)) {
-		if (listener->profile->debug >= 10 || 
+		if (listener->profile->debug >= 10 ||
 			(listener->profile->debug >= 9 && reply->type != KEEP_ALIVE_ACK_MESSAGE)) {
 			skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 					"Sending %s (type=%x,length=%d).\n",

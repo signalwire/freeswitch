@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_xml_scgi.c -- SCGI XML Gateway
@@ -46,7 +46,7 @@ struct xml_binding {
 	int timeout;
 	switch_hash_t *vars_map;
 	char *bindings;
-	
+
 	char *server;
 	switch_thread_t *thread;
 	struct xml_binding *next;
@@ -116,7 +116,7 @@ void *SWITCH_THREAD_FUNC monitor_thread_run(switch_thread_t *thread, void *obj)
 			switch_yield(10000000);
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -170,7 +170,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		while((len = scgi_recv(&handle, buf, sizeof(buf))) > 0) {
 			char *expanded = switch_event_expand_headers(params, (char *)buf);
-			
+
 			bytes += len;
 
 			if (bytes > XML_SCGI_MAX_BYTES) {
@@ -185,7 +185,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			if (expanded != (char *)buf) {
 				free(expanded);
 			}
-			
+
 			memset(buf, 0, sizeof(buf));
 		}
 
@@ -201,32 +201,32 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		goto end;
 	}
 
-	
+
 
 	if (GLOBAL_DEBUG) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:\n-----\n%s\n-----\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:\n-----\n%s\n-----\n",
 						  binding->url, data, switch_str_nil(txt));
 	}
 
-	
+
 
 	if (bytes && txt) {
 		if (!(xml = switch_xml_parse_str_dynamic(txt, FALSE))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s] RESPONSE[%s]\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s] RESPONSE[%s]\n",
 							  binding->url, data, switch_str_nil(txt));
 		}
 		txt = NULL;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received error trying to fetch %s\ndata: [%s] RESPONSE [%s]\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received error trying to fetch %s\ndata: [%s] RESPONSE [%s]\n",
 						  binding->url, data, switch_str_nil(txt));
 	}
 
 
  end:
-	
+
 	switch_safe_free(data);
 	switch_safe_free(txt);
-	
+
 	return xml;
 }
 
@@ -329,7 +329,7 @@ static switch_status_t do_config(void)
 
         if (bind_mask) {
 			binding->bindings = switch_core_strdup(globals.pool, bind_mask);
-		}                                         
+		}
 
 		if (vars_map) {
 			switch_zmalloc(hash_node, sizeof(hash_node_t));
@@ -351,14 +351,14 @@ static switch_status_t do_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
 		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
-		
+
 		if (binding->server) {
 			launch_monitor_thread(binding);
 		}
 
 		binding->next = globals.bindings;
 		globals.bindings = binding;
-		
+
 
 		x++;
 		binding = NULL;
@@ -423,7 +423,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_scgi_shutdown)
 					}
 					break;
 				}
-				
+
 				switch_yield(5000000);
 			}
 

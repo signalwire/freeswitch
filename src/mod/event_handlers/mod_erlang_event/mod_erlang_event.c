@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Andrew Thompson <andrew@hijacked.us>
  * Rob Charlton <rob.charlton@savageminds.com>
@@ -409,7 +409,7 @@ static void destroy_session_elem(session_elem_t *session_element)
 session_elem_t *find_session_elem_by_uuid(listener_t *listener, const char *uuid)
 {
 	session_elem_t *session = NULL;
-	
+
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
 	if ((session = (session_elem_t*)switch_core_hash_find(listener->sessions, uuid))) {
 		switch_thread_rwlock_rdlock(session->rwlock);
@@ -430,7 +430,7 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
 	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &val);
-		
+
 		if (((session_elem_t*)val)->process.type == ERLANG_PID && !ei_compare_pids(pid, &((session_elem_t*)val)->process.pid)) {
 			session = (session_elem_t*)val;
 			switch_thread_rwlock_rdlock(session->rwlock);
@@ -443,7 +443,7 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	return session;
 }
 
-static fetch_reply_t *new_fetch_reply(const char *uuid_str) 
+static fetch_reply_t *new_fetch_reply(const char *uuid_str)
 {
 	fetch_reply_t *reply = NULL;
 	switch_memory_pool_t *pool = NULL;
@@ -456,7 +456,7 @@ static fetch_reply_t *new_fetch_reply(const char *uuid_str)
 	reply = switch_core_alloc(pool, sizeof(*reply));
 	switch_assert(reply != NULL);
 	memset(reply, 0, sizeof(*reply));
-	
+
 	reply->uuid_str = switch_core_strdup(pool, uuid_str);
 	reply->pool = pool;
 	switch_thread_cond_create(&reply->ready_or_found, pool);
@@ -471,7 +471,7 @@ static fetch_reply_t *new_fetch_reply(const char *uuid_str)
 	return reply;
 }
 
-static void destroy_fetch_reply(fetch_reply_t *reply) 
+static void destroy_fetch_reply(fetch_reply_t *reply)
 {
 	switch_core_hash_delete_locked(mod_erlang_event_globals.fetch_reply_hash, reply->uuid_str, mod_erlang_event_globals.fetch_reply_mutex);
 	/* lock so nothing can have it while we delete it */
@@ -484,7 +484,7 @@ static void destroy_fetch_reply(fetch_reply_t *reply)
 	switch_core_destroy_memory_pool(&(reply->pool));
 }
 
-fetch_reply_t *find_fetch_reply(const char *uuid) 
+fetch_reply_t *find_fetch_reply(const char *uuid)
 {
 	fetch_reply_t *reply = NULL;
 
@@ -736,7 +736,7 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 
 				/*switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "flushed event %s for %s\n", switch_event_name(pevent->event_id), sp->uuid_str); */
 
-				/* events from attached sessions are wrapped in a {call_event,<EVT>} tuple 
+				/* events from attached sessions are wrapped in a {call_event,<EVT>} tuple
 				   to distinguish them from normal events (if they are sent to the same process)
 				 */
 
@@ -776,7 +776,7 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 
 			/*switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "popped event %s for %s\n", switch_event_name(pevent->event_id), sp->uuid_str); */
 
-			/* events from attached sessions are wrapped in a {call_event,<EVT>} tuple 
+			/* events from attached sessions are wrapped in a {call_event,<EVT>} tuple
 			   to distinguish them from normal events (if they are sent to the same process)
 			 */
 			ei_x_buff ebuf;
@@ -1227,7 +1227,7 @@ static int config(void)
 	prefs.compat_rel = 0;
 	prefs.max_event_bulk = 1;
 	prefs.max_log_bulk = 1;
-	
+
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -1531,14 +1531,14 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 	/* insert the waiting marker */
 	switch_set_flag(session_element, LFLAG_WAITING_FOR_PID);
-	
+
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Added session to listener\n");
 
 	switch_mutex_lock(p->mutex);
-	
+
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
 		ei_x_buff rbuf;
@@ -1668,7 +1668,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		return;
 	}
 
-	
+
 	/* first work out if there is a listener already talking to the node we want to talk to */
 	listener = find_listener(node);
 	/* if there is no listener, then create one */

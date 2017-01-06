@@ -248,7 +248,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	if (argc < 2 || argc == (DIG_MAX_ARGS + 1)) {
 		usage(1);
 	}
-	
+
 	if (!strcasecmp(argv[i], "xml")) {
 		switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "xml", "true");
 		i++;
@@ -343,7 +343,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	if (!dig->sres) {
 		usage(1);
 	}
-	
+
 	for (; i <= argc && (string = argv[i]); i++) {
 		if (multiple)
 			stream->write_function(stream, "%s", string);
@@ -440,12 +440,12 @@ int prepare_transport(struct dig *dig, char const *tport)
 
 		if (!srv || srv[strlen(srv) - 1] != '.') {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: invalid transport specifier \"%s\"\n"
-						
+
 							  "\tspecifier should have name/service/srv-id\n"
 							  "\twhere name is protocol name (e.g, \"tls-udp\")\n"
 							  "\t      service specifies service as per RFC 2915 (e.g., \"SIPS+D2U\")\n"
-							  "\t      srv-id is prefix for SRV lookup (e.g., \"_sips._udp.\")\n%s", 
-							  name, 
+							  "\t      srv-id is prefix for SRV lookup (e.g., \"_sips._udp.\")\n%s",
+							  name,
 							  tport,
 							  srv ? "\t      and it should end with a dot \".\"\n" : "");
 
@@ -881,7 +881,7 @@ void print_result(char const *addr,
 		port = transport_is_secure(tport) ? "5061" : "5060";
 
 	if (xml) {
-		stream->write_function(stream, 
+		stream->write_function(stream,
 							   " <route>\n"
 							   "  <preference>%u</preference>\n"
 							   "  <weight>%.3f</weight>\n"

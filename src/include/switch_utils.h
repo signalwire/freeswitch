@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -42,7 +42,7 @@
 #include <switch.h>
 #include <math.h>
 
-SWITCH_BEGIN_EXTERN_C 
+SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
@@ -72,18 +72,18 @@ static inline uint32_t switch_round_to_step(uint32_t num, uint32_t step)
 	uint32_t x;
 
 	if (!num) return 0;
-	
+
 	r = (num % step);
 	x = num - r;
-	
+
 	if (r > step / 2) {
 		x += step;
 	}
-	
+
 	return x;
 }
 
-/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii
    http://www.azillionmonkeys.com/qed/asmexample.html
 */
 static inline uint32_t switch_toupper(uint32_t eax)
@@ -94,7 +94,7 @@ ebx = (0x7f7f7f7ful & ebx) + 0x1a1a1a1aul;
  return eax - ebx;
 }
 
-/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii
    http://www.azillionmonkeys.com/qed/asmexample.html
 */
 static inline uint32_t switch_tolower(uint32_t eax)
@@ -108,7 +108,7 @@ static inline uint32_t switch_tolower(uint32_t eax)
 
 #ifdef FS_64BIT
 
-/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii
    http://www.azillionmonkeys.com/qed/asmexample.html
 */
 static inline uint64_t switch_toupper64(uint64_t eax)
@@ -119,7 +119,7 @@ uint64_t ebx = (0x7f7f7f7f7f7f7f7full & eax) + 0x0505050505050505ull;
  return eax - ebx;
 }
 
-/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii
    http://www.azillionmonkeys.com/qed/asmexample.html
 */
 static inline uint64_t switch_tolower64(uint64_t eax)
@@ -186,7 +186,7 @@ static inline void switch_tolower_max(char *s)
 
 }
 
-#else 
+#else
 
 static inline void switch_toupper_max(char *s)
 {
@@ -213,7 +213,7 @@ static inline void switch_toupper_max(char *s)
 		c++;
 		l--;
 	}
-	
+
 }
 
 static inline void switch_tolower_max(char *s)
@@ -241,7 +241,7 @@ static inline void switch_tolower_max(char *s)
 		c++;
 		l--;
 	}
-	
+
 }
 #endif
 
@@ -314,7 +314,7 @@ static inline switch_bool_t switch_is_moh(const char *s)
 #define zset(_a, _b) if (!zstr(_b)) _a = _b
 
 
-/* find a character (find) in a string (in) and return a pointer to that point in the string where the character was found 
+/* find a character (find) in a string (in) and return a pointer to that point in the string where the character was found
    using the array (allowed) as allowed non-matching characters, when (allowed) is NULL, behaviour should be identical to strchr()
  */
 static inline char *switch_strchr_strict(const char *in, char find, const char *allowed)
@@ -343,12 +343,12 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 					acceptable = 1;
 					break;
 				}
-			
+
 				a++;
 			}
 
 		}
-		
+
 		if (!acceptable) return NULL;
 
 		p++;
@@ -410,7 +410,7 @@ static inline char *switch_print_bits(const unsigned char *byte, char *buf, swit
 		k++;
 		byte++;
 	}
-	
+
 	if (buf[j-1] == ' ') j--;
 	buf[j++] = '\0';
 	return buf;
@@ -491,7 +491,7 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression
-  \return true or false 
+  \return true or false
 */
 static inline int switch_true(const char *expr)
 {
@@ -523,7 +523,7 @@ static inline switch_byte_t switch_true_byte(const char *expr)
 /*!
   \brief Evaluate the falsefullness of a string expression
   \param expr a string expression
-  \return true or false 
+  \return true or false
 */
 static inline int switch_false(const char *expr)
 {
@@ -725,7 +725,7 @@ static inline char *switch_sanitize_number(char *number)
 
 	while ((q = strrchr(p, '@')))
 		*q = '\0';
-	
+
 	for (i = 0; i < (int) strlen(warp); i++) {
 		while (p && (q = strchr(p, warp[i])))
 			p = q + 1;
@@ -1048,7 +1048,7 @@ static inline int32_t switch_calc_bitrate(int w, int h, int quality, double fps)
 	/* KUSH GAUGE*/
 
 	if (!fps) fps = 15;
-	
+
 	r = (int32_t)((double)(w * h * fps * (quality ? quality : 1)) * 0.07) / 1000;
 
 	if (!quality) r /= 2;
@@ -1065,7 +1065,7 @@ static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 
 	if (!strcasecmp(bwv, "auto")) {
 		return -1;
-	}	
+	}
 
 	if ((bw = (float) atof(bwv))) {
 		if (bw < 0) return 0;
@@ -1087,7 +1087,7 @@ static inline int switch_needs_url_encode(const char *s)
 	const char hex[] = "0123456789ABCDEF";
 	const char *p, *e = end_of_p(s);
 
-	
+
 	for(p = s; p && *p; p++) {
 		if (*p == '%' && e-p > 1) {
 			if (strchr(hex, *(p+1)) && strchr(hex, *(p+2))) {
@@ -1129,7 +1129,7 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 
 	*file_portion = NULL;
 	*params_portion = NULL;
-	
+
 	while (*file == '{') {
 		e = switch_find_end_paren(file, '{', '}');
 		file = e + 1;
@@ -1144,7 +1144,7 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 	} else {
 		*file_portion = (char *)space;
 	}
-	
+
 	return;
 }
 

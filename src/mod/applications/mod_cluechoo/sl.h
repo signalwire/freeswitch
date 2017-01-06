@@ -1,6 +1,6 @@
 /*========================================
  *    sl.h: Text data of SL version 3.01
- *	Copyright 1993 Toyoda Masashi 
+ *	Copyright 1993 Toyoda Masashi
  *		(toyoda@is.titech.ac.jp)
  *	Last Modified: 1992/12/23
  *========================================

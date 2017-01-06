@@ -96,7 +96,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 											const char *confirm_key,
 											const char *tts_engine,
 											const char *tts_voice,
-											int confirm_attempts, int inter_timeout, int digit_len, 
+											int confirm_attempts, int inter_timeout, int digit_len,
 											int timeout, int max_failures, int max_timeouts);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ IVRMenu();
 		 SWITCH_DECLARE(void) bindAction(char *action, const char *arg, const char *bind);
@@ -123,7 +123,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 void *threadState;		// pointer to the language specific thread state
 		 // eg, PyThreadState *threadState
 		 void *extra;			// currently used to store a switch_file_handle_t
-		 char *funcargs;		// extra string that will be passed to callback function 
+		 char *funcargs;		// extra string that will be passed to callback function
 	 } input_callback_state_t;
 
 	 typedef enum {
@@ -211,7 +211,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 // instead set them here first
 		 char *xml_cdr_text;
 		 void store_file_handle(switch_file_handle_t *fh);
-		 void *on_hangup;		// language specific callback function, cast as void * 
+		 void *on_hangup;		// language specific callback function, cast as void *
 		 switch_file_handle_t *fhp;
 		 char dtmf_buf[512];
 
@@ -251,9 +251,9 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(const char *) getState();
 
 	/** \brief Record to a file
-	 * \param file_name 
+	 * \param file_name
 	 * \param <[max_len]> maximum length of the recording in seconds
-	 * \param <[silence_threshold]> energy level audio must fall below 
+	 * \param <[silence_threshold]> energy level audio must fall below
 	 *        to be considered silence (500 is a good starting point).
 	 * \param <[silence_secs]> seconds of silence to interrupt the record.
 	 */
@@ -266,8 +266,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 	/** \brief Originate a call to a destination
 	 *
-	 * \param a_leg_session - the session where the call is originating from 
-	 *                        and also the session in which _this_ session was 
+	 * \param a_leg_session - the session where the call is originating from
+	 *                        and also the session in which _this_ session was
 	 *                        created
 	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo\@bar.com
 	 * \param timeout - time to wait for call to be answered
@@ -280,10 +280,10 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(virtual void) destroy(void);
 
 	/** \brief set a DTMF callback function
-	 * 
+	 *
 	 * The DTMF callback function will be set and persist
 	 * for the life of the session, and be called when a dtmf
-	 * is pressed by user during streamfile(), collectDigits(), and 
+	 * is pressed by user during streamfile(), collectDigits(), and
 	 * certain other methods are executing.
 	 *
 	 */
@@ -300,9 +300,9 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(int) collectDigits(int abs_timeout);
 		 SWITCH_DECLARE(int) collectDigits(int digit_timeout, int abs_timeout);
 
-	/** 
+	/**
 	 * Collect up to maxdigits digits worth of digits
-	 * and store them in dtmf_buf.  In the case of mod_python, the 
+	 * and store them in dtmf_buf.  In the case of mod_python, the
 	 * dtmf_buf parameter is configured to act as a _return_ value,
 	 * (see mod_python.i).  This does NOT call any callbacks upon
 	 * receiving dtmf digits.  For that, use collectDigits.
@@ -313,14 +313,14 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(int) transfer(char *extension, char *dialplan = NULL, char *context = NULL);
 
 
-		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits, 
+		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits,
 									 const char *prompt_audio_file, int timeout, const char *valid_terminators, int digit_timeout = 0);
 
 	/** \brief Play a file into channel and collect dtmfs
-	 * 
+	 *
 	 * See API docs in switch_ivr.h: switch_play_and_get_digits(..)
 	 *
-	 * NOTE: this does not call any dtmf callbacks set by 
+	 * NOTE: this does not call any dtmf callbacks set by
 	 *       setDTMFCallback(..) as it uses its own internal callback
 	 *       handler.
 	 */
@@ -334,7 +334,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 	/** \brief Play a file that resides on disk into the channel
 	 *
 	 * \param file - the path to the .wav/.mp3 to be played
-	 * \param starting_sample_count - the index of the sample to 
+	 * \param starting_sample_count - the index of the sample to
 	 *                                start playing from
 	 * \return an int status code indicating success or failure
 	 *
@@ -374,7 +374,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 virtual bool begin_allow_threads() = 0;
 		 virtual bool end_allow_threads() = 0;
 
-	/** \brief Get the uuid of this session	
+	/** \brief Get the uuid of this session
 	 * \return the uuid of this session
 	 */
 		 const char *get_uuid() const {
@@ -407,7 +407,7 @@ SWITCH_DECLARE(void) console_clean_log(char *msg);
 SWITCH_DECLARE(void) switch_msleep(unsigned ms);
 
 /** \brief bridge the audio of session_b into session_a
- * 
+ *
  * NOTE: the stuff regarding the dtmf callback might be completely
  *       wrong and has not been reviewed or tested
  */

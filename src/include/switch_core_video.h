@@ -103,7 +103,7 @@ typedef enum {
 	SRM_180 = 180,  // Rotate 180 degrees.
 	SRM_270 = 270,  // Rotate 270 degrees clockwise.
 } switch_image_rotation_mode_t;
-	
+
 
 /*!\brief Open a descriptor, allocating storage for the underlying image
 *
@@ -318,7 +318,7 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 													  int x, int y, const char *text,
 													  const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle);
-						 
+
 
 SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect);
 

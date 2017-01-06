@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -33,12 +33,12 @@
  * mod_nibblebill.c - Nibble Billing
  * Purpose is to allow real-time debiting of credit or cash from a database while calls are in progress. I had the following goals:
  *
- * Debit credit/cash from accounts real-time 
- * Allow for billing at different rates during a single call 
- * Allow for warning callers when their balance is low (via audio, in-channel) 
- * Allow for disconnecting or re-routing calls when balance is depleted 
- * Allow for billing to function as listed above with multiple concurrent calls 
- * 
+ * Debit credit/cash from accounts real-time
+ * Allow for billing at different rates during a single call
+ * Allow for warning callers when their balance is low (via audio, in-channel)
+ * Allow for disconnecting or re-routing calls when balance is depleted
+ * Allow for billing to function as listed above with multiple concurrent calls
+ *
  * Thanks go to bandwidth.com for funding this work.
  *
  *
@@ -139,7 +139,7 @@ static switch_cache_db_handle_t *nibblebill_get_db_handle(void)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -149,7 +149,7 @@ static switch_cache_db_handle_t *nibblebill_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 }
 
@@ -163,7 +163,7 @@ static int nibblebill_callback(void *pArg, int argc, char **argv, char **columnN
 			cbt->balance = atof(argv[0]);
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -171,7 +171,7 @@ static switch_bool_t nibblebill_execute_sql_callback(char *sql, switch_core_db_c
 {
 	switch_bool_t retval = SWITCH_FALSE;
 	switch_cache_db_handle_t *dbh = NULL;
-	
+
 	if (globals.odbc_dsn && (dbh = nibblebill_get_db_handle())) {
 		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, NULL) != SWITCH_STATUS_SUCCESS) {
 			retval = SWITCH_FALSE;
@@ -219,7 +219,7 @@ static switch_status_t nibblebill_load_config(void)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			
+
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "odbc_dsn is %s\n", val);
 				switch_safe_free(globals.odbc_dsn);
@@ -260,7 +260,7 @@ static switch_status_t nibblebill_load_config(void)
 			}
 		}
 	}
-	
+
 
 /* Set defaults for any variables still not set */
   setdefaults:
@@ -389,7 +389,7 @@ static switch_bool_t bill_event(double billamount, const char *billaccount, swit
 	} else {
 		sql = dsql = switch_mprintf("UPDATE %q SET %q=%q- %f WHERE %q='%q'", globals.db_table, globals.db_column_cash,
 									globals.db_column_cash, billamount, globals.db_column_account, billaccount);
-		
+
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
@@ -415,7 +415,7 @@ static double get_balance(const char *billaccount, switch_channel_t *channel)
 			sql = globals.custom_sql_lookup;
 		}
 	} else {
-		sql = dsql = switch_mprintf("SELECT %q AS nibble_balance FROM %q WHERE %q='%q'", 
+		sql = dsql = switch_mprintf("SELECT %q AS nibble_balance FROM %q WHERE %q='%q'",
 									globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 	}
 
@@ -429,12 +429,12 @@ static double get_balance(const char *billaccount, switch_channel_t *channel)
 		balance = pdata.balance;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Retrieved current balance for account %s (balance = %f)\n", billaccount, balance);
 	}
-	
+
 	switch_safe_free(dsql);
 	return balance;
 }
 
-/* This is where we actually charge the guy 
+/* This is where we actually charge the guy
   This can be called anytime a call is in progress or at the end of a call before the session is destroyed */
 static switch_status_t do_billing(switch_core_session_t *session)
 {
@@ -483,11 +483,11 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
 		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
-	
+
 	if (!zstr(switch_channel_get_variable(channel, "lowbal_amt"))) {
 		lowbal_amt = atof(switch_channel_get_variable(channel, "lowbal_amt"));
 	}
-	
+
 	if (!zstr(switch_channel_get_variable(channel, "nibble_rounding"))) {
 		rounding_factor = pow(10, atof(switch_channel_get_variable(channel, "nibble_rounding")));
 	}
@@ -580,7 +580,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			billamount = (atof(billrate) / 1000000 / 60) * chargedunits - nibble_data->bill_adjustments;
 			/* Account for the prepaid amount */
 			nibble_data->lastts += chargedunits;
-		} else {		
+		} else {
 			/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
 			billamount = (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
 			/* Update the last time we billed */
@@ -637,9 +637,9 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* don't verify balance and transfer to nobal if we're done with call */
 		if (switch_channel_get_state(channel) != CS_REPORTING && switch_channel_get_state(channel) != CS_HANGUP) {
-			
+
 			balance = get_balance(billaccount, channel);
-			
+
 			/* See if we've achieved low balance */
 			if (!nibble_data->lowbal_action_executed && balance <= lowbal_amt) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below low balance amount of %f! (Account %s)\n",
@@ -961,10 +961,10 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 static switch_status_t sched_billing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	
+
 	const char *billrate = NULL;
 	const char *billaccount = NULL;
-	
+
 	if (!(channel = switch_core_session_get_channel(session))) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -993,7 +993,7 @@ static switch_status_t process_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	
+
 	/* Resume any paused billings, just in case */
 	/*  nibblebill_resume(session); */
 
@@ -1026,7 +1026,7 @@ switch_state_handler_table_t nibble_state_handler = {
 	/* on_hibernate */ NULL,
 	/* on_reset */ NULL,
 	/* on_park */ NULL,
-	/* on_reporting */ NULL, 
+	/* on_reporting */ NULL,
 	/* on_destroy */ NULL
 };
 
@@ -1072,7 +1072,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&nibble_state_handler);
 	switch_odbc_handle_disconnect(globals.master_odbc);
-	
+
 	switch_safe_free(globals.dbname);
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.db_table);

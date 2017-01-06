@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -73,14 +73,14 @@ namespace K
     {
         return file.provide();
     }
-        
+
     bool Logger::start()
     {
         /* we love shortcuts! */
-        typedef LogManager::Option LogOpt; 
+        typedef LogManager::Option LogOpt;
 
         typedef LogOpt::Flags     Flags;
-        typedef LogOpt::InitFlags FL;  
+        typedef LogOpt::InitFlags FL;
 
         /* configures default log levels */
         Logger::Logg.classe(C_ERROR)
@@ -203,23 +203,23 @@ namespace K
         std::string new_gen;
 
         for (unsigned int i = 0;; i++)
-        {   
-            std::string tmp = base_path + STG(FMT("generic.%d.log") % i); 
+        {
+            std::string tmp = base_path + STG(FMT("generic.%d.log") % i);
 
             if (access(tmp.c_str(), R_OK|W_OK) != 0 && errno == ENOENT)
-            {   
+            {
                 new_gen = tmp;
                 break;
-            }   
-        }   
+            }
+        }
 
         std::string old_gen = base_path + "generic.log";
 
         if (rename(old_gen.c_str(), new_gen.c_str()) != 0)
-        {   
+        {
             Logger::Logg(C_ERROR, FMT("unable to move generic log file: %s.") % strerror(errno));
             return false;
-        }   
+        }
 
         Globals::logs_being_rotated = true;
 
@@ -250,8 +250,8 @@ namespace K
 
         Strings::Merger strs;
 
-        for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++) 
-        {    
+        for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++)
+        {
             std::string tok = Strings::trim(*i);
 
             /**/ if ((tok) == "errors")     flag_errors   = true;
@@ -264,14 +264,14 @@ namespace K
             else if ((tok) == "link")       flag_link     = true;
             else if ((tok) == "cas")        flag_cas      = true;
             else if ((tok) == "standard")
-            {    
+            {
                 flag_errors   = true;
                 flag_warnings = true;
                 flag_messages = true;
                 flag_link     = true;
-            }    
+            }
             else if ((tok) == "all")
-            {    
+            {
                 flag_errors   = true;
                 flag_warnings = true;
                 flag_messages = true;
@@ -281,12 +281,12 @@ namespace K
                 flag_modem    = true;
                 flag_link     = true;
                 flag_cas      = true;
-            }    
-            else 
-            {    
+            }
+            else
+            {
                 K::Logger::Logg2(classe, s, FMT("WARNING: The following console message option is not valid and will be ignored: %s.") % (tok) );
                 continue;
-            }    
+            }
 
             strs.add(tok);
         }
@@ -335,9 +335,9 @@ namespace K
         bool flag_streams   = false;
 
         Strings::Merger strs;
-        
-        for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++) 
-        {    
+
+        for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++)
+        {
             std::string tok = Strings::trim(*i);
 
             /**/ if ((tok) == "errors")     flag_errors    = true;
@@ -354,14 +354,14 @@ namespace K
             else if ((tok) == "locks")      flag_locks     = true;
             else if ((tok) == "streams")    flag_streams   = true;
             else if ((tok) == "standard")
-            {    
+            {
                 flag_errors   = true;
                 flag_warnings = true;
                 flag_messages = true;
                 flag_link     = true;
-            }    
+            }
             else if ((tok) == "debugging")
-            {    
+            {
                 flag_errors    = true;
                 flag_warnings  = true;
                 flag_messages  = true;
@@ -372,9 +372,9 @@ namespace K
                 flag_link      = true;
                 flag_cas       = true;
                 flag_functions = true;
-            }    
+            }
             else if ((tok) == "all")
-            {    
+            {
                 flag_errors    = true;
                 flag_warnings  = true;
                 flag_messages  = true;

@@ -82,7 +82,7 @@
 #define AVMD_MIN_FREQUENCY (440.0)
 /*! Minimum frequency as digital normalized frequency */
 #define AVMD_MIN_FREQUENCY_R(r) ((2.0 * M_PI * AVMD_MIN_FREQUENCY) / (r))
-/*! 
+/*!
  * Maximum beep frequency in Hertz
  * Note: The maximum frequency the DESA-2 algorithm can uniquely
  * identify is 0.25 of the sampling rate. All the frequencies
@@ -733,7 +733,7 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
                 switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-offset", "ERROR (TRUNCATED)");
             }
             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-offset", buf);
-            
+
             res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%u", idx);
             if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
@@ -1137,7 +1137,7 @@ static switch_status_t avmd_parse_cmd_data_one_entry(char *candidate, struct avm
     }
 
     /* this may be option parameter if valid */
-    key = candidate_parsed[0];      /* option name */      
+    key = candidate_parsed[0];      /* option name */
     if (zstr(key)) { /* empty key */
         return SWITCH_STATUS_NOT_INITALIZED;
     }
@@ -1399,7 +1399,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
         goto end_unlock;
     }
-    
+
     switch_mutex_lock(avmd_globals.mutex);
     ++avmd_globals.session_n;
     switch_mutex_unlock(avmd_globals.mutex);

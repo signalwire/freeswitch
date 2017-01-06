@@ -486,7 +486,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 			}
 			switch_safe_free(path);
 		}
-	
+
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to include javascript file"));
 	}
 }
@@ -582,7 +582,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Email)
 	JS_CHECK_SCRIPT_STATE();
 	HandleScope handle_scope(info.GetIsolate());
 	string to, from, headers, body, file, convert_cmd, convert_ext;
-	
+
 	if (info.Length() > 0) {
 		String::Utf8Value str(info[0]);
 		to = js_safe_str(*str);
@@ -642,7 +642,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Bridge)
 	if (info.Length() > 1) {
 		if (info[0]->IsObject()) {
 			obj_a = Handle<Object>::Cast(info[0]);
-			
+
 			if (!(jss_a = JSBase::GetInstance<FSSession>(obj_a))) {
 				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot find session A"));
 				return;

@@ -168,7 +168,7 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 		}
 
 		sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
-			
+
 		if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
 			if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s [%s]\n", to_filename, strerror(errno));
@@ -296,15 +296,15 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
 				char *dup = strdup(node->data);
 				char *lines[100];
 				int argc, i;
-				
+
 				argc = switch_split(dup, '\n', lines);
 				for (i = 0; i < argc; i++) {
 					switch_snprintf(buf, sizeof(buf), "%s %s\n", node->userdata, lines[i]);
-					mod_logfile_raw_write(profile, buf);	
+					mod_logfile_raw_write(profile, buf);
 				}
-				
+
 				free(dup);
-				
+
 			} else {
 				mod_logfile_raw_write(profile, node->data);
 			}

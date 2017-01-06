@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -61,7 +61,7 @@ typedef struct {
 	switch_core_session_t *session;
 	switch_caller_profile_t *caller_profile;
 	switch_media_handle_t *media_handle;
-	switch_core_media_params_t mparams; 
+	switch_core_media_params_t mparams;
 } private_object_t;
 
 static struct {
@@ -74,8 +74,8 @@ static struct {
 /* BODY OF THE MODULE */
 /*************************************************************************************************************************************************************/
 
-/* 
-   State methods they get called when the state changes to the specific state 
+/*
+   State methods they get called when the state changes to the specific state
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
@@ -131,7 +131,7 @@ switch_status_t rtc_on_destroy(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s RTC DESTROY\n", switch_channel_get_name(channel));
 	switch_media_handle_destroy(session);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -247,7 +247,7 @@ static switch_status_t rtc_receive_message(switch_core_session_t *session, switc
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-			
+
 			if (((var = switch_channel_get_variable(channel, "rtp_secure_media"))) &&
 				(switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
@@ -324,7 +324,7 @@ void rtc_attach_private(switch_core_session_t *session, private_object_t *tech_p
 
 	switch_assert(session != NULL);
 	switch_assert(tech_pvt != NULL);
-	
+
 	switch_core_session_add_stream(session, NULL);
 
 	tech_pvt->session = session;
@@ -362,7 +362,7 @@ static switch_call_cause_t rtc_outgoing_channel(switch_core_session_t *session, 
 	*new_session = NULL;
 
 
-	if (!(nsession = switch_core_session_request_uuid(rtc_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 
+	if (!(nsession = switch_core_session_request_uuid(rtc_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND,
 													  flags, pool, switch_event_get_header(var_event, "origination_uuid")))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
@@ -384,7 +384,7 @@ static switch_call_cause_t rtc_outgoing_channel(switch_core_session_t *session, 
 	if ((hval = switch_event_get_header(var_event, "rtc_secure_media"))) {
 		switch_channel_set_variable(nchannel, "rtc_secure_media", hval);
 	}
-	
+
 	rtc_attach_private(nsession, tech_pvt, NULL);
 
 
@@ -418,11 +418,11 @@ static switch_call_cause_t rtc_outgoing_channel(switch_core_session_t *session, 
 	return cause;
 }
 
-static int rtc_recover_callback(switch_core_session_t *session) 
+static int rtc_recover_callback(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = rtc_new_pvt(session);
 	rtc_attach_private(session, tech_pvt, NULL);
-	
+
 	return 1;
 }
 

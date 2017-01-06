@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -80,7 +80,7 @@ typedef enum {
 	SWITCH_STUN_ATTR_SOURCE_ADDRESS2 = 0x0012,	/* Address */
 	SWITCH_STUN_ATTR_DATA = 0x0013,	/* ByteString */
 	SWITCH_STUN_ATTR_OPTIONS = 0x8001,	/* UInt32 */
-	SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,   /* Address */  
+	SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,   /* Address */
 
 	/* ice crap */
 

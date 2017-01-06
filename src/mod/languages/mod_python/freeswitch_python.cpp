@@ -23,7 +23,7 @@ static switch_status_t python_hanguphook(switch_core_session_t *session_hungup);
 
 void Session::destroy(void)
 {
-	
+
 	if (!allocated) {
 		return;
 	}
@@ -40,7 +40,7 @@ void Session::destroy(void)
 		Py_DECREF(hangup_func);
         hangup_func = NULL;
     }
-	
+
 	if (hangup_func_arg) {
 		Py_DECREF(hangup_func_arg);
 		hangup_func_arg = NULL;
@@ -124,7 +124,7 @@ bool Session::ready()
 
 	/*! this is called every time ready is called as a workaround to
 	  make it threadsafe.  it sets a flag, and all the places where it
-	  comes in and out of threadswap, check it.  so the end result is 
+	  comes in and out of threadswap, check it.  so the end result is
 	  you still get the hangup hook executed pretty soon after you
 	  hangup.  */
 	do_hangup_hook();
@@ -148,7 +148,7 @@ void Session::do_hangup_hook()
 		mark++;
 
 		if (hangup_func) {
-			
+
 			if (!PyCallable_Check(hangup_func)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "function not callable\n");
 				return;
@@ -157,7 +157,7 @@ void Session::do_hangup_hook()
 			if (!Self) {
 				mod_python_conjure_session(NULL, session);
 			}
-			
+
 			if (hangup_func_arg) {
 				arglist = Py_BuildValue("(OsO)", Self, what, hangup_func_arg);
 			} else {
@@ -167,7 +167,7 @@ void Session::do_hangup_hook()
 			if (!(result = PyEval_CallObject(hangup_func, arglist))) {
 				PyErr_Print();
 			}
-			
+
 			Py_XDECREF(arglist);
 			Py_XDECREF(hangup_func_arg);
 		}
@@ -212,7 +212,7 @@ void Session::setHangupHook(PyObject *pyfunc, PyObject *arg)
 		Py_XDECREF(hangup_func_arg);
 		hangup_func_arg = NULL;
 	}
-	
+
 	hangup_func = pyfunc;
 	hangup_func_arg = arg;
 
@@ -239,10 +239,10 @@ void Session::unsetInputCallback(void)
         Py_XDECREF(cb_arg);
         cb_arg = NULL;
     }
-	
+
 	args.input_callback = NULL;
 	ap = NULL;
-	
+
 }
 
 void Session::setInputCallback(PyObject *cbfunc, PyObject *funcargs)
@@ -295,7 +295,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "function not callable\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (itype == SWITCH_INPUT_TYPE_DTMF) {
 		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 		io = mod_python_conjure_DTMF(dtmf->digit, dtmf->duration);
@@ -311,7 +311,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	if (!Self) {
 		mod_python_conjure_session(NULL, session);
 	}
-	
+
 	if (cb_arg) {
 		arglist = Py_BuildValue("(OsOO)", Self, what, io, cb_arg);
 	} else {

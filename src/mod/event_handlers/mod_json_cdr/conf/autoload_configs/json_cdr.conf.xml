@@ -9,7 +9,7 @@
 			<!-- Whether to URL encode the individual JSON values. Defaults to true, set to false for standard JSON. -->
 			<param name="encode-values" value="true"/>
 
-			<!-- Normally if url and log-dir are present, url is attempted first and log-dir second. 
+			<!-- Normally if url and log-dir are present, url is attempted first and log-dir second.
 			     This options allows to do both systematically. -->
 			<param name="log-http-and-disk" value="false"/>
 

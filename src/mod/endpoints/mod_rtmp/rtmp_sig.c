@@ -279,7 +279,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_publish)
 	amf0_object_add(object, "description", amf0_str("description"));
 	amf0_object_add(object, "details", amf0_str("details"));
 	amf0_object_add(object, "clientid", amf0_number_new(217834719));
-	
+
 	rtmp_send_invoke_free(rsession, RTMP_DEFAULT_STREAM_NOTIFY, 0, state->stream_id,
 		amf0_str("onStatus"),
 		amf0_number_new(0),

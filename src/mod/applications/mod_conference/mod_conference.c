@@ -258,16 +258,16 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				const char *caller_id_name = switch_channel_get_variable(imember->channel, "caller_id_name");
 				unsigned char CR[3] = TEXT_UNICODE_LINEFEED;
 
-				
+
 				switch_mutex_lock(imember->text_mutex);
 
 				framedatalen = strlen(imember->text_framedata) + strlen(caller_id_name) + 6;
 
 				switch_zmalloc(framedata, framedatalen);
-				
+
 				switch_snprintf(framedata, framedatalen, "%s::\n%s", caller_id_name, imember->text_framedata);
 				memcpy(framedata + strlen(framedata), CR, sizeof(CR));
-				
+
 
 				frame.data = framedata;
 				frame.datalen = framedatalen;
@@ -277,9 +277,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 						switch_core_session_write_text_frame(omember->session, &frame, 0, 0);
 					}
 				}
-				
+
 				free(framedata);
-				
+
 				imember->text_framedata[0] = '\0';
 
 				switch_mutex_unlock(imember->text_mutex);
@@ -295,7 +295,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			if (conference_utils_member_test_flag(imember, MFLAG_RUNNING) && imember->session) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				switch_media_flow_t video_media_flow;
-				
+
 				if ((!floor_holder || (imember->score_iir > SCORE_IIR_SPEAKING_MAX && (floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 					floor_holder = imember;
@@ -316,18 +316,18 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				}
 
-				if (switch_channel_ready(channel) && 
-					switch_channel_test_flag(channel, CF_VIDEO_READY) && 
-					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && 
-					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && 
-					(!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) || 
+				if (switch_channel_ready(channel) &&
+					switch_channel_test_flag(channel, CF_VIDEO_READY) &&
+					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY &&
+					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) &&
+					(!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) ||
 					 conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
 					members_with_video++;
 				}
 
-				if (switch_channel_ready(channel) && 
-					switch_channel_test_flag(channel, CF_VIDEO_READY) && 
-					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && 
+				if (switch_channel_ready(channel) &&
+					switch_channel_test_flag(channel, CF_VIDEO_READY) &&
+					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY &&
 					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN)) {
 					members_seeing_video++;
 				}
@@ -455,7 +455,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
-					
+
 					if (conference->fnode->fh.vol) {
 						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * conference->fnode->fh.channels,
 														  conference->fnode->fh.vol);
@@ -470,13 +470,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 						if (--conference->fnode->loops < 0) {
 							conference->fnode->loops = -1;
 						}
-						
+
 						if (conference->fnode->loops) {
 							uint32_t pos = 0;
 							switch_core_file_seek(&conference->fnode->fh, &pos, 0, SEEK_SET);
 						}
 					}
-					
+
 					if (!conference->fnode->loops) {
 						conference->fnode->done++;
 					}
@@ -501,13 +501,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 						if (--conference->async_fnode->loops < 0) {
 							conference->async_fnode->loops = -1;
 						}
-						
+
 						if (conference->async_fnode->loops) {
 							uint32_t pos = 0;
 							switch_core_file_seek(&conference->async_fnode->fh, &pos, 0, SEEK_SET);
 						}
 					}
-					
+
 					if (!conference->async_fnode->loops) {
 						conference->async_fnode->done++;
 					}
@@ -1814,17 +1814,17 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 			memcpy(tmp, member->text_framedata, member->text_framesize);
 
 			switch_assert(tmp);
-			
+
 			member->text_framesize = inuse + 1024;
-			
+
 			free(member->text_framedata);
 			member->text_framedata = tmp;
 
 		}
 
 		bytes = switch_buffer_read(member->text_buffer, member->text_framedata, inuse);
-		*(member->text_framedata + bytes) = '\0'; 
-		
+		*(member->text_framedata + bytes) = '\0';
+
 		/*
 		for(p = member->text_framedata; p && *p; p++) {
 			if (*p > 32 && *p < 127) {
@@ -1837,7 +1837,7 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 		}
 		*/
 	}
-	
+
 	switch_mutex_unlock(member->text_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2986,7 +2986,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-kps-debounce must be 0 or higher\n");
 				}
-				
+
 			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
 				if (!strcasecmp(val, "passthrough")) {
 					conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
@@ -3129,7 +3129,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		if (!video_border_color) {
 			video_border_color = "#000000";
 		}
-		
+
 		if (!video_super_canvas_bgcolor) {
 			video_super_canvas_bgcolor = "#068df3";
 		}
@@ -3146,7 +3146,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			conference->no_video_avatar = switch_core_strdup(conference->pool, no_video_avatar);
 		}
 
-		
+
 		conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
 		conference->video_border_color = switch_core_strdup(conference->pool, video_border_color);
 		conference->video_super_canvas_bgcolor = switch_core_strdup(conference->pool, video_super_canvas_bgcolor);
@@ -3529,7 +3529,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
 	}
 
-	
+
  end:
 
 	switch_mutex_unlock(conference_globals.hash_mutex);

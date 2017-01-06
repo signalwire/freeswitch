@@ -1,4 +1,4 @@
-/* 
+/*
  * H323 endpoint interface for Freeswitch Modular Media Switching Software Library /
  * Soft-Switch Application
  *
@@ -18,9 +18,9 @@
  * License.
  *
  * Contributor(s):
- * 
- * 
- * 
+ *
+ *
+ *
  *
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
@@ -125,13 +125,13 @@ const char* const GetMainTypes[H323Capability::e_NumMainTypes+1] = {
 	"ExtendVideo",
 	"GenericControl",
 	"ConferenceControl",
-	"NumMainTypes"	
+	"NumMainTypes"
 };
 
 extern void SetT38_IFP_PRE();
 class OpalMediaFormat;
 class H245_T38FaxProfile;
-class OpalT38Protocol; 
+class OpalT38Protocol;
 extern const OpalMediaFormat & GetOpalT38_IFP_COR();
 extern const OpalMediaFormat & GetOpalT38_IFP_PRE();
 
@@ -218,7 +218,7 @@ switch_status_t name(type1 name1)
 switch_status_t name(type1 name1, type2 name2, type3 name3)
 
 class FSH323EndPoint;
-class FSProcess:public PLibraryProcess { 
+class FSProcess:public PLibraryProcess {
 	PCLASSINFO(FSProcess, PLibraryProcess);
 
   public:
@@ -267,7 +267,7 @@ class FSH323EndPoint:public H323EndPoint {
 
 	switch_endpoint_interface_t *GetSwitchInterface() const {
 		return m_freeswitch;
-	} 
+	}
 	FSH323Connection *FSMakeCall(const PString & dest, void *userData);
 	list < FSListener > m_listeners;
 	int m_ai;
@@ -351,7 +351,7 @@ class FSH323Connection:public H323Connection {
 	const H245_MultiplexCapability * muxCap, H245_TerminalCapabilitySetReject & reject);
 	switch_core_session_t *GetSession() const {
 		return m_fsSession;
-	} 
+	}
 	FSH323EndPoint* GetEndPoint() const{
 		return m_endpoint;
 	}
@@ -359,7 +359,7 @@ class FSH323Connection:public H323Connection {
 	virtual void OnUserInputTone(char, unsigned, unsigned, unsigned);
 	virtual void OnUserInputString(const PString & value);
 	void CleanUpOnCall();
-    
+
 	DECLARE_CALLBACK0(on_init);
 	DECLARE_CALLBACK0(on_routing);
 	DECLARE_CALLBACK0(on_execute);
@@ -437,19 +437,19 @@ class BaseG7231Capab:public H323AudioCapability {
   public:
 	BaseG7231Capab(const char *fname, bool annexA = true)
   :	H323AudioCapability(7, 4), m_name(fname), m_aa(annexA) {
-	} 
+	}
 	virtual PObject *Clone() const {
 		return new BaseG7231Capab(*this);
-	} 
+	}
 	virtual unsigned GetSubType() const {
 		return H245_AudioCapability::e_g7231;
-	} 
+	}
 	virtual PString GetFormatName() const {
 		return m_name;
-	} 
+	}
 	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
-	} 
+	}
 	virtual Comparison Compare(const PObject & obj) const {
 		Comparison res = H323AudioCapability::Compare(obj);
 		if         (res != EqualTo)
@@ -460,7 +460,7 @@ class BaseG7231Capab:public H323AudioCapability {
 		if    (m_aa && !aa)
 			      return GreaterThan;
 		      return EqualTo;
-	} 
+	}
 	virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const {
 		pdu.SetTag(GetSubType());
 		H245_AudioCapability_g7231 & g7231 = pdu;
@@ -487,7 +487,7 @@ class BaseG729Capab:public H323AudioCapability {
   public:
 	BaseG729Capab(const char *fname, unsigned type = H245_AudioCapability::e_g729)
   :	H323AudioCapability(24, 6), m_name(fname), m_type(type) {
-	} 
+	}
 	virtual PObject *Clone() const
 	{
 		return new BaseG729Capab(*this);
@@ -500,7 +500,7 @@ class BaseG729Capab:public H323AudioCapability {
 	}
 	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
-	} 
+	}
   protected:
 	const char *m_name;
 	unsigned m_type;
@@ -513,7 +513,7 @@ class BaseGSM0610Cap:public H323AudioCapability {
 
 	BaseGSM0610Cap(const char *fname, unsigned type = H245_AudioCapability::e_gsmFullRate)
   :	H323AudioCapability(24, 2), m_name(fname), m_type(type), m_comfortNoise(0), m_scrambled(0) {
-	} 
+	}
 	virtual PObject *Clone() const {
 		return new BaseGSM0610Cap(*this);
 	}
@@ -564,8 +564,8 @@ class FSH323_T38Capability : public H323_T38Capability
     virtual PObject * Clone() const {
 		return new FSH323_T38Capability(*this);
 	}
-    virtual PString GetFormatName() const { 
-		return mediaFormat; 
+    virtual PString GetFormatName() const {
+		return mediaFormat;
 	}
     virtual H323Channel * CreateChannel(
       H323Connection & connection,

@@ -9,11 +9,11 @@ static struct globals_s globals;
 
 #ifndef WSS_STANDALONE
 
-void init_ssl(void) 
+void init_ssl(void)
 {
 	//	SSL_library_init();
 }
-void deinit_ssl(void) 
+void deinit_ssl(void)
 {
 	return;
 }
@@ -85,7 +85,7 @@ void init_ssl(void) {
 	globals.ssl_method = TLSv1_server_method();   /* create server instance */
 	globals.ssl_ctx = SSL_CTX_new(globals.ssl_method);         /* create context */
 	assert(globals.ssl_ctx);
-	
+
 	/* set the local certificate from CertFile */
 	SSL_CTX_use_certificate_file(globals.ssl_ctx, globals.cert, SSL_FILETYPE_PEM);
 	/* set the private key from KeyFile */
@@ -138,28 +138,28 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
 	  e = strchr(v, '\n');
 	}
 	  }
-			
+
 	  if (v && e) {
 	size_t cplen;
 	size_t len = e - v;
-	
+
 	if (len > buflen - 1) {
 	  cplen = buflen -1;
 	} else {
 	  cplen = len;
 	}
-	
+
 	strncpy(buf, v, cplen);
 	*(buf+cplen) = '\0';
 	return 1;
 	  }
-	  
+
 	}
   }
   return 0;
 }
 
-static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen) 
+static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen)
 {
 	int y=0,bytes=0;
 	size_t x=0;
@@ -203,7 +203,7 @@ static void sha1_digest(char *digest, unsigned char *in)
 	SHA1Update(&sha, in, strlen(in));
 	SHA1Final(&sha, digest);
 }
-#else 
+#else
 
 static void sha1_digest(unsigned char *digest, char *in)
 {
@@ -236,7 +236,7 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 	sha1_digest(output, input);
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
 
-	snprintf(respond, sizeof(respond), 
+	snprintf(respond, sizeof(respond),
 			 "HTTP/1.1 101 Switching Protocols\r\n"
 			 "Upgrade: websocket\r\n"
 			 "Connection: Upgrade\r\n"
@@ -358,7 +358,7 @@ void ws_destroy(wsh_t *wsh)
 	if (wsh->down > 1) {
 		return;
 	}
-	
+
 	wsh->down = 2;
 
 	if (wsh->ssl) {
@@ -372,9 +372,9 @@ void ws_destroy(wsh_t *wsh)
 	}
 }
 
-issize_t ws_close(wsh_t *wsh, int16_t reason) 
+issize_t ws_close(wsh_t *wsh, int16_t reason)
 {
-	
+
 	if (wsh->down) {
 		return -1;
 	}
@@ -386,7 +386,7 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 
 issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 {
-	
+
 	issize_t need = 2;
 	char *maskp;
 
@@ -435,7 +435,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			if (mask) {
 				need += 4;
-				
+
 				if (need > wsh->datalen) {
 					/* too small - protocol err */
 					*oc = WSOC_CLOSE;
@@ -445,7 +445,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			wsh->plen = wsh->buffer[1] & 0x7f;
 			wsh->payload = &wsh->buffer[2];
-			
+
 			if (wsh->plen == 127) {
 				uint64_t *u64;
 
@@ -488,7 +488,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if ((need + wsh->datalen) > (issize_t)wsh->buflen) {
 				/* too big - Ain't nobody got time fo' dat */
 				*oc = WSOC_CLOSE;
-				return ws_close(wsh, WS_DATA_TOO_BIG);				
+				return ws_close(wsh, WS_DATA_TOO_BIG);
 			}
 
 			wsh->rplen = wsh->plen - need;
@@ -506,7 +506,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				wsh->rplen += r;
 				need -= r;
 			}
-			
+
 			if (mask && maskp) {
 				issize_t i;
 
@@ -514,13 +514,13 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 					wsh->payload[i] ^= maskp[i % 4];
 				}
 			}
-			
+
 
 			if (*oc == WSOC_PING) {
 				ws_write_frame(wsh, WSOC_PONG, wsh->payload, wsh->rplen);
 				goto again;
 			}
-			
+
 
 			*(wsh->payload+wsh->rplen) = '\0';
 			*data = (uint8_t *)wsh->payload;
@@ -549,7 +549,7 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 	}
 
 	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
-	
+
 	wsh->wdatalen += (issize_t)bytes;
 
 	return (issize_t)bytes;
@@ -562,9 +562,9 @@ issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
 	if (!wsh->wdatalen) {
 		return -1;
 	}
-	
+
 	r = ws_write_frame(wsh, oc, wsh->wbuffer, wsh->wdatalen);
-	
+
 	wsh->wdatalen = 0;
 
 	return r;
@@ -600,7 +600,7 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 
 		hdr[1] = 127;
 		hlen += 8;
-		
+
 		u64 = (uint64_t *) &hdr[2];
 		*u64 = htonl((unsigned long)bytes);
 	}
@@ -612,7 +612,7 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 	if (ws_raw_write(wsh, data, bytes) != (issize_t)bytes) {
 		return -2;
 	}
-	
+
 	return (issize_t)bytes;
 }
 

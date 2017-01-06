@@ -1,4 +1,4 @@
-/* 
+/*
  * Contributor(s):
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>

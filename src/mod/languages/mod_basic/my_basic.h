@@ -233,7 +233,7 @@ MBAPI int mb_gets(char* buf, int s);
 
 MBAPI void mb_set_user_data(mb_interpreter_t* s, void *ptr);
 MBAPI void *mb_get_user_data(mb_interpreter_t* s);
-	       
+
 #ifdef MB_COMPACT_MODE
 #	pragma pack()
 #endif /* MB_COMPACT_MODE */

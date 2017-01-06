@@ -1,7 +1,7 @@
 <configuration name="spandsp.conf" description="SpanDSP config">
     <modem-settings>
 <!--
-    total-modems set to N will create that many soft-modems.  
+    total-modems set to N will create that many soft-modems.
     If you use them with Hylafax you need the following for each one numbered 0..N:
 
     1) A line like this in /etc/inittab:

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -38,7 +38,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_esl_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_esl_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_esl_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_esl, mod_esl_load, mod_esl_shutdown, NULL);
@@ -65,7 +65,7 @@ SWITCH_STANDARD_API(single_esl_api_function)
 
 	if (password && (host = strchr(password, ' '))) {
 		*host++ = '\0';
-	}   
+	}
 
 	if (host && (s_timeout = strchr(host, ' '))) {
 		*s_timeout++ = '\0';

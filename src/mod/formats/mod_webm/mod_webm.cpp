@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -309,7 +309,7 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 								buf, &size, &encoded_rate, NULL);
 	}
 
-	
+
 	if (size > 0) {
 		// timecode still need to figure out for sync
 
@@ -391,7 +391,7 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x | len:%d m:%d st:%d i:%d\n", hdr[0], hdr[1], hdr[2], datalen, frame->m, start_bit, is_iframe);
 
-	
+
 
 	if (!context->video) {
 		context->video_track_id = context->segment->AddVideoTrack(frame->img->d_w, frame->img->d_h, 0);
@@ -411,7 +411,7 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 		const void *data;
 		int duration = 0;
 
-		
+
 		switch_buffer_peek_zerocopy(context->buf, &data);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VID samplecount: %u\n", context->timer.samplecount);
 
@@ -430,7 +430,7 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 	}
 
 end:
-	
+
 
 	return status;
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,10 +22,10 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Csaba Zelei <csaba.zelei@eworldcom.net>
  *
- * Thanks for eWorld Com Ltd. for funding the module. 
+ * Thanks for eWorld Com Ltd. for funding the module.
  *
  * mod_spy.c -- UserSpy Module
  *
@@ -83,7 +83,7 @@ static switch_status_t spy_on_hangup(switch_core_session_t *session)
 	switch_core_hash_insert(globals.spy_hash, data, spy);
 
 	switch_thread_rwlock_unlock(globals.spy_hash_lock);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -213,16 +213,16 @@ static switch_status_t process_event(switch_event_t *event)
 				while (spy) {
 					if ((session = switch_core_session_locate(spy->uuid))) {
 						switch_channel_t *channel = switch_core_session_get_channel(session);
-						
+
 						my_uuid = switch_event_get_header(event, "Unique-ID");
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop\n", my_uuid, key);
-						
+
 						switch_channel_set_variable(channel, "spy_uuid", my_uuid);
 						found++;
-						
+
 						switch_channel_set_state(channel, CS_EXCHANGE_MEDIA);
 						switch_channel_set_flag(channel, CF_BREAK);
-						
+
 						switch_core_session_rwunlock(session);
 					}
 					spy = spy->next;
@@ -238,8 +238,8 @@ static switch_status_t process_event(switch_event_t *event)
 	if (!found) {
 		status = SWITCH_STATUS_FALSE;
 	}
-	
-	
+
+
  done:
 	switch_thread_rwlock_unlock(globals.spy_hash_lock);
 	return status;
@@ -254,7 +254,7 @@ static void event_handler(switch_event_t *event)
 		switch_core_session_t *peer_session = NULL;
 		switch_channel_t *peer_channel = NULL;
 		switch_event_t *peer_event = NULL;
-		
+
 		if (!peer_uuid) {
 			return;
 		}
@@ -265,7 +265,7 @@ static void event_handler(switch_event_t *event)
 		}
 
 		peer_channel = switch_core_session_get_channel(peer_session);
-		
+
 		if (switch_event_create(&peer_event, SWITCH_EVENT_CHANNEL_BRIDGE) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't create bridge event for peer channel %s\n", peer_uuid);
 			goto end;

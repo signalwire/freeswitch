@@ -40,7 +40,7 @@ static __inline WebRtc_Word32 MUL_ACCUM_1(WebRtc_Word32 tbl_value,
 // Return: Return: state + (((diff << 1) * tbl_value) >> 32)
 //
 // The reason to introduce this function is that, in case we can't use smlawb
-// instruction (in MUL_ACCUM_1) due to input value range, we can still use 
+// instruction (in MUL_ACCUM_1) due to input value range, we can still use
 // smmla to save some cycles.
 
 static __inline WebRtc_Word32 MUL_ACCUM_2(WebRtc_Word32 tbl_value,

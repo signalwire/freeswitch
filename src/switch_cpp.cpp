@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -41,7 +41,7 @@ static void event_handler(switch_event_t *event)
 {
 	EventConsumer *E = (EventConsumer *) event->bind_user_data;
 	switch_event_t *dup;
-	
+
 	switch_event_dup(&dup, event);
 
 	if (switch_queue_trypush(E->events, dup) != SWITCH_STATUS_SUCCESS) {
@@ -54,11 +54,11 @@ static void event_handler(switch_event_t *event)
 SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, const char *subclass_name, int len)
 {
 
-	switch_core_new_memory_pool(&pool);	
+	switch_core_new_memory_pool(&pool);
 	switch_queue_create(&events, len, pool);
 	node_index = 0;
 	ready = 1;
-	
+
 	if (!zstr(event_name)) {
 		bind(event_name, subclass_name);
 	}
@@ -80,8 +80,8 @@ SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subc
 	if (zstr(subclass_name)) {
 		subclass_name = NULL;
 	}
-	
-	if (node_index <= SWITCH_EVENT_ALL && 
+
+	if (node_index <= SWITCH_EVENT_ALL &&
 		switch_event_bind_removable(__FILE__, event_id, subclass_name, event_handler, this, &enodes[node_index]) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
 		node_index++;
@@ -102,7 +102,7 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 	if (!ready) {
 		return NULL;
 	}
-	
+
 	if (block) {
 		if (timeout > 0) {
 			switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
@@ -128,7 +128,7 @@ SWITCH_DECLARE(void) EventConsumer::cleanup()
 
 	if (!ready) {
 		return;
-	}	
+	}
 
 	ready = 0;
 
@@ -183,13 +183,13 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 		name = "no name";
 	}
 
-	switch_ivr_menu_init(&menu, main ? main->menu : NULL, name, greeting_sound, short_greeting_sound, invalid_sound, 
+	switch_ivr_menu_init(&menu, main ? main->menu : NULL, name, greeting_sound, short_greeting_sound, invalid_sound,
 						 exit_sound, transfer_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout,
 						 digit_len, timeout, max_failures, max_timeouts, pool);
-	
+
 
 }
-											
+
 SWITCH_DECLARE_CONSTRUCTOR IVRMenu::~IVRMenu()
 {
 	if (menu) {
@@ -203,7 +203,7 @@ SWITCH_DECLARE(void) IVRMenu::bindAction(char *action, const char *arg, const ch
 	switch_ivr_action_t ivr_action = SWITCH_IVR_ACTION_NOOP;
 
 	this_check_void();
-	
+
 	if (switch_ivr_menu_str2action(action, &ivr_action) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bind %s to %s(%s)\n", bind, action, arg);
 		switch_ivr_menu_bind_action(menu, ivr_action, arg, bind);
@@ -298,7 +298,7 @@ SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_n
         if (switch_event_create_json(&event, subclass_name) != SWITCH_STATUS_SUCCESS) {
 			return;
 		}
-		
+
 		event_id = event->event_id;
 
     } else {
@@ -360,7 +360,7 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 
 
 	switch_safe_free(serialized_string);
-	
+
 	if (!event) {
 		return "";
 	}
@@ -385,7 +385,7 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 			return serialized_string;
 		}
 	}
-	
+
 	return "";
 
 }
@@ -489,13 +489,13 @@ SWITCH_DECLARE(bool) Event::addBody(const char *value)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to addBody an event that does not exist!\n");
 	}
-	
+
 	return false;
 }
 
 SWITCH_DECLARE(char *)Event::getBody(void)
 {
-	
+
 	this_check((char *)"");
 
 	if (event) {
@@ -503,7 +503,7 @@ SWITCH_DECLARE(char *)Event::getBody(void)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to getBody an event that does not exist!\n");
 	}
-	
+
 	return NULL;
 }
 
@@ -516,7 +516,7 @@ SWITCH_DECLARE(const char *)Event::getType(void)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to getType an event that does not exist!\n");
 	}
-	
+
 	return (char *) "invalid";
 }
 
@@ -534,7 +534,7 @@ SWITCH_DECLARE_CONSTRUCTOR DTMF::DTMF(char idigit, uint32_t iduration)
 
 SWITCH_DECLARE_CONSTRUCTOR DTMF::~DTMF()
 {
-	
+
 }
 
 
@@ -619,7 +619,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 		allocated = 1;
     } else {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) 
+		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
 			== SWITCH_STATUS_SUCCESS) {
 			channel = switch_core_session_get_channel(session);
 			allocated = 1;
@@ -652,7 +652,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 
 SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
 {
-	
+
 	switch_xml_t cdr = NULL;
 
 	this_check((char *)"");
@@ -672,7 +672,7 @@ SWITCH_DECLARE(void) CoreSession::setEventData(Event *e)
 {
 	this_check_void();
 	sanity_check_noreturn;
-	
+
 	if (channel && e->event) {
 		switch_channel_event_set_data(channel, e->event);
 	}
@@ -717,7 +717,7 @@ SWITCH_DECLARE(int) CoreSession::preAnswer()
 
 SWITCH_DECLARE(void) CoreSession::hangupState(void)
 {
-	sanity_check_noreturn;	
+	sanity_check_noreturn;
 	this->begin_allow_threads();
 	if (switch_channel_down(channel)) {
 		switch_core_session_hangup_state(session, SWITCH_FALSE);
@@ -728,7 +728,7 @@ SWITCH_DECLARE(void) CoreSession::hangupState(void)
 SWITCH_DECLARE(void) CoreSession::hangup(const char *cause)
 {
 	this_check_void();
-	sanity_check_noreturn;	
+	sanity_check_noreturn;
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	this->begin_allow_threads();
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
@@ -772,7 +772,7 @@ SWITCH_DECLARE(void) CoreSession::execute(const char *app, const char *data)
 	if (zstr(app)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No application specified\n");
 		return;
-	} 
+	}
 
 	begin_allow_threads();
 	switch_core_session_execute_application(session, app, data);
@@ -787,16 +787,16 @@ SWITCH_DECLARE(void) CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) 
 	cb_state.funcargs = funcargs;
 	cb_state.function = cbfunc;
 
-	args.buf = &cb_state; 
+	args.buf = &cb_state;
 	args.buflen = sizeof(cb_state);  // not sure what this is used for, copy mod_spidermonkey
 
     switch_channel_set_private(channel, "CoreSession", this);
-        
+
 	// we cannot set the actual callback to a python function, because
 	// the callback is a function pointer with a specific signature.
 	// so, set it to the following c function which will act as a proxy,
 	// finding the python callback in the args callback args structure
-	args.input_callback = dtmf_callback;  
+	args.input_callback = dtmf_callback;
 	ap = &args;
 
 
@@ -871,7 +871,7 @@ SWITCH_DECLARE(int) CoreSession::collectDigits(int digit_timeout, int abs_timeou
 	switch_ivr_collect_digits_callback(session, ap, digit_timeout, abs_timeout);
     end_allow_threads();
     return SWITCH_STATUS_SUCCESS;
-} 
+}
 
 SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, char *terminators, int timeout)
 {
@@ -883,8 +883,8 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, char *terminators, 
     return getDigits(maxdigits, terminators, timeout, interdigit, 0);
 }
 
-SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, 
-											  char *terminators, 
+SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
+											  char *terminators,
 											  int timeout,
 											  int interdigit,
 											  int abstimeout)
@@ -895,12 +895,12 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 	char terminator;
 
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
-	switch_ivr_collect_digits_count(session, 
+	switch_ivr_collect_digits_count(session,
 									dtmf_buf,
 									sizeof(dtmf_buf),
-									maxdigits, 
-									terminators, 
-									&terminator, 
+									maxdigits,
+									terminators,
+									&terminator,
 									(uint32_t) timeout, (uint32_t)interdigit, (uint32_t)abstimeout);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
@@ -943,19 +943,19 @@ SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
 	}
 
     begin_allow_threads();
-	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf, 
+	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf,
 					sizeof(dtmf_buf), timeout, valid_terminators, (uint32_t)digit_timeout);
     end_allow_threads();
 
 	return dtmf_buf;
 }
 
-SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits, 
-													 int max_digits, 
-													 int max_tries, 
-													 int timeout, 
-													 char *terminators, 
-													 char *audio_files, 
+SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
+													 int max_digits,
+													 int max_tries,
+													 int timeout,
+													 char *terminators,
+													 char *audio_files,
 													 char *bad_input_audio_files,
 													 char *digits_regex,
 													 const char *var_name,
@@ -966,17 +966,17 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	this_check((char *)"");
 	begin_allow_threads();
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
-	switch_play_and_get_digits( session, 
+	switch_play_and_get_digits( session,
 								(uint32_t) min_digits,
 								(uint32_t) max_digits,
-								(uint32_t) max_tries, 
-								(uint32_t) timeout, 
-								terminators, 
-								audio_files, 
+								(uint32_t) max_tries,
+								(uint32_t) timeout,
+								terminators,
+								audio_files,
 								bad_input_audio_files,
 								var_name,
-								dtmf_buf, 
-								sizeof(dtmf_buf), 
+								dtmf_buf,
+								sizeof(dtmf_buf),
 								digits_regex,
 								(uint32_t) digit_timeout,
 								transfer_on_failure);
@@ -985,7 +985,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	return dtmf_buf;
 }
 
-SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender) 
+SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender)
 {
 	this_check_void();
 	sanity_check_noreturn;
@@ -998,11 +998,11 @@ SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name
     end_allow_threads();
 }
 
-SWITCH_DECLARE(void) CoreSession::sayPhrase(const char *phrase_name, const char *phrase_data, const char *phrase_lang) 
+SWITCH_DECLARE(void) CoreSession::sayPhrase(const char *phrase_name, const char *phrase_data, const char *phrase_lang)
 {
 	this_check_void();
 	sanity_check_noreturn;
-	
+
 	if (!(phrase_name)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! invalid args.\n");
 		return;
@@ -1022,7 +1022,7 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
 
 	this_check(-1);
     sanity_check(-1);
-	
+
 	memset(&local_fh, 0, sizeof(local_fh));
 	fhp = &local_fh;
     local_fh.samples = starting_sample_count;
@@ -1040,7 +1040,7 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
     end_allow_threads();
 
 	fhp = NULL;
-	
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
 }
@@ -1051,7 +1051,7 @@ SWITCH_DECLARE(int) CoreSession::sleep(int ms, int sync) {
 
 	this_check(-1);
     sanity_check(-1);
-	
+
     begin_allow_threads();
     status = switch_ivr_sleep(session, ms, (switch_bool_t) sync, ap);
     end_allow_threads();
@@ -1088,21 +1088,21 @@ SWITCH_DECLARE(bool) CoreSession::bridged() {
 SWITCH_DECLARE(bool) CoreSession::mediaReady() {
 
 	this_check(false);
-	sanity_check(false);	
+	sanity_check(false);
 	return switch_channel_media_ready(channel) != 0;
 }
 
 SWITCH_DECLARE(bool) CoreSession::answered() {
 
 	this_check(false);
-	sanity_check(false);	
+	sanity_check(false);
 	return switch_channel_test_flag(channel, CF_ANSWERED) != 0;
 }
 
 SWITCH_DECLARE(void) CoreSession::destroy(void)
 {
 	this_check_void();
-	
+
 	if (!allocated) {
 		return;
 	}
@@ -1110,7 +1110,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 	allocated = 0;
 
 	switch_safe_free(xml_cdr_text);
-	switch_safe_free(uuid);	
+	switch_safe_free(uuid);
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
 
@@ -1120,7 +1120,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 		}
 
 		if (channel) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 							  "%s destroy/unlink session from object\n", switch_channel_get_name(channel));
 			switch_channel_set_private(channel, "CoreSession", NULL);
 			if (switch_channel_up(channel) && switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
@@ -1134,7 +1134,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
     }
 
 	init_vars();
-	
+
 }
 
 SWITCH_DECLARE(const char *) CoreSession::hangupCause()
@@ -1169,19 +1169,19 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 	}
 
 	// this session has no valid switch_core_session_t at this point, and therefore
-	// no valid channel.  since the threadstate is stored in the channel, and there 
+	// no valid channel.  since the threadstate is stored in the channel, and there
 	// is none, if we try to call begin_alllow_threads it will fail miserably.
 	// use the 'a leg session' to do the thread swapping stuff.
     if (a_leg_session) a_leg_session->begin_allow_threads();
 
-	if (switch_ivr_originate(aleg_core_session, 
-							 &session, 
-							 &cause, 
-							 dest, 
+	if (switch_ivr_originate(aleg_core_session,
+							 &session,
+							 &cause,
+							 dest,
 							 timeout,
-							 handlers, 
-							 NULL, 
-							 NULL, 
+							 handlers,
+							 NULL,
+							 NULL,
 							 NULL,
 							 NULL,
 							 SOF_NONE,
@@ -1205,7 +1205,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int silence_threshold, int silence_hits) 
+SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int silence_threshold, int silence_hits)
 {
 	switch_status_t status;
 	switch_file_handle_t local_fh;
@@ -1228,7 +1228,7 @@ SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int
 
 }
 
-SWITCH_DECLARE(int) CoreSession::flushEvents() 
+SWITCH_DECLARE(int) CoreSession::flushEvents()
 {
 	switch_event_t *event;
 
@@ -1245,7 +1245,7 @@ SWITCH_DECLARE(int) CoreSession::flushEvents()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(int) CoreSession::flushDigits() 
+SWITCH_DECLARE(int) CoreSession::flushDigits()
 {
 	this_check(-1);
 	sanity_check(-1);
@@ -1253,14 +1253,14 @@ SWITCH_DECLARE(int) CoreSession::flushDigits()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(int) CoreSession::setAutoHangup(bool val) 
+SWITCH_DECLARE(int) CoreSession::setAutoHangup(bool val)
 {
 	this_check(-1);
 	sanity_check(-1);
 
 	if (!session) {
 		return SWITCH_STATUS_FALSE;
-	}	
+	}
 	if (val) {
 		switch_set_flag(this, S_HUP);
 	} else {
@@ -1269,11 +1269,11 @@ SWITCH_DECLARE(int) CoreSession::setAutoHangup(bool val)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) CoreSession::waitForAnswer(CoreSession *calling_session) 
+SWITCH_DECLARE(void) CoreSession::waitForAnswer(CoreSession *calling_session)
 {
 	this_check_void();
 	sanity_check_noreturn;
-	
+
 	switch_ivr_wait_for_answer(calling_session ? calling_session->session : NULL, session);
 
 }
@@ -1282,7 +1282,7 @@ SWITCH_DECLARE(void) CoreSession::setHangupHook(void *hangup_func) {
 
 	this_check_void();
 	sanity_check_noreturn;
-	
+
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
     on_hangup = hangup_func;
     switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1324,7 +1324,7 @@ SWITCH_DECLARE(int) globalSetVariable(const char *var, const char *val, const ch
 {
 	if (zstr(val)) val = NULL;
 	if (zstr(val2)) val2 = NULL;
-	
+
 	if (val2) {
 		return switch_core_set_var_conditional(var, val, val2);
 	} else {
@@ -1414,7 +1414,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 	switch_input_args_t args;
 	switch_channel_t *channel_a = NULL, *channel_b = NULL;
 	const char *err = "Channels not ready\n";
-	
+
 	if (session_a.allocated && session_a.session && session_b.allocated && session_b.session) {
 		channel_a = switch_core_session_get_channel(session_a.session);
 		channel_b = switch_core_session_get_channel(session_b.session);
@@ -1442,7 +1442,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 }
 
-SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session_hungup) 
+SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session_hungup)
 {
 	if (session_hungup) {
 		switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
@@ -1465,12 +1465,12 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 }
 
 
-SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session_cb, 
-													 void *input, 
-													 switch_input_type_t itype, 
-													 void *buf,  
+SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session_cb,
+													 void *input,
+													 switch_input_type_t itype,
+													 void *buf,
 													 unsigned int buflen) {
-	
+
 	switch_channel_t *channel = switch_core_session_get_channel(session_cb);
 	CoreSession *coresession = NULL;
 
@@ -1486,10 +1486,10 @@ SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *sess
 
 SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *result)
 {
-	
+
 	this_check(SWITCH_STATUS_FALSE);
 	sanity_check(SWITCH_STATUS_FALSE);
-	
+
 	return switch_ivr_process_fh(session, result, fhp);
 }
 

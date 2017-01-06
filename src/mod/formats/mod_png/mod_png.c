@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -67,7 +67,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 		return SWITCH_STATUS_GENERR;
 	}
 	ext++;
-	
+
 	if ((context = (png_file_context_t *)switch_core_alloc(handle->memory_pool, sizeof(png_file_context_t))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -190,7 +190,7 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 		status = SWITCH_STATUS_FALSE;
 		switch_goto_status(status, end);
 	}
-	
+
 	memset(data, 0, *len * 2 * handle->channels);
 
  end:
@@ -295,7 +295,7 @@ static switch_bool_t write_png_bug_callback(switch_media_bug_t *bug, void *user_
 				switch_img_write_png(frame->img, data->path);
 				return SWITCH_FALSE;
 			}
-			
+
 			if (!data->write_img) {
 				switch_img_copy(frame->img, &data->write_img);
 			}
@@ -352,7 +352,7 @@ SWITCH_STANDARD_API(uuid_write_png_function)
 		stream->write_function(stream, "-USAGE: <uuid> <path> [concat | split <other_path>]\n");
 		goto end;
 	}
-	
+
 	uuid = argv[0];
 
 	if (!(session_ = switch_core_session_locate(uuid))) {
@@ -448,7 +448,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_png_load)
 	SWITCH_ADD_API(api_interface, "uuid_write_png", "grab an image from a call",uuid_write_png_function, "");
 
 	switch_console_set_complete("add uuid_write_png ::console::list_uuid");
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2010, James Martelletti <james@nerdc0re.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Tamas Cseke <tamas.cseke@vcc.live>
  *
  * mod_raven.c -- Raven Logging
@@ -69,7 +69,7 @@ static switch_loadable_module_interface_t raven_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-static switch_status_t encode(const char *raw, int raw_len, char **encoded_out) 
+static switch_status_t encode(const char *raw, int raw_len, char **encoded_out)
 {
     z_stream stream;
     unsigned char *encoded = NULL, *compressed = NULL;
@@ -84,7 +84,7 @@ static switch_status_t encode(const char *raw, int raw_len, char **encoded_out)
 		return SWITCH_STATUS_FALSE;
     }
 
-    stream.next_in = (unsigned char *)raw;    
+    stream.next_in = (unsigned char *)raw;
     stream.avail_in = raw_len;
 
     do {
@@ -94,7 +94,7 @@ static switch_status_t encode(const char *raw, int raw_len, char **encoded_out)
 
 		stream.avail_out = compressed_size - compressed_len;
 		stream.next_out = compressed + compressed_len;
-		
+
 		ret = deflate(&stream, Z_FINISH);
 		assert(ret != Z_STREAM_ERROR);
 		compressed_len = compressed_size - stream.avail_out;
@@ -155,7 +155,7 @@ static switch_status_t raven_capture(const char *userdata, const char *message, 
 										   " sentry_client=%s,"
 										   " sentry_timestamp=%d,"
 										   " sentry_key=%s,"
-										   " sentry_secret=%s", 
+										   " sentry_secret=%s",
 										   RAVEN_VERSION, RAVEN_UA,
 										   timestamp, globals.key, globals.secret);
 
@@ -167,7 +167,7 @@ static switch_status_t raven_capture(const char *userdata, const char *message, 
         switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(encoded_body));
 
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, RAVEN_UA);
-	
+
 		list = switch_curl_slist_append(list, auth_header);
 		list = switch_curl_slist_append(list, "Content-Type: application/octet-stream");
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, list);
@@ -204,7 +204,7 @@ static switch_status_t mod_raven_logger(const switch_log_node_t *node, switch_lo
 
 	if (level != SWITCH_LOG_CONSOLE && !zstr(node->data)) {
 		const char * raven_level;
-		
+
 		switch (level) {
 		case SWITCH_LOG_DEBUG:
 			raven_level = "debug";
@@ -230,7 +230,7 @@ static switch_status_t mod_raven_logger(const switch_log_node_t *node, switch_lo
 
 		status = raven_capture(node->userdata, node->data, raven_level, node->file, node->func, node->line);
 	}
-	
+
 	return status;
 }
 
@@ -245,7 +245,7 @@ static switch_status_t load_config(void)
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {

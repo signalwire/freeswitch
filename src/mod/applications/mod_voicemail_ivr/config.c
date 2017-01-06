@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -60,7 +60,7 @@ void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 			switch_event_merge(menu_default, menu->event_settings);
 			switch_event_destroy(&menu->event_settings);
 		}
-		
+
 		switch_event_create(&menu->event_settings, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_merge(menu->event_settings, profile->event_settings);
 		switch_event_merge(menu->event_settings, menu_default);
@@ -188,7 +188,7 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile_name))) {
 		if (!(profile = switch_core_session_alloc(session, sizeof(vmivr_profile_t)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
-			goto end;	
+			goto end;
 		}
 
 		profile->name = profile_name;

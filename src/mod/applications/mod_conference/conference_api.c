@@ -523,7 +523,7 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if ((layer = conference_video_get_layer_locked(member))) {
 		layer->clear = 1;
 		conference_video_release_layer(&layer);
@@ -1277,7 +1277,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		} else {
 			group_name = argv[3];
 		}
-		
+
 		if (!group_name) {
 			stream->write_function(stream, "Group name not specified.\n");
 			return SWITCH_STATUS_SUCCESS;
@@ -1294,7 +1294,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			}
 
 			stream->write_function(stream, "Change to layout group [%s]\n", group_name);
-			
+
 			if (argv[xx]) {
 				if ((idx = atoi(argv[xx])) > 0) {
 					idx--;
@@ -1638,7 +1638,7 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 	}
 
 	layer = conference_video_get_layer_locked(member);
-		
+
 	if (!layer) {
 		goto end;
 	}
@@ -2545,7 +2545,7 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 	}
 
 	if (id == 0 && conference->canvases[0]) id = 1;
-	
+
 	if (id > conference->canvas_count) {
 		id = 1;
 	}
@@ -3001,7 +3001,7 @@ switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_str
 						}
 
 						member = conference_member_get_by_var(conference, var, val);
-						
+
 						if (member != NULL) {
 							pfn(member, stream, argv[argn + 2]);
 							switch_thread_rwlock_unlock(member->rwlock);

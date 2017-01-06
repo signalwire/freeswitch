@@ -110,14 +110,14 @@ SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
 	int i;
 
 	switch_assert(name);
-	
+
 	for(i = 0; POS_TABLE[i].name; i++) {
 		if (!strcasecmp(POS_TABLE[i].name, name)) {
 			r = POS_TABLE[i].pos;
 			break;
 		}
 	}
-	
+
 	return r;
 }
 
@@ -142,14 +142,14 @@ SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name)
 	int i;
 
 	switch_assert(name);
-	
+
 	for(i = 0; IMG_FIT_TABLE[i].name; i++) {
 		if (!strcasecmp(IMG_FIT_TABLE[i].name, name)) {
 			r = IMG_FIT_TABLE[i].fit;
 			break;
 		}
 	}
-	
+
 	return r;
 }
 
@@ -165,7 +165,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_has_video(void)
 	return SWITCH_FALSE;
 #endif
 }
-							  
+
 SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 switch_img_fmt_t fmt,
 						 unsigned int d_w,
@@ -529,7 +529,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 
 static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
-#ifdef SWITCH_HAVE_YUV	
+#ifdef SWITCH_HAVE_YUV
 	switch_yuv_color_t yuv;
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
@@ -555,7 +555,7 @@ static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, swit
 
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
-#ifdef SWITCH_HAVE_YUV	
+#ifdef SWITCH_HAVE_YUV
 	int len, i, max_h;
 	switch_yuv_color_t yuv_color;
 
@@ -613,7 +613,7 @@ static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_colo
 
 static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
-#ifdef SWITCH_HAVE_YUV		
+#ifdef SWITCH_HAVE_YUV
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
@@ -628,7 +628,7 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 		rgb->g = *(++a);
 		rgb->b = *(++a);
 	}
-#endif	
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t percent)
@@ -796,7 +796,7 @@ SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char 
 
 	switch_color_set_rgb(&rgb, str);
 	switch_color_rgb2yuv(&rgb, color);
-#endif	
+#endif
 }
 
 #if SWITCH_HAVE_FREETYPE
@@ -903,11 +903,11 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 	switch_memory_pool_t *pool;
 
 	switch_assert(handleP);
-	
+
 	old_handle = *handleP;
 	*handleP = NULL;
 	if (!old_handle) return;
-	
+
 
 #if SWITCH_HAVE_FREETYPE
 	if (old_handle->library) {
@@ -997,7 +997,7 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 
 SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 															 int x, int y, const char *text,
-															 const char *font_family, const char *font_color, 
+															 const char *font_family, const char *font_color,
 															 const char *bgcolor, uint16_t font_size, double angle)
 {
 #if SWITCH_HAVE_FREETYPE
@@ -1091,7 +1091,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 		if (error) continue;
 
 		this_x = pen.x + slot->bitmap_left;
-		
+
 		if (img) {
 			/* now, draw to our target surface (convert position) */
 			draw_bitmap(handle, img, &slot->bitmap, this_x, pen.y - slot->bitmap_top + font_size);
@@ -1142,7 +1142,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 	if (strchr(text, ':')) {
 		argc = switch_split(duptxt, ':', argv);
-		
+
 		if (argc > 0 && !zstr(argv[0])) {
 			fg = argv[0];
 		}
@@ -1150,11 +1150,11 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		if (argc > 1 && !zstr(argv[1])) {
 			bg = argv[1];
 		}
-		
+
 		if (argc > 2 && !zstr(argv[2])) {
 			font_face = argv[2];
 		}
-		
+
 		if (argc > 3 && !zstr(argv[3])) {
 			fontsz = argv[3];
 		}
@@ -1163,7 +1163,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 			txt = argv[4];
 		}
 	} else txt = duptxt;
-	
+
 	if (!txt) txt = duptxt;
 
 	if (strrchr(fontsz, '%')) {
@@ -1174,7 +1174,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 	while (*txt == ' ') txt++;
 	while (end_of(txt) == ' ') end_of(txt) = '\0';
-	
+
 	len = strlen(txt);
 
 	if (len < 5) len = 5;
@@ -1187,9 +1187,9 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 											 NULL,
 											 font_size / 2, font_size / 2,
 											 txt, NULL, fg, bg, 0, 0);
-	
+
 	height = font_size * 2;
-	
+
 	if (full && w > width) {
 		width = w;
 	} else {
@@ -1887,7 +1887,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch
 	int y_pos = 0;
 	switch_image_t *IMG = NULL, *scale_img = NULL;
 	switch_rgb_color_t bgcolor = { 0 };
-	
+
 	switch_assert(imgP);
 	*imgP = NULL;
 
@@ -1905,7 +1905,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch
 
 	screen_aspect = (double) IMG->d_w / IMG->d_h;
 	img_aspect = (double) img->d_w / img->d_h;
-	
+
 
 	if (screen_aspect > img_aspect) {
 		img_w = img_aspect * IMG->d_h;
@@ -1914,7 +1914,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch
 		img_h = IMG->d_w / img_aspect;
 		y_pos = (IMG->d_h - img_h) / 2;
 	}
-	
+
 	switch_img_scale(img, &scale_img, img_w, img_h);
 	switch_img_patch(IMG, scale_img, x_pos, y_pos);
 	switch_img_free(&scale_img);
@@ -1947,7 +1947,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 
 	new_w = src->d_w;
 	new_h = src->d_h;
-	
+
 	if (src->d_w < width && src->d_h < height) {
 		float rw = (float)new_w / width;
 		float rh = (float)new_h / height;
@@ -1960,7 +1960,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 			new_h = height;
 		}
 	} else {
-		while(new_w > width || new_h > height) { 
+		while(new_w > width || new_h > height) {
 			if (new_w > width) {
 				double m = (double) width / new_w;
 				new_w = width;
@@ -2150,7 +2150,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 	if (destP) {
 		*destP = dest;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 #else
 	return SWITCH_STATUS_FALSE;
@@ -2193,7 +2193,7 @@ SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw,
 		*xP = (sw - iw);
 		*yP = (sh - ih) / 2;
 		break;
-	case POS_RIGHT_BOT:	
+	case POS_RIGHT_BOT:
 		*xP = (sw - iw);
 		*yP = (sh - ih);
 		break;

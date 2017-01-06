@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -56,9 +56,9 @@ static inline char *print_bits(switch_byte_t byte, char *x)
 
 
 /*!
-  \defgroup bp1 Bitpacking 
+  \defgroup bp1 Bitpacking
   \ingroup core1
-  \{ 
+  \{
 */
 
 static const uint8_t SWITCH_BITPACKED_MASKS[] = { 0, 1, 3, 7, 15, 31, 63, 127, 255 };
@@ -70,7 +70,7 @@ static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = { 255, 254, 252, 248, 24
   \param bitlen the number of bits per packet
   \param buf the buffer to use for storage
   \param buflen the length of the storage buffer
-  \param mode RFC3551 or AAL2 mode (curse you backwards folks) 
+  \param mode RFC3551 or AAL2 mode (curse you backwards folks)
 */
 DoxyDefine(void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode))
 	 static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t *buf, uint32_t buflen,

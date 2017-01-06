@@ -1,4 +1,4 @@
-//indent -gnu -ts4 -br -brs -cdw -lp -ce -nbfda -npcs -nprs -npsl -nbbo -saf -sai -saw -cs -bbo -nhnl -nut -sob -l90 
+//indent -gnu -ts4 -br -brs -cdw -lp -ce -nbfda -npcs -nprs -npsl -nbbo -saf -sai -saw -cs -bbo -nhnl -nut -sob -l90
 #ifndef _SKYPIAX_H_
 #define _SKYPIAX_H_
 
@@ -194,7 +194,7 @@ void ast_unregister_atexit(void (*func) (void));	/* in asterisk.h, but some aste
 #define 	SKYPIAX_FRAME_SIZE   160
 
 /* SKYPIAX INTERNAL STRUCTS */
-/*! 
+/*!
  * \brief structure for exchanging messages with the skype client
  */
 #ifdef WANT_SKYPE_X11
@@ -235,7 +235,7 @@ struct SkypiaxHandles {
 
 #endif //WIN32
 
-/*! 
+/*!
  * \brief PVT structure for a skypiax interface (channel), created by skypiax_mkif
  */
 struct skypiax_pvt {

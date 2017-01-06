@@ -1,5 +1,5 @@
 <include>
-  
+
   <X-PRE-PROCESS cmd="set" data="AT_EPENT1=0 0 0 -1 -1 0 -1 0 -1 -1 0 -1"/>
   <X-PRE-PROCESS cmd="set" data="AT_EPENT2=1 1 1 -1 -1 1 -1 1 -1 -1 1 -1"/>
   <X-PRE-PROCESS cmd="set" data="AT_CPENT1=0 -1 -1 0 -1 0 0 0 -1 -1 0 -1"/>
@@ -8,9 +8,9 @@
   <X-PRE-PROCESS cmd="set" data="AT_CMAJ2=1 -1 1 1 -1 1 -1 1 1 -1 1 -1"/>
   <X-PRE-PROCESS cmd="set" data="AT_BBLUES=1 -1 1 -1 -1 1 -1 1 1 1 -1 -1"/>
   <X-PRE-PROCESS cmd="set" data="ATGPENT2=-1 1 -1 1 -1 1 -1 -1 1 -1 1 -1"/>
-  
-  <extension name="101"> 
-    <condition field="destination_number" expression="^101$"> 
+
+  <extension name="101">
+    <condition field="destination_number" expression="^101$">
       <!-- AUTOTALENT DEFAULTS -->
 
       <!--
@@ -65,13 +65,13 @@
 
 
       <action application="set"><![CDATA[ladspa_params=${AT_TUNE} ${AT_FIXED} ${AT_PULL} ${AT_EPENT2} ${AT_AMOUNT} ${AT_SMOOTH} ${AT_SHIFT} ${AT_OUTSCALE} ${AT_LFODEPTH} ${AT_LFORATE} ${AT_LFOSHAPE} ${AT_LFOSYMM} ${AT_LFOQUANT} ${AT_FCORR} ${AT_FWARP} ${AT_MIX}]]></action>
-      
+
       <action application="ladspa_run" data="r|autotalent||${ladspa_params}"/>
       <action application="ladspa_run" data="r|tap_chorusflanger||"/>
       <action application="ladspa_run" data="r|phasers_1217.so|autoPhaser|"/>
       <action application="bridge" data="sofia/internal/888@conference.freeswitch.org"/>
 
-      </condition> 
-  </extension> 
+      </condition>
+  </extension>
 
 </include>

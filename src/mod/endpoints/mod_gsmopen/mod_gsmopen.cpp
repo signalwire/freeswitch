@@ -259,7 +259,7 @@ static switch_status_t list_interfaces(const char *line, const char *cursor, swi
 		*matches = my_matches;
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return status;
 }
 
@@ -1261,7 +1261,7 @@ static switch_status_t load_config(int reload_type)
 			//int controldevice_audio_speed = 115200;	//FIXME TODO
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
-			const char *imei = "";	
+			const char *imei = "";
 			const char *imsi = "";
 
 			tech_pvt = NULL;
@@ -1580,15 +1580,15 @@ static switch_status_t load_config(int reload_type)
 				globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period = atoi(gsmopen_serial_sync_period);
 
 				globals.GSMOPEN_INTERFACES[interface_id].ussd_request_encoding =
-					strcasecmp(ussd_request_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN : 
-					strcasecmp(ussd_request_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT : 
-					strcasecmp(ussd_request_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT : 
+					strcasecmp(ussd_request_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN :
+					strcasecmp(ussd_request_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT :
+					strcasecmp(ussd_request_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT :
 					strcasecmp(ussd_request_encoding, "ucs2") == 0 ? USSD_ENCODING_UCS2 : USSD_ENCODING_AUTO;
 
 				globals.GSMOPEN_INTERFACES[interface_id].ussd_response_encoding =
-					strcasecmp(ussd_response_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN : 
-					strcasecmp(ussd_response_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT : 
-					strcasecmp(ussd_response_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT : 
+					strcasecmp(ussd_response_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN :
+					strcasecmp(ussd_response_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT :
+					strcasecmp(ussd_response_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT :
 					strcasecmp(ussd_response_encoding, "ucs2") == 0 ? USSD_ENCODING_UCS2 : USSD_ENCODING_AUTO;
 
 				globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed = controldevice_speed;	//FIXME
@@ -2224,7 +2224,7 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 				switch_mutex_unlock(globals.mutex);
 				return tech_pvt;
 			}
-		}						
+		}
 	}
 
 	switch_mutex_unlock(globals.mutex);
@@ -2757,7 +2757,7 @@ SWITCH_STANDARD_API(gsmopen_ussd_function)
 		stream->write_function(stream, "ERROR, usage: %s", USSD_SYNTAX);
 		goto end;
 	}
-	
+
 	if (argc >= 3 && strcasecmp(argv[2], "nowait")==0) {
 		waittime = 0;
 	}
@@ -2794,10 +2794,10 @@ SWITCH_STANDARD_API(gsmopen_ussd_function)
 				stream->write_function(stream, "ERROR: no response received\n");
 			} else {
 				stream->write_function(stream, "Status: %d%s\n", tech_pvt->ussd_status,
-				tech_pvt->ussd_status == 0 ? " - completed" : 
-				tech_pvt->ussd_status == 1 ? " - action required" : 
+				tech_pvt->ussd_status == 0 ? " - completed" :
+				tech_pvt->ussd_status == 1 ? " - action required" :
 				tech_pvt->ussd_status == 2 ? " - error" : "");
-				if (strlen(tech_pvt->ussd_message) != 0) 
+				if (strlen(tech_pvt->ussd_message) != 0)
 					stream->write_function(stream, "Text: %s\n", tech_pvt->ussd_message);
 			}
 		}

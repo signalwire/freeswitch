@@ -28,7 +28,7 @@ int shutdown;
 
 
 /**
- * Return a random sample from a normal distrubtion centered at mean with 
+ * Return a random sample from a normal distrubtion centered at mean with
  * the specified standard deviation.
  *
  * THIS FUNCTION IS NOT REENTRANT!!!
@@ -72,7 +72,7 @@ static int sample(int *weights, int num_weights)
 	return 0;
 }
 
-/* 
+/*
  * Calculate x - y
  * @return 0 if x is before y, the difference otherwise.
  */
@@ -91,7 +91,7 @@ double timespec_subtract(struct timespec *x, struct timespec *y)
 		y->tv_nsec += 1000000000 * nsec;
 		y->tv_sec -= nsec;
 	}
-     
+
 	/* Return 0 if result is negative. */
 	if(x->tv_sec < y->tv_sec) {
 		return 0.0f;
@@ -152,7 +152,7 @@ static void test_create_destroy()
 	int interval_counts[4] = { 0, 0, 0, 0 };
 	int toggle[2] = { 75, 100 };
 	int timer_count = 0;
-	
+
 	int i = 0;
 	printf("test_create_destroy()\n");
 	for(i = 0; i < 100000000; i++) {
@@ -257,7 +257,7 @@ void *session_thread(void *arg)
 	/* stop the timer */
 	timer_if->timer_destroy(&timer);
 
-	if (!shutdown) {	
+	if (!shutdown) {
 		check_result(d);
 	}
 
@@ -281,7 +281,7 @@ done:
 		free(d);
 		return NULL;
 	}
-	
+
 	/* return result */
 	return d;
 }
@@ -345,7 +345,7 @@ static void test_timer_session(int *interval, int *interval_weights, int num_int
 	int i = 0;
 	struct timespec start, now, period;
 	double elapsed = 0.0f;
-	
+
 	printf("test_timer_session(%d, %f, %d, %d, %f, %f)\n", interval[0], test_duration, cps, max_sessions, duration_mean, duration_std_dev);
 
 

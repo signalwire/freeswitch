@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Rupa Schomaker <rupa@rupa.com>
  *
  * mod_memcache.c -- API for memcache
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_memcache_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_memcache_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_memcache, mod_memcache_load, mod_memcache_shutdown, NULL);

@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -49,7 +49,7 @@ bool Fax::adjustForFax()
 {
     /* Don't worry, let the man work */
     DBG(FUNC, PVT_FMT(_pvt->target(),"Channel is now being adjusted for fax!"));
-    
+
     try
     {
         ScopedPvtLock lock(_pvt);
@@ -106,7 +106,7 @@ bool Fax::sendFax(switch_core_session_t * session, const char *data)
         ScopedPvtLock lock(_pvt);
 
         std::string id;
-        
+
         if(fax_args.size() == 2)
         {
             id = fax_args[1];
@@ -122,7 +122,7 @@ bool Fax::sendFax(switch_core_session_t * session, const char *data)
 
         if(!_pvt->call()->_flags.check(Kflags::REALLY_CONNECTED) && !_pvt->loopWhileFlagTimed(Kflags::REALLY_CONNECTED, timeout, false))
             return false;
-        
+
         if(!startFaxTX(orig_addr))
         {
             LOG(ERROR, PVT_FMT(_pvt->target(), "r (unable to start send fax)"));
@@ -137,13 +137,13 @@ bool Fax::sendFax(switch_core_session_t * session, const char *data)
                         % fax_files[i].c_str());
             }
         }
-        
+
         _fax_cond.reset();
 
         lock.unlock();
 
         _fax_cond.wait();
-        
+
         switch_channel_set_variable(channel, "KFaxSent", ((_fax_result == kfaxrEndOfTransmission) ? "yes" : "no"));
         switch_channel_set_variable(channel, "KFaxResult", (Verbose::faxResult((KFaxResult)_fax_result).c_str()));
 
@@ -211,7 +211,7 @@ bool Fax::receiveFax(switch_core_session_t * session, const char *data)
             LOG(ERROR, PVT_FMT(_pvt->target(), "r (unable to start receive fax)"));
             return false;
         }
-        
+
         _fax_cond.reset();
 
         lock.unlock();
@@ -232,7 +232,7 @@ bool Fax::receiveFax(switch_core_session_t * session, const char *data)
         LOG(ERROR, PVT_FMT(_pvt->target(), "r (%s)") % err._msg.c_str());
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_pvt->target(), "r"));
 
     return true;
@@ -454,7 +454,7 @@ bool SMS::justAlloc(unsigned int count)
 
         if(!caller_profile)
         {
-            _pvt->destroy(session);        
+            _pvt->destroy(session);
             LOG(ERROR, PVT_FMT(_pvt->target(), "r (Cannot create caller profile)"));
             return false;
         }
@@ -474,7 +474,7 @@ bool SMS::justAlloc(unsigned int count)
 
         switch_channel_set_name(channel, name.c_str());
         switch_channel_set_caller_profile(channel, caller_profile);
-    
+
         //DBG(FUNC, PVT_FMT(_pvt->target(), "Connect inbound SMS channel %s") % name.c_str());
 
         switch_channel_set_state(channel, CS_INIT);
@@ -482,7 +482,7 @@ bool SMS::justAlloc(unsigned int count)
 
         _owners.push_front(session);
     }
-    
+
     return true;
 }
 
@@ -557,7 +557,7 @@ bool SMS::sendSMS(switch_core_session_t * session, const char *data)
     DBG(FUNC, PVT_FMT(_pvt->target(), "(SMS) c"));
 
     volatile bool finished = false;
-    volatile KGsmCallCause result = kgccNone; 
+    volatile KGsmCallCause result = kgccNone;
 
     try
     {
@@ -596,8 +596,8 @@ bool SMS::sendSMS(switch_core_session_t * session, const char *data)
             conf = true;
         }
 
-        // get options/values 
-        
+        // get options/values
+
         _send_sms._dest = dest;
         _send_sms._conf = conf;
         _send_sms._body = sms_args[2];
@@ -612,7 +612,7 @@ bool SMS::sendSMS(switch_core_session_t * session, const char *data)
 
         if(status)
             _cond.signal();
-    
+
         while (!finished)
         {
             usleep(200000);
@@ -755,12 +755,12 @@ bool SMS::onSMSData(K3L_EVENT *e)
                 {
                     LOG(ERROR, PVT_FMT(_pvt->target(), "unable to receive SMS from '%s', something wrong!") % _got_sms._from);
                     LOG(ERROR, PVT_FMT(_pvt->target(), "disabling SMS processing to prevent messages from being lost."));
-    
+
                     _can_receive = false;
                 }
             }
         }
-        
+
         if(_can_receive)
         {
             /* stats update! */
@@ -777,7 +777,7 @@ bool SMS::onSMSData(K3L_EVENT *e)
                 statistics<SMSStatistics>()->incrementBroadcast();
             }
         }
-   
+
         /* reset data stuff */
         _got_sms.clear();
     }
@@ -817,7 +817,7 @@ bool SMS::onSMSSendResult(K3L_EVENT *e)
 int SMS::smsThread(void * sms_ptr)
 {
     SMS * sms = static_cast < SMS * > (sms_ptr);
-    
+
     Board::KhompPvt * pvt = static_cast < Board::KhompPvt * > (sms->_pvt);
 
     DBG(THRD, PVT_FMT(pvt->target(), "c"));
@@ -939,7 +939,7 @@ int SMS::smsThread(void * sms_ptr)
             {
                 sms->_result = kgccInvalidMessage;
             }
-            
+
             pvt->call()->_flags.clear(Kflags::SMS_DOING_UPLOAD);
 
             if (request_sms._cause)

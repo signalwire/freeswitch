@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,14 +22,14 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Rupa Schomaker <rupa@rupa.com>
  *
  * switch_limit.h - Limit generic implementations
  *
  */
 
- 
+
  /*!
   \defgroup limit1 LIMIT code
   \ingroup core1
@@ -40,7 +40,7 @@
 
 SWITCH_BEGIN_EXTERN_C
 
-/*! 
+/*!
   \brief Initilize the LIMIT Core System
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
@@ -48,7 +48,7 @@ SWITCH_BEGIN_EXTERN_C
 SWITCH_DECLARE(void) switch_limit_init(switch_memory_pool_t *pool);
 
 /*!
-  \brief Increment resource.  
+  \brief Increment resource.
   \param backend to use
   \param realm
   \param resource
@@ -59,7 +59,7 @@ SWITCH_DECLARE(void) switch_limit_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_core_session_t *session, const char *realm, const char *resource, const int max, const int interval);
 
 /*!
-  \brief Release resource.  
+  \brief Release resource.
   \param backend to use
   \param realm
   \param resource

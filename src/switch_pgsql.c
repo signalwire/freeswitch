@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Eliot Gable <egable@gmail.com>
  * Seven Du <dujinfang@gmail.com>
@@ -123,7 +123,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Connection\n");
 		goto done;
 	}
-  
+
 	/* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
 	PQconsumeInput(handle->con);
 
@@ -294,7 +294,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 	char *err_str;
 	struct pollfd fds[2] = { {0} };
 	int poll_res = 0;
-	
+
 	if(!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "**BUG** Null handle passed to switch_pgsql_next_result.\n");
 		return SWITCH_PGSQL_FAIL;
@@ -380,7 +380,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 	}
 	memset(res, 0, sizeof(switch_pgsql_result_t));
 
-	
+
 	res->result = PQgetResult(handle->con);
 	if (res->result) {
 		*result_out = res;
@@ -630,7 +630,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base_detailed(con
 			free(er);
 		}
 	}
-	
+
 	if (err_str) {
 		if (!switch_stristr("already exists", err_str) && !switch_stristr("duplicate key name", err_str)) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
@@ -676,7 +676,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 	if (switch_pgsql_handle_exec_base(handle, sql, err) == SWITCH_PGSQL_FAIL) {
 		goto error;
 	}
-	
+
 	if (switch_pgsql_next_result(handle, &result) == SWITCH_PGSQL_FAIL) {
 		err_cnt++;
 		err_str = switch_pgsql_handle_get_error(handle);
@@ -711,7 +711,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 					names[col] = malloc(len+1);
 					names[col][len] = '\0';
 					strncpy(names[col], tmp, len);
-					
+
 					len = PQgetlength(result->result, row, col);
 					vals[col] = malloc(len+1);
 					vals[col][len] = '\0';
@@ -851,7 +851,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_flush(switch_pgsql_handle_t *
 		PQclear(tmp);
 		x++;
 	}
-	
+
 	if (x) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Flushing %d results\n", x);
 	}

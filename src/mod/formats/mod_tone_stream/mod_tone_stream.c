@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -56,7 +56,7 @@ static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, co
 	}
 
 	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
-	
+
 	if (ms > 0) {
 		sh->samples = (handle->samplerate / 1000) * ms;
 	} else {
@@ -151,7 +151,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	if (handle->params) {
 		if ((tmp = switch_event_get_header(handle->params, "loops"))) {
 			loops = atoi(tmp);
-			switch_buffer_set_loops(audio_buffer, loops);		
+			switch_buffer_set_loops(audio_buffer, loops);
 		}
 	}
 

@@ -821,7 +821,7 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
 	int sane = 0;
-	
+
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
 			if (context->codec_settings.video.try_hardware_encoder && (context->encoder = avcodec_find_encoder_by_name("nvenc_h264"))) {
@@ -889,7 +889,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	context->bandwidth *= 3;
-	
+
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
@@ -1286,7 +1286,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 			if (got_picture && decoded_len > 0) {
 				int width = picture->width;
 				int height = picture->height;
-				
+
 				if (!context->img || (context->img->d_w != width || context->img->d_h != height)) {
 					switch_img_free(&context->img);
 					context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);

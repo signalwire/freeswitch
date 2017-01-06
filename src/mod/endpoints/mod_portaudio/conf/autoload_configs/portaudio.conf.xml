@@ -1,7 +1,7 @@
 <configuration name="portaudio.conf" description="Soundcard Endpoint">
   <settings>
-    <!-- indev, outdev, ringdev: 
-	 partial case sensitive string match on something in the name 
+    <!-- indev, outdev, ringdev:
+	 partial case sensitive string match on something in the name
 	 or the device number prefixed with # eg "#1" (or blank for default) -->
 
     <!-- device to use for input -->
@@ -36,7 +36,7 @@
     <!-- <param name="unload-on-device-fail" value="true"/> -->
   </settings>
 
-  <!-- 
+  <!--
 	mod_portaudio "streams"
 
 	The portaudio streams were introduced to support multiple devices and multiple channels in mod_portaudio.
@@ -44,8 +44,8 @@
 	want to use them at the same time, you can do it configuring streams and endpoints here.
 
 	A "stream" is just a logical container for some settings required by portaudio in order to stream audio and
-	define a friendly name for that configuration. Streams in itself do not do anything else than contain configs. 
-	Once you have your streams defined you can proceed to define "endpoints". Go to the "<endpoints>" section 
+	define a friendly name for that configuration. Streams in itself do not do anything else than contain configs.
+	Once you have your streams defined you can proceed to define "endpoints". Go to the "<endpoints>" section
 	for more information on endpoints.
 
 	You can use the command "pa shstreams" (portaudio shared streams) to show the configured streams.
@@ -59,16 +59,16 @@
 
 	<!-- This sample "usb1" configuration was tested with a USB Griffin iMic device -->
   	<stream name="usb1">
-		<!-- 
-			Which device to use for input in this stream 
-			The value for this parameter must be either in the form '#devno', 
+		<!--
+			Which device to use for input in this stream
+			The value for this parameter must be either in the form '#devno',
 			for example '#2' for device number 2, or 'device-name', like 'iMic USB audio system'
 			The output of command "pa devlist" will show you device names and numbers as enumerated
 			by portaudio.
 		-->
 		<param name="indev" value="#2" />
 
-		<!-- 
+		<!--
 			Same as the indev but for output. In this case the device is capable of input and output
 			Some devices are capable of input only or output only (see the default example)
 	       	-->
@@ -77,13 +77,13 @@
 		<!-- The sample rate to use for this stream -->
 		<param name="sample-rate" value="48000" />
 
-		<!-- 
+		<!--
 			Size of the packets in milliseconds. The smaller the number the less latency you'll have
-			The minimum value is 10ms 
+			The minimum value is 10ms
 		-->
 		<param name="codec-ms" value="10" />
 
-		<!-- 
+		<!--
 			How many channels to open for this stream.
 			If you're device is stereo, you can choose 2 here. However, bear in mind that then
 			your left and right channels will be separated and when creating endpoints you will have
@@ -109,7 +109,7 @@
   	</stream>
   </streams>
 
-  <!-- 
+  <!--
 	mod_portaudio "endpoints"
 
 	Endpoints is a way to define the input and output that a given portaudio channel will use.
@@ -141,23 +141,23 @@
   -->
   <endpoints>
 
-	<!-- 
-		An endpoint is a handle name to refer to a configuration that determines where to read media from 
-		and write media to. The endpoint can use any input/output stream combination for that purpose as 
+	<!--
+		An endpoint is a handle name to refer to a configuration that determines where to read media from
+		and write media to. The endpoint can use any input/output stream combination for that purpose as
 		long as the streams match the sampling rate and codec-ms (see <streams> XML tag).
 		You can also omit the instream or the outstream parameter (but obviously not both).
 	-->
 
-	<!-- 
+	<!--
 		Configuration for a "default" bidirectional endpoint that uses the default stream defined previously in
 		the <streams> section.
 	 -->
   	<endpoint name="default">
-		<!-- 
+		<!--
 			The instream, outstream is the name of the stream and channel to use. The stream
-			name is the same you configured in the <streams> section. This parameters follow 
+			name is the same you configured in the <streams> section. This parameters follow
 			the syntax <stream-name>:<channel index>. You can omit either the outstream
-			or the instream, but not both! The channel index is zero-based and must be consistent 
+			or the instream, but not both! The channel index is zero-based and must be consistent
 			with the number of channels available for that stream (as configured in the <stream> section).
 			You cannot use index 1 if you chose channels=1 in the stream configuration.
 		-->
@@ -165,50 +165,50 @@
 		<param name="outstream" value="default:0" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'send-only' or 'output-only' and uses the channel index 0 (left channel in a stereo device) 
+		is 'send-only' or 'output-only' and uses the channel index 0 (left channel in a stereo device)
 	-->
   	<endpoint name="usb1out-left">
 		<param name="outstream" value="usb1:0" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'send-only' or 'output-only' and uses the channel index 1 (right channel in a stereo device) 
+		is 'send-only' or 'output-only' and uses the channel index 1 (right channel in a stereo device)
 	-->
   	<endpoint name="usb1out-right">
 		<param name="outstream" value="usb1:1" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'receive-only' or 'input-only' and uses the channel index 0 (left channel in a stereo device) 
+		is 'receive-only' or 'input-only' and uses the channel index 0 (left channel in a stereo device)
 	-->
   	<endpoint name="usb1in-left">
 		<param name="instream" value="usb1:0" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'receive-only' or 'input-only' and uses the channel index 1 (right channel in a stereo device) 
+		is 'receive-only' or 'input-only' and uses the channel index 1 (right channel in a stereo device)
 	-->
   	<endpoint name="usb1in-right">
 		<param name="instream" value="usb1:1" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'bidirectional' or 'send-receive' and uses the channel index 0 (left channel in a stereo device) 
+		is 'bidirectional' or 'send-receive' and uses the channel index 0 (left channel in a stereo device)
 	-->
   	<endpoint name="usb1-left">
 		<param name="instream" value="usb1:0" />
 		<param name="outstream" value="usb1:0" />
 	</endpoint>
 
-	<!-- 
+	<!--
 		This endpoint uses the USB stream defined previously in the <streams> section and
-		is 'bidirectional' or 'send-receive' and uses the channel index 1 (right channel in a stereo device) 
+		is 'bidirectional' or 'send-receive' and uses the channel index 1 (right channel in a stereo device)
 	-->
   	<endpoint name="usb1-right">
 		<param name="instream" value="usb1:1" />

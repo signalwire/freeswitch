@@ -227,10 +227,10 @@ JS_DBH_FUNCTION_IMPL(query)
 
 	void *arg = NULL;
 	switch_core_db_callback_func_t cb_func = NULL;
-	
+
 	Handle<Function> func = Handle<Function>();
 
-	if (info.Length() > 1) 
+	if (info.Length() > 1)
 	    func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 
 	if (!func.IsEmpty()) {
@@ -238,7 +238,7 @@ JS_DBH_FUNCTION_IMPL(query)
 		cb_func = FSDBH::Callback;
 		arg = this;
 	}
-	
+
 	if (dbh) {
 		if (!func.IsEmpty()) {
 			if (switch_cache_db_execute_sql_callback(dbh, sql, cb_func, arg, &err) == SWITCH_STATUS_SUCCESS) {

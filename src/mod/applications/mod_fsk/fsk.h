@@ -109,5 +109,5 @@ void					dsp_fsk_sample(dsp_fsk_handle_t *handle, double normalized_sample);
 
 extern fsk_modem_definition_t fsk_modem_definitions[];
 
-#endif	
+#endif
 

@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -53,7 +53,7 @@ int BoardFXO::KhompPvtFXO::makeCall(std::string params)
 
     /* we always have audio */
     call()->_flags.set(Kflags::HAS_PRE_AUDIO);
-    
+
     if(callFXO()->_call_info_drop == 0 && !callFXO()->_call_info_report)
     {
         command(KHOMP_LOG, CM_DISABLE_CALL_ANSWER_INFO);
@@ -66,7 +66,7 @@ int BoardFXO::KhompPvtFXO::makeCall(std::string params)
         callFXO()->_flags.set(Kflags::CALL_WAIT_SEIZE);
 
         if (!command(KHOMP_LOG, CM_SEIZE, call()->_orig_addr.c_str()))
-            return ksFail;            
+            return ksFail;
 
         int timeout = 150;
 
@@ -81,8 +81,8 @@ int BoardFXO::KhompPvtFXO::makeCall(std::string params)
         callFXO()->_flags.set(Kflags::WAIT_SEND_DTMF);
 
         if (!command(KHOMP_LOG, CM_DIAL_DTMF, callFXO()->_pre_digits.c_str()))
-            return ksFail;            
-        
+            return ksFail;
+
         if(!loopWhileFlagTimed(Kflags::WAIT_SEND_DTMF, timeout))
             return ksFail;
 
@@ -105,7 +105,7 @@ int BoardFXO::KhompPvtFXO::makeCall(std::string params)
 
         /* we want the audio as soon as dialing ends */
         callFXO()->_flags.set(Kflags::EARLY_RINGBACK);
-    
+
         if (!command(KHOMP_LOG, CM_DIAL_DTMF, call()->_dest_addr.c_str()))
             return ksFail;
     }
@@ -200,7 +200,7 @@ bool BoardFXO::KhompPvtFXO::doChannelAnswer(CommandRequest &cmd)
 bool BoardFXO::KhompPvtFXO::onNewCall(K3L_EVENT *e)
 {
     DBG(FUNC,PVT_FMT(_target,"(FXO) c"));
-   
+
     bool ret = true;
 
     try
@@ -278,7 +278,7 @@ bool BoardFXO::KhompPvtFXO::onChannelRelease(K3L_EVENT *e)
         }
 
         command(KHOMP_LOG, CM_ENABLE_CALL_ANSWER_INFO);
-   
+
         ret = KhompPvt::onChannelRelease(e);
     }
     catch(ScopedLockFailed & err)
@@ -286,8 +286,8 @@ bool BoardFXO::KhompPvtFXO::onChannelRelease(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "(FXO) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    
-    DBG(FUNC, PVT_FMT(_target, "(FXO) r"));   
+
+    DBG(FUNC, PVT_FMT(_target, "(FXO) r"));
     return ret;
 }
 
@@ -322,7 +322,7 @@ bool BoardFXO::KhompPvtFXO::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "(FXO) r (%s)") % err._msg.c_str() );
         return false;
     }
-        
+
     DBG(FUNC, PVT_FMT(_target, "(FXO) r"));
 
     return ret;
@@ -330,7 +330,7 @@ bool BoardFXO::KhompPvtFXO::onCallSuccess(K3L_EVENT *e)
 
 bool BoardFXO::KhompPvtFXO::onCallFail(K3L_EVENT *e)
 {
-    bool ret = true; 
+    bool ret = true;
     try
     {
         ScopedPvtLock lock(this);
@@ -364,13 +364,13 @@ bool BoardFXO::KhompPvtFXO::onAudioStatus(K3L_EVENT *e)
             DBG(STRM, PVT_FMT(_target, "Fax detected"));
 
             /* hadn't we did this already? */
-            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);            
+            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);
 
             time_t time_was = call()->_call_statistics->_base_time;
             time_t time_now = time(NULL);
 
             bool detection_timeout = (time_now > (time_was + (time_t) (Opt::_options._fax_adjustment_timeout())));
-            
+
             BEGIN_CONTEXT
             {
                 ScopedPvtLock lock(this);
@@ -456,7 +456,7 @@ bool BoardFXO::KhompPvtFXO::onDtmfDetected(K3L_EVENT *e)
         if (callFXO()->_flags.check(Kflags::WAIT_SEND_DTMF) ||
                 callFXO()->_flags.check(Kflags::CALL_WAIT_SEIZE))
         {
-            /* waiting digit or seize means DEADLOCK if we try to 
+            /* waiting digit or seize means DEADLOCK if we try to
              *  queue something below. */
             DBG(FUNC, PVT_FMT(_target, "not queueing dtmf, waiting stuff!"));
             return true;
@@ -580,8 +580,8 @@ bool BoardFXO::KhompPvtFXO::onCallAnswerInfo(K3L_EVENT *e)
         {
             if (callFXO()->_call_info_report)
             {
-                //TODO: HOW WE TREAT THAT 
-                // make the channel export this 
+                //TODO: HOW WE TREAT THAT
+                // make the channel export this
                 setAnswerInfo(info_code);
             }
 
@@ -675,7 +675,7 @@ bool BoardFXO::KhompPvtFXO::setupConnection()
 bool BoardFXO::KhompPvtFXO::autoGainControl(bool enable)
 {
     bool ret = KhompPvt::autoGainControl(enable);
-    
+
     /* enable this AGC also, can be very useful */
     ret &= command(KHOMP_LOG, (enable ? CM_ENABLE_PLAYER_AGC : CM_DISABLE_PLAYER_AGC));
     return ret;
@@ -690,7 +690,7 @@ void BoardFXO::KhompPvtFXO::setAnswerInfo(int answer_info)
         DBG(FUNC, PVT_FMT(_target,"signaled unknown call answer info '%d', using 'Unknown'...") % answer_info);
         value = "Unknown";
     }
-   
+
     DBG(FUNC,PVT_FMT(_target,"KCallAnswerInfo: %s") % value);
 
     try
@@ -717,10 +717,10 @@ bool BoardFXO::KhompPvtFXO::indicateBusyUnlocked(int cause, bool sent_signaling)
     {
         /* already connected or sent signaling... */
         mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
-        
+
         if(!call()->_flags.check(Kflags::CONNECTED) && !sent_signaling)
         {
-            /* we are talking about branches, not trunks */ 
+            /* we are talking about branches, not trunks */
             command(KHOMP_LOG, CM_CONNECT);
             callFXO()->_busy_disconnect = Board::board(_target.device)->_timers.add(Opt::_options._fxo_busy_disconnection(), &BoardFXO::KhompPvtFXO::busyDisconnect, this);
         }
@@ -732,22 +732,22 @@ bool BoardFXO::KhompPvtFXO::indicateBusyUnlocked(int cause, bool sent_signaling)
     }
 
     DBG(FUNC,PVT_FMT(_target, "(FXO) r"));
-    return true; 
+    return true;
 }
 
 void BoardFXO::KhompPvtFXO::busyDisconnect(Board::KhompPvt * pvt)
 {
     DBG(FUNC, PVT_FMT(pvt->target(), "Disconnecting FXO"));
 
-    try 
-    {   
+    try
+    {
         ScopedPvtLock lock(pvt);
         pvt->command(KHOMP_LOG, CM_DISCONNECT);
-    }   
+    }
     catch (...)
     {
         LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock the pvt !"));
-    }  
+    }
 }
 
 void BoardFXO::KhompPvtFXO::reportFailToReceive(int fail_code)

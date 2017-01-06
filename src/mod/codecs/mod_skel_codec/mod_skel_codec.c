@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -29,7 +29,7 @@
  */
 
 /*
- * Other source of reference for module building: 
+ * Other source of reference for module building:
  * src/mod/applications/mod_skel/mod_skel.c
  * http://files.freeswitch.org/cluecon_2009/presentations/Silva_FreeSWITCH_Modules_For_Asterisk_Devs.ppt
  * You can load this codec with this command:
@@ -145,7 +145,7 @@ static switch_status_t switch_skel_decode(switch_codec_t *codec,	/* codec sessio
 
 static switch_status_t switch_skel_destroy(switch_codec_t *codec)
 {
-	/* things that you may do here is closing files, sockets or other resources used during the codec session 
+	/* things that you may do here is closing files, sockets or other resources used during the codec session
 	 * no need to free memory allocated from the pool though, the owner of the pool takes care of that */
 	struct skel_context *context = codec->private_info;
 	context->encodes = 0;
@@ -153,7 +153,7 @@ static switch_status_t switch_skel_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* A standard API registered by the this codec module, APIs can be executed from CLI, mod_event_socket, or many other interfaces 
+/* A standard API registered by the this codec module, APIs can be executed from CLI, mod_event_socket, or many other interfaces
  * any information or actions you want to publish for users on demand is typically exposed through an API */
 SWITCH_STANDARD_API(skel_sayhi)
 /* static switch_status_t skel_sayhi(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream) */
@@ -168,20 +168,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_codec_load)
 	/* the codec interface that will be registered with the core */
 	switch_codec_interface_t *codec_interface;
 
-	/* the API interface, only needed if you wish to register APIs 
+	/* the API interface, only needed if you wish to register APIs
 	 * (like commands exposed through CLI, mod_event_socket or any other FS interface capable of executing APIs) */
 	switch_api_interface_t *api_interface;
 
-	/* The core gives us a blank module interface pointer and a pool of memory, we allocate memory from that pool to create our module interface 
+	/* The core gives us a blank module interface pointer and a pool of memory, we allocate memory from that pool to create our module interface
 	 * and set the pointer to that chunk of allocated memory */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface list the core keeps, 
+	/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface list the core keeps,
 	 * gets a codec id and set the given codec name to it.
 	 * At this point there is an empty shell codec interface registered, but not yet implementations */
 	SWITCH_ADD_CODEC(codec_interface, "SKEL 8.0k");	/* 8.0kbit */
 
-	/* Now add as many codec implementations as needed, typically this is done inside a for loop where the packetization size is 
+	/* Now add as many codec implementations as needed, typically this is done inside a for loop where the packetization size is
 	 * incremented (10ms, 20ms, 30ms etc) as needed */
 	switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */

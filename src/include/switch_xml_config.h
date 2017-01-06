@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mathieu.rene@gmail.com>
  *
  *
@@ -96,7 +96,7 @@ typedef switch_status_t (*switch_xml_config_callback_t) (switch_xml_config_item_
 														 switch_bool_t changed);
 
 /*!
- * \brief A configuration instruction read by switch_xml_config_parse 
+ * \brief A configuration instruction read by switch_xml_config_parse
 */
 struct switch_xml_config_item {
 	const char *key;			/*< The key of the element, or NULL to indicate the end of the list */
@@ -122,29 +122,29 @@ SWITCH_DECLARE(void) switch_config_perform_set_item(switch_xml_config_item_t *it
 													const void *defaultvalue, void *data, switch_xml_config_callback_t function, const char *syntax,
 													const char *helptext);
 
-/*! 
+/*!
  * \brief Gets the int representation of an enum
  * \param enum_options the switch_xml_config_enum_item_t array for this enum
- * \param value string value to search 
+ * \param value string value to search
  */
 SWITCH_DECLARE(switch_status_t) switch_xml_config_enum_str2int(switch_xml_config_enum_item_t *enum_options, const char *value, int *out);
 
-/*! 
+/*!
  * \brief Gets the string representation of an enum
  * \param enum_options the switch_xml_config_enum_item_t array for this enum
- * \param value int value to search 
+ * \param value int value to search
  */
 SWITCH_DECLARE(const char *) switch_xml_config_enum_int2str(switch_xml_config_enum_item_t *enum_options, int value);
 
 /*!
- * \brief Prints out an item's documentation on the console 
+ * \brief Prints out an item's documentation on the console
  * \param level loglevel to use
  * \param item item which the doc should be printed
  */
 SWITCH_DECLARE(void) switch_xml_config_item_print_doc(int level, switch_xml_config_item_t *item);
 
-/*! 
- * \brief Parses all the xml elements, following a ruleset defined by an array of switch_xml_config_item_t 
+/*!
+ * \brief Parses all the xml elements, following a ruleset defined by an array of switch_xml_config_item_t
  * \param xml The first element of the list to parse
  * \param reload true to skip all non-reloadable options
  * \param instructions instrutions on how to parse the elements
@@ -156,12 +156,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, switch
  * \brief Parses a module's settings
  * \param reload true to skip all non-reloadable options
  * \param file the configuration file to look for
- * \param instructions the instructions 
+ * \param instructions the instructions
  */
 SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_module_settings(const char *file, switch_bool_t reload, switch_xml_config_item_t *instructions);
 
-/*! 
- * \brief Parses all of an event's elements, following a ruleset defined by an array of switch_xml_config_item_t 
+/*!
+ * \brief Parses all of an event's elements, following a ruleset defined by an array of switch_xml_config_item_t
  * \param event The event structure containing the key and values to parse
  * \param reload true to skip all non-reloadable options
  * \param instructions instrutions on how to parse the elements
@@ -171,10 +171,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 															  switch_xml_config_item_t *instructions);
 
 /*!
- * \brief Parses a list of xml elements into an event  
+ * \brief Parses a list of xml elements into an event
  * \param xml First element of the xml list to parse
  * \param keyname Name of the key attribute
- * \param keyvalue Name of the value attribute 
+ * \param keyvalue Name of the value attribute
  * \param event [out] event (if *event is NOT NULL, the headers will be appended to the existing event)
  */
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event);

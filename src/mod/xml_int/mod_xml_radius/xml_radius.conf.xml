@@ -1,12 +1,12 @@
 <configuration name="xml_radius.conf" description="Radius XML Gateway">
   <!--
      auth_invite is only called when a directory lookup is done on an inbound invite. Usually that means a digest auth challenge on the invite.
-     
-     auth_reg is only called on the actual registration. 
-     
+
+     auth_reg is only called on the actual registration.
+
      auth_app is used when an invite is in the dialplan. If your profile requires digest auth then this isn't needed.
               but if your profile is doing only ip authentication this allows you to authenticate the call without the need for digest auth.
-	      
+
      acct_start happens when the call goes into the state 'routing' which means it is starting the dialplan
   -->
   <auth_invite>
@@ -29,13 +29,13 @@
       <param name="Digest-Response" variable="sip_auth_response" format="%s"/>
       <param name="Digest-Realm" variable="sip_auth_realm" format="%s"/>
       <param name="Digest-Nonce" variable="sip_auth_nonce" format="%s"/>
-      <param name="Digest-Username" variable="sip_auth_username" format="%s"/> 
+      <param name="Digest-Username" variable="sip_auth_username" format="%s"/>
       <param name="Digest-URI" variable="sip_auth_uri" format="%s"/>
       <param name="Digest-Method" variable="sip_auth_method" format="%s"/>
       <param name="Digest-Algorithm" variable="sip_auth_method" format="MD5"/>
       <param name="Digest-Qop" variable="sip_auth_qop" format="%s"/>
       <param name="Digest-CNonce" variable="sip_auth_cnonce" format="%s"/>
-      <param name="Digest-Nonce-Count" variable="sip_auth_nc" format="%s"/> 
+      <param name="Digest-Nonce-Count" variable="sip_auth_nc" format="%s"/>
     </fields>
   </auth_invite>
   <auth_reg>
@@ -93,7 +93,7 @@
       <param name="dictionary" value="/usr/share/freeradius/dictionary.cisco"/>
       <param name="seqfile" value="/var/run/radius.seq"/>
     </connection>
-    <fields>      
+    <fields>
     </fields>
   </auth_reg>
   <acct_start>
@@ -114,7 +114,7 @@
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" variable_secondary="ani" format="src-number-in=%s" />
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" variable_secondary="ani" format="src-number-out=%s" />
       <param name="Calling-Station-Id" variable="sip_from_user" variable_secondary="ani" format="%s"/>
-      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>  
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>
       <param vendor="Cisco" name="Cisco-AVPair" variable="destination_number" format="dst-gw-name=%s"/>
       <param vendor="Cisco" name="Cisco-AVPair" variable="destination_number" format="dst-number-in=%s" />
       <param vendor="Cisco" name="Cisco-AVPair" variable="destination_number" format="dst-number-out=%s" />
@@ -146,7 +146,7 @@
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" variable_secondary="ani" format="src-number-in=%s" />
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" variable_secondary="ani" format="src-number-out=%s" />
       <param name="Calling-Station-Id" variable="sip_from_user" variable_secondary="ani" format="%s"/>
-      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>  
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_user" variable_secondary="dialed_extension" format="dst-gw-name=%s"/>
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_user" variable_secondary="dialed_extension" format="dst-number-in=%s" />
       <param name="Called-Station-Id" variable="destination_number" format="%s"/>

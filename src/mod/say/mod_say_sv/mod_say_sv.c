@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Daniel Swarbrick <daniel.swarbrick@gmail.com>
@@ -71,7 +71,7 @@ SWITCH_MODULE_DEFINITION(mod_say_sv, mod_say_sv_load, NULL, NULL);
 
 static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
 {
-	/*swedish makes the distiction between utrum for "one" (en) and neutrum for "one" (ett), e.g. voicemail-message is neutrum but recording is utrum. 
+	/*swedish makes the distiction between utrum for "one" (en) and neutrum for "one" (ett), e.g. voicemail-message is neutrum but recording is utrum.
 	This only applies to the likes of 1, 101, 1001 etc.
 	files referenced below:
 		SSM_COUNTED=r-%d
@@ -309,7 +309,7 @@ static switch_status_t sv_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			if (minutes == 0) {
 				switch_say_file(sh, "time/midnatt");
 			} else {
-				switch_say_file(sh, "digits/0"); 
+				switch_say_file(sh, "digits/0");
 				switch_say_file(sh, "time/timmar");
 			}
 		}

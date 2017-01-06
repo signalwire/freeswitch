@@ -262,7 +262,7 @@ static void rayo_cpa_component_hangup(const char *jid, void *user_data)
 }
 
 /**
- * Handle hungup call event 
+ * Handle hungup call event
  */
 static void on_channel_hangup_complete_event(switch_event_t *event)
 {
@@ -353,7 +353,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 	/* acknowledge command */
 	rayo_component_send_start(RAYO_COMPONENT(component), iq);
 
-	/* TODO hangup race condition */	
+	/* TODO hangup race condition */
 	subscribe(switch_core_session_get_uuid(session), "hangup", RAYO_JID(component));
 
 	/* ready to forward detector events */
@@ -374,7 +374,7 @@ switch_status_t rayo_cpa_component_load(switch_loadable_module_interface_t **mod
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "cpa", "set:"RAYO_EXT_NS":stop", stop_cpa_component);
 	switch_event_bind("rayo_cpa_component", SWITCH_EVENT_CUSTOM, "rayo::cpa", on_rayo_cpa_detector_event, NULL);
 	switch_event_bind("rayo_cpa_component", SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE, NULL, on_channel_hangup_complete_event, NULL);
-	
+
 	globals.pool = pool;
 	switch_core_hash_init(&globals.subscribers);
 	switch_mutex_init(&globals.subscribers_mutex, SWITCH_MUTEX_NESTED, pool);

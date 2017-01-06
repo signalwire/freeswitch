@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard at moctel dot com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
@@ -194,7 +194,7 @@ switch_cache_db_handle_t *directory_get_db_handle(void)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -204,7 +204,7 @@ switch_cache_db_handle_t *directory_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 
 }
@@ -661,7 +661,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 							sql = generate_sql_entry_for_user(session, ux, profile->use_number_alias);
 							switch_xml_free(ux);
 						}
-						
+
 					} else {
 						sql = generate_sql_entry_for_user(session, ut, profile->use_number_alias);
 					}
@@ -677,7 +677,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 							sql = NULL;
 						}
 					}
-					
+
 					if (++count >= 100) {
 						count = 0;
 						sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
@@ -1018,7 +1018,7 @@ SWITCH_STANDARD_APP(directory_function)
 	switch_copy_string(s_param.profile, profile_name, 255);
 	switch_copy_string(s_param.domain, domain_name, 255);
 
-	if (!(search_by = switch_channel_get_variable(channel, "directory_search_order"))) { 
+	if (!(search_by = switch_channel_get_variable(channel, "directory_search_order"))) {
 		search_by = profile->search_order;
 	}
 

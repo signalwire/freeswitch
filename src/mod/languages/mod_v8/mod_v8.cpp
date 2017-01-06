@@ -559,7 +559,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						/* Add xml handler global variables */
 
 						Handle<Array> XML_REQUEST = Array::New(isolate, 4);
-						
+
 						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_name"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_name)));
 						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_value"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_value)));
 						XML_REQUEST->Set(String::NewFromUtf8(isolate, "section"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->section)));
@@ -661,7 +661,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 								}
 
 								if (xml_handler)
-								{									
+								{
 									Local<Value> value = context->Global()->Get(String::NewFromUtf8(isolate, "XML_STRING"));
 									String::Utf8Value str(value);
 									if (strcmp(js_safe_str(*str), "undefined"))
@@ -698,7 +698,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 #endif
 	}
 	//isolate->Exit();
-	
+
 	if (res.length() == 0) {
 		result = -1;
 	} else {
@@ -741,16 +741,16 @@ static switch_xml_t v8_fetch(const char *section,
 			if (zstr(xml_handler.XML_STRING)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 			}
-			else if (!(xml = switch_xml_parse_str_dynamic(xml_handler.XML_STRING, SWITCH_TRUE))) {				
+			else if (!(xml = switch_xml_parse_str_dynamic(xml_handler.XML_STRING, SWITCH_TRUE))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
 			}
 		}
 
 		// Don't forget to free XML_STRING
 		switch_safe_free(xml_handler.XML_STRING);
-		
+
 	}
-	
+
 	switch_safe_free(mycmd);
 
 	return xml;
@@ -919,7 +919,7 @@ SWITCH_STANDARD_JSON_API(json_function)
 	switch_stream_handle_t stream = { 0 };
 
 	if ((data = cJSON_GetObjectItem(json, "data"))) {
-		path = cJSON_GetObjectItem(data, "path"); 
+		path = cJSON_GetObjectItem(data, "path");
 	}
 
 	if (!(path && data)) {
@@ -934,7 +934,7 @@ SWITCH_STANDARD_JSON_API(json_function)
 	switch_safe_free(json_text);
 
 	v8_parse_and_execute(session, (char *) path->valuestring, &stream, NULL, NULL);
-	
+
 	*json_reply = cJSON_Parse((char *)stream.data);
 
  end:
@@ -946,7 +946,7 @@ SWITCH_STANDARD_JSON_API(json_function)
 
 	switch_event_destroy(&stream.param_event);
 	switch_safe_free(stream.data);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

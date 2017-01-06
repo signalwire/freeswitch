@@ -84,7 +84,7 @@ SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
  * who will be available to answer a single caller. In ringall this
  * maximum is the number who will be called, in enterprise the need defines
  * how many agents will be called. outbound_per_cycle_min will define
- * the minimum agents who will be called to answer a caller regardless of 
+ * the minimum agents who will be called to answer a caller regardless of
  * need, giving the enterprise strategy the ability to ring through more
  * than one agent for one caller.
 
@@ -1999,19 +1999,19 @@ static int place_call_enterprise_callback(void *pArg, int argc, char **argv, cha
  * care of invoking the handler.
  *
  * Within the ringall call strategy outbound_per_cycle is used to define
- * how many agents exactly are assigned to the caller. With ringall if 
+ * how many agents exactly are assigned to the caller. With ringall if
  * multiple callers are calling in and one is answered, because the call
  * is assigned to all agents the call to the agents that is not answered
  * will be lose raced and the other agents will drop the call before the
- * next one will begin to ring. When oubound_per_cycle is used in the 
+ * next one will begin to ring. When oubound_per_cycle is used in the
  * enterprise strategy it acts as a maximum value for how many agents
- * are rung at once on any call, the caller is not assigned to any agent 
+ * are rung at once on any call, the caller is not assigned to any agent
  * until the call is answered. Enterprise only rings the number of phones
  * that are needed, so outbound_per_cycle as a max does not give you the
  * effect of ringall. outbound_per_cycle_min defines how many agents minimum
  * will be rung by an incoming caller through fifo, which can give a ringall
  * effect. outbound_per_cycle and outbound_per_cycle_min both default to 1.
- * 
+ *
  */
 static int find_consumers(fifo_node_t *node)
 {
@@ -4083,7 +4083,7 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle", tmp);
 
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_per_cycle_min);
-	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle_min", tmp); 
+	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle_min", tmp);
 
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->ring_timeout);
 	switch_xml_set_attr_d(x_fifo, "ring_timeout", tmp);

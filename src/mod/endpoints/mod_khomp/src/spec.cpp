@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -505,61 +505,61 @@ struct funProcessSMSChannelString
 
     funProcessSMSChannelString(int *cause)
     : _cause(cause), _all_fail(true), _pvt(NULL)
-    {};  
+    {};
 
     bool operator()(unsigned int dev, unsigned int obj, SpecFlagsType & flags)
-    {    
+    {
         Board::KhompPvt *pvt = Board::findFree(dev, obj);
 
         if (pvt)
         {
-            // found something? check if its GSM 
+            // found something? check if its GSM
             if (pvt->application(SMS_CHECK, NULL, NULL))
-            {    
-                // used for cause definition 
+            {
+                // used for cause definition
                 if (_all_fail)
                     _all_fail = (pvt ? !pvt->isOK() : true);
 
                 if (flags & SPF_CYCLIC)
-                {    
+                {
                     Board::queueAddChannel(_channels, dev, obj);
                     return true;
-                }    
-                else 
-                {    
-                    _pvt = pvt; 
+                }
+                else
+                {
+                    _pvt = pvt;
                     return false;
-                }    
-            }    
-            else 
-            {    
-                // not gsm, return ASAP and stop search 
+                }
+            }
+            else
+            {
+                // not gsm, return ASAP and stop search
                 LOG(ERROR, PVT_FMT(pvt->target(), "channel is NOT a GSM channel! unable to send message!"));
                 return false;
             }
         }
 
-        // keep searching 
+        // keep searching
         return true;
     }
 
     Board::KhompPvt * pvt(SpecFlagsType & flags)
-    {    
+    {
         if ((flags & SPF_CYCLIC) && !_pvt)
-        {    
-            // we have no pvt 'till now, lets find a suitable one.. 
+        {
+            // we have no pvt 'till now, lets find a suitable one..
             _pvt = Board::queueFindFree(_channels);
         }
 
         if (!_pvt && _cause && !(*_cause))
-        {    
+        {
             if (_all_fail)
-            {    
-                // all channels are in fail 
+            {
+                // all channels are in fail
                 *_cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
-            }    
-            else 
-            {    
+            }
+            else
+            {
                 // otherwise, congestion..
                 *_cause = SWITCH_CAUSE_SWITCH_CONGESTION;
             }
@@ -652,10 +652,10 @@ bool processSMSChannelString(std::string & str, Board::KhompPvt *& pvt, int *cau
     funProcessSMSChannelString proc(cause);
 
     SpecFlagsType flags = SPF_FIRST;
-    SpecFunType   fun(proc, false); 
+    SpecFunType   fun(proc, false);
 
-    switch (processSpecAtoms(str, flags, fun)) 
-    {    
+    switch (processSpecAtoms(str, flags, fun))
+    {
         case SPR_FAIL:
             DBG(FUNC, FMT("SPR_FAIL: %p") % cause);
             if (cause)
@@ -666,7 +666,7 @@ bool processSMSChannelString(std::string & str, Board::KhompPvt *& pvt, int *cau
         case SPR_CONTINUE:
             pvt = proc.pvt(flags);
             DBG(FUNC, FMT("pvt = %p") % pvt);
-			
+
             if (cause && !(*cause))
             {
     			if (!pvt)
@@ -676,7 +676,7 @@ bool processSMSChannelString(std::string & str, Board::KhompPvt *& pvt, int *cau
             }
 
             return true;
-    }    
+    }
 
     return true;
 }
@@ -712,7 +712,7 @@ Board::KhompPvt * processDialString (const char *dial_charv, int *cause)
 
 	unsigned int opt_size = (pvt->hasNumberDial() ? 3 : 2);
 	unsigned int opt_arg  = opt_size - 1;
-    
+
 	if (dial_args.size() == opt_size)
 	{
         Strings::vector_type options_args;
@@ -783,7 +783,7 @@ Board::KhompPvt * processSMSString (const char *sms_charv, int *cause)
     std::string           sms_string(sms_charv);
     Strings::vector_type  sms_args;
 
-    Strings::tokenize(sms_string, sms_args, "/|,", 3); // '/' is a backward compatibility feature! 
+    Strings::tokenize(sms_string, sms_args, "/|,", 3); // '/' is a backward compatibility feature!
 
     DBG(FUNC, FMT("processing SMS string [%d] : '%s'") % sms_args.size() % sms_string);
 
@@ -834,7 +834,7 @@ Board::KhompPvt * processSMSString (const char *sms_charv, int *cause)
         conf = true;
     }
 
-    // get options/values 
+    // get options/values
     pvt->send_sms.sms_dest = dest;
     pvt->send_sms.sms_conf = conf;
     pvt->send_sms.sms_body = sms_args[2];
@@ -870,10 +870,10 @@ void processGroupString()
         switch (processSpecAtoms(tokens[0], flags, fun))
         {
             case SPR_CONTINUE:
-                // remove context from spec 
+                // remove context from spec
                 opts = tokens[0];
 
-                // log this! 
+                // log this!
                 DBG(CONF, FMT("group '%s' is now '%s', with context '%s'...")
                         % name % tokens[0] % tokens[1]);
                 break;
@@ -881,10 +881,10 @@ void processGroupString()
             default:
                 LOG(WARNING, FMT("skipping group '%s', bad configuration!\n") % name.c_str());
 
-                // "zero" group 
+                // "zero" group
                 opts.clear();
 
-                // log this! 
+                // log this!
                 DBG(CONF, FMT("group '%s' have misconfigured options, ignoring...") % name);
                 break;
         }

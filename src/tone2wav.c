@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Pawel Pierscionek <pawel@voiceworks.pl>
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
 	for(i = 1; i < argc; i++) {
 		if (!strstr(argv[i], "-")) break;
-		
+
 		if (!strcmp(argv[i], "-v")) {
 			verbose = SWITCH_TRUE;
 		}
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 			   );
 		return 255;
 	}
-	
+
 	file = argv[i];
 	script = argv[i+1];
 
@@ -149,12 +149,12 @@ int main(int argc, char *argv[])
 		printf("Cannot init mod_sndfile [%s]\n", err);
 		fail();
 	}
-	
+
 	if (switch_core_file_open(&fh, file, c, rate, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		printf("Cannot open file %s\n", file);
 		fail();
 	}
-	
+
 	teletone_init_session(&ts, 0, teletone_handler, &fh);
 	ts.rate = rate;
 	ts.channels = c;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 	teletone_run(&ts, script);
 	teletone_destroy_session(&ts);
 	switch_core_file_close(&fh);
-	
+
 	printf("File: %s generated...\n\nPlease support:\nFreeSWITCH http://www.freeswitch.org\nClueCon http://www.cluecon.com\n", file);
 
  end:

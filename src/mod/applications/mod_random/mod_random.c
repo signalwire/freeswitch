@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  *
@@ -174,7 +174,7 @@ static void event_handler(switch_event_t *event)
 	char *buf;
 
 	if (switch_event_serialize(event, &buf, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-		random_add_entropy(rfd, buf, strlen(buf));  
+		random_add_entropy(rfd, buf, strlen(buf));
 		free(buf);
 	}
 
@@ -184,23 +184,23 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_random_runtime)
 {
 
 	unsigned char data[1024] = {0};
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread starting using random_device_file %s\n", modname, random_device_file); 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread starting using random_device_file %s\n", modname, random_device_file);
 
 	if ((rfd = open(random_device_file, O_RDWR)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Error opening random_device_file %s\n", modname, random_device_file); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Error opening random_device_file %s\n", modname, random_device_file);
 		RUNNING = 0;
 	}
 
 	rng_read(rfd, data, 4);
-	
+
 	while(RUNNING) {
 		int16_t data[64];
 		int i = 0;
 		int len = sizeof(data) / 2;
 
 		switch_generate_sln_silence(data, len, 1, 1);
-		random_add_entropy(rfd, data, len);	
+		random_add_entropy(rfd, data, len);
 
 		while(i < len && !data[i]) i++;
 
@@ -214,7 +214,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_random_runtime)
 		close(rfd);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ending\n", modname); 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ending\n", modname);
 
 	return SWITCH_STATUS_TERM;
 }

@@ -222,7 +222,7 @@ SWITCH_STANDARD_APP(t38_gateway_function)
 	}
 
 	switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
-		
+
 	if (zstr(direction) || strcasecmp(direction, "self")) {
 		direction = "peer";
 	}
@@ -809,7 +809,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_RXFAXRESULT);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
 	spandsp_globals.pool = pool;
 
@@ -900,7 +900,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	switch_event_free_subclass(SPANDSP_EVENT_RXFAXPAGERESULT);
 	switch_event_free_subclass(SPANDSP_EVENT_TXFAXRESULT);
 	switch_event_free_subclass(SPANDSP_EVENT_RXFAXRESULT);
-	
+
 	mod_spandsp_fax_shutdown();
 	mod_spandsp_dsp_shutdown();
 #if defined(MODEM_SUPPORT)

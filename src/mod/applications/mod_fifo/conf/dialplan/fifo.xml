@@ -1,4 +1,4 @@
-	<!-- 
+	<!--
 		Parking extensions... transferring calls to 5900 will park them in a queue.
 	-->
 	<extension name="park">
@@ -8,7 +8,7 @@
 		</condition>
 	</extension>
 
-	<!-- 
+	<!--
 		Parking pickup extension.  Calling 5901 will pickup the call.
 	-->
 	<extension name="unpark">

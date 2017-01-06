@@ -152,7 +152,7 @@ void conference_member_update_status_field(conference_member_t *member)
 	if (!member->conference->la || !member->json || !member->status_field || conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 		return;
 	}
-	
+
 	switch_live_array_lock(member->conference->la);
 
 	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
@@ -198,7 +198,7 @@ void conference_member_update_status_field(conference_member_t *member)
 		if (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img) {
 			video = cJSON_CreateObject();
 
-			if (conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) && 
+			if (conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 				member->video_layer_id > -1 && switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY) {
 				cJSON_AddItemToObject(video, "visible", cJSON_CreateTrue());
 			} else {
@@ -423,7 +423,7 @@ conference_member_t *conference_member_get_by_var(conference_obj_t *conference, 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
 		const char *check_var;
-		
+
 		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
 			continue;
 		}
@@ -692,7 +692,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	switch_mutex_lock(member->audio_out_mutex);
 	lock_member(member);
 	switch_mutex_lock(conference->member_mutex);
-	
+
 	if (member->rec) {
 		conference->recording_members++;
 	}
@@ -766,7 +766,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				member->energy_level = id;
 			}
 		}
-		
+
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
@@ -777,16 +777,16 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;
-			
+
 			if (id == 0) {
 				id = conference->canvas_count;
 			}
-			
+
 			if (id <= conference->canvas_count && conference->canvases[id]) {
 				member->watching_canvas_id = id;
 			}
 		}
-		
+
 		conference_video_reset_member_codec_index(member);
 
 		if (has_video) {
@@ -806,7 +806,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_in"))) {
 				member->max_bw_in = switch_parse_bandwidth_string(var);
 			}
-		
+
 			if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_out"))) {
 				member->max_bw_out = switch_parse_bandwidth_string(var);
 
@@ -816,7 +816,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				}
 			}
 		}
-		
+
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", conference_utils_member_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable_printf(channel, "conference_ghost", "%s", conference_utils_member_test_flag(member, MFLAG_GHOST) ? "true" : "false");
@@ -958,7 +958,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			cJSON *dvars;
 			switch_event_t *var_event;
 			switch_event_header_t *hi;
-			
+
 			member->json = cJSON_CreateArray();
 			cJSON_AddItemToArray(member->json, cJSON_CreateStringPrintf("%0.4d", member->id));
 			cJSON_AddItemToArray(member->json, cJSON_CreateString(switch_channel_get_variable(member->channel, "caller_id_number")));
@@ -979,7 +979,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				for (hi = var_event->headers; hi; hi = hi->next) {
 					if (!strncasecmp(hi->name, "verto_dvar_", 11)) {
 						char *var = hi->name + 11;
-						
+
 						if (var) {
 							cJSON_AddItemToObject(dvars, var, cJSON_CreateString(hi->value));
 						}
@@ -1147,7 +1147,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 	lock_member(member);
 	conference_utils_member_clear_flag(member, MFLAG_INTREE);
 
-	
+
 	switch_safe_free(member->text_framedata);
 	member->text_framesize = 0;
 	if (member->text_buffer) {

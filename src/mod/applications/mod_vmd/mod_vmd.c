@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2008, Eric des Courtis <eric.des.courtis@benbria.com>
  *
@@ -18,7 +18,7 @@
  * Copyright (C) Benbria. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Eric des Courtis <eric.des.courtis@benbria.com>
  *
  * Special thanks to the following companies for their help:
@@ -35,7 +35,7 @@
  * mod_vmd.c -- Voicemail Detection Module
  *
  * This module detects voicemail beeps at any frequency in O(1) time.
- * 
+ *
  */
 
 #include <switch.h>
@@ -86,17 +86,17 @@
 
 /*! \brief Conversion of frequency to Hz
  *
- * \f$F = \frac{f}{{2}{\pi}}\f$ 
+ * \f$F = \frac{f}{{2}{\pi}}\f$
  */
 #define TO_HZ(f) ((F * f) / (2.0 * M_PI))
 
 /* Number of points in discreet energy separation. */
 #define P (5)
 
-/* Maximum signed value of int16_t 
+/* Maximum signed value of int16_t
  * DEPRECATED */
 #define ADJUST (32768)
-/* Same as above times two 
+/* Same as above times two
  * DEPRECATED */
 #define ADJUST_MAX (65536)
 
@@ -179,7 +179,7 @@ static double median(double *m, int n);
 #define PRINT2(a, b) do{ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, a, b); }while(0)
 */
 
-/*! \brief The callback function that is called when new audio data becomes available 
+/*! \brief The callback function that is called when new audio data becomes available
  *
  * @author Eric des Courtis
  * @param bug A reference to the media bug.
@@ -217,7 +217,7 @@ static switch_bool_t vmd_callback(switch_media_bug_t *bug, void *user_data, swit
 	return SWITCH_TRUE;
 }
 
-/*! \brief Process and convert data to be used by the find_beep() function 
+/*! \brief Process and convert data to be used by the find_beep() function
  *
  * @author Eric des Courtis
  * @param vmd_info The session information associated with the call.
@@ -247,17 +247,17 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info, switch_frame_t *
 	if (vmd_info->data != NULL) free(vmd_info->data);
 	vmd_info->data = (int16_t *)malloc(len);
 	if (vmd_info->data == NULL) return SWITCH_FALSE;
-    } 
+    }
 
     (void)memcpy(vmd_info->data, data, len);
     for(i = 2; i < frame->samples; i++){
-	vmd_info->data[i] = 
-	    0.0947997 * data[i] 
-	    - 
-	    0.0947997 * data[i - 2] 
-	    - 
-	    1.4083405 * vmd_info->data[i - 1] 
-	    + 
+	vmd_info->data[i] =
+	    0.0947997 * data[i]
+	    -
+	    0.0947997 * data[i - 2]
+	    -
+	    1.4083405 * vmd_info->data[i - 1]
+	    +
 	    0.8104005 * vmd_info->data[i - 2];
     }
 */
@@ -274,7 +274,7 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info, switch_frame_t *
 	return SWITCH_TRUE;
 }
 
-/*! \brief Find voicemail beep in the audio stream 
+/*! \brief Find voicemail beep in the audio stream
  *
  * @author Eric des Courtis
  * @param vmd_info The session information associated with the call.
@@ -373,7 +373,7 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 	}
 }
 
-/*! \brief Find the median of an array of doubles 
+/*! \brief Find the median of an array of doubles
  *
  * @param m Array of frequency samples.
  * @param n Number of samples in the array.
@@ -442,7 +442,7 @@ static double median(double *m, int n)
 	return mingtguess;
 }
 
-/*! \brief Convert many points for Signed L16 to relative floating point 
+/*! \brief Convert many points for Signed L16 to relative floating point
  *
  * @author Eric des Courtis
  * @param i_pts Array of P 16 bit integer audio samples.
@@ -460,9 +460,9 @@ static void convert_pts(int16_t *i_pts, double *d_pts, int16_t max)
 }
 
 /*! \brief Amplitude estimator for DESA-2
- *  
+ *
  *  The function is defined as \f$A = \sqrt{\frac{\psi{(x)}}{\sin{\Omega^2}}}\f$
- *  
+ *
  *  @author Eric des Courtis
  *  @param x An array of 5 evenly spaced audio samples \f$x_0, x_1, x_2, x_3, x_4\f$.
  *  @return The estimated amplitude.
@@ -477,11 +477,11 @@ double ampl_estimator(double *x)
 	return sqrt(PSI(x) / sin(freq_sq));
 }
 
-/*! \brief The DESA-2 algorithm 
+/*! \brief The DESA-2 algorithm
  *
- *  The function is defined as \f$f = \frac{1}{2}\arccos{\frac{{{x^2_2} - 
- *  {x_0}{x_4}} - {{x^2_1} - 
- *  {x_0}{x_2}} - {{x^2_3} - 
+ *  The function is defined as \f$f = \frac{1}{2}\arccos{\frac{{{x^2_2} -
+ *  {x_0}{x_4}} - {{x^2_1} -
+ *  {x_0}{x_2}} - {{x^2_3} -
  *  {x_2}{x_4}}}
  *  {{2}({x^2_2} - {x_1}{x_3})}}\f$
  *
@@ -499,7 +499,7 @@ double freq_estimator(double *x)
 		);
 }
 
-/*! \brief FreeSWITCH module loading function 
+/*! \brief FreeSWITCH module loading function
  *
  * @author Eric des Courtis
  * @return Load success or failure.
@@ -644,7 +644,7 @@ SWITCH_STANDARD_API(vmd_api_main)
 	/* Separate the arguments */
 	argc = switch_separate_string(ccmd, ' ', argv, VMD_PARAMS);
 
-	/* If we don't have the expected number of parameters 
+	/* If we don't have the expected number of parameters
 	 * display usage */
 	if (argc != VMD_PARAMS) {
 		stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
@@ -710,7 +710,7 @@ SWITCH_STANDARD_API(vmd_api_main)
 		vmd_info->points[i].ampl = 0.0;
 	}
 
-	/* Add a media bug that allows me to intercept the 
+	/* Add a media bug that allows me to intercept the
 	 * reading leg of the audio stream */
 	status = switch_core_media_bug_add(vmd_session, "vmd", NULL, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
 

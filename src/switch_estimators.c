@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Dragos Oancea <droancea@yahoo.com>
  *
  * switch_estimators.c -- Estimators and Detectors (try to read into the future: packet loss, jitter, RTT, etc)
@@ -53,18 +53,18 @@
 
 /* This function initializes the Kalman System Model
  *
- * xk+1 = A*xk + wk 
+ * xk+1 = A*xk + wk
  * zk = H*xk + vk
  * xk = state variable (must exist in physical world - measurable )
- * zk = measurment 
- * wk,vk - white noise 
- * A = state trasition matrix , (n x n )  matrix 
- * H = state-to-measurment matrix , ( n x n ) matrix 
+ * zk = measurment
+ * wk,vk - white noise
+ * A = state trasition matrix , (n x n )  matrix
+ * H = state-to-measurment matrix , ( n x n ) matrix
  * Noise covariance:
  * Q:  Covariance matrix of wk, ( n x n ) diagonal matrix
- * R:  Covariance matrix of vk , ( m x m ) diagonal matrix 
- * R: if you want to be affected less by the measurement and get the estimate with less variation, increase R 
- * Q: if you want to be affected more by the measurement and get the estimate with more variation, decrease Q  
+ * R:  Covariance matrix of vk , ( m x m ) diagonal matrix
+ * R: if you want to be affected less by the measurement and get the estimate with less variation, increase R
+ * Q: if you want to be affected more by the measurement and get the estimate with more variation, decrease Q
  *
  * (Phil Kim book)
  *
@@ -76,7 +76,7 @@ SWITCH_DECLARE(void) switch_kalman_init(kalman_estimator_t *est, float Q, float 
 	est -> Q = Q; /*accuracy of system model */ /* SYSTEM MODEL: TO BE DEDUCTED */
 	est -> R = R; /*accuracy of measurement*/ /* SYSTEM MODEL: TO BE DEDUCTED */
 	est -> K = 0;
-	est -> val_estimate = 0 ; 
+	est -> val_estimate = 0 ;
 	est -> val_measured = 0 ; // [0-100 %] or [0-5000] or [0-2sec]
 }
 
@@ -84,7 +84,7 @@ SWITCH_DECLARE(void) switch_kalman_init(kalman_estimator_t *est, float Q, float 
 CUSUM Kalman functions to detect sudden change over a predefined thereshold.
 
 y(t) = sampled RTT
-x(t)= desired RTT 
+x(t)= desired RTT
 
 Model:
 x(t+1) = x(t) + delta(t)*v(t)
@@ -92,25 +92,25 @@ y(t) = x(t) + e(t)
 
 Noisy characteristic of RTT captured by measurment noise e(t) with variance Re.
 The step changes in the desired RTT x(t) is modeled as the process noise v(t)
-with variance Rv and the discrete variable delta(t) . 
+with variance Rv and the discrete variable delta(t) .
 If a change occurs at time t, then delta(t) = 1 otherwise delta(t) = 0.
 
 avg(x(t)) = avg(x(t-1)) + K(t)(y(t) - avg(x(t-1)))
 K(t) = P(t-1)/(P(t-1) + Re))
-P(t) = (1-K(t))P(t-1)  + delta(t-1)* Rv 
+P(t) = (1-K(t))P(t-1)  + delta(t-1)* Rv
 e(t) = y(t) - avg(x(t))
 g(t) = max(g(t-1) + e(t) - epsilon,0)
-if g(t) > 0 then 
+if g(t) > 0 then
 	delta(t) = 1 // alarm
 	g(t) = 0
-else 
+else
 	delta(t) = 0
 endif
 
-constants: 
+constants:
 
-epsilon = 0.005 
-h = 0.05 
+epsilon = 0.005
+h = 0.05
 */
 SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *detect_change, float epsilon,float h)
 {
@@ -123,9 +123,9 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *
 
 	detector_change -> val_estimate_last = 0;
 	detector_change -> val_desired_last = 0;
-	detector_change -> P_last = 0; 
+	detector_change -> P_last = 0;
 	detector_change -> K_last = 0;
-	detector_change -> delta = 0; 
+	detector_change -> delta = 0;
 	detector_change -> measurement_noise_e = 0;
 	detector_change -> variance_Re = 0;
 	detector_change -> measurement_noise_v = 0;
@@ -139,14 +139,14 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *
 	detector_change -> last_q = 0;
 	detector_change -> N = 0;
 	return TRUE;
-} 
+}
 
 SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float rtt_avg)
 {
 	float K=0;
 	float P=0;
 	float g=0;
-	float desired_val; 
+	float desired_val;
 	float current_average;
 	float current_q;
 	float sample_variance_Re = 0;
@@ -189,10 +189,10 @@ SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_de
 		return TRUE;
 	}
 	return FALSE;
-} 
+}
 
 /* Kalman filter abstract ( measure and estimate 1 single value per system model )
- * Given the measurment and the system model  together with the current state , 
+ * Given the measurment and the system model  together with the current state ,
  * the function puts an estimate in the estimator struct */
 SWITCH_DECLARE(switch_bool_t) switch_kalman_estimate(kalman_estimator_t * est, float measurement, int system_model)
 {
@@ -209,7 +209,7 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_estimate(kalman_estimator_t * est, f
 	if (system_model == EST_LOSS )  {
 		if ((measurement > 100) && (measurement < 0)) {
 			return SWITCH_FALSE ;
-		}		
+		}
 	}
 
 	if (system_model == EST_JITTER)  {
@@ -242,10 +242,10 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_is_slow_link(kalman_estimator_t * es
 	float thresh_packet_loss = 5; /* % */
 	float thresh_rtt = 0.8 ; /*seconds*/
 
-	if ((est_loss->val_estimate_last > thresh_packet_loss) && 
+	if ((est_loss->val_estimate_last > thresh_packet_loss) &&
 				(est_rtt->val_estimate_last > thresh_rtt )) {
 		return SWITCH_TRUE;
-	} 
+	}
 
 	return SWITCH_FALSE;
 }

@@ -36,7 +36,7 @@
 switch_status_t mod_smpp_message_encode_body(char *body, int length, unsigned char *bin, uint8_t *enc_length)
 {
 	int i = 0;
-	
+
 	for ( i = 0; i < length; i++ ) {
 		bin[i*2] = body[i] / 16;
 		bin[i*2 + 1] = body[i] % 16;
@@ -46,13 +46,13 @@ switch_status_t mod_smpp_message_encode_body(char *body, int length, unsigned ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* 
+/*
    Scratch notes taken during development/interop:
 
 	char *message = "5361792048656c6c6f20746f204d79204c6974746c6520467269656e64";
 	''.join('%02x' % ord(c) for c in  u'Скажите привет моему маленькому другу'.encode('utf16'))
 
-	Variable length UTF-16 russian text: 
+	Variable length UTF-16 russian text:
 
 	char *message = "fffe21043a043004360438044204350420003f044004380432043504420420003c043e0435043c04430420003c0430043b0435043d044c043a043e043c044304200034044004430433044304";
 	char *mesg_txt = "This is a test SMS message from FreeSWITCH over SMPP";
@@ -62,7 +62,7 @@ switch_status_t mod_smpp_message_create(mod_smpp_gateway_t *gateway, switch_even
 {
 	mod_smpp_message_t *msg = calloc(1, sizeof(mod_smpp_message_t));
 	char *body = switch_event_get_body(event);
-									   
+
 	assert(*message == NULL);
 
 	if ( !body ) {
@@ -87,7 +87,7 @@ switch_status_t mod_smpp_message_create(mod_smpp_gateway_t *gateway, switch_even
     msg->req.sm_default_msg_id       = 0;
     msg->req.data_coding             = 0;
     msg->req.source_addr_ton         = 1;
-    msg->req.source_addr_npi         = 1;	
+    msg->req.source_addr_npi         = 1;
     msg->req.dest_addr_ton           = 1;
 	msg->req.dest_addr_npi           = 1;
     msg->req.esm_class               = 1; /* 0 => default, 1 => datagram, 2 => forward(transaction), 3 => store and forward
@@ -104,7 +104,7 @@ switch_status_t mod_smpp_message_create(mod_smpp_gateway_t *gateway, switch_even
 	snprintf((char *)msg->req.short_message, sizeof(msg->req.short_message), "%s", body);
 	msg->req.sm_length = strlen(body);
 
-	if ( 0 && mod_smpp_message_encode_body(body, strlen(body), 
+	if ( 0 && mod_smpp_message_encode_body(body, strlen(body),
 											 (unsigned char *) &(msg->req.short_message), &(msg->req.sm_length)) != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to encode message body\n");
 		goto err;
@@ -124,7 +124,7 @@ switch_status_t mod_smpp_message_decode(mod_smpp_gateway_t *gateway, deliver_sm_
 	char *str = NULL;
 
 	if (switch_event_create(&evt, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new event\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new event\n");
 	}
 
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "endpoint", "mod_smpp");
@@ -173,7 +173,7 @@ switch_status_t mod_smpp_message_decode(mod_smpp_gateway_t *gateway, deliver_sm_
 switch_status_t mod_smpp_message_destroy(mod_smpp_message_t **msg)
 {
 	if ( msg ) {
-		switch_safe_free(*msg);		
+		switch_safe_free(*msg);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

@@ -26,7 +26,7 @@ public:
 
 		// Use the JSON string as the message body
 		zmq::message_t msg(pjson, strlen(pjson), free_message_data, NULL);
-		
+
 		// Send the message
 		_publisher.send(msg);
 	}
@@ -78,7 +78,7 @@ public:
 	void Listen() {
 		// All we do is sit here and block the run loop thread so it doesn't return
 		// it seems that if you want to keep your module running you can't return from the run loop
-		
+
 		char_msg msg;
 		while(true) {
 			// Listen for term message

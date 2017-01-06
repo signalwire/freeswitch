@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2010, Mathieu Parent <math.parent@gmail.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Parent <math.parent@gmail.com>
  *
  *
@@ -397,7 +397,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_forward_stat_message(c
 		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 		if(listener) {
 
-			send_forward_stat(listener, number); 
+			send_forward_stat(listener, number);
 
 			stream->write_function(stream, "+OK\n");
 		} else {
@@ -419,7 +419,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_display_prompt_status_
 		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 		if(listener) {
 
-			send_display_prompt_status(listener, 0, display, 0, 0); 
+			send_display_prompt_status(listener, 0, display, 0, 0);
 
 			stream->write_function(stream, "+OK\n");
 		} else {

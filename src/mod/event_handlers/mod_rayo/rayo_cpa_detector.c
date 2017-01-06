@@ -219,7 +219,7 @@ SWITCH_STANDARD_API(rayo_cpa_detector_api)
 
 	cmd_dup = strdup(cmd);
 	argc = switch_separate_string(cmd_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
-	
+
 	if (argc != 3) {
 		stream->write_function(stream, "-ERR: USAGE %s\n", RAYO_CPA_DETECTOR_SYNTAX);
 	} else {

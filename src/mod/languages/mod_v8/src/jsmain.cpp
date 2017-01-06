@@ -98,7 +98,7 @@ const string JSMain::LoadFileToString(const string& filename)
 JSMain::JSMain(void)
 {
 	isolate = Isolate::New();
-	
+
 	extenderClasses = new vector<const js_class_definition_t *>();
 	extenderFunctions = new vector<js_function_t *>();
 	extenderInstances = new vector<registered_instance_t*>();
@@ -178,7 +178,7 @@ const string JSMain::GetExceptionInfo(Isolate* isolate, TryCatch* try_catch)
 		ostringstream ss;
 
 		ss << filename_string << ":" << linenum << ": " << exception_string << "\r\n";
-		
+
 		// Print line of source code.
 		String::Utf8Value sourceline(message->GetSourceLine());
 		const char *sourceline_string = js_safe_str(*sourceline);
@@ -223,7 +223,7 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 			return;
 		}
 	}
-	
+
 	args.GetReturnValue().Set(Undefined(args.GetIsolate()));
 }
 
@@ -233,7 +233,7 @@ void JSMain::Log(const v8::FunctionCallbackInfo<Value>& args)
 	String::Utf8Value str(args[0]);
 
 	printf("%s\r\n", js_safe_str(*str));
-	
+
 	args.GetReturnValue().Set(Undefined(args.GetIsolate()));
 }
 
@@ -340,7 +340,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 #endif
 	}
 	//isolate->Exit();
-	
+
 	if (resultIsError) {
 		*resultIsError = isError;
 	}

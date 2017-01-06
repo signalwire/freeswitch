@@ -67,7 +67,7 @@ int mongo_env_write_socket( mongo *conn, const void *buf, int len ) {
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
-            if (errno == EPIPE) 
+            if (errno == EPIPE)
                 conn->connected = 0;
             conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;

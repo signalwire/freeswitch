@@ -1778,7 +1778,7 @@ JS_SESSION_FUNCTION_IMPL(Bridge)
 	if (info.Length() > 0) {
 		if (info[0]->IsObject()) {
 			obj_b = Handle<Object>::Cast(info[0]);
-			
+
 			if (!(jss_b = JSBase::GetInstance<FSSession>(obj_b))) {
 				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot find session B"));
 				return;

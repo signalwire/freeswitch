@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -103,7 +103,7 @@ bool BoardE1::KhompPvtE1::onChannelRelease(K3L_EVENT *e)
         return false;
     }
 
-    DBG(FUNC, PVT_FMT(_target, "(E1) r"));   
+    DBG(FUNC, PVT_FMT(_target, "(E1) r"));
     return ret;
 }
 
@@ -121,7 +121,7 @@ bool BoardE1::KhompPvtE1::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_options._out_of_band_dtmfs()&& !call()->_flags.check(Kflags::FAX_DETECTED));     
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs()&& !call()->_flags.check(Kflags::FAX_DETECTED));
 
             startListen();
             startStream();
@@ -145,7 +145,7 @@ bool BoardE1::KhompPvtE1::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to get device: %d!)") % err.device);
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(E1) r"));
 
     return ret;
@@ -164,13 +164,13 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
             DBG(STRM, PVT_FMT(_target, "Fax detected"));
 
             /* hadn't we did this already? */
-            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);            
+            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);
 
             time_t time_was = call()->_call_statistics->_base_time;
             time_t time_now = time(NULL);
 
             bool detection_timeout = (time_now > (time_was + (time_t) (Opt::_options._fax_adjustment_timeout())));
-            
+
             DBG(STRM, PVT_FMT(_target, "is set? (%s) timeout? (%s)")
                             % (already_detected ? "true" : "false") % (detection_timeout ? "true" : "false"));
 
@@ -183,15 +183,15 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
                     break;
 
                 if (callE1()->_call_info_drop != 0 || callE1()->_call_info_report)
-                {    
+                {
                     /* we did not detected fax yet, send answer info! */
                     setAnswerInfo(Board::KhompPvt::CI_FAX);
 
                     if (callE1()->_call_info_drop & Board::KhompPvt::CI_FAX)
-                    {    
+                    {
                         /* fastest way to force a disconnection */
                         command(KHOMP_LOG,CM_DISCONNECT);//,SCE_HIDE);
-                    }    
+                    }
                 }
 
                 if (Opt::_options._auto_fax_adjustment())
@@ -218,7 +218,7 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
     }
 
     bool ret = KhompPvt::onAudioStatus(e);
-    
+
     DBG(STRM, PVT_FMT(_target, "(E1) r"));
 
     return ret;
@@ -227,14 +227,14 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
 bool BoardE1::KhompPvtE1::onCallAnswerInfo(K3L_EVENT *e)
 {
     DBG(FUNC, PVT_FMT(_target, "(E1) c"));
-    try  
-    {    
+    try
+    {
         ScopedPvtLock lock(this);
 
         int info_code = -1;
 
         switch (e->AddInfo)
-        {    
+        {
             case kcsiCellPhoneMessageBox:
                 info_code = CI_MESSAGE_BOX;
                 break;
@@ -253,25 +253,25 @@ bool BoardE1::KhompPvtE1::onCallAnswerInfo(K3L_EVENT *e)
             default:
                 DBG(FUNC, PVT_FMT(_target, "got an unknown call answer info '%d', ignoring...") % e->AddInfo);
                 break;
-        }    
+        }
 
         if (info_code != -1)
-        {    
+        {
             if (callE1()->_call_info_report)
-            {    
-                //TODO: HOW WE TREAT THAT 
-                // make the channel export this 
+            {
+                //TODO: HOW WE TREAT THAT
+                // make the channel export this
                 setAnswerInfo(info_code);
-            }    
+            }
 
             if (callE1()->_call_info_drop & info_code)
-            {    
-                // fastest way to force a disconnection 
+            {
+                // fastest way to force a disconnection
                 //K::util::sendCmd(pvt->boardid, pvt->objectid, CM_DISCONNECT, true, false);
                 command(KHOMP_LOG,CM_DISCONNECT/*,SCE_HIDE ?*/);
-            }    
-        }    
-    }    
+            }
+        }
+    }
     catch (ScopedLockFailed & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to lock %s!)") % err._msg.c_str() );
@@ -298,7 +298,7 @@ bool BoardE1::KhompPvtE1::onDisconnect(K3L_EVENT *e)
             if(Opt::_options._disconnect_delay()== 0)
             {
                 DBG(FUNC, PVT_FMT(_target, "queueing disconnecting outgoing channel!"));
-                command(KHOMP_LOG, CM_DISCONNECT);       
+                command(KHOMP_LOG, CM_DISCONNECT);
             }
             else
             {
@@ -308,11 +308,11 @@ bool BoardE1::KhompPvtE1::onDisconnect(K3L_EVENT *e)
         }
         else
         {
-            /* in the case of a disconnect confirm is needed and a call 
+            /* in the case of a disconnect confirm is needed and a call
             was not started e.g. just after a ev_seizure_start */
             command(KHOMP_LOG, CM_DISCONNECT);
         }
-        
+
         ret = KhompPvt::onDisconnect(e);
 
     }
@@ -335,19 +335,19 @@ void BoardE1::KhompPvtE1::delayedDisconnect(Board::KhompPvt * pvt)
 {
     DBG(FUNC,PVT_FMT(pvt->target(), "Delayed disconnect"));
 
-    try  
-    {    
+    try
+    {
         ScopedPvtLock lock(pvt);
 
         DBG(FUNC, PVT_FMT(pvt->target(), "queueing disconnecting outgoing channel after delaying!"));
 
         pvt->command(KHOMP_LOG,CM_DISCONNECT);
         pvt->cleanup(CLN_HARD);
-    }        
+    }
     catch (...)
     {
         LOG(ERROR, PVT_FMT(pvt->target(), "r (unable to lock the pvt !)"));
-    }       
+    }
 }
 
 bool BoardE1::onLinkStatus(K3L_EVENT *e)
@@ -378,30 +378,30 @@ bool BoardE1::KhompPvtISDN::onSyncUserInformation(K3L_EVENT *e)
     {
         KUserInformationEx * info = (KUserInformationEx *) (((char*)e) + sizeof(K3L_EVENT));
         callISDN()->_uui_descriptor = (long int) info->ProtocolDescriptor;
-        
+
         /* clean string */
         callISDN()->_uui_information.clear();
 
         if (info->UserInfoLength)
-        {    
+        {
             /* append to a clean string */
-            for (unsigned int i = 0; i < info->UserInfoLength; ++i) 
+            for (unsigned int i = 0; i < info->UserInfoLength; ++i)
                 callISDN()->_uui_information += STG(FMT("%02hhx") % ((unsigned char) info->UserInfo[i]));
-        }    
+        }
     }
     else
     {
         KUserInformation * info = (KUserInformation *) (((char*)e) + sizeof(K3L_EVENT));
         callISDN()->_uui_descriptor = info->ProtocolDescriptor;
-        
+
         /* clean string */
         callISDN()->_uui_information.clear();
 
         if (info->UserInfoLength)
-        {    
-            for (unsigned int i = 0; i < info->UserInfoLength; ++i) 
+        {
+            for (unsigned int i = 0; i < info->UserInfoLength; ++i)
                 callISDN()->_uui_information += STG(FMT("%02hhx") % ((unsigned char) info->UserInfo[i]));
-        }    
+        }
     }
 
     return true;
@@ -454,19 +454,19 @@ bool BoardE1::KhompPvtISDN::onIsdnProgressIndicator(K3L_EVENT *e)
 
 bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
 {
-    DBG(FUNC,PVT_FMT(_target, "(ISDN) c"));   
+    DBG(FUNC,PVT_FMT(_target, "(ISDN) c"));
 
     bool isdn_reverse_charge = false;
     std::string isdn_reverse_charge_str;
     bool ret;
-   
+
     try
     {
-        callISDN()->_isdn_orig_type_of_number = Globals::k3lapi.get_param(e, "isdn_orig_type_of_number"); 
-        callISDN()->_isdn_orig_numbering_plan = Globals::k3lapi.get_param(e, "isdn_orig_numbering_plan"); 
-        callISDN()->_isdn_dest_type_of_number = Globals::k3lapi.get_param(e, "isdn_dest_type_of_number"); 
-        callISDN()->_isdn_dest_numbering_plan = Globals::k3lapi.get_param(e, "isdn_dest_numbering_plan"); 
-        callISDN()->_isdn_orig_presentation   = Globals::k3lapi.get_param(e, "isdn_orig_presentation"); 
+        callISDN()->_isdn_orig_type_of_number = Globals::k3lapi.get_param(e, "isdn_orig_type_of_number");
+        callISDN()->_isdn_orig_numbering_plan = Globals::k3lapi.get_param(e, "isdn_orig_numbering_plan");
+        callISDN()->_isdn_dest_type_of_number = Globals::k3lapi.get_param(e, "isdn_dest_type_of_number");
+        callISDN()->_isdn_dest_numbering_plan = Globals::k3lapi.get_param(e, "isdn_dest_numbering_plan");
+        callISDN()->_isdn_orig_presentation   = Globals::k3lapi.get_param(e, "isdn_orig_presentation");
         isdn_reverse_charge_str = Globals::k3lapi.get_param(e, "isdn_reverse_charge");
         isdn_reverse_charge = Strings::toboolean(isdn_reverse_charge_str);
     }
@@ -487,7 +487,7 @@ bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
         {
             bool pvt_locked = true;
             bool is_ok = false;
-        
+
             DBG(FUNC, PVT_FMT(_target, "Session has not been destroyed yet, waiting for khompDestroy"));
 
             for(unsigned int sleeps = 0; sleeps < 20; sleeps++)
@@ -516,7 +516,7 @@ bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
                 }
 
                 pvt_locked = true;
-            
+
                 if(!session())
                 {
                     is_ok = true;
@@ -536,11 +536,11 @@ bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
         }
 
         if(isdn_reverse_charge)
-        { 
+        {
             call()->_collect_call = true;
         }
 
-        ret = KhompPvtE1::onNewCall(e); 
+        ret = KhompPvtE1::onNewCall(e);
     }
     catch(ScopedLockFailed & err)
     {
@@ -548,7 +548,7 @@ bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
         return false;
     }
 
-    DBG(FUNC, PVT_FMT(_target, "(ISDN) r"));   
+    DBG(FUNC, PVT_FMT(_target, "(ISDN) r"));
 
     return ret;
 }
@@ -633,7 +633,7 @@ bool BoardE1::KhompPvtISDN::sendPreAudio(int rb_value)
         return false;
 
 
-    DBG(FUNC,PVT_FMT(_target, "doing the ISDN pre_connect"));   
+    DBG(FUNC,PVT_FMT(_target, "doing the ISDN pre_connect"));
 
     if (call()->_flags.check(Kflags::HAS_PRE_AUDIO))
     {
@@ -673,7 +673,7 @@ bool BoardE1::KhompPvtISDN::sendDtmf(std::string digit)
     }
 
     bool ret = KhompPvtE1::sendDtmf(callISDN()->_digits_buffer);
-        
+
     callISDN()->_digits_buffer.clear();
 
     return ret;
@@ -698,7 +698,7 @@ int BoardE1::KhompPvtE1::makeCall(std::string params)
     else
     {
         LOG(ERROR, PVT_FMT(target(), "Fail on make call"));
-    }   
+    }
 
     return ret;
 }
@@ -762,8 +762,8 @@ bool BoardE1::KhompPvtE1::indicateBusyUnlocked(int cause, bool sent_signaling)
     }
 
     DBG(FUNC,PVT_FMT(_target, "(E1) r"));
-    
-    return true; 
+
+    return true;
 }
 
 void BoardE1::KhompPvtE1::setAnswerInfo(int answer_info)
@@ -771,11 +771,11 @@ void BoardE1::KhompPvtE1::setAnswerInfo(int answer_info)
     const char * value = answerInfoToString(answer_info);
 
     if (value == NULL)
-    {    
+    {
         DBG(FUNC, PVT_FMT(_target, "signaled unknown call answer info '%d', using 'Unknown'...") % answer_info);
         value = "Unknown";
-    }   
-    
+    }
+
     DBG(FUNC,PVT_FMT(_target, "KCallAnswerInfo: %s") % value);
 
     try
@@ -784,7 +784,7 @@ void BoardE1::KhompPvtE1::setAnswerInfo(int answer_info)
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
     {
-        LOG(ERROR,PVT_FMT(_target, "%s") % err._msg.c_str()); 
+        LOG(ERROR,PVT_FMT(_target, "%s") % err._msg.c_str());
     }
 }
 
@@ -801,10 +801,10 @@ bool BoardE1::KhompPvtE1::setupConnection()
     Board::board(_target.device)->_timers.del(callE1()->_idx_disconnect);
 
     bool fax_detected = callE1()->_flags.check(Kflags::FAX_DETECTED) || (callE1()->_var_fax_adjust == T_TRUE);
-    
+
     bool res_out_of_band_dtmf = (call()->_var_dtmf_state == T_UNKNOWN || fax_detected ?
         Opt::_options._suppression_delay()&& Opt::_options._out_of_band_dtmfs()&& !fax_detected : (call()->_var_dtmf_state == T_TRUE));
-    
+
     bool res_echo_cancellator = (call()->_var_echo_state == T_UNKNOWN || fax_detected ?
         Opt::_options._echo_canceller()&& !fax_detected : (call()->_var_echo_state == T_TRUE));
 
@@ -815,7 +815,7 @@ bool BoardE1::KhompPvtE1::setupConnection()
     {
         obtainRX(res_out_of_band_dtmf);
 
-        /* esvazia buffers de leitura/escrita */ 
+        /* esvazia buffers de leitura/escrita */
         cleanupBuffers();
 
         if (!call()->_flags.check(Kflags::KEEP_DTMF_SUPPRESSION))
@@ -831,7 +831,7 @@ bool BoardE1::KhompPvtE1::setupConnection()
 
         startStream();
 
-        DBG(FUNC, PVT_FMT(_target, "(E1) Audio callbacks initialized successfully"));  
+        DBG(FUNC, PVT_FMT(_target, "(E1) Audio callbacks initialized successfully"));
     }
 
     return Board::KhompPvt::setupConnection();
@@ -866,8 +866,8 @@ bool BoardE1::KhompPvtE1::validContexts(
 
     contexts.push_back(Opt::_options._context_digital());
 
-    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
-    {    
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
+    {
         replaceTemplate((*i), "LL", ((_target.object)/30));
         replaceTemplate((*i), "CCC", _target.object);
     }
@@ -881,13 +881,13 @@ bool BoardE1::KhompPvtE1::validContexts(
 
 int BoardE1::KhompPvtISDN::makeCall(std::string params)
 {
-    DBG(FUNC,PVT_FMT(_target, "(ISDN) c"));   
+    DBG(FUNC,PVT_FMT(_target, "(ISDN) c"));
 
     CallISDN * call = callISDN();
 
     if(call->_uui_descriptor != -1)
     {
-        DBG(FUNC,PVT_FMT(_target, "got userinfo"));   
+        DBG(FUNC,PVT_FMT(_target, "got userinfo"));
 
         /* grab this information first, avoiding latter side-effects */
         const bool        info_extd = call->_uui_extended;
@@ -896,7 +896,7 @@ int BoardE1::KhompPvtISDN::makeCall(std::string params)
         const size_t      info_size = std::min<size_t>(call->_uui_information.size(), (info_extd ? KMAX_USER_USER_EX_LEN : KMAX_USER_USER_LEN) << 1) >> 1;
 
         bool res = true;
-    
+
         if(info_extd)
         {
             KUserInformationEx info;
@@ -905,13 +905,13 @@ int BoardE1::KhompPvtISDN::makeCall(std::string params)
             info.UserInfoLength = info_size;
 
             for (unsigned int pos = 0u, index = 0u; pos < info_size; index+=2, ++pos)
-                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16); 
+                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16);
 
             if (!command(KHOMP_LOG, CM_USER_INFORMATION_EX, (const char *) &info))
             {
-                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));   
+                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));
             }
-        } 
+        }
         else
         {
             KUserInformation info;
@@ -920,59 +920,59 @@ int BoardE1::KhompPvtISDN::makeCall(std::string params)
             info.UserInfoLength = info_size;
 
             for (unsigned int pos = 0u, index = 0u; pos < info_size; index+=2, ++pos)
-                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16); 
+                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16);
 
             if (!command(KHOMP_LOG, CM_USER_INFORMATION, (const char *) &info))
             {
-                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));   
+                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));
             }
         }
 
-        call->_uui_extended = false; 
+        call->_uui_extended = false;
         call->_uui_descriptor = -1;
         call->_uui_information.clear();
     }
 
-    if (!callISDN()->_isdn_orig_type_of_number.empty()) 
+    if (!callISDN()->_isdn_orig_type_of_number.empty())
     {
-        params += "isdn_orig_type_of_number=\""; 
-        params += callISDN()->_isdn_orig_type_of_number; 
-        params += "\" "; 
+        params += "isdn_orig_type_of_number=\"";
+        params += callISDN()->_isdn_orig_type_of_number;
+        params += "\" ";
     }
 
-    if (!callISDN()->_isdn_dest_type_of_number.empty()) 
-    { 
-        params += "isdn_dest_type_of_number=\""; 
-        params += callISDN()->_isdn_dest_type_of_number; 
-        params += "\" "; 
+    if (!callISDN()->_isdn_dest_type_of_number.empty())
+    {
+        params += "isdn_dest_type_of_number=\"";
+        params += callISDN()->_isdn_dest_type_of_number;
+        params += "\" ";
     }
 
-    if (!callISDN()->_isdn_orig_numbering_plan.empty()) 
-    { 
-        params += "isdn_orig_numbering_plan=\""; 
-        params += callISDN()->_isdn_orig_numbering_plan; 
-        params += "\" "; 
+    if (!callISDN()->_isdn_orig_numbering_plan.empty())
+    {
+        params += "isdn_orig_numbering_plan=\"";
+        params += callISDN()->_isdn_orig_numbering_plan;
+        params += "\" ";
     }
 
-    if (!callISDN()->_isdn_dest_numbering_plan.empty()) 
-    { 
-        params += "isdn_dest_numbering_plan=\""; 
-        params += callISDN()->_isdn_dest_numbering_plan; 
-        params += "\" "; 
+    if (!callISDN()->_isdn_dest_numbering_plan.empty())
+    {
+        params += "isdn_dest_numbering_plan=\"";
+        params += callISDN()->_isdn_dest_numbering_plan;
+        params += "\" ";
     }
 
     if (!callISDN()->_isdn_orig_presentation.empty())
-    { 
-        params += "isdn_orig_presentation=\"";   
-        params += callISDN()->_isdn_orig_presentation; 
-        params += "\" "; 
+    {
+        params += "isdn_orig_presentation=\"";
+        params += callISDN()->_isdn_orig_presentation;
+        params += "\" ";
     }
 
     int ret = KhompPvtE1::makeCall(params);
 
     call->_cleanup_upon_hangup = (ret == ksInvalidParams || ret == ksBusy);
-    
-    DBG(FUNC,PVT_FMT(_target, "(ISDN) r"));   
+
+    DBG(FUNC,PVT_FMT(_target, "(ISDN) r"));
 
     return ret;
 }
@@ -983,7 +983,7 @@ void BoardE1::KhompPvtISDN::reportFailToReceive(int fail_code)
 
     if(fail_code != -1)
     {
-        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio")); 
+        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio"));
 
         if(sendRingBackStatus(fail_code) == RingbackDefs::RBST_UNSUPPORTED)
         {
@@ -1052,7 +1052,7 @@ bool BoardE1::KhompPvtISDN::doChannelAnswer(CommandRequest &cmd)
 
 int BoardE1::KhompPvtR2::makeCall(std::string params)
 {
-    DBG(FUNC,PVT_FMT(_target, "(R2) c"));   
+    DBG(FUNC,PVT_FMT(_target, "(R2) c"));
 
     if (callR2()->_r2_category != -1)
         params += STG(FMT(" r2_categ_a=\"%ld\"")
@@ -1061,8 +1061,8 @@ int BoardE1::KhompPvtR2::makeCall(std::string params)
     int ret = KhompPvtE1::makeCall(params);
 
     call()->_cleanup_upon_hangup = (ret == ksInvalidParams);
-    
-    DBG(FUNC,PVT_FMT(_target, "(R2) r"));   
+
+    DBG(FUNC,PVT_FMT(_target, "(R2) r"));
 
     return ret;
 }
@@ -1088,7 +1088,7 @@ bool BoardE1::KhompPvtR2::doChannelAnswer(CommandRequest &cmd)
 
         // do we have to send ringback? yes we need !!!
         if(do_send_ring)
-        {       
+        {
             call()->_flags.clear(Kflags::NEEDS_RINGBACK_CMD);
 
             //TODO: callFailFromCause ??
@@ -1103,7 +1103,7 @@ bool BoardE1::KhompPvtR2::doChannelAnswer(CommandRequest &cmd)
             command(KHOMP_LOG, CM_CONNECT);
         }
 
-        if(!do_send_ring && has_drop_collect_call) 
+        if(!do_send_ring && has_drop_collect_call)
         {
             usleep(75000);
 
@@ -1114,10 +1114,10 @@ bool BoardE1::KhompPvtR2::doChannelAnswer(CommandRequest &cmd)
                 stopStream();
 
                 if (call()->_indication == INDICA_NONE)
-                {    
+                {
                     call()->_indication = INDICA_BUSY;
                     mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
-                }    
+                }
 
                 DBG(FUNC, PVT_FMT(_target,"forcing disconnect for collect call"));
                 forceDisconnect();
@@ -1170,7 +1170,7 @@ bool BoardE1::KhompPvtR2::doChannelHangup(CommandRequest &cmd)
             }
             else
             {
-                DBG(FUNC,PVT_FMT(_target, "disconnecting outgoing channel...")); 
+                DBG(FUNC,PVT_FMT(_target, "disconnecting outgoing channel..."));
 
                 disconnected = command(KHOMP_LOG, CM_DISCONNECT);
             }
@@ -1212,9 +1212,9 @@ int BoardE1::KhompPvtISDN::causeFromCallFail(int fail)
 {
     int switch_cause = SWITCH_CAUSE_USER_BUSY;
 
-    if (fail <= 127) 
+    if (fail <= 127)
         switch_cause = fail;
-    else 
+    else
         switch_cause = SWITCH_CAUSE_INTERWORKING;
 
     return switch_cause;
@@ -1226,7 +1226,7 @@ void BoardE1::KhompPvtR2::reportFailToReceive(int fail_code)
 
     if (Opt::_options._r2_strict_behaviour()&& fail_code != -1)
     {
-        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio")); 
+        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio"));
 
         if(sendRingBackStatus(fail_code) == RingbackDefs::RBST_UNSUPPORTED)
         {
@@ -1386,15 +1386,15 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
 {
     int k3l_fail = -1; // default
 
-    try  
-    {    
+    try
+    {
         bool handled = false;
 
         switch (_r2_country)
-        {    
+        {
             case Verbose::R2_COUNTRY_ARG:
                 switch (cause)
-                {    
+                {
                     case SWITCH_CAUSE_UNALLOCATED_NUMBER:
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
@@ -1441,13 +1441,13 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     default:
                         k3l_fail = kgbArLineOutOfOrder;
                         break;
-                }    
+                }
                 handled = true;
                 break;
 
             case Verbose::R2_COUNTRY_BRA:
                 switch (cause)
-                {    
+                {
                     case SWITCH_CAUSE_UNALLOCATED_NUMBER:
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
@@ -1661,7 +1661,7 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                 break;
 
         }
-    
+
         if (!handled)
             throw std::runtime_error("");
     }
@@ -1677,9 +1677,9 @@ int BoardE1::KhompPvtISDN::callFailFromCause(int cause)
 {
     int k3l_fail = -1; // default
 
-    if (cause <= 127) 
+    if (cause <= 127)
         k3l_fail = cause;
-    else 
+    else
         k3l_fail = kq931cInterworking;
 
     return k3l_fail;
@@ -1687,7 +1687,7 @@ int BoardE1::KhompPvtISDN::callFailFromCause(int cause)
 
 RingbackDefs::RingbackStType BoardE1::KhompPvtR2::sendRingBackStatus(int rb_value)
 {
-    DBG(FUNC,PVT_FMT(_target, "(p=%p) this is the r2 ringback procedure") % this);   
+    DBG(FUNC,PVT_FMT(_target, "(p=%p) this is the r2 ringback procedure") % this);
 
     std::string cause = (rb_value == -1 ? "" : STG(FMT("r2_cond_b=\"%d\"") % rb_value));
     return (command(KHOMP_LOG, CM_RINGBACK, cause.c_str()) ?
@@ -1696,12 +1696,12 @@ RingbackDefs::RingbackStType BoardE1::KhompPvtR2::sendRingBackStatus(int rb_valu
 
 bool BoardE1::KhompPvtR2::sendPreAudio(int rb_value)
 {
-    DBG(FUNC,PVT_FMT(_target, "must send R2 preaudio ?"));   
+    DBG(FUNC,PVT_FMT(_target, "must send R2 preaudio ?"));
     if(!KhompPvtE1::sendPreAudio(rb_value))
         return false;
 
 
-    DBG(FUNC,PVT_FMT(_target, "doing the R2 pre_connect wait..."));   
+    DBG(FUNC,PVT_FMT(_target, "doing the R2 pre_connect wait..."));
 
     /* wait some ms, just to be sure the command has been sent. */
     usleep(Opt::_options._r2_preconnect_wait()* 1000);
@@ -1724,30 +1724,30 @@ bool BoardE1::KhompPvtR2::sendPreAudio(int rb_value)
 
 void BoardE1::KhompPvtR2::numberDialTimer(Board::KhompPvt * pvt)
 {
-    try 
-    {   
+    try
+    {
         ScopedPvtLock lock(pvt);
 
         if (!pvt->call()->_flags.check(Kflags::NUMBER_DIAL_ONGOING) ||
              pvt->call()->_flags.check(Kflags::NUMBER_DIAL_FINISHD))
-        {   
+        {
             return;
-        }   
+        }
 
         pvt->call()->_flags.set(Kflags::NUMBER_DIAL_FINISHD);
 
         static_cast<BoardE1::KhompPvtR2*>(pvt)->callR2()->_incoming_exten.clear();
         pvt->command(KHOMP_LOG, CM_END_OF_NUMBER);
-    }   
+    }
     catch (...)
-    {   
+    {
         // TODO: log something.
-    }   
+    }
 }
 
 bool BoardE1::KhompPvtR2::indicateRinging()
 {
-    DBG(FUNC, PVT_FMT(_target, "(R2) c")); 
+    DBG(FUNC, PVT_FMT(_target, "(R2) c"));
 
     bool ret = false;
     try
@@ -1756,10 +1756,10 @@ bool BoardE1::KhompPvtR2::indicateRinging()
 
         /* already playing! */
         if (call()->_indication != INDICA_NONE)
-        {    
+        {
             DBG(FUNC, PVT_FMT(_target, "(R2) r (already playing something: %d)") % call()->_indication);
             return false;
-        }    
+        }
 
         // any collect calls ?
         setCollectCall();
@@ -1769,7 +1769,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
         bool send_ringback = true;
 
         if (!call()->_flags.check(Kflags::CONNECTED))
-        {    
+        {
             int ringback_value = RingbackDefs::RB_SEND_DEFAULT;
 
             bool do_drop_call = Opt::_options._drop_collect_call()
@@ -1783,19 +1783,19 @@ bool BoardE1::KhompPvtR2::indicateRinging()
 
             const char *condition_string = getFSChannelVar("KR2SendCondition");
 
-            try  
-            {    
+            try
+            {
                 if (condition_string)
-                {    
+                {
                     ringback_value = Strings::toulong(condition_string);
                     DBG(FUNC, PVT_FMT(_target, "KR2SendCondition adjusted ringback value to %d") % ringback_value);
-                }    
-            }    
+                }
+            }
             catch (Strings::invalid_value e)
-            {    
+            {
                 LOG(ERROR, PVT_FMT(_target, "invalid value '%s', adjusted in KR2SendCondition: not a valid number.")
                         % condition_string);
-            }    
+            }
 
             if (Opt::_options._r2_strict_behaviour())
             {
@@ -1814,7 +1814,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
         }
 
         if (send_ringback)
-        {             
+        {
             DBG(FUNC, PVT_FMT(_target, "Send ringback!"));
 
             call()->_flags.set(Kflags::GEN_CO_RING);
@@ -1826,8 +1826,8 @@ bool BoardE1::KhompPvtR2::indicateRinging()
             /* start stream if it is not already */
             startStream();
 
-            ret = true; 
-        }   
+            ret = true;
+        }
 
     }
     catch (ScopedLockFailed & err)
@@ -1845,14 +1845,14 @@ bool BoardE1::KhompPvtR2::indicateRinging()
         LOG(ERROR, PVT_FMT(_target, "(R2) r (unable to get device: %d!)") % err.device);
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(R2) r"));
     return ret;
 }
 
 bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
 {
-    DBG(FUNC,PVT_FMT(_target, "(R2) c"));   
+    DBG(FUNC,PVT_FMT(_target, "(R2) c"));
 
     std::string r2_categ_a;
 
@@ -1865,13 +1865,13 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
         if (status == ksSuccess && !r2_categ_a.empty())
         {
 
-            try 
-            { 
-                callR2()->_r2_category = Strings::toulong(r2_categ_a); 
+            try
+            {
+                callR2()->_r2_category = Strings::toulong(r2_categ_a);
             }
-            catch (Strings::invalid_value e) 
-            { 
-                /* do nothing */ 
+            catch (Strings::invalid_value e)
+            {
+                /* do nothing */
             };
 
             /* channel will know if is a collect call or not */
@@ -1898,7 +1898,7 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
                 DBG(FUNC,PVT_FMT(_target, "Setting DROP_COLLECT flag"));
             }
 
-            freeFSGlobalVar(&drop_str);            
+            freeFSGlobalVar(&drop_str);
 
             // keeping the hardcore mode
             if (do_drop_collect && call()->_collect_call)
@@ -1910,7 +1910,7 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
             }
             else
             {
-                // send ringback too! 
+                // send ringback too!
                 sendPreAudio(RingbackDefs::RB_SEND_DEFAULT);
                 startStream();
             }
@@ -1926,7 +1926,7 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
         return false;
     }
 
-    DBG(FUNC,PVT_FMT(_target, "(R2) r"));   
+    DBG(FUNC,PVT_FMT(_target, "(R2) r"));
 
     return true;
 }
@@ -1953,7 +1953,7 @@ bool BoardE1::KhompPvtR2::onCallSuccess(K3L_EVENT *e)
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
     {
-        LOG(ERROR,PVT_FMT(_target, "%s") % err._msg.c_str()); 
+        LOG(ERROR,PVT_FMT(_target, "%s") % err._msg.c_str());
         return false;
     }
 
@@ -1997,15 +1997,15 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
 {
     DBG(FUNC, PVT_FMT(_target, "(digit=%d) c") % e->AddInfo);
 
-    try  
-    {    
+    try
+    {
         ScopedPvtLock lock(this);
 
         if (call()->_flags.check(Kflags::NUMBER_DIAL_FINISHD))
             return false;
 
         if (!call()->_flags.check(Kflags::NUMBER_DIAL_ONGOING))
-        {    
+        {
             DBG(FUNC, PVT_FMT(_target, "incoming number start..."));
 
             call()->_flags.set(Kflags::NUMBER_DIAL_ONGOING);
@@ -2013,11 +2013,11 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
 
             callR2()->_idx_number_dial = Board::board(_target.device)->_timers.add(4000,
                 &BoardE1::KhompPvtR2::numberDialTimer, this, TM_VAL_CALL);
-        }    
-        else 
-        {    
+        }
+        else
+        {
             Board::board(_target.device)->_timers.restart(callR2()->_idx_number_dial);
-        }    
+        }
 
         callR2()->_incoming_exten += e->AddInfo;
 
@@ -2034,7 +2034,7 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
         std::string tmp_orig("");
 
         switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, callR2()->_incoming_exten,tmp_orig, false, false))
-        {    
+        {
             case MatchExtension::MATCH_EXACT:
             case MatchExtension::MATCH_NONE:
                 call()->_flags.set(Kflags::NUMBER_DIAL_FINISHD);
@@ -2049,13 +2049,13 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
                 DBG(FUNC, "didn't match exact extension, waiting...");
                 // cannot say anything exact about the number, do nothing...
                 break;
-        }    
-    }    
+        }
+    }
     catch (ScopedLockFailed & err)
-    {    
+    {
         LOG(ERROR, PVT_FMT(target(), "unable to lock %s!") % err._msg.c_str() );
         return false;
-    }    
+    }
     catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
@@ -2181,7 +2181,7 @@ void BoardE1::KhompPvtFXS::loadOptions()
         parseBranchOptions(it3->second);
     }
 
-    //TODO: Implementar o setVolume para levar em consideracao que o 
+    //TODO: Implementar o setVolume para levar em consideracao que o
     //       padrao pode ser o da FXS
     if (_input_volume != Opt::_options._input_volume())
         setVolume("input", _input_volume);
@@ -2361,7 +2361,7 @@ bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
     try
     {
         ScopedPvtLock lock(this);
-    
+
         /* we always have audio */
         call()->_flags.set(Kflags::HAS_PRE_AUDIO);
 
@@ -2370,7 +2370,7 @@ bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
         if (justAlloc(true) != SWITCH_STATUS_SUCCESS)
         {
             int fail_code = callFailFromCause(SWITCH_CAUSE_UNALLOCATED_NUMBER);
-            setHangupCause(SWITCH_CAUSE_UNALLOCATED_NUMBER);            
+            setHangupCause(SWITCH_CAUSE_UNALLOCATED_NUMBER);
             cleanup(CLN_FAIL);
             reportFailToReceive(fail_code);
             LOG(ERROR,PVT_FMT(_target, "(FXS) r (Initilization Error on alloc!)"));
@@ -2408,7 +2408,7 @@ bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
         LOG(ERROR,PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
 
     return ret;
@@ -2428,7 +2428,7 @@ bool BoardE1::KhompPvtFXS::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_options._out_of_band_dtmfs());     
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs());
 
             startListen();
             startStream();
@@ -2439,8 +2439,8 @@ bool BoardE1::KhompPvtFXS::onCallSuccess(K3L_EVENT *e)
             call()->_flags.set(Kflags::GEN_PBX_RING);
             call()->_idx_pbx_ring = Board::board(_target.device)->_timers.add(
                     Opt::_options._ringback_pbx_delay(),
-                    &Board::KhompPvt::pbxRingGen, 
-                    this, 
+                    &Board::KhompPvt::pbxRingGen,
+                    this,
                     TM_VAL_CALL);
         }
 
@@ -2460,7 +2460,7 @@ bool BoardE1::KhompPvtFXS::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "(FXS) r (%s)") % err._msg.c_str() );
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
 
     return ret;
@@ -2473,10 +2473,10 @@ void BoardE1::KhompPvtFXS::dialTimer(KhompPvt * pvt)
     try
     {
         ScopedPvtLock lock(pvt);
-    
+
         KhompPvtFXS * pvt_fxs = static_cast<BoardE1::KhompPvtFXS*>(pvt);
 
-        if(!pvt_fxs->callFXS()->_flags.check(Kflags::FXS_DIAL_ONGOING) 
+        if(!pvt_fxs->callFXS()->_flags.check(Kflags::FXS_DIAL_ONGOING)
             || pvt_fxs->callFXS()->_flags.check(Kflags::FXS_DIAL_FINISHD))
             return;
 
@@ -2513,7 +2513,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
         if(pvt_fxs->callFXS()->_flash_transfer.empty())
         {
             DBG(FUNC, PVT_FMT(pvt->target(), "r (Number is empty)"));
-            
+
             if(!pvt_fxs->stopTransfer())
             {
                 pvt_fxs->cleanup(KhompPvt::CLN_HARD);
@@ -2524,7 +2524,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
             return;
         }
 
-        // begin context adjusting + processing 
+        // begin context adjusting + processing
         MatchExtension::ContextListType contexts;
 
         pvt_fxs->validContexts(contexts);
@@ -2552,7 +2552,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
             case MatchExtension::MATCH_NONE:
             {
                 DBG(FUNC, PVT_FMT(pvt_fxs->target(), "match none!"));
-                
+
                 if(!pvt_fxs->stopTransfer())
                 {
                     pvt_fxs->cleanup(KhompPvt::CLN_HARD);
@@ -2569,7 +2569,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
         LOG(ERROR, PVT_FMT(pvt->target(), "r (unable to lock %s!)") % err._msg.c_str());
         return;
     }
-    
+
     DBG(FUNC, PVT_FMT(pvt->target(), "r"));
 
 }
@@ -2588,20 +2588,20 @@ bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
         /*
         if(!callFXS()->_uuid_other_session.empty() && session())
         {
-            
+
             //switch_core_session_t *hold_session;
 
-            //if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str()))) 
+            //if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str())))
             //{
             //    switch_channel_t * hold = switch_core_session_get_channel(hold_session);
             //    switch_channel_stop_broadcast(hold);
             //    switch_channel_wait_for_flag(hold, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
             //    switch_core_session_rwunlock(hold_session);
             //}
-            
+
             try
             {
-                // get other side of the bridge 
+                // get other side of the bridge
                 switch_core_session_t * peer_session = getFSLockedPartnerSession();
                 unlockPartner(peer_session);
                 DBG(FUNC, PVT_FMT(target(), "bridge with the new session"));
@@ -2628,7 +2628,7 @@ bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
 
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
     return ret;
- 
+
 }
 /*
 bool BoardE1::KhompPvtFXS::startTransfer()
@@ -2646,23 +2646,23 @@ bool BoardE1::KhompPvtFXS::startTransfer()
         {
             stream = "silence";
         }
-        
+
         unlockPartner(peer_session);
 
         DBG(FUNC, PVT_FMT(target(), "stream=%s") % stream);
 
         if (stream && strcasecmp(stream, "silence"))
         {
-            // Freeswitch not get/put frames 
+            // Freeswitch not get/put frames
             //switch_channel_set_flag(channel, CF_HOLD);
             switch_ivr_broadcast(getUUID(peer_session), stream, SMF_ECHO_ALEG | SMF_LOOP);
         }
 
         callFXS()->_flags.set(Kflags::FXS_FLASH_TRANSFER);
-    
+
         startCadence(PLAY_PBX_TONE);
 
-        callFXS()->_idx_transfer = Board::board(_target.device)->_timers.add(Opt::_options._fxs_digit_timeout()* 1000, &BoardE1::KhompPvtFXS::transferTimer, this, TM_VAL_CALL);        
+        callFXS()->_idx_transfer = Board::board(_target.device)->_timers.add(Opt::_options._fxs_digit_timeout()* 1000, &BoardE1::KhompPvtFXS::transferTimer, this, TM_VAL_CALL);
 
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
@@ -2687,7 +2687,7 @@ bool BoardE1::KhompPvtFXS::stopTransfer()
     DBG(FUNC, PVT_FMT(target(), "c"));
 
     callFXS()->_flags.clear(Kflags::FXS_FLASH_TRANSFER);
-    
+
     callFXS()->_flash_transfer.clear();
 
     stopCadence();
@@ -2703,7 +2703,7 @@ bool BoardE1::KhompPvtFXS::stopTransfer()
 
     try
     {
-        // get other side of the bridge 
+        // get other side of the bridge
         switch_core_session_t * peer_session = getFSLockedPartnerSession();
         switch_channel_t * peer_channel = getFSChannel(peer_session);
 
@@ -2731,12 +2731,12 @@ static switch_status_t xferHook(switch_core_session_t *session)
 
     DBG(FUNC, D("state change=%d") % state);
 
-    if (state == CS_PARK) 
+    if (state == CS_PARK)
     {
         switch_core_event_hook_remove_state_change(session, xferHook);
 
         BoardE1::KhompPvtFXS * pvt = static_cast<BoardE1::KhompPvtFXS*>(switch_core_session_get_private(session));
-        
+
         if(!pvt)
         {
             DBG(FUNC, D("pvt is NULL"));
@@ -2758,17 +2758,17 @@ static switch_status_t xferHook(switch_core_session_t *session)
         }
         catch(ScopedLockFailed & err)
         {
-            LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());            
+            LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());
             return SWITCH_STATUS_FALSE;
         }
         catch(Board::KhompPvt::InvalidSwitchChannel & err)
         {
-            LOG(ERROR, PVT_FMT(pvt->target(), "%s!") %  err._msg.c_str());            
+            LOG(ERROR, PVT_FMT(pvt->target(), "%s!") %  err._msg.c_str());
             return SWITCH_STATUS_FALSE;
         }
 
     }
-    else if (state == CS_HANGUP) 
+    else if (state == CS_HANGUP)
     {
         switch_core_event_hook_remove_state_change(session, xferHook);
 
@@ -2795,7 +2795,7 @@ static switch_status_t xferHook(switch_core_session_t *session)
         //}
         //catch(ScopedLockFailed & err)
         //{
-        //   LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());            
+        //   LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());
         //}
 
     }
@@ -2823,7 +2823,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
 
     try
     {
-        // get other side of the bridge 
+        // get other side of the bridge
         switch_core_session_t * peer_session = getFSLockedPartnerSession();
         switch_channel_t * peer_channel = getFSChannel(peer_session);
 
@@ -2848,7 +2848,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             else
             {
                 DBG(FUNC, PVT_FMT(target(), "first transfer"));
-                callFXS()->_uuid_other_session = getUUID(peer_session);    
+                callFXS()->_uuid_other_session = getUUID(peer_session);
                 const char *stream = NULL;
 
                 if (!(stream = switch_channel_get_hold_music(peer_channel)))
@@ -2866,7 +2866,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
                 else
                 {
                     switch_ivr_session_transfer(peer_session, "endless_playback:local_stream://moh,park", "inline", NULL);
-                    //switch_ivr_session_transfer(peer_session, "park", "inline", NULL);                
+                    //switch_ivr_session_transfer(peer_session, "park", "inline", NULL);
                 }
             }
 
@@ -2881,7 +2881,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             call()->_flags.set(Kflags::GEN_CO_RING);
             startCadence(PLAY_RINGBACK);
 
-            
+
             //try
             //{
             //    call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
@@ -2890,7 +2890,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             //{
              //   LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
             //}
-            
+
         }
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
@@ -2915,7 +2915,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
     {
         ScopedPvtLock lock(this);
 
-        if (call()->_flags.check(Kflags::IS_INCOMING) && 
+        if (call()->_flags.check(Kflags::IS_INCOMING) &&
                 callFXS()->_flags.check(Kflags::FXS_OFFHOOK) &&
                 !callFXS()->_flags.check(Kflags::FXS_DIAL_FINISHD))
         {
@@ -2990,7 +2990,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     DBG(FUNC, PVT_FMT(target(), "match none!"));
 
                     std::string invalid = "i";
-                    
+
                     Board::board(_target.device)->_timers.del(callFXS()->_idx_dial);
 
                     switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, invalid, call()->_orig_addr, true, false))
@@ -3030,7 +3030,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
             }
 
             callFXS()->_flash_transfer += e->AddInfo;
-    
+
             // begin context adjusting + processing
             MatchExtension::ContextListType contexts;
 
@@ -3038,7 +3038,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
 
             std::string tmp_exten;
             std::string tmp_context;
-            
+
             switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, callFXS()->_flash_transfer, call()->_orig_addr, false, false))
             {
                 case MatchExtension::MATCH_EXACT:
@@ -3101,7 +3101,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to get device: %d!)") % err.device);
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
 
     return ret;
@@ -3126,7 +3126,7 @@ bool BoardE1::KhompPvtFXS::onDtmfSendFinish(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
 
     return ret;
@@ -3198,7 +3198,7 @@ bool BoardE1::KhompPvtFXS::onFlashDetected(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    
+
     DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
 
     return true;
@@ -3210,7 +3210,7 @@ int BoardE1::KhompPvtFXS::makeCall(std::string params)
 
     /* we always have audio */
     call()->_flags.set(Kflags::HAS_PRE_AUDIO);
-    
+
     if (Opt::_options._fxs_bina()&& !call()->_orig_addr.empty())
     {
         /* Sending Bina DTMF*/
@@ -3280,7 +3280,7 @@ int BoardE1::KhompPvtFXS::makeCall(std::string params)
 bool BoardE1::KhompPvtFXS::doChannelAnswer(CommandRequest &cmd)
 {
     DBG(FUNC, PVT_FMT(_target, "(FXS) c"));
-    
+
     bool ret = true;
 
     try
@@ -3310,7 +3310,7 @@ bool BoardE1::KhompPvtFXS::doChannelAnswer(CommandRequest &cmd)
 bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
 {
     DBG(FUNC, PVT_FMT(_target, "(FXS) c"));
-    
+
     bool ret = true;
 
     bool answered     = true;
@@ -3319,15 +3319,15 @@ bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
     try
     {
         ScopedPvtLock lock(this);
-       
+
         /*
         if(!callFXS()->_uuid_other_session.empty())
         {
             DBG(FUNC,PVT_FMT(_target, "unable to transfer"));
-            
+
             switch_core_session_t *hold_session;
 
-            if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str()))) 
+            if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str())))
             {
                 switch_channel_t *hold_channel = switch_core_session_get_channel(hold_session);
                 switch_core_session_rwunlock(hold_session);
@@ -3336,7 +3336,7 @@ bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
                     switch_channel_hangup(hold_channel, (switch_call_cause_t)call()->_hangup_cause);
                 //switch_channel_hangup(hold_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
             }
-            callFXS()->_uuid_other_session.clear();            
+            callFXS()->_uuid_other_session.clear();
         }
         */
 
@@ -3366,7 +3366,7 @@ bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
             }
             else
             {
-                DBG(FUNC,PVT_FMT(_target, "disconnecting outgoing channel...")); 
+                DBG(FUNC,PVT_FMT(_target, "disconnecting outgoing channel..."));
 
                 disconnected = command(KHOMP_LOG, CM_DISCONNECT);
             }
@@ -3521,7 +3521,7 @@ void BoardE1::KhompPvtFXS::reportFailToReceive(int fail_code)
 
     if(fail_code != -1)
     {
-        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio")); 
+        DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio"));
 
         if(sendRingBackStatus(fail_code) == RingbackDefs::RBST_UNSUPPORTED)
         {
@@ -3542,7 +3542,7 @@ bool BoardE1::KhompPvtFXS::validContexts(
         MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target, "(FXS) c"));
-    
+
     if(!_context.empty())
         contexts.push_back(_context);
 

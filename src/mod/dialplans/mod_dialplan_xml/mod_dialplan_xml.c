@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -93,9 +93,9 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 		} else {														\
 			tzoff = NULL;												\
 		}																\
-	} while(tzoff)														
+	} while(tzoff)
 
-static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, 
+static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten,
 					   switch_caller_extension_t **extension, const char *exten_name, int recur)
 {
 	switch_xml_t xcond, xaction, xexpression, xregex;
@@ -131,7 +131,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		switch_snprintf(nbuf, sizeof(nbuf), "%s_recur_%d", exten_name, recur);
 		exten_name = nbuf;
-		
+
 		space[j++] = '|';
 
 		for (i = 0; i < recur; i++) {
@@ -143,17 +143,17 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 			}
 		}
-		
+
 		if ((req_nesta = switch_xml_attr(xexten, "require-nested"))) {
 			req_nest = switch_true(req_nesta);
 		}
 
 		if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 						  "%sDialplan: Processing recursive conditions level:%d [%s] require-nested=%s\n", space,
 						  recur, exten_name, req_nest ? "TRUE" : "FALSE");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 						  "%sDialplan: Processing recursive conditions level:%d [%s] require-nested=%s\n", space,
 						  recur, exten_name, req_nest ? "TRUE" : "FALSE");
 		}
@@ -197,7 +197,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				do_break_a = NULL;
 			}
 		}
-		
+
 		if (time_match == 1) {
 			if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -222,8 +222,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			}
 			proceed = 0;
 		}
-		
-		
+
+
 		if ((regex_rule = (char *) switch_xml_attr(xcond, "regex"))) {
 			int all = !strcasecmp(regex_rule, "all");
 			int xor = !strcasecmp(regex_rule, "xor");
@@ -237,7 +237,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				int regex_time_match;
 				check_tz();
 				regex_time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname_);
-				
+
 				if (regex_time_match == 1) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -266,17 +266,17 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				} else {
 					expression = (char *) switch_xml_attr_soft(xregex, "expression");
 				}
-				
+
 				if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
 					expression_expanded = NULL;
 				} else {
 					expression = expression_expanded;
 				}
-				
+
 				total++;
-				
+
 				field = (char *) switch_xml_attr(xregex, "field");
-				
+
 				if (field) {
 					if (strchr(field, '$')) {
 						if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
@@ -291,7 +291,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					if (!field_data) {
 						field_data = "";
 					}
-					
+
 					if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -338,23 +338,23 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					fail++;
 					if (all) break;
 				}
-				
+
 				if (field && strchr(expression, '(')) {
 					char var[256];
 					switch_snprintf(var, sizeof(var), "DP_REGEX_MATCH_%d", total);
 
 					switch_channel_set_variable(channel, var, NULL);
 					switch_capture_regex(re, proceed, field_data, ovector, var, switch_regex_set_var_callback, session);
-					
+
 					switch_safe_free(save_expression);
 					switch_safe_free(save_field_data);
 					switch_regex_safe_free(save_re);
-					
+
 					save_expression = strdup(expression);
 					save_field_data = strdup(field_data);
 					save_re = re;
 					save_proceed = proceed;
-					
+
 					re = NULL;
 				}
 
@@ -370,7 +370,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 			} else {
 				if ((all && !fail) || (!all && pass)) {
-					anti_action = SWITCH_FALSE; 
+					anti_action = SWITCH_FALSE;
 				}
 			}
 
@@ -388,7 +388,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			} else {
 				expression = expression_expanded;
 			}
-			
+
 			if (field) {
 				if (strchr(field, '$')) {
 					if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
@@ -445,7 +445,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		if (save_re) {
 			re = save_re;
 			save_re = NULL;
-			
+
 			expression = expression_expanded = save_expression;
 			save_expression = NULL;
 			field_data = field_expanded = save_field_data;

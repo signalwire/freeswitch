@@ -22,7 +22,7 @@
     <!-- optional: if not present we do log the b leg -->
     <!-- true or false if we should create a cdr for the b leg of a call-->
     <param name="log-b-leg" value="false"/>
-    
+
     <!-- optional: if not present, all filenames are the uuid of the call -->
     <!-- true or false if a leg files are prefixed "a_" -->
     <param name="prefix-a-leg" value="true"/>
@@ -30,15 +30,15 @@
     <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding, 'base64' for base64 encoding or 'textxml' for text/xml -->
     <param name="encode" value="true"/>
 
-    <!-- optional: set to true to disable Expect: 100-continue lighttpd requires this setting --> 
-    <!--<param name="disable-100-continue" value="true"/>--> 
-    
+    <!-- optional: set to true to disable Expect: 100-continue lighttpd requires this setting -->
+    <!--<param name="disable-100-continue" value="true"/>-->
+
     <!-- optional: full path to the error log dir for failed web posts if not specified its the same as log-dir -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank or omitted value will default to ${prefix}/logs/xml_cdr -->
     <!-- <param name="err-log-dir" value="/tmp"/> -->
 
     <!-- which auhtentification scheme to use. Supported values are: basic, digest, NTLM, GSS-NEGOTIATE or "any" for automatic detection -->
-    <!--<param name="auth-scheme" value="basic"/>--> 
+    <!--<param name="auth-scheme" value="basic"/>-->
 
     <!-- optional: this will enable the CA root certificate check by libcurl to
          verify that the certificate was issued by a major Certificate Authority.

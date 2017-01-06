@@ -800,8 +800,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			}
 
 			member->loop_loop = 1;
-			
-			goto do_continue;			
+
+			goto do_continue;
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
@@ -1003,7 +1003,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 				}
 			}
 		}
-		
+
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((conference_utils_member_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS))
 			&& conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&	!conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)

@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Mahdi Moradi <m.moradi@sepanta.net>
  * Babak Yakhchali <b.yakhchali@sepanta.net>
@@ -582,13 +582,13 @@ void gregorian_to_jalali(int *j_y, int *j_m, int *j_d,
    int jy, jm, jd;
    long g_day_no, j_day_no;
    int j_np;
- 
+
    int i;
 
    gy = g_y-1600;
    gm = g_m-1;
    gd = g_d-1;
- 
+
    g_day_no = 365*gy+(gy+3)/4-(gy+99)/100+(gy+399)/400;
    for (i=0;i<gm;++i)
       g_day_no += g_days_in_month[i];
@@ -596,20 +596,20 @@ void gregorian_to_jalali(int *j_y, int *j_m, int *j_d,
       /* leap and after Feb */
       ++g_day_no;
    g_day_no += gd;
- 
+
    j_day_no = g_day_no-79;
- 
+
    j_np = j_day_no / 12053;
    j_day_no %= 12053;
- 
+
    jy = 979+33*j_np+4*(j_day_no/1461);
    j_day_no %= 1461;
- 
+
    if (j_day_no >= 366) {
       jy += (j_day_no-1)/365;
       j_day_no = (j_day_no-1)%365;
    }
- 
+
    for (i = 0; i < 11 && j_day_no >= j_days_in_month[i]; ++i) {
       j_day_no -= j_days_in_month[i];
    }
@@ -651,7 +651,7 @@ void jalali_to_gregorian(int *g_y, int *g_m, int *g_d,
       g_day_no--;
       gy += 100*(g_day_no/36524); /* 36524 = 365*100 + 100/4 - 100/100 */
       g_day_no = g_day_no % 36524;
-      
+
       if (g_day_no >= 365)
          g_day_no++;
       else

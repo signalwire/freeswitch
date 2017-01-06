@@ -1136,7 +1136,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	char *s;
 
 	s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
-	
+
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
 		if (l == SWITCH_XML_BUFSIZE) {
@@ -2065,7 +2065,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 
 				if (switch_is_number(cacheable)) {
 					int cache_ms = atol(cacheable);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s for %d milliseconds\n", 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s for %d milliseconds\n",
 									  user_name, domain_name, cache_ms);
 					time_now = switch_micro_time_now();
 					expires = time_now + (cache_ms * 1000);

@@ -25,7 +25,7 @@
  *
  * Khomp development team
  * Geovani Ricardo Wiedenhoft <grw.freeswitch  (at) gmail.com>
- * Leonardo Lang              <lang.freeswitch (at) gmail.com> 
+ * Leonardo Lang              <lang.freeswitch (at) gmail.com>
  * Eduardo Nunes              <eduardonunesp   (at) gmail.com>
  * Joao Mesquita              <mesquita        (at) khomp.com.br>
  * Raul Fragoso               <raulfragoso     (at) gmail.com>
@@ -37,7 +37,7 @@
 
 /**
   \mainpage Khomp board Endpoint Module
-  
+
   \section Introduction
   This module has been developed to make a nice, affordable brazilian board
   called Khomp (http://www.khomp.com.br) compatible with FreeSWITCH.
@@ -276,18 +276,18 @@ switch_status_t khompHangup(switch_core_session_t *session)
         LOG(ERROR, D("cr (Session is NULL)"));
         return SWITCH_STATUS_FALSE;
     }
-    
+
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
     if(!tech_pvt)
     {
         LOG(ERROR, D("cr (pvt is NULL)"));
         return SWITCH_STATUS_FALSE;
     }
-    
+
     DBG(FUNC, PVT_FMT(tech_pvt->target(), "c"));
 
     try
-    {       
+    {
         ScopedPvtLock lock(tech_pvt);
 
         if(tech_pvt->freeState())
@@ -336,7 +336,7 @@ switch_status_t khompDestroy(switch_core_session_t *session)
         LOG(ERROR, D("cr (session is null)"))
         return SWITCH_STATUS_FALSE;
     }
-    
+
     Board::KhompPvt *tech_pvt = NULL;
 
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
@@ -357,7 +357,7 @@ switch_status_t khompDestroy(switch_core_session_t *session)
 
             switch_core_session_set_private(session, NULL);
             tech_pvt->destroyAll();
-            
+
             DBG(FUNC, PVT_FMT(tech_pvt->target(), "r"));
 
             return SWITCH_STATUS_SUCCESS;
@@ -369,7 +369,7 @@ switch_status_t khompDestroy(switch_core_session_t *session)
 
     }
     while(true);
-            
+
     DBG(FUNC, PVT_FMT(tech_pvt->target(), "r (unable to lock!)"));
 
     return SWITCH_STATUS_FALSE;
@@ -384,7 +384,7 @@ switch_status_t khompSMSDestroy(switch_core_session_t *session)
         DBG(FUNC, D("r (session is null)"))
         return SWITCH_STATUS_FALSE;
     }
-/*    
+/*
     Board::KhompPvt *tech_pvt = NULL;
 
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
@@ -394,9 +394,9 @@ switch_status_t khompSMSDestroy(switch_core_session_t *session)
         DBG(FUNC, D("r (pvt is null)"))
         return SWITCH_STATUS_FALSE;
     }
-    
+
     try
-    {       
+    {
         ScopedPvtLock lock(tech_pvt);
 */
         switch_core_session_set_private(session, NULL);
@@ -416,7 +416,7 @@ switch_status_t khompSMSDestroy(switch_core_session_t *session)
 
 switch_status_t khompKill(switch_core_session_t *session, int sig)
 {
-    //DBG(FUNC,FMT("CHANNEL KILL, kill = %d") % sig) 
+    //DBG(FUNC,FMT("CHANNEL KILL, kill = %d") % sig)
     Board::KhompPvt *tech_pvt = NULL;
 
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
@@ -426,7 +426,7 @@ switch_status_t khompKill(switch_core_session_t *session, int sig)
         return SWITCH_STATUS_FALSE;
     }
 
-    switch (sig) 
+    switch (sig)
     {
     case SWITCH_SIG_NONE:
         DBG(FUNC, PVT_FMT(tech_pvt->target(), "CHANNEL KILL,  NONE!"));
@@ -469,7 +469,7 @@ switch_status_t khompDigit(switch_core_session_t *session, const switch_dtmf_t *
         LOG(ERROR, D("pvt is NULL"));
         return SWITCH_STATUS_FALSE;
     }
-    
+
     DBG(FUNC, PVT_FMT(tech_pvt->target(), "c (%c)") % dtmf->digit);
 
     try
@@ -585,9 +585,9 @@ switch_status_t khompWrite(switch_core_session_t *session, switch_frame_t *frame
             }
 
             if(tech_pvt->call()->_cadence != Board::KhompPvt::PLAY_VM_TONE)
-            {    
+            {
                 tech_pvt->stopCadence();
-            } 
+            }
         }
 
         if (!tech_pvt->_writer_frames.give((const char *)frame->data, (size_t)frame->datalen))
@@ -631,7 +631,7 @@ switch_status_t khompAnswer(switch_core_session_t *session)
     }
 
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
-    
+
     if(!tech_pvt)
     {
         LOG(ERROR, D("pvt is NULL"));
@@ -695,7 +695,7 @@ switch_status_t khompAnswer(switch_core_session_t *session)
 switch_status_t khompReceiveMessage(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
     Board::KhompPvt *tech_pvt;
-    
+
     if(!session)
     {
         LOG(ERROR, D("session is NULL"));
@@ -714,100 +714,100 @@ switch_status_t khompReceiveMessage(switch_core_session_t *session, switch_core_
         LOG(ERROR, D("pvt is NULL"));
         return SWITCH_STATUS_FALSE;
     }
-    
+
     switch (msg->message_id) {
         case SWITCH_MESSAGE_REDIRECT_AUDIO:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_REDIRECT_AUDIO")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_REDIRECT_AUDIO"));
             break;
         case SWITCH_MESSAGE_TRANSMIT_TEXT:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_TRANSMIT_TEXT")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_TRANSMIT_TEXT"));
             break;
         case SWITCH_MESSAGE_INDICATE_ANSWER:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_ANSWER")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_ANSWER"));
             return khompAnswer(session);
             break;
         case SWITCH_MESSAGE_INDICATE_PROGRESS:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_PROGRESS")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_PROGRESS"));
             tech_pvt->indicateProgress();
             break;
         case SWITCH_MESSAGE_INDICATE_BRIDGE:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_BRIDGE")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_BRIDGE"));
             break;
         case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UNBRIDGE")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UNBRIDGE"));
             break;
         case SWITCH_MESSAGE_INDICATE_TRANSFER:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_TRANSFER")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_TRANSFER"));
             break;
         case SWITCH_MESSAGE_INDICATE_RINGING:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_RINGING")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_RINGING"));
             tech_pvt->indicateRinging();
             break;
         case SWITCH_MESSAGE_INDICATE_MEDIA:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_MEDIA")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_MEDIA"));
             break;
         case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_NOMEDIA")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_NOMEDIA"));
             break;
         case SWITCH_MESSAGE_INDICATE_HOLD:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_HOLD")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_HOLD"));
             break;
         case SWITCH_MESSAGE_INDICATE_UNHOLD:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UNHOLD")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UNHOLD"));
             break;
         case SWITCH_MESSAGE_INDICATE_REDIRECT:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_REDIRECT")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_REDIRECT"));
             break;
         case SWITCH_MESSAGE_INDICATE_RESPOND:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_RESPOND")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_RESPOND"));
             break;
         case SWITCH_MESSAGE_INDICATE_BROADCAST:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_BROADCAST")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_BROADCAST"));
             break;
         case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT"));
             break;
         case SWITCH_MESSAGE_INDICATE_DEFLECT:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_DEFLECT")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_DEFLECT"));
             break;
         case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ"));
             break;
         case SWITCH_MESSAGE_INDICATE_DISPLAY:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_DISPLAY")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_DISPLAY"));
             break;
         case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY"));
             break;
         case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_AUDIO_SYNC")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_AUDIO_SYNC"));
             break;
         case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA"));
             break;
         case SWITCH_MESSAGE_INDICATE_UUID_CHANGE:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UUID_CHANGE")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_UUID_CHANGE"));
             break;
         case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_SIMPLIFY")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_SIMPLIFY"));
             break;
         case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
             DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA"));
             break;
         case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_PROXY_MEDIA")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_PROXY_MEDIA"));
             break;
         case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC"));
             break;
         case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE"));
             break;
         case SWITCH_MESSAGE_INVALID:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INVALID")); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "SWITCH_MESSAGE_INVALID"));
             break;
         default:
-            DBG(FUNC, PVT_FMT(tech_pvt->_target, "unknown message received [%d].") % msg->message_id % (msg->from ? msg->from : 0)); 
+            DBG(FUNC, PVT_FMT(tech_pvt->_target, "unknown message received [%d].") % msg->message_id % (msg->from ? msg->from : 0));
             break;
     }
 
@@ -837,7 +837,7 @@ switch_call_cause_t khompCall
 
     Board::KhompPvt *tech_pvt;
     int cause = (int)SWITCH_CAUSE_NONE;
-    
+
     try
     {
         ScopedAllocLock alloc_lock;
@@ -857,7 +857,7 @@ switch_call_cause_t khompCall
         {
             tech_pvt->cleanup(Board::KhompPvt::CLN_HARD);
             LOG(ERROR, PVT_FMT(tech_pvt->target(), "Initilization Error!"));
-            return SWITCH_CAUSE_UNALLOCATED_NUMBER; 
+            return SWITCH_CAUSE_UNALLOCATED_NUMBER;
         }
 
         tech_pvt->owner((session ? session : tech_pvt->session()));
@@ -873,11 +873,11 @@ switch_call_cause_t khompCall
         }
 
         alloc_lock.unlock();
-        
+
         tech_pvt->getSpecialVariables();
 
         tech_pvt->setVolume();
-        
+
         if(tech_pvt->makeCall() != ksSuccess)
         {
             *new_session = NULL;
@@ -920,8 +920,8 @@ switch_status_t khompReceiveEvent(switch_core_session_t *session, switch_event_t
         LOG(ERROR, D("pvt is NULL"));
         return SWITCH_STATUS_FALSE;
     }
-    
-    DBG(FUNC, PVT_FMT(tech_pvt->target(), "Receive Event id[%d] name[%s] body=[%s]") % event->event_id % event->headers->name % body); 
+
+    DBG(FUNC, PVT_FMT(tech_pvt->target(), "Receive Event id[%d] name[%s] body=[%s]") % event->event_id % event->headers->name % body);
 
     if (!body) {
         body = (char *)"";
@@ -933,11 +933,11 @@ switch_status_t khompReceiveEvent(switch_core_session_t *session, switch_event_t
 /* A simple idea of app */
 SWITCH_STANDARD_APP(klogFunction)
 {
-    if (zstr(data)) 
+    if (zstr(data))
     {
         LOG(ERROR, D("No data specified"));
-    } 
-    else 
+    }
+    else
     {
         LOG(MESSAGE, FMT("KLOG: %s") %  std::string(data));
     }
@@ -951,11 +951,11 @@ void setVariable(switch_core_session_t * session, const char * variable, const c
         return;
     }
 
-    if (zstr(data)) 
+    if (zstr(data))
     {
         LOG(ERROR, FMT("No %s specified") % variable);
         return;
-    } 
+    }
 
     if(strcasecmp(data, "on") && strcasecmp(data, "off"))
     {
@@ -1003,7 +1003,7 @@ SWITCH_STANDARD_APP(kadjustForFaxFunction)
         LOG(ERROR, D("Session is NULL"));
         return;
     }
-    
+
     Board::KhompPvt *tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
 
     if(!tech_pvt)
@@ -1038,7 +1038,7 @@ SWITCH_STANDARD_APP(ksendFaxFunction)
         LOG(ERROR, D("Session is NULL"));
         return;
     }
-    
+
 
     Board::KhompPvt *tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
 
@@ -1060,7 +1060,7 @@ SWITCH_STANDARD_APP(kreceiveFaxFunction)
         LOG(ERROR, D("Session is NULL"));
         return;
     }
-    
+
 
     Board::KhompPvt *tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
 
@@ -1069,7 +1069,7 @@ SWITCH_STANDARD_APP(kreceiveFaxFunction)
         LOG(ERROR, D("pvt is NULL"));
         return;
     }
-    
+
     DBG(FUNC, PVT_FMT(tech_pvt->target(), "Application KReceiveFax"));
 
     tech_pvt->application(FAX_RECEIVE, session, data);
@@ -1082,12 +1082,12 @@ SWITCH_STANDARD_APP(kUserTransferFunction)
         LOG(ERROR, D("Session is NULL"));
         return;
     }
-    
-    if (zstr(data)) 
+
+    if (zstr(data))
     {
         LOG(ERROR, D("No number specified"));
         return;
-    } 
+    }
 
     Board::KhompPvt *tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
 
@@ -1096,7 +1096,7 @@ SWITCH_STANDARD_APP(kUserTransferFunction)
         DBG(FUNC, D("pvt is NULL"));
         return;
     }
-    
+
     DBG(FUNC, PVT_FMT(tech_pvt->target(), "Application KUserTransfer"));
 
     tech_pvt->application(USER_TRANSFER, session, data);
@@ -1110,11 +1110,11 @@ SWITCH_STANDARD_APP(ksetVolumeFunction)
         return;
     }
 
-    if (zstr(data)) 
+    if (zstr(data))
     {
         LOG(ERROR, D("No KSetVolume specified"));
         return;
-    } 
+    }
 
     switch_channel_t *c = switch_core_session_get_channel(session);
 
@@ -1174,7 +1174,7 @@ SWITCH_STANDARD_APP(kSendSMSFunction)
         ScopedPvtLock lock(tech_pvt);
 
         alloc_lock.unlock();
-        
+
         tech_pvt->application(SMS_SEND, session, data);
 
     }
@@ -1201,10 +1201,10 @@ SWITCH_STANDARD_APP(kSelectSimCardFunction)
     }
 
     if (zstr(data))
-    {    
+    {
         LOG(ERROR, D("invalid number of arguments"));
         return;
-    }    
+    }
 
     int dev = -1;
     int obj = -1;
@@ -1220,14 +1220,14 @@ SWITCH_STANDARD_APP(kSelectSimCardFunction)
         std::string num("0");
 
         if (params.size() == 3)
-        {    
+        {
             dev = Strings::tolong(params[0]);
             obj = Strings::tolong(params[1]);
             num = params[2];
 
             /* just check for validity */
             (void)Strings::tolong(params[2]);
-        }    
+        }
         else
         {
             LOG(ERROR, D("Invalid number of arguments!"));
@@ -1269,12 +1269,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
         return SWITCH_STATUS_FALSE;
     }
 
-    /* Two bodies can not occupy the same space at the same time */ 
+    /* Two bodies can not occupy the same space at the same time */
     if(switch_loadable_module_exists("mod_kommuter") == SWITCH_STATUS_SUCCESS)
-    {   
+    {
         LOG(ERROR, D("Kommuter module for FreeSWITCH is already loaded."));
         return SWITCH_STATUS_FALSE;
-    } 
+    }
 
     //TODO: must put the autorevision variable here
     LOG(MESSAGE, "loading Khomp module");
@@ -1322,7 +1322,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
     Globals::khomp_sms_endpoint_interface->interface_name = "khomp_SMS";
     Globals::khomp_sms_endpoint_interface->io_routines = &khomp_sms_io_routines;
     Globals::khomp_sms_endpoint_interface->state_handler = &khomp_sms_state_handlers;
-    
+
     Globals::khomp_pr_endpoint_interface = static_cast<switch_endpoint_interface_t*>(switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE));
     Globals::khomp_pr_endpoint_interface->interface_name = "khomp_PR";
     Globals::khomp_pr_endpoint_interface->io_routines = &khomp_pr_io_routines;
@@ -1330,7 +1330,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
 
     /* Register cli commands */
     Cli::registerCommands(apiKhomp,module_interface);
-    
+
     ESL::registerEvents();
 
     /* Add applications */
@@ -1340,13 +1340,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KAutoGainControl", "KAutoGainControl", "KAutoGainControl", kautoGainControlFunction, "on|off", SAF_SUPPORT_NOMEDIA);
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KSetVolume", "KSetVolume", "KSetVolume", ksetVolumeFunction, "value|value", SAF_SUPPORT_NOMEDIA);
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KR2SendCondition", "KR2SendCondition", "KR2SendCondition", kr2SendConditionFunction, "value|value", SAF_SUPPORT_NOMEDIA);
-    
+
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KAdjustForFax", "KAdjustForFax", "KAdjustForFax", kadjustForFaxFunction, "", SAF_SUPPORT_NOMEDIA);
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KSendFax", "KSendFax", "KSendFax", ksendFaxFunction, "<infilename>[:<infilename2>[:...]][|<faxid>]", SAF_SUPPORT_NOMEDIA);
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KReceiveFax", "KReceiveFax", "KReceiveFax", kreceiveFaxFunction, "<outfilename>[|<faxid>]", SAF_SUPPORT_NOMEDIA);
-    
+
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KUserTransfer", "KUserTransfer", "KUserTransfer", kUserTransferFunction, "number", SAF_SUPPORT_NOMEDIA);
-    
+
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KSendSMS", "KSendSMS", "KSendSMS", kSendSMSFunction, "resource|destination|message", SAF_SUPPORT_NOMEDIA);
 
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KSelectSimCard", "KSelectSimCard", "KSelectSimCard", kSelectSimCardFunction, "<board>|<channel>|<sim_card>", SAF_SUPPORT_NOMEDIA);
@@ -1364,7 +1364,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_khomp_shutdown)
     Board::kommuter.stop();
 
     Cli::unregisterCommands();
-    
+
     ESL::unregisterEvents();
 
 
@@ -1374,7 +1374,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_khomp_shutdown)
     Board::finalizeHandlers();
 
     Board::finalize();
-    
+
     DBG(FUNC, "Successfully Unloaded mod_khomp")
 
     K::Logger::stop();
@@ -1426,7 +1426,7 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
 {
     try
     {
-    
+
     //If NULL get throws K3LAPITraits::invalid_channel exception.
     Board::KhompPvt * pvt = Board::get(deviceid, objectid);
 
@@ -1441,7 +1441,7 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
         DBG(STRM, PVT_FMT(pvt->target(), "Stream not enabled, skipping write..."));
         return;
     }
-    
+
     /* will be used below for CM_ADD_STREAM_BUFFER */
     struct
     {
@@ -1449,7 +1449,7 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
         size_t       size;
     }
     write_packet = { (const byte *)0, 0 };
-    
+
     /* push audio from the write buffer */
     switch_frame_t * fr = pvt->_writer_frames.pick();
 

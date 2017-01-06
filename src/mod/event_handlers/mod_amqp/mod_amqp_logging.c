@@ -250,12 +250,12 @@ switch_status_t mod_amqp_logging_create(char *name, switch_xml_t cfg)
 						  0, /* passive */
 						  profile->exchange_durable,
 						  amqp_empty_table);
-	
+
 	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] failed to create exchange\n", profile->name);
 		goto err;
 	}
-	
+
 	/* Create a bounded FIFO queue for sending messages */
 	if (switch_queue_create(&(profile->send_queue), profile->send_queue_size, profile->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create send queue of size %d!\n", profile->send_queue_size);
@@ -382,7 +382,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_logging_thread(switch_thread_t *thread, void 
 
       default:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send failed with a generic error\n");
-	
+
 	/* Send failed and closed the connection; reconnect will happen at the beginning of the loop
 	 * NB: do we need a delay here to prevent a fast reconnect-send-fail loop? */
 	break;

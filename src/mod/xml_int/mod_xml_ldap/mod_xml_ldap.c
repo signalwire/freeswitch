@@ -27,7 +27,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
  * John Skopis <john+fs@skopis.com>
- * 
+ *
  * mod_xml_ldap.c -- LDAP XML Gateway
  *
  */
@@ -125,7 +125,7 @@ struct xml_ldap_attribute {
         char *val;
         xml_ldap_attribute_t *next;
 };
-        
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_ldap_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_ldap, mod_xml_ldap_load, mod_xml_ldap_shutdown, NULL);
@@ -145,7 +145,7 @@ SWITCH_STANDARD_API(xml_ldap_function)
 {
         return SWITCH_STATUS_FALSE;
 }
-  
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load)
 {
         switch_api_interface_t *xml_ldap_api_interface;
@@ -495,13 +495,13 @@ static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *di
                    "vm-skip-instructions", "vm-cc", "vm-disk-quota", "accountcode", "user_context",
                    "vm_mailbox", "callgroup", "effective_caller_id_number", "effective_caller_id_name",
                    "outbound_caller_id_number", "outbound_caller_id_name", "toll_allow", NULL };
- 
+
         basedn = switch_mprintf(binding->basedn, dir_domain);
         filter = switch_mprintf(binding->filter, dir_exten);
- 
+
 		if (param_event) {
 			char *expanded = switch_event_expand_headers(param_event, filter);
-			
+
 			if (expanded != filter) {
 				free(filter);
 				filter = expanded;
@@ -509,7 +509,7 @@ static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *di
 		}
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "searching in basedn %s with filter %s\n", basedn, filter);
- 
+
         if ((ldap_search_s(ld, basedn, LDAP_SCOPE_SUB, filter, NULL, 0, &msg) != LDAP_SUCCESS))
                 goto cleanup;
 
@@ -614,15 +614,15 @@ static switch_status_t trysearch(switch_xml_t *pxml, int *xoff, LDAP * ld, char 
 
                                 val = ldap_get_values(ld, entry, key);
                                 switch_xml_set_attr_d(xml, key, val[0]);
- 
+
                                 ldap_memfree(key);
                                 ldap_value_free(val);
 			}
                         ber_free(ber, 0);
- 
+
                         dn = ldap_get_dn(ld, entry);
                         rec(&xml, &off, ld, dn);
- 
+
                         *xoff = 1;
 		}
 
@@ -661,7 +661,7 @@ void rec(switch_xml_t *pxml, int *xoff, LDAP * ld, char *dn)
                         ldap_value_free(val);
 
                         for (key = ldap_first_attribute(ld, entry, &ber); key != NULL; key = ldap_next_attribute(ld, entry, ber)) {
- 
+
                                 if (!strncasecmp("fstag", key, 5) || !strncasecmp("objectclass", key, 10)) {
                                         ldap_memfree(key);
                                         continue;
@@ -713,7 +713,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
                                 switch (binding->bt) {
                                 case XML_LDAP_CONFIG:
                                         break;
- 
+
                                 case XML_LDAP_DIRECTORY:
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "from cb got %s=%s\n", hi->name, hi->value);
                                         if (!strncmp(hi->name, "user", strlen(hi->name))) {
@@ -722,7 +722,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
                                                 dir_domain = strdup(hi->value);
                                         }
                                         break;
- 
+
                                 case XML_LDAP_DIALPLAN:
                                 case XML_LDAP_PHRASE:
                                         break;

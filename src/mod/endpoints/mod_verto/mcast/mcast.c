@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2011, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -63,11 +63,11 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	int family = AF_INET;
 
 	memset(handle, 0, sizeof(*handle));
-	
-	if (strchr(host, ':')) { 
+
+	if (strchr(host, ':')) {
 		family = AF_INET6;
 	}
-	
+
 	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = (mcast_socket_t)socket(family, SOCK_DGRAM, 0)) == mcast_sock_invalid ) {
 		return -1;
 	}
@@ -83,17 +83,17 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		handle->send_addr.sin_port = htons(port);
 		handle->family = AF_INET;
 	}
-	
+
 	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0 ) {
 		mcast_socket_close(handle);
 		return -1;
 	}
-	
+
 
 	if ((flags & MCAST_RECV)) {
 		if (handle->family == AF_INET) {
 			struct ip_mreq mreq;
-			
+
 			handle->recv_addr.sin_family = AF_INET;
 			handle->recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 			handle->recv_addr.sin_port = htons(port);
@@ -116,24 +116,24 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 			struct addrinfo addr_criteria;
 			struct addrinfo *mcast_addr;
 			char service[80] = "";
-			
+
 			memset(&addr_criteria, 0, sizeof(addr_criteria));
 			addr_criteria.ai_family = AF_UNSPEC;
 			addr_criteria.ai_socktype = SOCK_DGRAM;
 			addr_criteria.ai_protocol = IPPROTO_UDP;
 			addr_criteria.ai_flags |= AI_NUMERICHOST;
-			
+
 			snprintf(service, sizeof(service), "%d", port);
 			getaddrinfo(host, service, &addr_criteria, &mcast_addr);
 
-			
+
 			memset(&handle->recv_addr6, 0, sizeof(handle->recv_addr6));
 			handle->recv_addr6.sin6_family = AF_INET6;
 			handle->recv_addr6.sin6_port = htons(port);
 			inet_pton(AF_INET6, "::0", &(handle->recv_addr6.sin6_addr));
 
 			memcpy(&mreq.ipv6mr_multiaddr, &((struct sockaddr_in6 *)mcast_addr->ai_addr)->sin6_addr,  sizeof(struct in6_addr));
-											 
+
 			mreq.ipv6mr_interface = 0;
 			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (const char *)&mreq, sizeof(mreq));
 
@@ -165,7 +165,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	if ((flags & MCAST_TTL_CONTINENT)) {
 		handle->ttl = 128;
 	}
-	
+
 	if ((flags & MCAST_TTL_UNIVERSE)) {
 		handle->ttl = 255;
 	}
@@ -175,7 +175,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	}
 
 	handle->ready = 1;
-	
+
 	return 0;
 }
 

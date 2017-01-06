@@ -2017,7 +2017,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_ATTACH);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	memset(&rtmp_globals, 0, sizeof(rtmp_globals));
 
 	switch_mutex_init(&rtmp_globals.mutex, SWITCH_MUTEX_NESTED, pool);
@@ -2118,7 +2118,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown)
 	switch_event_free_subclass(RTMP_EVENT_LOGOUT);
 	switch_event_free_subclass(RTMP_EVENT_DETACH);
 	switch_event_free_subclass(RTMP_EVENT_ATTACH);
-	
+
 	switch_mutex_lock(rtmp_globals.mutex);
 	while ((hi = switch_core_hash_first_iter(rtmp_globals.profile_hash, hi))) {
 		void *val;

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,17 +22,17 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * mod_cepstral.c -- Cepstral Interface
- * 
- * Contains some material derived from the Cepstral Swift SDK, by  
- * permission.  You are free to copy and modify the source under the  
- * terms of FreeSWITCH itself, without additional permission from  
+ *
+ * Contains some material derived from the Cepstral Swift SDK, by
+ * permission.  You are free to copy and modify the source under the
+ * terms of FreeSWITCH itself, without additional permission from
  * Cepstral
- * 
+ *
  *
  */
 #ifdef __ICC

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Eliot Gable <egable@gmail.com>
  *
@@ -31,7 +31,7 @@
  */
 /*! \file switch_apr.h
     \brief APR includes header
-	
+
 	The things powered by APR are renamed into the switch_ namespace to provide a cleaner
 	look to things and helps me to document what parts of APR I am using I'd like to take this
 	opportunity to thank APR for all the awesome stuff it does and for making my life much easier.
@@ -53,7 +53,7 @@ typedef pthread_t switch_thread_id_t;
 
 SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void);
 
-/*! \brief Compare two thread ids 
+/*! \brief Compare two thread ids
  *  \param tid1 1st Thread ID to compare
  *  \param tid2 2nd Thread ID to compare
 */
@@ -71,7 +71,7 @@ SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_i
  */
 /**
  * @defgroup switch_memory_pool Memory Pool Functions
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 /** The fundamental pool type */
@@ -142,7 +142,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_memory_pool_
 /**
  * Continue iterating over the entries in a hash table.
  * @param ht The iteration state
- * @return a pointer to the updated iteration state.  NULL if there are no more  
+ * @return a pointer to the updated iteration state.  NULL if there are no more
  *         entries.
  */
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(switch_hash_index_t *ht);
@@ -171,7 +171,7 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t *ht);
  * The default hash function.
  * @param key pointer to the key.
  * @param klen the key length.
- * 
+ *
  */
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen);
 
@@ -180,7 +180,7 @@ SWITCH_DECLARE(unsigned int) switch_ci_hashfunc_default(const char *char_key, sw
 
  /**
  * @defgroup switch_time Time Routines
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -261,7 +261,7 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_nocheck(char *s, switch_size_t *
  * format which requires the indicated amount of storage,
  * including the trailing NUL terminator.
  * @param date_str String to write to.
- * @param t the time to convert 
+ * @param t the time to convert
  */
 SWITCH_DECLARE(switch_status_t) switch_rfc822_date(char *date_str, switch_time_t t);
 
@@ -273,7 +273,7 @@ SWITCH_DECLARE(switch_status_t) switch_rfc822_date(char *date_str, switch_time_t
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t *result, switch_time_t input);
 
 /**
- * Convert time value from human readable format to a numeric apr_time_t 
+ * Convert time value from human readable format to a numeric apr_time_t
  * e.g. elapsed usec since epoch
  * @param result the resulting imploded time
  * @param input the input exploded time
@@ -297,7 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz(switch_time_exp_t *result, sw
 /**
  * Sleep for the specified number of micro-seconds.
  * @param t desired amount of time to sleep.
- * @warning May sleep for longer than the specified time. 
+ * @warning May sleep for longer than the specified time.
  */
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t);
@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
 
 /**
  * @defgroup switch_thread_cond Condition Variable Routines
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -496,8 +496,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_wait(switch_thread_cond_t *co
  * @param mutex the mutex that must be locked upon entering this function,
  *        is released while the thread is asleep, and is again acquired before
  *        returning from this function.
- * @param timeout The amount of time in microseconds to wait. This is 
- *        a maximum, not a minimum. If the condition is signaled, we 
+ * @param timeout The amount of time in microseconds to wait. This is
+ *        a maximum, not a minimum. If the condition is signaled, we
  *        will wake up before this time, otherwise the error APR_TIMEUP
  *        is returned.
  */
@@ -589,7 +589,7 @@ SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIG
 /** Opaque structure used for queue API */
 	 typedef struct apr_queue_t switch_queue_t;
 
-/** 
+/**
  * create a FIFO queue
  * @param queue The new queue
  * @param queue_capacity maximum size of the queue
@@ -677,7 +677,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 
 /**
  * @defgroup switch_file_io File I/O Handling Functions
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -703,7 +703,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 
 
 /**
- * @defgroup switch_file_permissions File Permissions flags 
+ * @defgroup switch_file_permissions File Permissions flags
  * @ingroup switch_file_io
  * @{
  */
@@ -784,7 +784,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
  *         SWITCH_FOPEN_CREATE				create the file if not there
  *         SWITCH_FOPEN_APPEND				file ptr is set to end prior to all writes
  *         SWITCH_FOPEN_TRUNCATE			set length to zero if file exists
- *         SWITCH_FOPEN_BINARY				not a text file (This flag is ignored on 
+ *         SWITCH_FOPEN_BINARY				not a text file (This flag is ignored on
  *											UNIX because it has no meaning)
  *         SWITCH_FOPEN_BUFFERED			buffer the data.  Default is non-buffered
  *         SWITCH_FOPEN_EXCL				return error if APR_CREATE and file exists
@@ -794,7 +794,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
  *         SWITCH_FOPEN_SHARELOCK			Platform dependent support for higher
  *											level locked read/write access to support
  *											writes across process/machines
- *         SWITCH_FOPEN_NOCLEANUP			Do not register a cleanup with the pool 
+ *         SWITCH_FOPEN_NOCLEANUP			Do not register a cleanup with the pool
  *											passed in on the <EM>pool</EM> argument (see below).
  *											The apr_os_file_t handle in apr_file_t will not
  *											be closed when the pool is destroyed.
@@ -860,7 +860,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_read(switch_file_t *thefile, void *b
  * Write data to the specified file.
  * @param thefile The file descriptor to write to.
  * @param buf The buffer which contains the data.
- * @param nbytes On entry, the number of bytes to write; on exit, the number 
+ * @param nbytes On entry, the number of bytes to write; on exit, the number
  *               of bytes written.
  *
  * @remark apr_file_write will write up to the specified number of
@@ -924,7 +924,7 @@ SWITCH_DECLARE(uint32_t) switch_dir_count(switch_dir_t *thedir);
 
 /**
  * @defgroup switch_thread_proc Threads and Process Functions
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -955,7 +955,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** 
 
 /**
  * Set if newly created threads should be created in detached state.
- * @param attr The threadattr to affect 
+ * @param attr The threadattr to affect
  * @param on Non-zero if detached threads should be created.
  */
 SWITCH_DECLARE(switch_status_t) switch_threadattr_detach_set(switch_threadattr_t *attr, int32_t on);
@@ -975,7 +975,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 
 /**
  * @defgroup switch_network_io Network Routines
- * @ingroup switch_apr 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -1048,12 +1048,12 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock
 
 /**
  * Shutdown either reading, writing, or both sides of a socket.
- * @param sock The socket to close 
+ * @param sock The socket to close
  * @param how How to shutdown the socket.  One of:
  * <PRE>
  *            SWITCH_SHUTDOWN_READ         no longer allow read requests
  *            SWITCH_SHUTDOWN_WRITE        no longer allow write requests
- *            SWITCH_SHUTDOWN_READWRITE    no longer allow read or write requests 
+ *            SWITCH_SHUTDOWN_READWRITE    no longer allow read or write requests
  * </PRE>
  * @see switch_shutdown_how_e
  * @remark This does not actually close the socket descriptor, it just
@@ -1063,13 +1063,13 @@ SWITCH_DECLARE(switch_status_t) switch_socket_shutdown(switch_socket_t *sock, sw
 
 /**
  * Close a socket.
- * @param sock The socket to close 
+ * @param sock The socket to close
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_close(switch_socket_t *sock);
 
 /**
  * Bind the socket to its associated port
- * @param sock The socket to bind 
+ * @param sock The socket to bind
  * @param sa The socket address to bind to
  * @remark This may be where we will find out if there is any other process
  *      using the selected port.
@@ -1078,10 +1078,10 @@ SWITCH_DECLARE(switch_status_t) switch_socket_bind(switch_socket_t *sock, switch
 
 /**
  * Listen to a bound socket for connections.
- * @param sock The socket to listen on 
+ * @param sock The socket to listen on
  * @param backlog The number of outstanding connections allowed in the sockets
  *                listen queue.  If this value is less than zero, the listen
- *                queue size is set to zero.  
+ *                queue size is set to zero.
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t *sock, int32_t backlog);
 
@@ -1096,9 +1096,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t *sock, int3
 SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t *sock, switch_memory_pool_t *pool);
 
 /**
- * Issue a connection request to a socket either on the same machine 
+ * Issue a connection request to a socket either on the same machine
  * or a different one.
- * @param sock The socket we wish to use for our side of the connection 
+ * @param sock The socket we wish to use for our side of the connection
  * @param sa The address of the machine we wish to connect to.
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t *sock, switch_sockaddr_t *sa);
@@ -1122,7 +1122,7 @@ SWITCH_DECLARE(int) switch_sockaddr_equal(const switch_sockaddr_t *sa1, const sw
  * @param sa The new apr_sockaddr_t.
  * @param hostname The hostname or numeric address string to resolve/parse, or
  *               NULL to build an address that corresponds to 0.0.0.0 or ::
- * @param family The address family to use, or SWITCH_UNSPEC if the system should 
+ * @param family The address family to use, or SWITCH_UNSPEC if the system should
  *               decide.
  * @param port The port number.
  * @param flags Special processing flags:
@@ -1148,12 +1148,12 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 /**
  * Send data over a network.
  * @param sock The socket to send the data over.
- * @param buf The buffer which contains the data to be sent. 
+ * @param buf The buffer which contains the data to be sent.
  * @param len On entry, the number of bytes to send; on exit, the number
  *            of bytes sent.
  * @remark
  * <PRE>
- * This functions acts like a blocking write by default.  To change 
+ * This functions acts like a blocking write by default.  To change
  * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
  * socket option.
  *
@@ -1173,7 +1173,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, switch_sockaddr_t *where, int32_t flags, const char *buf,
 													 switch_size_t *len);
-													
+
 SWITCH_DECLARE(switch_status_t) switch_socket_send_nonblock(switch_socket_t *sock, const char *buf, switch_size_t *len);
 
 /**
@@ -1191,12 +1191,12 @@ SWITCH_DECLARE(switch_status_t) switch_socket_atmark(switch_socket_t *sock, int 
 /**
  * Read data from a network.
  * @param sock The socket to read the data from.
- * @param buf The buffer to store the data in. 
+ * @param buf The buffer to store the data in.
  * @param len On entry, the number of bytes to receive; on exit, the number
  *            of bytes received.
  * @remark
  * <PRE>
- * This functions acts like a blocking read by default.  To change 
+ * This functions acts like a blocking read by default.  To change
  * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
  * socket option.
  * The number of bytes actually received is stored in argument 3.
@@ -1214,7 +1214,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
  * @param sock The socket to set up.
  * @param opt The option we would like to configure.  One of:
  * <PRE>
- *            APR_SO_DEBUG      --  turn on debugging information 
+ *            APR_SO_DEBUG      --  turn on debugging information
  *            APR_SO_KEEPALIVE  --  keep connections active
  *            APR_SO_LINGER     --  lingers on close if data is present
  *            APR_SO_NONBLOCK   --  Turns blocking on/off for socket
@@ -1263,9 +1263,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_timeout_set(switch_socket_t *sock,
  * Join a Multicast Group
  * @param sock The socket to join a multicast group
  * @param join The address of the multicast group to join
- * @param iface Address of the interface to use.  If NULL is passed, the 
+ * @param iface Address of the interface to use.  If NULL is passed, the
  *              default multicast interface will be used. (OS Dependent)
- * @param source Source Address to accept transmissions from (non-NULL 
+ * @param source Source Address to accept transmissions from (non-NULL
  *               implies Source-Specific Multicast)
  */
 SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_sockaddr_t *join, switch_sockaddr_t *iface, switch_sockaddr_t *source);
@@ -1331,7 +1331,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
 
 /**
  * Setup a pollset object
- * @param pollset  The pointer in which to return the newly created object 
+ * @param pollset  The pointer in which to return the newly created object
  * @param size The maximum number of descriptors that this pollset can hold
  * @param pool The pool from which to allocate the pollset
  * @param flags Optional flags to modify the operation of the pollset.
@@ -1382,16 +1382,16 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_remove(switch_pollset_t *pollset,
 
 /**
  * Poll the sockets in the poll structure
- * @param aprset The poll structure we will be using. 
+ * @param aprset The poll structure we will be using.
  * @param numsock The number of sockets we are polling
  * @param nsds The number of sockets signalled.
- * @param timeout The amount of time in microseconds to wait.  This is 
- *                a maximum, not a minimum.  If a socket is signalled, we 
- *                will wake up before this time.  A negative number means 
+ * @param timeout The amount of time in microseconds to wait.  This is
+ *                a maximum, not a minimum.  If a socket is signalled, we
+ *                will wake up before this time.  A negative number means
  *                wait until a socket is signalled.
- * @remark The number of sockets signalled is returned in the third argument. 
- *         This is a blocking call, and it will not return until either a 
- *         socket has been signalled, or the timeout has expired. 
+ * @remark The number of sockets signalled is returned in the third argument.
+ *         This is a blocking call, and it will not return until either a
+ *         socket has been signalled, or the timeout has expired.
  */
 SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t numsock, int32_t *nsds, switch_interval_time_t timeout);
 
@@ -1415,7 +1415,7 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_poll(switch_pollset_t *pollset, s
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** poll, switch_socket_t *sock, int16_t flags, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(switch_interval_time_t) switch_interval_time_from_timeval(struct timeval *tvp);
-																
+
 
 /*!
   \brief Create a pollfd out of a socket
@@ -1442,14 +1442,14 @@ SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, swi
 /**
  * Get the timeout value for a pipe or manipulate the blocking state.
  * @param thepipe The pipe we are getting a timeout for.
- * @param timeout The current timeout value in microseconds. 
+ * @param timeout The current timeout value in microseconds.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_get(switch_file_t *thepipe, switch_interval_time_t *timeout);
 
 /**
  * Set the timeout value for a pipe or manipulate the blocking state.
  * @param thepipe The pipe we are setting a timeout on.
- * @param timeout The timeout value in microseconds.  Values < 0 mean wait 
+ * @param timeout The timeout value in microseconds.  Values < 0 mean wait
  *        forever, 0 means do not wait at all.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_set(switch_file_t *thepipe, switch_interval_time_t timeout);

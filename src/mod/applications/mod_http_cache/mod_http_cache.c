@@ -359,7 +359,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
 
-		/* we want to use our own read function so we can send a portion of the file */ 
+		/* we want to use our own read function so we can send a portion of the file */
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &block_info);
 

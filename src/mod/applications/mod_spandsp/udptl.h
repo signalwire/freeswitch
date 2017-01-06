@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2009, Steve Underwood <steveu@coppice.org>
  *
@@ -15,7 +15,7 @@
  * License.
  *
  * Contributor(s):
- * 
+ *
  * Steve Underwood <steveu@coppice.org>
  *
  * udptl.h -- UDPTL handling for T.38

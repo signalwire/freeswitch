@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_stress.cpp -- Detect Voice Stress
@@ -81,19 +81,19 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
             } else {
                 return SWITCH_FALSE;
             }
-            
+
             sth->data = (float *) switch_core_session_alloc(sth->session, sizeof(*sth->data) * sth->frame_size);
             sth->result = (float *) switch_core_session_alloc(sth->session, sizeof(*sth->result) * sth->frame_size);
             sth->pow_spectrum = (float *) switch_core_session_alloc(sth->session, sizeof(*sth->pow_spectrum) * sth->frame_size);
             sth->audio = (int16_t *) switch_core_session_alloc(sth->session, sizeof(*sth->audio) * sth->frame_size);
-            
+
             sth->fft = new FFTReal (sth->frame_size);
             switch_buffer_create_dynamic(&sth->audio_buffer, sth->frame_size, sth->frame_size * 3, 0);
 
             sth->bind = (float) sth->rate / sth->frame_size;
             sth->start = (int) (8.0 / sth->bind);
             sth->end = (int) (14.0 / sth->bind);
-            
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -109,7 +109,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			switch_frame_t *frame;
-            
+
 			if (sth->read) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
@@ -119,7 +119,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
             if (!switch_test_flag(frame, SFF_CNG)) {
                 switch_buffer_write(sth->audio_buffer, frame->data, frame->datalen);
             }
-            
+
             sth->stress = 0.0;
 
             if (switch_buffer_inuse(sth->audio_buffer) >= sth->frame_size * sizeof(int16_t)) {
@@ -129,7 +129,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
 
                 bytes = switch_buffer_read(sth->audio_buffer, sth->audio, sth->frame_size * sizeof(int16_t));
                 samples = bytes / sizeof(int16_t);
-                
+
                 switch_short_to_float(sth->audio, sth->data, samples);
                 sth->fft->do_fft(sth->result, sth->data);
 
@@ -140,7 +140,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
                 sth->avg_tremor_pwr = 0.0;
                 sth->avg_total_pwr = 0.0;
                 sth->total_pwr = 0.0;
-                
+
                 for (i = sth->start; i <= sth->end; ++i) {
                     sth->avg_tremor_pwr += sth->pow_spectrum[i];
                 }
@@ -150,7 +150,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
                     sth->total_pwr += sth->pow_spectrum[i];
                 }
                 sth->avg_total_pwr = sth->total_pwr / samples;
-                
+
                 if (sth->total_pwr < threshold) {
                     sth->tremor_ratio = 0.0;
                 } else {
@@ -227,7 +227,7 @@ SWITCH_STANDARD_APP(stress_start_function)
 	}
 
 	sth->session = session;
-    
+
 	if ((status = switch_core_media_bug_add(session, "stress", NULL, stress_callback, sth, 0,
 											sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
@@ -244,7 +244,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_stress_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "stress", "Analyze the stream for voice stress", "Analyze the stream for voice stress", 
+	SWITCH_ADD_APP(app_interface, "stress", "Analyze the stream for voice stress", "Analyze the stream for voice stress",
                    stress_start_function, "[read|write|stop]", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */

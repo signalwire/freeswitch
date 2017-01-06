@@ -25,6 +25,6 @@
 	You can place files in the skinny-patterns directory to get included.
     -->
     <X-PRE-PROCESS cmd="include" data="skinny-patterns/*.xml"/>
-    
+
   </context>
 </include>

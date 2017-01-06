@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Rupa Schomaker <rupa@rupa.com>
  * John Wehle <john@feith.com>
@@ -478,7 +478,7 @@ static int sockopt_callback(void *clientp, curl_socket_t curlfd,
 	switch_mutex_lock(context->audio_mutex);
 	context->curlfd = curlfd;
 	switch_mutex_unlock(context->audio_mutex);
-	
+
 	return 0;
 }
 
@@ -752,16 +752,16 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 		context->channels = handle->channels;
-		
+
 		if (globals.brate) {
 			lame_set_brate(context->gfp, globals.brate);
 		} else {
 			lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
 		}
-		
+
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		
+
 		if (globals.resample) {
 			lame_set_out_samplerate(context->gfp, globals.resample);
 		} else {
@@ -880,7 +880,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		} else {
 			const char *mask = "wb+";
-			
+
 			if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
 				mask = "ab+";
 			}
@@ -979,7 +979,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		if (newbytes < bytes) {
 			bytes = newbytes;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with %ds of empty audio. (%s)\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with %ds of empty audio. (%s)\n",
 						  context->buffer_seconds, context->stream_url);
 
 		memset(data, 255, bytes);

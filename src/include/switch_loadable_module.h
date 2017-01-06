@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -33,7 +33,7 @@
     \brief Loadable Module Routines
 
 	This module is the gateway between external modules and the core of the application.
-	it contains all the access points to the various pluggable interfaces including the codecs 
+	it contains all the access points to the various pluggable interfaces including the codecs
 	and API modules.
 
 */
@@ -49,7 +49,7 @@ SWITCH_BEGIN_EXTERN_C
 /*!
   \defgroup mods Loadable Module Functions
   \ingroup core1
-  \{ 
+  \{
 */
 /*! \brief The abstraction of a loadable module */
 	struct switch_loadable_module_interface {

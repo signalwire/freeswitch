@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian K. West <brian@freeswitch.org>
  *
  * mod_b64.c -- The B64 ultra-low delay audio codec (http://www.b64-codec.org/)
@@ -53,7 +53,7 @@ static int rot(char *p, char min, char max, int i)
 {
 	int r = 0;
 	int c;
-	
+
 	if (*p >= min && *p <= max) {
 		if ((c = *p + i) <= max) {
 			*p = c;
@@ -119,7 +119,7 @@ static switch_status_t switch_codec_b64_decode(switch_codec_t *codec,
 	p += HLEN;
 	encoded_data = p;
 	encoded_data_len -= HLEN;
-	
+
 	rot13_buffer(encoded_data, encoded_data_len);
 	switch_b64_decode(encoded_data, decoded_data, *decoded_data_len);
 	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
@@ -160,14 +160,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_b64_load)
 											 switch_codec_b64_encode,	/* function to encode raw data into encoded data */
 											 switch_codec_b64_decode,	/* function to decode encoded data into raw data */
 											 switch_codec_b64_destroy);	/* deinitalize a codec handle using this implementation */
-		
+
 		bytes *= 2;
 		samples *= 2;
 		rate *= 2;
 		bits *= 2;
-		
+
 	}
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

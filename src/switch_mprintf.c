@@ -700,7 +700,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 					bufpt = buf;
 				}
 				j = 0;
-				if (needQuote) 
+				if (needQuote)
 					bufpt[j++] = '\'';
 				for (i = 0; (ch = escarg[i]) != 0; i++) {
 					bufpt[j++] = (char) ch;

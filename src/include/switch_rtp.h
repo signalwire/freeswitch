@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -30,10 +30,10 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  */
-/** 
+/**
  * @file switch_rtp.h
  * @brief RTP
- * 
+ *
  */
 
 #ifndef SWITCH_RTP_H
@@ -162,7 +162,7 @@ typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignme
 	_RTCP_PSFB_TSTR  = 5, /* TSTR: Temporal-Spatial Trade-off Request RFC5104 */
 	_RTCP_PSFB_TSTN  = 6, /* TSTN: Temporal-Spatial Trade-off Notification RFC5104 */
 	_RTCP_PSFB_VBCM  = 7, /* VBCM: Video Back Channel Message RFC5104 */
-	_RTCP_PSFB_PSLEI = 8, /* PSLEI: Payload-Specific Third-Party Loss Early Indication RFC6642*/ 
+	_RTCP_PSFB_PSLEI = 8, /* PSLEI: Payload-Specific Third-Party Loss Early Indication RFC6642*/
 	_RTCP_PSFB_AFB   = 15 /* AFB Application layer FB */
 } rtcp_psfb_t;
 
@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 
 SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len);
-/*! 
+/*!
   \brief Initilize the RTP System
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
@@ -205,7 +205,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_ses
 */
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
 
-/*! 
+/*!
   \brief Request a new port to be used for media
   \param ip the ip to request a port from
   \return the new port to use
@@ -216,7 +216,7 @@ SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval);
-/*! 
+/*!
   \brief create a new RTP session handle
   \param new_rtp_session a poiter to aim at the new session
   \param payload the IANA payload number
@@ -260,7 +260,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
-/*! 
+/*!
   \brief Assign a remote address to the RTP session
   \param rtp_session an RTP session to assign the remote address to
   \param host the ip or fqhn of the remote address
@@ -279,7 +279,7 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Assign a local address to the RTP session
   \param rtp_session an RTP session to assign the local address to
   \param host the ip or fqhn of the local address
@@ -290,7 +290,7 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session);
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
 
-/*! 
+/*!
   \brief Kill the socket on an existing RTP session
   \param rtp_session an RTP session to kill the socket of
 */
@@ -299,14 +299,14 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Test if an RTP session is ready
   \param rtp_session an RTP session to test
   \return a true value if it's ready
 */
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Destroy an RTP session
   \param rtp_session an RTP session to destroy
 */
@@ -314,15 +314,15 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_sync_stats(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Acvite ICE on an RTP session
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin,
 														const char *password, const char *rpassword, ice_proto_t proto,
 														switch_core_media_ice_type_t type, ice_t *ice_params);
 
-/*! 
+/*!
   \brief Activate sending RTCP Sender Reports (SR's)
   \param send_rate interval in milliseconds to send at
   \return SWITCH_STATUS_SUCCESS
@@ -335,13 +335,13 @@ SWITCH_DECLARE(switch_timer_t *) switch_rtp_get_media_timer(switch_rtp_t *rtp_se
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames, uint32_t max_frames);
 SWITCH_DECLARE(switch_status_t) switch_rtp_get_video_buffer_size(switch_rtp_t *rtp_session, uint32_t *min_frame_len, uint32_t *max_frame_len, uint32_t *cur_frame_len, uint32_t *highest_frame_len);
 
-/*! 
+/*!
   \brief Acvite a jitter buffer on an RTP session
   \param rtp_session the rtp session
   \param queue_frames the number of frames to delay
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, 
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session,
 																  uint32_t queue_frames,
 																  uint32_t max_queue_frames,
 																  uint32_t samples_per_packet, uint32_t samples_per_second);
@@ -379,28 +379,28 @@ SWITCH_DECLARE(uint32_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_
 */
 SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flag);
 
-/*! 
+/*!
   \brief Retrieve the socket from an existing RTP session
   \param rtp_session the RTP session to retrieve the socket from
   \return the socket from the RTP session
 */
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_ping(switch_rtp_t *rtp_session);
-/*! 
+/*!
   \brief Get the default samples per interval for a given RTP session
   \param rtp_session the RTP session to get the samples per interval from
   \return the default samples per interval of the RTP session
 */
 SWITCH_DECLARE(uint32_t) switch_rtp_get_default_samples_per_interval(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Set the default payload number for a given RTP session
   \param rtp_session the RTP session to set the payload number on
-  \param payload the new default payload number 
+  \param payload the new default payload number
 */
 SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp_t *rtp_session, switch_payload_t payload);
 
-/*! 
+/*!
   \brief Get the default payload number for a given RTP session
   \param rtp_session the RTP session to get the payload number from
   \return the default payload of the RTP session
@@ -408,15 +408,15 @@ SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp_t *rtp_session, s
 SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp_t *rtp_session);
 
 
-/*! 
+/*!
   \brief Set a callback function to execute when an invalid RTP packet is encountered
   \param rtp_session the RTP session
   \param on_invalid the function to set
-  \return 
+  \return
 */
 SWITCH_DECLARE(void) switch_rtp_set_invalid_handler(switch_rtp_t *rtp_session, switch_rtp_invalid_handler_t on_invalid);
 
-/*! 
+/*!
   \brief Read data from a given RTP session
   \param rtp_session the RTP session to read from
   \param data the data to read
@@ -429,7 +429,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invalid_handler(switch_rtp_t *rtp_session, s
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen,
 												switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags);
 
-/*! 
+/*!
   \brief Queue RFC2833 DTMF data into an RTP Session
   \param rtp_session the rtp session to use
   \param dtmf the dtmf digits to queue
@@ -437,7 +437,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
 
-/*! 
+/*!
   \brief Queue RFC2833 DTMF data into an RTP Session
   \param rtp_session the rtp session to use
   \param dtmf the dtmf digits to queue
@@ -460,7 +460,7 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session);
 */
 SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, switch_dtmf_t *dtmf);
 
-/*! 
+/*!
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
@@ -474,7 +474,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 														 void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags,
 														 switch_io_flag_t io_flags);
 
-/*! 
+/*!
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param frame a frame to populate with information
@@ -484,7 +484,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flags);
 
 
-/*! 
+/*!
   \brief Read RTCP data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param frame an RTCP frame to populate with information
@@ -512,7 +512,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Write data to a given RTP session
   \param rtp_session the RTP session to write to
   \param frame the frame to write
@@ -520,7 +520,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session
 */
 SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame_t *frame);
 
-/*! 
+/*!
   \brief Write data with a specified payload and sequence number to a given RTP session
   \param rtp_session the RTP session to write to
   \param data data to write
@@ -536,21 +536,21 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, void *data, switch_size_t *bytes, switch_bool_t process_encryption);
 
-/*! 
+/*!
   \brief Retrieve the SSRC from a given RTP session
   \param rtp_session the RTP session to retrieve from
   \return the SSRC
 */
 SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp_t *rtp_session);
 
-/*! 
+/*!
   \brief Associate an arbitrary data pointer with and RTP session
   \param rtp_session the RTP session to assign the pointer to
   \param private_data the private data to assign
 */
 SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *private_data);
 
-/*! 
+/*!
   \brief Set the payload type to consider RFC2833 DTMF
   \param rtp_session the RTP session to modify
   \param te the payload type
@@ -558,14 +558,14 @@ SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *pri
 SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te);
 SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_session, switch_payload_t te);
 
-/*! 
+/*!
   \brief Set the payload type for comfort noise
   \param rtp_session the RTP session to modify
   \param pt the payload type
 */
 SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt);
 
-/*! 
+/*!
   \brief Retrieve the private data from a given RTP session
   \param rtp_session the RTP session to retrieve the data from
   \return the pointer to the private data

@@ -150,7 +150,7 @@
 				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
 				<key dtmf="#" action="skip_instruction" />
 			</keys>
-			</menu>			
+			</menu>
 
 			<menu name="std_forward_ask_prepend">
 			<phrases>

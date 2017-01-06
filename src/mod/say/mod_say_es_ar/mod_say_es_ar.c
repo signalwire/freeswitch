@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * François Delawarde <fdelawarde@wirelessmundi.com>
@@ -174,7 +174,7 @@ static switch_status_t es_say_general_count(switch_say_file_handle_t *sh, char *
 				in -= places[(uint32_t) x] * num;
 			}
 		}
-		
+
 
 		switch (say_args->method) {
 		case SSM_PRONOUNCED_YEAR:
@@ -224,7 +224,7 @@ static switch_status_t es_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	const char *tz = NULL;
 
-	tz = switch_say_file_handle_get_variable(sh, "timezone");		
+	tz = switch_say_file_handle_get_variable(sh, "timezone");
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -341,8 +341,8 @@ static switch_status_t es_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
 		//Time is in the future
-		if ((tm.tm_year > tm_now.tm_year) || 
-		    (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) || 
+		if ((tm.tm_year > tm_now.tm_year) ||
+		    (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) ||
 		    (tm.tm_year == tm_now.tm_year && tm.tm_mon == tm_now.tm_mon && tm.tm_mday > tm_now.tm_mday))
 		{
 			say_date = 1;
@@ -496,11 +496,11 @@ static switch_status_t es_say_money(switch_say_file_handle_t *sh, char *tosay, s
 static switch_status_t say_ip(switch_say_file_handle_t *sh,
 							  char *tosay,
 							  switch_say_args_t *say_args)
-	
+
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!(a = strdup(tosay))) {
 		abort();
 	}
@@ -532,7 +532,7 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh,
 	say_num(sh, atoi(d), say_args->method);
 
  end:
-	
+
 	free(a);
 
 	return status;
@@ -628,14 +628,14 @@ static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosa
 	switch_say_file_handle_t *sh;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *var_event = NULL;
-	
+
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_get_variables(channel, &var_event);
 	}
 
 	switch_say_file_handle_create(&sh, say_args->ext, &var_event);
-	
+
 	status = say_cb(sh, tosay, say_args);
 
 	if ((*rstr = switch_say_file_handle_detach_path(sh))) {
@@ -663,7 +663,7 @@ static switch_status_t es_say(switch_core_session_t *session, char *tosay, switc
 		if (session && string) {
 			status = switch_ivr_play_file(session, NULL, string, args);
 		}
-		
+
 		switch_safe_free(string);
 	}
 
@@ -701,7 +701,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_say_es_ar_load)
 	say_interface->interface_name = "es_ar";
 	say_interface->say_function = es_say;
 	say_interface->say_string_function = es_say_string;
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

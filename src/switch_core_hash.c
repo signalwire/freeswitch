@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -60,7 +60,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(switch_hash_t
 	int r = 0;
 
 	r = switch_hashtable_insert_destructor(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor);
-	
+
 	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
@@ -143,14 +143,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	switch_event_t *event = NULL;
 	switch_event_header_t *header = NULL;
 	switch_status_t status = SWITCH_STATUS_GENERR;
-	
+
 	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
 	switch_assert(event);
-	
+
 	/* iterate through the hash, call callback, if callback returns NULL or true, put the key on the list (event)
 	   When done, iterate through the list deleting hash entries
 	 */
-	
+
 	for (hi = switch_core_hash_first(hash); hi; hi = switch_core_hash_next(&hi)) {
 		const void *key;
 		void *val;
@@ -159,7 +159,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 		}
 	}
-	
+
 	/* now delete them */
 	for (header = event->headers; header; header = header->next) {
 		if (switch_core_hash_delete(hash, header->value)) {
@@ -168,7 +168,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	}
 
 	switch_event_destroy(&event);
-	
+
 	return status;
 }
 

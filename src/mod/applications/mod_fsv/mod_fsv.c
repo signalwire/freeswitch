@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -124,14 +124,14 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
 			count = 100;
 			if (!--sanity) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n",
 								  switch_channel_get_name(channel));
 				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got timeout while waiting for video");
 				goto done;
 			}
 		}
 	}
-	
+
 	if (!switch_channel_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Channel not ready");
@@ -241,7 +241,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			}
 			break;
 		}
-        
+
 		if (mutex) {
 			switch_mutex_unlock(mutex);
 		}
@@ -442,7 +442,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				if (terminators && !strcasecmp(terminators, "none"))
 				{
 					terminators = NULL;
-				}								
+				}
 
 				if (terminators && strchr(terminators, dtmf.digit)) {
 
@@ -452,7 +452,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				}
 			}
 		}
-		
+
 	}
 
 	switch_core_thread_session_end(session);
@@ -625,7 +625,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 				break;
 			}
 		}
-		
+
 		if (read_frame) {
 			memset(read_frame->data, 0, read_frame->datalen);
 			switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -699,7 +699,7 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 			switch_core_session_request_video_refresh(session);
 			count = 1;
 		}
-			
+
 
 		if (frame && frame->datalen > 0) {
 			switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);

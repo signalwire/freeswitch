@@ -473,7 +473,7 @@ int skypopen_init_module(void)
 		return result;
 	}
 
-	/* 
+	/*
 	 * allocate the devices -- we can't have them static, as the number
 	 * can be specified at load time
 	 */

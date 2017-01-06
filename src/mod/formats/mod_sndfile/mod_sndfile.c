@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -225,7 +225,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		handle->pos = sf_seek(context->handle, frames, SEEK_END);
 	} else if (switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
 		handle->pos = sf_seek(context->handle, frames, SEEK_SET);
-	} else {		
+	} else {
 		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
 	}
 
@@ -279,7 +279,7 @@ static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned 
 	sndfile_context *context = handle->private_info;
 	sf_count_t count;
 	switch_status_t r = SWITCH_STATUS_SUCCESS;
-	
+
 	if (!handle->seekable) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
 		return SWITCH_STATUS_NOTIMPL;
@@ -289,10 +289,10 @@ static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned 
 		r = SWITCH_STATUS_BREAK;
 		count = sf_seek(context->handle, -1, SEEK_END);
 	}
-	
+
 	*cur_sample = (unsigned int) count;
-	handle->pos = *cur_sample;	
-	
+	handle->pos = *cur_sample;
+
 	return r;
 }
 

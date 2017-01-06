@@ -86,7 +86,7 @@ static void test_parse_url(void)
 	parse_url(strdup("https://my-bucket-with-dash.s3-us-west-2.amazonaws.com/greeting/file/1002/Lumino.mp3"), NULL, "s3", &bucket, &object);
 	ASSERT_STRING_EQUALS("my-bucket-with-dash", bucket);
 	ASSERT_STRING_EQUALS("greeting/file/1002/Lumino.mp3", object);
-	
+
 	parse_url(strdup("http://quotes.s3.foo.bar.s3.amazonaws.com/greeting/file/1002/Lumino.mp3"), NULL, "s3", &bucket, &object);
 	ASSERT_STRING_EQUALS("quotes.s3.foo.bar", bucket);
 	ASSERT_STRING_EQUALS("greeting/file/1002/Lumino.mp3", object);

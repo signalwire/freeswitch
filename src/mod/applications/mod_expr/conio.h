@@ -2,7 +2,7 @@
  *
  * Written by:
  * Hongli Lai <hongli@telekabel.nl>
- * tkorrovi <tkorrovi@altavista.net> on 2002/02/26. 
+ * tkorrovi <tkorrovi@altavista.net> on 2002/02/26.
  * Andrew Westcott <ajwestco@users.sourceforge.net>
  *
  * Offered for use in the public domain without any warranty.

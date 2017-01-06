@@ -4072,7 +4072,7 @@ SWITCH_STANDARD_APP(rayo_app)
 			}
 		}
 		if (!call) {
-			/* this scenario can only happen if a call was originated through a mechanism other than <dial> 
+			/* this scenario can only happen if a call was originated through a mechanism other than <dial>
 			   and then the rayo APP was executed to offer control */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Outbound call that wasn't created with <dial>, will try to offer control\n");
 		}
@@ -5179,7 +5179,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-	
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading module\n");
@@ -5288,7 +5288,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  * Shutdown module.  Notifies threads to stop.
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
-{	
+{
 	switch_status_t result;
 
 	switch_event_free_subclass("rayo::cpa");

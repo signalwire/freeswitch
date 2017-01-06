@@ -29,7 +29,7 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
 
 void Session::destroy(const char *err)
 {
-	
+
 	if (!allocated) {
 		return;
 	}
@@ -157,7 +157,7 @@ void Session::do_hangup_hook()
 		docall(L, arg_count, 1, 1, 0);
 
 		const char *err = lua_tostring(L, -1);
-		
+
 		switch_channel_set_variable(channel, "lua_hangup_hook_return_val", err);
 
 		if (!zstr(err)) {
@@ -200,7 +200,7 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 				coresession = (Session *) vs;
 			}
 		}
-		
+
 		if (!(coresession && coresession->hook_state)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -356,15 +356,15 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 	dbh = NULL;
 	err = NULL;
 	char *tmp = NULL;
-	
+
 	if (!zstr(user) || !zstr(pass)) {
-		tmp = switch_mprintf("%s%s%s%s%s", dsn, 
+		tmp = switch_mprintf("%s%s%s%s%s", dsn,
 							 zstr(user) ? "" : ":",
 							 zstr(user) ? "" : user,
 							 zstr(pass) ? "" : ":",
 							 zstr(pass) ? "" : pass
 							 );
-		
+
 		dsn = tmp;
 	}
 
@@ -375,7 +375,7 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 	}
 
 	switch_safe_free(tmp);
-	
+
 }
 
 Dbh::~Dbh()
@@ -449,11 +449,11 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 
   ret = lua_tonumber(lua_fun->L, -1);
   lua_pop(lua_fun->L, 1);
-  
+
   if (ret != 0) {
 	  return 1;
   }
-  
+
   return 0; /* 0 to continue with next row */
 }
 

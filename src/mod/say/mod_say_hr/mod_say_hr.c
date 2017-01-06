@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,10 +36,10 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
- * Tihomir Culjaga <tculjaga@gmail.com> 
+ * Tihomir Culjaga <tculjaga@gmail.com>
  *
  * mod_say_hr.c -- Say for Croatian
  *
@@ -225,13 +225,13 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 	char tisucu[64] = "";
 	char tgen[8] = "";
 	char mgen[8] = "";
-	
-	
+
+
 	int number;
 	switch_status_t status;
 
 	strcpy(tgen, gen);
-	
+
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf)-1)) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
@@ -256,8 +256,8 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 					strcpy(milion, "digits/milijun.wav");
 				else
 					strcpy(milion, "digits/milijuna.wav");
-				
-				if (places[4] == 1)	
+
+				if (places[4] == 1)
 				{
 					strcpy(tisucu, "digits/thousands-a.wav");
 				}
@@ -269,7 +269,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 							strcpy(tisucu, "digits/thousands-a.wav");
 							strcpy(tgen, "a");
 							break;
-							
+
 						case 5:
 						case 6:
 						case 7:
@@ -277,12 +277,12 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 						case 9:
 							strcpy(tisucu, "digits/thousands-a.wav");
 							break;
-							
+
 						case 2:
 							strcpy(tgen, "je");
 							strcpy(tisucu, "digits/thousands-e.wav");
 							break;
-							
+
 						case 3:
 						case 4:
 							strcpy(tisucu, "digits/thousands-e.wav");
@@ -297,7 +297,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 							strcpy(tisucu, "digits/thousands-a.wav");
 							strcpy(tgen, "a");
 							break;
-							
+
 						case 5:
 						case 6:
 						case 7:
@@ -305,12 +305,12 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 						case 9:
 							strcpy(tisucu, "digits/thousands-a.wav");
 							break;
-							
+
 						case 2:
 							strcpy(tisucu, "digits/thousands-e.wav");
 							strcpy(tgen, "je");
 							break;
-							
+
 						case 3:
 						case 4:
 							strcpy(tisucu, "digits/thousands-e.wav");
@@ -318,7 +318,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 					}
 				}
 
-				
+
 				if ((status =
 					 play_group(SSM_PRONOUNCED, mgen, places[8], places[7], places[6], milion, number, session, args)) != SWITCH_STATUS_SUCCESS) {
 					return status;
@@ -462,7 +462,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *tz = switch_channel_get_variable(channel, "timezone");
-	
+
 	int sat_desetinka = 0;
 	int sat_jedinica = 0;
 	int minuta_desetinka = 0;
@@ -510,14 +510,14 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		sat_jedinica = hours % 10;
-		
+
 		if (hours > 10)
 			sat_desetinka = (int) (hours / 10);
-	
-		if (hours) 
+
+		if (hours)
 		{
 			say_num(hours, SSM_PRONOUNCED, "");
-			
+
 			if (sat_desetinka == 0 && sat_jedinica == 0)
 			{
 				nop;
@@ -533,13 +533,13 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 					case 1:
 						say_file("time/sat.wav");
 						break;
-						
+
 					case 2:
 					case 3:
 					case 4:
 						say_file("time/sata.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -550,17 +550,17 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						break;
 				}
 			}
-		} 
+		}
 
 		minuta_jedinica = minutes % 10;
-		
+
 		if (minutes > 10)
 			minuta_desetinka = (int) (minutes / 10);
-			
-		if (minutes) 
+
+		if (minutes)
 		{
-			
-			
+
+
 			if (minuta_desetinka == 1)
 			{
 				say_num(minutes, SSM_PRONOUNCED, "");
@@ -574,18 +574,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(minutes, SSM_PRONOUNCED, "je");
 						say_file("time/minute.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(minutes, SSM_PRONOUNCED, "");
 						say_file("time/minute.wav");
 						break;
-					
+
 					case 1:
 							say_num(minutes, SSM_PRONOUNCED, "a");
 							say_file("time/minuta.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -597,14 +597,14 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						break;
 				}
 			}
-		} 
+		}
 
 		sekunda_jedinica = seconds % 10;
-		
+
 		if (seconds > 10)
 			sekunda_desetinka = (int) (seconds / 10);
-			
-		if (seconds) 
+
+		if (seconds)
 		{
 			if (sekunda_desetinka == 1)
 			{
@@ -619,18 +619,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(seconds, SSM_PRONOUNCED, "a");
 						say_file("time/sekunda.wav");
 						break;
-						
+
 					case 2:
 						say_num(seconds, SSM_PRONOUNCED, "je");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(seconds, SSM_PRONOUNCED, "");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -649,18 +649,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(seconds, SSM_PRONOUNCED, "a");
 						say_file("time/sekunda.wav");
 						break;
-						
+
 					case 2:
 						say_num(seconds, SSM_PRONOUNCED, "je");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(seconds, SSM_PRONOUNCED, "");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -672,7 +672,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						break;
 				}
 			}
-		} 
+		}
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -758,15 +758,15 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_day) {
 		say_num(tm.tm_mday, SSM_COUNTED, "");
 	}
-	
+
 	if (say_month) {
 		say_file("time/mon-%d.wav", tm.tm_mon);
 	}
-	
+
 	if (say_year) {
 		int y = tm.tm_year + 1900;
 		int tis = 0;
-		
+
 		//say_num(tm.tm_year + 1900, SSM_PRONOUNCED, "");
 		//1 - 99 => h-1a.wav - h-99a.wav
 		if (y >= 1 && y <= 99)
@@ -795,7 +795,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("digits/thousand-u.wav");
 			if (0 != (int) ((y - 1000) - ((y - 1000) % 100)))
 				say_file("digits/h-%da.wav", (int) ((y - 1000) - ((y - 1000) % 100)));
-				
+
 			say_file("digits/h-%da.wav", (int) y % 100);
 		}
 		//2000  => 2je.wav + thousand-ta.wav
@@ -811,7 +811,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("digits/thousands-e.wav");
 			if (0 != (int) ((y - 2000) - ((y - 2000) % 100)))
 				say_file("digits/h-%da.wav", (int) ((y - 2000) - ((y - 2000) % 100)));
-				
+
 			say_file("digits/h-%da.wav", (int) y % 100);
 		}
 		// 3000 => [3-9].wav + thousand-ta.wav
@@ -828,25 +828,25 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 			tis = y  - (y % 1000);
 			if (0 != (int) ((y - tis) - ((y - tis) % 100)))
 				say_file("digits/h-%da.wav",  (int) ((y - tis) - ((y - tis) % 100)));
-				
+
 			say_file("digits/h-%da.wav", (int) y % 100);
 		}
-		
+
 		//say_num(tm.tm_year + 1900, SSM_COUNTED, "a");
 	}
 
-	
-	if (say_time) 
+
+	if (say_time)
 	{
 		say_num(tm.tm_hour, SSM_PRONOUNCED, "");
-		
+
 		sat_jedinica = tm.tm_hour % 10;
-		
+
 		if (tm.tm_hour >= 10)
 			sat_desetinka = (int) (tm.tm_hour / 10);
-			
-	
-		if (tm.tm_hour) 
+
+
+		if (tm.tm_hour)
 		{
 			if (sat_desetinka == 0 && sat_jedinica == 0)
 			{
@@ -863,13 +863,13 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 					case 1:
 						say_file("time/sat.wav");
 						break;
-						
+
 					case 2:
 					case 3:
 					case 4:
 						say_file("time/sata.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -878,17 +878,17 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 					case 9:
 						say_file("time/sati.wav");
 						break;
-					
+
 				}
 			}
-		} 
-		
+		}
+
 		minuta_jedinica = tm.tm_min % 10;
-		
+
 		if (tm.tm_min >= 10)
 			minuta_desetinka = (int) (tm.tm_min / 10);
-			
-		if (tm.tm_min) 
+
+		if (tm.tm_min)
 		{
 			if (minuta_desetinka == 1)
 			{
@@ -903,18 +903,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(tm.tm_min, SSM_PRONOUNCED, "je");
 						say_file("time/minute.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(tm.tm_min, SSM_PRONOUNCED, "");
 						say_file("time/minute.wav");
 						break;
-					
+
 					case 1:
 						say_num(tm.tm_min, SSM_PRONOUNCED, "a");
 						say_file("time/minuta.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -926,14 +926,14 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						break;
 				}
 			}
-		} 
-		
+		}
+
 		sekunda_jedinica = tm.tm_sec % 10;
-		
+
 		if (tm.tm_sec >= 10)
 			sekunda_desetinka = (int) (tm.tm_sec / 10);
-			
-		if (tm.tm_sec) 
+
+		if (tm.tm_sec)
 		{
 			if (sekunda_desetinka == 1)
 			{
@@ -948,18 +948,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "a");
 						say_file("time/sekunda.wav");
 						break;
-						
+
 					case 2:
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "je");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -978,18 +978,18 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "a");
 						say_file("time/sekunda.wav");
 						break;
-						
+
 					case 2:
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "je");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 3:
 					case 4:
 						say_num(tm.tm_sec, SSM_PRONOUNCED, "");
 						say_file("time/sekunde.wav");
 						break;
-						
+
 					case 0:
 					case 5:
 					case 6:
@@ -1001,7 +1001,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 						break;
 				}
 			}
-		} 
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1013,35 +1013,35 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 	char sbuf[16] = "";
 	char *kuna = NULL;
 	char *lipa = NULL;
-	
+
 	int zadnja_kuna = 0;
 	int predzadnja_kuna = 0;
 	int zadnja_lipa = 0;
 	int predzadnja_lipa = 0;
 
-	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) 
+	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1)))
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	kuna = sbuf;
-	
-	if ((lipa = strchr(sbuf, '.'))) 
+
+	if ((lipa = strchr(sbuf, '.')))
 	{
 		*lipa++ = '\0';
-		if (strlen(lipa) > 2) 
+		if (strlen(lipa) > 2)
 		{
 			lipa[2] = '\0';
 		}
 	}
 
-	if (sbuf[0] == '+') 
+	if (sbuf[0] == '+')
 	{
 		kuna++;
 	}
 
-	if (sbuf[0] == '-') 
+	if (sbuf[0] == '-')
 	{
 		say_file("currency/negative.wav");
 		kuna++;
@@ -1049,11 +1049,11 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 
 	if (kuna != NULL && strlen(kuna) > 0)
 		zadnja_kuna = (int) ((char) *(kuna + strlen(kuna) - 1) - '0');
-		
+
 	if (kuna != NULL && strlen(kuna) > 1)
 		predzadnja_kuna = (int) ((char) *(kuna + strlen(kuna) - 2) - '0');
-		
-		
+
+
 	if (predzadnja_kuna == 1)
 	{
 		hr_say_count(session, "", kuna, say_args, args);
@@ -1068,7 +1068,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 				say_file("currency/kuna.wav");
 				break;
 
-			case 0:				
+			case 0:
 			case 5:
 			case 6:
 			case 7:
@@ -1077,12 +1077,12 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 				hr_say_count(session, "", kuna, say_args, args);
 				say_file("currency/kuna.wav");
 				break;
-				
+
 			case 2:
 				hr_say_count(session, "je", kuna, say_args, args);
 				say_file("currency/kune.wav");
 				break;
-				
+
 			case 3:
 			case 4:
 				hr_say_count(session, "", kuna, say_args, args);
@@ -1090,26 +1090,26 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 				break;
 		}
 	}
-	
+
 	if (lipa)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lipa:%s \n", lipa);
 	else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lipa: NULL \n");
-	
+
 	if (lipa)
 	{
 		/* Say "and" */
 		say_file("currency/and.wav");
-	
+
 		if (lipa != NULL && strlen(lipa) > 0)
 			zadnja_lipa = (int) ((char) *(lipa + strlen(lipa) - 1) - '0');
-		
+
 		if (lipa != NULL && strlen(lipa) > 1)
 			predzadnja_lipa = (int) ((char) *(lipa + strlen(lipa) - 2) - '0');
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "zadnja_lipa:%d \n", zadnja_lipa);	
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "predzadnja_lipa:%d \n", predzadnja_lipa);	
-			
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "zadnja_lipa:%d \n", zadnja_lipa);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "predzadnja_lipa:%d \n", predzadnja_lipa);
+
 		if (predzadnja_lipa == 1)
 		{
 			hr_say_count(session, "", lipa, say_args, args);
@@ -1124,7 +1124,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 					say_file("currency/lipa.wav");
 					break;
 
-				case 0:					
+				case 0:
 				case 5:
 				case 6:
 				case 7:
@@ -1133,12 +1133,12 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 					hr_say_count(session, "", lipa, say_args, args);
 					say_file("currency/lipa.wav");
 					break;
-					
+
 				case 2:
 					hr_say_count(session, "je", lipa, say_args, args);
 					say_file("currency/lipa.wav");
 					break;
-					
+
 				case 3:
 				case 4:
 					hr_say_count(session, "", lipa, say_args, args);

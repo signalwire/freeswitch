@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -110,7 +110,7 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 			menu.ivre_d.result = RES_FOUND;
 			action = action_on_new_message;
 			action_on_new_message_occured = SWITCH_TRUE;
-			
+
 		} else {
 			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 		}
@@ -199,7 +199,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 			goto done;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "API message list return invalid result : %s(%s)\n", profile->api_msg_list, cmd); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "API message list return invalid result : %s(%s)\n", profile->api_msg_list, cmd);
 		goto done;
 	}
 
@@ -227,7 +227,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		if (msg_undeleted) {
 			msg_undeleted = SWITCH_FALSE;
 			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "ack"), "undeleted", menu.phrase_params, NULL, 0);
-		} 
+		}
 		if (msg_saved) {
 			msg_saved = SWITCH_FALSE;
 			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "ack"), "saved", menu.phrase_params, NULL, 0);
@@ -309,14 +309,14 @@ action:
 						vmivr_api_execute(session, profile->api_msg_delete, cmd);
 
 						msg_deleted = SWITCH_TRUE;
-						
+
 						if (action_on_delete) {
 							action = action_on_delete;
-							goto action;	
+							goto action;
 						} else {
 							skip_header = skip_playback = SWITCH_TRUE;
 						}
-					} else { 
+					} else {
 						cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 						vmivr_api_execute(session, profile->api_msg_undelete, cmd);
 
@@ -405,7 +405,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 					forward_msg = SWITCH_FALSE;
 				} else if (!strcasecmp(action, "prepend")) { /* Prepend record msg */
 					vmivr_menu_t sub_menu = { "std_record_message" };
-					
+
 					const char *tmp_filepath = NULL;
 					const char *record_format = NULL;
 
@@ -413,7 +413,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 
 					/* Initialize Menu Configs */
 					menu_init(profile, &sub_menu);
-					
+
 					record_format = switch_event_get_header(sub_menu.event_settings, "Record-Format");
 
 					tmp_filepath = generate_random_file_name(session, "voicemail_ivr", record_format);
@@ -787,7 +787,7 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 		const char *rec_silence_threshold = switch_event_get_header(menu->event_settings, "Record-Silence-Threshold");
 		const char *rec_silence_samplerate = switch_event_get_header(menu->event_settings, "Record-Sample-Rate");
 		const char *rec_maximum_length = switch_event_get_header(menu->event_settings, "Record-Maximum-Length");
-		const char *rec_minimum_length = switch_event_get_header(menu->event_settings, "Record-Minimum-Length"); 
+		const char *rec_minimum_length = switch_event_get_header(menu->event_settings, "Record-Minimum-Length");
 		switch_size_t record_length = 0;
 
 		/* Prepare Recording File Handle */

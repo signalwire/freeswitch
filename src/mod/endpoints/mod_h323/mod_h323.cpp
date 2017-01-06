@@ -1,4 +1,4 @@
-/* 
+/*
  * H323 endpoint interface for Freeswitch Modular Media Switching Software Library /
  * Soft-Switch Application
  *
@@ -19,9 +19,9 @@
  *
  * Contributor(s):
  * Jan Willamowius.
- * 
- * 
- * 
+ *
+ *
+ *
  *
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
@@ -207,7 +207,7 @@ void h_timer(unsigned sec)
 #else
 	timeval timeout;
 	timeout.tv_sec = sec;
-	timeout.tv_usec = 0; 
+	timeout.tv_usec = 0;
 	select(0, NULL, NULL, NULL, &timeout);
 #endif
 }
@@ -255,7 +255,7 @@ class FSTrace : public ostream {
                 *pptr() = (char)c;
                 bufSize++;
             }
-            
+
             if (bufSize != 0) {
                 char *bufPtr = pbase();
                 char *bufEndPtr = NULL;
@@ -263,11 +263,11 @@ class FSTrace : public ostream {
                 bufPtr[bufSize] = '\0';
                 int line = 0;
                 char *p;
-                
+
                 char *file = NULL;
                 switch_log_level_t level;
 
-                
+
                 switch (strtoul(bufPtr, &file, 10)) {
                 case 1 :
                     level = SWITCH_LOG_INFO;
@@ -279,7 +279,7 @@ class FSTrace : public ostream {
 
                 if (file) {
                     while (isspace(*file)) file++;
-                    
+
                     if (file && (bufPtr = strchr(file, '(')) && (bufEndPtr = strchr(bufPtr, ')'))) {
                         char *e;
 
@@ -300,7 +300,7 @@ class FSTrace : public ostream {
                         }
                     }
                 }
-                
+
                 switch_text_channel_t tchannel = SWITCH_CHANNEL_ID_LOG;
 
                 if (!bufPtr) {
@@ -316,7 +316,7 @@ class FSTrace : public ostream {
 
                     switch_log_printf(tchannel, file, func, line, NULL, level, fmt, bufPtr);
                 }
-                
+
             }
 
             return 0;
@@ -352,7 +352,7 @@ PString GetH245CodecName(const H323Capability* cap)
 		case H245_AudioCapability::e_gsmFullRate:
 		case H245_AudioCapability::e_gsmHalfRate:
 		case H245_AudioCapability::e_gsmEnhancedFullRate:
-			return "GSM";	
+			return "GSM";
 	}
 	return "L16";
 }
@@ -369,7 +369,7 @@ FSProcess::~FSProcess(){
 bool FSProcess::Initialise(switch_loadable_module_interface_t *iface)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "======>FSProcess::Initialise [%p]\n", this);
-	
+
 	m_h323endpoint = new FSH323EndPoint();
 	return m_h323endpoint != NULL && m_h323endpoint->Initialise(iface);
 }
@@ -388,13 +388,13 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 	m_freeswitch->interface_name = modulename;
 	m_freeswitch->io_routines = &h323fs_io_routines;
 	m_freeswitch->state_handler = &h323fs_event_handlers;
-			
+
 	PString codec = ((const char *)mod_h323_globals.codec_string);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Config capability %s \n", (const char *)codec);
 
-	if (!codec.IsEmpty()) {		
+	if (!codec.IsEmpty()) {
 		const char** f = h323_formats;
-		for (; *f; f += 2) {			
+		for (; *f; f += 2) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Find capability %s to %s\n",f[1], (const char *)codec);
 			if (codec.Find(f[1]) != P_MAX_INDEX) {
 				PString tmp = f[0];
@@ -410,15 +410,15 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 					AddAllCapabilities(0, 0, tmp);
 					num = GetCapabilities().GetSize() - init;
 				}
-				if (num)					
+				if (num)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "H.323 added %d capabilities '%s' \n",num,(const char *)tmp);
 				else
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "H323 failed to add capability '%s' \n",(const char *)tmp);
-					
-			}		
+
+			}
 		}
 	}
-	
+
 	if (m_fax_old_asn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "--->fax_old_asn\n");
 		SetT38_IFP_PRE();
@@ -427,16 +427,16 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "--->fax_asn\n");
 		SetCapability(0, 0, new FSH323_T38Capability(OpalT38_IFP_COR));
 	}
-		
+
 	AddAllUserInputCapabilities(0, 1);
-	
+
 	DisableFastStart(!m_faststart);
 	DisableH245Tunneling(!m_h245tunneling);
 	DisableH245inSetup(!m_h245insetup);
 	DisableDetectInBandDTMF(!m_dtmfinband);
 	if (!m_endpointname.IsEmpty())
 		SetLocalUserName(m_endpointname);
-	 
+
 	if (m_listeners.empty()) {
 		StartListener("");
 	} else {
@@ -452,7 +452,7 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 		m_thread->SetAutoDelete();
 		m_thread->Resume();
 	}
-	
+
 	return TRUE;
 }
 
@@ -464,7 +464,7 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_memory_pool_t *pool = NULL;
-	
+
 	if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 		return status;
@@ -551,7 +551,7 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload)
 				m_ai = atoi(val);
 			} else if (!strcasecmp(var, "fax-old-asn")) {
 				m_fax_old_asn = switch_true(val);
-			}			
+			}
 		}
 	}
 
@@ -606,7 +606,7 @@ FSH323EndPoint::FSH323EndPoint()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323EndPoint::FSH323EndPoint [%p]\n",this);
 	terminalType = e_GatewayAndMC;
-}	
+}
 
 FSH323EndPoint::~FSH323EndPoint()
 {
@@ -628,12 +628,12 @@ H323Connection  *FSH323EndPoint::CreateConnection(
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------> SWITCH_CALL_DIRECTION_INBOUND\n");
 	}
-	
-	switch_core_session_t *fsSession = switch_core_session_request(GetSwitchInterface(), 
+
+	switch_core_session_t *fsSession = switch_core_session_request(GetSwitchInterface(),
 				(switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL);
 	if (fsSession == NULL)
 		return NULL;
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------> fsSession = %p\n",fsSession);
 	switch_channel_t *fsChannel = switch_core_session_get_channel(fsSession);
 
@@ -641,7 +641,7 @@ H323Connection  *FSH323EndPoint::CreateConnection(
 		switch_core_session_destroy(&fsSession);
 		return NULL;
 	}
-	
+
 	return new FSH323Connection(*this, transport, callReference, (switch_caller_profile_t *)userData, fsSession, fsChannel);
 }
 
@@ -670,7 +670,7 @@ void FSH323EndPoint::StartGkClient(int retry, PString* gkAddress,PString* gkIden
 		if (m_stop_gk) {
 			m_stop_gk = false;
 			return;
-		}		
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Wait next go connect gatekeeper %d\n",retry);
 		h_timer(retry);
 		if (m_stop_gk) {
@@ -681,7 +681,7 @@ void FSH323EndPoint::StartGkClient(int retry, PString* gkAddress,PString* gkIden
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started gatekeeper: %s\n",
-							(const char *)GetGatekeeper()->GetName());	
+							(const char *)GetGatekeeper()->GetName());
 	m_thread = NULL;
 }
 
@@ -692,7 +692,7 @@ void FSH323EndPoint::StopGkClient()
 	if (m_thread) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stop gatekeeper thread\n");
 		m_stop_gk = true;
-		
+
 		while (m_stop_gk){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Wait stop gatekeeper thread\n");
 			h_timer(2);
@@ -727,11 +727,11 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 	tech_pvt->me = this;
 	tech_pvt->active_connection = true;
 	switch_core_session_set_private(m_fsSession, tech_pvt);
-	
+
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
 	switch_mutex_init(&tech_pvt->h323_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
 	switch_mutex_init(&tech_pvt->h323_io_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
-	
+
 	if (outbound_profile != NULL) {
 		SetLocalPartyName(outbound_profile->caller_id_number);
 		SetDisplayName(outbound_profile->caller_id_name);
@@ -745,7 +745,7 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 
 		switch_channel_set_state(m_fsChannel, CS_INIT);
 	}
-}	
+}
 
 FSH323Connection::~FSH323Connection()
 {
@@ -764,13 +764,13 @@ FSH323Connection::~FSH323Connection()
 	} else if (m_RTPlocalPort) {
 		switch_rtp_release_port((const char *)m_RTPlocalIP.AsString(), m_RTPlocalPort);
 	}
-	
+
 	tech_pvt->me = NULL;
 	tech_pvt->active_connection = false;
 //	switch_mutex_unlock(tech_pvt->h323_mutex);
 //	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 	switch_safe_free(tech_pvt->token);
-}	
+}
 
 void FSH323Connection::AttachSignalChannel(const PString & token,
                                          H323Transport * channel,
@@ -796,7 +796,7 @@ bool FSH323Connection::SetLocalCapabilities()
 
 	if (!mod_h323_globals.codec_string)
 		return false;
-    
+
 	bool nocodecs = true;
 	bool changed = false;
 
@@ -813,7 +813,7 @@ bool FSH323Connection::SetLocalCapabilities()
 					if (fastStartChannels[idx].GetCapability() == localCapabilities[i]) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Removing fast start channel %s '%s' (%s)\n",GetDirections[fastStartChannels[idx].GetDirection()],(const char*)fname,(const char*)format);
 						fastStartChannels.RemoveAt(idx--);
-					}		
+					}
 				}
 				localCapabilities.Remove(fname);
 				i--;
@@ -825,7 +825,7 @@ bool FSH323Connection::SetLocalCapabilities()
 	if (nocodecs) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No codecs remaining for H323 connection [%p]\n",this);
 		changed = false;
-		ClearCall(EndedByCapabilityExchange);		
+		ClearCall(EndedByCapabilityExchange);
 	}
 
 	return changed;
@@ -836,12 +836,12 @@ bool FSH323Connection::decodeCapability(const H323Capability& capability, const 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::decodeCapability [%p]\n",this);
 
 	PString fname((const char *)capability.GetFormatName());
-  
+
 	if (fname.Find("{sw}") == (fname.GetLength() - 4))
 		fname = fname.Mid(0,fname.GetLength()-4);
 	if (fname.Find("{hw}") == (fname.GetLength() - 4))
 		fname = fname.Mid(0,fname.GetLength()-4);
-		
+
 	OpalMediaFormat oformat(fname, false);
 	int pload = oformat.GetPayloadType();
 	const char *format = 0;
@@ -853,7 +853,7 @@ bool FSH323Connection::decodeCapability(const H323Capability& capability, const 
 			break;
 		}
 	}
-    
+
 	if (format) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"capability '%s' format '%s' %d\n",(const char*)fname,format,pload);
 		if (capabName)
@@ -872,7 +872,7 @@ H323Connection::AnswerCallResponse FSH323Connection::OnAnswerCall(const PString 
     const H323SignalPDU &setupPDU, H323SignalPDU &connectPDU)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnAnswerCall caller = %s [%p]\n",(const char*)caller,this);
-	
+
 	if (m_fsSession == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session request failed.\n");
 		return H323Connection::AnswerCallDenied;
@@ -902,14 +902,14 @@ H323Connection::AnswerCallResponse FSH323Connection::OnAnswerCall(const PString 
 	else {
 		PString callnam;
 		if (q931.GetCalledPartyNumber(callnam)) {
-			called=(const char *)callnam;			
+			called=(const char *)callnam;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Called-Party-Number = %s\n",(const char*)called);
 		}
 	}
-	
+
 	PIPSocket::Address remote_network_addr;
 	GetSignallingChannel()->GetRemoteAddress().GetIpAddress(remote_network_addr);
-       
+
 	switch_caller_profile_t *caller_profile = switch_caller_profile_new(switch_core_session_get_pool(m_fsSession),
                                                                         NULL,
                                                                         /** username */
@@ -976,7 +976,7 @@ H323Connection::AnswerCallResponse FSH323Connection::OnAnswerCall(const PString 
 H323Channel* FSH323Connection::CreateRealTimeLogicalChannel(const H323Capability& capability,H323Channel::Directions dir,unsigned sessionID,const H245_H2250LogicalChannelParameters* param, RTP_QOS * rtpqos)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::CreateRealTimeLogicalChannel [%p]\n",this);
-	
+
 	H323TransportAddress m_h323transportadd = GetSignallingChannel()->GetLocalAddress();
 	m_h323transportadd.GetIpAddress(m_RTPlocalIP);
 	if (!m_RTPlocalPort) {
@@ -996,7 +996,7 @@ PBoolean FSH323Connection::OnStartLogicalChannel(H323Channel & channel)
 PBoolean FSH323Connection::OnCreateLogicalChannel(const H323Capability& capability, H323Channel::Directions dir, unsigned& errorCode)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnCreateLogicalChannel ('%s',%s) [%p]\n",(const char *)capability.GetFormatName(),GetDirections[dir],this);
-    
+
 	return H323Connection::OnCreateLogicalChannel(capability,dir,errorCode);
 }
 
@@ -1011,7 +1011,7 @@ void FSH323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_write [%p]\n",m_fsSession);
 	}
 	tech_pvt->me = NULL;
-	switch_channel_hangup(switch_core_session_get_channel(m_fsSession),(switch_call_cause_t)pdu.GetQ931().GetCause()); 
+	switch_channel_hangup(switch_core_session_get_channel(m_fsSession),(switch_call_cause_t)pdu.GetQ931().GetCause());
 
 	return H323Connection::OnReceivedReleaseComplete(pdu);
 }
@@ -1042,7 +1042,7 @@ bool FSH323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"---------> after callProceedingPDU.BuildCallProceeding connectionState = %s [%p]\n",ConnectionStatesNames[connectionState],this);
 	if (connectionState == ShuttingDownConnection){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"---------> connectionState = ShuttingDownConnection [%p]\n",this);
-		return false; 
+		return false;
 	}
 
 	if (SendFastStartAcknowledge(callProceeding.m_fastStart)) {
@@ -1069,7 +1069,7 @@ bool FSH323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 		return false;
 	}
 
-	return true;		
+	return true;
 }
 
 bool FSH323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
@@ -1094,7 +1094,7 @@ bool FSH323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
 
 bool FSH323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendCallProceeding fastStartState = %s [%p]\n",FastStartStateNames[fastStartState],this);	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendCallProceeding fastStartState = %s [%p]\n",FastStartStateNames[fastStartState],this);
 
 	return false;
 //	return true;
@@ -1102,7 +1102,7 @@ bool FSH323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 
 bool FSH323Connection::OnSendReleaseComplete(H323SignalPDU & pdu)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendReleaseComplete cause = %u\n",(switch_call_cause_t)pdu.GetQ931().GetCause());	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendReleaseComplete cause = %u\n",(switch_call_cause_t)pdu.GetQ931().GetCause());
 
 	switch_channel_hangup(m_fsChannel, (switch_call_cause_t) pdu.GetQ931().GetCause());
 	return H323Connection::OnSendReleaseComplete(pdu);
@@ -1127,19 +1127,19 @@ bool FSH323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCa
 		return false;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>END H323Connection::OnReceivedCapabilitySet [%p]\n",this);
-	
+
 	for (int i = 0; i < remoteCapabilities.GetSize(); ++i) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----> Capabilities = %s\n",(const char*)(remoteCapabilities[i].GetFormatName()));
 	}
-	
+
 	H323Capability * cap = remoteCapabilities.FindCapability(H323Capability::e_Audio);
 	if (cap == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----> Capabilities is NULL \n");
 		return false;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----> Capabilities not NULL \n");
-	
-	return connectionState != ShuttingDownConnection;						
+
+	return connectionState != ShuttingDownConnection;
 }
 
 bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PString &user)
@@ -1147,7 +1147,7 @@ bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PStrin
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>PFSH323Connection::OnAlerting user = %s [%p]\n",(const char *)user,this);
 	unsigned pi;
 	switch_channel_mark_ring_ready(m_fsChannel);
-	
+
 	if (!alertingPDU.GetQ931().GetProgressIndicator(pi))
 		pi = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----------->OnAlerting PI = %u\n",pi);
@@ -1164,7 +1164,7 @@ bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PStrin
 void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::AnsweringCall [%p]\n",this);
-	
+
 	switch (response) {
 		case AnswerCallDeferredWithMedia:{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Answering call: %s\n",GetAnswerCallResponse[response]);
@@ -1198,15 +1198,15 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 						}
 						fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
 						controlChannel->SetUpTransportPDU(fac.m_h245Address, TRUE);
-					} 
+					}
 					else
 						sendPDU = FALSE;
 				}
-*/				
-				const char *vpi = switch_channel_get_variable(m_fsChannel, "progress-indication"); 
+*/
+				const char *vpi = switch_channel_get_variable(m_fsChannel, "progress-indication");
 				unsigned pi = 8;
 				if (vpi){
-					pi = atoi(vpi); 
+					pi = atoi(vpi);
 				}
 				else pi = m_endpoint->m_pi;
 				if ((pi< 1) || (pi > 8)||(pi == 7)) pi = 8;
@@ -1220,7 +1220,7 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 			Unlock();
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->UnLock\n");
 			return;
-		} 
+		}
 		case AnswerCallPending :{
 			if (alertingPDU != NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->Lock\n");
@@ -1229,17 +1229,17 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->Lock ok\n");
 				// send Q931 Alerting PDU
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Sending Alerting PDU\n");
-				
-				const char *vai = switch_channel_get_variable(m_fsChannel, "alerting-indication"); 
+
+				const char *vai = switch_channel_get_variable(m_fsChannel, "alerting-indication");
 				unsigned ai = 0;
 				if (vai){
-					ai = atoi(vai); 
+					ai = atoi(vai);
 				}
 				else ai = m_endpoint->m_ai;
 				if ((ai< 0) || (ai > 8)||(ai == 7)) ai = 8;
 				if (ai > 0)
 					(*alertingPDU).GetQ931().SetProgressIndicator(ai);
-				
+
 				HandleTunnelPDU(alertingPDU);
 				WriteSignalPDU(*alertingPDU);
 				alertingTime = PTime();
@@ -1250,20 +1250,20 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 			}
 		}
 		default :H323Connection::AnsweringCall(response);
-	} 
+	}
 }
 
 void FSH323Connection::OnEstablished()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>PFSH323Connection::OnEstablished [%p]\n",this);
-	if(m_startRTP)		
+	if(m_startRTP)
 		switch_channel_mark_answered(m_fsChannel);
 	else
 		m_ChannelAnswer = true;
 
 	if (m_active_channel_fax)
 		RequestModeChangeT38("T.38\nT.38");
-	else 
+	else
 		m_active_channel_fax = true;
 }
 PBoolean FSH323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
@@ -1292,7 +1292,7 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 	for (PINDEX i = 0; i < newMode.GetSize(); i++) {
 		H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
 		if (PAssertNULL(capability) != NULL)  {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Open channel after mode change: %s\n",(const char*)(capability->GetFormatName()));			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Open channel after mode change: %s\n",(const char*)(capability->GetFormatName()));
 			if (capability->GetMainType() == H323Capability::e_Data){
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"capability->GetMainType() = H323Capability::e_Data\n");
 				H245_DataMode & type = newMode[i].m_type;
@@ -1308,18 +1308,18 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"switch_core_session_alloc t38_options\n");
 					}
 					t38_options->T38VendorInfo = "0 0 0";
-					
+
 					t38_options->T38FaxVersion = (uint16_t)profile.m_version;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxVersion:%lu\n",(unsigned long)profile.m_version);
 					t38_options->T38MaxBitRate = type.m_bitRate*100;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38MaxBitRate:%d\n",t38_options->T38MaxBitRate);
-					if (profile.m_fillBitRemoval) 
+					if (profile.m_fillBitRemoval)
 						t38_options->T38FaxFillBitRemoval = SWITCH_TRUE;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxFillBitRemoval:%d\n",(int)profile.m_fillBitRemoval);
 					if (profile.m_transcodingMMR)
 						t38_options->T38FaxTranscodingMMR = SWITCH_TRUE;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxTranscodingMMR:%d\n",(int)profile.m_transcodingMMR);
-					if (profile.m_transcodingJBIG) 
+					if (profile.m_transcodingJBIG)
 						t38_options->T38FaxTranscodingJBIG = SWITCH_TRUE;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxTranscodingJBIG:%d\n",(int)profile.m_transcodingJBIG);
 					if (profile.m_t38FaxRateManagement.GetTag() == H245_T38FaxRateManagement::e_transferredTCF)
@@ -1336,10 +1336,10 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 					else
 						t38_options->T38FaxUdpEC = "t38UDPRedundancy";
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxUdpEC:%s\n",t38_options->T38FaxUdpEC);
-					const char *uuid = switch_channel_get_partner_uuid(m_fsChannel); 
+					const char *uuid = switch_channel_get_partner_uuid(m_fsChannel);
 					if (uuid != NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",uuid);
-						
+
 						switch_core_session_t *session = switch_core_session_locate(switch_channel_get_partner_uuid(m_fsChannel));
 						if (session) {
 							switch_channel_t * channel = switch_core_session_get_channel(session);
@@ -1351,19 +1351,19 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 							switch_core_session_rwunlock(session);
 						}else{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no session\n");
-						}						
-					
-					
+						}
+
+
 						switch_core_session_message_t msg = { 0 };
 						int insist = 0;
 						const char *v;
 						if ((v = switch_channel_get_variable(m_fsChannel, "fax_enable_t38_insist"))) {
 							insist = switch_true(v);
-						} 
+						}
 						msg.from = switch_channel_get_name(m_fsChannel);
 						msg.message_id = SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA;
 						msg.numeric_arg = insist;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",switch_channel_get_uuid(switch_core_session_get_channel(switch_channel_get_session(m_fsChannel))));					
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",switch_channel_get_uuid(switch_core_session_get_channel(switch_channel_get_session(m_fsChannel))));
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",uuid);
 						switch_core_session_message_send(uuid,&msg);
 					} else {
@@ -1371,7 +1371,7 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 					}
 				}
 			}
-		} 
+		}
 	}
 	H323Connection::OnModeChanged(newMode);
 }
@@ -1379,7 +1379,7 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 bool FSH323Connection::OnSendSignalSetup(H323SignalPDU & setupPDU)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>PFSH323Connection::OnSendSignalSetup [%p]\n",this);
-	setupPDU.GetQ931().SetBearerCapabilities(Q931::TransferSpeech, 1); 
+	setupPDU.GetQ931().SetBearerCapabilities(Q931::TransferSpeech, 1);
 	return true;
 }
 
@@ -1397,14 +1397,14 @@ void FSH323Connection::setRemoteAddress(const char* remoteIP, WORD remotePort)
 switch_status_t FSH323Connection::on_execute()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::on_execute [%p]\n",this);
-    
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSH323Connection::on_routing()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::on_routing [%p]\n",this);
-   
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1417,7 +1417,7 @@ switch_status_t FSH323Connection::kill_channel(int sig)
 	if (!tech_pvt) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch (sig) {
 		case SWITCH_SIG_BREAK:
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -1427,7 +1427,7 @@ switch_status_t FSH323Connection::kill_channel(int sig)
 		case SWITCH_SIG_KILL:
 		default:
 			m_rxAudioOpened.Signal();
-			m_txAudioOpened.Signal();        
+			m_txAudioOpened.Signal();
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				if ((m_rtp_resetting == 1)) {
 					switch_core_session_unlock_codec_read(m_fsSession);
@@ -1523,12 +1523,12 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 			AnsweringCall(AnswerCallPending);
 			AnsweringCall(AnswerCallDeferredWithMedia);
-			
+
 			if (m_txChannel && m_rxChannel){
 				if (!switch_channel_test_flag(m_fsChannel, CF_EARLY_MEDIA)) {
 					switch_channel_mark_pre_answered(m_fsChannel);
 				}
-			} else { 
+			} else {
 				m_callOnPreAnswer = true;
 				if (fastStartState == FastStartDisabled){
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-------------------->m_txAudioOpened.Wait START [%p]\n",this);
@@ -1544,10 +1544,10 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			}
 			AnsweringCall(H323Connection::AnswerCallNow);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Media started on connection [%p]\n",this);
-		
+
 			if (m_txChannel && m_rxChannel){
 				if (!switch_channel_test_flag(m_fsChannel, CF_EARLY_MEDIA)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-------------------->switch_channel_mark_answered(m_fsChannel) [%p]\n",this);					
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-------------------->switch_channel_mark_answered(m_fsChannel) [%p]\n",this);
 					switch_channel_mark_answered(m_fsChannel);
 				}
 			} else{
@@ -1573,7 +1573,7 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 			if (m_active_channel_fax)
 				RequestModeChangeT38("T.38\nT.38");
-			else 
+			else
 				m_active_channel_fax = true;
 			break;
 		}
@@ -1625,7 +1625,7 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 		}
 		default:{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Received message id = %d [%p]\n", msg->message_id,this);
-		}	
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1664,14 +1664,14 @@ switch_status_t FSH323Connection::on_init()
 switch_status_t FSH323Connection::on_exchange_media()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::on_exchange_media [%p]\n",this);
-    
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSH323Connection::on_soft_execute()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::on_soft_execute [%p]\n",this);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1759,7 +1759,7 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
 	if (!switch_channel_ready(m_fsChannel)) {
-		switch_clear_flag_locked(tech_pvt, TFLAG_READING);		
+		switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 #ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n");
 #endif
@@ -1789,7 +1789,7 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 #ifdef DEBUG_RTP_PACKETS
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n\n");
 #endif
-			return status;			
+			return status;
 		}
 
 //		PTRACE(4, "mod_h323\t--------->\n source = "<<tech_pvt->read_frame.source<< "\n packetlen = "<<tech_pvt->read_frame.packetlen<<"\n datalen = "<<tech_pvt->read_frame.datalen<<"\n samples = "<<tech_pvt->read_frame.samples<<"\n rate = "<<tech_pvt->read_frame.rate<<"\n payload = "<<(int)tech_pvt->read_frame.payload<<"\n timestamp = "<<tech_pvt->read_frame.timestamp<<"\n seq = "<<tech_pvt->read_frame.seq<<"\n ssrc = "<<tech_pvt->read_frame.ssrc);
@@ -1817,7 +1817,7 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 
 	switch_mutex_unlock(tech_pvt->h323_io_mutex);
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
-	
+
 	*frame = &tech_pvt->read_frame;
 #ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n\n");
@@ -1831,11 +1831,11 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 #ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame [%p]\n",this);
 #endif
-	
+
 	/*switch_channel_t *channel = NULL;
 	h323_private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	channel = switch_core_session_get_channel(m_fsSession);
 	assert(channel != NULL);
 
@@ -1860,14 +1860,14 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
 	switch_assert(tech_pvt != NULL);
-	
+
 	if (!switch_channel_ready(m_fsChannel)) {
 #ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
 #endif
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
 		if (switch_channel_ready(m_fsChannel)) {
 			switch_yield(10000);
@@ -1878,7 +1878,7 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 			return SWITCH_STATUS_GENERR;
 		}
 	}
-	
+
 	if (!switch_core_codec_ready(&tech_pvt->read_codec) || !tech_pvt->read_codec.implementation) {
 #ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
@@ -1894,11 +1894,11 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
-	
+
 	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame) < 0) {
 		status = SWITCH_STATUS_GENERR;
 	}
-	
+
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 #ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
@@ -1923,9 +1923,9 @@ switch_status_t FSH323Connection::write_video_frame(switch_frame_t *frame, switc
 
 FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(FSH323Connection& connection,
 							const H323Capability& capability,
-							Directions direction, 
+							Directions direction,
 							unsigned sessionID,
-							const PIPSocket::Address& ip, 
+							const PIPSocket::Address& ip,
 							WORD dataPort)
 	: H323_ExternalRTPChannel(connection, capability, direction, sessionID,ip,dataPort)
 	, m_conn(&connection)
@@ -1934,23 +1934,23 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(FSH323Connection& connectio
 	, m_RTPlocalPort(dataPort)
 	, m_sessionID(sessionID)
 	, m_rtp_resetting(0)
-{ 
+{
 	m_RTPlocalIP = (const char *)ip.AsString();
 	SetExternalAddress(H323TransportAddress(ip, dataPort), H323TransportAddress(ip, dataPort+1));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel sessionID = %d :%s addr = %s:%d [%p]\n",sessionID,GetDirections[GetDirection()],(const char*)m_RTPlocalIP,m_RTPlocalPort,this);	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel sessionID = %d :%s addr = %s:%d [%p]\n",sessionID,GetDirections[GetDirection()],(const char*)m_RTPlocalIP,m_RTPlocalPort,this);
 
 	m_fsChannel = switch_core_session_get_channel(m_fsSession);
 	//SetExternalAddress(H323TransportAddress(localIpAddress, m_RTPlocalPort), H323TransportAddress(localIpAddress, m_RTPlocalPort+1));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------->capability.GetPayloadType() return = %s\n",((capability.GetPayloadType() <= RTP_DataFrame::LastKnownPayloadType)?PayloadTypesNames[capability.GetPayloadType()]:"[pt=128]"));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------->capability.GetFormatName() return = %s\n",(const char*)(capability.GetFormatName()));
-	
+
 	PString fname((const char *)capability.GetFormatName());
-  
+
 	if (fname.Find("{sw}") == (fname.GetLength() - 4))
 		fname = fname.Mid(0,fname.GetLength()-4);
 	if (fname.Find("{hw}") == (fname.GetLength() - 4))
 		fname = fname.Mid(0,fname.GetLength()-4);
-	
+
 	OpalMediaFormat format(fname, FALSE);
 	m_format = &format;
 	payloadCode = (BYTE)format.GetPayloadType();
@@ -1960,12 +1960,12 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(FSH323Connection& connectio
 
 FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel()
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel  %s [%p]\n",GetDirections[GetDirection()],this);		
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel  %s [%p]\n",GetDirections[GetDirection()],this);
 	if (m_rtp_resetting) {
 		switch_core_session_unlock_codec_read(m_fsSession);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_read [%p]\n",m_fsSession);
 		switch_core_session_unlock_codec_write(m_fsSession);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_write [%p]\n",m_fsSession);	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_write [%p]\n",m_fsSession);
 	}
 }
 
@@ -1981,19 +1981,19 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	char * timer_name = NULL;
 	const char *var;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->m_sessionID = %d  m_active_sessionID = %d\n",sessionID,m_conn->m_active_sessionID);    
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->m_sessionID = %d  m_active_sessionID = %d\n",sessionID,m_conn->m_active_sessionID);
 	if (!(m_conn && H323_ExternalRTPChannel::Start())) {
 		switch_mutex_unlock(tech_pvt->h323_mutex);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 		return false;
 	}
-	
+
 	if ((tech_pvt->me == NULL) || ((tech_pvt->me != NULL) && tech_pvt->me->m_channel_hangup)) {
 		switch_mutex_unlock(tech_pvt->h323_mutex);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 		return false;
 	}
-	
+
 	if ((m_conn->m_active_sessionID != 0) && (m_conn->m_active_sessionID != sessionID)) {
 		if (switch_core_codec_ready(&tech_pvt->read_codec) || switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->Changing Codec to %s\n",(const char*)GetH245CodecName(m_capability));
@@ -2048,14 +2048,14 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 		}
 		default:break;
 	}
-		
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->GetFrameSize() return = %u\n",(unsigned)m_format->GetFrameSize());
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->GetFrameTime() return = %u\n",m_format->GetFrameTime());
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->payloadCode = %d\n",(int)payloadCode);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->m_codec_ms return =  %u\n",m_codec_ms);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->m_capability->GetFormatName() return =  %s\n",(const char*)(m_capability->GetFormatName()));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->GetH245CodecName() return =  %s\n",(const char*)GetH245CodecName(m_capability));
-	
+
 	if (GetDirection() == IsReceiver) {
 		codec = isAudio ? &tech_pvt->read_codec : &tech_pvt->vid_read_codec;
 		//m_switchTimer = isAudio ? &tech_pvt->read_timer : &tech_pvt->vid_read_timer;
@@ -2068,14 +2068,14 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			//m_switchTimer = isAudio ? &tech_pvt->read_timer : &tech_pvt->vid_read_timer;
 		}
 	}
-	
+
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec; /* Set codec here - no need to set it every time a frame is read */
 
 	if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, NULL, // FMTP
 		8000, m_codec_ms, 1,  // Channels
 		SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
 		switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
-        
+
 		if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, NULL, // FMTP
 			8000, 0, 1,  // Channels
 			SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
@@ -2095,7 +2095,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 
 	if (GetDirection() == IsReceiver) {
 		//m_readFrame.rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
-		
+
 		if (isAudio) {
 			switch_core_session_set_read_codec(m_fsSession, codec);
 			/*if (switch_core_timer_init(m_switchTimer,
@@ -2103,7 +2103,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 				codec->implementation->microseconds_per_packet / 1000,
 				codec->implementation->samples_per_packet,
 				switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
-				
+
 				switch_core_codec_destroy(codec);
 				codec = NULL;
 				switch_mutex_unlock(tech_pvt->h323_mutex);
@@ -2135,35 +2135,35 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 						return false;
 				}
 				switch_channel_set_variable(m_fsChannel,"timer_name","soft");*/
-			}	
+			}
 		} else {
 			switch_core_session_set_video_write_codec(m_fsSession, codec);
 			switch_channel_set_flag(m_fsChannel, CF_VIDEO);
 		}
 	}
-	
+
 //	PTRACE(4, "mod_h323\tSet " << ((GetDirection() == IsReceiver)? " read" : " write") << ' '
 //		<< m_capability->GetMainType() << " codec to << " << m_capability << " for connection " << *this);
-		
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Set %s %s codec to %s  for connection [%p]\n",((GetDirection() == IsReceiver)? " read" : " write")
 		,GetMainTypes[m_capability->GetMainType()],(const char*)m_capability->GetFormatName(),this);
-		
+
 	PIPSocket::Address remoteIpAddress;
-	GetRemoteAddress(remoteIpAddress,m_RTPremotePort);	
+	GetRemoteAddress(remoteIpAddress,m_RTPremotePort);
 	m_RTPremoteIP = (const char *)remoteIpAddress.AsString();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->tech_pvt->rtp_session = [%p]\n",tech_pvt->rtp_session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->samples_per_packet = %lu\n", codec->implementation->samples_per_packet);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->actual_samples_per_second = %lu\n", codec->implementation->actual_samples_per_second);
-	
+
 	bool ch_port = false;
 	if (tech_pvt->rtp_session != NULL){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->old remote port = %d new remote port = %d\n",switch_rtp_get_remote_port(tech_pvt->rtp_session),m_RTPremotePort);
 		if ((switch_rtp_get_remote_port(tech_pvt->rtp_session) != m_RTPremotePort) && (GetDirection() != IsReceiver) && (m_conn->m_rtp_resetting == 1)){
 			ch_port = true;
 			m_conn->m_startRTP = false;
-			
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_lock_codec_read [%p]\n",m_fsSession);
-			switch_core_session_lock_codec_read(m_fsSession);			
+			switch_core_session_lock_codec_read(m_fsSession);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_io_mutex_lock\n");
 			switch_mutex_lock(tech_pvt->h323_io_mutex);
 			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
@@ -2173,8 +2173,8 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			switch_rtp_destroy(&tech_pvt->rtp_session);
 		}
 	}
-	
-	if ((!m_conn->m_startRTP)) {			
+
+	if ((!m_conn->m_startRTP)) {
 		flags[SWITCH_RTP_FLAG_DATAWAIT] = (switch_rtp_flag_t)1;
 		flags[SWITCH_RTP_FLAG_RAW_WRITE] = (switch_rtp_flag_t)1;
 
@@ -2196,7 +2196,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 							(const char *)m_RTPremoteIP,
 							m_RTPremotePort,
 							(switch_payload_t)payloadCode,
-							codec->implementation->samples_per_packet,	
+							codec->implementation->samples_per_packet,
 							codec->implementation->microseconds_per_packet,
 							flags, timer_name, &err,
 							switch_core_session_get_pool(m_fsSession));
@@ -2207,7 +2207,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			switch_channel_set_flag(m_fsChannel, CF_FS_RTP);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
-			switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);			
+			switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_mutex_unlock(tech_pvt->h323_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 			return SWITCH_STATUS_FALSE;
@@ -2225,7 +2225,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->External RTP address %s:%u\n",(const char*)m_RTPremoteIP,m_RTPremotePort);
-	
+
 	if (GetDirection() == IsReceiver) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_io_mutex_lock\n");
 		switch_mutex_lock(tech_pvt->h323_io_mutex);
@@ -2233,7 +2233,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 		switch_mutex_unlock(tech_pvt->h323_io_mutex);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_io_mutex_unlock\n");
 	}
-	
+
 	if (m_conn->m_rtp_resetting) {
 		if (GetDirection() == IsReceiver) {
 			switch_core_session_unlock_codec_read(m_fsSession);
@@ -2242,25 +2242,25 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			switch_core_session_unlock_codec_write(m_fsSession);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_write [%p]\n",m_fsSession);
 			if (m_conn->m_callOnPreAnswer) {
-				switch_core_session_unlock_codec_read(m_fsSession);	
+				switch_core_session_unlock_codec_read(m_fsSession);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_read [%p]\n",m_fsSession);
 			}
 		}
 	}
-	
+
 	if (GetDirection() == IsReceiver)
 		m_conn->m_rxAudioOpened.Signal();
 	else
-		m_conn->m_txAudioOpened.Signal();                             
-	
+		m_conn->m_txAudioOpened.Signal();
+
 	if (m_conn->m_ChannelAnswer && m_conn->m_rxChannel &&  m_conn->m_txChannel)
 		switch_channel_mark_answered(m_fsChannel);
-		
+
 	if ((m_conn->m_ChannelProgress && m_conn->m_rxChannel)||(m_conn->m_callOnPreAnswer && m_conn->m_txChannel))
 		switch_channel_mark_pre_answered(m_fsChannel);
 
 	if (m_capability->GetMainType() == H323Capability::e_Data && m_conn->m_rxChannel &&  m_conn->m_txChannel) {
-		const char *uuid = switch_channel_get_partner_uuid(m_fsChannel); 
+		const char *uuid = switch_channel_get_partner_uuid(m_fsChannel);
 		if (uuid != NULL){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------------->switch_rtp_udptl_mode\n");
 			switch_rtp_udptl_mode(tech_pvt->rtp_session);
@@ -2279,7 +2279,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 PBoolean FSH323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters& param, unsigned& errorCode)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::OnReceivedPDU [%p]\n",this);
-	
+
 	if (!H323_ExternalRTPChannel::OnReceivedPDU(param,errorCode))
 		return true;
 	PIPSocket::Address remoteIpAddress;
@@ -2312,25 +2312,25 @@ void FSH323_ExternalRTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParamet
 FSH323Connection * FSH323EndPoint::FSMakeCall(const PString & dest, void *userData)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323EndPoint::FSMakeCall DST NUMBER = %s [%p]\n",(const char*)dest,this);
-	
+
 	FSH323Connection * connection;
 	PString token;
 	H323Transport *transport = NULL;
-	
+
 	if (listeners.GetSize() > 0) {
 		H323TransportAddress taddr = listeners[0].GetTransportAddress();
 		PIPSocket::Address addr;
 		WORD port;
-		if (taddr.GetIpAndPort(addr, port)) {				
+		if (taddr.GetIpAndPort(addr, port)) {
 			if (addr) {
 				transport = new H323TransportTCP(*this, addr,false);
-				if (!transport)						
+				if (!transport)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----> Unable to create transport for outgoing call\n");
 			}
 		} else
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----> Unable to get address and port\n");
 	}
-	
+
 	if (!(connection = (FSH323Connection *)H323EndPoint::MakeCall(dest, token, userData))) {
 		return NULL;
 	}
@@ -2344,7 +2344,7 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t *sessio
                                                    switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>create_outgoing_channel DST NUMBER = %s\n",outbound_profile->destination_number);
-	
+
 	FSH323Connection * connection;
 	if (h323_process == NULL) {
 		return SWITCH_CAUSE_CRASH;
@@ -2365,7 +2365,7 @@ static switch_status_t on_destroy(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>on_destroy\n");
 
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session);
-    
+
 	if (tech_pvt) {
 		if (tech_pvt->read_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -2400,7 +2400,7 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	FSH323Connection *me = tech_pvt->me;
 	FSH323EndPoint & ep = h323_process->GetH323EndPoint();
 	tech_pvt->me = NULL;
-    
+
 	if (me) {
 		if (me->m_rtp_resetting == 1) {
 			switch_core_session_unlock_codec_read(session);
@@ -2424,7 +2424,7 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> () = %d\n",trylock);
 		if (trylock == 1) {
 			const PString currentToken(tech_pvt->token);
-			FSH323Connection *connection = (FSH323Connection *)me->GetEndPoint()->FindConnectionWithLock(currentToken); 
+			FSH323Connection *connection = (FSH323Connection *)me->GetEndPoint()->FindConnectionWithLock(currentToken);
 			if (connection) {
 				connection->Unlock();
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> connection->UnLock()\n");
@@ -2453,6 +2453,6 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "H323 connection was cleared successfully\n");
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }

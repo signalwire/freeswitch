@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <arpa/inet.h>
-#include <sys/wait.h> 
+#include <sys/wait.h>
 #include <sys/socket.h>
 #else
 #pragma warning(disable:4996)
@@ -95,7 +95,7 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto);
 
 #ifndef _MSC_VER
 static inline uint64_t get_unaligned_uint64(const void *p)
-{   
+{
     const struct { uint64_t d; } __attribute__((packed)) *pp = p;
     return pp->d;
 }

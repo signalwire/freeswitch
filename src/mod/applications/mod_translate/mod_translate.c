@@ -143,7 +143,7 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				goto end;
 			}
 			memset(substituted, 0, len);
-			
+
 			switch_perform_substitution(re, proceed, rule->replace, number, substituted, len, ovector);
 
 			if ((switch_string_var_check_const(substituted) || switch_string_has_escaped_data(substituted))) {

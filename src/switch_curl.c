@@ -2,7 +2,7 @@
 #include "switch_curl.h"
 #include <curl/curl.h>
 
-SWITCH_DECLARE(switch_CURL *) switch_curl_easy_init(void) 
+SWITCH_DECLARE(switch_CURL *) switch_curl_easy_init(void)
 {
 	return curl_easy_init();
 }
@@ -81,7 +81,7 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_even
 
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
 			char *pname = strdup(hp->name + 12);
-			
+
 			if (pname) {
 				char *fname = strchr(pname, ':');
 				if (fname) {

@@ -2,23 +2,23 @@
  * Copyright (c) 2016, Athonet (www.athonet.com)
  * Dragos Oancea  <dragos.oancea@athonet.com>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,13 +42,13 @@ extern const int switch_amr_frame_sizes[];
 /* Bandwidth Efficient AMR-NB */
 /* https://tools.ietf.org/html/rfc4867#page-17 */
 
-extern switch_bool_t switch_amr_pack_be(unsigned char *shift_buf, int n) 
+extern switch_bool_t switch_amr_pack_be(unsigned char *shift_buf, int n)
 {
 	uint8_t save_toc, ft;
 
 	save_toc = shift_buf[1];
 
-	/* we must convert OA TOC -> BE TOC */ 
+	/* we must convert OA TOC -> BE TOC */
 	/* OA TOC
 	0 1 2 3 4 5 6 7
 	+-+-+-+-+-+-+-+-+
@@ -68,8 +68,8 @@ extern switch_bool_t switch_amr_pack_be(unsigned char *shift_buf, int n)
 	 +-+-+-+-+-+-+
 	|F|  FT   |Q|
 	+-+-+-+-+-+-+
-	F = 0 , FT = XXXX , Q = 1 
-	eg: Frame Types (FT): ftp://www.3gpp.org/tsg_sa/TSG_SA/TSGS_04/Docs/PDF/SP-99253.pdf - table 1a 
+	F = 0 , FT = XXXX , Q = 1
+	eg: Frame Types (FT): ftp://www.3gpp.org/tsg_sa/TSG_SA/TSGS_04/Docs/PDF/SP-99253.pdf - table 1a
 	*/
 
 	ft = save_toc >> 3 ; /* drop Q, P1, P2  */
@@ -86,19 +86,19 @@ extern switch_bool_t switch_amr_pack_be(unsigned char *shift_buf, int n)
 		shift_buf[1] |= 1 << 7;
 	} else {
 		/* reset last bit of TOC instead of P2 */
-		shift_buf[1] &= ~(1 << 7);  
+		shift_buf[1] &= ~(1 << 7);
 	}
 
 	return SWITCH_TRUE;
 }
 
-extern switch_bool_t switch_amr_unpack_be(unsigned char *encoded_buf, uint8_t *tmp, int encoded_len) 
+extern switch_bool_t switch_amr_unpack_be(unsigned char *encoded_buf, uint8_t *tmp, int encoded_len)
 {
 	int framesz, index, ft;
 	uint8_t shift_tocs[2] = {0x00, 0x00};
 	uint8_t *shift_buf;
 
-	memcpy(shift_tocs, encoded_buf, 2); 
+	memcpy(shift_tocs, encoded_buf, 2);
 	/* shift for BE */
 	switch_amr_array_lshift(4, shift_tocs, 2);
 	ft = shift_tocs[0] >> 3;
@@ -117,7 +117,7 @@ extern switch_bool_t switch_amr_unpack_be(unsigned char *encoded_buf, uint8_t *t
 
 	return SWITCH_TRUE;
 }
-#endif 
+#endif
 
 /* For Emacs:
  * Local Variables:

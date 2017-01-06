@@ -34,15 +34,15 @@
 
 static switch_limit_interface_t *get_backend(const char *backend) {
 	switch_limit_interface_t *limit = NULL;
-	
+
 	if (!backend) {
 		return NULL;
 	}
-	
+
 	if (!(limit = switch_loadable_module_get_limit_interface(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to locate limit backend: %s\n", backend);
 	}
-	
+
 	return limit;
 }
 
@@ -81,7 +81,7 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	const char *vval = switch_channel_get_variable(channel, LIMIT_IGNORE_TRANSFER_VARIABLE);
 	const char *backendlist = switch_channel_get_variable(channel, LIMIT_BACKEND_VARIABLE);
-	
+
 	if (zstr(backendlist)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Unset limit backendlist!\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -92,7 +92,7 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 		char *argv[6] = { 0 };
 		char *mydata = strdup(backendlist);
 		int x;
-		
+
 		argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 		for (x = 0; x < argc; x++) {
 			switch_limit_release(argv[x], session, NULL, NULL);
@@ -100,10 +100,10 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 		switch_core_event_hook_remove_state_change(session, limit_state_handler);
 		/* Remove limit_backend variable so we register another hook if limit is called again */
 		switch_channel_set_variable(channel, LIMIT_BACKEND_VARIABLE, NULL);
-		
+
 		free(mydata);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -112,7 +112,7 @@ SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_co
 	switch_limit_interface_t *limit = NULL;
 	switch_channel_t *channel = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
-	
+
 	assert(session);
 
 	channel = switch_core_session_get_channel(session);
@@ -125,7 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_co
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "incr called: %s_%s max:%d, interval:%d\n",
 					  realm, resource, max, interval);
-	
+
 	if ((status = limit->incr(session, realm, resource, max, interval)) == SWITCH_STATUS_SUCCESS) {
 		/* race condition? what if another leg is doing the same thing? */
 		const char *existing = switch_channel_get_variable(channel, LIMIT_BACKEND_VARIABLE);
@@ -138,9 +138,9 @@ SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_co
 			switch_core_event_hook_add_state_change(session, limit_state_handler);
 		}
 	}
-	
+
 	release_backend(limit);
-	
+
 end:
 	return status;
 }
@@ -148,15 +148,15 @@ end:
 SWITCH_DECLARE(switch_status_t) switch_limit_release(const char *backend, switch_core_session_t *session, const char *realm, const char *resource) {
 	switch_limit_interface_t *limit = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
-	
+
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
-	
+
 	status = limit->release(session, realm, resource);
-	
+
 end:
 	release_backend(limit);
 	return status;
@@ -165,15 +165,15 @@ end:
 SWITCH_DECLARE(int) switch_limit_usage(const char *backend, const char *realm, const char *resource, uint32_t *rcount) {
 	switch_limit_interface_t *limit = NULL;
 	int usage = 0;
-	
+
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		goto end;
 	}
-	
+
 	usage = limit->usage(realm, resource, rcount);
-	
+
 end:
 	release_backend(limit);
 	return usage;
@@ -182,15 +182,15 @@ end:
 SWITCH_DECLARE(switch_status_t) switch_limit_reset(const char *backend) {
 	switch_limit_interface_t *limit = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
-	
+
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
-	
+
 	status = limit->reset();
-	
+
 end:
 	release_backend(limit);
 	return status;
@@ -199,20 +199,20 @@ end:
 SWITCH_DECLARE(switch_status_t) switch_limit_interval_reset(const char *backend, const char *realm, const char *resource) {
 	switch_limit_interface_t *limit = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
-	
+
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
-	
+
 	if (!limit->interval_reset) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s does not implement interval_reset!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 
 	status = limit->interval_reset(realm, resource);
-	
+
 end:
 	release_backend(limit);
 	return status;
@@ -221,15 +221,15 @@ end:
 SWITCH_DECLARE(char *) switch_limit_status(const char *backend) {
 	switch_limit_interface_t *limit = NULL;
 	char *status = NULL;
-	
+
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(strdup("-ERR"), end);
 	}
-	
+
 	status = limit->status();
-	
+
 end:
 	release_backend(limit);
 	return status;

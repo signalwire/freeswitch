@@ -179,7 +179,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 	}
 	profile->conn_active = NULL;
 	/* We are not going to open the command queue connection on create, but instead wait for the running thread to open it */
-	
+
 	/* Start the worker threads */
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -279,7 +279,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 				continue;
 			}
 
-			/* Check if exchange already exists */ 
+			/* Check if exchange already exists */
 			amqp_exchange_declare(profile->conn_active->state, 1,
 								  amqp_cstring_bytes(profile->exchange),
 								  amqp_cstring_bytes("topic"),

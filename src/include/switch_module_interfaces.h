@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
@@ -33,7 +33,7 @@
 /*! \file switch_module_interfaces.h
   \brief Module Interface Definitions
 
-  This module holds the definition of data abstractions used to implement various pluggable 
+  This module holds the definition of data abstractions used to implement various pluggable
   interfaces and pluggable event handlers.
 
 */
@@ -44,7 +44,7 @@
 #include "switch_resample.h"
 
 SWITCH_BEGIN_EXTERN_C
-/*! \brief A table of functions to execute at various states 
+/*! \brief A table of functions to execute at various states
  */
 	typedef enum {
 	SWITCH_SHN_ON_INIT,
@@ -106,7 +106,7 @@ struct switch_stream_handle {
 struct switch_io_event_hooks;
 struct switch_say_file_handle;
 
-typedef switch_call_cause_t (*switch_io_outgoing_channel_t)	
+typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
 	(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t,
 	 switch_call_cause_t *);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
@@ -560,7 +560,7 @@ struct switch_chat_interface {
 	const char *interface_name;
 	/*! function to open the directory interface */
 	switch_status_t (*chat_send) (switch_event_t *message_event);
-								  
+
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;

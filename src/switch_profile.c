@@ -2,23 +2,23 @@
  * Copyright (c) 2009, Sangoma Technologies
  * Moises Silva <moy@sangoma.com>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -44,7 +44,7 @@
 #include <errno.h>
 #endif
 
-struct profile_timer 
+struct profile_timer
 {
 	/* bool, just used to retrieve the values for the first time and not calculate the percentage of idle time */
 	int valid_last_times;
@@ -82,14 +82,14 @@ struct profile_timer
 };
 
 #ifdef __linux__
-static int read_cpu_stats(switch_profile_timer_t *p, 
-		unsigned long long *user, 
-		unsigned long long *nice, 
-		unsigned long long *system, 
-		unsigned long long *idle, 
-		unsigned long long *iowait, 
-		unsigned long long *irq, 
-		unsigned long long *softirq, 
+static int read_cpu_stats(switch_profile_timer_t *p,
+		unsigned long long *user,
+		unsigned long long *nice,
+		unsigned long long *system,
+		unsigned long long *idle,
+		unsigned long long *iowait,
+		unsigned long long *irq,
+		unsigned long long *softirq,
 		unsigned long long *steal)
 {
 // the output of proc should not change that often from one kernel to other
@@ -247,11 +247,11 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 	FILETIME kernelTime;
 	FILETIME userTime;
 	__int64 i64UserTime, i64KernelTime, i64IdleTime;
-  
+
 	if (!GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
 		return SWITCH_FALSE;
 	}
-  
+
 	i64UserTime = (__int64)userTime.dwLowDateTime | ((__int64)userTime.dwHighDateTime << 32);
 
 	i64KernelTime = (__int64)kernelTime.dwLowDateTime | ((__int64)kernelTime.dwHighDateTime << 32);

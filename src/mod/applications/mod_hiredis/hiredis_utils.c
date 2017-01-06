@@ -32,7 +32,7 @@
 
 #include <mod_hiredis.h>
 
-switch_status_t mod_hiredis_do_config() 
+switch_status_t mod_hiredis_do_config()
 {
 	char *conf = "hiredis.conf";
 	switch_xml_t xml, cfg, profiles, profile, connections, connection, params, param;
@@ -43,7 +43,7 @@ switch_status_t mod_hiredis_do_config()
 	}
 
 	if ( (profiles = switch_xml_child(cfg, "profiles")) != NULL) {
-		for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {		
+		for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
 			hiredis_profile_t *new_profile = NULL;
 			uint8_t ignore_connect_fail = 0;
 			uint8_t ignore_error = 0;
@@ -79,10 +79,10 @@ switch_status_t mod_hiredis_do_config()
 
 			/* Add connection to profile */
 			if ( (connections = switch_xml_child(profile, "connections")) != NULL) {
-				for (connection = switch_xml_child(connections, "connection"); connection; connection = connection->next) {		
+				for (connection = switch_xml_child(connections, "connection"); connection; connection = connection->next) {
 					char *host = NULL, *password = NULL;
 					uint32_t port = 0, timeout_ms = 0, max_connections = 0;
-					
+
 					for (param = switch_xml_child(connection, "param"); param; param = param->next) {
 						char *var = (char *) switch_xml_attr_soft(param, "name");
 						if ( !strncmp(var, "hostname", 8) ) {
@@ -114,9 +114,9 @@ switch_status_t mod_hiredis_do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profiles config is missing\n");
 		goto err;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
-	
+
  err:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Configuration failed\n");
 	return SWITCH_STATUS_GENERR;

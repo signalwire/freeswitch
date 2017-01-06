@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_lua.c -- Lua
@@ -102,7 +102,7 @@ int docall(lua_State * L, int narg, int nresults, int perror, int fatal)
 		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		
+
 		// pass error up to top
 		if (fatal) {
 			lua_error(L);
@@ -143,7 +143,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code, switch_core_se
 	}
 
 	while(input_code && (*input_code == ' ' || *input_code == '\n' || *input_code == '\r')) input_code++;
-	
+
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
 		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);	//lua_pcall(L, 0, 0, 0);
@@ -274,12 +274,12 @@ static switch_xml_t lua_fetch(const char *section,
 
 		lua_getglobal(L, "XML_STRING");
 		str = lua_tostring(L, -1);
-		
+
 		if (str) {
 			if (zstr(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
-			} else if (!(xml = switch_xml_parse_str_dynamic((char *)str, SWITCH_TRUE))) { 
-				/* const char -> char conversion was OK because switch_xml_parse_str_dynamic makes a duplicate of str 
+			} else if (!(xml = switch_xml_parse_str_dynamic((char *)str, SWITCH_TRUE))) {
+				/* const char -> char conversion was OK because switch_xml_parse_str_dynamic makes a duplicate of str
 				   and saves this duplcate as root->m which is freed when switch_xml_free is issued
 				*/
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
@@ -308,7 +308,7 @@ static switch_status_t do_config(void)
 	switch_xml_t cfg, xml, settings, param, hook;
 	switch_stream_handle_t path_stream = {0};
 	switch_stream_handle_t cpath_stream = {0};
-	
+
     if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -423,7 +423,7 @@ static switch_status_t do_config(void)
 	}
 
 	switch_safe_free(path_stream.data);
-    
+
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -689,7 +689,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
-	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", 
+	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC | SAF_SUPPORT_TEXT_ONLY);
 	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 

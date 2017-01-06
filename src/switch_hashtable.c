@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2002, Christopher Clark
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -64,9 +64,9 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 	if (minsize > (1u << 30)) {*hp = NULL; return SWITCH_STATUS_FALSE;}
 	/* Enforce size as prime */
 	for (pindex=0; pindex < prime_table_length; pindex++) {
-		if (primes[pindex] > minsize) { 
-			size = primes[pindex]; 
-			break; 
+		if (primes[pindex] > minsize) {
+			size = primes[pindex];
+			break;
 		}
 	}
 	h = (switch_hashtable_t *) malloc(sizeof(switch_hashtable_t));
@@ -120,7 +120,7 @@ hashtable_expand(switch_hashtable_t *h)
 			h->table = newtable;
 		}
 	/* Plan B: realloc instead */
-	else 
+	else
 		{
 			newtable = (struct entry **)
 				realloc(h->table, newsize * sizeof(struct entry *));
@@ -174,7 +174,7 @@ static void * _switch_hashtable_remove(switch_hashtable_t *h, void *k, unsigned 
 				freekey(e->k);
 			}
 			if (e->flags & HASHTABLE_FLAG_FREE_VALUE) {
-				switch_safe_free(e->v); 
+				switch_safe_free(e->v);
 				v = NULL;
 			} else if (e->destructor) {
 				e->destructor(e->v);
@@ -259,19 +259,19 @@ switch_hashtable_destroy(switch_hashtable_t **h)
 	for (i = 0; i < (*h)->tablelength; i++) {
 		e = table[i];
 		while (NULL != e) {
-			f = e; e = e->next; 
+			f = e; e = e->next;
 
 			if (f->flags & HASHTABLE_FLAG_FREE_KEY) {
-				freekey(f->k); 
+				freekey(f->k);
 			}
-			
+
 			if (f->flags & HASHTABLE_FLAG_FREE_VALUE) {
-				switch_safe_free(f->v); 
+				switch_safe_free(f->v);
 			} else if (f->destructor) {
 				f->destructor(f->v);
 				f->v = NULL;
 			}
-			switch_safe_free(f); 
+			switch_safe_free(f);
 		}
 	}
 
@@ -284,9 +284,9 @@ SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hasht
 {
 
 	switch_hashtable_iterator_t *i = *iP;
-	
+
 	if (i->e) {
-		if ((i->e = i->e->next) != 0) { 
+		if ((i->e = i->e->next) != 0) {
 			return i;
 		} else {
 			i->pos++;
@@ -296,12 +296,12 @@ SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hasht
 	while(i->pos < i->h->tablelength && !i->h->table[i->pos]) {
 		i->pos++;
 	}
-	
+
 	if (i->pos >= i->h->tablelength) {
 		goto end;
 	}
-	
-	if ((i->e = i->h->table[i->pos]) != 0) { 
+
+	if ((i->e = i->h->table[i->pos]) != 0) {
 		return i;
 	}
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -71,7 +71,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(const char *ip, s
 	odd = switch_test_flag(alloc, SPF_ODD);
 
 	alloc->flags |= runtime.port_alloc_flags;
-	
+
 
 	if (!(even && odd)) {
 		if (even) {
@@ -125,7 +125,7 @@ static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int family, 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_FALSE;
 	}
-	
+
 	if (switch_sockaddr_info_get(&local_addr, alloc->ip, SWITCH_UNSPEC, port, 0, pool) == SWITCH_STATUS_SUCCESS) {
 		if (switch_socket_create(&sock, family, type, 0, pool) == SWITCH_STATUS_SUCCESS) {
 			if (switch_socket_bind(sock, local_addr) == SWITCH_STATUS_SUCCESS) {
@@ -134,9 +134,9 @@ static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int family, 
 			switch_socket_close(sock);
 		}
 	}
-	
+
 	switch_core_destroy_memory_pool(&pool);
-	
+
 	return r;
 }
 

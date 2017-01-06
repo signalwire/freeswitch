@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian West <brian@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
@@ -89,7 +89,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_json_cdr, mod_json_cdr_load, mod_json_cdr_shutdown, NULL);
 
-/* this function would have access to the HTML returned by the webserver, we don't need it 
+/* this function would have access to the HTML returned by the webserver, we don't need it
  * and the default curl activity is to print to stdout, something not as desirable
  * so we have a dummy function here
  */
@@ -207,12 +207,12 @@ static void backup_cdr(cdr_data_t *data)
 
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Backup file %s\n", path);
 			if (path) {
-#ifdef _MSC_VER 
+#ifdef _MSC_VER
 				mode_t mode = S_IRUSR | S_IWUSR;
-#else 
+#else
 				mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-#endif 
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)) > -1) { 
+#endif
+				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)) > -1) {
 					switch_size_t json_len = strlen(json_text);
 					switch_ssize_t wrote = 0, x;
 					do { x = write(fd, json_text, json_len);
@@ -231,18 +231,18 @@ static void backup_cdr(cdr_data_t *data)
 					char ebuf[512] = { 0 };
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Can't open %s! [%s]\n",
 									  path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
-				
+
 				}
 				switch_safe_free(path);
 			}
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_NOTICE, "Not writing to file\n");
-	}	
+	}
 }
 
-	
-void destroy_cdr_data(cdr_data_t *data) 
+
+void destroy_cdr_data(cdr_data_t *data)
 {
 	switch_safe_free(data->json_text);
 	switch_safe_free(data->json_text_escaped);
@@ -314,7 +314,7 @@ static void process_cdr(cdr_data_t *data)
 
 			curl_json_text = switch_mprintf("cdr=%s", data->json_text_escaped);
 			switch_assert(curl_json_text != NULL);
-			
+
 		} else {
 			headers = switch_curl_slist_append(headers, "Content-Type: application/json");
 			curl_json_text = (char *)data->json_text;
@@ -463,15 +463,15 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Generating Data!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	cdr_data = malloc(sizeof(cdr_data_t));
 	switch_assert(cdr_data);
-	
+
 	json_text = cJSON_PrintUnformatted(json_cdr);
 
 	if (globals.url_count && globals.encode) {
 		switch_size_t need_bytes = strlen(json_text) * 3;
-		
+
 		json_text_escaped = malloc(need_bytes);
 		switch_assert(json_text_escaped);
 		memset(json_text_escaped, 0, need_bytes);
@@ -500,12 +500,12 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		if (switch_queue_trypush(globals.queue, cdr_data) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unable to push cdr to queue\n");
 			backup_cdr(cdr_data);
-			destroy_cdr_data(cdr_data);			
+			destroy_cdr_data(cdr_data);
 		}
 	} else {
 		process_cdr(cdr_data);
 	}
-	
+
 	cJSON_Delete(json_cdr);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -649,7 +649,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 							globals.base_err_log_dir[globals.err_dir_count++] = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 						}
 					}
-					
+
 				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				globals.enable_cacert_check = 1;
@@ -744,7 +744,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 	}
 
 	switch_safe_free(globals.log_dir);
-	
+
 	for (;err_dir_index < globals.err_dir_count; err_dir_index++) {
 		switch_safe_free(globals.err_log_dir[err_dir_index]);
 	}

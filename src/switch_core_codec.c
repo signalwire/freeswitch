@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -133,7 +133,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 			}
 			session->real_read_codec = codec;
 			session->real_read_impl = *codec->implementation;
-			
+
 			/* set read_codec with real_read_codec if it no longer is ready */
 			if (!switch_core_codec_ready(session->read_codec)) {
 				session->read_codec = codec;
@@ -248,7 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Restore previous codec %s:%d.\n",
 							  switch_channel_get_name(session->channel),
 							  session->read_impl.iananame ? session->read_impl.iananame : "N/A", session->read_impl.ianacode);
-			
+
 
 		} else if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
@@ -344,7 +344,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_s
 		*impp = session->write_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	memset(impp, 0, sizeof(*impp));
 	impp->number_of_channels = 1;
 	return SWITCH_STATUS_FALSE;
@@ -581,13 +581,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_n
 {
 	switch_codec_interface_t *codec_interface;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (zstr(codec_name) || zstr(fmtp) || !codec_fmtp) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	memset(codec_fmtp, 0, sizeof(*codec_fmtp));
-	
+
 	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name, NULL))) {
 		if (codec_interface->parse_fmtp) {
 			codec_fmtp->actual_samples_per_second = rate;
@@ -611,13 +611,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
 	switch_assert(codec != NULL);
 	switch_assert(new_codec != NULL);
-	
-	return switch_core_codec_init(new_codec, 
+
+	return switch_core_codec_init(new_codec,
 								  codec->implementation->iananame,
 								  codec->implementation->modname,
 								  codec->fmtp_in,
@@ -627,7 +627,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 								  codec->flags,
 								  codec_settings,
 								  pool);
-	
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *modname, const char *fmtp,
@@ -671,7 +671,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 
 		goto found;
 	}
-	
+
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
@@ -720,9 +720,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_READY);
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms %dch\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms %dch\n",
 						  codec_name, rate, ms, channels);
-						  
+
 	}
 
 	UNPROTECT_INTERFACE(codec_interface);
@@ -789,14 +789,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		uint32_t frames = encoded_data_len / codec->implementation->encoded_bytes_per_packet / codec->implementation->number_of_channels;
 
 		if (frames && codec->implementation->decoded_bytes_per_packet * frames > *decoded_data_len) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer size sanity check failed! edl:%u ebpp:%u fr:%u ddl:%u\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer size sanity check failed! edl:%u ebpp:%u fr:%u ddl:%u\n",
 							  encoded_data_len, codec->implementation->encoded_bytes_per_packet, frames, *decoded_data_len);
 			*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 			memset(decoded_data, 255, *decoded_data_len);
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
-	
+
 	if (codec->mutex) switch_mutex_lock(codec->mutex);
 	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate,
 										   decoded_data, decoded_data_len, decoded_rate, flag);
@@ -825,7 +825,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 
 	if (codec->implementation->encode_video) {
 		status = codec->implementation->encode_video(codec, frame);
-		
+
 		if (status == SWITCH_STATUS_MORE_DATA) {
 			frame->flags |= SFF_SAME_IMAGE;
 		} else {
@@ -869,14 +869,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *c
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec, 
-														  switch_codec_control_command_t cmd, 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
+														  switch_codec_control_command_t cmd,
 														  switch_codec_control_type_t ctype,
 														  void *cmd_data,
 														  switch_codec_control_type_t atype,
 														  void *cmd_arg,
 														  switch_codec_control_type_t *rtype,
-														  void **ret_data) 
+														  void **ret_data)
 {
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -884,7 +884,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 
 	switch_assert(codec != NULL);
 
-	
+
 	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
 		abort();
@@ -927,17 +927,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	}
 
 	codec->implementation->destroy(codec);
-	
+
 	UNPROTECT_INTERFACE(codec->codec_interface);
 
 	if (mutex) switch_mutex_unlock(mutex);
-	
+
 	if (free_pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 
 	memset(codec, 0, sizeof(*codec));
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

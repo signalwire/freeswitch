@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
  *
@@ -22,13 +22,13 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Michael Giagnocavo <mgg@packetrino.com>
  * Jeff Lenk <jlenk@frontiernet.net> - Modified class to support Dotnet
- * 
+ *
  * freeswitch_managed.cpp -- Managed CoreSession subclasses
  *
- */  
+ */
 
 #include <switch.h>
 #include <switch_cpp.h>
@@ -38,35 +38,35 @@
 #pragma unmanaged
 #endif
 
-ManagedSession::ManagedSession():CoreSession() 
+ManagedSession::ManagedSession():CoreSession()
 {
 
-} 
+}
 
-ManagedSession::ManagedSession(char *uuid):CoreSession(uuid) 
+ManagedSession::ManagedSession(char *uuid):CoreSession(uuid)
 {
 
-} 
+}
 
-ManagedSession::ManagedSession(switch_core_session_t *session):CoreSession(session) 
+ManagedSession::ManagedSession(switch_core_session_t *session):CoreSession(session)
 {
 
-} 
+}
 
-bool ManagedSession::begin_allow_threads() 
+bool ManagedSession::begin_allow_threads()
 {
 	return true;
 }
 
-bool ManagedSession::end_allow_threads() 
+bool ManagedSession::end_allow_threads()
 {
 	return true;
 }
 
-ManagedSession::~ManagedSession() 
+ManagedSession::~ManagedSession()
 {
 	ATTACH_THREADS
-	// Do auto-hangup ourselves because CoreSession can't call check_hangup_hook 
+	// Do auto-hangup ourselves because CoreSession can't call check_hangup_hook
 	// after ManagedSession destruction (cause at point it's pure virtual)
 	if (session) {
 		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
@@ -78,7 +78,7 @@ ManagedSession::~ManagedSession()
 	}
 }
 
-void ManagedSession::check_hangup_hook() 
+void ManagedSession::check_hangup_hook()
 {
 	ATTACH_THREADS
 	if (!hangupDelegate) {
@@ -88,7 +88,7 @@ void ManagedSession::check_hangup_hook()
 	hangupDelegate();
 }
 
-switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type_t itype) 
+switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type_t itype)
 {
 	ATTACH_THREADS
 	if (!dtmfDelegate) {
@@ -98,7 +98,7 @@ switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type
 	char *result = dtmfDelegate(input, itype);
 	switch_status_t status = process_callback_result(result);
 
-	RESULT_FREE(result); 
+	RESULT_FREE(result);
 
 	return status;
 }

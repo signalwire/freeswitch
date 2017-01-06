@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Brian K. West <brian@freeswitch.org>
  * Dragos Oancea <dragos.oancea@athonet.com>
@@ -117,7 +117,7 @@ static switch_bool_t switch_amrwb_unpack_oa(unsigned char *buf, uint8_t *tmp, in
 	}
 	tmp[0] = tocs[0];
 	memcpy(&tmp[1], buf, framesz);
-	
+
 	return SWITCH_TRUE;
 }
 
@@ -127,7 +127,7 @@ static switch_bool_t switch_amrwb_pack_oa(unsigned char *shift_buf, int n)
 	return SWITCH_TRUE;
 }
 
-static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_data_len, int payload_format, char *print_text) 
+static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_data_len, int payload_format, char *print_text)
 {
 	uint8_t *tocs;
 	int framesz, index, not_last_frame, q, ft;
@@ -136,29 +136,29 @@ static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_d
 	if (!encoded_buf) {
 		return SWITCH_FALSE;
 	}
-	
+
 	/* payload format can be OA (octed-aligned) or BE (bandwidth efficient)*/
 	if (payload_format) {
 		/* OA */
 		encoded_buf++; /* CMR skip */
-		tocs = encoded_buf; 
+		tocs = encoded_buf;
 		index = (tocs[0] >> 3) & 0x0f;
 		if (index > SWITCH_AMRWB_MODES) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid TOC 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
 		framesz = switch_amrwb_frame_sizes[index];
-		not_last_frame = (tocs[0] >> 7) & 1; 
-		q = (tocs[0] >> 2) & 1; 
+		not_last_frame = (tocs[0] >> 7) & 1;
+		q = (tocs[0] >> 2) & 1;
 		ft = tocs[0] >> 3;
 		ft &= ~(1 << 5); /* Frame Type */
 	} else {
 		/* BE */
-		memcpy(shift_tocs, encoded_buf, 2); 
+		memcpy(shift_tocs, encoded_buf, 2);
 		/* shift for BE */
 		switch_amr_array_lshift(4, shift_tocs, 2);
-		not_last_frame = (shift_tocs[0] >> 7) & 1; 
-		q = (shift_tocs[0] >> 2) & 1; 
+		not_last_frame = (shift_tocs[0] >> 7) & 1;
+		q = (shift_tocs[0] >> 2) & 1;
 		ft = shift_tocs[0] >> 3;
 		ft &= ~(1 << 5); /* Frame Type */
 		index = (shift_tocs[0] >> 3) & 0x0f;
@@ -169,13 +169,13 @@ static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_d
 		framesz = switch_amrwb_frame_sizes[index];
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): FT: [0x%x] Q: [0x%x] Frame flag: [%d]\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): FT: [0x%x] Q: [0x%x] Frame flag: [%d]\n",
 													print_text, payload_format ? "OA":"BE", ft, q, not_last_frame);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): AMRWB encoded voice payload sz: [%d] : | encoded_data_len: [%d]\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): AMRWB encoded voice payload sz: [%d] : | encoded_data_len: [%d]\n",
 													print_text, payload_format ? "OA":"BE", framesz, encoded_data_len);
 
 	return SWITCH_TRUE;
-} 
+}
 #endif
 
 static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -200,8 +200,8 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		return SWITCH_STATUS_FALSE;
 	} else {
 
-		/* "mode" may mean two different things: 
-		 * "Octed Aligned" or "Bandwidth Efficient" encoding mode , 
+		/* "mode" may mean two different things:
+		 * "Octed Aligned" or "Bandwidth Efficient" encoding mode ,
 		 * or the actual bitrate  which is set with FMTP param "mode-set". */
 		/* https://tools.ietf.org/html/rfc4867 */
 
@@ -279,10 +279,10 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (!globals.volte) {
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", 
+			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
 		} else {
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d; max-red=0; mode-change-capability=2", 
+			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d; max-red=0; mode-change-capability=2",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
 		}
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
@@ -346,12 +346,12 @@ static switch_status_t switch_amrwb_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	/* set CMR + TOC (F + 3 bits of FT), 1111 = CMR: No mode request */ 
+	/* set CMR + TOC (F + 3 bits of FT), 1111 = CMR: No mode request */
 	*(switch_byte_t *) encoded_data = 0xf0;
 	*encoded_data_len  = n;
 
 	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) {
-		switch_amrwb_pack_oa(shift_buf, n);  /* the payload is OA as it 
+		switch_amrwb_pack_oa(shift_buf, n);  /* the payload is OA as it
 												comes out of the encoding function */
 		*encoded_data_len = n + 1;
 	} else {
@@ -380,7 +380,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 #else
 	struct amrwb_context *context = codec->private_info;
 	unsigned char *buf = encoded_data;
-	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE]; 
+	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE];
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -390,12 +390,12 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 		switch_amrwb_info(buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");
 	}
 
-	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) { 
+	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) {
 		/* Octed Aligned */
 		if (!switch_amrwb_unpack_oa(buf, tmp, encoded_data_len)) {
 			return SWITCH_STATUS_FALSE;
 		}
-	} else { 
+	} else {
 		/* Bandwidth Efficient */
 		if (!switch_amrwb_unpack_be(buf, tmp, encoded_data_len)) {
 			return SWITCH_STATUS_FALSE;
@@ -436,32 +436,32 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 			if (!strcasecmp(cmd, "increase")) {
 				if (context->enc_mode < SWITCH_AMRWB_MODES - 1) {
 					int mode_step = 2; /*this is the mode, not the actual bitrate*/
-					context->enc_mode = context->enc_mode + mode_step; 
+					context->enc_mode = context->enc_mode + mode_step;
 					if (globals.debug || context->debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (increase)\n", context->enc_mode);
 					}
-				} 
+				}
 			} else if (!strcasecmp(cmd, "decrease")) {
 				if (context->enc_mode > 0) {
 					int mode_step = 2; /*this is the mode, not the actual bitrate*/
-					context->enc_mode = context->enc_mode - mode_step; 
+					context->enc_mode = context->enc_mode - mode_step;
 					if (globals.debug || context->debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (decrease)\n", context->enc_mode);
 					}
 				}
 			} else if (!strcasecmp(cmd, "default")) {
 					context->enc_mode = globals.default_bitrate;
 					if (globals.debug || context->debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (default)\n", context->enc_mode);
 					}
 			} else {
 				/*minimum bitrate (AMRWB mode)*/
 				context->enc_mode = 0;
 				if (globals.debug || context->debug) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							"AMRWB encoder: Adjusting mode to %d (minimum)\n", context->enc_mode);
 				}
 			}
@@ -469,14 +469,14 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 		break;
 	default:
 		break;
-	} 
-	
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif 
+#endif
 
 static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
-{ 
+{
 	char buf[256] = { 0 };
 
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "octet-align=%d; ", octet_align);
@@ -563,31 +563,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 	switch_console_set_complete("add amrwb_debug off");
 #else
 #define SWITCH_AMRWB_OUT_MAX_SIZE 0
-#endif 
+#endif
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Octet Aligned");
 
 	default_fmtp_oa = generate_fmtp(pool, 1);
 
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 100, "AMR-WB", default_fmtp_oa, 
+										 SWITCH_CODEC_TYPE_AUDIO, 100, "AMR-WB", default_fmtp_oa,
 										 16000, 16000, 23850, 20000, 320, 640, SWITCH_AMRWB_OUT_MAX_SIZE, 1, 1,
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
-#endif 
+#endif
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Bandwidth Efficient");
 
 	default_fmtp_be = generate_fmtp(pool, 0);
 
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 110, "AMR-WB", default_fmtp_be,  
-										 16000, 16000, 23850, 20000, 320, 640, SWITCH_AMRWB_OUT_MAX_SIZE, 1, 1, 
+										 SWITCH_CODEC_TYPE_AUDIO, 110, "AMR-WB", default_fmtp_be,
+										 16000, 16000, 23850, 20000, 320, 640, SWITCH_AMRWB_OUT_MAX_SIZE, 1, 1,
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
-#endif 
+#endif
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

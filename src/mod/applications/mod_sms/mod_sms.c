@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,11 +22,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Raymond Chandler <intralanman@freeswitch.org>
  *
- * mod_sms.c -- Abstract SMS 
+ * mod_sms.c -- Abstract SMS
  *
  */
 #include <switch.h>
@@ -70,7 +70,7 @@ static void send_report(switch_event_t *event, const char * Status) {
 	}
 }
 
-static void event_handler(switch_event_t *event) 
+static void event_handler(switch_event_t *event)
 {
 	const char *dest_proto = switch_event_get_header(event, "dest_proto");
 	const char *check_failure = switch_event_get_header(event, "Delivery-Failure");
@@ -115,7 +115,7 @@ typedef enum {
 		} else {														\
 			tzoff = NULL;												\
 		}																\
-	} while(tzoff)														
+	} while(tzoff)
 
 static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_t **extension)
 {
@@ -400,7 +400,7 @@ static switch_event_t *chatplan_hunt(switch_event_t *event)
 	}
 
 	xexten = switch_xml_child(xcontext, "extension");
-	
+
 	while (xexten) {
 		int proceed = 0;
 		const char *cont = switch_xml_attr(xexten, "continue");
@@ -415,7 +415,7 @@ static switch_event_t *chatplan_hunt(switch_event_t *event)
 						  to, context, exten_name, cont ? cont : "false");
 
 		proceed = parse_exten(event, xexten, &extension);
-		
+
 		if (proceed && !switch_true(cont)) {
 			break;
 		}
@@ -445,7 +445,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		forwards = 70;
 	} else {
 		forwards = atoi(var);
-		
+
 		if (forwards) {
 			forwards--;
 		}
@@ -463,11 +463,11 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	if ((exten = chatplan_hunt(message_event))) {
 		switch_event_header_t *hp;
-		
+
 		for (hp = exten->headers; hp; hp = hp->next) {
 			status = switch_core_execute_chat_app(message_event, hp->name, hp->value);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				status = SWITCH_STATUS_SUCCESS;	
+				status = SWITCH_STATUS_SUCCESS;
 				break;
 			}
 		}
@@ -542,7 +542,7 @@ SWITCH_STANDARD_CHAT_APP(set_function)
 	if ((val = strchr(var, '='))) {
 		*val++ = '\0';
 	}
- 
+
 	if (zstr(val)) {
 		switch_event_del_header(message, var);
 	} else {
@@ -618,7 +618,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -632,7 +632,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "fire", "fire the message", "fire the message", fire_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "system", "execute a system command", "execute a sytem command", system_function, "", SCAF_NONE);
-						
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -645,7 +645,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown)
 	switch_event_unbind_callback(event_handler);
 
 	switch_event_free_subclass(MY_EVENT_DELIVERY_REPORT);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

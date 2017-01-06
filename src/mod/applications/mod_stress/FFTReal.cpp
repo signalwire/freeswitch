@@ -136,7 +136,7 @@ void	FFTReal::do_fft (flt_t f [], const flt_t x []) const
 
 					df2 [0] = sf_0 + sf_2;
 					df2 [2] = sf_0 - sf_2;
-					
+
 					coef_index += 4;
 				}
 				while (coef_index < _length);
@@ -236,7 +236,7 @@ void	FFTReal::do_fft (flt_t f [], const flt_t x []) const
 
 		const flt_t			b_0 = x [0] + x [2];
 		const flt_t			b_2 = x [1] + x [3];
-		
+
 		f [0] = b_0 + b_2;
 		f [2] = b_0 - b_2;
 	}

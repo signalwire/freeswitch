@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Mariusz Czułada <manieq.net@gmail.com>
@@ -473,11 +473,11 @@ static switch_status_t pl_say_money(switch_say_file_handle_t *sh, char *tosay, s
 static switch_status_t pl_say_ip(switch_say_file_handle_t *sh,
 							  char *tosay,
 							  switch_say_args_t *say_args)
-	
+
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!(a = strdup(tosay))) {
 		abort();
 	}
@@ -509,7 +509,7 @@ static switch_status_t pl_say_ip(switch_say_file_handle_t *sh,
 	say_num(sh, atoi(d), say_args->method, SSG_MASCULINE);
 
  end:
-	
+
 	free(a);
 
 	return status;
@@ -580,14 +580,14 @@ static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosa
 	switch_say_file_handle_t *sh;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *var_event = NULL;
-	
+
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_get_variables(channel, &var_event);
 	}
 
 	switch_say_file_handle_create(&sh, say_args->ext, &var_event);
-	
+
 	status = say_cb(sh, tosay, say_args);
 
 	if ((*rstr = switch_say_file_handle_detach_path(sh))) {
@@ -615,7 +615,7 @@ static switch_status_t pl_say(switch_core_session_t *session, char *tosay, switc
 		if (session && string) {
 			status = switch_ivr_play_file(session, NULL, string, args);
 		}
-		
+
 		switch_safe_free(string);
 	}
 
@@ -654,7 +654,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_say_pl_load)
 	say_interface->interface_name = "pl";
 	say_interface->say_function = pl_say;
 	say_interface->say_string_function = pl_say_string;
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

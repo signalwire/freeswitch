@@ -165,7 +165,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "websocket::stophook");
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -1077,7 +1077,7 @@ abyss_bool handler_hook(TSession * r)
 	/* fs api command will write to stream,  calling http_stream_write / http_stream_raw_write	*/
 	/* switch_api_execute will stream INVALID COMMAND before it fails					        */
 	switch_api_execute(command, api_str, NULL, &stream);
-	
+
         if (globals.commands_to_log != NULL) {
                 full_command = switch_mprintf("%s%s%s", command, (api_str==NULL ? "" : " "), api_str);
 
@@ -1286,7 +1286,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
 
 	switch_event_free_subclass("websocket::stophook");
-	
+
 	/* Cann't find a way to stop the websockets, use this for a workaround before finding the real one that works */
 	stop_all_websockets();
 

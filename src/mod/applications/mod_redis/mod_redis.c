@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Kevin Morizur <kmorizur@avgs.ca> 
+ * Kevin Morizur <kmorizur@avgs.ca>
  * Mathieu Rene <mrene@avgs.ca>
  *
  * mod_redis.c -- Redis limit backend
@@ -45,7 +45,7 @@ static struct{
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("host", CONFIG_RELOAD, &globals.host, NULL, "localhost", "Hostname for redis server"),	
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("host", CONFIG_RELOAD, &globals.host, NULL, "localhost", "Hostname for redis server"),
 	SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.port, (void *) 6379, NULL,NULL, NULL),
 	SWITCH_CONFIG_ITEM("timeout", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.timeout, (void *) 10000, NULL,NULL, NULL),
 	SWITCH_CONFIG_ITEM("ignore_connect_fail", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.ignore_connect_fail, SWITCH_FALSE, NULL, "true|false", "Set to true in order to continue when redis is not contactable"),
@@ -58,10 +58,10 @@ typedef struct {
 	switch_mutex_t *mutex;
 } limit_redis_private_t;
 
-static switch_status_t redis_factory(REDIS *redis) 
+static switch_status_t redis_factory(REDIS *redis)
 {
 	if (!((*redis) = credis_connect(globals.host, globals.port, globals.timeout))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't connect to redis server at %s:%d timeout:%d\n", globals.host, globals.port, globals.timeout);		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't connect to redis server at %s:%d timeout:%d\n", globals.host, globals.port, globals.timeout);
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -83,7 +83,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	char *rediskey = NULL;
 	char *uuid_rediskey = NULL;
 	uint8_t increment = 1;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;	
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	REDIS redis;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_redis is deprecated and will be removed in FS 1.8. Check out mod_hiredis.\n");
@@ -110,11 +110,11 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 		switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_channel_set_private(channel, "limit_redis", pvt);
 	}
-	
+
 	if (!(switch_core_hash_find_locked(pvt->hash, rediskey, pvt->mutex))) {
 		switch_core_hash_insert_locked(pvt->hash, rediskey, rediskey, pvt->mutex);
 	}
-	
+
    	if (increment) {
 		if (credis_incr(redis, rediskey, &val) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't increment value corresponding to %s\n", rediskey);
@@ -127,7 +127,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
                		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", rediskey);
 					switch_goto_status(SWITCH_STATUS_GENERR, end);
 				} else {
-           			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d\n", 
+           			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d\n",
 						rediskey, max);
 					switch_goto_status(SWITCH_STATUS_FALSE, end);
 				}
@@ -136,7 +136,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
        				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't increment value corresponding to %s\n", uuid_rediskey);
        				switch_goto_status(SWITCH_STATUS_FALSE, end);
 				}
-			}	
+			}
 		} else  {
 			if (credis_incr(redis, uuid_rediskey, &uuid_val) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't increment value corresponding to %s\n", uuid_rediskey);
@@ -154,7 +154,7 @@ end:
 	}
 	return status;
 }
-	
+
 /* !\brief Releases usage of a limit_redis-controlled ressource  */
 SWITCH_LIMIT_RELEASE(limit_release_redis)
 {
@@ -165,12 +165,12 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	char *uuid_rediskey = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
 	REDIS redis;
-	
+
 	if (!pvt || !pvt->hash) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No hashtable for channel %s\n", switch_channel_get_name(channel));
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (redis_factory(&redis) != SWITCH_STATUS_SUCCESS) {
                 if ( globals.ignore_connect_fail ) {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignore_connect_fail=true, so ignoring the fact that redis was not contactabl and continuing with the call\n" );
@@ -192,9 +192,9 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 			const void *p_key;
 			char *p_uuid_key = NULL;
 			switch_ssize_t keylen;
-			
+
 			switch_core_hash_this(hi, &p_key, &keylen, &p_val);
-			
+
 			if (credis_decr(redis, (const char*)p_key, &val) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", (char *)p_key);
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -210,8 +210,8 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Limit incr redis : uuid_rediskey : %s uuid_val : %d\n",
 					 p_uuid_key, uuid_val);*/
 		}
-	
-	} else {	
+
+	} else {
 	   	rediskey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
 		uuid_rediskey = switch_core_session_sprintf(session, "%s_%s_%s", switch_core_get_switchname(), realm, resource);
 		switch_core_hash_delete(pvt->hash, (const char *) rediskey);
@@ -224,7 +224,7 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", uuid_rediskey);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
-		
+
 /*
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Limit release redis : rediskey : %s val : %d\n", rediskey,val);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Limit incr redis : uuid_rediskey : %s uuid_val : %d\n", uuid_rediskey,uuid_val);
@@ -244,23 +244,23 @@ SWITCH_LIMIT_USAGE(limit_usage_redis)
 	char *str;
 	REDIS redis;
 	int usage;
-	
+
 	if (redis_factory(&redis) != SWITCH_STATUS_SUCCESS) {
 		return 0;
 	}
 
 	redis_key = switch_mprintf("%s_%s", realm, resource);
-  
+
 	if (credis_get(redis, redis_key, &str) != 0){
 		usage = 0;
 	} else {
-		usage = atoi(str);		
+		usage = atoi(str);
 	}
-	
+
 	if (redis) {
 		credis_close(redis);
 	}
-	
+
 	switch_safe_free(redis_key);
 	return usage;
 }
@@ -272,23 +272,23 @@ SWITCH_LIMIT_RESET(limit_reset_redis)
 		char *rediskey = switch_mprintf("%s_*", switch_core_get_switchname());
 		int dec = 0, val = 0, keyc;
 		char *uuids[2000];
-	
+
 		if ((keyc = credis_keys(redis, rediskey, uuids, switch_arraylen(uuids))) > 0) {
 			int i = 0;
 			int hostnamelen = (int)strlen(switch_core_get_switchname())+1;
-			
+
 			for (i = 0; i < keyc && uuids[i]; i++){
 				const char *key = uuids[i] + hostnamelen;
 				char *value;
-			
+
 				if ((int)strlen(uuids[i]) <= hostnamelen) {
 					continue; /* Sanity check */
 				}
-			
+
 				credis_get(redis, key, &value);
 				dec = atoi(value);
 				credis_decrby(redis, key, dec, &val);
-			
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DECR %s by %d. value is now %d\n", key, dec, val);
 			}
 		}
@@ -312,7 +312,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_redis_load)
 	switch_limit_interface_t *limit_interface = NULL;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	if (switch_xml_config_parse_module_settings("redis.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -321,9 +321,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_redis_load)
 
 	/* If FreeSWITCH was restarted and we still have active calls, decrement them so our global count stays valid */
 	limit_reset_redis();
-	
+
 	SWITCH_ADD_LIMIT(limit_interface, "redis", limit_incr_redis, limit_release_redis, limit_usage_redis, limit_reset_redis, limit_status_redis, NULL);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

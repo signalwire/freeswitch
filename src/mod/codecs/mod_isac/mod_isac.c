@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -59,7 +59,7 @@ static switch_status_t switch_isac_init(switch_codec_t *codec, switch_codec_flag
 	codec->private_info = context;
 
 	err = WebRtcIsac_Create(&context->ISAC_main_inst);
-	
+
 	if (err < 0) return SWITCH_STATUS_FALSE;
 
 
@@ -95,9 +95,9 @@ static switch_status_t switch_isac_init(switch_codec_t *codec, switch_codec_flag
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-	
 
-	
+
+
 	if (WebRtcIsac_SetMaxRate(context->ISAC_main_inst, codec->implementation->bits_per_second) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -126,13 +126,13 @@ static switch_status_t switch_isac_encode(switch_codec_t *codec, switch_codec_t 
 		len = WebRtcIsac_Encode(context->ISAC_main_inst, in, out);
 		in += rise;
 	}
-	
+
 	if (len < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
 	*encoded_data_len = (uint32_t) len;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -159,9 +159,9 @@ static switch_status_t switch_isac_decode(switch_codec_t *codec,
 		*decoded_data_len = 0;
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	*decoded_data_len = (uint32_t) len * 2;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -170,7 +170,7 @@ static switch_status_t switch_isac_destroy(switch_codec_t *codec)
 	struct isac_context *context = codec->private_info;
 
 	WebRtcIsac_Free(context->ISAC_main_inst);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -183,90 +183,90 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "isac");	/* 8.0kbit */
 
-	switch_core_codec_add_implementation(pool, codec_interface,	
+	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO,
-										 99,	
+										 99,
 										 "isac",
-										 "ibitrate=32000;maxbitrate=53400",	
-										 16000,	
-										 16000,	
-										 53400,	
-										 30000,	
-										 480,	
-										 960,	
-										 0,	
-										 1,	
-										 3,	
-										 switch_isac_init,	
+										 "ibitrate=32000;maxbitrate=53400",
+										 16000,
+										 16000,
+										 53400,
+										 30000,
+										 480,
+										 960,
+										 0,
+										 1,
+										 3,
+										 switch_isac_init,
 										 switch_isac_encode,
 										 switch_isac_decode,
 										 switch_isac_destroy);
 
 
 
-	switch_core_codec_add_implementation(pool, codec_interface,	
+	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO,
-										 99,	
+										 99,
 										 "isac",
-										 "ibitrate=32000;maxbitrate=53400",	
-										 16000,	
-										 16000,	
-										 53400,	
-										 60000,	
-										 960,	
-										 1920,	
-										 0,	
-										 1,	
-										 6,	
-										 switch_isac_init,	
-										 switch_isac_encode,
-										 switch_isac_decode,
-										 switch_isac_destroy);
-
-	
-
-
-	switch_core_codec_add_implementation(pool, codec_interface,	
-										 SWITCH_CODEC_TYPE_AUDIO,
-										 99,	
-										 "isac",
-										 "ibitrate=32000;maxbitrate=160000",	
-										 32000,	
-										 32000,	
-										 160000,	
-										 30000,	
-										 960,	
-										 1920,	
-										 0,	
-										 1,	
-										 6,	
-										 switch_isac_init,	
+										 "ibitrate=32000;maxbitrate=53400",
+										 16000,
+										 16000,
+										 53400,
+										 60000,
+										 960,
+										 1920,
+										 0,
+										 1,
+										 6,
+										 switch_isac_init,
 										 switch_isac_encode,
 										 switch_isac_decode,
 										 switch_isac_destroy);
 
 
-	switch_core_codec_add_implementation(pool, codec_interface,	
+
+
+	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO,
-										 99,	
+										 99,
 										 "isac",
-										 "ibitrate=32000;maxbitrate=160000",	
-										 32000,	
-										 32000,	
-										 160000,	
-										 60000,	
-										 1920,	
-										 3840,	
-										 0,	
-										 1,	
-										 6,	
-										 switch_isac_init,	
+										 "ibitrate=32000;maxbitrate=160000",
+										 32000,
+										 32000,
+										 160000,
+										 30000,
+										 960,
+										 1920,
+										 0,
+										 1,
+										 6,
+										 switch_isac_init,
 										 switch_isac_encode,
 										 switch_isac_decode,
 										 switch_isac_destroy);
-	
 
-	
+
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO,
+										 99,
+										 "isac",
+										 "ibitrate=32000;maxbitrate=160000",
+										 32000,
+										 32000,
+										 160000,
+										 60000,
+										 1920,
+										 3840,
+										 0,
+										 1,
+										 6,
+										 switch_isac_init,
+										 switch_isac_encode,
+										 switch_isac_decode,
+										 switch_isac_destroy);
+
+
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

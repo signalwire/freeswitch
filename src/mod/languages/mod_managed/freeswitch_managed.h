@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Michael Giagnocavo <mgg@packetrino.com>
  * Jeff Lenk <jlenk@frontiernet.net> - Modified class to support Dotnet
  * 

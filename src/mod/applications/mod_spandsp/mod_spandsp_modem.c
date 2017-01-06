@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -27,7 +27,7 @@
  * Brian West <brian@freeswitch.org>
  * Anthony Minessale II <anthm@freeswitch.org>
  * Steve Underwood <steveu@coppice.org>
- * mod_spandsp_modem.c -- t31 Soft Modem 
+ * mod_spandsp_modem.c -- t31 Soft Modem
  *
  */
 
@@ -106,7 +106,7 @@ static int t31_at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 #endif
 
 	if (wrote != len) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to pass the full buffer onto the device file. " 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to pass the full buffer onto the device file. "
 						  "%"SWITCH_SSIZE_T_FMT " bytes of " "%"SWITCH_SIZE_T_FMT " written: %s\n", wrote, len, strerror(errno));
 
 		if (wrote == -1) wrote = 0;
@@ -138,7 +138,7 @@ static int t31_call_control_handler(t31_state_t *s, void *user_data, int op, con
 	return ret;
 }
 
-static modem_state_t modem_get_state(modem_t *modem) 
+static modem_state_t modem_get_state(modem_t *modem)
 {
 	modem_state_t state;
 
@@ -149,18 +149,18 @@ static modem_state_t modem_get_state(modem_t *modem)
 	return state;
 }
 
-static void _modem_set_state(modem_t *modem, modem_state_t state, const char *file, const char *func, int line) 
+static void _modem_set_state(modem_t *modem, modem_state_t state, const char *file, const char *func, int line)
 {
 
 	switch_mutex_lock(modem->mutex);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,"Modem %s [%s] - Changing state to %s\n", modem->devlink, 
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,"Modem %s [%s] - Changing state to %s\n", modem->devlink,
 					  modem_state2name(modem->state), modem_state2name(state));
 	modem->state = state;
 	switch_mutex_unlock(modem->mutex);
 }
 #define modem_set_state(_modem, _state) _modem_set_state(_modem, _state, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-char *modem_state2name(int state) 
+char *modem_state2name(int state)
 {
 	if (state > MODEM_STATE_LAST || state < 0) {
 		state = MODEM_STATE_LAST;
@@ -169,7 +169,7 @@ char *modem_state2name(int state)
 	return MODEM_STATE[state].name;
 }
 
-int modem_close(modem_t *modem) 
+int modem_close(modem_t *modem)
 {
 	int r = 0;
 	switch_status_t was_running = switch_test_flag(modem, MODEM_FLAG_RUNNING);
@@ -295,7 +295,7 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 
 #ifndef WIN32
 	snprintf(modem->devlink, sizeof(modem->devlink), "%s/FS%d", spandsp_globals.modem_directory, modem->slot);
-	
+
 	unlink(modem->devlink);
 
 	if (symlink(modem->stty, modem->devlink)) {
@@ -329,7 +329,7 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	}
 	modem->threadAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
-	
+
 	if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, t38_tx_packet_handler, modem))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize the T.31 modem\n");
 		modem_close(modem);
@@ -414,8 +414,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
 
-/* 
-   State methods they get called when the state changes to the specific state 
+/*
+   State methods they get called when the state changes to the specific state
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
@@ -471,11 +471,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_ALERTING);
 				rt = ring_ticks;
 			}
-			
+
 			switch_yield(rest);
 			to_ticks--;
 		}
-		
+
 		if (to_ticks < 1 || modem_get_state(tech_pvt->modem) != MODEM_STATE_ANSWERED) {
 			t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_NO_ANSWER);
 			switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
@@ -487,7 +487,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	}
 
 	switch_channel_set_state(channel, CS_ROUTING);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -528,7 +528,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 	//channel = switch_core_session_get_channel(session);
 	//switch_assert(channel != NULL);
-	
+
 	if ((tech_pvt = switch_core_session_get_private(session))) {
 
 		switch_core_timer_destroy(&tech_pvt->timer);
@@ -675,7 +675,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	tech_pvt->read_frame.flags = SFF_NONE;
 	switch_core_timer_next(&tech_pvt->timer);
-	
+
 	do {
 		r = t31_tx(tech_pvt->modem->t31_state, data + samples_read, samples_wanted - samples_read);
 		if (r < 0) break;
@@ -715,7 +715,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (t31_rx(tech_pvt->modem->t31_state, frame->data, frame->datalen / 2)) {
 		status = SWITCH_STATUS_FALSE;
 	}
-	
+
 	return status;
 }
 
@@ -862,7 +862,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Cannot find a modem.\n");
 			cause = SWITCH_CAUSE_USER_BUSY; goto fail;
 		}
-		
+
 		switch_core_session_add_stream(*new_session, NULL);
 
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
@@ -944,7 +944,7 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	char name[1024];
 	switch_caller_profile_t *caller_profile;
 	char *ani = NULL, *p, *digits = NULL;
-	
+
 	if (!(session = switch_core_session_request(modem_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failure.\n");
 		goto end;
@@ -953,7 +953,7 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	switch_core_session_add_stream(session, NULL);
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(*tech_pvt));
-	
+
 	p = switch_core_session_strdup(session, modem->digits);
 
 	if (*p == '*') {
@@ -964,7 +964,7 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 			ani = NULL;
 		}
 	}
-	
+
 	if (zstr(digits)) {
 		digits = p;
 	}
@@ -985,14 +985,14 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 											   modem->devlink,
 											   spandsp_globals.modem_dialplan,
-											   "FSModem", 
+											   "FSModem",
 											   ani,
-											   NULL, 
+											   NULL,
 											   ani,
-											   NULL, 
-											   NULL, 
-											   "mod_spandsp", 
-											   spandsp_globals.modem_context, 
+											   NULL,
+											   NULL,
+											   "mod_spandsp",
+											   spandsp_globals.modem_context,
 											   digits);
 
 	caller_profile->source = switch_core_strdup(caller_profile->pool, "mod_spandsp");
@@ -1027,7 +1027,7 @@ static int control_handler(modem_t *modem, const char *num, int op)
 {
 	switch_core_session_t *session = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n",
 					  op, modem_state2name(modem_get_state(modem)), modem->devlink);
 
 	switch (op) {
@@ -1045,7 +1045,7 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			wake_modem_thread(modem);
 
 			switch_set_string(modem->digits, num);
-			
+
 			if (create_session(&session, modem) != SWITCH_STATUS_SUCCESS) {
 				t31_call_event(modem->t31_state, AT_CALL_EVENT_HANGUP);
 			} else {
@@ -1059,11 +1059,11 @@ static int control_handler(modem_t *modem, const char *num, int op)
 		modem_set_state(modem, MODEM_STATE_OFFHOOK);
 		break;
 	case AT_MODEM_CONTROL_ONHOOK:
-	case AT_MODEM_CONTROL_HANGUP: 
+	case AT_MODEM_CONTROL_HANGUP:
 		{
 			if (modem_get_state(modem) != MODEM_STATE_RINGING) {
 				int set_state = 1;
-				
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Modem %s [%s] - Hanging up\n", modem->devlink, modem_state2name(modem_get_state(modem)));
 				switch_clear_flag(modem, MODEM_FLAG_XOFF);
@@ -1073,10 +1073,10 @@ static int control_handler(modem_t *modem, const char *num, int op)
 
 				if (!zstr(modem->uuid_str)) {
 					switch_core_session_t *session;
-					
+
 					if ((session = switch_core_session_force_locate(modem->uuid_str))) {
 						switch_channel_t *channel = switch_core_session_get_channel(session);
-						
+
 						if (switch_channel_up(channel)) {
 							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 							set_state = 0;
@@ -1148,7 +1148,7 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 {
 	struct pollfd pfds[2] = { { 0 } };
 	int s = 0, r = 0;
-	
+
 	pfds[0].fd = sock;
 
 	if ((flags & MODEM_POLL_READ)) {
@@ -1162,7 +1162,7 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 	if ((flags & MODEM_POLL_ERROR)) {
 		pfds[0].events |= POLLERR;
 	}
-	
+
 	s = poll(pfds, 1, ms);
 
 	if (s < 0) {
@@ -1208,7 +1208,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
 	if (result == 0)
 	{
 		if (GetLastError() != ERROR_IO_PENDING) {
-			/* something went horribly wrong with WaitCommEvent(), so 
+			/* something went horribly wrong with WaitCommEvent(), so
 			clear all errors and try again */
 			DWORD comerrors;
 			ClearCommError(modem->master, &comerrors, 0);
@@ -1278,7 +1278,7 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 				continue;
 			}
 
-#ifndef WIN32		
+#ifndef WIN32
 			r = read(modem->master, buf, avail);
 #else
 			o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -1318,7 +1318,7 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
-static void launch_modem_thread(modem_t *modem) 
+static void launch_modem_thread(modem_t *modem)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -1350,7 +1350,7 @@ static void deactivate_modems(void)
 {
 	int max = globals.SOFT_MAX_MODEMS;
 	int x;
-	
+
 	switch_mutex_lock(globals.mutex);
 
 	for (x = 0; x < max; x++) {
@@ -1409,7 +1409,7 @@ switch_status_t modem_global_init(switch_loadable_module_interface_t **module_in
 	globals.pool = pool;
 
 	globals.SOFT_MAX_MODEMS = spandsp_globals.modem_count;
-	
+
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
 
 	modem_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);

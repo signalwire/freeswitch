@@ -1,5 +1,5 @@
 //#define UDPTL_DEBUG
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2009, Steve Underwood <steveu@coppice.org>
  *
@@ -16,7 +16,7 @@
  * License.
  *
  * Contributor(s):
- * 
+ *
  * Steve Underwood <steveu@coppice.org>
  *
  * udptl.c -- UDPTL handling for T.38
@@ -252,7 +252,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 					   FEC mode after sending some redundant packets, and this may then be important. */
 					x = (seq_no - i) & UDPTL_BUF_MASK;
 					if (lengths[i - 1] > 0)
-						memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);						
+						memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);
 					s->rx[x].buf_len = lengths[i - 1];
 					s->rx[x].fec_len[0] = 0;
 					s->rx[x].fec_span = 0;

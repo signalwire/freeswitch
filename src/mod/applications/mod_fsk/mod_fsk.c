@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_fsk.c -- FSK data transfer
@@ -36,7 +36,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fsk_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_fsk_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fsk_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_fsk, mod_fsk_load, mod_fsk_shutdown, NULL);
@@ -46,7 +46,7 @@ switch_status_t my_write_sample(int16_t *buf, size_t buflen, void *user_data)
 	switch_buffer_t *buffer = (switch_buffer_t *) user_data;
 
 	switch_buffer_write(buffer, buf, buflen * 2);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -62,7 +62,7 @@ static switch_status_t write_fsk_data(uint32_t rate, int32_t db, switch_buffer_t
 	switch_size_t plen = 0;
 
 	memset(&fsk_trans, 0, sizeof(fsk_trans));
-	
+
 	time(&now);
 	localtime_r(&now, &tm);
 	strftime(time_str, sizeof(time_str), "%m%d%H%M", &tm);
@@ -91,7 +91,7 @@ static switch_status_t write_fsk_data(uint32_t rate, int32_t db, switch_buffer_t
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding [%s][%s]\n", hp->name, hp->value);
-			
+
 			if (!strcasecmp(name, "phone_num")) {
 				fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, (uint8_t *)hp->value, strlen(hp->value));
 			} else if (!strcasecmp(name, "phone_name")) {
@@ -122,14 +122,14 @@ SWITCH_STANDARD_APP(fsk_send_function) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_frame_t *read_frame;
 	switch_status_t status;
-	
+
 
 	if (data) {
 		switch_ivr_sleep(session, 1000, SWITCH_TRUE, NULL);
 		switch_core_session_send_dtmf_string(session, (const char *) data);
 		switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 	}
-	
+
 	if (switch_core_session_set_codec_slin(session, &sdata) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 						  SWITCH_LOG_ERROR, "FAILURE\n");
@@ -139,7 +139,7 @@ SWITCH_STANDARD_APP(fsk_send_function) {
 	switch_buffer_create_dynamic(&buffer, 1024, 2048, 0);
 
 	switch_channel_get_variables(channel, &event);
-	
+
 	write_fsk_data(sdata.codec.implementation->actual_samples_per_second, -14, buffer, event, "fsk_");
 
 	while(switch_channel_ready(channel)) {
@@ -149,14 +149,14 @@ SWITCH_STANDARD_APP(fsk_send_function) {
 			break;
 		}
 
-		if ((sdata.write_frame.datalen = switch_buffer_read(buffer, sdata.write_frame.data, 
+		if ((sdata.write_frame.datalen = switch_buffer_read(buffer, sdata.write_frame.data,
 															 sdata.codec.implementation->decoded_bytes_per_packet)) <= 0) {
 			break;
 		}
 
-		
+
 		if (sdata.write_frame.datalen < sdata.codec.implementation->decoded_bytes_per_packet) {
-			memset((char *)sdata.write_frame.data + sdata.write_frame.datalen, 255, 
+			memset((char *)sdata.write_frame.data + sdata.write_frame.datalen, 255,
 				   sdata.codec.implementation->decoded_bytes_per_packet - sdata.write_frame.datalen);
 			sdata.write_frame.datalen = sdata.codec.implementation->decoded_bytes_per_packet;
 		}
@@ -168,7 +168,7 @@ SWITCH_STANDARD_APP(fsk_send_function) {
 	switch_buffer_destroy(&buffer);
 	switch_core_codec_destroy(&sdata.codec);
 	switch_core_session_set_read_codec(session, NULL);
-	
+
 }
 
 typedef struct {
@@ -191,11 +191,11 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 	case SWITCH_ABC_TYPE_INIT: {
 		switch_codec_implementation_t read_impl = { 0 };
 		switch_core_session_get_read_impl(pvt->session, &read_impl);
-		
+
 		if (fsk_demod_init(&pvt->fsk_data, read_impl.actual_samples_per_second, pvt->fbuf, sizeof(pvt->fbuf))) {
 			return SWITCH_FALSE;
 		}
-		
+
 		break;
 	}
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -224,10 +224,10 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 				int total = 0;
 
 				switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA);
-				
+
 				while(fsk_data_parse(&pvt->fsk_data, &type, &sp, &mlen) == SWITCH_STATUS_SUCCESS) {
 					char *varname = NULL, *val, *p;
-					
+
 					switch_copy_string(str, sp, mlen+1);
 					*(str+mlen) = '\0';
 					switch_clean_string(str);
@@ -258,7 +258,7 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 
 					if (varname && val) {
 						total++;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s setting FSK var [%s][%s]\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s setting FSK var [%s][%s]\n",
 										  switch_channel_get_name(channel), varname, val);
 						switch_channel_set_variable(channel, varname, val);
 						if (event) {
@@ -272,21 +272,21 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 						switch_event_destroy(&event);
 					}
 				}
-				
+
 				if (total && (app_var = switch_channel_get_variable(channel, "execute_on_fsk"))) {
 					char *app_arg;
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s processing execute_on_fsk [%s]\n", 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s processing execute_on_fsk [%s]\n",
 									  switch_channel_get_name(channel), app_var);
 					if ((app_arg = strchr(app_var, ' '))) {
 						*app_arg++ = '\0';
 					}
 					switch_core_session_execute_application(pvt->session, app_var, app_arg);
 				}
-				
+
 				pvt->skip = 10;
 			}
-			
+
 			memset(rframe->data, 255, rframe->datalen);
 
 			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
@@ -359,12 +359,12 @@ switch_status_t fsk_detect_session(switch_core_session_t *session, const char *f
 }
 
 
-SWITCH_STANDARD_APP(fsk_recv_function) 
+SWITCH_STANDARD_APP(fsk_recv_function)
 {
 	fsk_detect_session(session, data);
 }
 
-SWITCH_STANDARD_APP(fsk_display_function) 
+SWITCH_STANDARD_APP(fsk_display_function)
 {
 	/* expected to be called via 'execute_on_fsk' -- passes display update over FSK */
 
@@ -380,7 +380,7 @@ SWITCH_STANDARD_APP(fsk_display_function)
 	if (zstr(cid_name)) {
 		cid_name = cid_num;
 	}
-	
+
 	if (zstr(cid_num)) {
 		return;
 	}
@@ -409,13 +409,13 @@ SWITCH_STANDARD_APP(fsk_display_function)
 	}
 }
 
-SWITCH_STANDARD_APP(fsk_simplify_function) 
+SWITCH_STANDARD_APP(fsk_simplify_function)
 {
 	/* expected to be called via 'execute_on_fsk' -- redirects call to point-to-point and eliminates legs in the middle */
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *sip_uri, *fsk_simplify_profile, *fsk_simplify_context;
 	char *bridgeto;
-	
+
 	if (!(sip_uri = switch_channel_get_variable(channel, "fsk_uri"))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Missing URI field!\n", switch_channel_get_name(channel));
 	}
@@ -431,21 +431,21 @@ SWITCH_STANDARD_APP(fsk_simplify_function)
 		switch_channel_t *pchannel;
 
 		bridgeto = switch_core_session_sprintf(session, "bridge:sofia/%s/sip:%s", fsk_simplify_profile, sip_uri);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s transfering to [%s]\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s transfering to [%s]\n",
 						  switch_channel_get_name(channel), bridgeto);
-		
+
 
 		if (switch_core_session_get_partner(session, &psession) == SWITCH_STATUS_SUCCESS) {
 			pchannel = switch_core_session_get_channel(psession);
 			switch_channel_set_flag(pchannel, CF_REDIRECT);
 			switch_channel_set_flag(pchannel, CF_TRANSFER);
 		}
-		
+
 		switch_ivr_session_transfer(session, bridgeto, "inline", fsk_simplify_context);
 
 		if (psession) {
 			switch_ivr_session_transfer(psession, "sleep:5000", "inline", NULL);
-			switch_core_session_rwunlock(psession);			
+			switch_core_session_rwunlock(psession);
 		}
 	}
 }

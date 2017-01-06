@@ -1,4 +1,4 @@
-//indent -gnu -ts4 -br -brs -cdw -lp -ce -nbfda -npcs -nprs -npsl -nbbo -saf -sai -saw -cs -bbo -nhnl -nut -sob -l90 
+//indent -gnu -ts4 -br -brs -cdw -lp -ce -nbfda -npcs -nprs -npsl -nbbo -saf -sai -saw -cs -bbo -nhnl -nut -sob -l90
 #include "skypiax.h"
 
 /* LOCKS */
@@ -95,13 +95,13 @@ const struct ast_channel_tech skypiax_tech = {
 #endif /* ASTERISK_VERSION_1_4 */
 };
 
-/*! \brief fake skypiax_pvt structure values, 
+/*! \brief fake skypiax_pvt structure values,
  * just for logging purposes */
 struct skypiax_pvt skypiax_log_struct = {
 	.name = "none",
 };
 
-/*! \brief Default skypiax_pvt structure values, 
+/*! \brief Default skypiax_pvt structure values,
  * used by skypiax_mkif to initialize the interfaces */
 struct skypiax_pvt skypiax_default = {
 	.interface_state = SKYPIAX_STATE_DOWN,
@@ -121,14 +121,14 @@ struct skypiax_pvt skypiax_default = {
 	.skypiax_dir_entry_extension_prefix = 6,
 };
 
-/*! 
+/*!
  * \brief PVT structure for a skypiax interface (channel), created by skypiax_mkif
  */
 struct skypiax_pvt *skypiax_iflist = NULL;
 
 #ifdef ASTERISK_VERSION_1_6
 struct ast_cli_entry myclis[] = {
-/* 
+/*
  * CLI do not works since some time on 1.6, they changed the CLI mechanism
  */
 #if 0
@@ -286,7 +286,7 @@ int skypiax_indicate(struct ast_channel *c, int cond, const void *data, size_t d
 	return res;
 }
 
-/*! \brief PBX interface function -build skypiax pvt structure 
+/*! \brief PBX interface function -build skypiax pvt structure
  *         skypiax calls initiated by the PBX arrive here */
 struct ast_channel *skypiax_request(const char *type, int format, void *data, int *cause)
 {
@@ -584,7 +584,7 @@ struct ast_frame *skypiax_read(struct ast_channel *c)
 	return &f;
 }
 
-/*! \brief Initiate skypiax call from PBX 
+/*! \brief Initiate skypiax call from PBX
  * used from the dial() application
  */
 int skypiax_originate_call(struct ast_channel *c, char *idest, int timeout)
@@ -788,7 +788,7 @@ struct ast_channel *skypiax_new(struct skypiax_pvt *p, int state, char *context)
  * \brief Load the module into Asterisk and start its threads
  *
  * This function register the module into Asterisk,
- * create the interfaces for the channels, 
+ * create the interfaces for the channels,
  * start the auxiliary threads for the interfaces,
  * then start a monitor thread. The monitor thread
  * will signal Asterisk when an interface receive a call.
@@ -901,7 +901,7 @@ int load_module(void)
  * \brief Unload the module from Asterisk and shutdown its threads
  *
  * This function unregister the module from Asterisk,
- * destroy the interfaces for the channels, 
+ * destroy the interfaces for the channels,
  * shutdown the auxiliary threads for the interfaces,
  * then shutdown its monitor thread.
  *
@@ -1363,9 +1363,9 @@ int skypiax_restart_monitor(void)
 	return 0;
 }
 
-/*! \brief The skypiax monitoring thread 
+/*! \brief The skypiax monitoring thread
  * \note   This thread monitors all the skypiax interfaces that are not in a call
- *         (and thus do not have a separate thread) indefinitely 
+ *         (and thus do not have a separate thread) indefinitely
  *         */
 void *skypiax_do_monitor(void *data)
 {
@@ -1439,7 +1439,7 @@ void *skypiax_do_monitor(void *data)
 
 		/* If there are errors...  */
 		if (res < 0) {
-			if (errno == EINTR)	/* EINTR is just the select 
+			if (errno == EINTR)	/* EINTR is just the select
 								   being interrupted by a SIGURG, or so */
 				continue;
 			else {
@@ -1483,10 +1483,10 @@ void *skypiax_do_monitor(void *data)
 }
 
 /*!
- * \brief Initialize the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces) 
+ * \brief Initialize the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces)
  * \param p the skypiax_pvt of the interface
  *
- * This function initialize the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces). It simply pass its parameters to the right function for the sound system for which has been compiled, eg. alsa_init for ALSA, oss_init for OSS, winmm_init for Windows Multimedia, etc and return the result 
+ * This function initialize the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces). It simply pass its parameters to the right function for the sound system for which has been compiled, eg. alsa_init for ALSA, oss_init for OSS, winmm_init for Windows Multimedia, etc and return the result
  *
  * \return zero on success, -1 on error.
  */
@@ -1497,7 +1497,7 @@ int skypiax_sound_init(struct skypiax_pvt *p)
 }
 
 /*!
- * \brief Shutdown the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces) 
+ * \brief Shutdown the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces)
  * \param p the skypiax_pvt of the interface
  *
  * This function shutdown the soundcard channels (input and output) used by one interface (a multichannel soundcard can be used by multiple interfaces). It simply pass its parameters to the right function for the sound system for which has been compiled, eg. alsa_shutdown for ALSA, oss_shutdown for OSS, winmm_shutdown for Windows Multimedia, etc and return the result
@@ -2035,7 +2035,7 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 
 				int friends_count = 0;
 				while (p->skype_friends[0] == '\0') {
-					/* FIXME needs a timeout, can't wait forever! 
+					/* FIXME needs a timeout, can't wait forever!
 					 * eg. when skype is running but not connected! */
 					usleep(100);
 					friends_count++;
@@ -2063,9 +2063,9 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 							 * So, we have the Skype username (the HANDLE, I think is called).
 							 * But we want to call the names we see in the Skype contact list
 							 * So, let's check the DISPLAYNAME (the end user modified contact name)
-							 * Then, we check the FULLNAME (that appears as it was the DISPLAYNAME 
+							 * Then, we check the FULLNAME (that appears as it was the DISPLAYNAME
 							 * if the end user has not modify it)
-							 * If we still have neither DISPLAYNAME nor FULLNAME, we'll use the 
+							 * If we still have neither DISPLAYNAME nor FULLNAME, we'll use the
 							 * Skipe username (the HANDLE)
 							 */
 
@@ -2074,7 +2074,7 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 							skypiax_signaling_write(p, msg_to_skype);
 							int displayname_count = 0;
 							while (p->skype_displayname[0] == '\0') {
-								/* FIXME needs a timeout, can't wait forever! 
+								/* FIXME needs a timeout, can't wait forever!
 								 * eg. when skype is running but not connected! */
 								usleep(100);
 								displayname_count++;
@@ -2090,9 +2090,9 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 								where2 = strstr(p->skype_displayname, "DISPLAYNAME ");
 								if (where2) {
 
-									/* there can be some *smart* that makes a displayname 
+									/* there can be some *smart* that makes a displayname
 									 * that is different than first<space>last, */
-									/* maybe initials, simbols, slashes, 
+									/* maybe initials, simbols, slashes,
 									 * something smartish... let's check */
 
 									if (where2[12] != '\0') {
@@ -2153,7 +2153,7 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 							skypiax_signaling_write(p, msg_to_skype);
 							int fullname_count = 0;
 							while (p->skype_fullname[0] == '\0') {
-								/* FIXME needs a timeout, can't wait forever! 
+								/* FIXME needs a timeout, can't wait forever!
 								 * eg. when skype is running but not connected! */
 								usleep(100);
 								fullname_count++;
@@ -2167,7 +2167,7 @@ int skypiax_console_skypiax_dir_import(int fd, int argc, char *argv[])
 								where2 = strstr(p->skype_fullname, "FULLNAME ");
 								if (where2) {
 
-									/* there can be some *smart* that makes a fullname 
+									/* there can be some *smart* that makes a fullname
 									 * that is different than first<space>last, */
 									/* maybe initials, simbols, slashes,
 									 *  something smartish... let's check */

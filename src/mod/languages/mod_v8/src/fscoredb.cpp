@@ -179,7 +179,7 @@ JS_COREDB_FUNCTION_IMPL(Exec)
 }
 
 /* Evaluate a prepared statement
-  stepSuccessCode expected success code from switch_core_db_step() 
+  stepSuccessCode expected success code from switch_core_db_step()
   return true if step return expected success code, false otherwise
 */
 void FSCoreDB::StepEx(const v8::FunctionCallbackInfo<Value>& info, int stepSuccessCode)
@@ -214,7 +214,7 @@ void FSCoreDB::StepEx(const v8::FunctionCallbackInfo<Value>& info, int stepSucce
 	}
 }
 
-/* Evaluate a prepared statement, to be used with statements that return data 
+/* Evaluate a prepared statement, to be used with statements that return data
   return true while data is available, false when done or error
 */
 JS_COREDB_FUNCTION_IMPL(Next)
@@ -223,8 +223,8 @@ JS_COREDB_FUNCTION_IMPL(Next)
 	StepEx(info, SWITCH_CORE_DB_ROW);
 }
 
-/* Evaluate a prepared statement, to be used with statements that return no data 
-  return true if statement has finished executing successfully, false otherwise 
+/* Evaluate a prepared statement, to be used with statements that return no data
+  return true if statement has finished executing successfully, false otherwise
 */
 JS_COREDB_FUNCTION_IMPL(Step)
 {

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -165,7 +165,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	const char *codec_name = "PCMU";
 	int read_rate = 8000;
 	int need_transcode = 0;
-	
+
 	inc_serno();
 
 	switch_core_session_get_read_impl(session, &read_impl);
@@ -313,7 +313,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		goto fail;
 	}
 
-	
+
 	while (!ready) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -333,7 +333,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	alert_packet->audio_header.codec = 0x00;
 	alert_packet->audio_header.flags = 0;
-	
+
 	if ((var = switch_channel_get_variable(channel, "esf_multicast_write_codec"))) {
 		if (!strcasecmp(var, "PCMU")) {
 			codec_name = var;
@@ -379,7 +379,7 @@ SWITCH_STANDARD_APP(bcast_function)
 				goto fail;
 			}
 		}
-		
+
 
 		if (!(rtp_port = switch_rtp_request_port(source_ip))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Port Error\n");
@@ -393,7 +393,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 alert_packet->audio_header.codec,
 									 160,
 									 20000, flags, "soft", &err, switch_core_session_get_pool(session));
-		
+
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");
 			goto fail;
@@ -420,7 +420,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	strncpy((char *)polycom_packet->cid, caller_id_name, sizeof(polycom_packet->cid));
 	polycom_packet->cid_len = 13;
-	
+
 	polycom_packet->op = 0x0F;
 	polycom_packet->channel = 0x1a;
 	polycom_packet->serno = htonl(get_serno());
@@ -485,27 +485,27 @@ SWITCH_STANDARD_APP(bcast_function)
 				ebuf = read_frame->data;
 				encoded_datalen = read_frame->datalen;
 			}
-			
+
 			switch_rtp_write_frame(rtp_session, read_frame);
-			
+
 			seq += 160;
-			
+
 			alert_packet->audio_header.seq = htonl(seq);
-			
+
 			if (last_polycom_len) {
 				memcpy(alert_packet->data, last_polycom_buf, last_polycom_len);
 				memcpy(alert_packet->data + last_polycom_len, ebuf, encoded_datalen);
 			} else {
 				memcpy(alert_packet->data, ebuf, encoded_datalen);
 			}
-			
+
 			bytes = sizeof(*alert_packet) + encoded_datalen + last_polycom_len;
 
 			switch_socket_sendto(socket, polycom_addr, 0, (void *) polycom_buf, &bytes);
-			
+
 			last_polycom_len = encoded_datalen;
 			memcpy((void *)last_polycom_buf, (void *)ebuf, last_polycom_len);
-			
+
 		} else {
 			bytes = read_frame->packetlen;
 			switch_socket_sendto(socket, audio_addr, 0, read_frame->packet, &bytes);
@@ -543,7 +543,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	if (socket) {
 		switch_socket_close(socket);
 	}
-	
+
 	if (polycom_socket) {
 		switch_socket_close(polycom_socket);
 	}
