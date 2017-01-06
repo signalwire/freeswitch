@@ -191,7 +191,6 @@ BuildRequires: ilbc2-devel
 BuildRequires: g722_1-devel
 BuildRequires: libcodec2-devel
 BuildRequires: libsilk-devel
-BuildRequires: libvpx2-devel >= 2.0.0
 BuildRequires: libyuv-devel >= 0.0.1280
 BuildRequires: lua-devel
 BuildRequires: mongo-c-driver-devel
