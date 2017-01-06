@@ -4246,6 +4246,26 @@ else
     return ret;
   }
 
+  public static string switch_core_url_encode_opt(SWIGTYPE_p_apr_pool_t pool, string url, switch_bool_t double_encode) {
+    string ret = freeswitchPINVOKE.switch_core_url_encode_opt(SWIGTYPE_p_apr_pool_t.getCPtr(pool), url, (int)double_encode);
+    return ret;
+  }
+
+  public static string switch_core_url_encode(SWIGTYPE_p_apr_pool_t pool, string url) {
+    string ret = freeswitchPINVOKE.switch_core_url_encode(SWIGTYPE_p_apr_pool_t.getCPtr(pool), url);
+    return ret;
+  }
+
+  public static string switch_core_session_url_encode_opt(SWIGTYPE_p_switch_core_session session, string url, switch_bool_t double_encode) {
+    string ret = freeswitchPINVOKE.switch_core_session_url_encode_opt(SWIGTYPE_p_switch_core_session.getCPtr(session), url, (int)double_encode);
+    return ret;
+  }
+
+  public static string switch_core_session_url_encode(SWIGTYPE_p_switch_core_session session, string url) {
+    string ret = freeswitchPINVOKE.switch_core_session_url_encode(SWIGTYPE_p_switch_core_session.getCPtr(session), url);
+    return ret;
+  }
+
   public static switch_bool_t switch_simple_email(string to, string from, string headers, string body, string file, string convert_cmd, string convert_ext) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_simple_email(to, from, headers, body, file, convert_cmd, convert_ext);
     return ret;
@@ -12700,6 +12720,18 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_url_decode")]
   public static extern string switch_url_decode(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_url_encode_opt")]
+  public static extern string switch_core_url_encode_opt(HandleRef jarg1, string jarg2, int jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_url_encode")]
+  public static extern string switch_core_url_encode(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_url_encode_opt")]
+  public static extern string switch_core_session_url_encode_opt(HandleRef jarg1, string jarg2, int jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_url_encode")]
+  public static extern string switch_core_session_url_encode(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_simple_email")]
   public static extern int switch_simple_email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7);
@@ -29468,7 +29500,8 @@ public enum switch_channel_app_flag_t {
   CF_APP_T38 = (1 << 1),
   CF_APP_T38_REQ = (1 << 2),
   CF_APP_T38_FAIL = (1 << 3),
-  CF_APP_T38_NEGOTIATED = (1 << 4)
+  CF_APP_T38_NEGOTIATED = (1 << 4),
+  CF_APP_T38_POSSIBLE = (1 << 5)
 }
 
 }

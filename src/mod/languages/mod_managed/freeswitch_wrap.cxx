@@ -19681,6 +19681,66 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_url_decode(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_url_encode_opt(void * jarg1, char * jarg2, int jarg3) {
+  char * jresult ;
+  switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_bool_t arg3 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_memory_pool_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  result = (char *)switch_core_url_encode_opt(arg1,(char const *)arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_url_encode(void * jarg1, char * jarg2) {
+  char * jresult ;
+  switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_memory_pool_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (char *)switch_core_url_encode(arg1,(char const *)arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_session_url_encode_opt(void * jarg1, char * jarg2, int jarg3) {
+  char * jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_bool_t arg3 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  result = (char *)switch_core_session_url_encode_opt(arg1,(char const *)arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_session_url_encode(void * jarg1, char * jarg2) {
+  char * jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (char *)switch_core_session_url_encode(arg1,(char const *)arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_simple_email(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7) {
   int jresult ;
   char *arg1 = (char *) 0 ;
