@@ -665,6 +665,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
+			sofia_media_activate_rtp(tech_pvt);
 			switch_core_media_patch_sdp(tech_pvt->session);			
 			switch_core_media_proxy_remote_addr(tech_pvt->session, NULL);
 		}

@@ -1645,6 +1645,7 @@ static void our_sofia_event_callback(nua_event_t event,
 						switch_channel_set_variable_partner(tech_pvt->channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 						
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
+						sofia_media_activate_rtp(tech_pvt);
 						switch_core_media_proxy_remote_addr(tech_pvt->session, r_sdp);
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 						sofia_clear_flag(tech_pvt, TFLAG_PASS_ACK);
@@ -7754,10 +7755,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							}
 						}
 
-						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && !(tech_pvt->profile->mndlb & SM_NDLB_NEVER_PATCH_REINVITE)) {
-							if (switch_core_media_proxy_remote_addr(session, r_sdp) == SWITCH_STATUS_SUCCESS && !is_t38) {
+						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+							sofia_media_activate_rtp(tech_pvt);
+							switch_core_media_proxy_remote_addr(session, r_sdp);
+
+							if ((tech_pvt->profile->mndlb & SM_NDLB_NEVER_PATCH_REINVITE)) {
 								nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed, NOT proxying re-invite.\n");
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NOT proxying re-invite.\n");
 								switch_core_session_rwunlock(other_session);
 								goto done;
 							}
