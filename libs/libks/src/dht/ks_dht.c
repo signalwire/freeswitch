@@ -8,13 +8,14 @@ void ks_dht_transaction_destructor(void *ptr) { ks_dht_transaction_destroy((ks_d
 
 void ks_dht_storageitem_destructor(void *ptr) { ks_dht_storageitem_destroy((ks_dht_storageitem_t **)&ptr); }
 
-KS_DECLARE(ks_status_t) ks_dht_create(ks_dht_t **dht, ks_pool_t *pool, ks_thread_pool_t *tpool)
+KS_DECLARE(ks_status_t) ks_dht_create(ks_dht_t **dht, ks_pool_t *pool, ks_thread_pool_t *tpool, ks_dht_nodeid_t *nodeid)
 {
 	ks_bool_t pool_alloc = !pool;
 	ks_dht_t *d = NULL;
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(dht);
+	ks_assert(nodeid);
 
 	*dht = NULL;
 
@@ -48,6 +49,8 @@ KS_DECLARE(ks_status_t) ks_dht_create(ks_dht_t **dht, ks_pool_t *pool, ks_thread
 		ks_thread_pool_create(&d->tpool, KS_DHT_TPOOL_MIN, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
 		ks_assert(d->tpool);
 	}
+
+	d->nodeid = *nodeid;
 
 	/**
 	 * Default autorouting to disabled.
@@ -366,7 +369,7 @@ KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, const ks_sockaddr_
 	if (!ep && dht->autoroute) {
 		ks_sockaddr_t addr;
 		if ((ret = ks_addr_set(&addr, ip, dht->autoroute_port, raddr->family)) != KS_STATUS_SUCCESS) return ret;
-		if ((ret = ks_dht_bind(dht, NULL, &addr, &ep)) != KS_STATUS_SUCCESS) return ret;
+		if ((ret = ks_dht_bind(dht, &addr, &ep)) != KS_STATUS_SUCCESS) return ret;
 	}
 
 	/**
@@ -419,7 +422,7 @@ KS_DECLARE(void) ks_dht_register_error(ks_dht_t *dht, const char *value, ks_dht_
 }
 
 
-KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
+KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
 {
 	ks_socket_t sock = KS_SOCK_INVALID;
 	ks_dht_endpoint_t *ep = NULL;
@@ -466,7 +469,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	/**
 	 * Allocate the endpoint to track the local socket.
 	 */
-	ks_dht_endpoint_create(&ep, dht->pool, nodeid, addr, sock);
+	ks_dht_endpoint_create(&ep, dht->pool, addr, sock);
 	ks_assert(ep);
 
 	/**
@@ -506,24 +509,24 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	if (ep->addr.family == AF_INET) {
 		if (!dht->rt_ipv4 && (ret = ks_dhtrt_initroute(&dht->rt_ipv4, dht, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv4,
-										ep->nodeid,
+										dht->nodeid,
 										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
 										KS_DHTRT_CREATE_DEFAULT,
-										&ep->node)) != KS_STATUS_SUCCESS) goto done;
+										&dht->node)) != KS_STATUS_SUCCESS) goto done;
 	} else {
 		if (!dht->rt_ipv6 && (ret = ks_dhtrt_initroute(&dht->rt_ipv6, dht, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv6,
-										ep->nodeid,
+										dht->nodeid,
 										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
 										KS_DHTRT_CREATE_DEFAULT,
-										&ep->node)) != KS_STATUS_SUCCESS) goto done;
+										&dht->node)) != KS_STATUS_SUCCESS) goto done;
 	}
 	/**
-	 * Do not release the ep->node, keep it alive until cleanup
+	 * Do not release the dht->node, keep it alive until cleanup
 	 */
 
 	/**
@@ -786,6 +789,19 @@ KS_DECLARE(char *) ks_dht_hex(const uint8_t *data, char *buffer, ks_size_t len)
 	for (int i = 0; i < len; ++i, t += 2) sprintf(t, "%02X", data[i]);
 
 	return buffer;
+}
+
+KS_DECLARE(uint8_t *) ks_dht_dehex(uint8_t *data, const char *buffer, ks_size_t len)
+{
+	const char *t = buffer;
+	
+	ks_assert(data);
+	ks_assert(buffer);
+	ks_assert(!(len & 1));
+
+	for (int i = 0; i < len; ++i, t += 2) sscanf(t, "%2hhx", &data[i]);
+	
+	return data;
 }
 
 KS_DECLARE(void) ks_dht_utility_nodeid_xor(ks_dht_nodeid_t *dest, ks_dht_nodeid_t *src1, ks_dht_nodeid_t *src2)
@@ -1361,7 +1377,7 @@ KS_DECLARE(ks_status_t) ks_dht_query_setup(ks_dht_t *dht,
 
 	if (args) *args = a;
 
-	ben_dict_set(a, ben_blob("id", 2), ben_blob(ep->nodeid.id, KS_DHT_NODEID_SIZE));
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_SIZE));
 
 	*message = msg;
 
@@ -1414,7 +1430,7 @@ KS_DECLARE(ks_status_t) ks_dht_response_setup(ks_dht_t *dht,
 
 	if (args) *args = r;
 
-	ben_dict_set(r, ben_blob("id", 2), ben_blob(ep->nodeid.id, KS_DHT_NODEID_SIZE));
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_SIZE));
 
 	*message = msg;
 
@@ -1546,7 +1562,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query(ks_dht_t *dht, ks_dht_message_t *me
 	message->args_id = *id;
 
 	ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(id->id, id_buf, KS_DHT_NODEID_SIZE));
-	if ((ret = ks_dhtrt_create_node(message->endpoint->node->table,
+	if ((ret = ks_dhtrt_create_node(message->endpoint->addr.family == AF_INET ? dht->rt_ipv4 : dht->rt_ipv6,
 									*id,
 									KS_DHT_REMOTE,
 									message->raddr.host,
@@ -1620,7 +1636,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 	message->args_id = *id;
 
 	ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(id->id, id_buf, KS_DHT_NODEID_SIZE));
-	if ((ret = ks_dhtrt_create_node(message->endpoint->node->table,
+	if ((ret = ks_dhtrt_create_node(message->endpoint->addr.family == AF_INET ? dht->rt_ipv4 : dht->rt_ipv6,
 									*id,
 									KS_DHT_REMOTE,
 									message->raddr.host,
@@ -1629,7 +1645,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 									&node)) != KS_STATUS_SUCCESS) goto done;
 	
 	ks_log(KS_LOG_DEBUG, "Touching node %s\n", ks_dht_hex(id->id, id_buf, KS_DHT_NODEID_SIZE));
-	if ((ret = ks_dhtrt_touch_node(message->endpoint->node->table, *id)) != KS_STATUS_SUCCESS) goto done;
+	if ((ret = ks_dhtrt_touch_node(message->endpoint->addr.family == AF_INET ? dht->rt_ipv4 : dht->rt_ipv6, *id)) != KS_STATUS_SUCCESS) goto done;
 
 	
 	tid = (uint32_t *)message->transactionid;
@@ -2292,7 +2308,7 @@ KS_DECLARE(ks_status_t) ks_dht_query_findnode(ks_dht_t *dht, ks_dht_job_t *job)
 
 	ben_dict_set(a, ben_blob("target", 6), ben_blob(job->query_target.id, KS_DHT_NODEID_SIZE));
 	// Only request both v4 and v6 if we have both interfaces bound and are looking for our own node id, aka bootstrapping
-	if (dht->rt_ipv4 && dht->rt_ipv6 && !memcmp(message->endpoint->nodeid.id, job->query_target.id, KS_DHT_NODEID_SIZE)) {
+	if (dht->rt_ipv4 && dht->rt_ipv6 && !memcmp(dht->nodeid.id, job->query_target.id, KS_DHT_NODEID_SIZE)) {
 		struct bencode *want = ben_list();
 		ben_list_append_str(want, "n4");
 		ben_list_append_str(want, "n6");

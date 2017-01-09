@@ -1,6 +1,6 @@
 #include <ks.h>
-#include <../dht/ks_dht.h>
-#include <../dht/ks_dht-int.h>
+#include <ks_dht.h>
+#include <ks_dht-int.h>
 #include <tap.h>
 
 ks_dht_storageitem_skey_t sk;
@@ -55,6 +55,7 @@ int main() {
 	//ks_size_t buflen;
   ks_status_t err;
   int mask = 0;
+  ks_dht_nodeid_t nodeid;
   ks_dht_t *dht1 = NULL;
   ks_dht_t *dht2 = NULL;
   ks_dht_t *dht3 = NULL;
@@ -112,20 +113,23 @@ int main() {
 	  diag("Binding to %s on ipv6\n", v6);
   }
 
-  err = ks_dht_create(&dht1, NULL, NULL);
+  ks_dht_dehex(nodeid.id, "0000000000000000000000000000000000000001", KS_DHT_NODEID_SIZE);
+  err = ks_dht_create(&dht1, NULL, NULL, &nodeid);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_create(&dht2, NULL, NULL);
+  ks_dht_dehex(nodeid.id, "0000000000000000000000000000000000000002", KS_DHT_NODEID_SIZE);
+  err = ks_dht_create(&dht2, NULL, NULL, &nodeid);
   ok(err == KS_STATUS_SUCCESS);
 
-  err = ks_dht_create(&dht3, NULL, NULL);
+  ks_dht_dehex(nodeid.id, "0000000000000000000000000000000000000003", KS_DHT_NODEID_SIZE);
+  err = ks_dht_create(&dht3, NULL, NULL, &nodeid);
   ok(err == KS_STATUS_SUCCESS);
   
   if (have_v4) {
     err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-    err = ks_dht_bind(dht1, NULL, &addr, &ep1);
+    err = ks_dht_bind(dht1, &addr, &ep1);
     ok(err == KS_STATUS_SUCCESS);
 
 	raddr1 = addr;
@@ -133,7 +137,7 @@ int main() {
 	err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT + 1, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-	err = ks_dht_bind(dht2, NULL, &addr, &ep2);
+	err = ks_dht_bind(dht2, &addr, &ep2);
 	ok(err == KS_STATUS_SUCCESS);
 
 	//raddr2 = addr;
@@ -141,7 +145,7 @@ int main() {
 	err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT + 2, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-	err = ks_dht_bind(dht3, NULL, &addr, &ep3);
+	err = ks_dht_bind(dht3, &addr, &ep3);
 	ok(err == KS_STATUS_SUCCESS);
 
 	//raddr3 = addr;
@@ -151,19 +155,19 @@ int main() {
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 	  
-    err = ks_dht_bind(dht1, NULL, &addr, NULL);
+    err = ks_dht_bind(dht1, &addr, NULL);
     ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 1, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 
-	err = ks_dht_bind(dht2, NULL, &addr, NULL);
+	err = ks_dht_bind(dht2, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 2, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 
-	err = ks_dht_bind(dht3, NULL, &addr, NULL);
+	err = ks_dht_bind(dht3, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
   }
 
@@ -175,11 +179,11 @@ int main() {
 
   ks_dht_pulse(dht1, 100); // Receive and process ping query from dht2, queue and send ping response
 
-  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, dht2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
   ks_dht_pulse(dht2, 100); // Receive and process ping response from dht1 (PROCESSING then COMPLETING)
 
-  ok(ks_dhtrt_find_node(dht2->rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht2->rt_ipv4, dht1->nodeid) != NULL); // The node should be good, and thus be returned as good
 
   ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
 
@@ -189,7 +193,7 @@ int main() {
 	  ks_dht_pulse(dht2, 100);
 	  ks_dht_pulse(dht3, 100);
   }
-  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, dht2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
 
   
   ks_dht_ping(dht3, &raddr1, NULL, NULL); // (QUERYING)
@@ -198,11 +202,11 @@ int main() {
   
   ks_dht_pulse(dht1, 100); // Receive and process ping query from dht3, queue and send ping response
 
-  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, dht3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
   ks_dht_pulse(dht3, 100); // Receive and process ping response from dht1 (PROCESSING then COMPLETING)
 
-  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, dht1->nodeid) != NULL); // The node should be good, and thus be returned as good
 
   ks_dht_pulse(dht3, 100); // Call finish callback and purge the job (COMPLETING)
 
@@ -212,26 +216,26 @@ int main() {
 	  ks_dht_pulse(dht2, 100);
 	  ks_dht_pulse(dht3, 100);
   }
-  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, dht2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
 
   // Test bootstrap find_node from dht3 to dht1 to find dht2 nodeid
 
   /*
   diag("Find_Node test\n");
 
-  ks_dht_findnode(dht3, NULL, &raddr1, NULL, NULL, &ep2->nodeid);
+  ks_dht_findnode(dht3, NULL, &raddr1, NULL, NULL, &dht2->nodeid);
 
   ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1
 
   ks_dht_pulse(dht1, 100); // Receive and process findnode query from dht3, queue and send findnode response
 
-  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, dht3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
   ks_dht_pulse(dht3, 100); // Receive and process findnode response from dht1
   
   ks_dht_pulse(dht3, 100); // Call finish callback and purge the job (COMPLETING)
 
-  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, dht2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
   
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
@@ -239,12 +243,12 @@ int main() {
 	  ks_dht_pulse(dht2, 100);
 	  ks_dht_pulse(dht3, 100);
   }
-  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, dht2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
   */
 
   diag("Search test\n");
   
-  ks_dht_search(dht3, dht2_search_callback, NULL, dht3->rt_ipv4, &ep2->nodeid);
+  ks_dht_search(dht3, dht2_search_callback, NULL, dht3->rt_ipv4, &dht2->nodeid);
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 20; ++i) {
 	  ks_dht_pulse(dht1, 100);

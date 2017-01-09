@@ -64,6 +64,11 @@ testdht2_SOURCES = testdht2.c tap.c
 testdht2_CFLAGS = $(AM_CFLAGS)
 testdht2_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += nodeidgen
+nodeidgen_SOURCES = nodeidgen.c tap.c
+nodeidgen_CFLAGS = $(AM_CFLAGS)
+nodeidgen_LDADD = $(TEST_LDADD)
+
 #check_PROGRAMS += testdht_net
 #testdht_net_SOURCES = testdht-net.c tap.c
 #testdht_net_CFLAGS = $(AM_CFLAGS)

@@ -34,6 +34,7 @@
 #ifndef _BLADE_H_
 #define _BLADE_H_
 #include <ks.h>
+#include <ks_dht.h>
 #include <sodium.h>
 #include "blade_types.h"
 #include "blade_stack.h"

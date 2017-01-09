@@ -7,6 +7,11 @@ testbuild_SOURCES = testbuild.c tap.c
 testbuild_CFLAGS = $(AM_CFLAGS)
 testbuild_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += bladec
+bladec_SOURCES = bladec.c tap.c
+bladec_CFLAGS = $(AM_CFLAGS)
+bladec_LDADD = $(TEST_LDADD)
+
 
 TESTS=$(check_PROGRAMS)
 

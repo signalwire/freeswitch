@@ -319,7 +319,6 @@ KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job);
  */
 KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 											   ks_pool_t *pool,
-											   const ks_dht_nodeid_t *nodeid,
 											   const ks_sockaddr_t *addr,
 											   ks_socket_t sock);
 KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint);

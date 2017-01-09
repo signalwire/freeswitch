@@ -35,9 +35,18 @@
 #define _BLADE_STACK_H_
 #include <blade.h>
 
+#define BLADE_HANDLE_TPOOL_MIN 2
+#define BLADE_HANDLE_TPOOL_MAX 8
+#define BLADE_HANDLE_TPOOL_STACK (1024 * 256)
+#define BLADE_HANDLE_TPOOL_IDLE 10
+
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool, const char *nodeid);
+KS_DECLARE(void) blade_handle_myid(blade_handle_t *bh, char *buffer);
+KS_DECLARE(void) blade_handle_autoroute(blade_handle_t *bh, ks_bool_t autoroute, ks_port_t port);
+KS_DECLARE(ks_status_t) blade_handle_bind(blade_handle_t *bh, const char *ip, ks_port_t port, ks_dht_endpoint_t **endpoint);
+KS_DECLARE(void) blade_handle_pulse(blade_handle_t *bh, int32_t timeout);
 KS_END_EXTERN_C
 
 #endif

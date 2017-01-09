@@ -33,14 +33,22 @@
 
 #include "blade.h"
 
+#define KS_DHT_TPOOL_MIN 2
+#define KS_DHT_TPOOL_MAX 8
+#define KS_DHT_TPOOL_STACK (1024 * 256)
+#define KS_DHT_TPOOL_IDLE 10
+
 typedef enum {
 	BP_NONE = 0,
-	BP_MYPOOL = (1 << 0)
+	BP_MYPOOL = (1 << 0),
+	BP_MYTPOOL = (1 << 1)
 } bppvt_flag_t;
 
 struct blade_peer_s {
 	bppvt_flag_t flags;
 	ks_pool_t *pool;
+	ks_thread_pool_t *tpool;
+	ks_dht_t *dht;
 };
 
 
@@ -60,33 +68,75 @@ KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 	flags = bp->flags;
 	pool = bp->pool;
 
+	if (bp->dht) ks_dht_destroy(&bp->dht);
+	if (bp->tpool && (flags & BP_MYTPOOL)) ks_thread_pool_destroy(&bp->tpool);
+	
 	ks_pool_free(bp->pool, &bp);
 
-	if (pool && (flags & BP_MYPOOL)) {
-		ks_pool_close(&pool);
-	}
+	if (pool && (flags & BP_MYPOOL)) ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, ks_dht_nodeid_t *nodeid)
 {
 	bppvt_flag_t newflags = BP_NONE;
 	blade_peer_t *bp = NULL;
+	ks_dht_t *dht = NULL;
 
 	if (!pool) {
 		newflags |= BP_MYPOOL;
 		ks_pool_open(&pool);
+		ks_assert(pool);
 	}
+	if (!tpool) {
+		newflags |= BP_MYTPOOL;
+		ks_thread_pool_create(&tpool, BLADE_PEER_TPOOL_MIN, BLADE_PEER_TPOOL_MAX, BLADE_PEER_TPOOL_STACK, KS_PRI_NORMAL, BLADE_PEER_TPOOL_IDLE);
+		ks_assert(tpool);
+	}
+	ks_dht_create(&dht, pool, tpool, nodeid);
+	ks_assert(dht);
 
 	bp = ks_pool_alloc(pool, sizeof(*bp));
-	bp->pool = pool;
 	bp->flags = newflags;
+	bp->pool = pool;
+	bp->tpool = tpool;
+	bp->dht = dht;
 	*bpP = bp;
 
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(ks_dht_nodeid_t *) blade_peer_myid(blade_peer_t *bp)
+{
+	ks_assert(bp);
+	ks_assert(bp->dht);
+
+	return &bp->dht->nodeid;
+}
+
+KS_DECLARE(void) blade_peer_autoroute(blade_peer_t *bp, ks_bool_t autoroute, ks_port_t port)
+{
+	ks_assert(bp);
+
+	ks_dht_autoroute(bp->dht, autoroute, port);
+}
+
+KS_DECLARE(ks_status_t) blade_peer_bind(blade_peer_t *bp, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
+{
+	ks_assert(bp);
+	ks_assert(addr);
+
+	return ks_dht_bind(bp->dht, addr, endpoint);
+}
+
+KS_DECLARE(void) blade_peer_pulse(blade_peer_t *bp, int32_t timeout)
+{
+	ks_assert(bp);
+	ks_assert(timeout >= 0);
+
+	ks_dht_pulse(bp->dht, timeout);
+}
 
 /* For Emacs:
  * Local Variables:

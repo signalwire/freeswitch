@@ -7,7 +7,6 @@
  */
 KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 											   ks_pool_t *pool,
-											   const ks_dht_nodeid_t *nodeid,
 											   const ks_sockaddr_t *addr,
 											   ks_socket_t sock)
 {
@@ -23,8 +22,6 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 	ks_assert(ep);
 
 	ep->pool = pool;
-    if (!nodeid) randombytes_buf(ep->nodeid.id, KS_DHT_NODEID_SIZE);
-	else memcpy(ep->nodeid.id, nodeid->id, KS_DHT_NODEID_SIZE);
 	ep->addr = *addr;
 	ep->sock = sock;
 
