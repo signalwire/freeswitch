@@ -227,12 +227,23 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 	if (sip) {
 		if (sip->sip_route) {
-			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_route))) {
-				const char *v = switch_channel_get_variable(channel, "sip_full_route");
-				if (!v) {
-					switch_channel_set_variable(channel, "sip_full_route", full);
+			const char *v = switch_channel_get_variable(channel, "sip_full_route");
+
+			if (!v) {
+				sip_route_t *rp;
+				switch_stream_handle_t stream = { 0 };
+				int x = 0;
+
+				SWITCH_STANDARD_STREAM(stream);
+
+				for (rp = sip->sip_route; rp; rp = rp->r_next) {
+					char *route = sip_header_as_string(nh->nh_home, (void *) rp);
+					stream.write_function(&stream, x == 0 ? "%s" : ",%s", route);
+					su_free(nh->nh_home, route);
+					x++;
 				}
-				su_free(nh->nh_home, full);
+				switch_channel_set_variable(channel, "sip_full_route", stream.data);
+				free(stream.data);
 			}
 		}
 
