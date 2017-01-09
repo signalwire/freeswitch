@@ -3,7 +3,7 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 
 //#include "ks.h"
-#include "../src/dht/ks_dht.h"
+#include "../src/include/ks_dht.h"
 
 ks_dht_t *dht;
 ks_dhtrt_routetable_t *rt;
@@ -1140,7 +1140,7 @@ int main(int argc, char *argv[]) {
 
 	ks_init();
 	ks_global_set_default_logger(7);
-	ks_dht_create(&dht, NULL, NULL);
+	ks_dht_create(&dht, NULL, NULL, NULL);
 
 
   // ks_thread_pool_create(&tpool, 0, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
