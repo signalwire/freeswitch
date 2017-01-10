@@ -1684,7 +1684,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			continue;
 		}
 
-		if (channel && handles[i].cause && handles[i].cause != SWITCH_CAUSE_SUCCESS) {
+		if (getcause && channel && handles[i].cause && handles[i].cause != SWITCH_CAUSE_SUCCESS) {
 			switch_channel_handle_cause(channel, handles[i].cause);
 		}
 
