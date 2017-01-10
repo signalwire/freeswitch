@@ -640,6 +640,7 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 	/* we need to build a real packet here and make write_frame.packet and write_frame.packetlen point to it */
 	out_frame.flags = SFF_UDPTL_PACKET | SFF_PROXY_PACKET;
 	out_frame.packet = pkt;
+	out_frame.buflen = LOCAL_FAX_MAX_DATAGRAM;
 	if ((r = udptl_build_packet(pvt->udptl_state, pkt, buf, len)) > 0) {
 		out_frame.packetlen = r;
 		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "WRITE %d udptl bytes\n", out_frame.packetlen);
