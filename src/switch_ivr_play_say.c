@@ -1169,6 +1169,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *p;
 	//char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
 	char *ext;
+	char *backup_file = NULL;
+	const char *backup_ext;
 	const char *prefix;
 	const char *timer_name;
 	const char *prebuf;
@@ -1371,7 +1373,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if ((ext = strrchr(file, '.'))) {
 				ext++;
 			} else {
+
+				if (!(backup_ext = switch_channel_get_variable(channel, "native_backup_extension"))) {
+					backup_ext = "wav";
+				}
+
 				ext = read_impl.iananame;
+				backup_file = switch_core_session_sprintf(session, "%s.%s", file, backup_ext);
 				file = switch_core_session_sprintf(session, "%s.%s", file, ext);
 			}
 		}
@@ -1395,10 +1403,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			//switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		}
 
-		if (switch_core_file_open(fh,
-								  file,
-								  read_impl.number_of_channels,
-								  read_impl.actual_samples_per_second, flags, NULL) != SWITCH_STATUS_SUCCESS) {
+
+		for(;;) {
+			if (switch_core_file_open(fh,
+									  file,
+									  read_impl.number_of_channels,
+									  read_impl.actual_samples_per_second, flags, NULL) == SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+
+			if (backup_file) {
+				file = backup_file;
+				backup_file = NULL;
+			} else {
+				break;
+			}
+		}
+
+		if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			status = SWITCH_STATUS_NOTFOUND;
 			continue;
