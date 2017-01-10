@@ -1802,10 +1802,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!zstr(name) && strcmp(name, "_undef_")) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+				const char *allow = switch_channel_get_variable(tech_pvt->channel, "sip_allow");
 				switch_event_t *event;
+				int update_allowed = 0;
 
 				check_decode(name, tech_pvt->session);
 
+				if (allow) {
+					update_allowed = !!switch_stristr("UPDATE", allow);
+				}
 
 				if (zstr(number)) {
 					number = tech_pvt->caller_profile->destination_number;
@@ -1868,7 +1873,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-						} else if ((ua && (switch_stristr("polycom", ua)))) {
+						} else if (update_allowed && ua && switch_stristr("polycom", ua)) {
 							if ( switch_stristr("UA/4", ua) ) {
 								snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 							} else {
@@ -1882,7 +1887,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if (ua && ((switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
+						} else if (update_allowed && ua && ((switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 										  (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)) ||
 										  switch_stristr("cisco/spa30", ua) || switch_stristr("Grandstream GXP", ua) ||
 										  switch_stristr("Yealink", ua) || switch_stristr("Mitel", ua) ||
