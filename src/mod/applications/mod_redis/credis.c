@@ -38,6 +38,8 @@
 #if _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
+typedef SOCKET credis_socket_t;
+#define CREDIS_SOCK_INVALID INVALID_SOCKET
 #else
 #include <unistd.h>
 #include <sys/select.h>
@@ -49,6 +51,8 @@
 #include <netinet/in.h>
 #endif
 #include <arpa/inet.h>
+typedef int credis_socket_t;
+#define CREDIS_SOCK_INVALID -1
 #endif
 #include <fcntl.h>
 #include <errno.h>
@@ -558,14 +562,19 @@ static int cr_sendfandreceive(REDIS rhnd, char recvtype, const char *format, ...
 
 void credis_close(REDIS rhnd)
 {
-  if (rhnd->fd > 0)
+  if (rhnd->fd != CREDIS_SOCK_INVALID)
+#ifdef  _MSC_VER
+    closesocket(rhnd->fd);
+#else
     close(rhnd->fd);
+#endif
   cr_delete(rhnd);
 }
 
 REDIS credis_connect(const char *host, int port, int timeout)
 {
-  int fd, yes = 1;
+  credis_socket_t fd = CREDIS_SOCK_INVALID;
+  int yes = 1;
   struct sockaddr_in sa;  
   REDIS rhnd;
   int valid = 0;
@@ -578,7 +587,7 @@ REDIS credis_connect(const char *host, int port, int timeout)
   if (port == 0)
     port = 6379;
 
-  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1 ||
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == CREDIS_SOCK_INVALID ||
       setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) == -1 ||
       setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes)) == -1)
     goto error;
@@ -612,9 +621,7 @@ REDIS credis_connect(const char *host, int port, int timeout)
   return rhnd;
 
  error:
-  if (fd >= 0)
-    close(fd);
-  cr_delete(rhnd);
+  credis_close(rhnd);
   return NULL;
 }
 
