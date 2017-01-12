@@ -11046,12 +11046,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
 					}
 				} else {
-					char *a_leg = NULL;
+					char const *a_leg = NULL;
 				    switch_event_t *event = NULL;
 					if (sip->sip_replaces && sip->sip_replaces->rp_params && sip->sip_replaces->rp_call_id) {
-						a_leg = switch_find_parameter(*(sip->sip_replaces->rp_params), "a-leg", switch_core_session_get_pool(session));
+						a_leg = msg_header_find_param(sip->sip_replaces->rp_common, "a-leg");
 					}
-					if(a_leg) {
+					if(a_leg && switch_true(a_leg)) {
 						switch_channel_mark_hold(b_channel, SWITCH_FALSE);
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,intercept:%s", sip->sip_replaces->rp_call_id);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "call %s picked up on a-leg\n", sip->sip_replaces->rp_call_id);
