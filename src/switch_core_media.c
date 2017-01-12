@@ -3945,7 +3945,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					goto done;
 				}
 
-				if (switch_channel_var_true(channel, "refuse_t38")) {
+				if (switch_channel_var_true(channel, "refuse_t38") || !switch_channel_var_true(channel, "fax_enable_t38")) {
 					switch_channel_clear_app_flag_key("T38", session->channel, CF_APP_T38);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 REFUSE on %s\n",
 									  switch_channel_get_name(channel),
