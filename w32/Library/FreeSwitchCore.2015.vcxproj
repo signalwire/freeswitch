@@ -113,8 +113,8 @@
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -176,8 +176,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -230,8 +230,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </PreBuildEvent>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -281,8 +281,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\pcre-8.34;..\..\libs\speex-1.2rc1\include;..\..\libs\curl-7.35.0\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\openssl-$(OpenSSLVersion)\include;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -738,6 +738,12 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       </PrecompiledHeader>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
+    <ClCompile Include="..\..\src\switch_utf8.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"></PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"></PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"></PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'"></PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\libtpl-1.5\src\tpl.h" />
@@ -832,6 +838,18 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </ProjectReference>
     <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2015.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\freetype\freetype.vcxproj">
+      <Project>{78b079bd-9fc7-4b9e-b4a6-96da0f00248b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\libpng\libpng.vcxproj">
+      <Project>{d6973076-9317-4ef2-a0b8-b7a18ac0713e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\libvpx\libvpx.2015.vcxproj">
+      <Project>{dce19daf-69ac-46db-b14a-39f0faa5db74}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\libyuv\libyuv.2015.vcxproj">
+      <Project>{b6e22500-3db6-4e6e-8cd5-591b781d7d99}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2015.vcxproj">
       <Project>{03207781-0d1c-4db3-a71d-45c608f28dbd}</Project>
