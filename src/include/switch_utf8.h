@@ -94,8 +94,8 @@ SWITCH_DECLARE(int) switch_u8_unescape(char *buf, int sz, char *src);
 SWITCH_DECLARE(int) switch_u8_escape(char *buf, int sz, char *src, int escape_quotes);
 
 /* utility predicates used by the above */
-int octal_digit(char c);
-int hex_digit(char c);
+SWITCH_DECLARE(int) octal_digit(char c);
+SWITCH_DECLARE(int) hex_digit(char c);
 
 /* return a pointer to the first occurrence of ch in s, or NULL if not
    found. character index of found character returned in *charn. */

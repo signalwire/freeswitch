@@ -49,6 +49,12 @@ If objArgs.Count >=3 Then
 	End Select
 End If
 
+If objArgs.Count = 2 Then
+        Select Case objArgs(0)
+	       Case "GetYasmEXE"
+	               GetYasmEXE objArgs(1)
+        End Select
+End If
 
 ' *******************
 ' Utility Subroutines
@@ -130,6 +136,14 @@ Sub GetWgetEXE(DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 	If Not FSO.FileExists(DestFolder & "wget.exe") Then
 		Slow_Wget ToolsBase & "wget.exe", DestFolder
+	End If
+End Sub
+
+Sub GetYasmEXE(DestFolder)
+	Dim oExec
+	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	If Not FSO.FileExists(DestFolder & "yasm.exe") Then
+		Wget ToolsBase & "yasm.exe", DestFolder
 	End If
 End Sub
 
