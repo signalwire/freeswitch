@@ -507,7 +507,6 @@ body .modal-body .btn-group .btn.active {
   max-height: calc(100% - 1vw);
   max-width: 146.78vh;
   margin: 7px auto;
-  position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
