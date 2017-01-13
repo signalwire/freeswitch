@@ -617,6 +617,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               case $.verto.enum.message.info:
                 var body = params.body;
                 var from = params.from_msg_name || params.from;
+                if (!body) {
+                  console.log('Received an empty body: ', params);
+                  return;
+                }
                 $rootScope.$emit('chat.newMessage', {
                   from: from,
                   body: body
