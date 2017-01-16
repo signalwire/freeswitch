@@ -44,6 +44,7 @@ struct blade_handle_s {
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 	blade_peer_t *peer;
+	blade_datastore_t *datastore;
 };
 
 
@@ -62,6 +63,8 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 
 	flags = bh->flags;
 	pool = bh->pool;
+
+	if (bh->datastore) blade_datastore_destroy(&bh->datastore);
 
 	blade_peer_destroy(&bh->peer);
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
@@ -146,6 +149,17 @@ KS_DECLARE(void) blade_handle_pulse(blade_handle_t *bh, int32_t timeout)
 	ks_assert(timeout >= 0);
 
 	blade_peer_pulse(bh->peer, timeout);
+	if (bh->datastore) blade_datastore_pulse(bh->datastore, timeout);
+}
+
+
+KS_DECLARE(void) blade_handle_datastore_start(blade_handle_t *bh)
+{
+	ks_assert(bh);
+
+	if (bh->datastore) return;
+
+	blade_datastore_create(&bh->datastore, bh->pool);
 }
 
 

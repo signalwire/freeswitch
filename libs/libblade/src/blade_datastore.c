@@ -31,26 +31,67 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <ks_dht.h>
-#include <sodium.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_peer.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
+#include "blade.h"
 
-KS_BEGIN_EXTERN_C
 
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
+typedef enum {
+	BDS_NONE = 0,
+	BDS_MYPOOL = (1 << 0),
+} bdspvt_flag_t;
 
-KS_END_EXTERN_C
+struct blade_datastore_s {
+	bdspvt_flag_t flags;
+	ks_pool_t *pool;
+};
 
-#endif
+
+KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP)
+{
+	blade_datastore_t *bds = NULL;
+	bdspvt_flag_t flags;
+	ks_pool_t *pool;
+
+	ks_assert(bdsP);
+
+	bds = *bdsP;
+	*bdsP = NULL;
+
+	ks_assert(bds);
+
+	flags = bds->flags;
+	pool = bds->pool;
+
+	ks_pool_free(bds->pool, &bds);
+
+	if (pool && (flags & BDS_MYPOOL)) ks_pool_close(&pool);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool)
+{
+	bdspvt_flag_t newflags = BDS_NONE;
+	blade_datastore_t *bds = NULL;
+
+	if (!pool) {
+		newflags |= BDS_MYPOOL;
+		ks_pool_open(&pool);
+		ks_assert(pool);
+	}
+
+	bds = ks_pool_alloc(pool, sizeof(*bds));
+	bds->flags = newflags;
+	bds->pool = pool;
+	*bdsP = bds;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(void) blade_datastore_pulse(blade_datastore_t *bds, int32_t timeout)
+{
+	ks_assert(bds);
+	ks_assert(timeout >= 0);
+}
 
 /* For Emacs:
  * Local Variables:

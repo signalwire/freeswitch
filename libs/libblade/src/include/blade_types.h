@@ -39,6 +39,7 @@ KS_BEGIN_EXTERN_C
 
 typedef struct blade_handle_s blade_handle_t;
 typedef struct blade_peer_s blade_peer_t;
+typedef struct blade_datastore_s blade_datastore_t;
 
 KS_END_EXTERN_C
 

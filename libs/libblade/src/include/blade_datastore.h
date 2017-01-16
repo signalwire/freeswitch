@@ -31,23 +31,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <ks_dht.h>
-#include <sodium.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_peer.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
+#ifndef _BLADE_DATASTORE_H_
+#define _BLADE_DATASTORE_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
-
+KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
+KS_DECLARE(void) blade_datastore_pulse(blade_datastore_t *bds, int32_t timeout);
 KS_END_EXTERN_C
 
 #endif
