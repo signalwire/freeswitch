@@ -752,7 +752,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 	int exists = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;
-	int local_pt = 0;
 
 	switch_assert(session);
 
@@ -780,7 +779,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 				if (!zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
 					if (strcmp(pmap->rm_fmtp, fmtp)) {
 						exists = 0;
-						local_pt = pmap->pt;
 						continue;
 					}
 				}
@@ -795,7 +793,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 				if (!zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
 					if (strcmp(pmap->rm_fmtp, fmtp)) {
 						exists = 0;
-						local_pt = pmap->pt;
 						continue;
 					}
 				}
@@ -839,8 +836,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		pmap->modname = switch_core_strdup(session->pool, modname);
 	}
 
-	if (!zstr(fmtp) && (zstr(pmap->rm_fmtp) || strcmp(pmap->rm_fmtp, fmtp))) {
-		pmap->rm_fmtp = switch_core_strdup(session->pool, fmtp);
+	if (!zstr(fmtp)) {
+		if (sdp_type == SDP_TYPE_REQUEST || !exists) {
+			pmap->rm_fmtp = switch_core_strdup(session->pool, fmtp);
+		}
 	}
 
 	pmap->allocated = 1;
@@ -849,7 +848,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	if (sdp_type == SDP_TYPE_REQUEST || !exists) {
-		pmap->pt = (switch_payload_t)  (local_pt ? local_pt : pt);
+		pmap->pt = (switch_payload_t) pt;
 	}
 
 	if (negotiated) {
@@ -3775,7 +3774,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	const char *tmp;
 	int m_idx = 0, skip_rtcp = 0, skip_video_rtcp = 0, got_rtcp_mux = 0, got_video_rtcp_mux = 0;
 	int nm_idx = 0;
-	int vmatch_pt = 0;
+	int vmatch_pt = 1, consider_video_fmtp = 1;
 	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
 	int got_audio_rtcp = 0, got_video_rtcp = 0;
 	switch_port_t audio_port = 0, video_port = 0;
@@ -4739,6 +4738,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			const char *rm_encoding;
 			const switch_codec_implementation_t *mimp = NULL;
 			int i;
+			const char *inherit_video_fmtp = NULL;
 
 			vmatch = 0;
 			nm_idx = 0;
@@ -4905,23 +4905,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					if (sdp_type == SDP_TYPE_RESPONSE && vmatch && map->rm_fmtp) {
-						int fmatch = 0;
-						int fcount = 0;
-						payload_map_t *pmap;
-						
-						for (pmap = v_engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-							if (pmap->rm_fmtp) {
-								fcount++;
-								if ((fmatch = !strcasecmp(pmap->rm_fmtp, map->rm_fmtp))) {
-									break;
-								}
-							}
-						}
-
-						if (fcount && !fmatch) {
-							vmatch = 0;
-						}
+					if (sdp_type == SDP_TYPE_RESPONSE && consider_video_fmtp && vmatch && !zstr(map->rm_fmtp) && !zstr(smh->fmtps[i])) {
+						vmatch = !strcasecmp(smh->fmtps[i], map->rm_fmtp);
 					}
 
 					if (vmatch && vmatch_pt) {
@@ -4931,6 +4916,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							int opt = atoi(other_pt);
 							if (map->rm_pt != opt) {
 								vmatch = 0;
+							} else {
+								if (switch_channel_var_true(channel, "inherit_video_fmtp")) {
+									inherit_video_fmtp = switch_channel_get_variable_partner(channel, "rtp_video_fmtp");
+								}
 							}
 						}
 					}
@@ -4949,7 +4938,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
+			if (consider_video_fmtp && !m_idx) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No matches with FTMP, fallback to ignoring FMTP\n");
+				consider_video_fmtp = 0;
+				goto compare;
+			}
+
 			if (vmatch_pt && !m_idx) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No matches with inherit_codec, fallback to ignoring PT\n");
 				vmatch_pt = 0;
 				goto compare;
 			}
@@ -5004,7 +5000,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					pmap->remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					pmap->remote_sdp_port = (switch_port_t) m->m_port;
-					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
+					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) inherit_video_fmtp ? inherit_video_fmtp : map->rm_fmtp);
 					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;					
 						
 #if 0
@@ -8101,7 +8097,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 						smh->ianacodes[i] = orig_pt;
 												
-						if (orig_fmtp) {
+						if (!zstr(orig_fmtp)) {
 							smh->fmtps[i] = switch_core_session_strdup(session, orig_fmtp);
 						}
 					} else {
