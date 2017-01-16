@@ -5438,7 +5438,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					if (sdp_type == SDP_TYPE_RESPONSE && vmatch && map->rm_fmtp && consider_video_fmtp) {
+					if (sdp_type == SDP_TYPE_RESPONSE && consider_video_fmtp && vmatch && !zstr(map->rm_fmtp) && !zstr(smh->fmtps[i])) {
 						vmatch = !strcasecmp(smh->fmtps[i], map->rm_fmtp);
 					}
 
