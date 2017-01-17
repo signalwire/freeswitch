@@ -7014,17 +7014,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
 									  v_engine->cur_payload_map->remote_sdp_ip, v_engine->cur_payload_map->remote_sdp_port);
-					if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
-						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-						!switch_channel_test_flag(session->channel, CF_AVPF)) {
-						/* Reactivate the NAT buster flag. */
-						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-					}
 					if (switch_media_handle_test_media_flag(smh, SCMF_AUTOFIX_TIMING)) {
 						v_engine->check_frames = 0;
 					}
 				}
 			}
+		}
+		if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
+			!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) &&
+			v_engine->rtp_session &&
+			!switch_channel_test_flag(session->channel, CF_AVPF)) {
+			/* Reactivate the NAT buster flag. */
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 		}
 	}
 
@@ -7052,17 +7053,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "TEXT RTP CHANGING DEST TO: [%s:%d]\n",
 									  t_engine->cur_payload_map->remote_sdp_ip, t_engine->cur_payload_map->remote_sdp_port);
-					if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
-						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-						!switch_channel_test_flag(session->channel, CF_AVPF)) {
-						/* Reactivate the NAT buster flag. */
-						switch_rtp_set_flag(t_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-					}
 					if (switch_media_handle_test_media_flag(smh, SCMF_AUTOFIX_TIMING)) {
 						t_engine->check_frames = 0;
 					}
 				}
 			}
+		}
+		if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
+			!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) &&
+			t_engine->rtp_session &&
+			!switch_channel_test_flag(session->channel, CF_AVPF)) {
+			/* Reactivate the NAT buster flag. */
+			switch_rtp_set_flag(t_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 		}
 	}
 
@@ -7258,6 +7260,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 			switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) || engine->adv_sdp_port) {
 			return SWITCH_STATUS_SUCCESS;
 		}
+	}
+
+	/* Always too late when RTP has already started */
+	if (engine->rtp_session) {
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	/* Release the local sdp port */
