@@ -41,6 +41,8 @@ typedef struct blade_handle_s blade_handle_t;
 typedef struct blade_peer_s blade_peer_t;
 typedef struct blade_datastore_s blade_datastore_t;
 
+typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
+
 KS_END_EXTERN_C
 
 #endif

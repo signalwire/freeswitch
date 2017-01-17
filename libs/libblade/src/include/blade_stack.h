@@ -47,6 +47,13 @@ KS_DECLARE(void) blade_handle_myid(blade_handle_t *bh, char *buffer);
 KS_DECLARE(void) blade_handle_autoroute(blade_handle_t *bh, ks_bool_t autoroute, ks_port_t port);
 KS_DECLARE(ks_status_t) blade_handle_bind(blade_handle_t *bh, const char *ip, ks_port_t port, ks_dht_endpoint_t **endpoint);
 KS_DECLARE(void) blade_handle_pulse(blade_handle_t *bh, int32_t timeout);
+KS_DECLARE(void) blade_handle_datastore_start(blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length);
+KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
+													 blade_datastore_fetch_callback_t callback,
+													 const void *key,
+													 int32_t key_length,
+													 void *userdata);
 KS_END_EXTERN_C
 
 #endif

@@ -162,6 +162,33 @@ KS_DECLARE(void) blade_handle_datastore_start(blade_handle_t *bh)
 	blade_datastore_create(&bh->datastore, bh->pool);
 }
 
+KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length)
+{
+	ks_assert(bh);
+	ks_assert(bh->datastore);
+	ks_assert(key);
+	ks_assert(key_length > 0);
+	ks_assert(data);
+	ks_assert(data_length > 0);
+	
+	return blade_datastore_store(bh->datastore, key, key_length, data, data_length);
+}
+
+KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
+													 blade_datastore_fetch_callback_t callback,
+													 const void *key,
+													 int32_t key_length,
+													 void *userdata)
+{
+	ks_assert(bh);
+	ks_assert(bh->datastore);
+	ks_assert(callback);
+	ks_assert(key);
+	ks_assert(key_length > 0);
+	
+	return blade_datastore_fetch(bh->datastore, callback, key, key_length, userdata);
+}
+
 
 /* For Emacs:
  * Local Variables:

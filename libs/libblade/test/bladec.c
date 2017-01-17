@@ -30,12 +30,16 @@ void command_test(blade_handle_t *bh, char *args);
 void command_quit(blade_handle_t *bh, char *args);
 void command_myid(blade_handle_t *bh, char *args);
 void command_bind(blade_handle_t *bh, char *args);
+void command_store(blade_handle_t *bh, char *args);
+void command_fetch(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "test", command_test },
 	{ "quit", command_quit },
 	{ "myid", command_myid },
 	{ "bind", command_bind },
+	{ "store", command_store },
+	{ "fetch", command_fetch },
 	
 	{ NULL, NULL }
 };
@@ -201,4 +205,38 @@ void command_bind(blade_handle_t *bh, char *args)
 	p = atoi(port); // @todo use strtol for error handling
 
 	blade_handle_bind(bh, ip, p, NULL);
+}
+
+void command_store(blade_handle_t *bh, char *args)
+{
+	char *key;
+	char *data;
+
+	ks_assert(args);
+
+	blade_handle_datastore_start(bh);
+	
+	parse_argument(&args, &key, ' ');
+	parse_argument(&args, &data, ' ');
+
+	blade_handle_datastore_store(bh, key, strlen(key), data, strlen(data) + 1);
+}
+
+ks_bool_t blade_datastore_fetch_callback(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata)
+{
+	ks_log(KS_LOG_INFO, "%s\n", data);
+	return KS_TRUE;
+}
+
+void command_fetch(blade_handle_t *bh, char *args)
+{
+	char *key;
+
+	ks_assert(args);
+
+	blade_handle_datastore_start(bh);
+	
+	parse_argument(&args, &key, ' ');
+
+	blade_handle_datastore_fetch(bh, blade_datastore_fetch_callback, key, strlen(key), bh);
 }
