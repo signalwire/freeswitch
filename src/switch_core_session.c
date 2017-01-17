@@ -598,6 +598,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 		const char *use_uuid;
+		switch_core_session_t *other_session = NULL;
 
 		switch_assert(peer_channel);
 
@@ -618,6 +619,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 		}
 
+		if (!channel && var_event) {
+			const char *other_uuid;
+
+			if ((other_uuid = switch_event_get_header(var_event, "origination_aleg_uuid")) && (other_session = switch_core_session_locate(other_uuid))) {
+				channel = switch_core_session_get_channel(other_session);
+				session = other_session;
+			}
+		}
+		
 		if (channel) {
 			const char *val;
 			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
@@ -699,6 +709,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 
 		}
+
+		if (other_session) {
+			switch_core_session_rwunlock(other_session);
+			channel = NULL;
+			session = NULL;
+		}
+
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(peer_channel, event);
