@@ -1140,7 +1140,12 @@ int main(int argc, char *argv[]) {
 
 	ks_init();
 	ks_global_set_default_logger(7);
-	ks_dht_create(&dht, NULL, NULL, NULL);
+
+	ks_dht_nodeid_t homeid;
+	memset(homeid.id, 0x01, KS_DHT_NODEID_SIZE); 
+
+
+	ks_dht_create(&dht, NULL, NULL, &homeid);
 
 
   // ks_thread_pool_create(&tpool, 0, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
@@ -1151,7 +1156,7 @@ int main(int argc, char *argv[]) {
 	ks_status_t status;
 	char *str = NULL;
 	int bytes = 1024;
-	ks_dht_nodeid_t homeid;
+	 
 	ks_dht_nodeid_t nodeid, nodeid1, nodeid2;
 	ks_dht_node_t *peer, *peer1, *peer2;
 
