@@ -121,6 +121,16 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function) {
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
 					switch_channel_set_variable(channel, var_name, var_value);
+					if (!strcasecmp(var_name, "effective_callee_id_number")) {
+						switch_channel_set_profile_var(channel, "callee_id_number", var_value);
+					} else if (!strcasecmp(var_name, "effective_callee_id_name")) {
+						switch_channel_set_profile_var(channel, "callee_id_name", var_value);
+					} else if (!strcasecmp(var_name, "effective_caller_id_number")) {
+						switch_channel_set_profile_var(channel, "caller_id_number", var_value);
+					} else if (!strcasecmp(var_name, "effective_caller_id_name")) {
+						switch_channel_set_profile_var(channel, "caller_id_name", var_value);
+					};
+
 					y++;
 				}
 			}
