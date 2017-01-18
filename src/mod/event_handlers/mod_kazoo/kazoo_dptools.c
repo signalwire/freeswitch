@@ -82,6 +82,17 @@ static void base_set (switch_core_session_t *session, const char *data, switch_s
 						  expanded ? expanded : "UNDEF");
 		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 
+		if (!strcasecmp(var, "effective_callee_id_number")) {
+			switch_channel_set_profile_var(channel, "callee_id_number", expanded);
+		} else if (!strcasecmp(var, "effective_callee_id_name")) {
+			switch_channel_set_profile_var(channel, "callee_id_name", expanded);
+		} else if (!strcasecmp(var, "effective_caller_id_number")) {
+			switch_channel_set_profile_var(channel, "caller_id_number", expanded);
+		} else if (!strcasecmp(var, "effective_caller_id_name")) {
+			switch_channel_set_profile_var(channel, "caller_id_name", expanded);
+		};
+
+
 		if (expanded && expanded != val) {
 			switch_safe_free(expanded);
 		}
