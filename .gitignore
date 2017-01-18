@@ -237,3 +237,6 @@ Freeswitch.2015.VC.VC.opendb
 libs/freetype/
 libs/libpng/
 libs/zlib/
+
+libs/libav/
+libs/libx264/

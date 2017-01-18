@@ -53,6 +53,8 @@ If objArgs.Count = 2 Then
         Select Case objArgs(0)
 	       Case "GetYasmEXE"
 	               GetYasmEXE objArgs(1)
+	       Case "GetVSYasmEXE"
+	               GetVSYasmEXE objArgs(1)
         End Select
 End If
 
@@ -144,6 +146,14 @@ Sub GetYasmEXE(DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 	If Not FSO.FileExists(DestFolder & "yasm.exe") Then
 		Wget ToolsBase & "yasm.exe", DestFolder
+	End If
+End Sub
+
+Sub GetVSYasmEXE(DestFolder)
+	Dim oExec
+	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	If Not FSO.FileExists(DestFolder & "vsyasm.exe") Then
+		Wget ToolsBase & "vsyasm.exe", DestFolder
 	End If
 End Sub
 

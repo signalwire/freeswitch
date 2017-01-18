@@ -105,7 +105,7 @@ static char *const get_error_text(const int error)
 	return error_buffer;
 }
 
-static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *img)
+static void av_unused fill_avframe(AVFrame *pict, switch_image_t *img)
 {
 	int i;
 	uint8_t *y = img->planes[0];
@@ -124,7 +124,7 @@ static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *
 	}
 }
 
-static void __attribute__((unused)) avframe2img(AVFrame *pict, switch_image_t *img)
+static void av_unused avframe2img(AVFrame *pict, switch_image_t *img)
 {
 	int i;
 	uint8_t *y = pict->data[0];
@@ -143,7 +143,7 @@ static void __attribute__((unused)) avframe2img(AVFrame *pict, switch_image_t *i
 	}
 }
 
-static void __attribute__((unused)) avframe2fd(AVFrame *pict, int fd)
+static void av_unused avframe2fd(AVFrame *pict, int fd)
 {
 	int i;
 	uint8_t *y = pict->data[0];
