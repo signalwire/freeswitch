@@ -399,6 +399,126 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 	}
 }
 
+struct switch_agc_s {
+	switch_memory_pool_t *pool;
+	uint32_t energy_avg;
+	uint32_t margin;
+	uint32_t change_factor;
+
+	int vol;
+	uint32_t score;
+	uint32_t score_count;
+	uint32_t score_sum;
+	uint32_t score_avg;
+	uint32_t score_over;
+	uint32_t score_under;
+	uint32_t period_len;
+};
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, uint32_t margin, uint32_t change_factor, uint32_t period_len)
+{
+	switch_agc_t *agc;
+	switch_memory_pool_t *pool;
+
+	switch_assert(agcP);
+
+	switch_core_new_memory_pool(&pool);
+	
+	agc = switch_core_alloc(pool, sizeof(*agc));
+	agc->pool = pool;
+	agc->energy_avg = energy_avg;
+	agc->margin = margin;
+	agc->change_factor = change_factor;
+	agc->period_len = period_len;
+
+	*agcP = agc;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_agc_destroy(switch_agc_t **agcP)
+{
+	switch_agc_t *agc;
+
+	switch_assert(agcP);
+
+	agc = *agcP;
+	*agcP = NULL;
+
+	if (agc) {
+		switch_memory_pool_t *pool = agc->pool;
+		switch_core_destroy_memory_pool(&pool);
+	}
+}
+
+SWITCH_DECLARE(void) switch_agc_set_energy_avg(switch_agc_t *agc, uint32_t energy_avg)
+{
+	switch_assert(agc);
+
+	agc->energy_avg = energy_avg;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data, uint32_t samples, uint32_t channels)
+{
+	
+	if (!channels) channels = 1;
+
+	if (agc->vol) {
+		switch_change_sln_volume_granular(data, samples * channels, agc->vol);
+	}
+							
+	if (agc->energy_avg) {
+		uint32_t energy = 0;
+		int i;
+
+		for (i = 0; i < samples * channels; i++) {
+			energy += abs(data[i]);
+		}
+
+		agc->score = energy / samples * channels;
+		agc->score_sum += agc->score;
+		agc->score_count++;
+								
+		if (agc->score_count > agc->period_len) {
+									
+			agc->score_avg = (int)((double)agc->score_sum / agc->score_count);
+			agc->score_count = 0;
+			agc->score_sum = 0;
+									
+			if (agc->score_avg > agc->energy_avg + agc->margin) {
+				agc->score_over++;
+			} else {
+				agc->score_over = 0;
+			}
+
+			if (agc->score_avg < agc->energy_avg - agc->margin) {
+				agc->score_under++;
+			} else {
+				agc->score_under = 0;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "AVG %d over: %d under: %d\n", agc->score_avg, agc->score_over, agc->score_under);
+
+			if (agc->score_over > agc->change_factor) {
+				agc->vol--;
+				switch_normalize_volume_granular(agc->vol);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VOL DOWN %d\n", agc->vol);
+			} else if (agc->score_under > agc->change_factor) {
+				agc->vol++;
+				switch_normalize_volume_granular(agc->vol);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VOL UP %d\n", agc->vol);
+			}
+
+		}
+
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -2658,6 +2658,7 @@ typedef enum {
 
 struct switch_rtp_text_factory_s;
 typedef struct switch_rtp_text_factory_s  switch_rtp_text_factory_t;
+typedef struct switch_agc_s switch_agc_t;
 
 SWITCH_END_EXTERN_C
 #endif

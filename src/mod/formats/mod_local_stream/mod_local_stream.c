@@ -93,6 +93,9 @@ struct local_stream_source {
 	char *timer_name;
 	local_stream_context_t *context_list;
 	int total;
+	int vol;
+	switch_agc_t *agc;
+	int energy_avg;
 	int first;
 	switch_dir_t *dir_handle;
 	switch_mutex_t *mutex;
@@ -571,6 +574,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						}
 						
 						if (source->total) {
+
+							if (source->energy_avg && source->agc) {
+								switch_agc_feed(source->agc, (int16_t *)source->abuf, olen, source->channels);
+							} else if (source->vol) {
+								switch_change_sln_volume_granular((int16_t *)source->abuf, olen * source->channels, source->vol);
+							}
+
 							switch_buffer_write(audio_buffer, source->abuf, olen * 2 * source->channels);
 						} else {
 							switch_buffer_zero(audio_buffer);
@@ -720,6 +730,15 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 													  "Interval must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 								}
+							} else if (!strcasecmp(var, "volume")) {
+								source->vol = atoi(val);
+								switch_normalize_volume_granular(source->vol);
+							} else if (!strcasecmp(var, "auto-volume")) {
+								source->energy_avg = atoi(val);
+
+								if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
+									source->energy_avg = 0;
+								}
 							}
 							if (source->chime_max) {
 								source->chime_max *= source->rate;
@@ -772,6 +791,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_mutex_lock(globals.mutex);
 	switch_core_hash_delete(globals.source_hash, source->name);
 	switch_mutex_unlock(globals.mutex);
+
+	if (source->agc) {
+		switch_agc_destroy(&source->agc);
+	}
 
 	switch_thread_rwlock_wrlock(source->rwlock);
 	switch_thread_rwlock_unlock(source->rwlock);
@@ -1247,6 +1270,16 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			if (source->text_opacity < 0 && source->text_opacity > 100) {
 				source->text_opacity = 0;
 			}
+		} else if (!strcasecmp(var, "volume")) {
+			source->vol = atoi(val);
+			switch_normalize_volume_granular(source->vol);
+		} else if (!strcasecmp(var, "auto-volume")) {
+			source->energy_avg = atoi(val);
+			
+			if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
+				source->energy_avg = 0;
+			}
+
 		}
 	}
 
@@ -1328,6 +1361,34 @@ SWITCH_STANDARD_API(local_stream_function)
 		if ((source = get_source(local_stream_name))) {
 			source->hup = 1;
 			stream->write_function(stream, "+OK hup stream: %s", source->name);
+			switch_thread_rwlock_unlock(source->rwlock);
+		}
+	} else if (!strcasecmp(argv[0], "vol") && local_stream_name) {
+		if ((source = get_source(local_stream_name))) {
+			if (argv[2]) {
+				if (!strncasecmp(argv[2], "auto:", 5)) {
+					source->energy_avg = atoi(argv[2] + 5);
+					if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
+						source->energy_avg = 0;
+						stream->write_function(stream, "-ERR invalid auto-volume level for  stream: %s\n", source->name);
+					} else {
+						if (!source->agc) {
+							switch_agc_create(&source->agc, source->energy_avg, 500, 3, (1000 / source->interval) * 2);
+						} else {
+							switch_agc_set_energy_avg(source->agc, source->energy_avg);
+						}
+					}
+				} else {
+					source->vol = atoi(argv[2]);
+					switch_normalize_volume_granular(source->vol);
+				}
+			}
+
+			if (source->energy_avg) {
+				stream->write_function(stream, "+OK Auto-Volume stream: %s is %d", source->name, source->energy_avg);
+			} else {
+				stream->write_function(stream, "+OK vol stream: %s is %d", source->name, source->vol);
+			}
 			switch_thread_rwlock_unlock(source->rwlock);
 		}
 	} else if (!strcasecmp(argv[0], "stop") && local_stream_name) {

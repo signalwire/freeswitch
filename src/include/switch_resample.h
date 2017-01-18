@@ -177,7 +177,10 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 
 #define switch_resample_calc_buffer_size(_to, _from, _srclen) ((uint32_t)(((float)_to / (float)_from) * (float)_srclen) * 2)
 
-						 
+SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, uint32_t margin, uint32_t change_factor, uint32_t period_len);
+SWITCH_DECLARE(void) switch_agc_destroy(switch_agc_t **agcP);
+SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data, uint32_t samples, uint32_t channels);
+SWITCH_DECLARE(void) switch_agc_set_energy_avg(switch_agc_t *agc, uint32_t energy_avg);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
