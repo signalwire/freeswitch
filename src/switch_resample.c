@@ -413,11 +413,13 @@ struct switch_agc_s {
 	uint32_t score_over;
 	uint32_t score_under;
 	uint32_t period_len;
+	uint32_t low_energy_point;
 };
 
 
 
-SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, uint32_t margin, uint32_t change_factor, uint32_t period_len)
+SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, 
+												  uint32_t low_energy_point, uint32_t margin, uint32_t change_factor, uint32_t period_len)
 {
 	switch_agc_t *agc;
 	switch_memory_pool_t *pool;
@@ -432,6 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t 
 	agc->margin = margin;
 	agc->change_factor = change_factor;
 	agc->period_len = period_len;
+	agc->low_energy_point = low_energy_point;
 
 	*agcP = agc;
 
@@ -458,6 +461,13 @@ SWITCH_DECLARE(void) switch_agc_set_energy_avg(switch_agc_t *agc, uint32_t energ
 	switch_assert(agc);
 
 	agc->energy_avg = energy_avg;
+}
+
+SWITCH_DECLARE(void) switch_agc_set_energy_low(switch_agc_t *agc, uint32_t low_energy_point)
+{
+	switch_assert(agc);
+
+	agc->low_energy_point = low_energy_point;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data, uint32_t samples, uint32_t channels)
@@ -493,7 +503,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 				agc->score_over = 0;
 			}
 
-			if (agc->score_avg < agc->energy_avg - agc->margin) {
+			if (agc->score_avg < agc->energy_avg - agc->margin && agc->score_avg > agc->low_energy_point) {
 				agc->score_under++;
 			} else {
 				agc->score_under = 0;

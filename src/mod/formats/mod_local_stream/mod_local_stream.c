@@ -96,6 +96,7 @@ struct local_stream_source {
 	int vol;
 	switch_agc_t *agc;
 	int energy_avg;
+	int energy_low;
 	int first;
 	switch_dir_t *dir_handle;
 	switch_mutex_t *mutex;
@@ -739,6 +740,12 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
 									source->energy_avg = 0;
 								}
+							} else if (!strcasecmp(var, "auto-volume-low-point")) {
+								source->energy_low = atoi(val);
+								
+								if (!(source->energy_low > -1 && source->energy_avg <= 20000)) {
+									source->energy_low = 0;
+								}
 							}
 							if (source->chime_max) {
 								source->chime_max *= source->rate;
@@ -1279,7 +1286,12 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
 				source->energy_avg = 0;
 			}
-
+		} else if (!strcasecmp(var, "auto-volume-low-point")) {
+			source->energy_low = atoi(val);
+			
+			if (!(source->energy_low > -1 && source->energy_avg <= 20000)) {
+				source->energy_low = 0;
+			}
 		}
 	}
 
@@ -1367,15 +1379,30 @@ SWITCH_STANDARD_API(local_stream_function)
 		if ((source = get_source(local_stream_name))) {
 			if (argv[2]) {
 				if (!strncasecmp(argv[2], "auto:", 5)) {
+					char *p;
 					source->energy_avg = atoi(argv[2] + 5);
+
+					if ((p = strchr(argv[2] + 5, ':'))) {
+						int tmp = 0;
+						p++;
+						tmp = atoi(p);
+
+						if ((tmp > -1 && tmp <= 20000)) {
+							source->energy_low = tmp;
+						} else {
+							stream->write_function(stream, "-ERR invalid auto-volume low-energy level for stream: %s\n", source->name);
+						}
+					}
+					
 					if (!(source->energy_avg > -1 && source->energy_avg <= 20000)) {
 						source->energy_avg = 0;
-						stream->write_function(stream, "-ERR invalid auto-volume level for  stream: %s\n", source->name);
+						stream->write_function(stream, "-ERR invalid auto-volume level for stream: %s\n", source->name);
 					} else {
 						if (!source->agc) {
-							switch_agc_create(&source->agc, source->energy_avg, 500, 3, (1000 / source->interval) * 2);
+							switch_agc_create(&source->agc, source->energy_avg, source->energy_low, 500, 3, (1000 / source->interval) * 2);
 						} else {
 							switch_agc_set_energy_avg(source->agc, source->energy_avg);
+							switch_agc_set_energy_low(source->agc, source->energy_low);
 						}
 					}
 				} else {
@@ -1385,7 +1412,7 @@ SWITCH_STANDARD_API(local_stream_function)
 			}
 
 			if (source->energy_avg) {
-				stream->write_function(stream, "+OK Auto-Volume stream: %s is %d", source->name, source->energy_avg);
+				stream->write_function(stream, "+OK Auto-Volume stream: %s is %d/%d", source->name, source->energy_avg, source->energy_low);
 			} else {
 				stream->write_function(stream, "+OK vol stream: %s is %d", source->name, source->vol);
 			}
