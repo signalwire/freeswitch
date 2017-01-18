@@ -2050,7 +2050,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	rchannel = switch_core_session_get_channel(rsession);
 	buuid = switch_channel_get_partner_uuid(rchannel);
 
-	if (!strcasecmp(buuid, switch_core_session_get_uuid(session))) {
+	if (zstr(buuid) || !strcasecmp(buuid, switch_core_session_get_uuid(session))) {
 		buuid = NULL;
 	}
 
