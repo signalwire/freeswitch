@@ -59,7 +59,7 @@ typedef uint8_t ks_dhtrt_nodeid_t[KS_DHT_NODEID_SIZE];
 typedef struct ks_dhtrt_bucket_entry_s {
 	ks_time_t  tyme;
     ks_time_t  ping_tyme;
-	uint8_t	   id[KS_DHT_NODEID_SIZE];
+//	uint8_t	   id[KS_DHT_NODEID_SIZE];
 	ks_dht_node_t *gptr;					/* ptr to peer */	
 	uint8_t	   inuse;
 	uint8_t	   outstanding_pings;
@@ -1015,7 +1015,7 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
                                      tdiff >= KS_DHTRT_EXPIREDTIME           &&        /* beyond expired time */ 
 									 e->outstanding_pings >= KS_DHTRT_MAXPING ) {      /* has been retried    */ 
 									ks_log(KS_LOG_DEBUG,"process_table: expiring node %s\n", 
-															ks_dhtrt_printableid(e->id, buf));
+															ks_dhtrt_printableid(e->gptr->nodeid.id, buf));
 									e->flags =	DHTPEER_EXPIRED; 
 									++b->expired_count;
 									e->outstanding_pings = 0;     /* extinguish all hope: do not retry again */ 
@@ -1191,7 +1191,7 @@ KS_DECLARE(void) ks_dhtrt_dump(ks_dhtrt_routetable_t *table, int level) {
 				for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 					memset(buffer, 0, 100);
 					if (b->entries[ix].inuse == 1) {
-						ks_dhtrt_printableid(b->entries[ix].id, buffer);
+						ks_dhtrt_printableid(b->entries[ix].gptr->nodeid.id, buffer);
 						ks_dht_node_t *n = b->entries[ix].gptr;
 						ks_log(KS_LOG_DEBUG, "     slot %d: flags:%d %d type:%d family:%d %s\n", ix,
 												b->entries[ix].flags,
@@ -1313,7 +1313,7 @@ ks_dhtrt_bucket_entry_t *ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t *hea
 	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 
 		if ( bucket->entries[ix].inuse == 1	  &&
-			 (!memcmp(nodeid, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
+			 (!memcmp(nodeid, bucket->entries[ix].gptr->nodeid.id, KS_DHT_NODEID_SIZE)) ) {
 			return &(bucket->entries[ix]);
 		}
 	}
@@ -1338,7 +1338,7 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
 
 	for ( ; rix<KS_DHT_BUCKETSIZE; ++rix) {
 
-		if (ks_dhtrt_ismasked(source->entries[rix].id, left->mask)) {
+		if (ks_dhtrt_ismasked(source->entries[rix].gptr->nodeid.id, left->mask)) {
 
 			/* move it to the left */
 			memcpy(&dest->entries[lix], &source->entries[rix], sizeof(ks_dhtrt_bucket_entry_t));
@@ -1398,7 +1398,7 @@ ks_dhtrt_bucket_entry_t* ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_no
 			expiredix = ix;
 		}
 
-		else if (!memcmp(bucket->entries[ix].id, node->nodeid.id, KS_DHT_NODEID_SIZE)) {
+		else if (!memcmp(bucket->entries[ix].gptr->nodeid.id, node->nodeid.id, KS_DHT_NODEID_SIZE)) {
 #ifdef	KS_DHT_DEBUGPRINTF_
 			char buffer[100];
 			ks_log(KS_LOG_DEBUG, "duplicate peer %s found at %d\n", ks_dhtrt_printableid(node->nodeid.id, buffer), ix);
@@ -1424,7 +1424,7 @@ ks_dhtrt_bucket_entry_t* ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_no
 			++bucket->count;       /* yes: increment total count */
 		}
 
-		memcpy(bucket->entries[free].id, node->nodeid.id, KS_DHT_NODEID_SIZE);
+		memcpy(bucket->entries[free].gptr->nodeid.id, node->nodeid.id, KS_DHT_NODEID_SIZE);
 #ifdef	KS_DHT_DEBUGPRINTF_
 		char buffer[100];
 		ks_log(KS_LOG_DEBUG, "Inserting node %s at %d\n",  ks_dhtrt_printableid(node->nodeid.id, buffer), free);
@@ -1455,7 +1455,7 @@ ks_dht_node_t *ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t
 #endif	  
 		if ( bucket->entries[ix].inuse == 1              	&& 
              bucket->entries[ix].flags == DHTPEER_ACTIVE    &&
-			 (!memcmp(id, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
+			 (!memcmp(id, bucket->entries[ix].gptr->nodeid.id, KS_DHT_NODEID_SIZE)) ) {
 			return bucket->entries[ix].gptr;
 		}
 	}
@@ -1474,11 +1474,11 @@ ks_status_t ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id)
 #ifdef	KS_DHT_DEBUGPRINTFX_
 		char bufferx[100];
 		ks_log(KS_LOG_DEBUG, "bucket->entries[%d].id = %s inuse=%c\n", ix,
-						ks_dhtrt_printableid(bucket->entries[ix].id, bufferx),
+						ks_dhtrt_printableid(bucket->entries[ix].gptr->nodeid.id, bufferx),
 						bucket->entries[ix].inuse  );
 #endif
 		if ( bucket->entries[ix].inuse == 1	  &&
-			 (!memcmp(id, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
+			 (!memcmp(id, bucket->entries[ix].gptr->nodeid.id, KS_DHT_NODEID_SIZE)) ) {
 			bucket->entries[ix].inuse = 0;
 			bucket->entries[ix].gptr  = 0;
 			bucket->entries[ix].flags = 0;
@@ -1535,7 +1535,7 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 			(bucket->entries[ix].gptr->type & type) )                             {     /* match type   */
 		  
 			/* calculate xor value */
-			ks_dhtrt_xor(bucket->entries[ix].id, id, xorvalue );
+			ks_dhtrt_xor(bucket->entries[ix].gptr->nodeid.id, id, xorvalue );
 		   
 			/* do we need to hold this one */
 			if ( count < max	||								   /* yes: we have not filled the quota yet */
@@ -1675,7 +1675,7 @@ void ks_dhtrt_ping(ks_dhtrt_internal_t *internal, ks_dhtrt_bucket_entry_t *entry
 #ifdef	KS_DHT_DEBUGPRINTF_
 	char buf[100];
 	ks_log(KS_LOG_DEBUG, "Ping queued for nodeid %s count %d\n",
-					ks_dhtrt_printableid(entry->id,buf), entry->outstanding_pings);
+					ks_dhtrt_printableid(entry->gptr->nodeid.id,buf), entry->outstanding_pings);
     /*printf("ping:  %s\n", buf); fflush(stdout);*/
 #endif
 	ks_dht_node_t* node = entry->gptr;
