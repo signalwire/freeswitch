@@ -8817,6 +8817,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	const char *local_sdp_audio_zrtp_hash;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
+	int include_external;
 
 	switch_assert(session);
 
@@ -8831,6 +8832,8 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, 
 					get_media_profile_name(session, secure || a_engine->crypto_type != CRYPTO_INVALID));
+
+	include_external = switch_channel_var_true(session->channel, "include_external_ip");
 
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
@@ -8990,6 +8993,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	if (a_engine->ice_out.cands[0][0].ready) {
 		char tmp1[11] = "";
 		char tmp2[11] = "";
+		char tmp3[11] = "";
 		uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 		uint32_t c2 = c1 - 1;
 
@@ -9000,8 +9004,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 		tmp1[10] = '\0';
 		tmp2[10] = '\0';
+		tmp3[10] = '\0';
 		switch_stun_random_string(tmp1, 10, "0123456789");
 		switch_stun_random_string(tmp2, 10, "0123456789");
+		switch_stun_random_string(tmp3, 10, "0123456789");
 
 		gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, NULL, 0);
 
@@ -9022,6 +9028,13 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 						ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
 						);
 
+		if (include_external && !zstr(smh->mparams->extsipip)) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+				tmp3, ice_out->cands[0][0].transport, c1,
+				smh->mparams->extsipip, ice_out->cands[0][0].con_port
+				);
+		}
+
 		if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
 			strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
 			&& a_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
@@ -9041,6 +9054,13 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 							);
 			
+			if (include_external && !zstr(smh->mparams->extsipip)) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+					tmp3, ice_out->cands[0][0].transport, c1,
+					smh->mparams->extsipip, ice_out->cands[0][0].con_port
+					);
+			}
+
 			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
 				strcmp(a_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
 				&& a_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
@@ -9269,6 +9289,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int bw = 256;
 	uint8_t fir = 0, nack = 0, pli = 0, tmmbr = 0, has_vid = 0;
 	const char *use_rtcp_mux = NULL;
+	int include_external;
 
 	switch_assert(session);
 
@@ -9279,6 +9300,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
+
+	include_external = switch_channel_var_true(session->channel, "include_external_ip");
 
 	use_rtcp_mux = switch_channel_get_variable(session->channel, "rtcp_mux");
 
@@ -9707,6 +9730,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if (a_engine->ice_out.cands[0][0].ready) {
 			char tmp1[11] = "";
 			char tmp2[11] = "";
+			char tmp3[11] = "";
 			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 			//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 			//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
@@ -9718,8 +9742,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			tmp1[10] = '\0';
 			tmp2[10] = '\0';
+			tmp3[10] = '\0';
 			switch_stun_random_string(tmp1, 10, "0123456789");
 			switch_stun_random_string(tmp2, 10, "0123456789");
+			switch_stun_random_string(tmp3, 10, "0123456789");
 
 			ice_out = &a_engine->ice_out;
 			
@@ -9732,6 +9758,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							tmp1, ice_out->cands[0][0].transport, c1,
 							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
 							);
+
+			if (include_external && !zstr(smh->mparams->extsipip)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+					tmp3, ice_out->cands[0][0].transport, c1,
+					smh->mparams->extsipip, ice_out->cands[0][0].con_port
+					);
+			}
 
 			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
 				strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
@@ -9752,6 +9785,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 								);
 				
+				if (include_external && !zstr(smh->mparams->extsipip)) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+						tmp3, ice_out->cands[0][0].transport, c2,
+						smh->mparams->extsipip, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+						);
+				}
 
 				
 				if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
@@ -10234,6 +10273,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				if (v_engine->ice_out.cands[0][0].ready) {
 					char tmp1[11] = "";
 					char tmp2[11] = "";
+					char tmp3[11] = "";
 					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 					//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 					//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
@@ -10245,8 +10285,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 					tmp1[10] = '\0';
 					tmp2[10] = '\0';
+					tmp3[10] = '\0';
 					switch_stun_random_string(tmp1, 10, "0123456789");
 					switch_stun_random_string(tmp2, 10, "0123456789");
+					switch_stun_random_string(tmp3, 10, "0123456789");
 
 					ice_out = &v_engine->ice_out;
 					
@@ -10267,6 +10309,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
 									);
 
+					if (include_external && !zstr(smh->mparams->extsipip)) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+							tmp3, ice_out->cands[0][0].transport, c1,
+							smh->mparams->extsipip, ice_out->cands[0][0].con_port
+							);
+					}
+
 					if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
 						strcmp(v_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
 						&& v_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
@@ -10286,7 +10335,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 										);
 					
-					
+					if (include_external && !zstr(smh->mparams->extsipip)) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+								tmp3, ice_out->cands[0][0].transport, c2,
+								smh->mparams->extsipip, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+								);
+						}
+
+
 						if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
 							strcmp(v_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
 							&& v_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
