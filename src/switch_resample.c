@@ -503,7 +503,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 				agc->score_over = 0;
 			}
 
-			if (agc->score_avg < agc->energy_avg - agc->margin && agc->score_avg > agc->low_energy_point) {
+			if (agc->score_avg < agc->energy_avg - agc->margin && (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
 				agc->score_under++;
 			} else {
 				agc->score_under = 0;
