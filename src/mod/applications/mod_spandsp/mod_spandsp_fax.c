@@ -1474,9 +1474,19 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
 
 	if (pvt->app_mode == FUNCTION_TX) {
-		req_counter = spandsp_globals.t38_tx_reinvite_packet_count;
+		const char *packet_count = switch_channel_get_variable(channel, "fax_t38_tx_reinvite_packet_count");
+		if (!zstr(packet_count) && switch_is_number(packet_count)) {
+			req_counter = atoi(packet_count);
+		} else {
+			req_counter = spandsp_globals.t38_tx_reinvite_packet_count;
+		}
 	} else {
-		req_counter = spandsp_globals.t38_rx_reinvite_packet_count;
+		const char *packet_count = switch_channel_get_variable(channel, "fax_t38_rx_reinvite_packet_count");
+		if (!zstr(packet_count) && switch_is_number(packet_count)) {
+			req_counter = atoi(packet_count);
+		} else {
+			req_counter = spandsp_globals.t38_rx_reinvite_packet_count;
+		}
 	}
 
 	while (switch_channel_ready(channel)) {
