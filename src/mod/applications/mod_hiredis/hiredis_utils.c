@@ -47,6 +47,8 @@ switch_status_t mod_hiredis_do_config()
 			hiredis_profile_t *new_profile = NULL;
 			uint8_t ignore_connect_fail = 0;
 			uint8_t ignore_error = 0;
+			int max_pipelined_requests = 0;
+			int delete_when_zero = 0;
 			char *name = (char *) switch_xml_attr_soft(profile, "name");
 
 			// Load params
@@ -57,11 +59,19 @@ switch_status_t mod_hiredis_do_config()
 						ignore_connect_fail = switch_true(switch_xml_attr_soft(param, "value"));
 					} else if ( !strncmp(var, "ignore-error", 12) ) {
 						ignore_error = switch_true(switch_xml_attr_soft(param, "value"));
+					} else if ( !strncmp(var, "max-pipelined-requests", 22) ) {
+						max_pipelined_requests = atoi(switch_xml_attr_soft(param, "value"));
+					} else if ( !strncmp(var, "delete-when-zero", 16) ) {
+						delete_when_zero = switch_true(switch_xml_attr_soft(param, "value"));
 					}
 				}
 			}
 
-			if ( hiredis_profile_create(&new_profile, name, ignore_connect_fail, ignore_error) == SWITCH_STATUS_SUCCESS ) {
+			if (max_pipelined_requests <= 0) {
+				max_pipelined_requests = 20;
+			}
+
+			if ( hiredis_profile_create(&new_profile, name, ignore_connect_fail, ignore_error, max_pipelined_requests, delete_when_zero) == SWITCH_STATUS_SUCCESS ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);
