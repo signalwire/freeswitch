@@ -1,5 +1,5 @@
 #
-# FreeSWITCH auto-build Makefile (OpenBSD 5.x)
+# FreeSWITCH auto-build Makefile (OpenBSD 6.x)
 # http://www.freeswitch.org
 # put this file anywhere and type make to
 # create a fully-built freeswitch.git from scratch
@@ -7,27 +7,27 @@
 #
 #
 
-PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
+PKG=rsync-3.1.2p0 git automake-1.15p0 autoconf-2.69p2 libtool gmake bzip2 jpeg wget pcre speex libldns
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
-OPENSSL=1.0.1j
+OPENSSL=1.1.0c
 LIBEDIT=20140618-3.1
-CURL=7.35.0
+CURL=7.49.0
 
 freeswitch: has-git deps freeswitch.git/Makefile
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize gmake
 
 freeswitch.git/Makefile: freeswitch.git/configure
 	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(PREFIX)
 
 freeswitch.git/configure: freeswitch.git/bootstrap.sh
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
 	test -d freeswitch.git || git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
 
 install:
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install
 
 clean:
 	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~
