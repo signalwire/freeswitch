@@ -1,5 +1,5 @@
 #
-# FreeSWITCH auto-build Makefile (OpenBSD 5.x)
+# FreeSWITCH auto-build Makefile (OpenBSD 6.x)
 # http://www.freeswitch.org
 # put this file anywhere and type make to
 # create a fully-built freeswitch.git from scratch
@@ -7,54 +7,45 @@
 #
 #
 
-PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
+PKG=rsync-3.1.2p0 bzip2 git gmake automake-1.15p0 libtool apr apr-util-1.5.4p1 curl flac jpeg libidn libnatpmp libogg libldns libsndfile libsrtp libvorbis lua-5.2.4p1 miniupnpc pcre spandsp speex tiff libvpx yasm nasm opus
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
-OPENSSL=1.0.1j
+OPENSSL=1.0.2
 LIBEDIT=20140618-3.1
-CURL=7.35.0
 
 freeswitch: has-git deps freeswitch.git/Makefile
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize gmake
 
 freeswitch.git/Makefile: freeswitch.git/configure
-	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(PREFIX)
+	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(PREFIX) --disable-libyuv
 
 freeswitch.git/configure: freeswitch.git/bootstrap.sh
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
 	test -d freeswitch.git || git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
 
 install:
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.15 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install
 
 clean:
-	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~
+	@rm -rf openssl* libedit* *~
 	(cd freeswitch.git && git clean -fdx && git reset --hard HEAD && git pull)
 
 has-git:
 	@git --version || PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r git
 
-deps: libedit openssl curl
+deps: libedit openssl 
 	@PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r $(PKG)
 
 openssl: openssl-$(OPENSSL)/.done
 openssl-$(OPENSSL)/.done: openssl-$(OPENSSL)
 openssl-$(OPENSSL):
-	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./Configure --prefix=$(PREFIX) BSD-x86_64 shared && make && sudo make install && touch .done)
+	(test -d $@) || (ftp -o $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && ./Configure --prefix=$(PREFIX) BSD-x86_64 shared && make && doas make install && touch .done)
 
 libedit: libedit-$(LIBEDIT)/Makefile
 libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)
 libedit-$(LIBEDIT):
-	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-curl: curl-$(CURL)/.done
-curl-$(CURL)/.done: curl-$(CURL)
-curl-$(CURL):
-	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(rm -rf $(PREFIX)/lib/libcurl.*)
-	(cd $@ && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig:$PKG_CONFIG_PATH LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath-link=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
-
+	(test -d $@) || (ftp -o $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && ./configure --prefix=$(PREFIX) && make && doas make install)
