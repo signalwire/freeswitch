@@ -1140,11 +1140,9 @@ int main(int argc, char *argv[]) {
 
 	ks_init();
 	ks_global_set_default_logger(7);
-
+	
 	ks_dht_nodeid_t homeid;
 	memset(homeid.id, 0x01, KS_DHT_NODEID_SIZE); 
-
-
 	ks_dht_create(&dht, NULL, NULL, &homeid);
 
 
