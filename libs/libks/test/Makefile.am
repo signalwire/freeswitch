@@ -4,6 +4,11 @@ check_PROGRAMS =
 
 EXTRA_DIST = tap.h
 
+check_PROGRAMS += testmessages
+testmessages_SOURCES = testmessages.c tap.c
+testmessages_CFLAGS = $(AM_CFLAGS)
+testmessages_LDADD = $(TEST_LDADD)
+
 check_PROGRAMS += testbuckets
 testbuckets_SOURCES = testbuckets.c tap.c
 testbuckets_CFLAGS = $(AM_CFLAGS)
