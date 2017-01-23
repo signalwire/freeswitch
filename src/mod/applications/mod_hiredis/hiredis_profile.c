@@ -344,8 +344,9 @@ switch_status_t hiredis_profile_execute_requests(hiredis_profile_t *profile, swi
 			/* have a bad connection, try a single reconnect attempt before moving on to alternate connection */
 			if (reconnected || hiredis_context_reconnect(context) != SWITCH_STATUS_SUCCESS) {
 				/* try alternate connection */
+				hiredis_context_t *new_context = hiredis_profile_get_context(profile, context->connection, session);
 				hiredis_context_release(context, session);
-				context = hiredis_profile_get_context(profile, context->connection, session);
+				context = new_context;
 				if (context) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: got alternate connection to [%s, %d]\n", context->connection->host, context->connection->port);
 				} else {
