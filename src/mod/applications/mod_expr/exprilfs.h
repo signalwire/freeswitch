@@ -496,9 +496,10 @@ case EXPR_NODEFUNC_RANDOMIZE:
 {
 	static int curcall = 0;
 
-	curcall++;
+	curcall += clock() + time(NULL);
+	curcall = curcall * 31821U + 13849U;
 
-	*(nodes->data.function.refs[0]) = (EXPRTYPE) ((clock() + 1024 + curcall) * time(NULL));
+	*(nodes->data.function.refs[0]) = (EXPRTYPE) curcall;
 
 	break;
 }
