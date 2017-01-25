@@ -2182,6 +2182,19 @@ KS_DECLARE(char *) ks_pstrcat(ks_pool_t *pool, ...)
     return result;
 }
 
+KS_DECLARE(char *) ks_psprintf(ks_pool_t *pool, const char *fmt, ...)
+{
+	va_list ap;
+	char *result;
+	va_start(ap, fmt);
+	result = ks_vpprintf(pool, fmt, ap);
+	va_end(ap);
+
+	return result;
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

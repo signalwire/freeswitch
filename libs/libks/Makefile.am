@@ -18,6 +18,7 @@ libks_la_SOURCES += src/dht/ks_dht_job.c src/dht/ks_dht_search.c src/dht/ks_dht_
 libks_la_SOURCES += src/dht/ks_dht_bucket.c
 libks_la_SOURCES += crypt/aeskey.c crypt/aestab.c crypt/sha2.c crypt/twofish.c crypt/aes_modes.c crypt/aescrypt.c crypt/twofish_cfb.c 
 #aes.h aescpp.h brg_endian.h aesopt.h aestab.h brg_types.h sha2.h twofish.h
+libks_la_SOURCES += src/ks_acl.c
 
 libks_la_CFLAGS	  = $(AM_CFLAGS)
 libks_la_CPPFLAGS = -DPOSIX
@@ -30,7 +31,7 @@ library_include_HEADERS += src/include/ks_pool.h src/include/simclist.h src/incl
 library_include_HEADERS += src/include/ks_dso.h src/include/ks_platform.h src/include/ks_types.h # src/include/ks_rng.h src/include/ks_dht.h
 library_include_HEADERS += src/include/ks_printf.h src/include/ks_hash.h src/include/ks_ssl.h src/include/kws.h
 library_include_HEADERS += src/utp/utp_internal.h src/utp/utp.h src/utp/utp_types.h src/utp/utp_callbacks.h src/utp/utp_templates.h
-library_include_HEADERS += src/utp/utp_hash.h src/utp/utp_packedsockaddr.h src/utp/utp_utils.h src/include/ks_utp.h
+library_include_HEADERS += src/utp/utp_hash.h src/utp/utp_packedsockaddr.h src/utp/utp_utils.h src/include/ks_utp.h src/include/ks_acl.h
 
 tests: libks.la
 	$(MAKE) -C test tests

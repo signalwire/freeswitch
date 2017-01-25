@@ -33,6 +33,8 @@
 
 #include <ks.h>
 
+#define ESCAPE_META '\\'
+
 /* Written by Marc Espie, public domain */
 #define KS_CTYPE_NUM_CHARS       256
 
@@ -230,7 +232,87 @@ KS_DECLARE(int) ks_snprintf(char *buffer, size_t count, const char *fmt, ...)
 }
 
 
-KS_DECLARE(unsigned int) ks_separate_string(char *buf, const char *delim, char **array, unsigned int arraylen)
+/* Helper function used when separating strings to unescape a character. The
+   supported characters are:
+
+   \n  linefeed
+   \r  carriage return
+   \t  tab
+   \s  space
+
+   Any other character is returned as it was received. */
+static char unescape_char(char escaped)
+{
+	char unescaped;
+
+	switch (escaped) {
+	case 'n':
+		unescaped = '\n';
+		break;
+	case 'r':
+		unescaped = '\r';
+		break;
+	case 't':
+		unescaped = '\t';
+		break;
+	case 's':
+		unescaped = ' ';
+		break;
+	default:
+		unescaped = escaped;
+	}
+	return unescaped;
+}
+
+
+/* Helper function used when separating strings to remove quotes, leading /
+   trailing spaces, and to convert escaped characters. */
+static char *cleanup_separated_string(char *str, char delim)
+{
+	char *ptr;
+	char *dest;
+	char *start;
+	char *end = NULL;
+	int inside_quotes = 0;
+
+	/* Skip initial whitespace */
+	for (ptr = str; *ptr == ' '; ++ptr) {
+	}
+
+	for (start = dest = ptr; *ptr; ++ptr) {
+		char e;
+		int esc = 0;
+
+		if (*ptr == ESCAPE_META) {
+			e = *(ptr + 1);
+			if (e == '\'' || e == '"' || (delim && e == delim) || e == ESCAPE_META || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
+				++ptr;
+				*dest++ = e;
+				end = dest;
+				esc++;
+			}
+		}
+		if (!esc) {
+			if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
+				if ((inside_quotes = (1 - inside_quotes))) {
+					end = dest;
+				}
+			} else {
+				*dest++ = *ptr;
+				if (*ptr != ' ' || inside_quotes) {
+					end = dest;
+				}
+			}
+		}
+	}
+	if (end) {
+		*end = '\0';
+	}
+
+	return start;
+}
+
+KS_DECLARE(unsigned int) ks_separate_string_string(char *buf, const char *delim, char **array, unsigned int arraylen)
 {
 	unsigned int count = 0;
 	char *d;
@@ -272,4 +354,130 @@ KS_DECLARE(char *) ks_copy_string(char *from_str, const char *to_str, ks_size_t 
 	*p = '\0';
 
 	return p;
+}
+
+
+/* Separate a string using a delimiter that is not a space */
+static unsigned int separate_string_char_delim(char *buf, char delim, char **array, unsigned int arraylen)
+{
+	enum tokenizer_state {
+		START,
+		FIND_DELIM
+	} state = START;
+
+	unsigned int count = 0;
+	char *ptr = buf;
+	int inside_quotes = 0;
+	unsigned int i;
+
+	while (*ptr && count < arraylen) {
+		switch (state) {
+		case START:
+			array[count++] = ptr;
+			state = FIND_DELIM;
+			break;
+
+		case FIND_DELIM:
+			/* escaped characters are copied verbatim to the destination string */
+			if (*ptr == ESCAPE_META) {
+				++ptr;
+			} else if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
+				inside_quotes = (1 - inside_quotes);
+			} else if (*ptr == delim && !inside_quotes) {
+				*ptr = '\0';
+				state = START;
+			}
+			++ptr;
+			break;
+		}
+	}
+	/* strip quotes, escaped chars and leading / trailing spaces */
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], delim);
+	}
+
+	return count;
+}
+
+/* Separate a string using a delimiter that is a space */
+static unsigned int separate_string_blank_delim(char *buf, char **array, unsigned int arraylen)
+{
+	enum tokenizer_state {
+		START,
+		SKIP_INITIAL_SPACE,
+		FIND_DELIM,
+		SKIP_ENDING_SPACE
+	} state = START;
+
+	unsigned int count = 0;
+	char *ptr = buf;
+	int inside_quotes = 0;
+	unsigned int i;
+
+	while (*ptr && count < arraylen) {
+		switch (state) {
+		case START:
+			array[count++] = ptr;
+			state = SKIP_INITIAL_SPACE;
+			break;
+
+		case SKIP_INITIAL_SPACE:
+			if (*ptr == ' ') {
+				++ptr;
+			} else {
+				state = FIND_DELIM;
+			}
+			break;
+
+		case FIND_DELIM:
+			if (*ptr == ESCAPE_META) {
+				++ptr;
+			} else if (*ptr == '\'') {
+				inside_quotes = (1 - inside_quotes);
+			} else if (*ptr == ' ' && !inside_quotes) {
+				*ptr = '\0';
+				state = SKIP_ENDING_SPACE;
+			}
+			++ptr;
+			break;
+
+		case SKIP_ENDING_SPACE:
+			if (*ptr == ' ') {
+				++ptr;
+			} else {
+				state = START;
+			}
+			break;
+		}
+	}
+	/* strip quotes, escaped chars and leading / trailing spaces */
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], 0);
+	}
+	
+	return count;
+}
+
+KS_DECLARE(unsigned int) ks_separate_string(char *buf, char delim, char **array, unsigned int arraylen)
+{
+	if (!buf || !array || !arraylen) {
+		return 0;
+	}
+
+
+	if (*buf == '^' && *(buf+1) == '^') {
+		char *p = buf + 2;
+		
+		if (p && *p && *(p+1)) {
+			buf = p;
+			delim = *buf++;
+		}
+	}
+
+
+	memset(array, 0, arraylen * sizeof(*array));
+
+	return (delim == ' ' ? separate_string_blank_delim(buf, array, arraylen) : separate_string_char_delim(buf, delim, array, arraylen));
 }

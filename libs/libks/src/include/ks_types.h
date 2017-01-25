@@ -212,6 +212,10 @@ typedef void (*ks_flush_fn_t)(ks_q_t *q, void *ptr, void *flush_data);
 
 typedef struct ks_thread_pool_s ks_thread_pool_t;
 
+struct ks_network_list;
+typedef struct ks_network_list ks_network_list_t;
+
+
 KS_END_EXTERN_C
 
 #endif							/* defined(_KS_TYPES_H_) */

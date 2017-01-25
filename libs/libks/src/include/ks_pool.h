@@ -462,6 +462,7 @@ KS_DECLARE(char *) ks_pstrndup(ks_pool_t *pool, const char *str, size_t len);
 KS_DECLARE(char *) ks_pstrmemdup(ks_pool_t *pool, const char *str, size_t len);
 KS_DECLARE(void *) ks_pmemdup(ks_pool_t *pool, const void *buf, size_t len);
 KS_DECLARE(char *) ks_pstrcat(ks_pool_t *pool, ...);
+KS_DECLARE(char *) ks_psprintf(ks_pool_t *pool, const char *fmt, ...);
 
 KS_END_EXTERN_C
 
