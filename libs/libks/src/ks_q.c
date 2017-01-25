@@ -73,14 +73,14 @@ static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_po
 		while(np) {
 			fp = np;
 			np = np->next;
-			ks_pool_free(q->pool, fp);
+			ks_pool_free(q->pool, &fp);
 		}
 		
 		np = q->empty;
 		while(np) {
 			fp = np;
 			np = np->next;
-			ks_pool_free(q->pool, fp);
+			ks_pool_free(q->pool, &fp);
 		}
 		break;
 	case KS_MPCL_DESTROY:
@@ -167,7 +167,7 @@ KS_DECLARE(ks_status_t) ks_q_destroy(ks_q_t **qP)
 		ks_q_term(q);
 
 		pool = q->pool;
-		ks_pool_free(pool, q);
+		ks_pool_free(pool, &q);
 		pool = NULL;
 
 		return KS_STATUS_SUCCESS;

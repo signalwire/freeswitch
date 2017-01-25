@@ -34,10 +34,13 @@
 #ifndef _BLADE_H_
 #define _BLADE_H_
 #include <ks.h>
+#include <ks_dht.h>
 #include <sodium.h>
+#include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
 #include "blade_peer.h"
+#include "blade_datastore.h"
 #include "bpcp.h"
 
 KS_BEGIN_EXTERN_C

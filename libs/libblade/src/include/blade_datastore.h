@@ -31,18 +31,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_TYPES_H_
-#define _BLADE_TYPES_H_
-#include <ks.h>
+#ifndef _BLADE_DATASTORE_H_
+#define _BLADE_DATASTORE_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-typedef struct blade_handle_s blade_handle_t;
-typedef struct blade_peer_s blade_peer_t;
-typedef struct blade_datastore_s blade_datastore_t;
-
-typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
-
+KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
+KS_DECLARE(void) blade_datastore_pulse(blade_datastore_t *bds, int32_t timeout);
+KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length);
+KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void *key, int32_t key_length, const void *data, int64_t data_length);
+KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
+											  blade_datastore_fetch_callback_t callback,
+											  const void *key,
+											  int32_t key_length,
+											  void *userdata);
 KS_END_EXTERN_C
 
 #endif

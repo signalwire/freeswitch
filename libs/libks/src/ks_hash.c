@@ -210,8 +210,8 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 		break;
 	}
 
-	if (flags == KS_HASH_FLAG_DEFAULT) {
-		flags = KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_RWLOCK;
+	if ((flags & KS_HASH_FLAG_NOLOCK)) {
+		flags &= ~KS_HASH_FLAG_RWLOCK;
 	}
 
 	ks_assert(pool);
@@ -240,7 +240,9 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 		ks_rwl_create(&h->rwl, h->pool);
 	}
 
-	ks_mutex_create(&h->mutex, KS_MUTEX_FLAG_DEFAULT, h->pool);
+	if (!(flags & KS_HASH_FLAG_NOLOCK)) {
+		ks_mutex_create(&h->mutex, KS_MUTEX_FLAG_DEFAULT, h->pool);
+	}
 	
 
     if (NULL == h) abort(); /*oom*/
@@ -291,7 +293,7 @@ ks_hash_expand(ks_hash_t *h)
 					newtable[index] = e;
 				}
 			}
-			ks_pool_safe_free(h->pool, h->table);
+			ks_pool_free(h->pool, &h->table);
 			h->table = newtable;
 		}
     /* Plan B: realloc instead */
@@ -355,10 +357,10 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
 			h->entrycount--;
 			v = e->v;
 			if (e->flags & KS_HASH_FLAG_FREE_KEY) {
-				ks_pool_free(h->pool, e->k);
+				ks_pool_free(h->pool, &e->k);
 			}
 			if (e->flags & KS_HASH_FLAG_FREE_VALUE) {
-				ks_pool_safe_free(h->pool, e->v); 
+				ks_pool_free(h->pool, &e->v); 
 				v = NULL;
 			} else if (e->destructor) {
 				e->destructor(e->v);
@@ -367,7 +369,7 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
 				h->destructor(e->v);
 				v = e->v = NULL;
 			}
-			ks_pool_safe_free(h->pool, e);
+			ks_pool_free(h->pool, &e);
 			return v;
 		}
 		pE = &(e->next);
@@ -377,7 +379,7 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
 }
 
 /*****************************************************************************/
-KS_DECLARE(int)
+KS_DECLARE(ks_status_t)
 ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_destructor_t destructor)
 {
     struct entry *e;
@@ -404,7 +406,6 @@ ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_
 			index = indexFor(h->tablelength, hashvalue);
 		}
     e = (struct entry *)ks_pool_alloc(h->pool, sizeof(struct entry));
-    if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
     e->h = hashvalue;
     e->k = k;
     e->v = v;
@@ -415,13 +416,15 @@ ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_
 
 	ks_hash_write_unlock(h);
 
-    return -1;
+    return KS_STATUS_SUCCESS;
 }
 
 
 KS_DECLARE(void) ks_hash_write_lock(ks_hash_t *h)
 {
-	if ((h->flags & KS_HASH_FLAG_RWLOCK)) {
+	if ((h->flags & KS_HASH_FLAG_NOLOCK)) {
+		return;
+	} else if ((h->flags & KS_HASH_FLAG_RWLOCK)) {
 		ks_rwl_write_lock(h->rwl);
 	} else {
 		ks_mutex_lock(h->mutex);
@@ -430,7 +433,9 @@ KS_DECLARE(void) ks_hash_write_lock(ks_hash_t *h)
 
 KS_DECLARE(void) ks_hash_write_unlock(ks_hash_t *h)
 {
-	if ((h->flags & KS_HASH_FLAG_RWLOCK)) {
+	if ((h->flags & KS_HASH_FLAG_NOLOCK)) {
+		return;
+	} else if ((h->flags & KS_HASH_FLAG_RWLOCK)) {
 		ks_rwl_write_unlock(h->rwl);
 	} else {
 		ks_mutex_unlock(h->mutex);
@@ -533,11 +538,11 @@ ks_hash_destroy(ks_hash_t **h)
 			f = e; e = e->next; 
 
 			if (f->flags & KS_HASH_FLAG_FREE_KEY) {
-				ks_pool_free((*h)->pool, f->k); 
+				ks_pool_free((*h)->pool, &f->k); 
 			}
 			
 			if (f->flags & KS_HASH_FLAG_FREE_VALUE) {
-				ks_pool_safe_free((*h)->pool, f->v); 
+				ks_pool_free((*h)->pool, &f->v); 
 			} else if (f->destructor) {
 				f->destructor(f->v);
 				f->v = NULL;
@@ -545,16 +550,18 @@ ks_hash_destroy(ks_hash_t **h)
 				(*h)->destructor(f->v);
 				f->v = NULL;
 			}
-			ks_pool_safe_free((*h)->pool, f); 
+			ks_pool_free((*h)->pool, &f); 
 		}
 	}
 
 	pool = (*h)->pool;
-    ks_pool_safe_free(pool, (*h)->table);
+    ks_pool_free(pool, &(*h)->table);
 	ks_hash_write_unlock(*h);
-	if ((*h)->rwl) ks_pool_free(pool, (*h)->rwl);
-	ks_pool_free(pool, (*h)->mutex);
-	ks_pool_free(pool, *h);
+	if ((*h)->rwl) ks_pool_free(pool, &(*h)->rwl);
+	if ((*h)->mutex) {
+		ks_pool_free(pool, &(*h)->mutex);
+	}
+	ks_pool_free(pool, &(*h));
 	pool = NULL;
 	*h = NULL;
 
@@ -565,8 +572,6 @@ KS_DECLARE(void) ks_hash_last(ks_hash_iterator_t **iP)
 {
 	ks_hash_iterator_t *i = *iP;
 
-	//ks_assert(i->locked != KS_READLOCKED || (i->h->flags & KS_HASH_FLAG_RWLOCK));
-
 	if (i->locked == KS_READLOCKED) {
 		ks_mutex_lock(i->h->mutex);
 		i->h->readers--;
@@ -575,7 +580,7 @@ KS_DECLARE(void) ks_hash_last(ks_hash_iterator_t **iP)
 		ks_rwl_read_unlock(i->h->rwl);
 	}
 
-	ks_pool_free(i->h->pool, i);
+	ks_pool_free(i->h->pool, &i);
 	
 	*iP = NULL;
 }

@@ -99,13 +99,13 @@ KS_DECLARE(ks_status_t) ks_socket_rcvbuf(ks_socket_t socket, int bufsize);
 KS_DECLARE(int) ks_wait_sock(ks_socket_t sock, uint32_t ms, ks_poll_t flags);
 
 KS_DECLARE(ks_socket_t) ks_socket_connect(int type, int protocol, ks_sockaddr_t *addr);
-KS_DECLARE(ks_status_t) ks_addr_bind(ks_socket_t server_sock, ks_sockaddr_t *addr);
+KS_DECLARE(ks_status_t) ks_addr_bind(ks_socket_t server_sock, const ks_sockaddr_t *addr);
 KS_DECLARE(const char *) ks_addr_get_host(ks_sockaddr_t *addr);
 KS_DECLARE(ks_port_t) ks_addr_get_port(ks_sockaddr_t *addr);
 KS_DECLARE(int) ks_addr_cmp(const ks_sockaddr_t *sa1, const ks_sockaddr_t *sa2);
 KS_DECLARE(ks_status_t) ks_addr_copy(ks_sockaddr_t *addr, const ks_sockaddr_t *src_addr);
 KS_DECLARE(ks_status_t) ks_addr_set(ks_sockaddr_t *addr, const char *host, ks_port_t port, int family);
-KS_DECLARE(ks_status_t) ks_addr_set_raw(ks_sockaddr_t *addr, void *data, ks_port_t port, int family);
+KS_DECLARE(ks_status_t) ks_addr_set_raw(ks_sockaddr_t *addr, const void *data, ks_port_t port, int family);
 KS_DECLARE(ks_status_t) ks_addr_raw_data(const ks_sockaddr_t *addr, void **data, ks_size_t *datalen);
 KS_DECLARE(ks_status_t) ks_listen(const char *host, ks_port_t port, int family, int backlog, ks_listen_callback_t callback, void *user_data);
 KS_DECLARE(ks_status_t) ks_socket_shutdown(ks_socket_t sock, int how);

@@ -102,10 +102,10 @@ static int check_queue(ks_thread_pool_t *tp, ks_bool_t adding)
 		
 		need--;
 	}
-
+	/*
 	ks_log(KS_LOG_DEBUG, "WORKER check: adding %d need %d running %d dying %d total %d max %d\n", 
 		   adding, need, tp->running_thread_count, tp->dying_thread_count, tp->thread_count, tp->max);
-
+	*/
 	return need;
 }
 
@@ -129,10 +129,10 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		ks_status_t status;
 		
 		status = ks_q_pop_timeout(tp->q, &pop, 1000);
-
+		/*
 		ks_log(KS_LOG_DEBUG, "WORKER %d idle_sec %d running %d dying %d total %d max %d\n", 
 			   my_id, idle_sec, tp->running_thread_count, tp->dying_thread_count, tp->thread_count, tp->max);		
-		
+		*/		
 		check_queue(tp, KS_FALSE);
 		
 		if (status == KS_STATUS_TIMEOUT) {
@@ -170,7 +170,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		idle_sec = 0;
 		job->func(thread, job->data);
 		
-		ks_pool_free(tp->pool, job);
+		ks_pool_free(tp->pool, &job);
 
 		ks_mutex_lock(tp->mutex);
 		tp->busy_thread_count--;

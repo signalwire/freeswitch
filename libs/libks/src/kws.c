@@ -752,7 +752,7 @@ KS_DECLARE(void) kws_destroy(kws_t **kwsP)
 	kws->down = 2;
 
 	if (kws->write_buffer) {
-		ks_pool_free(kws->pool, kws->write_buffer);
+		ks_pool_free(kws->pool, &kws->write_buffer);
 		kws->write_buffer = NULL;
 		kws->write_buffer_len = 0;
 	}
@@ -767,12 +767,12 @@ KS_DECLARE(void) kws_destroy(kws_t **kwsP)
 		kws->ssl = NULL;
 	}
 
-	if (kws->buffer) ks_pool_free(kws->pool, kws->buffer);
-	if (kws->bbuffer) ks_pool_free(kws->pool, kws->bbuffer);
+	if (kws->buffer) ks_pool_free(kws->pool, &kws->buffer);
+	if (kws->bbuffer) ks_pool_free(kws->pool, &kws->bbuffer);
 
 	kws->buffer = kws->bbuffer = NULL;
 
-	ks_pool_free(kws->pool, kws);
+	ks_pool_free(kws->pool, &kws);
 	kws = NULL;
 }
 
@@ -786,7 +786,7 @@ KS_DECLARE(ks_ssize_t) kws_close(kws_t *kws, int16_t reason)
 	kws->down = 1;
 	
 	if (kws->uri) {
-		ks_pool_free(kws->pool, kws->uri);
+		ks_pool_free(kws->pool, &kws->uri);
 		kws->uri = NULL;
 	}
 

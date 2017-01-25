@@ -132,7 +132,7 @@ int test3(void)
 	char *A, *B, *C;
 
 	ks_pool_open(&pool);
-	ks_hash_create(&hash, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NONE, pool);
+	ks_hash_create(&hash, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NOLOCK, pool);
 	ks_hash_set_keysize(hash, TEST3_SIZE);
 
 	randombytes_buf(data, sizeof(data));

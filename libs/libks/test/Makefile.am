@@ -4,6 +4,11 @@ check_PROGRAMS =
 
 EXTRA_DIST = tap.h
 
+check_PROGRAMS += testbuckets
+testbuckets_SOURCES = testbuckets.c tap.c
+testbuckets_CFLAGS = $(AM_CFLAGS)
+testbuckets_LDADD = $(TEST_LDADD)
+
 check_PROGRAMS += testpools
 testpools_SOURCES = testpools.c tap.c
 testpools_CFLAGS = $(AM_CFLAGS)
@@ -49,25 +54,35 @@ testwebsock_SOURCES = testwebsock.c tap.c
 testwebsock_CFLAGS = $(AM_CFLAGS)
 testwebsock_LDADD = $(TEST_LDADD)
 
-check_PROGRAMS += testdht
-testdht_SOURCES = testdht.c tap.c
-testdht_CFLAGS = $(AM_CFLAGS)
-testdht_LDADD = $(TEST_LDADD)
+#check_PROGRAMS += testdht
+#testdht_SOURCES = testdht.c tap.c
+#testdht_CFLAGS = $(AM_CFLAGS)
+#testdht_LDADD = $(TEST_LDADD)
 
-check_PROGRAMS += testdht_net
-testdht_net_SOURCES = testdht-net.c tap.c
-testdht_net_CFLAGS = $(AM_CFLAGS)
-testdht_net_LDADD = $(TEST_LDADD)
+check_PROGRAMS += testdht2
+testdht2_SOURCES = testdht2.c tap.c
+testdht2_CFLAGS = $(AM_CFLAGS)
+testdht2_LDADD = $(TEST_LDADD)
 
-check_PROGRAMS += testdht_msg
-testdht_msg_SOURCES = testdht-msg.c tap.c
-testdht_msg_CFLAGS = $(AM_CFLAGS)
-testdht_msg_LDADD = $(TEST_LDADD)
+check_PROGRAMS += nodeidgen
+nodeidgen_SOURCES = nodeidgen.c tap.c
+nodeidgen_CFLAGS = $(AM_CFLAGS)
+nodeidgen_LDADD = $(TEST_LDADD)
 
-check_PROGRAMS += dht_example
-dht_example_SOURCES = dht-example.c
-dht_example_CFLAGS = $(AM_CFLAGS)
-dht_example_LDADD = $(abs_top_builddir)/libks.la $(openssl_LIBS) -ledit -lpthread
+#check_PROGRAMS += testdht_net
+#testdht_net_SOURCES = testdht-net.c tap.c
+#testdht_net_CFLAGS = $(AM_CFLAGS)
+#testdht_net_LDADD = $(TEST_LDADD)
+
+#check_PROGRAMS += testdht_msg
+#testdht_msg_SOURCES = testdht-msg.c tap.c
+#testdht_msg_CFLAGS = $(AM_CFLAGS)
+#testdht_msg_LDADD = $(TEST_LDADD)
+
+#check_PROGRAMS += dht_example
+#dht_example_SOURCES = dht-example.c
+#dht_example_CFLAGS = $(AM_CFLAGS)
+#dht_example_LDADD = $(abs_top_builddir)/libks.la $(openssl_LIBS) -ledit -lpthread
 
 #check_PROGRAMS += libtorrent_example
 #libtorrent_example_SOURCES = libtorrent-example.c
