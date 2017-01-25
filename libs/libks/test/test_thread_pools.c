@@ -18,7 +18,7 @@ static void *test1_thread(ks_thread_t *thread, void *data)
 
 	ks_log(KS_LOG_DEBUG, "Thread %d\n", mydata->i);
 	ks_sleep(100000);
-	ks_pool_free(mydata->pool, mydata);
+	ks_pool_free(mydata->pool, &mydata);
 	return NULL;
 }
 
