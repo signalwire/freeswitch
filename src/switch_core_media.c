@@ -10526,6 +10526,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 		
 	if (!zstr(codec_string)) {
 		char *tmp_codec_string;
+		if (*codec_string == '=') codec_string++;
 		if ((tmp_codec_string = strdup(codec_string))) {
 			num_codecs = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
 			num_codecs = switch_loadable_module_get_codecs_sorted(codecs, fmtp, SWITCH_MAX_CODECS, codec_order, num_codecs);
