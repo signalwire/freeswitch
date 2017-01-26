@@ -613,6 +613,7 @@ static void phase_e_handler(void *user_data, int result)
 			}
 		}
 		switch_channel_execute_on(channel, "execute_on_fax_success");
+		switch_channel_api_on(channel, "api_on_fax_success");
 	} else {
 		if ((var = switch_channel_get_variable(channel, "system_on_fax_failure"))) {
 			expanded = switch_channel_expand_variables(channel, var);
@@ -622,6 +623,7 @@ static void phase_e_handler(void *user_data, int result)
 			}
 		}
 		switch_channel_execute_on(channel, "execute_on_fax_failure");
+		switch_channel_api_on(channel, "api_on_fax_failure");
 	}
 }
 
