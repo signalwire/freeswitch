@@ -36,11 +36,14 @@
 #include <ks.h>
 #include <ks_dht.h>
 #include <sodium.h>
+#include <libconfig.h>
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
 #include "blade_peer.h"
+#include "blade_service.h"
 #include "blade_datastore.h"
+#include "blade_directory.h"
 #include "bpcp.h"
 
 KS_BEGIN_EXTERN_C

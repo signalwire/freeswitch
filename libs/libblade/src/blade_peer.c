@@ -33,11 +33,6 @@
 
 #include "blade.h"
 
-#define KS_DHT_TPOOL_MIN 2
-#define KS_DHT_TPOOL_MAX 8
-#define KS_DHT_TPOOL_STACK (1024 * 256)
-#define KS_DHT_TPOOL_IDLE 10
-
 typedef enum {
 	BP_NONE = 0,
 	BP_MYPOOL = (1 << 0),
@@ -48,8 +43,18 @@ struct blade_peer_s {
 	bppvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
-	ks_dht_t *dht;
+	blade_service_t *service;
+
+	ks_bool_t shutdown;
+	kws_t *kws;
+	ks_thread_t *kws_thread;
+
+	ks_q_t *messages_sending;
+	ks_q_t *messages_receiving;
 };
+
+
+void *blade_peer_kws_thread(ks_thread_t *thread, void *data);
 
 
 KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
@@ -68,7 +73,11 @@ KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 	flags = bp->flags;
 	pool = bp->pool;
 
-	if (bp->dht) ks_dht_destroy(&bp->dht);
+	blade_peer_shutdown(bp);
+
+	ks_q_destroy(&bp->messages_sending);
+	ks_q_destroy(&bp->messages_receiving);
+
 	if (bp->tpool && (flags & BP_MYTPOOL)) ks_thread_pool_destroy(&bp->tpool);
 	
 	ks_pool_free(bp->pool, &bp);
@@ -78,11 +87,13 @@ KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, ks_dht_nodeid_t *nodeid)
+KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_service_t *service)
 {
 	bppvt_flag_t newflags = BP_NONE;
 	blade_peer_t *bp = NULL;
-	ks_dht_t *dht = NULL;
+
+	ks_assert(bpP);
+	ks_assert(service);
 
 	if (!pool) {
 		newflags |= BP_MYPOOL;
@@ -94,50 +105,112 @@ KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, k
 		ks_thread_pool_create(&tpool, BLADE_PEER_TPOOL_MIN, BLADE_PEER_TPOOL_MAX, BLADE_PEER_TPOOL_STACK, KS_PRI_NORMAL, BLADE_PEER_TPOOL_IDLE);
 		ks_assert(tpool);
 	}
-	ks_dht_create(&dht, pool, tpool, nodeid);
-	ks_assert(dht);
 
 	bp = ks_pool_alloc(pool, sizeof(*bp));
 	bp->flags = newflags;
 	bp->pool = pool;
 	bp->tpool = tpool;
-	bp->dht = dht;
+	bp->service = service;
+	ks_q_create(&bp->messages_sending, pool, 0);
+	ks_q_create(&bp->messages_receiving, pool, 0);
 	*bpP = bp;
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_dht_nodeid_t *) blade_peer_myid(blade_peer_t *bp)
+KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, kws_t *kws)
 {
 	ks_assert(bp);
-	ks_assert(bp->dht);
+	ks_assert(kws);
 
-	return &bp->dht->nodeid;
+	// @todo: consider using a recycle queue for blade_peer_t in blade_service_t, just need to call startup then
+	
+	blade_peer_shutdown(bp);
+	
+	bp->kws = kws;
+
+    if (ks_thread_create_ex(&bp->kws_thread,
+							blade_peer_kws_thread,
+							bp,
+							KS_THREAD_FLAG_DEFAULT,
+							KS_THREAD_DEFAULT_STACK,
+							KS_PRI_NORMAL,
+							bp->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+	
+	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) blade_peer_autoroute(blade_peer_t *bp, ks_bool_t autoroute, ks_port_t port)
+KS_DECLARE(ks_status_t) blade_peer_shutdown(blade_peer_t *bp)
 {
 	ks_assert(bp);
 
-	ks_dht_autoroute(bp->dht, autoroute, port);
+	bp->shutdown = KS_TRUE;
+	
+	if (bp->kws_thread) {
+		ks_thread_join(bp->kws_thread);
+		ks_pool_free(bp->pool, &bp->kws_thread);
+	}
+	
+	if (bp->kws) kws_destroy(&bp->kws);
+	
+	bp->shutdown = KS_FALSE;
+	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_peer_bind(blade_peer_t *bp, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
+void *blade_peer_kws_thread(ks_thread_t *thread, void *data)
 {
-	ks_assert(bp);
-	ks_assert(addr);
+	blade_peer_t *peer;
+	kws_opcode_t opcode;
+	uint8_t *data;
+	ks_size_t data_len;
+	blade_message_t *message;
 
-	return ks_dht_bind(bp->dht, addr, endpoint);
+	ks_assert(thread);
+	ks_assert(data);
+
+	peer = (blade_peer_t *)data;
+
+	while (!peer->shutdown) {
+		// @todo use nonblocking kws mode so that if no data at all is available yet we can still do other things such as sending messages before trying again
+		// or easier alternative, just use ks_poll (or select) to check if there is a POLLIN event pending, but this requires direct access to the socket, or
+		// kws can be updated to add a function to poll the inner socket for events (IE, kws_poll(kws, &inbool, NULL, &errbool, timeout))
+		data_len = kws_read_frame(peer->kws, &opcode, &data);
+
+		if (data_len <= 0) {
+			// @todo error handling, strerror(ks_errno())
+			// 0 means socket closed with WS_NONE, which closes websocket with no additional reason
+			// -1 means socket closed with a general failure
+			// -2 means nonblocking wait
+			// other values are based on WS_XXX reasons
+			// negative values are based on reasons, except for -1 is but -2 is nonblocking wait, and
+			
+			// @todo: this way of disconnecting would have the service periodically check the list of connected peers for those that are disconnecting,
+			// remove them from the connected peer list, and then call peer destroy which will wait for this thread to rejoin which it already will have,
+			// and then destroy the inner kws and finish any cleanup of the actual socket if neccessary, and can still call an ondisconnected callback
+			// at the service level
+			peer->disconnecting = KS_TRUE;
+			break;
+		}
+
+		// @todo this will check the discarded queue first and realloc if there is not enough space, otherwise allocate a message, and finally copy the data
+		if (blade_handle_message_claim(peer->service->handle, &message, data, data_len) != KS_STATUS_SUCCESS || !message) {
+			// @todo error handling
+			// just drop the peer for now, the only failure scenarios are asserted OOM, or if the discard queue pop fails
+			peer->disconnecting = KS_TRUE;
+			break;
+		}
+		
+		ks_q_push(peer->messages_receiving, message);
+		// @todo callback up the stack to indicate a message has been received and can be popped (more efficient than constantly polling by popping)?
+
+
+		if (ks_q_trypop(peer->messages_sending, &message) == KS_STATUS_SUCCESS) {
+		}
+	}
+	
+	return NULL;
 }
-
-KS_DECLARE(void) blade_peer_pulse(blade_peer_t *bp, int32_t timeout)
-{
-	ks_assert(bp);
-	ks_assert(timeout >= 0);
-
-	ks_dht_pulse(bp->dht, timeout);
-}
-
+	
 /* For Emacs:
  * Local Variables:
  * mode:c

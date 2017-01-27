@@ -43,7 +43,12 @@ struct blade_handle_s {
 	bhpvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
-	blade_peer_t *peer;
+	
+	config_setting_t *config_datastore;
+	config_setting_t *config_directory;
+	
+	//blade_peer_t *peer;
+	blade_directory_t *directory;
 	blade_datastore_t *datastore;
 };
 
@@ -64,9 +69,9 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	flags = bh->flags;
 	pool = bh->pool;
 
-	if (bh->datastore) blade_datastore_destroy(&bh->datastore);
-
-	blade_peer_destroy(&bh->peer);
+	blade_handle_shutdown(bh);
+	
+	//blade_peer_destroy(&bh->peer);
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
 
 	ks_pool_free(bh->pool, &bh);
@@ -78,14 +83,12 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool, const char *nodeid)
+KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool)
 {
 	bhpvt_flag_t newflags = BH_NONE;
 	blade_handle_t *bh = NULL;
-	ks_dht_nodeid_t nid;
 
-	ks_assert(nodeid);
-	ks_assert(strlen(nodeid) == (KS_DHT_NODEID_SIZE * 2));
+	ks_assert(bhP);
 
 	if (!pool) {
 		newflags |= BH_MYPOOL;
@@ -101,75 +104,88 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	bh->flags = newflags;
 	bh->pool = pool;
 	bh->tpool = tpool;
-	ks_dht_dehex(nid.id, nodeid, KS_DHT_NODEID_SIZE);
-	blade_peer_create(&bh->peer, bh->pool, bh->tpool, &nid);
+	//blade_peer_create(&bh->peer, bh->pool, bh->tpool);
 
 	*bhP = bh;
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) blade_handle_myid(blade_handle_t *bh, char *buffer)
+ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
-	ks_dht_nodeid_t *nodeid = NULL;
-
-	ks_assert(bh);
-	ks_assert(bh->peer);
-
-	nodeid = blade_peer_myid(bh->peer);
-	ks_dht_hex(nodeid->id, buffer, KS_DHT_NODEID_SIZE);
-}
-
-KS_DECLARE(void) blade_handle_autoroute(blade_handle_t *bh, ks_bool_t autoroute, ks_port_t port)
-{
-	ks_assert(bh);
-	ks_assert(bh->peer);
-
-	blade_peer_autoroute(bh->peer, autoroute, port);
-}
-
-KS_DECLARE(ks_status_t) blade_handle_bind(blade_handle_t *bh, const char *ip, ks_port_t port, ks_dht_endpoint_t **endpoint)
-{
-	ks_sockaddr_t addr;
-	int family = AF_INET;
+	config_setting_t *datastore = NULL;
+	config_setting_t *directory = NULL;
 	
 	ks_assert(bh);
-	ks_assert(ip);
-	ks_assert(port);
 
-	if (ip[1] != '.' && ip[2] != '.' && ip[3] != '.') family = AF_INET6;
+	if (!config) return KS_STATUS_FAIL;
+    if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
+
+    datastore = config_setting_get_member(config, "datastore");
+    //if (datastore && !config_setting_is_group(datastore)) return KS_STATUS_FAIL;
 	
-	ks_addr_set(&addr, ip, port, family);
-	return blade_peer_bind(bh->peer, &addr, endpoint);
+    directory = config_setting_get_member(config, "directory");
+    //if (directory && !config_setting_is_group(directory)) return KS_STATUS_FAIL;
+
+	bh->config_datastore = datastore;
+	bh->config_directory = directory;
+	
+	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) blade_handle_pulse(blade_handle_t *bh, int32_t timeout)
-{
-	ks_assert(bh);
-	ks_assert(timeout >= 0);
-
-	blade_peer_pulse(bh->peer, timeout);
-	if (bh->datastore) blade_datastore_pulse(bh->datastore, timeout);
-}
-
-
-KS_DECLARE(void) blade_handle_datastore_start(blade_handle_t *bh)
+KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config)
 {
 	ks_assert(bh);
 
-	if (bh->datastore) return;
+    if (blade_handle_config(bh, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+	
+	if (bh->config_datastore && !blade_handle_datastore_available(bh)) {
+		blade_datastore_create(&bh->datastore, bh->pool, bh->tpool);
+		blade_datastore_startup(bh->datastore, bh->config_datastore);
+	}
+	
+	if (bh->config_directory && !blade_handle_directory_available(bh)) {
+		blade_directory_create(&bh->directory, bh->pool, bh->tpool);
+		blade_directory_startup(bh->directory, config);
+	}
+	
+	return KS_STATUS_SUCCESS;
+}
 
-	blade_datastore_create(&bh->datastore, bh->pool);
+KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
+{
+	ks_assert(bh);
+	
+	if (blade_handle_directory_available(bh)) blade_directory_destroy(&bh->directory);
+	
+	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
+	
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
+{
+	ks_assert(bh);
+
+	return bh->datastore != NULL;
+}
+
+KS_DECLARE(ks_bool_t) blade_handle_directory_available(blade_handle_t *bh)
+{
+	ks_assert(bh);
+
+	return bh->directory != NULL;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length)
 {
 	ks_assert(bh);
-	ks_assert(bh->datastore);
 	ks_assert(key);
 	ks_assert(key_length > 0);
 	ks_assert(data);
 	ks_assert(data_length > 0);
+
+	if (!blade_handle_datastore_available(bh)) return KS_STATUS_INACTIVE;
 	
 	return blade_datastore_store(bh->datastore, key, key_length, data, data_length);
 }
@@ -181,10 +197,11 @@ KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
 													 void *userdata)
 {
 	ks_assert(bh);
-	ks_assert(bh->datastore);
 	ks_assert(callback);
 	ks_assert(key);
 	ks_assert(key_length > 0);
+	
+	if (!blade_handle_datastore_available(bh)) return KS_STATUS_INACTIVE;
 	
 	return blade_datastore_fetch(bh->datastore, callback, key, key_length, userdata);
 }

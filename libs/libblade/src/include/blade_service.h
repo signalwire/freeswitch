@@ -31,20 +31,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_TYPES_H_
-#define _BLADE_TYPES_H_
-#include <ks.h>
+#ifndef _BLADE_SERVICE_H_
+#define _BLADE_SERVICE_H_
+#include <blade.h>
+
+#define BLADE_SERVICE_TPOOL_MIN 2
+#define BLADE_SERVICE_TPOOL_MAX 8
+#define BLADE_SERVICE_TPOOL_STACK (1024 * 256)
+#define BLADE_SERVICE_TPOOL_IDLE 10
 
 KS_BEGIN_EXTERN_C
-
-typedef struct blade_handle_s blade_handle_t;
-typedef struct blade_peer_s blade_peer_t;
-typedef struct blade_service_s blade_service_t;
-typedef struct blade_datastore_s blade_datastore_t;
-typedef struct blade_directory_s blade_directory_t;
-
-typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
-
+KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
+KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP);
+KS_DECLARE(ks_status_t) blade_service_startup(blade_service_t *bs, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_service_shutdown(blade_service_t *bs);
 KS_END_EXTERN_C
 
 #endif

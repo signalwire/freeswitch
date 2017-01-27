@@ -28,16 +28,12 @@ struct command_def_s {
 
 void command_test(blade_handle_t *bh, char *args);
 void command_quit(blade_handle_t *bh, char *args);
-void command_myid(blade_handle_t *bh, char *args);
-void command_bind(blade_handle_t *bh, char *args);
 void command_store(blade_handle_t *bh, char *args);
 void command_fetch(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "test", command_test },
 	{ "quit", command_quit },
-	{ "myid", command_myid },
-	{ "bind", command_bind },
 	{ "store", command_store },
 	{ "fetch", command_fetch },
 	
@@ -48,19 +44,12 @@ static const struct command_def_s command_defs[] = {
 int main(int argc, char **argv)
 {
 	blade_handle_t *bh = NULL;
-	const char *nodeid;
-
-	ks_assert(argc >= 2);
-
-	nodeid = argv[1];
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 	
 	blade_init();
 
-	blade_handle_create(&bh, NULL, NULL, nodeid);
-
-	blade_handle_autoroute(bh, KS_TRUE, KS_DHT_DEFAULT_PORT);
+	blade_handle_create(&bh, NULL, NULL);
 
 	loop(bh);
 	
@@ -121,7 +110,7 @@ void loop(blade_handle_t *bh)
 			// @todo lines must not exceed 512 bytes, treat as error and ignore buffer until next new line?
 			ks_assert(0);
 		}
-		blade_handle_pulse(bh, 1);
+		blade_handle_pulse(bh);
 	}
 }
 
@@ -179,34 +168,6 @@ void command_quit(blade_handle_t *bh, char *args)
 	g_shutdown = KS_TRUE;
 }
 
-void command_myid(blade_handle_t *bh, char *args)
-{
-	char buf[KS_DHT_NODEID_SIZE * 2 + 1];
-
-	ks_assert(bh);
-	ks_assert(args);
-
-	blade_handle_myid(bh, buf);
-
-	ks_log(KS_LOG_INFO, "%s\n", buf);
-}
-
-void command_bind(blade_handle_t *bh, char *args)
-{
-	char *ip = NULL;
-	char *port = NULL;
-	ks_port_t p;
-
-	ks_assert(args);
-
-	parse_argument(&args, &ip, ' ');
-	parse_argument(&args, &port, ' ');
-
-	p = atoi(port); // @todo use strtol for error handling
-
-	blade_handle_bind(bh, ip, p, NULL);
-}
-
 void command_store(blade_handle_t *bh, char *args)
 {
 	char *key;
@@ -214,7 +175,7 @@ void command_store(blade_handle_t *bh, char *args)
 
 	ks_assert(args);
 
-	blade_handle_datastore_start(bh);
+	blade_handle_datastore_startup(bh, NULL);
 	
 	parse_argument(&args, &key, ' ');
 	parse_argument(&args, &data, ' ');
@@ -234,7 +195,7 @@ void command_fetch(blade_handle_t *bh, char *args)
 
 	ks_assert(args);
 
-	blade_handle_datastore_start(bh);
+	blade_handle_datastore_startup(bh, NULL);
 	
 	parse_argument(&args, &key, ' ');
 

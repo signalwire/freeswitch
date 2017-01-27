@@ -42,12 +42,13 @@
 
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool, const char *nodeid);
-KS_DECLARE(void) blade_handle_myid(blade_handle_t *bh, char *buffer);
-KS_DECLARE(void) blade_handle_autoroute(blade_handle_t *bh, ks_bool_t autoroute, ks_port_t port);
-KS_DECLARE(ks_status_t) blade_handle_bind(blade_handle_t *bh, const char *ip, ks_port_t port, ks_dht_endpoint_t **endpoint);
-KS_DECLARE(void) blade_handle_pulse(blade_handle_t *bh, int32_t timeout);
-KS_DECLARE(void) blade_handle_datastore_start(blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
+KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
+
+KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh);
+KS_DECLARE(ks_bool_t) blade_handle_directory_available(blade_handle_t *bh);
+
 KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length);
 KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
 													 blade_datastore_fetch_callback_t callback,
