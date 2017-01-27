@@ -1928,7 +1928,9 @@ int sofia_recover_callback(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, break_rfc ? "sip_full_to" : "sip_full_from"));
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, break_rfc ? "sip_full_from" : "sip_full_to"));
 	} else {
-		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
+		const char *contact_params = switch_channel_get_variable(channel, "sip_contact_params");
+		const char *contact_uri = switch_channel_get_variable(channel, "sip_contact_uri");
+		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s%s%s", contact_uri, contact_params ? ";" : "", switch_str_nil(contact_params));
 
 		if (zstr(rr)) {
 			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;transport=%s>",
