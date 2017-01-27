@@ -9854,8 +9854,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		char *last_acl = NULL;
 		const char *contact_host = NULL;
 
-		if (sip && sip->sip_contact) {
-			contact_host = sip->sip_contact->m_url->url_host;
+		if (sip) {
+			if (sip->sip_via && sip->sip_via->v_host) {
+				contact_host = sip->sip_via->v_host;
+			} else if (sip->sip_contact) {
+				contact_host = sip->sip_contact->m_url->url_host;
+			}
 		}
 
 		if (!zstr(contact_host)) {
