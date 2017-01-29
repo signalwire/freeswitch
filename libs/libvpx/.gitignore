@@ -13,3 +13,5 @@ vpx_config.h
 vpx_dsp_rtcd.h
 vpx_scale_rtcd.h
 vpx_version.h
+
+!build/make/Makefile
