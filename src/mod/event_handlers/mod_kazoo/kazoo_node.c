@@ -1281,6 +1281,7 @@ static void *SWITCH_THREAD_FUNC receive_handler(switch_thread_t *thread, void *o
 static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) {
 	ei_node_t *ei_node = (ei_node_t *) obj;
 	ei_received_msg_t *received_msg = NULL;
+	int fault_count = 0;
 
 	switch_atomic_inc(&globals.threads);
 
@@ -1332,13 +1333,17 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 			/* erlang nodes send ticks to eachother to validate they are still reachable, we dont have to do anything here */
 			break;
 		case ERL_MSG:
+			fault_count = 0;
+
 			if (switch_queue_trypush(ei_node->received_msgs, received_msg) != SWITCH_STATUS_SUCCESS) {
 				ei_x_free(&received_msg->buf);
 				switch_safe_free(received_msg);
 			}
+
 			if (globals.receive_msg_preallocate > 0 && received_msg->buf.buffsz > globals.receive_msg_preallocate) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased received message buffer size to %d\n", received_msg->buf.buffsz);
 			}
+
 			received_msg = NULL;
 			break;
 		case ERL_ERROR:
@@ -1353,8 +1358,12 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 				switch_clear_flag(ei_node, LFLAG_RUNNING);
 				break;
 			case EIO:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Erlang communication fault with node %p %s (%s:%d): socket closed or I/O error\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port);
-				switch_clear_flag(ei_node, LFLAG_RUNNING);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Erlang communication fault with node %p %s (%s:%d): socket closed or I/O error [fault count %d]\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port, ++fault_count);
+
+				if (fault_count >= globals.io_fault_tolerance) {
+					switch_clear_flag(ei_node, LFLAG_RUNNING);
+				}
+
 				break;
 			default:
 				/* OH NOS! something has gone horribly wrong, shutdown the connection if status set by ei_xreceive_msg_tmo is less than or equal to 0 */

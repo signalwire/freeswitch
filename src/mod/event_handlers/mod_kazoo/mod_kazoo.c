@@ -349,6 +349,7 @@ static switch_status_t config(void) {
 	globals.send_msg_batch = 10;
 	globals.event_stream_framing = 2;
 	globals.port = 0;
+	globals.io_fault_tolerance = 10;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
@@ -410,6 +411,9 @@ static switch_status_t config(void) {
 				} else if (!strcmp(var, "event-stream-framing")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-framing: %s\n", val);
 					globals.event_stream_framing = atoi(val);
+				} else if (!strcmp(var, "io-fault-tolerance")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);
+					globals.io_fault_tolerance = atoi(val);
 				}
 			}
 		}
@@ -442,6 +446,11 @@ static switch_status_t config(void) {
 	if (globals.send_msg_batch < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid send message batch size, reverting to default\n");
 		globals.send_msg_batch = 10;
+	}
+
+	if (globals.io_fault_tolerance < 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid I/O fault tolerance, reverting to default\n");
+		globals.io_fault_tolerance = 10;
 	}
 
 	if (!globals.event_filter) {
