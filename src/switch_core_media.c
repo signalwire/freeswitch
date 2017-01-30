@@ -178,6 +178,8 @@ typedef struct switch_rtp_engine_s {
 	uint8_t reject_avp;
 } switch_rtp_engine_t;
 
+#define MAX_REJ_STREAMS 10
+
 struct switch_media_handle_s {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -192,6 +194,9 @@ struct switch_media_handle_s {
 	char fmtp[SWITCH_MAX_CODECS][MAX_FMTP_LEN];
 	int payload_space;
 	char *origin;
+
+	sdp_media_e rejected_streams[MAX_REJ_STREAMS];
+	int rej_idx;
 
 	switch_mutex_t *mutex;
 	switch_mutex_t *sdp_mutex;
@@ -3892,11 +3897,29 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		sendonly = 2;			/* global sendonly always wins */
 	}
 
+	memset(smh->rejected_streams, 0, sizeof(smh->rejected_streams));
+	smh->rej_idx = 0;
+
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
 		switch_core_session_t *other_session;
 
-		if (!m->m_port) {
+		if (!m->m_port && smh->rej_idx < MAX_REJ_STREAMS - 1) {
+
+			switch(m->m_type) {
+			case sdp_media_audio:
+				smh->rejected_streams[smh->rej_idx++] = sdp_media_audio;
+				break;
+			case sdp_media_video:
+				smh->rejected_streams[smh->rej_idx++] = sdp_media_video;
+				break;
+			case sdp_media_image:
+				smh->rejected_streams[smh->rej_idx++] = sdp_media_image;
+				break;
+			default:
+				break;
+			}
+
 			continue;
 		}
 
@@ -9062,6 +9085,18 @@ SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session
 	}
 }
 
+static switch_bool_t stream_rejected(switch_media_handle_t *smh, sdp_media_e st)
+{
+	int x;
+
+	for (x = 0; x < smh->rej_idx; x++) {
+		if (smh->rejected_streams[x] == st) {
+			return SWITCH_TRUE;
+		}
+	}
+
+	return SWITCH_FALSE;
+}
 
 //?
 SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist)
@@ -9169,7 +9204,11 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 		jbig_off = "a=T38FaxTranscodingJBIG:0\r\n";
 
 	}
-	
+
+	if (stream_rejected(smh, sdp_media_audio)) {
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+						"m=audio 0 RTP/AVP 0\r\n");
+	}
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 					"m=image %d udptl t38\r\n"
