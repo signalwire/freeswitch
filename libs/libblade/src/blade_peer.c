@@ -33,21 +33,16 @@
 
 #include "blade.h"
 
-typedef enum {
-	BP_NONE = 0,
-	BP_MYPOOL = (1 << 0),
-	BP_MYTPOOL = (1 << 1)
-} bppvt_flag_t;
-
 struct blade_peer_s {
-	bppvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 	blade_service_t *service;
 
 	ks_socket_t sock;
 	ks_bool_t shutdown;
-	ks_bool_t disconnecting;
+	blade_peerstate_t state;
+	blade_peerreason_t reason;
+	
 	kws_t *kws;
 	ks_thread_t *kws_thread;
 
@@ -62,8 +57,6 @@ void *blade_peer_kws_thread(ks_thread_t *thread, void *data);
 KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 {
 	blade_peer_t *bp = NULL;
-	bppvt_flag_t flags;
-	ks_pool_t *pool;
 
 	ks_assert(bpP);
 
@@ -72,47 +65,31 @@ KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 
 	ks_assert(bp);
 
-	flags = bp->flags;
-	pool = bp->pool;
-
 	blade_peer_shutdown(bp);
 
 	ks_q_destroy(&bp->messages_sending);
 	ks_q_destroy(&bp->messages_receiving);
 
-	if (bp->tpool && (flags & BP_MYTPOOL)) ks_thread_pool_destroy(&bp->tpool);
-	
 	ks_pool_free(bp->pool, &bp);
-
-	if (pool && (flags & BP_MYPOOL)) ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_service_t *service)
 {
-	bppvt_flag_t newflags = BP_NONE;
 	blade_peer_t *bp = NULL;
 
 	ks_assert(bpP);
+	ks_assert(pool);
+	ks_assert(tpool);
 	ks_assert(service);
 
-	if (!pool) {
-		newflags |= BP_MYPOOL;
-		ks_pool_open(&pool);
-		ks_assert(pool);
-	}
-	if (!tpool) {
-		newflags |= BP_MYTPOOL;
-		ks_thread_pool_create(&tpool, BLADE_PEER_TPOOL_MIN, BLADE_PEER_TPOOL_MAX, BLADE_PEER_TPOOL_STACK, KS_PRI_NORMAL, BLADE_PEER_TPOOL_IDLE);
-		ks_assert(tpool);
-	}
-
 	bp = ks_pool_alloc(pool, sizeof(*bp));
-	bp->flags = newflags;
 	bp->pool = pool;
 	bp->tpool = tpool;
 	bp->service = service;
+	bp->state = BLADE_PEERSTATE_CONNECTING;
+	bp->reason = BLADE_PEERREASON_NORMAL;
 	ks_q_create(&bp->messages_sending, pool, 0);
 	ks_q_create(&bp->messages_receiving, pool, 0);
 	*bpP = bp;
@@ -132,6 +109,8 @@ KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, ks_socket_t sock)
 	blade_peer_shutdown(bp);
 	
 	bp->sock = sock;
+	bp->state = BLADE_PEERSTATE_CONNECTING;
+	bp->reason = BLADE_PEERREASON_NORMAL;
 
     if (ks_thread_create_ex(&bp->kws_thread,
 							blade_peer_kws_thread,
@@ -139,7 +118,11 @@ KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, ks_socket_t sock)
 							KS_THREAD_FLAG_DEFAULT,
 							KS_THREAD_DEFAULT_STACK,
 							KS_PRI_NORMAL,
-							bp->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+							bp->pool) != KS_STATUS_SUCCESS) {
+		// @todo error logging
+		blade_peer_disconnect(bp, BLADE_PEERREASON_ERROR);
+		return KS_STATUS_FAIL;
+	}
 	
 	return KS_STATUS_SUCCESS;
 }
@@ -159,7 +142,7 @@ KS_DECLARE(ks_status_t) blade_peer_shutdown(blade_peer_t *bp)
 
 	while (ks_q_trypop(bp->messages_sending, (void **)&message) == KS_STATUS_SUCCESS && message) blade_message_discard(&message);
 	while (ks_q_trypop(bp->messages_receiving, (void **)&message) == KS_STATUS_SUCCESS && message) blade_message_discard(&message);
-	
+
 	if (bp->kws) kws_destroy(&bp->kws);
 	else if (bp->sock != KS_SOCK_INVALID) ks_socket_close(&bp->sock);
 	bp->sock = KS_SOCK_INVALID;
@@ -168,17 +151,19 @@ KS_DECLARE(ks_status_t) blade_peer_shutdown(blade_peer_t *bp)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) blade_peer_disconnect(blade_peer_t *bp)
+KS_DECLARE(void) blade_peer_disconnect(blade_peer_t *bp, blade_peerreason_t reason)
 {
 	ks_assert(bp);
 
-	bp->disconnecting = KS_TRUE;
+	// @todo check if already disconnecting for another reason, avoid resetting to get initial reason for disconnect?
+	bp->reason = reason;
+	bp->state = BLADE_PEERSTATE_DISCONNECTING;
 }
 
-KS_DECLARE(ks_bool_t) blade_peer_disconnecting(blade_peer_t *bp)
+KS_DECLARE(blade_peerstate_t) blade_peer_state(blade_peer_t *bp)
 {
 	ks_assert(bp);
-	return bp->disconnecting;
+	return bp->state;
 }
 
 KS_DECLARE(ks_status_t) blade_peer_message_pop(blade_peer_t *peer, blade_message_t **message)
@@ -199,9 +184,8 @@ KS_DECLARE(ks_status_t) blade_peer_message_push(blade_peer_t *peer, void *data, 
 	ks_assert(data_length > 0);
 	
 	if (blade_handle_message_claim(blade_service_handle(peer->service), &message, data, data_length) != KS_STATUS_SUCCESS || !message) {
-		// @todo error handling
-		// just drop the peer for now, the only failure scenarios are asserted OOM, or if the discard queue pop fails
-		peer->disconnecting = KS_TRUE;
+		// @todo error logging
+		blade_peer_disconnect(peer, BLADE_PEERREASON_ERROR);
 		return KS_STATUS_FAIL;
 	}
 	ks_q_push(peer->messages_sending, message);
@@ -222,20 +206,27 @@ void *blade_peer_kws_thread(ks_thread_t *thread, void *data)
 
 	peer = (blade_peer_t *)data;
 
+	// @todo consider using an INITIALIZING state to track when there is problems during initialization (specifically SSL negotiations)?
+	// @todo should stack be notified with an internal event callback here before logic layer initialization starts (IE, before SSL negotiations)?
+	peer->state = BLADE_PEERSTATE_RUNNING;
+	
 	// @todo: SSL init stuffs based on data from peer->service->config_websockets_ssl to pass into kws_init
 	
 	if (kws_init(&peer->kws, peer->sock, NULL, NULL, KWS_BLOCK, peer->pool) != KS_STATUS_SUCCESS) {
-		peer->disconnecting = KS_TRUE;
+		// @todo error logging
+		blade_peer_disconnect(peer, BLADE_PEERREASON_ERROR);
 		return NULL;
 	}
+
+	blade_service_peer_state_callback(peer->service, peer, BLADE_PEERSTATE_RUNNING);
 	
 	while (!peer->shutdown) {
 		// @todo get exact timeout from service config?
 		poll_flags = ks_wait_sock(peer->sock, 100, KS_POLL_READ | KS_POLL_ERROR);
 
 		if (poll_flags & KS_POLL_ERROR) {
-			// @todo switch this (and others below) to the enum for the state callback, called during the service connected peer cleanup
-			peer->disconnecting = KS_TRUE;
+			// @todo error logging
+			blade_peer_disconnect(peer, BLADE_PEERREASON_ERROR);
 			break;
 		}
 
@@ -243,37 +234,31 @@ void *blade_peer_kws_thread(ks_thread_t *thread, void *data)
 			frame_data_len = kws_read_frame(peer->kws, &opcode, &frame_data);
 			
 			if (frame_data_len <= 0) {
-				// @todo error handling, strerror(ks_errno())
+				// @todo error logging, strerror(ks_errno())
 				// 0 means socket closed with WS_NONE, which closes websocket with no additional reason
 				// -1 means socket closed with a general failure
 				// -2 means nonblocking wait
 				// other values are based on WS_XXX reasons
 				// negative values are based on reasons, except for -1 is but -2 is nonblocking wait, and
 			
-				// @todo: this way of disconnecting would have the service periodically check the list of connected peers for those that are disconnecting,
-				// remove them from the connected peer list, and then call peer destroy which will wait for this thread to rejoin which it already will have,
-				// and then destroy the inner kws and finish any cleanup of the actual socket if neccessary, and can still call an ondisconnected callback
-				// at the service level
-				peer->disconnecting = KS_TRUE;
+				blade_peer_disconnect(peer, BLADE_PEERREASON_ERROR);
 				break;
 			}
 
 			if (blade_handle_message_claim(blade_service_handle(peer->service), &message, frame_data, frame_data_len) != KS_STATUS_SUCCESS || !message) {
-				// @todo error handling
-				// just drop the peer for now, the only failure scenarios are asserted OOM, or if the discard queue pop fails
-				peer->disconnecting = KS_TRUE;
+				// @todo error logging
+				blade_peer_disconnect(peer, BLADE_PEERREASON_ERROR);
 				break;
 			}
 		
 			ks_q_push(peer->messages_receiving, message);
-			// @todo callback up the stack to indicate a message has been received and can be popped (more efficient than constantly polling by popping)?
-			// might not perfectly fit the traditional state callback, but it could work if it only sends the state temporarily and does NOT actually change
-			// the internal state to receiving
+			blade_service_peer_state_callback(peer->service, peer, BLADE_PEERSTATE_RECEIVING);
 		}
 
 		// @todo consider only sending one message at a time and use shorter polling timeout to prevent any considerable blocking if send buffers get full
 		while (ks_q_trypop(peer->messages_sending, (void **)&message) == KS_STATUS_SUCCESS && message) {
 			blade_message_get(message, (void **)&frame_data, &frame_data_len);
+			// @todo may need to get the WSOC_TEXT from the message if using WSOC_BINARY is desired later
 			kws_write_frame(peer->kws, WSOC_TEXT, frame_data, frame_data_len);
 		}
 	}

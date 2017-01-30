@@ -35,11 +35,6 @@
 #define _BLADE_DATASTORE_H_
 #include <blade.h>
 
-#define BLADE_DATASTORE_TPOOL_MIN 2
-#define BLADE_DATASTORE_TPOOL_MAX 8
-#define BLADE_DATASTORE_TPOOL_STACK (1024 * 256)
-#define BLADE_DATASTORE_TPOOL_IDLE 10
-
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
 KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);

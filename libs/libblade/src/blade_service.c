@@ -33,19 +33,13 @@
 
 #include "blade.h"
 
-typedef enum {
-	BS_NONE = 0,
-	BS_MYPOOL = (1 << 0),
-	BS_MYTPOOL = (1 << 1)
-} bspvt_flag_t;
-
 #define BLADE_SERVICE_WEBSOCKETS_ENDPOINTS_MULTIHOME_MAX 16
 
 struct blade_service_s {
-	bspvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 	blade_handle_t *handle;
+	blade_service_peer_state_callback_t peer_state_callback;
 
 	ks_sockaddr_t config_websockets_endpoints_ipv4[BLADE_SERVICE_WEBSOCKETS_ENDPOINTS_MULTIHOME_MAX];
 	ks_sockaddr_t config_websockets_endpoints_ipv6[BLADE_SERVICE_WEBSOCKETS_ENDPOINTS_MULTIHOME_MAX];
@@ -56,7 +50,6 @@ struct blade_service_s {
 	ks_bool_t shutdown;
 	
 	struct pollfd *listeners_poll;
-	int32_t *listeners_families;
 	int32_t listeners_size;
 	int32_t listeners_length;
 	ks_thread_t *listeners_thread;
@@ -72,8 +65,6 @@ ks_status_t blade_service_listen(blade_service_t *bs, ks_sockaddr_t *addr);
 KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP)
 {
 	blade_service_t *bs = NULL;
-	bspvt_flag_t flags;
-	ks_pool_t *pool;
 
 	ks_assert(bsP);
 
@@ -82,46 +73,33 @@ KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP)
 
 	ks_assert(bs);
 
-	flags = bs->flags;
-	pool = bs->pool;
-
 	blade_service_shutdown(bs);
 	
 	list_destroy(&bs->connected);
 
-	if (bs->tpool && (flags & BS_MYTPOOL)) ks_thread_pool_destroy(&bs->tpool);
-	
 	ks_pool_free(bs->pool, &bs);
-
-	if (pool && (flags & BS_MYPOOL)) ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_handle_t *handle)
+KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP,
+											 ks_pool_t *pool,
+											 ks_thread_pool_t *tpool,
+											 blade_handle_t *handle,
+											 blade_service_peer_state_callback_t peer_state_callback)
 {
-	bspvt_flag_t newflags = BS_NONE;
 	blade_service_t *bs = NULL;
 
 	ks_assert(bsP);
+	ks_assert(pool);
+	ks_assert(tpool);
 	ks_assert(handle);
 
-	if (!pool) {
-		newflags |= BS_MYPOOL;
-		ks_pool_open(&pool);
-		ks_assert(pool);
-	}
-	if (!tpool) {
-		newflags |= BS_MYTPOOL;
-		ks_thread_pool_create(&tpool, BLADE_SERVICE_TPOOL_MIN, BLADE_SERVICE_TPOOL_MAX, BLADE_SERVICE_TPOOL_STACK, KS_PRI_NORMAL, BLADE_SERVICE_TPOOL_IDLE);
-		ks_assert(tpool);
-	}
-
 	bs = ks_pool_alloc(pool, sizeof(*bs));
-	bs->flags = newflags;
 	bs->pool = pool;
 	bs->tpool = tpool;
 	bs->handle = handle;
+	bs->peer_state_callback = peer_state_callback;
 	list_init(&bs->connected);
 	*bsP = bs;
 
@@ -258,6 +236,8 @@ KS_DECLARE(ks_status_t) blade_service_shutdown(blade_service_t *bs)
 {
 	ks_assert(bs);
 
+	// @todo 1 more callback for blade_service_state_callback_t? providing event up the stack on service startup, shutdown, and service errors?
+	
 	bs->shutdown = KS_TRUE;
 	
 	if (bs->listeners_thread) {
@@ -275,13 +255,21 @@ KS_DECLARE(ks_status_t) blade_service_shutdown(blade_service_t *bs)
 	list_iterator_start(&bs->connected);
 	while (list_iterator_hasnext(&bs->connected)) {
 		blade_peer_t *peer = (blade_peer_t *)list_iterator_next(&bs->connected);
-		blade_peer_destroy(&peer);
+		blade_peer_destroy(&peer); // @todo determine if NOT receiving the DISCONNECTING event callback for these will matter, as service is being shutdown
 	}
 	list_iterator_stop(&bs->connected);
 	list_clear(&bs->connected);
 
 	bs->shutdown = KS_FALSE;
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(void) blade_service_peer_state_callback(blade_service_t *bs, blade_peer_t *bp, blade_peerstate_t state)
+{
+	ks_assert(bs);
+	ks_assert(bp);
+
+	if (bs->peer_state_callback) bs->peer_state_callback(bs, bp, state);
 }
 
 ks_status_t blade_service_listen(blade_service_t *bs, ks_sockaddr_t *addr)
@@ -317,12 +305,9 @@ ks_status_t blade_service_listen(blade_service_t *bs, ks_sockaddr_t *addr)
 		bs->listeners_size = bs->listeners_length;
 		bs->listeners_poll = (struct pollfd *)ks_pool_resize(bs->pool, bs->listeners_poll, sizeof(struct pollfd) * bs->listeners_size);
 		ks_assert(bs->listeners_poll);
-		bs->listeners_families = (int32_t *)ks_pool_resize(bs->pool, bs->listeners_families, sizeof(int32_t) * bs->listeners_size);
-		ks_assert(bs->listeners_families);
 	}
 	bs->listeners_poll[listener_index].fd = listener;
 	bs->listeners_poll[listener_index].events = POLLIN | POLLERR;
-	bs->listeners_families[listener_index] = addr->family;
 
  done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -342,6 +327,8 @@ void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 	ks_assert(data);
 
 	service = (blade_service_t *)data;
+	
+	// @todo 1 more callback for blade_service_state_callback_t? providing event up the stack on service startup, shutdown, and service errors?
 	
 	while (!service->shutdown) {
 		// @todo take exact timeout from a setting in config_service_endpoints
@@ -367,6 +354,7 @@ void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 				ks_assert(peer);
 
 				// @todo call state callback with connecting enum state
+				blade_service_peer_state_callback(service, peer, BLADE_PEERSTATE_CONNECTING);
 				
 				blade_peer_startup(peer, sock);
 				
@@ -379,10 +367,11 @@ void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 			blade_peer_t *peer = (blade_peer_t *)list_iterator_next(&service->connected);
 			// @todo expose accessor for disconnecting, after changing it into the state callback enum
 			// ensure that every way kws_close might occur leads back to disconnecting = KS_TRUE for this to universally process disconnects
-			if (blade_peer_disconnecting(peer)) {
+			if (blade_peer_state(peer) == BLADE_PEERSTATE_DISCONNECTING) {
 				// @todo check if there is an iterator based remove function, or indexed iteration to use list_delete_at()
 				list_delete(&service->connected, peer);
-				// @todo call state callback with internal disconnecting enum state (stored in peer to hold specific reason for disconnecting)
+				blade_service_peer_state_callback(service, peer, BLADE_PEERSTATE_DISCONNECTING);
+
 				// @todo switch to blade_peer_shutdown(&peer) and blade_peer_discard(&peer) after introducing recycling of peers
 				blade_peer_destroy(&peer);
 			}

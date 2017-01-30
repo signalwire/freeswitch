@@ -43,7 +43,7 @@
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
 KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config, blade_service_peer_state_callback_t service_peer_state_callback);
 KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
 
 KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length);

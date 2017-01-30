@@ -35,17 +35,17 @@
 #define _BLADE_SERVICE_H_
 #include <blade.h>
 
-#define BLADE_SERVICE_TPOOL_MIN 2
-#define BLADE_SERVICE_TPOOL_MAX 8
-#define BLADE_SERVICE_TPOOL_STACK (1024 * 256)
-#define BLADE_SERVICE_TPOOL_IDLE 10
-
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_handle_t *handle);
+KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP,
+											 ks_pool_t *pool,
+											 ks_thread_pool_t *tpool,
+											 blade_handle_t *handle,
+											 blade_service_peer_state_callback_t peer_state_callback);
 KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP);
 KS_DECLARE(blade_handle_t *) blade_service_handle(blade_service_t *bs);
 KS_DECLARE(ks_status_t) blade_service_startup(blade_service_t *bs, config_setting_t *config);
 KS_DECLARE(ks_status_t) blade_service_shutdown(blade_service_t *bs);
+KS_DECLARE(void) blade_service_peer_state_callback(blade_service_t *bs, blade_peer_t *bp, blade_peerstate_t state);
 KS_END_EXTERN_C
 
 #endif

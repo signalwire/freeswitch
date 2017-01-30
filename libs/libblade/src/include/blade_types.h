@@ -37,12 +37,26 @@
 
 KS_BEGIN_EXTERN_C
 
+typedef enum {
+	BLADE_PEERSTATE_CONNECTING,
+	BLADE_PEERSTATE_DISCONNECTING,
+	BLADE_PEERSTATE_RUNNING,
+	BLADE_PEERSTATE_RECEIVING,
+} blade_peerstate_t;
+
+typedef enum {
+	BLADE_PEERREASON_NORMAL,
+	BLADE_PEERREASON_ERROR,
+	// @todo populate more reasons for disconnecting as neccessary
+} blade_peerreason_t;
+
 typedef struct blade_handle_s blade_handle_t;
 typedef struct blade_peer_s blade_peer_t;
 typedef struct blade_service_s blade_service_t;
 typedef struct blade_message_s blade_message_t;
 typedef struct blade_datastore_s blade_datastore_t;
 
+typedef void (*blade_service_peer_state_callback_t)(blade_service_t *bs, blade_peer_t *bp, blade_peerstate_t state);
 typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
 
 KS_END_EXTERN_C

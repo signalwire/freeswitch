@@ -143,14 +143,14 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config)
+KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config, blade_service_peer_state_callback_t service_peer_state_callback)
 {
 	ks_assert(bh);
 
     if (blade_handle_config(bh, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 
 	if (bh->config_service && !blade_handle_service_available(bh)) {
-		blade_service_create(&bh->service, bh->pool, bh->tpool, bh);
+		blade_service_create(&bh->service, bh->pool, bh->tpool, bh, service_peer_state_callback);
 		ks_assert(bh->service);
 		if (blade_service_startup(bh->service, bh->config_service) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 	}
