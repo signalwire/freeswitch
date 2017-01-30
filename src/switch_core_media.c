@@ -3745,7 +3745,7 @@ static void restore_pmaps(switch_rtp_engine_t *engine)
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type)
 {
 	uint8_t match = 0;
-	uint8_t vmatch = 0;
+	uint8_t vmatch = 0, almost_vmatch = 0;
 	switch_payload_t best_te = 0, cng_pt = 0;
 	unsigned long best_te_rate = 8000, cng_rate = 8000;
 	sdp_media_t *m;
@@ -4741,6 +4741,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			const char *inherit_video_fmtp = NULL;
 
 			vmatch = 0;
+			almost_vmatch = 0;
 			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
@@ -4906,6 +4907,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 
 					if (sdp_type == SDP_TYPE_RESPONSE && consider_video_fmtp && vmatch && !zstr(map->rm_fmtp) && !zstr(smh->fmtps[i])) {
+						almost_vmatch = 1;
 						vmatch = !strcasecmp(smh->fmtps[i], map->rm_fmtp);
 					}
 
@@ -4938,8 +4940,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			if (consider_video_fmtp && !m_idx) {
+			if (consider_video_fmtp && (!m_idx || almost_vmatch)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No matches with FTMP, fallback to ignoring FMTP\n");
+				almost_vmatch = 0;
+				m_idx = 0;
 				consider_video_fmtp = 0;
 				goto compare;
 			}
