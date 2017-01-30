@@ -42,8 +42,8 @@
 #include "blade_stack.h"
 #include "blade_peer.h"
 #include "blade_service.h"
+#include "blade_message.h"
 #include "blade_datastore.h"
-#include "blade_directory.h"
 #include "bpcp.h"
 
 KS_BEGIN_EXTERN_C

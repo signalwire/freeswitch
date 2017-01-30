@@ -31,24 +31,92 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_DIRECTORY_H_
-#define _BLADE_DIRECTORY_H_
-#include <blade.h>
+#include "blade.h"
 
-#define BLADE_DIRECTORY_TPOOL_MIN 2
-#define BLADE_DIRECTORY_TPOOL_MAX 8
-#define BLADE_DIRECTORY_TPOOL_STACK (1024 * 256)
-#define BLADE_DIRECTORY_TPOOL_IDLE 10
+struct blade_message_s {
+	ks_pool_t *pool;
+	blade_handle_t *handle;
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_directory_create(blade_directory_t **bdP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_directory_destroy(blade_directory_t **bdP);
-KS_DECLARE(ks_status_t) blade_directory_startup(blade_directory_t *bd, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_directory_shutdown(blade_directory_t *bd);
-KS_END_EXTERN_C
+	void *data;
+	ks_size_t data_length;
+	ks_size_t data_size;
+};
 
-#endif
 
+KS_DECLARE(ks_status_t) blade_message_destroy(blade_message_t **bmP)
+{
+	blade_message_t *bm = NULL;
+
+	ks_assert(bmP);
+
+	bm = *bmP;
+	*bmP = NULL;
+
+	ks_assert(bm);
+
+	if (bm->data) ks_pool_free(bm->pool, &bm->data);
+	
+	ks_pool_free(bm->pool, &bm);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_message_create(blade_message_t **bmP, ks_pool_t *pool, blade_handle_t *handle)
+{
+	blade_message_t *bm = NULL;
+
+	ks_assert(bmP);
+	ks_assert(pool);
+	ks_assert(handle);
+
+	bm = ks_pool_alloc(pool, sizeof(*bm));
+	bm->pool = pool;
+	bm->handle = handle;
+	*bmP = bm;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_message_discard(blade_message_t **bm)
+{
+	ks_assert(bm);
+	ks_assert(*bm);
+
+	return blade_handle_message_discard((*bm)->handle, bm);
+}
+
+KS_DECLARE(ks_status_t) blade_message_set(blade_message_t *bm, void *data, ks_size_t data_length)
+{
+	ks_assert(bm);
+	ks_assert(data);
+	ks_assert(data_length > 0);
+
+	// @todo fail on a max message size?
+
+	if (data_length > bm->data_size) {
+		// @todo talk to tony about adding flags to ks_pool_resize_ex to prevent the memcpy, don't need to copy old memory here
+		// otherwise switch to a new allocation instead of resizing
+		bm->data = ks_pool_resize(bm->pool, bm->data, data_length);
+		ks_assert(bm->data);
+		bm->data_size = data_length;
+	}
+	memcpy(bm->data, data, data_length);
+	bm->data_length = data_length;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_message_get(blade_message_t *bm, void **data, ks_size_t *data_length)
+{
+	ks_assert(bm);
+
+	*data = bm->data;
+	*data_length = bm->data_length;
+
+	return KS_STATUS_SUCCESS;
+}
+
+	
 /* For Emacs:
  * Local Variables:
  * mode:c

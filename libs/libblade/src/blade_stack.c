@@ -44,11 +44,12 @@ struct blade_handle_s {
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 	
+	config_setting_t *config_service;
 	config_setting_t *config_datastore;
-	config_setting_t *config_directory;
-	
-	//blade_peer_t *peer;
-	blade_directory_t *directory;
+
+	ks_q_t *messages_discarded;
+	blade_service_t *service;
+
 	blade_datastore_t *datastore;
 };
 
@@ -70,8 +71,12 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	pool = bh->pool;
 
 	blade_handle_shutdown(bh);
-	
-	//blade_peer_destroy(&bh->peer);
+
+	if (bh->messages_discarded) {
+		// @todo make sure messages are cleaned up
+		ks_q_destroy(&bh->messages_discarded);
+	}
+
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
 
 	ks_pool_free(bh->pool, &bh);
@@ -104,7 +109,10 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	bh->flags = newflags;
 	bh->pool = pool;
 	bh->tpool = tpool;
-	//blade_peer_create(&bh->peer, bh->pool, bh->tpool);
+
+	// @todo check thresholds from config, for now just ensure it doesn't grow out of control, allow 100 discarded messages
+	ks_q_create(&bh->messages_discarded, bh->pool, 100);
+	ks_assert(bh->messages_discarded);
 
 	*bhP = bh;
 
@@ -113,22 +121,24 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 
 ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
+	config_setting_t *service = NULL;
 	config_setting_t *datastore = NULL;
-	config_setting_t *directory = NULL;
 	
 	ks_assert(bh);
 
 	if (!config) return KS_STATUS_FAIL;
     if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
 
+	// @todo config for messages_discarded threshold (ie, message count, message memory, etc)
+
+    service = config_setting_get_member(config, "service");
+	
     datastore = config_setting_get_member(config, "datastore");
     //if (datastore && !config_setting_is_group(datastore)) return KS_STATUS_FAIL;
-	
-    directory = config_setting_get_member(config, "directory");
-    //if (directory && !config_setting_is_group(directory)) return KS_STATUS_FAIL;
 
+
+	bh->config_service = service;
 	bh->config_datastore = datastore;
-	bh->config_directory = directory;
 	
 	return KS_STATUS_SUCCESS;
 }
@@ -138,15 +148,17 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 	ks_assert(bh);
 
     if (blade_handle_config(bh, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+
+	if (bh->config_service && !blade_handle_service_available(bh)) {
+		blade_service_create(&bh->service, bh->pool, bh->tpool, bh);
+		ks_assert(bh->service);
+		if (blade_service_startup(bh->service, bh->config_service) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+	}
 	
 	if (bh->config_datastore && !blade_handle_datastore_available(bh)) {
 		blade_datastore_create(&bh->datastore, bh->pool, bh->tpool);
-		blade_datastore_startup(bh->datastore, bh->config_datastore);
-	}
-	
-	if (bh->config_directory && !blade_handle_directory_available(bh)) {
-		blade_directory_create(&bh->directory, bh->pool, bh->tpool);
-		blade_directory_startup(bh->directory, config);
+		ks_assert(bh->datastore);
+		if (blade_datastore_startup(bh->datastore, bh->config_datastore) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 	}
 	
 	return KS_STATUS_SUCCESS;
@@ -155,12 +167,53 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
 	ks_assert(bh);
-	
-	if (blade_handle_directory_available(bh)) blade_directory_destroy(&bh->directory);
+
+	if (blade_handle_service_available(bh)) blade_service_destroy(&bh->service);
 	
 	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
 	
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length)
+{
+	blade_message_t *msg = NULL;
+	
+	ks_assert(bh);
+	ks_assert(message);
+	ks_assert(data);
+
+	*message = NULL;
+	
+	if (ks_q_trypop(bh->messages_discarded, (void **)&msg) != KS_STATUS_SUCCESS || !msg) blade_message_create(&msg, bh->pool, bh);
+	ks_assert(msg);
+
+	if (blade_message_set(msg, data, data_length) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+	
+	*message = msg;
+		
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_message_t **message)
+{
+	ks_assert(bh);
+	ks_assert(message);
+	ks_assert(*message);
+
+	// @todo check thresholds for discarded messages, if the queue is full just destroy the message for now (currently 100 messages)
+	if (ks_q_push(bh->messages_discarded, *message) != KS_STATUS_SUCCESS) blade_message_destroy(message);
+
+	*message = NULL;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_bool_t) blade_handle_service_available(blade_handle_t *bh)
+{
+	ks_assert(bh);
+
+	return bh->service != NULL;
 }
 
 KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
@@ -168,13 +221,6 @@ KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
 	ks_assert(bh);
 
 	return bh->datastore != NULL;
-}
-
-KS_DECLARE(ks_bool_t) blade_handle_directory_available(blade_handle_t *bh)
-{
-	ks_assert(bh);
-
-	return bh->directory != NULL;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length)

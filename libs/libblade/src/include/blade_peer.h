@@ -31,8 +31,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BPCP_H_
-#define _BPCP_H_
+#ifndef _BLADE_PEER_H_
+#define _BLADE_PEER_H_
 #include <blade.h>
 
 #define BLADE_PEER_TPOOL_MIN 2
@@ -41,10 +41,14 @@
 #define BLADE_PEER_TPOOL_IDLE 10
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool);
+KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_service_t *service);
 KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP);
-KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, kws_t *kws);
+KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, ks_socket_t sock);
 KS_DECLARE(ks_status_t) blade_peer_shutdown(blade_peer_t *bp);
+KS_DECLARE(void) blade_peer_disconnect(blade_peer_t *bp);
+KS_DECLARE(ks_bool_t) blade_peer_disconnecting(blade_peer_t *bp);
+KS_DECLARE(ks_status_t) blade_peer_message_pop(blade_peer_t *peer, blade_message_t **message);
+KS_DECLARE(ks_status_t) blade_peer_message_push(blade_peer_t *peer, void *data, ks_size_t data_length);
 KS_END_EXTERN_C
 
 #endif

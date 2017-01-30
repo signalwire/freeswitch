@@ -45,6 +45,7 @@ struct blade_service_s {
 	bspvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
+	blade_handle_t *handle;
 
 	ks_sockaddr_t config_websockets_endpoints_ipv4[BLADE_SERVICE_WEBSOCKETS_ENDPOINTS_MULTIHOME_MAX];
 	ks_sockaddr_t config_websockets_endpoints_ipv6[BLADE_SERVICE_WEBSOCKETS_ENDPOINTS_MULTIHOME_MAX];
@@ -97,10 +98,13 @@ KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *pool, ks_thread_pool_t *tpool)
+KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_handle_t *handle)
 {
 	bspvt_flag_t newflags = BS_NONE;
 	blade_service_t *bs = NULL;
+
+	ks_assert(bsP);
+	ks_assert(handle);
 
 	if (!pool) {
 		newflags |= BS_MYPOOL;
@@ -117,10 +121,17 @@ KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP, ks_pool_t *p
 	bs->flags = newflags;
 	bs->pool = pool;
 	bs->tpool = tpool;
+	bs->handle = handle;
 	list_init(&bs->connected);
 	*bsP = bs;
 
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(blade_handle_t *) blade_service_handle(blade_service_t *bs)
+{
+	ks_assert(bs);
+	return bs->handle;
 }
 
 ks_status_t blade_service_config(blade_service_t *bs, config_setting_t *config)
@@ -325,7 +336,7 @@ ks_status_t blade_service_listen(blade_service_t *bs, ks_sockaddr_t *addr)
 
 void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 {
-	blade_service_t *service;
+	blade_service_t *service = NULL;
 
 	ks_assert(thread);
 	ks_assert(data);
@@ -333,57 +344,50 @@ void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 	service = (blade_service_t *)data;
 	
 	while (!service->shutdown) {
+		// @todo take exact timeout from a setting in config_service_endpoints
 		if (ks_poll(service->listeners_poll, service->listeners_length, 100) > 0) {
 			for (int32_t index = 0; index < service->listeners_length; ++index) {
-				ks_socket_t sock;
-				ks_sockaddr_t raddr;
-				socklen_t slen = 0;
-				kws_t *kws = NULL;
+				ks_socket_t sock = KS_SOCK_INVALID;
 				blade_peer_t *peer = NULL;
 
 				if (!(service->listeners_poll[index].revents & POLLIN)) continue;
 				if (service->listeners_poll[index].revents & POLLERR) {
-					// @todo: error handling, just skip the listener for now
+					// @todo: error handling, just skip the listener for now, it might recover, could skip X sanity times before closing?
 					continue;
 				}
 
-				if (service->listeners_families[index] == AF_INET) {
-					slen = sizeof(raddr.v.v4);
-					if ((sock = accept(service->listeners_poll[index].fd, (struct sockaddr *)&raddr.v.v4, &slen)) == KS_SOCK_INVALID) {
-						// @todo: error handling, just skip the socket for now
-						continue;
-					}
-					raddr.family = AF_INET;
-				} else {
-					slen = sizeof(raddr.v.v6);
-					if ((sock = accept(service->listeners_poll[index].fd, (struct sockaddr *)&raddr.v.v6, &slen)) == KS_SOCK_INVALID) {
-						// @todo: error handling, just skip the socket for now
-						continue;
-					}
-					raddr.family = AF_INET6;
-				}
-
-				ks_addr_get_host(&raddr);
-				ks_addr_get_port(&raddr);
-
-				// @todo: SSL init stuffs based on data from service->config_websockets_ssl
-				
-				if (kws_init(&kws, sock, NULL, NULL, KWS_BLOCK, service->pool) != KS_STATUS_SUCCESS) {
-					// @todo: error handling, just close and skip the socket for now
-					ks_socket_close(&sock);
+				if ((sock = accept(service->listeners_poll[index].fd, NULL, NULL)) == KS_SOCK_INVALID) {
+					// @todo: error handling, just skip the socket for now as most causes are because the remote side suddenly became unreachable
 					continue;
 				}
 
-				blade_peer_create(&peer, service->pool, service->tpool);
+				// @todo consider a recycle queue of peers per service, and only have to call startup when one is already available
+				// blade_service_peer_claim(service, &peer);
+				blade_peer_create(&peer, service->pool, service->tpool, service);
 				ks_assert(peer);
 
-				// @todo: should probably assign kws before adding to list, in a separate call from startup because it starts the internal worker thread
+				// @todo call state callback with connecting enum state
+				
+				blade_peer_startup(peer, sock);
 				
 				list_append(&service->connected, peer);
-				
-				blade_peer_startup(peer, kws);
 			}
 		}
+
+		list_iterator_start(&service->connected);
+		while (list_iterator_hasnext(&service->connected)) {
+			blade_peer_t *peer = (blade_peer_t *)list_iterator_next(&service->connected);
+			// @todo expose accessor for disconnecting, after changing it into the state callback enum
+			// ensure that every way kws_close might occur leads back to disconnecting = KS_TRUE for this to universally process disconnects
+			if (blade_peer_disconnecting(peer)) {
+				// @todo check if there is an iterator based remove function, or indexed iteration to use list_delete_at()
+				list_delete(&service->connected, peer);
+				// @todo call state callback with internal disconnecting enum state (stored in peer to hold specific reason for disconnecting)
+				// @todo switch to blade_peer_shutdown(&peer) and blade_peer_discard(&peer) after introducing recycling of peers
+				blade_peer_destroy(&peer);
+			}
+		}
+		list_iterator_stop(&service->connected);
 	}
 	
 	return NULL;

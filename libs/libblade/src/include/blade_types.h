@@ -40,8 +40,8 @@ KS_BEGIN_EXTERN_C
 typedef struct blade_handle_s blade_handle_t;
 typedef struct blade_peer_s blade_peer_t;
 typedef struct blade_service_s blade_service_t;
+typedef struct blade_message_s blade_message_t;
 typedef struct blade_datastore_s blade_datastore_t;
-typedef struct blade_directory_s blade_directory_t;
 
 typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
 

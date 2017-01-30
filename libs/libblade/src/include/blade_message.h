@@ -31,33 +31,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_STACK_H_
-#define _BLADE_STACK_H_
+#ifndef _BLADE_MESSAGE_H_
+#define _BLADE_MESSAGE_H_
 #include <blade.h>
 
-#define BLADE_HANDLE_TPOOL_MIN 2
-#define BLADE_HANDLE_TPOOL_MAX 8
-#define BLADE_HANDLE_TPOOL_STACK (1024 * 256)
-#define BLADE_HANDLE_TPOOL_IDLE 10
-
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
-
-KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_message_t **message);
-
-KS_DECLARE(ks_bool_t) blade_handle_service_available(blade_handle_t *bh);
-
-KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
-													 blade_datastore_fetch_callback_t callback,
-													 const void *key,
-													 int32_t key_length,
-													 void *userdata);
+KS_DECLARE(ks_status_t) blade_message_create(blade_message_t **bmP, ks_pool_t *pool, blade_handle_t *handle);
+KS_DECLARE(ks_status_t) blade_message_destroy(blade_message_t **bmP);
+KS_DECLARE(ks_status_t) blade_message_set(blade_message_t *bm, void *data, ks_size_t data_length);
+KS_DECLARE(ks_status_t) blade_message_get(blade_message_t *bm, void **data, ks_size_t *data_length);
+KS_DECLARE(ks_status_t) blade_message_discard(blade_message_t **bm);
 KS_END_EXTERN_C
 
 #endif
