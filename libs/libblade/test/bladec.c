@@ -16,6 +16,7 @@ char g_console_input[CONSOLE_INPUT_MAX];
 size_t g_console_input_length = 0;
 size_t g_console_input_eol = 0;
 
+void service_peer_state_callback(blade_service_t *service, blade_peer_t *peer, blade_peerstate_t state);
 void loop(blade_handle_t *bh);
 void process_console_input(blade_handle_t *bh, char *line);
 
@@ -40,10 +41,11 @@ static const struct command_def_s command_defs[] = {
 	{ NULL, NULL }
 };
 
-
 int main(int argc, char **argv)
 {
 	blade_handle_t *bh = NULL;
+	config_t config;
+	config_setting_t *config_blade = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 	
@@ -51,8 +53,31 @@ int main(int argc, char **argv)
 
 	blade_handle_create(&bh, NULL, NULL);
 
-	loop(bh);
+	// @todo load config file, and lookup "blade" setting to put into config_blade
+	config_init(&config);
+	if (!config_read_file(&config, "bladec.cfg")) {
+		ks_log(KS_LOG_ERROR, "%s:%d - %s\n", config_error_file(&config), config_error_line(&config), config_error_text(&config));
+		config_destroy(&config);
+		return EXIT_FAILURE;
+	}
+	config_blade = config_lookup(&config, "blade");
+	if (!config_blade) {
+		ks_log(KS_LOG_ERROR, "Missing 'blade' config group\n");
+		config_destroy(&config);
+		return EXIT_FAILURE;
+	}
+	if (config_setting_type(config_blade) != CONFIG_TYPE_GROUP) {
+		ks_log(KS_LOG_ERROR, "The 'blade' config setting is not a group\n");
+		return EXIT_FAILURE;
+	}
 	
+	if (blade_handle_startup(bh, config_blade, service_peer_state_callback) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_ERROR, "Blade startup failed\n");
+		return EXIT_FAILURE;
+	}
+
+	loop(bh);
+
 	blade_handle_destroy(&bh);
 
 	blade_shutdown();
@@ -60,6 +85,12 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+void service_peer_state_callback(blade_service_t *service, blade_peer_t *peer, blade_peerstate_t state)
+{
+	// @todo log output and pop peer messages if state == BLADE_PEERSTATE_RECEIVING
+	ks_log(KS_LOG_INFO, "service peer state callback: %d\n", (int)state);
+}
+		
 void buffer_console_input(void)
 {
 	ssize_t bytes = 0;
@@ -110,7 +141,6 @@ void loop(blade_handle_t *bh)
 			// @todo lines must not exceed 512 bytes, treat as error and ignore buffer until next new line?
 			ks_assert(0);
 		}
-		blade_handle_pulse(bh);
 	}
 }
 
@@ -175,8 +205,6 @@ void command_store(blade_handle_t *bh, char *args)
 
 	ks_assert(args);
 
-	blade_handle_datastore_startup(bh, NULL);
-	
 	parse_argument(&args, &key, ' ');
 	parse_argument(&args, &data, ' ');
 
@@ -195,8 +223,6 @@ void command_fetch(blade_handle_t *bh, char *args)
 
 	ks_assert(args);
 
-	blade_handle_datastore_startup(bh, NULL);
-	
 	parse_argument(&args, &key, ' ');
 
 	blade_handle_datastore_fetch(bh, blade_datastore_fetch_callback, key, strlen(key), bh);

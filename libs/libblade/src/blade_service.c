@@ -130,13 +130,25 @@ ks_status_t blade_service_config(blade_service_t *bs, config_setting_t *config)
 
 	ks_assert(bs);
 
-	if (!config) return KS_STATUS_FAIL;
-	if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
+	if (!config) {
+		ks_log(KS_LOG_DEBUG, "!config\n");
+		return KS_STATUS_FAIL;
+	}
+	if (!config_setting_is_group(config)) {
+		ks_log(KS_LOG_DEBUG, "!config_setting_is_group(config)\n");
+		return KS_STATUS_FAIL;
+	}
 
 	websockets = config_setting_get_member(config, "websockets");
-	if (!websockets) return KS_STATUS_FAIL;
-	websockets_endpoints = config_setting_get_member(config, "endpoints");
-	if (!websockets_endpoints) return KS_STATUS_FAIL;
+	if (!websockets) {
+		ks_log(KS_LOG_DEBUG, "!websockets\n");
+		return KS_STATUS_FAIL;
+	}
+	websockets_endpoints = config_setting_get_member(websockets, "endpoints");
+	if (!websockets_endpoints) {
+		ks_log(KS_LOG_DEBUG, "!websockets_endpoints\n");
+		return KS_STATUS_FAIL;
+	}
 	websockets_endpoints_ipv4 = config_lookup_from(websockets_endpoints, "ipv4");
 	websockets_endpoints_ipv6 = config_lookup_from(websockets_endpoints, "ipv6");
 	if (websockets_endpoints_ipv4) {
@@ -156,6 +168,10 @@ ks_status_t blade_service_config(blade_service_t *bs, config_setting_t *config)
 							config_setting_get_string(tmp1),
 							config_setting_get_int(tmp2),
 							AF_INET) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+			ks_log(KS_LOG_DEBUG,
+				   "Binding to IPV4 %s on port %d\n",
+				   ks_addr_get_host(&config_websockets_endpoints_ipv4[index]),
+				   ks_addr_get_port(&config_websockets_endpoints_ipv4[index]));
 		}
 	}
 	if (websockets_endpoints_ipv6) {
@@ -175,6 +191,10 @@ ks_status_t blade_service_config(blade_service_t *bs, config_setting_t *config)
 							config_setting_get_string(tmp1),
 							config_setting_get_int(tmp2),
 							AF_INET6) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+			ks_log(KS_LOG_DEBUG,
+				   "Binding to IPV6 %s on port %d\n",
+				   ks_addr_get_host(&config_websockets_endpoints_ipv6[index]),
+				   ks_addr_get_port(&config_websockets_endpoints_ipv6[index]));
 		}
 	}
 	if (config_websockets_endpoints_ipv4_length + config_websockets_endpoints_ipv6_length <= 0) return KS_STATUS_FAIL;
@@ -212,13 +232,22 @@ KS_DECLARE(ks_status_t) blade_service_startup(blade_service_t *bs, config_settin
 	// @todo: If the configuration is invalid, and this is a case of reloading a new config, then the service shutdown shouldn't occur
 	// but the service may use configuration that changes before we shutdown if it is read successfully, may require a config reader/writer mutex?
 	
-    if (blade_service_config(bs, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+    if (blade_service_config(bs, config) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_DEBUG, "blade_service_config failed\n");
+		return KS_STATUS_FAIL;
+	}
 
 	for (int32_t index = 0; index < bs->config_websockets_endpoints_ipv4_length; ++index) {
-		if (blade_service_listen(bs, &bs->config_websockets_endpoints_ipv4[index]) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		if (blade_service_listen(bs, &bs->config_websockets_endpoints_ipv4[index]) != KS_STATUS_SUCCESS) {
+			ks_log(KS_LOG_DEBUG, "blade_service_listen (v4) failed\n");
+			return KS_STATUS_FAIL;
+		}
 	}
 	for (int32_t index = 0; index < bs->config_websockets_endpoints_ipv6_length; ++index) {
-		if (blade_service_listen(bs, &bs->config_websockets_endpoints_ipv6[index]) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		if (blade_service_listen(bs, &bs->config_websockets_endpoints_ipv6[index]) != KS_STATUS_SUCCESS) {
+			ks_log(KS_LOG_DEBUG, "blade_service_listen (v6) failed\n");
+			return KS_STATUS_FAIL;
+		}
 	}
 
 	if (ks_thread_create_ex(&bs->listeners_thread,
@@ -282,20 +311,23 @@ ks_status_t blade_service_listen(blade_service_t *bs, ks_sockaddr_t *addr)
 	ks_assert(addr);
 
 	if ((listener = socket(addr->family, SOCK_STREAM, IPPROTO_TCP)) == KS_SOCK_INVALID) {
+		ks_log(KS_LOG_DEBUG, "listener == KS_SOCK_INVALID\n");
 		ret = KS_STATUS_FAIL;
 		goto done;
 	}
 
 	ks_socket_option(listener, SO_REUSEADDR, KS_TRUE);
 	ks_socket_option(listener, TCP_NODELAY, KS_TRUE);
-	// @todo make sure v6 does not automatically map to a v4 using socket option IPV6_V6ONLY?
+	if (addr->family == AF_INET6) ks_socket_option(listener, IPV6_V6ONLY, KS_TRUE);
 
 	if (ks_addr_bind(listener, addr) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_DEBUG, "ks_addr_bind(listener, addr) != KS_STATUS_SUCCESS\n");
 		ret = KS_STATUS_FAIL;
 		goto done;
 	}
 
 	if (listen(listener, bs->config_websockets_endpoints_backlog) != 0) {
+		ks_log(KS_LOG_DEBUG, "listen(listener, backlog) != 0\n");
 		ret = KS_STATUS_FAIL;
 		goto done;
 	}
@@ -327,6 +359,8 @@ void *blade_service_listeners_thread(ks_thread_t *thread, void *data)
 	ks_assert(data);
 
 	service = (blade_service_t *)data;
+
+	ks_log(KS_LOG_DEBUG, "Service running\n");
 	
 	// @todo 1 more callback for blade_service_state_callback_t? providing event up the stack on service startup, shutdown, and service errors?
 	

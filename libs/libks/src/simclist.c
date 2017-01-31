@@ -268,7 +268,7 @@ static inline long get_random(void)
 
 
 /* list initialization */
-int list_init(list_t *restrict l)
+KS_DECLARE(int) list_init(list_t *restrict l)
 {
 	if (l == NULL)
 		return -1;
@@ -306,7 +306,7 @@ int list_init(list_t *restrict l)
 	return 0;
 }
 
-void list_destroy(list_t *restrict l)
+KS_DECLARE(void) list_destroy(list_t *restrict l)
 {
 	unsigned int i;
 
@@ -340,7 +340,7 @@ int list_attributes_setdefaults(list_t *restrict l)
 }
 
 /* setting list properties */
-int list_attributes_comparator(list_t *restrict l, element_comparator comparator_fun)
+KS_DECLARE(int) list_attributes_comparator(list_t *restrict l, element_comparator comparator_fun)
 {
 	if (l == NULL)
 		return -1;
@@ -352,7 +352,7 @@ int list_attributes_comparator(list_t *restrict l, element_comparator comparator
 	return 0;
 }
 
-int list_attributes_seeker(list_t *restrict l, element_seeker seeker_fun)
+KS_DECLARE(int) list_attributes_seeker(list_t *restrict l, element_seeker seeker_fun)
 {
 	if (l == NULL)
 		return -1;
@@ -363,7 +363,7 @@ int list_attributes_seeker(list_t *restrict l, element_seeker seeker_fun)
 	return 0;
 }
 
-int list_attributes_copy(list_t *restrict l, element_meter metric_fun, int copy_data)
+KS_DECLARE(int) list_attributes_copy(list_t *restrict l, element_meter metric_fun, int copy_data)
 {
 	if (l == NULL || (metric_fun == NULL && copy_data != 0))
 		return -1;
@@ -376,7 +376,7 @@ int list_attributes_copy(list_t *restrict l, element_meter metric_fun, int copy_
 	return 0;
 }
 
-int list_attributes_hash_computer(list_t *restrict l, element_hash_computer hash_computer_fun)
+KS_DECLARE(int) list_attributes_hash_computer(list_t *restrict l, element_hash_computer hash_computer_fun)
 {
 	if (l == NULL)
 		return -1;
@@ -386,7 +386,7 @@ int list_attributes_hash_computer(list_t *restrict l, element_hash_computer hash
 	return 0;
 }
 
-int list_attributes_serializer(list_t *restrict l, element_serializer serializer_fun)
+KS_DECLARE(int) list_attributes_serializer(list_t *restrict l, element_serializer serializer_fun)
 {
 	if (l == NULL)
 		return -1;
@@ -396,7 +396,7 @@ int list_attributes_serializer(list_t *restrict l, element_serializer serializer
 	return 0;
 }
 
-int list_attributes_unserializer(list_t *restrict l, element_unserializer unserializer_fun)
+KS_DECLARE(int) list_attributes_unserializer(list_t *restrict l, element_unserializer unserializer_fun)
 {
 	if (l == NULL)
 		return -1;
@@ -406,22 +406,22 @@ int list_attributes_unserializer(list_t *restrict l, element_unserializer unseri
 	return 0;
 }
 
-int list_append(list_t *restrict l, const void *data)
+KS_DECLARE(int) list_append(list_t *restrict l, const void *data)
 {
 	return list_insert_at(l, data, l->numels);
 }
 
-int list_prepend(list_t *restrict l, const void *data)
+KS_DECLARE(int) list_prepend(list_t *restrict l, const void *data)
 {
 	return list_insert_at(l, data, 0);
 }
 
-void *list_fetch(list_t *restrict l)
+KS_DECLARE(void *) list_fetch(list_t *restrict l)
 {
 	return list_extract_at(l, 0);
 }
 
-void *list_get_at(const list_t *restrict l, unsigned int pos)
+KS_DECLARE(void *) list_get_at(const list_t *restrict l, unsigned int pos)
 {
 	struct list_entry_s *tmp;
 
@@ -430,12 +430,12 @@ void *list_get_at(const list_t *restrict l, unsigned int pos)
 	return (tmp != NULL ? tmp->data : NULL);
 }
 
-void *list_get_max(const list_t *restrict l)
+KS_DECLARE(void *) list_get_max(const list_t *restrict l)
 {
 	return list_get_minmax(l, +1);
 }
 
-void *list_get_min(const list_t *restrict l)
+KS_DECLARE(void *) list_get_min(const list_t *restrict l)
 {
 	return list_get_minmax(l, -1);
 }
@@ -488,7 +488,7 @@ static inline struct list_entry_s *list_findpos(const list_t *restrict l, int po
 	return ptr;
 }
 
-void *list_extract_at(list_t *restrict l, unsigned int pos)
+KS_DECLARE(void *) list_extract_at(list_t *restrict l, unsigned int pos)
 {
 	struct list_entry_s *tmp;
 	void *data;
@@ -508,7 +508,7 @@ void *list_extract_at(list_t *restrict l, unsigned int pos)
 	return data;
 }
 
-int list_insert_at(list_t *restrict l, const void *data, unsigned int pos)
+KS_DECLARE(int) list_insert_at(list_t *restrict l, const void *data, unsigned int pos)
 {
 	struct list_entry_s *lent, *succ, *prec;
 
@@ -561,7 +561,7 @@ int list_insert_at(list_t *restrict l, const void *data, unsigned int pos)
 	return 1;
 }
 
-int list_delete(list_t *restrict l, const void *data)
+KS_DECLARE(int) list_delete(list_t *restrict l, const void *data)
 {
 	int pos, r;
 
@@ -578,7 +578,7 @@ int list_delete(list_t *restrict l, const void *data)
 	return 0;
 }
 
-int list_delete_at(list_t *restrict l, unsigned int pos)
+KS_DECLARE(int) list_delete_at(list_t *restrict l, unsigned int pos)
 {
 	struct list_entry_s *delendo;
 
@@ -598,7 +598,7 @@ int list_delete_at(list_t *restrict l, unsigned int pos)
 	return 0;
 }
 
-int list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend)
+KS_DECLARE(int) list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend)
 {
 	struct list_entry_s *lastvalid, *tmp, *tmp2;
 	unsigned int numdel, midposafter, i;
@@ -665,7 +665,7 @@ int list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int po
 	return numdel;
 }
 
-int list_clear(list_t *restrict l)
+KS_DECLARE(int) list_clear(list_t *restrict l)
 {
 	struct list_entry_s *s;
 	unsigned int numels;
@@ -715,17 +715,17 @@ int list_clear(list_t *restrict l)
 	return numels;
 }
 
-unsigned int list_size(const list_t *restrict l)
+KS_DECLARE(unsigned int) list_size(const list_t *restrict l)
 {
 	return l->numels;
 }
 
-int list_empty(const list_t *restrict l)
+KS_DECLARE(int) list_empty(const list_t *restrict l)
 {
 	return (l->numels == 0);
 }
 
-int list_locate(const list_t *restrict l, const void *data)
+KS_DECLARE(int) list_locate(const list_t *restrict l, const void *data)
 {
 	struct list_entry_s *el;
 	int pos = 0;
@@ -749,7 +749,7 @@ int list_locate(const list_t *restrict l, const void *data)
 	return pos;
 }
 
-void *list_seek(list_t *restrict l, const void *indicator)
+KS_DECLARE(void *) list_seek(list_t *restrict l, const void *indicator)
 {
 	const struct list_entry_s *iter;
 
@@ -764,12 +764,12 @@ void *list_seek(list_t *restrict l, const void *indicator)
 	return NULL;
 }
 
-int list_contains(const list_t *restrict l, const void *data)
+KS_DECLARE(int) list_contains(const list_t *restrict l, const void *data)
 {
 	return (list_locate(l, data) >= 0);
 }
 
-int list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest)
+KS_DECLARE(int) list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest)
 {
 	struct list_entry_s *el, *srcel;
 	unsigned int cnt;
@@ -825,7 +825,7 @@ int list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest)
 	return 0;
 }
 
-int list_sort(list_t *restrict l, int versus)
+KS_DECLARE(int) list_sort(list_t *restrict l, int versus)
 {
 	if (l->iter_active || l->attrs.comparator == NULL)	/* cannot modify list in the middle of an iteration */
 		return -1;
@@ -1005,7 +1005,7 @@ static void list_sort_quicksort(list_t *restrict l, int versus, unsigned int fir
 #endif
 }
 
-int list_iterator_start(list_t *restrict l)
+KS_DECLARE(int) list_iterator_start(list_t *restrict l)
 {
 	if (l->iter_active)
 		return 0;
@@ -1015,7 +1015,7 @@ int list_iterator_start(list_t *restrict l)
 	return 1;
 }
 
-void *list_iterator_next(list_t *restrict l)
+KS_DECLARE(void *) list_iterator_next(list_t *restrict l)
 {
 	void *toret;
 
@@ -1029,14 +1029,14 @@ void *list_iterator_next(list_t *restrict l)
 	return toret;
 }
 
-int list_iterator_hasnext(const list_t *restrict l)
+KS_DECLARE(int) list_iterator_hasnext(const list_t *restrict l)
 {
 	if (!l->iter_active)
 		return 0;
 	return (l->iter_pos < l->numels);
 }
 
-int list_iterator_stop(list_t *restrict l)
+KS_DECLARE(int) list_iterator_stop(list_t *restrict l)
 {
 	if (!l->iter_active)
 		return 0;
@@ -1045,7 +1045,7 @@ int list_iterator_stop(list_t *restrict l)
 	return 1;
 }
 
-int list_hash(const list_t *restrict l, list_hash_t *restrict hash)
+KS_DECLARE(int) list_hash(const list_t *restrict l, list_hash_t *restrict hash)
 {
 	struct list_entry_s *x;
 	list_hash_t tmphash;
@@ -1083,7 +1083,7 @@ int list_hash(const list_t *restrict l, list_hash_t *restrict hash)
 }
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
-int list_dump_getinfo_filedescriptor(int fd, list_dump_info_t *restrict info)
+KS_DECLARE(int) list_dump_getinfo_filedescriptor(int fd, list_dump_info_t *restrict info)
 {
 	int32_t terminator_head, terminator_tail;
 	uint32_t elemlen;
@@ -1148,7 +1148,7 @@ int list_dump_getinfo_filedescriptor(int fd, list_dump_info_t *restrict info)
 	return 0;
 }
 
-int list_dump_getinfo_file(const char *restrict filename, list_dump_info_t *restrict info)
+KS_DECLARE(int) list_dump_getinfo_file(const char *restrict filename, list_dump_info_t *restrict info)
 {
 	int fd, ret;
 
@@ -1162,7 +1162,7 @@ int list_dump_getinfo_file(const char *restrict filename, list_dump_info_t *rest
 	return ret;
 }
 
-int list_dump_filedescriptor(const list_t *restrict l, int fd, size_t *restrict len)
+KS_DECLARE(int) list_dump_filedescriptor(const list_t *restrict l, int fd, size_t *restrict len)
 {
 	struct list_entry_s *x;
 	void *ser_buf;
@@ -1311,7 +1311,7 @@ int list_dump_filedescriptor(const list_t *restrict l, int fd, size_t *restrict 
 	return 0;
 }
 
-int list_restore_filedescriptor(list_t *restrict l, int fd, size_t *restrict len)
+KS_DECLARE(int) list_restore_filedescriptor(list_t *restrict l, int fd, size_t *restrict len)
 {
 	struct list_dump_header_s header;
 	unsigned long cnt;
@@ -1436,7 +1436,7 @@ int list_restore_filedescriptor(list_t *restrict l, int fd, size_t *restrict len
 	return 0;
 }
 
-int list_dump_file(const list_t *restrict l, const char *restrict filename, size_t *restrict len)
+KS_DECLARE(int) list_dump_file(const list_t *restrict l, const char *restrict filename, size_t *restrict len)
 {
 	int fd, oflag, mode;
 
@@ -1457,7 +1457,7 @@ int list_dump_file(const list_t *restrict l, const char *restrict filename, size
 	return 0;
 }
 
-int list_restore_file(list_t *restrict l, const char *restrict filename, size_t *restrict len)
+KS_DECLARE(int) list_restore_file(list_t *restrict l, const char *restrict filename, size_t *restrict len)
 {
 	int fd;
 
@@ -1507,38 +1507,38 @@ static int list_drop_elem(list_t *restrict l, struct list_entry_s *tmp, unsigned
 }
 
 /* ready-made comparators and meters */
-#define SIMCLIST_NUMBER_COMPARATOR(type)     int list_comparator_##type(const void *a, const void *b) { return( *(type *)a < *(type *)b) - (*(type *)a > *(type *)b); }
+#define SIMCLIST_NUMBER_COMPARATOR(type)     KS_DECLARE(int) list_comparator_##type(const void *a, const void *b) { return( *(type *)a < *(type *)b) - (*(type *)a > *(type *)b); }
 
 SIMCLIST_NUMBER_COMPARATOR(int8_t)
 SIMCLIST_NUMBER_COMPARATOR(int16_t) SIMCLIST_NUMBER_COMPARATOR(int32_t) SIMCLIST_NUMBER_COMPARATOR(int64_t)
  SIMCLIST_NUMBER_COMPARATOR(uint8_t) SIMCLIST_NUMBER_COMPARATOR(uint16_t) SIMCLIST_NUMBER_COMPARATOR(uint32_t) SIMCLIST_NUMBER_COMPARATOR(uint64_t)
  SIMCLIST_NUMBER_COMPARATOR(float) SIMCLIST_NUMBER_COMPARATOR(double)
 
-	 int list_comparator_string(const void *a, const void *b)
+KS_DECLARE(int) list_comparator_string(const void *a, const void *b)
 {
 	return strcmp((const char *) b, (const char *) a);
 }
 
 /* ready-made metric functions */
-#define SIMCLIST_METER(type)        size_t list_meter_##type(const void *el) { if (el) { /* kill compiler whinge */ } return sizeof(type); }
+#define SIMCLIST_METER(type)        KS_DECLARE(size_t) list_meter_##type(const void *el) { if (el) { /* kill compiler whinge */ } return sizeof(type); }
 
 SIMCLIST_METER(int8_t) SIMCLIST_METER(int16_t) SIMCLIST_METER(int32_t) SIMCLIST_METER(int64_t)
  SIMCLIST_METER(uint8_t) SIMCLIST_METER(uint16_t) SIMCLIST_METER(uint32_t) SIMCLIST_METER(uint64_t)
  SIMCLIST_METER(float) SIMCLIST_METER(double)
 
-	 size_t list_meter_string(const void *el)
+KS_DECLARE(size_t) list_meter_string(const void *el)
 {
 	return strlen((const char *) el) + 1;
 }
 
 /* ready-made hashing functions */
-#define SIMCLIST_HASHCOMPUTER(type)    list_hash_t list_hashcomputer_##type(const void *el) { return (list_hash_t)(*(type *)el); }
+#define SIMCLIST_HASHCOMPUTER(type)    KS_DECLARE(list_hash_t) list_hashcomputer_##type(const void *el) { return (list_hash_t)(*(type *)el); }
 
 SIMCLIST_HASHCOMPUTER(int8_t) SIMCLIST_HASHCOMPUTER(int16_t) SIMCLIST_HASHCOMPUTER(int32_t) SIMCLIST_HASHCOMPUTER(int64_t)
  SIMCLIST_HASHCOMPUTER(uint8_t) SIMCLIST_HASHCOMPUTER(uint16_t) SIMCLIST_HASHCOMPUTER(uint32_t) SIMCLIST_HASHCOMPUTER(uint64_t)
  SIMCLIST_HASHCOMPUTER(float) SIMCLIST_HASHCOMPUTER(double)
 
-	 list_hash_t list_hashcomputer_string(const void *el)
+KS_DECLARE(list_hash_t) list_hashcomputer_string(const void *el)
 {
 	size_t l;
 	list_hash_t hash = 123;

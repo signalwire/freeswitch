@@ -1,5 +1,5 @@
 AM_CFLAGS += -I$(abs_top_srcdir)/src/include -g -ggdb -O0 
-TEST_LDADD = $(abs_top_builddir)/libblade.la
+TEST_LDADD = $(abs_top_builddir)/libblade.la -lconfig -lm -lpthread
 check_PROGRAMS =
 
 check_PROGRAMS += testbuild

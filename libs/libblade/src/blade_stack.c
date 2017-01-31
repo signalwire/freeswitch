@@ -147,18 +147,27 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 {
 	ks_assert(bh);
 
-    if (blade_handle_config(bh, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+    if (blade_handle_config(bh, config) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_DEBUG, "blade_handle_config failed\n");
+		return KS_STATUS_FAIL;
+	}
 
 	if (bh->config_service && !blade_handle_service_available(bh)) {
 		blade_service_create(&bh->service, bh->pool, bh->tpool, bh, service_peer_state_callback);
 		ks_assert(bh->service);
-		if (blade_service_startup(bh->service, bh->config_service) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		if (blade_service_startup(bh->service, bh->config_service) != KS_STATUS_SUCCESS) {
+			ks_log(KS_LOG_DEBUG, "blade_service_startup failed\n");
+			return KS_STATUS_FAIL;
+		}
 	}
 	
 	if (bh->config_datastore && !blade_handle_datastore_available(bh)) {
 		blade_datastore_create(&bh->datastore, bh->pool, bh->tpool);
 		ks_assert(bh->datastore);
-		if (blade_datastore_startup(bh->datastore, bh->config_datastore) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		if (blade_datastore_startup(bh->datastore, bh->config_datastore) != KS_STATUS_SUCCESS) {
+			ks_log(KS_LOG_DEBUG, "blade_datastore_startup failed\n");
+			return KS_STATUS_FAIL;
+		}
 	}
 	
 	return KS_STATUS_SUCCESS;
