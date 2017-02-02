@@ -119,6 +119,7 @@ struct globals_s {
 	short event_stream_framing;
 	switch_port_t port;
 	int config_filters_fetched;
+	int io_fault_tolerance;
 };
 typedef struct globals_s globals_t;
 extern globals_t globals;
