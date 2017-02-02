@@ -1027,7 +1027,7 @@ error:
 	return SWITCH_STATUS_FALSE;
 }
 
-static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *img)
+static void av_unused fill_avframe(AVFrame *pict, switch_image_t *img)
 {
 	switch_I420_copy2(img->planes, img->stride,
 					  pict->data, pict->linesize,
