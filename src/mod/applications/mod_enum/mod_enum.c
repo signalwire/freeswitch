@@ -175,7 +175,6 @@ static switch_status_t load_config(void)
 				buf = (char*)malloc(data_sz + 1);
 
 				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
-				RegCloseKey(hKey);
 
 				if(buf[data_sz - 1] != 0) {
 					buf[data_sz] = 0;
@@ -183,6 +182,8 @@ static switch_status_t load_config(void)
 				switch_replace_char(buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
 				globals.nameserver[0] = buf;
 			}
+			
+			RegCloseKey(hKey);
 		}
 	}
 #endif
