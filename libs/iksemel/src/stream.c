@@ -785,7 +785,9 @@ iks_recv (iksparser *prs, int timeout)
 #ifdef HAVE_GNUTLS
 		if (data->flags & SF_SECURE) {
 			len = gnutls_record_recv (data->sess, data->buf, NET_IO_BUF_SIZE - 1);
-			if (len == 0) len = -1;
+			if (len > 0 && len < 5) {
+				len += gnutls_record_recv (data->sess, data->buf + len, NET_IO_BUF_SIZE - 1 - len);
+			} else if (len == 0) len = -1;
 		} else
 #elif HAVE_SSL
 		if (data->flags & SF_SECURE) {
@@ -797,6 +799,9 @@ iks_recv (iksparser *prs, int timeout)
 				return IKS_OK;
 			} else {
 				len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
+				if (len > 0 && len < 5) {
+					len += SSL_read(data->ssl, data->buf + len, NET_IO_BUF_SIZE - 1 - len);
+				}
 			}
 			
 			if( len <= 0 ) 
