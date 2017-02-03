@@ -838,6 +838,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *invite_from_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_uri");
 		const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
 		const char *invite_from_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_params");
+		const char *invite_pid_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_pid_params");
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
 		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
 		const char *invite_req_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_req_uri");
@@ -1113,20 +1114,28 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		case CID_TYPE_PID:
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
-					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
-																		use_number, rpid_domain);
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																		use_number, rpid_domain,
+																		invite_pid_params ? ";" : "",
+																		invite_pid_params ? invite_pid_params : "");
 				} else {
-					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
-																		use_name, use_number, rpid_domain);
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																		use_name, use_number, rpid_domain,
+																		invite_pid_params ? ";" : "",
+																		invite_pid_params ? invite_pid_params : "");
 				}
 			} else {
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
-					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
-																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																		 invite_pid_params ? ";" : "",
+																		 invite_pid_params ? invite_pid_params : "");
 				} else {
-					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s%s%s>",
 																		 tech_pvt->caller_profile->caller_id_name,
-																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																		 invite_pid_params ? ";" : "",
+																		 invite_pid_params ? invite_pid_params : "");
 				}
 			}
 
