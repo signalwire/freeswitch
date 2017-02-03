@@ -1340,7 +1340,7 @@ PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
-PKG_CHECK_MODULES([PULSEAUDIO], [libpulse >= 2.1],[
+PKG_CHECK_MODULES([PULSEAUDIO], [libpulse-simple >= 0.1],[
   AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])],[
   AC_CHECK_LIB([pulse-simple], [pa_simple_new], [PULSEAUDIO_LIBS="-lpulse-simple -lpulse"])
   AS_IF([test -z "$PULSEAUDIO_LIBS"],[
