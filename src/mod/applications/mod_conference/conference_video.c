@@ -1882,6 +1882,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 {
 	uint32_t avatar_layers = 0;
 	mcu_layer_t *layer = NULL;
+	mcu_layer_t *xlayer;
 	int i;
 
 	if (conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) &&
@@ -1892,7 +1893,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 	switch_mutex_lock(canvas->mutex);
 
 	for (i = 0; i < canvas->total_layers; i++) {
-		mcu_layer_t *xlayer = &canvas->layers[i];
+		xlayer = &canvas->layers[i];
 
 		if (xlayer->is_avatar && xlayer->member_id != (int)conference->video_floor_holder) {
 			avatar_layers++;
@@ -1904,9 +1905,10 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 		 (avatar_layers && !member->avatar_png_img) || conference_utils_member_test_flag(member, MFLAG_MOD)) &&
 		(member->avatar_png_img || (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && 
 		  switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE))) {
+
 		/* find an empty layer */
 		for (i = 0; i < canvas->total_layers; i++) {
-			mcu_layer_t *xlayer = &canvas->layers[i];
+			xlayer = &canvas->layers[i];
 
 			if (xlayer->geometry.res_id) {
 				if (member->video_reservation_id && !strcmp(xlayer->geometry.res_id, member->video_reservation_id)) {
@@ -1914,22 +1916,38 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 					conference_video_attach_video_layer(member, canvas, i);
 					break;
 				}
-			} else if (xlayer->geometry.flooronly && !xlayer->fnode && !xlayer->geometry.fileonly) {
-				if (member->id == conference->video_floor_holder) {
-					layer = xlayer;
-					conference_video_attach_video_layer(member, canvas, i);
-					break;
-				}
-			} else if ((!xlayer->member_id || (!member->avatar_png_img &&
-											   xlayer->is_avatar &&
-											   (conference->canvas_count > 1 || xlayer->member_id != (int)conference->video_floor_holder))) &&
-					   !xlayer->fnode && !xlayer->geometry.fileonly) {
-				switch_status_t lstatus;
-				lstatus = conference_video_attach_video_layer(member, canvas, i);
+			}
+		}
 
-				if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
-					layer = xlayer;
-					break;
+		if (!layer) {
+			for (i = 0; i < canvas->total_layers; i++) {
+				xlayer = &canvas->layers[i];
+				
+				if (xlayer->geometry.flooronly && !xlayer->fnode && !xlayer->geometry.fileonly && !xlayer->geometry.res_id) {
+					if (member->id == conference->video_floor_holder) {
+						layer = xlayer;
+						conference_video_attach_video_layer(member, canvas, i);
+						break;
+					}
+				}
+			}
+		}
+
+		if (!layer) {
+			for (i = 0; i < canvas->total_layers; i++) {
+				xlayer = &canvas->layers[i];
+				
+
+				if ((!xlayer->member_id || (!member->avatar_png_img &&
+											xlayer->is_avatar &&
+											(conference->canvas_count > 1 || xlayer->member_id != (int)conference->video_floor_holder))) &&
+					!xlayer->fnode && !xlayer->geometry.fileonly && !xlayer->geometry.res_id && !xlayer->geometry.flooronly) {
+					switch_status_t lstatus = conference_video_attach_video_layer(member, canvas, i);
+
+					if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
+						layer = xlayer;
+						break;
+					}
 				}
 			}
 		}
@@ -2212,7 +2230,7 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 			mcu_layer_t *layer = &canvas->layers[i];
 					
 			if (layer->need_patch) {
-				if (layer->member) {
+				if (layer->member_id && layer->member && conference_utils_member_test_flag(layer->member, MFLAG_RUNNING)) {
 					switch_queue_trypush(layer->member->mux_out_queue, (void *) 1);
 					x++;
 				} else {
