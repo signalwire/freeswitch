@@ -1890,22 +1890,46 @@ SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
 	switch_time_exp_t tm = { 0 }, local_tm = { 0 };
-	int proceed = 0, ovector[30];
+	int proceed = 0, ovector[30], time_only = 0;
 	switch_regex_t *re = NULL;
 	char replace[1024] = "";
 	switch_time_t ret = 0, local_time = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
 	char *pattern2 = "^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})";
+	char *pattern3 = "^(\\d*):{0,1}(\\d*):{0,1}(\\d*)$";
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
-	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = tm.tm_usec = 0;
 
-	if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-		switch_regex_safe_free(re);
-		proceed = switch_regex_perform(in, pattern2, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+
+	if ((time_only = switch_regex_perform(in, pattern3, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		tm.tm_hour = 0;
+		tm.tm_min = 0;
+		tm.tm_sec = 0;
+	} else {
+		tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = tm.tm_usec = 0;
+
+		if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			switch_regex_safe_free(re);
+			proceed = switch_regex_perform(in, pattern2, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+		}
 	}
-	
-	if (proceed) {
+
+	if (proceed || time_only) {
+
+		if (time_only > 1) {
+			switch_regex_copy_substring(in, ovector, time_only, 1, replace, sizeof(replace));
+			tm.tm_hour = atoi(replace);
+		}
+
+		if (time_only > 2) {
+			switch_regex_copy_substring(in, ovector, time_only, 2, replace, sizeof(replace));
+			tm.tm_min = atoi(replace);
+		}
+
+		if (time_only > 3) {
+			switch_regex_copy_substring(in, ovector, time_only, 3, replace, sizeof(replace));
+			tm.tm_sec = atoi(replace);
+		}
 
 		if (proceed > 1) {
 			switch_regex_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
@@ -1936,7 +1960,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 			switch_regex_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
 			tm.tm_sec = atoi(replace);
 		}
-
+		
 		switch_regex_safe_free(re);
 
 		switch_time_exp_get(&local_time, &tm);
