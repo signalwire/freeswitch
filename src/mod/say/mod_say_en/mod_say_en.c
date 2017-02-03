@@ -184,7 +184,7 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 
 static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
-	int32_t t;
+	int32_t t = 0;
 	switch_time_t target = 0, target_now = 0;
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
@@ -192,6 +192,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 	tz = switch_say_file_handle_get_variable(sh, "timezone");		
 
+	
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
@@ -215,6 +216,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			}
 			free(tme);
 		} else {
+
 			if ((seconds = atol(tosay)) <= 0) {
 				seconds = (int64_t) switch_epoch_time_now(NULL);
 			}
@@ -271,12 +273,22 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((t = atol(tosay)) > 0) {
+	if (strchr(tosay, ':')) {
+		switch_time_t tme  = switch_str_time(tosay);
+		t = (int32_t) ((tme) / (int64_t) (1000000));
+		
 		target = switch_time_make(t, 0);
 		target_now = switch_micro_time_now();
-	} else {
-		target = switch_micro_time_now();
-		target_now = switch_micro_time_now();
+	}
+	
+	if (!t) {
+		if ((t = atol(tosay)) > 0) {
+			target = switch_time_make(t, 0);
+			target_now = switch_micro_time_now();
+		} else {
+			target = switch_micro_time_now();
+			target_now = switch_micro_time_now();
+		}
 	}
 
 	if (tz) {
@@ -369,34 +381,64 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
+		int32_t hour = tm.tm_hour, pm = 0, mil = 0;
+
+		if (say_args->method == SSM_ITERATED) {
+			mil = 1;
+		}
 
 		if (say_date || say_today || say_yesterday || say_dow) {
 			switch_say_file(sh, "time/at");
 		}
 
 		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
+			mil++;
 		} else if (hour == 12) {
 			pm = 1;
 		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
+			if (mil) {
+				if (tm.tm_min == 0) {
+					hour = 24;
+				}
+			} else {
+				hour = 12;
+				pm = 0;
+			}
 		}
 
-		say_num(sh, hour, SSM_PRONOUNCED);
+		if (mil) {
 
-		if (tm.tm_min > 9) {
-			say_num(sh, tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			switch_say_file(sh, "time/oh");
-			say_num(sh, tm.tm_min, SSM_PRONOUNCED);
+			if (hour < 10) {
+				say_num(sh, 0, SSM_PRONOUNCED);
+			}
+
+			say_num(sh, hour, SSM_PRONOUNCED);
+			
+			if (tm.tm_min > 9) {
+				say_num(sh, tm.tm_min, SSM_PRONOUNCED);
+			} else if (tm.tm_min) {
+				say_num(sh, 0, SSM_PRONOUNCED);
+				say_num(sh, tm.tm_min, SSM_PRONOUNCED);
+			} else {
+				switch_say_file(sh, "digits/hundred");
+			}
+
+			switch_say_file(sh, "time/hours");
+
 		} else {
-			switch_say_file(sh, "time/oclock");
-		}
+			say_num(sh, hour, SSM_PRONOUNCED);
+			
+			if (tm.tm_min > 9) {
+				say_num(sh, tm.tm_min, SSM_PRONOUNCED);
+			} else if (tm.tm_min) {
+				switch_say_file(sh, "time/oh");
+				say_num(sh, tm.tm_min, SSM_PRONOUNCED);
+			} else {
+				switch_say_file(sh, "time/oclock");
+			}
 
-		switch_say_file(sh, "time/%s", pm ? "p-m" : "a-m");
+			switch_say_file(sh, "time/%s", pm ? "p-m" : "a-m");
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
