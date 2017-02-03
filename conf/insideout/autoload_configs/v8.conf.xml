@@ -2,6 +2,8 @@
   <settings>
     <!-- <param name="xml-handler-script" value="directory.js"/> -->
     <!-- <param name="xml-handler-bindings" value="directory"/> -->
+    <!-- <hook event="CUSTOM" subclass="sofia::register" script="catch-event.js"/> -->
+    <!-- <hook event="CHANNEL_HANGUP" script="hangup-event.js"/> -->
   </settings>
   <modules>
     <!-- <load module="mod_v8_skel"/> -->
