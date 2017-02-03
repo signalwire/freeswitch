@@ -2702,6 +2702,9 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		}
 
 		switch_core_session_rwunlock(session);
+	} else {
+		err = 1;
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
 	}
 
  cleanup:
@@ -2709,7 +2712,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 	
 	if (!err) return SWITCH_TRUE;
 
-	cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
+
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
 
@@ -2759,6 +2762,7 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 		cJSON_AddItemToObject(obj, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
 		switch_core_session_rwunlock(session);
 	} else {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
 		err = 1;
 	}
 
@@ -2767,7 +2771,7 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 	
 	if (!err) return SWITCH_TRUE;
 
-	cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
+
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
 
@@ -3130,6 +3134,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 		
 		switch_core_session_rwunlock(session);
 	} else {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
 		err = 1;
 	}
 
@@ -3138,7 +3143,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 	
 	if (!err) return SWITCH_TRUE;
 
-	cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
+
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
 
@@ -3173,7 +3178,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	}
 
 	if (!(session = switch_core_session_locate(call_id))) {
-		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Call does not exist"));
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
 		err = 1; goto cleanup;
 	}
 
