@@ -1,0 +1,7 @@
+<configuration name="fail2ban.conf" description="fail2ban log configs">
+  <bindings>
+    <config name="settings" desription="configs">
+      <param name="logfile" value="$${log_dir}/fail2ban.log"/>
+    </config>
+  </bindings>
+</configuration>
