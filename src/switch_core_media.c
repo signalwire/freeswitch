@@ -6461,6 +6461,10 @@ static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void
 		return NULL;
 	}
 
+	if (switch_channel_var_true(session->channel, "fire_text_events")) {
+		switch_channel_set_flag(session->channel, CF_FIRE_TEXT_EVENTS);
+	}
+
 	cr_frame.data = CR;
 	cr_frame.datalen = 3;
 	
@@ -14206,9 +14210,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_
 			switch_core_media_bug_prune(session);
 		}
 	}
-
+	
 	if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {		
-		if (switch_channel_test_flag(session->channel, CF_QUEUE_TEXT_EVENTS) && (*frame)->datalen && !switch_test_flag((*frame), SFF_CNG)) {
+		if ((switch_channel_test_flag(session->channel, CF_QUEUE_TEXT_EVENTS) || switch_channel_test_flag(session->channel, CF_FIRE_TEXT_EVENTS)) && 
+			(*frame)->datalen && !switch_test_flag((*frame), SFF_CNG)) {
 			int ok = 1;
 			switch_event_t *event;
 			void *data = (*frame)->data;
@@ -14234,11 +14239,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_
 
 
 			if (ok) {
-				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_extended_data(session->channel, event);
+				if (switch_event_create(&event, SWITCH_EVENT_TEXT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(session->channel, event);
 
 					switch_event_add_body(event, "%s", (char *)data);
-					switch_core_session_queue_event(session, &event);
+
+					if (switch_channel_test_flag(session->channel, CF_QUEUE_TEXT_EVENTS)) {
+						switch_event_t *q_event = NULL;
+
+						if (switch_channel_test_flag(session->channel, CF_FIRE_TEXT_EVENTS)) {
+							switch_event_dup(&q_event, event);
+						} else {
+							q_event = event;
+							event = NULL;
+						}
+
+						switch_core_session_queue_event(session, &q_event);
+					}
+					
+					if (switch_channel_test_flag(session->channel, CF_FIRE_TEXT_EVENTS)) {
+						switch_event_fire(&event);
+					}
 				}
 				if (session->text_line_buffer) {
 					switch_buffer_zero(session->text_line_buffer);

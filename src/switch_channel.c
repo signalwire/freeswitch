@@ -2644,6 +2644,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_MEDIA_BUG_STOP || 
 		event->event_id == SWITCH_EVENT_CHANNEL_HOLD || 
 		event->event_id == SWITCH_EVENT_CHANNEL_UNHOLD || 
+		event->event_id == SWITCH_EVENT_TEXT || 
 		event->event_id == SWITCH_EVENT_CUSTOM) {
 
 		/* Index Variables */
