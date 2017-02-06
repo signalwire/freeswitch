@@ -84,6 +84,8 @@ static void fail2ban_event_handler(switch_event_t *event)
 			fail2ban_logger("A registration was attempted", switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
 		} else if (strncmp(event->subclass_name, "sofia::register_failure",23) == 0) {
 			fail2ban_logger("A registration failed", switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
+		} else if (strncmp(event->subclass_name, "sofia::wrong_call_state",23) == 0) {
+			fail2ban_logger("Abandoned call from ", switch_event_get_header(event, "from_user"), switch_event_get_header(event, "network_ip"));
 		}
 	}
 }
