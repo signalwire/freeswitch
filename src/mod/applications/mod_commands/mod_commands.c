@@ -3112,6 +3112,7 @@ SWITCH_STANDARD_API(uuid_send_text)
 			switch_core_session_print(tsession, text);
 			switch_core_session_print(tsession, "\r\n");
 			switch_core_session_rwunlock(tsession);
+			stream->write_function(stream, "+OK\n");
 		} else {
 			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
 		}
