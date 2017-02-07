@@ -7873,8 +7873,22 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_NACK]) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+
 			if (!rtp_session->vbw) {
-				switch_jb_create(&rtp_session->vbw, SJB_VIDEO, 30, 30, rtp_session->pool);
+				int nack_size = 100;
+				const char *var;
+				
+				if ((var = switch_channel_get_variable(channel, "rtp_nack_buffer_size"))) {
+					int tmp = atoi(var);
+					
+					if (tmp > 0 && tmp < 500) {
+						nack_size = tmp;
+					}
+				}
+
+				switch_jb_create(&rtp_session->vbw, SJB_VIDEO, nack_size, nack_size, rtp_session->pool);
+
 				if (rtp_session->vbw) {
 					switch_jb_set_flag(rtp_session->vbw, SJB_QUEUE_ONLY);
 					//switch_jb_debug_level(rtp_session->vbw, 10);
