@@ -36,80 +36,62 @@
 
 #include <ks.h>
 #include <ks_rpcmessage.h>
+#include <ks_buffer.h>
 
-#define KS_RPCMESSAGE_NAMESPACE_LENGTH 16
-#define KS_PRCMESSAGE_COMMAND_LENGTH  238
-#define KS_PRCMESSAGE_FQCOMMAND_LENGTH KS_RPCMESSAGE_NAMESPACE_LENGTH + 1 + KS_PRCMESSAGE_COMMAND_LENGTH
-#define KS_RPCMESSAGE_VERSION_LENGTH 9
-
-struct ks_rpcmessaging_handle_s
+struct 
 {
-	ks_hash_t  *method_hash;
 
-	ks_mutex_t *id_mutex;
-	uint32_t   message_id;
-	
-	ks_pool_t  *pool;
+    ks_mutex_t *id_mutex;
+    uint32_t   message_id;
 
-	char namespace[KS_RPCMESSAGE_NAMESPACE_LENGTH+2];
-    char version[KS_RPCMESSAGE_VERSION_LENGTH+1];   /* nnn.nn.nn */
-};
+    ks_pool_t  *pool;
 
-typedef struct ks_rpcmessage_callbackpair_s 
+} handle = {NULL, 0, NULL};
+
+KS_DECLARE(void*) ks_json_pool_alloc(ks_size_t size)
 {
-	jrpc_func_t	     request_func;
-	jrpc_resp_func_t response_func;
-	uint16_t         command_length;
-	char             command[1]; 
-} ks_rpcmessage_callbackpair_t;
+	return ks_pool_alloc(handle.pool, size);
+}
+
+KS_DECLARE(void) ks_json_pool_free(void *ptr)
+{
+    ks_pool_free(handle.pool, &ptr);
+}
 
 
-static uint32_t ks_rpcmessage_next_id(ks_rpcmessaging_handle_t* handle)
+KS_DECLARE(void) ks_rpcmessage_init(ks_pool_t* pool)
+{
+	if (!handle.id_mutex) {
+		ks_mutex_create(&handle.id_mutex, KS_MUTEX_FLAG_DEFAULT, pool);
+	    handle.pool = pool;
+
+		cJSON_Hooks hooks;
+		hooks.malloc_fn = ks_json_pool_alloc;
+		hooks.free_fn   = ks_json_pool_free;
+		cJSON_InitHooks(&hooks);
+	}
+	return;
+}
+
+static uint32_t ks_rpcmessage_next_id()
 {
     uint32_t message_id;
 
-    ks_mutex_lock(handle->id_mutex);
+    ks_mutex_lock(handle.id_mutex);
 
-    ++handle->message_id;
+    ++handle.message_id;
 
-    if (!handle->message_id) {
-		 ++handle->message_id;
+    if (!handle.message_id) {
+		 ++handle.message_id;
 	}
 
-	message_id = handle->message_id;
+	message_id = handle.message_id;
 
-    ks_mutex_unlock(handle->id_mutex);
+    ks_mutex_unlock(handle.id_mutex);
 
     return message_id;
 }
 
-
-KS_DECLARE(ks_rpcmessaging_handle_t*) ks_rpcmessage_init(ks_pool_t* pool, ks_rpcmessaging_handle_t** handleP)
-{
-	ks_rpcmessaging_handle_t *handle = (ks_rpcmessaging_handle_t *)ks_pool_alloc(pool, sizeof(ks_rpcmessaging_handle_t));
-	*handleP = handle;
-
-	ks_hash_create(&handle->method_hash, 
-					KS_HASH_MODE_CASE_SENSITIVE, 
-					KS_HASH_FLAG_RWLOCK + KS_HASH_FLAG_DUP_CHECK + KS_HASH_FLAG_FREE_VALUE,
-					pool);
-
-    ks_mutex_create(&handle->id_mutex, KS_MUTEX_FLAG_DEFAULT, pool);
-
-	strcpy(handle->namespace, "global.");
-
-	handle->pool = pool;
-	return handle;
-}
-
-
-KS_DECLARE(void) ks_rpcmessage_deinit(ks_rpcmessaging_handle_t** handleP)
-{
-	ks_rpcmessaging_handle_t *handle = *handleP;
-	ks_hash_destroy(&handle->method_hash);
-    ks_pool_free(handle->pool, handleP);
-    return;
-}
 
 static cJSON *ks_rpcmessage_new(uint32_t id)
 {
@@ -135,9 +117,8 @@ static cJSON *ks_rpcmessage_dup(cJSON *msgid)
     return obj;
 }
 
-static ks_bool_t ks_rpcmessage_isrequest(cJSON *msg)
+KS_DECLARE(ks_bool_t) ks_rpcmessage_isrequest(cJSON *msg)
 {
-	//cJSON *params = cJSON_GetObjectItem(msg, "param");
     cJSON *result = cJSON_GetObjectItem(msg, "result");
     cJSON *error  = cJSON_GetObjectItem(msg, "error");
 
@@ -148,47 +129,79 @@ static ks_bool_t ks_rpcmessage_isrequest(cJSON *msg)
     return KS_TRUE;
 }
 
+KS_DECLARE(ks_bool_t) ks_rpcmessage_isrpc(cJSON *msg)
+{
+    cJSON *rpc = cJSON_GetObjectItem(msg, "json-rpc");
+
+    if (rpc) {
+        return  KS_FALSE;
+    }
+
+    return KS_TRUE;
+}
 
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(ks_rpcmessaging_handle_t* handle, 
-												const char *command,
+
+
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace,
+												char *command,
+												char *sessionid,
+												char *version,
 												cJSON **paramsP,
 												cJSON **requestP)
 {
     cJSON *msg, *params = NULL;
 	*requestP = NULL;
 
-	if (!ks_rpcmessage_find_function(handle, command)) {
-		ks_log(KS_LOG_ERROR, "Attempt to create unknown message type : %s, namespace %s\n", command, handle->namespace);
-		return 0;
-	}
-
-	ks_rpcmessage_id msgid = ks_rpcmessage_next_id(handle);
+	ks_rpcmessage_id msgid = ks_rpcmessage_next_id();
     msg = ks_rpcmessage_new(msgid);
 
-    if (paramsP && *paramsP) {
-        params = *paramsP;
+    if (paramsP && *paramsP) {   /* parameters have been passed */
+
+		cJSON *p = *paramsP;
+		
+		if (p->type != cJSON_Object) {    /* need to wrap this in a param field */
+			params = cJSON_CreateObject();
+			cJSON_AddItemToObject(params, "param", p);
+		}
+		else {
+			params = *paramsP;
+		}
+
+		cJSON *v = cJSON_GetObjectItem(params, "version");
+
+		if (!v) {                /* add version if needed  */
+			 cJSON_AddStringToObject(params, "version", version);
+		}
+		else {
+			cJSON_AddStringToObject(params, "version", "0");
+		}
     }
 
     if (!params) {
         params = cJSON_CreateObject();
+
+		if (version && version[0] != 0) {		
+			cJSON_AddStringToObject(params, "version", version);
+		}
+		else {
+			cJSON_AddStringToObject(params, "version", "0");
+		}
+
     }
 
-    char fqcommand[KS_PRCMESSAGE_FQCOMMAND_LENGTH];
+    char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
     memset(fqcommand, 0, sizeof(fqcommand));
 
-    if (handle->namespace[0] != 0) {
-        strcpy(fqcommand, handle->namespace);
-    }
-
-    strcat(fqcommand, command);
+	sprintf(fqcommand, "%s.%s", namespace, command);
 
     cJSON_AddItemToObject(msg, "method", cJSON_CreateString(fqcommand));
-    cJSON_AddItemToObject(msg, "params", params);
 
-    if (handle->version[0] != 0) {
-        cJSON_AddItemToObject(msg, "version", cJSON_CreateString(handle->version));
-    }
+	if (sessionid && sessionid[0] != 0) {
+		cJSON_AddStringToObject(params, "sessionid", sessionid);
+	}
+
+    cJSON_AddItemToObject(msg, "params", params);
 
     if (paramsP) {
         *paramsP = params;
@@ -197,6 +210,31 @@ KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(ks_rpcmessaging_handle
 	*requestP = msg;
     return msgid;
 }
+
+KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
+                                            char *method,
+											char *sessionid,
+											char *version,
+                                            cJSON **parms,
+                                            ks_buffer_t *buffer)
+{
+	cJSON *message;
+
+	ks_rpcmessage_id msgid = ks_rpcmessage_create_request(namespace, method, sessionid, version, parms, &message);
+
+	if (!msgid) {
+		return 0;
+	}
+
+	const char* b = cJSON_PrintUnformatted(message);
+	ks_size_t size = strlen(b);
+
+	ks_buffer_write(buffer, b, size);
+	cJSON_Delete(message);
+
+	return size; 	
+}
+
 
 static ks_rpcmessage_id ks_rpcmessage_get_messageid(const cJSON *msg, cJSON **cmsgidP)
 {
@@ -214,14 +252,22 @@ static ks_rpcmessage_id ks_rpcmessage_get_messageid(const cJSON *msg, cJSON **cm
 } 
 
 
-static ks_rpcmessage_id ks_rpcmessage_new_response(ks_rpcmessaging_handle_t* handle,
+static ks_rpcmessage_id ks_rpcmessage_new_response(
                                                 const cJSON *request,
                                                 cJSON *result,
                                                 cJSON **pmsg)
 {
     cJSON *respmsg = NULL;
     cJSON *cmsgid  = NULL;
+	cJSON *version = NULL;
+	cJSON *sessionid = NULL;
+
     cJSON *command = cJSON_GetObjectItem(request, "method");
+	cJSON *params =  cJSON_GetObjectItem(request, "params");
+
+	if (params) {
+		version = cJSON_GetObjectItem(request, "version");
+	}
 
 	ks_rpcmessage_id msgid = ks_rpcmessage_get_messageid(request, &cmsgid );
 
@@ -233,11 +279,25 @@ static ks_rpcmessage_id ks_rpcmessage_new_response(ks_rpcmessaging_handle_t* han
 
     cJSON_AddItemToObject(respmsg, "method", cJSON_Duplicate(command, 0));
 
-    if (handle->version[0] != 0) {
-        cJSON_AddItemToObject(respmsg, "version", cJSON_CreateString(handle->version));
-    }
-
     if (result) {
+
+	    cJSON *params =  cJSON_GetObjectItem(request, "params");
+
+		if (params) {
+			version = cJSON_GetObjectItem(params, "version");
+
+			if (version) {
+				cJSON_AddItemToObject(result, "version", cJSON_Duplicate(version, 0));
+			}
+		
+			sessionid = cJSON_GetObjectItem(params, "sessionid");
+
+            if (sessionid) {
+                cJSON_AddItemToObject(result, "sessionid", cJSON_Duplicate(sessionid, 0));
+            }
+
+		}
+		
         cJSON_AddItemToObject(respmsg, "result", result);
     }
 
@@ -245,31 +305,56 @@ static ks_rpcmessage_id ks_rpcmessage_new_response(ks_rpcmessaging_handle_t* han
 }
 
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_response(ks_rpcmessaging_handle_t* handle,
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_response(
 												const cJSON *request,
 												cJSON **resultP,
 												cJSON **responseP)
 {
-	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(handle, request, *resultP, responseP);
+	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(request, *resultP, responseP);
+
 	cJSON *respmsg = *responseP;
 
     if (msgid) {
 
 		if (*resultP == NULL) {
 			*resultP = cJSON_CreateObject();
-			cJSON_AddItemToObject(respmsg, "result", *resultP);
+			cJSON *result = *resultP;
+
+		    cJSON *params =  cJSON_GetObjectItem(request, "params");
+
+			if (params) {
+				cJSON *version = cJSON_GetObjectItem(request, "version");
+				cJSON *sessionid = cJSON_GetObjectItem(request, "sessionid");
+
+				if (version) {
+					cJSON_AddItemToObject(result, "version", cJSON_Duplicate(version, 0));
+				}
+				else {
+					cJSON_AddStringToObject(result, "version", "0");
+				}
+
+				if (sessionid) {
+					cJSON_AddItemToObject(result, "sessionid", cJSON_Duplicate(sessionid, 0));
+				}
+				
+			}
+			else {
+				cJSON_AddStringToObject(result, "version", "0");
+			}
+
+			cJSON_AddItemToObject(respmsg, "result", result);
 		}
 	}
 
     return msgid;
 }
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse(ks_rpcmessaging_handle_t* handle, 
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse( 
 												const cJSON *request, 
 												cJSON **errorP, 
 												cJSON **responseP)
 {
-	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(handle, request, *errorP, responseP);
+	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(request, *errorP, responseP);
 	cJSON *respmsg = *responseP;
 
 	if (msgid) { 
@@ -282,180 +367,6 @@ KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse(ks_rpcmessaging_
 
     return msgid;
 }
-
-KS_DECLARE(ks_status_t) ks_rpcmessage_namespace(ks_rpcmessaging_handle_t* handle, const char* namespace, const char* version)
-{
-	memset(handle->namespace, 0, sizeof(handle->namespace));
-    memset(handle->version, 0, sizeof(handle->version)); 
-
-	strncpy(handle->namespace, namespace, KS_RPCMESSAGE_NAMESPACE_LENGTH);
-    strncpy(handle->version, version, KS_RPCMESSAGE_VERSION_LENGTH);
-	handle->namespace[sizeof(handle->namespace) - 1] = 0;
-	handle->version[sizeof(handle->version) -1] = 0;
-
-    ks_log(KS_LOG_DEBUG, "Setting message namespace value %s, version %s", handle->namespace, handle->version);
-	strcat( handle->namespace, ".");
-
-    return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) ks_rpcmessage_register_function(ks_rpcmessaging_handle_t* handle, 
-												const char *command, 
-												jrpc_func_t func,
-												jrpc_resp_func_t respfunc)
-{
-	if (!func && !respfunc) {
-		return KS_STATUS_FAIL;
-	}
-
-	char fqcommand[KS_PRCMESSAGE_FQCOMMAND_LENGTH];
-    memset(fqcommand, 0, sizeof(fqcommand));
-
-	if (handle->namespace[0] != 0) {
-		strcpy(fqcommand, handle->namespace);
-	}	
-	strcat(fqcommand, command);
-
-	int lkey = strlen(fqcommand)+1;
-
-	if (lkey < 16) {
-		lkey = 16;
-	}	
-
-	ks_rpcmessage_callbackpair_t* callbacks =
-			(ks_rpcmessage_callbackpair_t*)ks_pool_alloc(handle->pool, lkey + sizeof(ks_rpcmessage_callbackpair_t));
-
-	strcpy(callbacks->command, fqcommand);
-	callbacks->command_length = lkey;
-	callbacks->request_func = func;
-	callbacks->response_func = respfunc;
-
-	ks_hash_write_lock(handle->method_hash);
-	ks_hash_insert(handle->method_hash, callbacks->command, (void *) callbacks);
-
-	ks_hash_write_unlock(handle->method_hash);
-
-	ks_log(KS_LOG_DEBUG, "Message %s registered (%s)\n", command, fqcommand);
-
-	return KS_STATUS_SUCCESS;
-}
-
-static ks_rpcmessage_callbackpair_t* ks_rpcmessage_find_function_ex(ks_rpcmessaging_handle_t* handle, char *command)
-{
-	ks_hash_read_lock(handle->method_hash);
-
-	 ks_rpcmessage_callbackpair_t* callbacks = ks_hash_search(handle->method_hash, command, KS_UNLOCKED);
-
-	ks_hash_read_unlock(handle->method_hash);
-
-	return callbacks;
-}
-
-KS_DECLARE(jrpc_func_t) ks_rpcmessage_find_function(ks_rpcmessaging_handle_t* handle, const char *command)
-{
-    char fqcommand[KS_PRCMESSAGE_FQCOMMAND_LENGTH];
-    memset(fqcommand, 0, sizeof(fqcommand));
-
-    if (handle->namespace[0] != 0) {
-        strcpy(fqcommand, handle->namespace);
-		strcat(fqcommand, command);
-    }
-	else {
-		strcpy(fqcommand, command);
-	}
-	
-
-    ks_rpcmessage_callbackpair_t* callbacks = ks_rpcmessage_find_function_ex(handle, (char *)fqcommand);
-
-	if (!callbacks) {
-		return NULL;
-	}
-
-	return callbacks->request_func;
-}
-
-KS_DECLARE(jrpc_resp_func_t) ks_rpcmessage_find_response_function(ks_rpcmessaging_handle_t* handle, const char *command)
-{
-    char fqcommand[KS_PRCMESSAGE_FQCOMMAND_LENGTH];
-    memset(fqcommand, 0, sizeof(fqcommand));
-
-    if (handle->namespace[0] != 0) {
-        strcpy(fqcommand, handle->namespace);
-        strcat(fqcommand, command);
-    }
-    else {
-        strcpy(fqcommand, command);
-    }
-
-    ks_rpcmessage_callbackpair_t* callbacks = ks_rpcmessage_find_function_ex(handle, (char *)fqcommand);
-
-    return callbacks->response_func;
-}
-
-
-KS_DECLARE(ks_status_t) ks_rpcmessage_process_jsonmessage(ks_rpcmessaging_handle_t* handle, cJSON *request, cJSON **responseP)
-{
-	const char *command = cJSON_GetObjectCstr(request, "method");
-	cJSON *error = NULL;
-	cJSON *response = NULL;
-	*responseP = NULL;
-
-	if (!command) {
-		error = cJSON_CreateString("Command not found");
-	}
-
-	//todo - add more checks ? 
-
-	if (error) {
-		ks_rpcmessage_create_request(handle, 0, &error, &response);
-		return KS_STATUS_FAIL;
-	}
-
-	
-	ks_rpcmessage_callbackpair_t* callbacks = ks_rpcmessage_find_function_ex(handle, (char *)command);
-
-	if (!callbacks) {
-		error = cJSON_CreateString("Command not supported");
-		return  KS_STATUS_FAIL;
-	}
-
-	ks_bool_t isrequest = ks_rpcmessage_isrequest(request);
-
-	if (isrequest && callbacks->request_func) {
-		return callbacks->request_func(handle, request, responseP);
-	}
-    else if (!isrequest && callbacks->response_func) {
-		return callbacks->response_func(handle, request);
-	}
-
-	return KS_STATUS_FAIL;
-}
-
-
-
-KS_DECLARE(ks_status_t) ks_rpcmessage_process_message(ks_rpcmessaging_handle_t* handle, 
-														uint8_t *data, 
-														ks_size_t size, 
-														cJSON **responseP)
-{
-	cJSON *response = NULL;
-	cJSON *error = NULL;
-
-	cJSON *request = cJSON_Parse((char*)data);
-
-	if (!request) {
-		error = cJSON_CreateString("Invalid json format");
-		ks_rpcmessage_create_request(handle, 0, &error, &response);
-		return  KS_STATUS_FAIL; 
-	}
-
-	ks_status_t status = ks_rpcmessage_process_jsonmessage(handle, request, responseP);
-
-	cJSON_Delete(request);
-
-	return status;
-}
-
 
 
 /* For Emacs:

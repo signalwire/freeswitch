@@ -31,52 +31,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
- * Usage notes	
- *
- *   ks_rpcmessaging_handle_t *handle;
- *
- *   ks_rpcmessage_init(pool, &handle);
- *   
- *   ks_rpcmessage_version(handle, version);
- *   ks_rpcmessage_namespace(handle, application_namespace);
- *   ks_rpcmessage_register_function(handle, "invite", handle_invite_message);
- *   ks_rpcmessage_register_function(handle, "media",  handle_media_message);
- *
- *   ...
- *   cJSON* request = NULL;
- *   cJSON* parms   = NULL;
- *   cJSON* response  = NULL;
- *
- *   request  = ks_rpcmessage_create_request(h, "invite", &parms, &request);
- *   cJSON_AddStringToObject(parms, "hello", "cruel world");
- *   ... and send
- *   
- *   
- * static ks_status_t  handle_..._message(ks_rpcmessaging_handle_t* handle, cJSON *msg, cJSON **response)
- * {
- *       cJSON *respvalue = cJSON_CreateNumber(1);
- *       cJSON *x  = *response = ks_rpcmessage_create_response(h, msg, &respvalue, response);
- *       if ( x == NULL) { 
- *           return KS_STATUS_FAIL;
- *        } 
- *        ...
- *        return KS_STATUS_SUCCESS;
- * }
-
- *
- *
- *     
- *   
- *
- *
- *   ...
- *   ks_rpcmessage_deinit(&handle);
- *
- */		
-
-
-
 
 #ifndef _KS_RPCMESSAGE_H_
 #define _KS_RPCMESSAGE_H_
@@ -85,51 +39,48 @@
 
 KS_BEGIN_EXTERN_C
 
+#define KS_RPCMESSAGE_NAMESPACE_LENGTH 16
+#define KS_RPCMESSAGE_COMMAND_LENGTH  238
+#define KS_RPCMESSAGE_FQCOMMAND_LENGTH  (KS_RPCMESSAGE_NAMESPACE_LENGTH+KS_RPCMESSAGE_COMMAND_LENGTH+1)
+#define KS_RPCMESSAGE_VERSION_LENGTH 9
 
 
-
-
-typedef struct ks_rpcmessaging_handle_s ks_rpcmessaging_handle_t;
 typedef uint32_t ks_rpcmessage_id;
 
 
-typedef  ks_status_t (*jrpc_func_t)(ks_rpcmessaging_handle_t* handle, cJSON *request, cJSON **responseP);
-typedef  ks_status_t (*jrpc_resp_func_t)(ks_rpcmessaging_handle_t* handle, cJSON *response);
+KS_DECLARE(void) ks_rpcmessage_init(ks_pool_t *pool);
+
+KS_DECLARE(void*) ks_json_pool_alloc(ks_size_t size);
+KS_DECLARE(void) ks_json_pool_free(void *ptr);
 
 
-
-KS_DECLARE(ks_rpcmessaging_handle_t *) ks_rpcmessage_init(ks_pool_t* pool, ks_rpcmessaging_handle_t** handleP);
-KS_DECLARE(void)                    ks_rpcmessage_deinit(ks_rpcmessaging_handle_t** handleP);
-
-KS_DECLARE(ks_status_t)ks_rpcmessage_namespace(ks_rpcmessaging_handle_t* handle, const char* namespace, const char* version);
-
-KS_DECLARE(ks_rpcmessage_id)ks_rpcmessage_create_request(ks_rpcmessaging_handle_t* handle, 
-											const char *method, 
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace, 
+											char *method,
+											char *sessionid,
+											char *version, 
 											cJSON **parmsP,
 											cJSON **requestP);
-KS_DECLARE(ks_rpcmessage_id)ks_rpcmessage_create_response(ks_rpcmessaging_handle_t* handle, 
+
+KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
+                                            char *method,
+											char *sessionid,
+											char *version,
+                                            cJSON **parmsP,
+                                            ks_buffer_t *buffer);
+
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_response( 
 											const cJSON *request, 
 											cJSON **resultP, 
 											cJSON **responseP);
-KS_DECLARE(ks_rpcmessage_id)ks_rpcmessage_create_errorresponse(ks_rpcmessaging_handle_t* handle,
+
+KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse(
                                             const cJSON *request,
                                             cJSON **errorP,
                                             cJSON **responseP);
 
-KS_DECLARE(ks_status_t)ks_rpcmessage_register_function(ks_rpcmessaging_handle_t* handle, 
-												const char *command, 
-												jrpc_func_t func,
-												jrpc_resp_func_t respfunc);
+KS_DECLARE(ks_bool_t) ks_rpcmessage_isrequest(cJSON *msg);
 
-KS_DECLARE(jrpc_func_t) ks_rpcmessage_find_function(ks_rpcmessaging_handle_t* handle, const char *command);
-KS_DECLARE(jrpc_resp_func_t) ks_rpcmessage_find_response_function(ks_rpcmessaging_handle_t* handle, const char *command);
-
-KS_DECLARE(ks_status_t) ks_rpcmessage_process_message(ks_rpcmessaging_handle_t* handle, 
-														uint8_t *data, 
-														ks_size_t size, 
-														cJSON **responseP);
-KS_DECLARE(ks_status_t) ks_rpcmessage_process_jsonmessage(ks_rpcmessaging_handle_t* handle, cJSON *request, cJSON **responseP);
-
+KS_DECLARE(ks_bool_t) ks_rpcmessage_isrpc(cJSON *msg);
 
 KS_END_EXTERN_C
 
