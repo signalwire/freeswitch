@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *
 SWITCH_DECLARE(switch_status_t) switch_msrp_start_client(switch_msrp_session_t *msrp_session);
 SWITCH_DECLARE(const char *) switch_msrp_listen_ip(void);
 
-SWITCH_DECLARE(switch_msrp_msg_t*) switch_msrp_msg_create();
+SWITCH_DECLARE(switch_msrp_msg_t*) switch_msrp_msg_create(void);
 SWITCH_DECLARE(void) switch_msrp_msg_destroy(switch_msrp_msg_t **msg);
 
 SWITCH_DECLARE(void) switch_msrp_load_apis_and_applications(switch_loadable_module_interface_t **moudle_interface);
