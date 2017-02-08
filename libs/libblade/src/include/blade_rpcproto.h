@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2017, FreeSWITCH LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * * Neither the name of the original author; nor the names of any contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef _BLADE_RPCPROTO_H_
+#define _BLADE_RPCPROTO_H_
+
+#include <ks_rpcmessage.h>
+#include <blade_types.h>
+
+// temp typedefs to get compile going 
+//typedef struct blade_peer_s  blade_peer_t;
+//typedef struct blade_message_s blade_message_t;
+//typedef struct blade_event_s blade_event_t;
+
+#define KS_RPCMESSAGE_NAMESPACE_LENGTH 16
+#define KS_RPCMESSAGE_COMMAND_LENGTH  238
+#define KS_RPCMESSAGE_FQCOMMAND_LENGTH  (KS_RPCMESSAGE_NAMESPACE_LENGTH+KS_RPCMESSAGE_COMMAND_LENGTH+1)
+#define KS_RPCMESSAGE_VERSION_LENGTH 9
+
+
+typedef  ks_status_t (*jrpc_func_t)         (cJSON *request, cJSON **responseP);
+typedef  ks_status_t (*jrpc_prefix_func_t)  (cJSON *request);
+typedef  ks_status_t (*jrpc_postfix_func_t) (cJSON *response,  cJSON **responseP);
+
+typedef  ks_status_t (*jrpc_resp_func_t)         (cJSON *response);
+typedef  ks_status_t (*jrpc_prefix_resp_func_t)  (cJSON *response);
+typedef  ks_status_t (*jrpc_postfix_resp_func_t) (cJSON *response);
+
+
+/*
+ *  setup
+ *  -----
+ */
+
+KS_DECLARE(ks_status_t) blade_rpc_init(ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_rpc_runprocess();
+
+
+/* 
+ *  namespace and call back registration 
+ *  ------------------------------------
+ */
+KS_DECLARE(ks_status_t) blade_rpc_declare_namespace(char* namespace, const char* version);
+KS_DECLARE(ks_status_t) blade_rpc_register_function(char* namespace, 
+														char *command,
+														jrpc_func_t func,
+														jrpc_resp_func_t respfunc);
+KS_DECLARE(ks_status_t) blade_rpc_register_prefix_request_function(char* namespace,   
+														char *command,
+														jrpc_prefix_func_t prefix_func,
+														jrpc_postfix_func_t postfix_func);
+KS_DECLARE(ks_status_t) blade_rpc_register_prefix_response_function(char *namespace,   
+														char *command,
+														jrpc_prefix_resp_func_t prefix_func,
+														jrpc_postfix_resp_func_t postfix_func);
+KS_DECLARE(void) blade_rpc_remove_namespace(char* namespace);
+
+
+/*
+ * peer create/destroy
+ * -------------------
+ */
+KS_DECLARE(ks_status_t) blade_rpc_onconnect(ks_pool_t *pool, blade_peer_t* peer);
+KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer);
+
+/* 
+ * send message
+ * ------------
+ */
+KS_DECLARE(ks_status_t) blade_rpc_write(char *sessionid, char* data, uint32_t size);
+KS_DECLARE(ks_status_t) blade_rpc_write_json(cJSON* json);
+
+
+/*
+ * process inbound message
+ * -----------------------
+ */
+KS_DECLARE(ks_status_t) blade_rpc_process_blademessage(blade_message_t *message);
+KS_DECLARE(ks_status_t) blade_rpc_process_data(const uint8_t *data, ks_size_t size);
+
+KS_DECLARE(ks_status_t) blade_rpc_process_jsonmessage(cJSON *request, cJSON **responseP);
+
+
+#endif
+
