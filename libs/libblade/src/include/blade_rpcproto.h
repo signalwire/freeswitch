@@ -48,13 +48,14 @@
 #define KS_RPCMESSAGE_VERSION_LENGTH 9
 
 
-typedef  ks_status_t (*jrpc_func_t)         (cJSON *request, cJSON **responseP);
-typedef  ks_status_t (*jrpc_prefix_func_t)  (cJSON *request);
-typedef  ks_status_t (*jrpc_postfix_func_t) (cJSON *response,  cJSON **responseP);
+enum jrpc_status_t { 
+	JRPC_PASS = 0, 
+	JRPC_SEND, 
+	JRPC_ERROR
+};
 
-typedef  ks_status_t (*jrpc_resp_func_t)         (cJSON *response);
-typedef  ks_status_t (*jrpc_prefix_resp_func_t)  (cJSON *response);
-typedef  ks_status_t (*jrpc_postfix_resp_func_t) (cJSON *response);
+
+typedef enum jrpc_status_t (*jrpc_func_t)  (cJSON *request, cJSON **responseP);
 
 
 /*
@@ -74,16 +75,30 @@ KS_DECLARE(ks_status_t) blade_rpc_declare_namespace(char* namespace, const char*
 KS_DECLARE(ks_status_t) blade_rpc_register_function(char* namespace, 
 														char *command,
 														jrpc_func_t func,
-														jrpc_resp_func_t respfunc);
+														jrpc_func_t respfunc);
 KS_DECLARE(ks_status_t) blade_rpc_register_prefix_request_function(char* namespace,   
 														char *command,
-														jrpc_prefix_func_t prefix_func,
-														jrpc_postfix_func_t postfix_func);
+														jrpc_func_t prefix_func,
+														jrpc_func_t postfix_func);
 KS_DECLARE(ks_status_t) blade_rpc_register_prefix_response_function(char *namespace,   
 														char *command,
-														jrpc_prefix_resp_func_t prefix_func,
-														jrpc_postfix_resp_func_t postfix_func);
+														jrpc_func_t prefix_func,
+														jrpc_func_t postfix_func);
 KS_DECLARE(void) blade_rpc_remove_namespace(char* namespace);
+
+/*
+ * template registration and inheritance
+ * -------------------------------------
+ */
+KS_DECLARE(ks_status_t) blade_rpc_declare_template(char* templatename, const char* version);
+
+KS_DECLARE(ks_status_t)blade_rpc_register_template_function(char *name,
+                                                char *command,
+                                                jrpc_func_t func,
+                                                jrpc_func_t respfunc);
+
+KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* template);
+
 
 
 /*
@@ -97,7 +112,7 @@ KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer);
  * send message
  * ------------
  */
-KS_DECLARE(ks_status_t) blade_rpc_write(char *sessionid, char* data, uint32_t size);
+KS_DECLARE(ks_status_t) blade_rpc_write(char *sessionid, char* data, uint32_t size);  //uuid_t ?
 KS_DECLARE(ks_status_t) blade_rpc_write_json(cJSON* json);
 
 
@@ -108,7 +123,7 @@ KS_DECLARE(ks_status_t) blade_rpc_write_json(cJSON* json);
 KS_DECLARE(ks_status_t) blade_rpc_process_blademessage(blade_message_t *message);
 KS_DECLARE(ks_status_t) blade_rpc_process_data(const uint8_t *data, ks_size_t size);
 
-KS_DECLARE(ks_status_t) blade_rpc_process_jsonmessage(cJSON *request, cJSON **responseP);
+KS_DECLARE(ks_status_t) blade_rpc_process_jsonmessage(cJSON *request);
 
 
 #endif
