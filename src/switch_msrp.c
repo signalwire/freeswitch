@@ -1288,6 +1288,8 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 		if (p + len > last_p) { // unparsed msg in buffer
 			p += len;
+			len = MSRP_BUFF_SIZE - (p - buf);
+
 			if (!msrp_msg) {
 				int rest_len = p - last_p;
 
