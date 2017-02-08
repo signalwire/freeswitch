@@ -2408,6 +2408,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 		video_count = 0;
 
+		switch_mutex_lock(conference->mutex);
 		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh, SWITCH_TRUE)) {
 			check_async_file = 1;
 			file_count++;
@@ -2421,7 +2422,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			video_count++;
 			files_playing = 1;
 		}
-
+		switch_mutex_unlock(conference->mutex);
 
 		switch_mutex_lock(conference->member_mutex);
 		for (imember = conference->members; imember; imember = imember->next) {
@@ -2853,8 +2854,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				conference->new_personal_vlayout = NULL;
 				layout_applied = 0;
 			}
+
+			switch_mutex_lock(conference->mutex);
 			
-			if (check_async_file) {
+			if (check_async_file && conference->async_fnode) {
 				switch_status_t st = switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH);
 				
 				if (st == SWITCH_STATUS_SUCCESS) {
@@ -2867,7 +2870,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 
-			if (check_file) {
+			if (check_file && conference->fnode) {
 				switch_status_t st = switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH);
 
 				if (st == SWITCH_STATUS_SUCCESS) {
@@ -2879,6 +2882,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					j++;
 				}
 			}
+			switch_mutex_unlock(conference->mutex);
 
 			for (imember = conference->members; imember; imember = imember->next) {
 				int i = 0;
