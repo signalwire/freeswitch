@@ -1285,6 +1285,7 @@ struct av_file_context {
 	switch_time_t last_vid_push;
 	int64_t seek_ts;
 	switch_bool_t read_paused;
+	int errs;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1984,7 +1985,15 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 			if (context->mutex) switch_mutex_unlock(context->mutex);
 			if (ret < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %s\n", get_error_text(ret));
+				context->errs++;
 				//switch_goto_status(SWITCH_STATUS_FALSE, end);
+			} else {
+				context->errs = 0;
+			}
+
+			if (context->errs > 100) {
+				status = SWITCH_STATUS_FALSE;
+				break;
 			}
 		}
 		if (data) {
