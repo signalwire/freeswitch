@@ -28,7 +28,7 @@
 #define WS_WRITE_SANITY 2000
 
 #define SHA1_HASH_SIZE 20
-struct ws_globals_s ws_globals;
+static struct ws_globals_s ws_globals;
 
 #ifndef WSS_STANDALONE
 

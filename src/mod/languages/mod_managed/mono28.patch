@@ -36,7 +36,7 @@ index 1d0b6a7..13ffe5d 100644
  #include <mono/jit/jit.h>
  #include <mono/metadata/assembly.h>
  #include <mono/metadata/environment.h>
-@@ -73,7 +72,7 @@ extern mod_managed_globals globals;
+@@ -73,7 +72,7 @@ extern mod_managed_globals managed_globals;
  #ifdef WIN32
  #define RESULT_FREE(x) CoTaskMemFree(x)
  #else
@@ -68,8 +68,8 @@ index ec2d866..87e831f 100644
 +	
  	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
  
--	if (!(globals.mod_mono_asm = mono_assembly_loaded(&name))) {
-+	if (!(globals.mod_mono_asm = mono_assembly_loaded(name))) {
+-	if (!(managed_globals.mod_mono_asm = mono_assembly_loaded(&name))) {
++	if (!(managed_globals.mod_mono_asm = mono_assembly_loaded(name))) {
  		/* Open the assembly */ 
  		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open.\n");
- 		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);
+ 		managed_globals.mod_mono_asm = mono_domain_assembly_open(managed_globals.domain, filename);

@@ -122,7 +122,7 @@ struct globals_s {
 	int io_fault_tolerance;
 };
 typedef struct globals_s globals_t;
-extern globals_t globals;
+extern globals_t kazoo_globals;
 
 /* kazoo_node.c */
 switch_status_t new_kazoo_node(int nodefd, ErlConnect *conn);

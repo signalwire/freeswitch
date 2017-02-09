@@ -28,7 +28,7 @@
 #define WS_WRITE_SANITY 2000
 
 #define SHA1_HASH_SIZE 20
-struct ws_globals_s ws_globals;
+static struct ws_globals_s ws_globals;
 
 #ifndef WSS_STANDALONE
 
@@ -110,13 +110,13 @@ void init_ssl(void) {
 	assert(ws_globals.ssl_ctx);
 
 	/* Disable SSLv2 */
-	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_SSLv2);
+	SSL_CTX_set_options(ws_globals.ssl_ctx, SSL_OP_NO_SSLv2);
 	/* Disable SSLv3 */
-	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_SSLv3);
+	SSL_CTX_set_options(ws_globals.ssl_ctx, SSL_OP_NO_SSLv3);
 	/* Disable TLSv1 */
-	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_TLSv1);
+	SSL_CTX_set_options(ws_globals.ssl_ctx, SSL_OP_NO_TLSv1);
 	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
-	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_COMPRESSION);
+	SSL_CTX_set_options(ws_globals.ssl_ctx, SSL_OP_NO_COMPRESSION);
 	/* set the local certificate from CertFile */
 	SSL_CTX_use_certificate_file(ws_globals.ssl_ctx, ws_globals.cert, SSL_FILETYPE_PEM);
 	/* set the private key from KeyFile */

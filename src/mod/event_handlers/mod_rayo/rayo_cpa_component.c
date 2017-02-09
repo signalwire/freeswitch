@@ -35,7 +35,7 @@
 /**
  * Module globals
  */
-struct {
+static struct {
 	/** signal subscribers */
 	switch_hash_t *subscribers;
 	/** synchronizes access to subscribers */

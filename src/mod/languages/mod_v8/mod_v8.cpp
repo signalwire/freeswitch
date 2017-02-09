@@ -122,7 +122,7 @@ typedef struct {
 	char *xml_handler;
 } mod_v8_global_t;
 
-mod_v8_global_t globals = { 0 };
+static mod_v8_global_t globals = { 0 };
 
 /* Loadable module struct, used for external extension modules */
 typedef struct {

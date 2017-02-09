@@ -26,7 +26,7 @@
  * Michael Giagnocavo <mgg@packetrino.com>
  * Jeff Lenk <jlenk@frontiernet.net> - Modified class to support Dotnet
  * 
- * freeswitch_managed.h -- Header for ManagedSession and globals
+ * freeswitch_managed.h -- Header for ManagedSession and managed_globals
  *
  */
 
@@ -60,13 +60,13 @@ struct mod_managed_globals {
 #endif
 };
 typedef struct mod_managed_globals mod_managed_globals;
-extern mod_managed_globals globals;
+extern mod_managed_globals managed_globals;
 #endif
 
 #ifdef _MANAGED
 #define ATTACH_THREADS
 #else
-#define ATTACH_THREADS mono_thread_attach(globals.domain);
+#define ATTACH_THREADS mono_thread_attach(managed_globals.domain);
 #endif
 
 #ifdef WIN32

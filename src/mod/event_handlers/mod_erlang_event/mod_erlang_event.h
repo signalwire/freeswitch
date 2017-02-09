@@ -222,12 +222,12 @@ typedef struct prefs_struct prefs_t;
 
 /* shared globals */
 #ifdef DEFINE_GLOBALS
-globals_t globals;
+globals_t mod_erlang_event_globals;
 listen_list_t listen_list;
 bindings_t bindings;
 prefs_t prefs;
 #else
-extern globals_t globals;
+extern globals_t mod_erlang_event_globals;
 extern listen_list_t listen_list;
 extern bindings_t bindings;
 extern prefs_t prefs;

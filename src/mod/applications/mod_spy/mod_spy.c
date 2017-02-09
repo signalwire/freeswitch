@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spy_load);
 
 SWITCH_MODULE_DEFINITION(mod_spy, mod_spy_load, mod_spy_shutdown, NULL);
 
-struct mod_spy_globals {
+static struct mod_spy_globals {
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	switch_hash_t *spy_hash;

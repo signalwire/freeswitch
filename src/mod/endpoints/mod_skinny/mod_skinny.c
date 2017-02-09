@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, NULL)
 
 switch_endpoint_interface_t *skinny_endpoint_interface;
 
-skinny_globals_t globals;
+skinny_globals_t skinny_globals;
 
 /*****************************************************************************/
 /* SQL TABLES */
@@ -188,9 +188,9 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 skinny_profile_t *skinny_find_profile(const char *profile_name)
 {
 	skinny_profile_t *profile;
-	switch_mutex_lock(globals.mutex);
-	profile = (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(skinny_globals.mutex);
+	profile = (skinny_profile_t *) switch_core_hash_find(skinny_globals.profile_hash, profile_name);
+	switch_mutex_unlock(skinny_globals.mutex);
 	return profile;
 }
 
@@ -201,8 +201,8 @@ skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
 	void *val;
 	skinny_profile_t *profile = NULL, *tmp_profile;
 
-	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	switch_mutex_lock(skinny_globals.mutex);
+	for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		tmp_profile = (skinny_profile_t *) val;
 
@@ -216,7 +216,7 @@ skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
 		}
 	}
 	switch_safe_free(hi);
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 
 	return profile;
 }
@@ -1469,7 +1469,7 @@ switch_io_routines_t skinny_io_routines = {
 
 uint8_t listener_is_ready(listener_t *listener)
 {
-	return globals.running
+	return skinny_globals.running
 		&& listener
 		&& listener->sock
 		&& switch_test_flag(listener, LFLAG_RUNNING)
@@ -1520,14 +1520,14 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	skinny_profile_t *profile;
 
 	/* walk listeners */
-	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	switch_mutex_lock(skinny_globals.mutex);
+	for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
 		profile_walk_listeners(profile, callback, pvt);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 }
 
 static int flush_listener_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -2017,7 +2017,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 	}
 
 new_socket:
-	while(globals.running && !profile->sock) {
+	while(skinny_globals.running && !profile->sock) {
 		char *listening_ip = NULL;
 		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_UNSPEC, profile->port, 0, tmp_pool);
@@ -2053,7 +2053,7 @@ sock_fail:
 
 	switch_set_flag_locked(profile, PFLAG_LISTENER_READY);
 
-	while(globals.running) {
+	while(skinny_globals.running) {
 
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
@@ -2063,7 +2063,7 @@ sock_fail:
 		assert(profile->sock);
 
 		if ((rv = switch_socket_accept(&inbound_socket, profile->sock, listener_pool))) {
-			if (!globals.running) {
+			if (!skinny_globals.running) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
 			} else if (switch_test_flag(profile, PFLAG_RESPAWN)) {
@@ -2253,7 +2253,7 @@ static switch_status_t load_skinny_config(void)
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(skinny_globals.mutex);
 	if ((xprofiles = switch_xml_child(xcfg, "profiles"))) {
 		for (xprofile = switch_xml_child(xprofiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *profile_name = (char *) switch_xml_attr_soft(xprofile, "name");
@@ -2450,7 +2450,7 @@ static switch_status_t load_skinny_config(void)
 				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
-				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+				switch_core_hash_insert(skinny_globals.profile_hash, profile->name, profile);
 				profile = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -2459,7 +2459,7 @@ static switch_status_t load_skinny_config(void)
 		} /* profile */
 	}
 	switch_xml_free(xml);
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2679,7 +2679,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 	const char *cond = switch_event_get_header(event, "condition");
 
 
-	if (cond && !strcmp(cond, "network-address-change") && globals.auto_restart) {
+	if (cond && !strcmp(cond, "network-address-change") && skinny_globals.auto_restart) {
 		const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
 		const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
 		const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
@@ -2692,9 +2692,9 @@ static void skinny_trap_event_handler(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);
 
-		switch_mutex_lock(globals.mutex);
-		if (globals.profile_hash) {
-			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_mutex_lock(skinny_globals.mutex);
+		if (skinny_globals.profile_hash) {
+			for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				if ((profile = (skinny_profile_t *) val) && profile->auto_restart) {
 					if (!strcmp(profile->ip, old_ip4)) {
@@ -2706,7 +2706,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 				}
 			}
 		}
-		switch_mutex_unlock(globals.mutex);
+		switch_mutex_unlock(skinny_globals.mutex);
 	}
 
 }
@@ -2715,45 +2715,45 @@ static void skinny_trap_event_handler(switch_event_t *event)
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {
 	switch_hash_index_t *hi;
-	/* globals init */
-	memset(&globals, 0, sizeof(globals));
+	/* skinny_globals init */
+	memset(&skinny_globals, 0, sizeof(skinny_globals));
 
-	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_new_memory_pool(&skinny_globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&skinny_globals.mutex, SWITCH_MUTEX_NESTED, skinny_globals.pool);
 
-	switch_mutex_lock(globals.mutex);
-	switch_core_hash_init(&globals.profile_hash);
-	globals.running = 1;
-	globals.auto_restart = SWITCH_TRUE;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(skinny_globals.mutex);
+	switch_core_hash_init(&skinny_globals.profile_hash);
+	skinny_globals.running = 1;
+	skinny_globals.auto_restart = SWITCH_TRUE;
+	switch_mutex_unlock(skinny_globals.mutex);
 
 	/* load_skinny_config does it's own locking */
 	load_skinny_config();
 
-	switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(skinny_globals.mutex);
 
 	/* at least one profile */
-	if (switch_core_hash_empty( globals.profile_hash)) {
+	if (switch_core_hash_empty( skinny_globals.profile_hash)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profile found!\n");
 		return SWITCH_STATUS_TERM;
 	}
 	/* bind to events */
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &skinny_globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
 	}
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_WAITING, NULL, skinny_message_waiting_event_handler, NULL, &globals.message_waiting_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_WAITING, NULL, skinny_message_waiting_event_handler, NULL, &skinny_globals.message_waiting_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our message waiting handler!\n");
 		/* Not such severe to prevent loading */
 	}
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, NULL, skinny_trap_event_handler, NULL, &globals.trap_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, NULL, skinny_trap_event_handler, NULL, &skinny_globals.trap_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our trap handler!\n");
 		/* Not such severe to prevent loading */
 	}
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_USER_TO_DEVICE, skinny_user_to_device_event_handler, NULL, &globals.user_to_device_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_USER_TO_DEVICE, skinny_user_to_device_event_handler, NULL, &skinny_globals.user_to_device_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our user_to_device handler!\n");
 		/* Not such severe to prevent loading */
 	}
@@ -2789,7 +2789,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(globals.pool, modname);
+	*module_interface = switch_loadable_module_create_module_interface(skinny_globals.pool, modname);
 	skinny_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	skinny_endpoint_interface->interface_name = "skinny";
 	skinny_endpoint_interface->io_routines = &skinny_io_routines;
@@ -2798,7 +2798,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	skinny_api_register(module_interface);
 
 	/* launch listeners */
-	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;
 		skinny_profile_t *profile;
 
@@ -2807,7 +2807,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 		launch_skinny_profile_thread(profile);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -2817,17 +2817,17 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 {
 	switch_hash_index_t *hi;
 	void *val;
-	switch_memory_pool_t *pool = globals.pool;
-	switch_mutex_t *mutex = globals.mutex;
+	switch_memory_pool_t *pool = skinny_globals.pool;
+	switch_mutex_t *mutex = skinny_globals.mutex;
 	int sanity = 0;
 
 	skinny_api_unregister();
 
 	/* release events */
-	switch_event_unbind(&globals.user_to_device_node);
-	switch_event_unbind(&globals.call_state_node);
-	switch_event_unbind(&globals.message_waiting_node);
-	switch_event_unbind(&globals.trap_node);
+	switch_event_unbind(&skinny_globals.user_to_device_node);
+	switch_event_unbind(&skinny_globals.call_state_node);
+	switch_event_unbind(&skinny_globals.message_waiting_node);
+	switch_event_unbind(&skinny_globals.trap_node);
 	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_UNREGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_EXPIRE);
@@ -2838,14 +2838,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 
 	switch_mutex_lock(mutex);
 
-	globals.running = 0;
+	skinny_globals.running = 0;
 
 	/* kill listeners */
 	walk_listeners(kill_listener, NULL);
 
 	/* close sockets */
-	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	switch_mutex_lock(skinny_globals.mutex);
+	for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		skinny_profile_t *profile;
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
@@ -2861,10 +2861,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 		}
 		switch_core_destroy_memory_pool(&profile->pool);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 
-	switch_core_hash_destroy(&globals.profile_hash);
-	memset(&globals, 0, sizeof(globals));
+	switch_core_hash_destroy(&skinny_globals.profile_hash);
+	memset(&skinny_globals, 0, sizeof(skinny_globals));
 	switch_mutex_unlock(mutex);
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;

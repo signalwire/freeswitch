@@ -48,14 +48,14 @@ static switch_status_t skinny_api_list_profiles(const char *line, const char *cu
 	skinny_profile_t *profile;
 
 	/* walk profiles */
-	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	switch_mutex_lock(skinny_globals.mutex);
+	for (hi = switch_core_hash_first(skinny_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
 		switch_console_push_match(&my_matches, profile->name);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(skinny_globals.mutex);
 
 	if (my_matches) {
 		*matches = my_matches;

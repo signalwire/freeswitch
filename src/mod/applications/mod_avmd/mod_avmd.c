@@ -235,7 +235,7 @@ struct avmd_session {
     struct avmd_detector    *detectors;
 };
 
-struct avmd_globals
+static struct avmd_globals
 {
     switch_mutex_t          *mutex;
     struct avmd_settings    settings;

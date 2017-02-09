@@ -61,7 +61,7 @@ struct ws_globals_s {
 	char key[512];
 };
 
-extern struct ws_globals_s ws_globals;
+//extern struct ws_globals_s ws_globals;
 
 #ifndef WIN32
 typedef int ws_socket_t;
