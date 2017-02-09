@@ -1666,7 +1666,7 @@ SWITCH_STANDARD_APP(msrp_send_file_function)
 		/*TODO: send in chunk should ending in + but not $ after delimiter*/
 		switch_msrp_send(msrp_session, msrp_msg);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%ld bytes sent\n", len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%" SWITCH_SIZE_T_FMT " bytes sent\n", len);
 
 		msrp_msg->byte_start += len;
 	}
