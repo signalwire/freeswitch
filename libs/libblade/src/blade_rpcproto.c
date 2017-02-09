@@ -124,7 +124,7 @@ static void blade_rpc_parse_fqcommand(const char* fscommand, char *namespace, ch
 
 		if (fscommand[i] == '.' && dotfound == KS_FALSE) {
 			dotfound = KS_TRUE;
-			x = 0;
+			x = -1;
 		}
 		else if (dotfound == KS_FALSE) {
 			namespace[x] = fscommand[i];	
@@ -142,7 +142,6 @@ static void blade_rpc_parse_fqcommand(const char* fscommand, char *namespace, ch
 
 KS_DECLARE(ks_status_t) blade_rpc_init(ks_pool_t *pool)
 {
-
 	if (g_handle == NULL) {
 		g_handle = ks_pool_alloc(pool, sizeof(blade_rpc_handle_ex_t));
 	    ks_hash_create(&g_handle->namespace_hash,
@@ -196,15 +195,16 @@ static blade_rpc_callbackpair_t *blade_rpc_find_callbacks_locked(char *namespace
 
     blade_rpc_namespace_t *n =  ks_hash_search(g_handle->namespace_hash, namespace, KS_UNLOCKED);
 	if (n) {
-		char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH+1];
-		blade_rpc_make_fqcommand(namespace, command, fqcommand);
 
 		ks_hash_read_lock(n->method_hash);
 
-        callbacks = ks_hash_search(n->method_hash, fqcommand, KS_UNLOCKED);
-		ks_mutex_lock(callbacks->lock);
+        callbacks = ks_hash_search(n->method_hash, command, KS_UNLOCKED);
 
-		ks_hash_read_lock(n->method_hash);
+		if (callbacks) {
+			ks_mutex_lock(callbacks->lock);
+		}
+
+		ks_hash_read_unlock(n->method_hash);
 	}
 
     return callbacks;
@@ -219,9 +219,12 @@ static blade_rpc_callbackpair_t *blade_rpc_find_template_locked(char *name, char
 
         ks_hash_read_lock(n->method_hash);
         callbacks = ks_hash_search(n->method_hash, command, KS_UNLOCKED);
-        ks_mutex_lock(callbacks->lock);
 
-        ks_hash_read_lock(n->method_hash);
+		if (callbacks) {
+			ks_mutex_lock(callbacks->lock);
+		}
+
+        ks_hash_read_unlock(n->method_hash);
     }
 
     return callbacks;
@@ -245,7 +248,10 @@ static blade_rpc_callbackpair_t *blade_rpc_find_callbacks_locked_fq(char *fqcomm
 		ks_hash_read_lock(n->method_hash);
 
         callbacks = ks_hash_search(n->method_hash, fqcommand, KS_UNLOCKED);
-		ks_mutex_lock(callbacks->lock);
+
+		if (callbacks) {
+			ks_mutex_lock(callbacks->lock);
+		}
 
 		ks_hash_read_unlock(n->method_hash);
     }
@@ -329,17 +335,21 @@ KS_DECLARE(ks_status_t) blade_rpc_declare_namespace(char* namespace, const char*
 		n = ks_pool_alloc(g_handle->pool, sizeof (blade_rpc_namespace_t) + strlen(namespace) + 1);
 		strncpy(n->name, namespace, KS_RPCMESSAGE_NAMESPACE_LENGTH);
 		strncpy(n->version, version, KS_RPCMESSAGE_VERSION_LENGTH);
+		ks_hash_create(&n->method_hash,
+					KS_HASH_MODE_CASE_SENSITIVE,
+					KS_HASH_FLAG_RWLOCK + KS_HASH_FLAG_DUP_CHECK + KS_HASH_FLAG_FREE_VALUE,
+					g_handle->pool);
 		ks_hash_insert(g_handle->namespace_hash, n->name, n);
 	}
 	ks_hash_write_unlock(g_handle->namespace_hash);
 
-    ks_log(KS_LOG_DEBUG, "Setting message namespace value %s, version %s", namespace, version);
+    ks_log(KS_LOG_DEBUG, "Setting message namespace value %s, version %s\n", namespace, version);
 
     return KS_STATUS_SUCCESS;
 }
 
 
-KS_DECLARE(ks_status_t)blade_rpc_register_namespace_function(char *namespace, 
+KS_DECLARE(ks_status_t)blade_rpc_register_function(char *namespace, 
                                                 char *command,
                                                 jrpc_func_t func,
                                                 jrpc_func_t respfunc)
@@ -355,11 +365,11 @@ KS_DECLARE(ks_status_t)blade_rpc_register_namespace_function(char *namespace,
     char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
     memset(fqcommand, 0, sizeof(fqcommand));
 
-    strcpy(fqcommand, namespace);
-	strcpy(fqcommand, ".");
+//    strcpy(fqcommand, namespace);
+//    strcpy(fqcommand, ".");
     strcat(fqcommand, command);
 
-    int lkey = strlen(fqcommand)+1;
+    int lkey = strlen(command)+1;
 
     if (lkey < 16) {
         lkey = 16;
@@ -409,15 +419,19 @@ KS_DECLARE(ks_status_t)blade_rpc_register_namespace_function(char *namespace,
 }
 
 
-KS_DECLARE(ks_status_t)blade_rpc_register_prefix_request_function(char *namespace, 
+KS_DECLARE(ks_status_t)blade_rpc_register_custom_request_function(char *namespace, 
 													char *command,
 													jrpc_func_t prefix_func,
 													jrpc_func_t postfix_func)
 {
 	ks_status_t s = KS_STATUS_FAIL;
 
+    char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
+    memset(fqcommand, 0, sizeof(fqcommand));
+    strcat(fqcommand, command);
+
     ks_hash_write_lock(g_handle->namespace_hash);
-	blade_rpc_callbackpair_t* callbacks = blade_rpc_find_callbacks_locked(namespace, command);
+	blade_rpc_callbackpair_t* callbacks = blade_rpc_find_callbacks_locked(namespace, fqcommand);
 
     if (callbacks) {
 
@@ -436,15 +450,19 @@ KS_DECLARE(ks_status_t)blade_rpc_register_prefix_request_function(char *namespac
 	return	s;
 }
 
-KS_DECLARE(ks_status_t)blade_rpc_register_prefix_response_function(char* namespace, 
+KS_DECLARE(ks_status_t)blade_rpc_register_custom_response_function(char* namespace, 
 													char *command,
 													jrpc_func_t prefix_func,
 													jrpc_func_t postfix_func)
 {
 	ks_status_t s = KS_STATUS_FAIL;
+
+    char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
+    memset(fqcommand, 0, sizeof(fqcommand));
+    strcat(fqcommand, command);
 	
 	ks_hash_write_lock(g_handle->namespace_hash);
-    blade_rpc_callbackpair_t *callbacks = blade_rpc_find_callbacks_locked(namespace, command);
+    blade_rpc_callbackpair_t *callbacks = blade_rpc_find_callbacks_locked(namespace, fqcommand);
 
     if (callbacks) {
 
@@ -465,10 +483,13 @@ KS_DECLARE(ks_status_t)blade_rpc_register_prefix_response_function(char* namespa
 
 KS_DECLARE(void) blade_rpc_remove_namespace(char* namespace)
 {
+    char nskey[KS_RPCMESSAGE_NAMESPACE_LENGTH];
+    memset(nskey, 0, sizeof(nskey));
+    strcat(nskey, namespace);
 
     ks_hash_write_lock(g_handle->namespace_hash);
 
-	blade_rpc_namespace_t *n =  ks_hash_search(g_handle->namespace_hash, namespace, KS_UNLOCKED);
+	blade_rpc_namespace_t *n =  ks_hash_search(g_handle->namespace_hash, nskey, KS_UNLOCKED);
 
 	ks_hash_iterator_t* it = ks_hash_first(n->method_hash, KS_HASH_FLAG_RWLOCK);
 
@@ -504,19 +525,28 @@ KS_DECLARE(void) blade_rpc_remove_namespace(char* namespace)
 
 KS_DECLARE(ks_status_t) blade_rpc_declare_template(char* templatename, const char* version)
 {
+    char nskey[KS_RPCMESSAGE_NAMESPACE_LENGTH];
+    memset(nskey, 0, sizeof(nskey));
+    strcat(nskey, templatename);
+
 
     /* find/insert to namespace hash as needed */
     ks_hash_write_lock(g_handle->template_hash);
-    blade_rpc_namespace_t *n =  ks_hash_search(g_handle->template_hash, templatename, KS_UNLOCKED);
+    blade_rpc_namespace_t *n =  ks_hash_search(g_handle->template_hash, nskey, KS_UNLOCKED);
+
     if (n == NULL) {
         n = ks_pool_alloc(g_handle->pool, sizeof (blade_rpc_namespace_t) + strlen(templatename) + 1);
         strncpy(n->name, templatename, KS_RPCMESSAGE_NAMESPACE_LENGTH);
 		strncpy(n->version, version, KS_RPCMESSAGE_VERSION_LENGTH);
+		ks_hash_create(&n->method_hash,
+					KS_HASH_MODE_CASE_SENSITIVE,
+                    KS_HASH_FLAG_RWLOCK + KS_HASH_FLAG_DUP_CHECK + KS_HASH_FLAG_FREE_VALUE,
+                    g_handle->pool);
         ks_hash_insert(g_handle->template_hash, n->name, n);
     }
     ks_hash_write_unlock(g_handle->template_hash);
 
-    ks_log(KS_LOG_DEBUG, "Declaring application template namespace %s, version %s", templatename, version);
+    ks_log(KS_LOG_DEBUG, "Declaring application template namespace %s, version %s\n", templatename, version);
 
     return KS_STATUS_SUCCESS;
 }
@@ -526,11 +556,21 @@ KS_DECLARE(ks_status_t)blade_rpc_register_template_function(char *name,
                                                 jrpc_func_t func,
                                                 jrpc_func_t respfunc)
 {
+	(void)blade_rpc_find_template_locked;   //remove
+
     if (!func && !respfunc) {
         return KS_STATUS_FAIL;
     }
 
-    int lkey = strlen(command)+1;
+    char nskey[KS_RPCMESSAGE_NAMESPACE_LENGTH];
+    memset(nskey, 0, sizeof(nskey));
+    strcat(nskey, name);
+
+    char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
+    memset(fqcommand, 0, sizeof(fqcommand));
+    strcat(fqcommand, command);
+
+    int lkey = strlen(fqcommand)+1;
 
     if (lkey < 16) {
         lkey = 16;
@@ -538,7 +578,7 @@ KS_DECLARE(ks_status_t)blade_rpc_register_template_function(char *name,
 
     ks_hash_read_lock(g_handle->template_hash);    /* lock template hash */
 
-    blade_rpc_namespace_t *n =  ks_hash_search(g_handle->template_hash, name, KS_UNLOCKED);
+    blade_rpc_namespace_t *n =  ks_hash_search(g_handle->template_hash, nskey, KS_UNLOCKED);
 
     if (n == NULL) {
         ks_hash_read_unlock(g_handle->template_hash);
@@ -546,7 +586,9 @@ KS_DECLARE(ks_status_t)blade_rpc_register_template_function(char *name,
         return KS_STATUS_FAIL;
     }
 
-    blade_rpc_callbackpair_t* callbacks = blade_rpc_find_template_locked(name, command);
+	ks_hash_read_lock(n->method_hash);
+    blade_rpc_callbackpair_t* callbacks = ks_hash_search(n->method_hash, fqcommand, KS_UNLOCKED);
+    ks_hash_read_unlock(n->method_hash);
 
     /* just ignore attempt to re register callbacks */
     /* as the template may already be in use leading to confusion */
@@ -616,43 +658,6 @@ KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* templat
 
     ks_hash_iterator_t* it = ks_hash_first(n->method_hash, KS_HASH_FLAG_RWLOCK);
 
-	ks_hash_iterator_t* itfirst = it;
-
-	/* first check that there are no name conflicts */
-    while (it) {
-
-        const void *key;
-        void *value;
-        ks_ssize_t len = strlen(key);
-
-        ks_hash_this(it, &key, &len, &value);
-        blade_rpc_callbackpair_t *t_callback = (blade_rpc_callbackpair_t *)value;
-
-        ks_mutex_lock(t_callback->lock);
-
-        char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH+1];
-        blade_rpc_make_fqcommand(namespace, t_callback->command, fqcommand);
-        blade_rpc_callbackpair_t *ns_callbacks = ks_hash_search(ns->method_hash, fqcommand, KS_UNLOCKED);
-
-		if (ns_callbacks) {   /* if something already registered for this function kick the entire inherit */
-			ks_hash_read_unlock(g_handle->template_hash);
-			ks_hash_read_unlock(g_handle->namespace_hash);
-			ks_hash_read_unlock(ns->method_hash);
-			ks_mutex_unlock(t_callback->lock);
-			ks_log(KS_LOG_ERROR, "Implementing template %s in namespace %s rejected. Command %s is ambiguous\n", 
-											template, namespace, t_callback->command);
-			return KS_STATUS_FAIL;
-		}
-
-		ks_mutex_unlock(t_callback->lock);
-
-        it = ks_hash_next(&it);
-    }
-
-	/* ok - if we have got this far then the inherit is problem free */
-
-	it = itfirst;
-
 	while (it) {
 
         const void *key;
@@ -669,7 +674,10 @@ KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* templat
 		blade_rpc_callbackpair_t *callbacks =
 				(blade_rpc_callbackpair_t*)ks_pool_alloc(g_handle->pool, lkey + sizeof(blade_rpc_callbackpair_t));
 
-		strcpy(callbacks->command, t_callback->command);
+		strcat(callbacks->command, template);
+		strcat(callbacks->command, ".");
+		strcat(callbacks->command, t_callback->command);
+		
 		callbacks->command_length = lkey;
 		callbacks->request_func   = t_callback->request_func;
 		callbacks->response_func  = t_callback->response_func;
@@ -731,6 +739,7 @@ KS_DECLARE(ks_status_t) blade_rpc_write_json(cJSON* json)
 	if (data) {
 		ks_log(KS_LOG_DEBUG, "%s\n", data);
 	    //return blade_rpc_write_data(sessionid, data, strlen(data));
+		return KS_STATUS_SUCCESS;
 	}
 	ks_log(KS_LOG_ERROR, "Unable to parse json\n");
 	return KS_STATUS_FAIL;

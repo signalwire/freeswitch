@@ -76,11 +76,11 @@ KS_DECLARE(ks_status_t) blade_rpc_register_function(char* namespace,
 														char *command,
 														jrpc_func_t func,
 														jrpc_func_t respfunc);
-KS_DECLARE(ks_status_t) blade_rpc_register_prefix_request_function(char* namespace,   
+KS_DECLARE(ks_status_t) blade_rpc_register_custom_request_function(char* namespace,   
 														char *command,
 														jrpc_func_t prefix_func,
 														jrpc_func_t postfix_func);
-KS_DECLARE(ks_status_t) blade_rpc_register_prefix_response_function(char *namespace,   
+KS_DECLARE(ks_status_t) blade_rpc_register_custom_response_function(char *namespace,   
 														char *command,
 														jrpc_func_t prefix_func,
 														jrpc_func_t postfix_func);
