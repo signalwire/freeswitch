@@ -793,7 +793,7 @@ static ks_status_t blade_rpc_process_jsonmessage_all(cJSON *request)
 
 	ks_bool_t isrequest = ks_rpcmessage_isrequest(request);
 
-	enum jrpc_status_t jrcs = JRPC_ERROR;
+	enum jrpc_status_t jrcs = 0;
 	
 	if (isrequest && callbacks->request_func) {
 
@@ -801,25 +801,25 @@ static ks_status_t blade_rpc_process_jsonmessage_all(cJSON *request)
 	
 		if (callbacks->custom && callbacks->custom->prefix_request_func) {
 			jrcs = callbacks->custom->prefix_request_func(request, &responseP);
-			if (jrcs == JRPC_SEND && responseP) {
+			if ( (jrcs & JRPC_SEND) && responseP) {
 				blade_rpc_write_json(responseP);
 				cJSON_Delete(responseP);
 				responseP = NULL;
 			}
 		}
 
-		if (jrcs != JRPC_ERROR) {
+		if ( !(jrcs & JRPC_EXIT) && jrcs != JRPC_ERROR) {
 			jrcs =  callbacks->request_func(request, &responseP);
-			if (jrcs == JRPC_SEND && responseP) {
+			if ((jrcs & JRPC_SEND) && responseP) {
 				blade_rpc_write_json(responseP);
 				cJSON_Delete(responseP);
 				responseP = NULL;
 			}
 		}
 
-		if (jrcs != JRPC_ERROR && callbacks->custom && callbacks->custom->postfix_request_func) {
+		if (  !(jrcs & JRPC_EXIT) && jrcs != JRPC_ERROR && callbacks->custom && callbacks->custom->postfix_request_func) {
 			jrcs =  callbacks->custom->postfix_request_func(request, &responseP);
-			if (jrcs == JRPC_SEND && responseP) {
+			if ( (jrcs & JRPC_SEND) && responseP) {
 				blade_rpc_write_json(responseP);
 				cJSON_Delete(responseP);
 				responseP = NULL;
@@ -838,25 +838,25 @@ static ks_status_t blade_rpc_process_jsonmessage_all(cJSON *request)
 
         if (callbacks->custom && callbacks->custom->prefix_response_func) {
             jrcs = callbacks->custom->prefix_response_func(response, &responseP);
-            if (jrcs == JRPC_SEND && responseP) {
+            if ( (jrcs & JRPC_SEND) && responseP) {
                 blade_rpc_write_json(responseP);
                 cJSON_Delete(responseP);
                 responseP = NULL;
             }
 		}
 
-		if (jrcs != JRPC_ERROR) {
+		if ( !(jrcs & JRPC_EXIT) && jrcs != JRPC_ERROR) {
 			jrcs =  callbacks->response_func(response, &responseP);
-            if (jrcs == JRPC_SEND && responseP) {
+            if ( (jrcs & JRPC_SEND) && responseP) {
                 blade_rpc_write_json(responseP);
                 cJSON_Delete(responseP);
                 responseP = NULL;
             }
 		}
 
-		if (jrcs != JRPC_ERROR && callbacks->custom &&  callbacks->custom->postfix_response_func) {
+		if ( !(jrcs & JRPC_EXIT) && jrcs != JRPC_ERROR && callbacks->custom &&  callbacks->custom->postfix_response_func) {
 			jrcs =  callbacks->custom->postfix_response_func(response, &responseP);
-			if (jrcs == JRPC_SEND && responseP) {
+			if ( (jrcs & JRPC_SEND) && responseP) {
 				blade_rpc_write_json(responseP);
 				cJSON_Delete(responseP);
 				responseP = NULL;
@@ -864,7 +864,6 @@ static ks_status_t blade_rpc_process_jsonmessage_all(cJSON *request)
 		}
 
 		ks_mutex_unlock(callbacks->lock);
-
 
 		if (jrcs == JRPC_ERROR) {
 			return KS_STATUS_FAIL;

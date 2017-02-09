@@ -49,13 +49,15 @@
 
 
 enum jrpc_status_t { 
-	JRPC_PASS = 0, 
-	JRPC_SEND, 
-	JRPC_ERROR
+	JRPC_PASS = (1 << 0), 
+	JRPC_SEND = (1 << 1),
+	JRPC_EXIT = (1 << 2),
+	JRPC_SEND_EXIT = JRPC_SEND + JRPC_EXIT, 
+	JRPC_ERROR =  (1 << 3)
 };
 
 
-typedef enum jrpc_status_t (*jrpc_func_t)  (cJSON *request, cJSON **responseP);
+typedef enum jrpc_status_t (*jrpc_func_t)  (cJSON *request, cJSON **replyP);
 
 
 /*
@@ -64,7 +66,6 @@ typedef enum jrpc_status_t (*jrpc_func_t)  (cJSON *request, cJSON **responseP);
  */
 
 KS_DECLARE(ks_status_t) blade_rpc_init(ks_pool_t *pool);
-KS_DECLARE(ks_status_t) blade_rpc_runprocess();
 
 
 /* 
