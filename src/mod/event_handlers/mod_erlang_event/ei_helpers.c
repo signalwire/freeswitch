@@ -202,21 +202,21 @@ void ei_init_ref(ei_cnode * ec, erlang_ref * ref)
 	memset(ref, 0, sizeof(*ref));	/* zero out the struct */
 	snprintf(ref->node, MAXATOMLEN, "%s", ec->thisnodename);
 
-	switch_mutex_lock(globals.ref_mutex);
-	globals.reference0++;
-	if (globals.reference0 >= MAX_REFERENCE) {
-		globals.reference0 = 0;
-		globals.reference1++;
-		if (globals.reference1 == 0) {
-			globals.reference2++;
+	switch_mutex_lock(mod_erlang_event_globals.ref_mutex);
+	mod_erlang_event_globals.reference0++;
+	if (mod_erlang_event_globals.reference0 >= MAX_REFERENCE) {
+		mod_erlang_event_globals.reference0 = 0;
+		mod_erlang_event_globals.reference1++;
+		if (mod_erlang_event_globals.reference1 == 0) {
+			mod_erlang_event_globals.reference2++;
 		}
 	}
 
-	ref->n[0] = globals.reference0;
-	ref->n[1] = globals.reference1;
-	ref->n[2] = globals.reference2;
+	ref->n[0] = mod_erlang_event_globals.reference0;
+	ref->n[1] = mod_erlang_event_globals.reference1;
+	ref->n[2] = mod_erlang_event_globals.reference2;
 
-	switch_mutex_unlock(globals.ref_mutex);
+	switch_mutex_unlock(mod_erlang_event_globals.ref_mutex);
 
 	ref->creation = 1;			/* why is this 1 */
 	ref->len = 3;				/* why is this 3 */

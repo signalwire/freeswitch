@@ -101,7 +101,7 @@ struct skinny_globals {
 };
 typedef struct skinny_globals skinny_globals_t;
 
-extern skinny_globals_t globals;
+extern skinny_globals_t skinny_globals;
 
 typedef enum {
 	PFLAG_LISTENER_READY = (1 << 0),

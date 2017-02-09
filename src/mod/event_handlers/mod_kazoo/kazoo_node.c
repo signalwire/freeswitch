@@ -142,16 +142,16 @@ static void destroy_node_handler(ei_node_t *ei_node) {
 }
 
 static switch_status_t add_to_ei_nodes(ei_node_t *this_ei_node) {
-	switch_thread_rwlock_wrlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_wrlock(kazoo_globals.ei_nodes_lock);
 
-	if (!globals.ei_nodes) {
-		globals.ei_nodes = this_ei_node;
+	if (!kazoo_globals.ei_nodes) {
+		kazoo_globals.ei_nodes = this_ei_node;
 	} else {
-		this_ei_node->next = globals.ei_nodes;
-		globals.ei_nodes = this_ei_node;
+		this_ei_node->next = kazoo_globals.ei_nodes;
+		kazoo_globals.ei_nodes = this_ei_node;
 	}
 
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -160,10 +160,10 @@ static switch_status_t remove_from_ei_nodes(ei_node_t *this_ei_node) {
 	ei_node_t *ei_node, *prev = NULL;
 	int found = 0;
 
-	switch_thread_rwlock_wrlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_wrlock(kazoo_globals.ei_nodes_lock);
 
 	/* try to find the event bindings list for the requestor */
-	ei_node = globals.ei_nodes;
+	ei_node = kazoo_globals.ei_nodes;
 	while(ei_node != NULL) {
 		if (ei_node == this_ei_node) {
 			found = 1;
@@ -176,13 +176,13 @@ static switch_status_t remove_from_ei_nodes(ei_node_t *this_ei_node) {
 
 	if (found) {
 		if (!prev) {
-			globals.ei_nodes = this_ei_node->next;
+			kazoo_globals.ei_nodes = this_ei_node->next;
 		} else {
 			prev->next = ei_node->next;
 		}
 	}
 
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -301,7 +301,7 @@ static void *SWITCH_THREAD_FUNC bgapi3_exec(switch_thread_t *thread, void *obj) 
 	switch_malloc(send_msg, sizeof(*send_msg));
 	memcpy(&send_msg->pid, &acs->pid, sizeof(erlang_pid));
 
-	if(!switch_test_flag(ei_node, LFLAG_RUNNING) || !switch_test_flag(&globals, LFLAG_RUNNING)) {
+	if(!switch_test_flag(ei_node, LFLAG_RUNNING) || !switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring command while shuting down\n");
 		switch_atomic_dec(&ei_node->pending_bgapi);
 		return NULL;
@@ -351,7 +351,7 @@ static void *SWITCH_THREAD_FUNC bgapi4_exec(switch_thread_t *thread, void *obj) 
 	ei_send_msg_t *send_msg;
 	switch_stream_handle_t stream = { 0 };
 
-	if(!switch_test_flag(ei_node, LFLAG_RUNNING) || !switch_test_flag(&globals, LFLAG_RUNNING)) {
+	if(!switch_test_flag(ei_node, LFLAG_RUNNING) || !switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring command while shuting down\n");
 		switch_atomic_dec(&ei_node->pending_bgapi);
 		return NULL;
@@ -544,7 +544,7 @@ static switch_status_t handle_request_exit(ei_node_t *ei_node, erlang_pid *pid, 
 }
 
 static switch_status_t handle_request_link(ei_node_t *ei_node, erlang_pid *pid, ei_x_buff *buf, ei_x_buff *rbuf) {
-	ei_link(ei_node, ei_self(&globals.ei_cnode), pid);
+	ei_link(ei_node, ei_self(&kazoo_globals.ei_cnode), pid);
 
 	return erlang_response_ok(rbuf);
 }
@@ -674,21 +674,21 @@ static switch_status_t handle_request_bind(ei_node_t *ei_node, erlang_pid *pid, 
 
 	switch(section) {
 	case SWITCH_XML_SECTION_CONFIG:
-		add_fetch_handler(ei_node, pid, globals.config_fetch_binding);
-		if(!globals.config_filters_fetched)
+		add_fetch_handler(ei_node, pid, kazoo_globals.config_fetch_binding);
+		if(!kazoo_globals.config_filters_fetched)
 			fetch_config_filters();
 		break;
 	case SWITCH_XML_SECTION_DIRECTORY:
-		add_fetch_handler(ei_node, pid, globals.directory_fetch_binding);
+		add_fetch_handler(ei_node, pid, kazoo_globals.directory_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_DIALPLAN:
-		add_fetch_handler(ei_node, pid, globals.dialplan_fetch_binding);
+		add_fetch_handler(ei_node, pid, kazoo_globals.dialplan_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_CHATPLAN:
-		add_fetch_handler(ei_node, pid, globals.chatplan_fetch_binding);
+		add_fetch_handler(ei_node, pid, kazoo_globals.chatplan_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_CHANNELS:
-		add_fetch_handler(ei_node, pid, globals.channels_fetch_binding);
+		add_fetch_handler(ei_node, pid, kazoo_globals.channels_fetch_binding);
 		break;
 	default:
 		return erlang_response_badarg(rbuf);
@@ -701,7 +701,7 @@ static switch_status_t handle_request_getpid(ei_node_t *ei_node, erlang_pid *pid
 	if (rbuf) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "ok");
-		ei_x_encode_pid(rbuf, ei_self(&globals.ei_cnode));
+		ei_x_encode_pid(rbuf, ei_self(&kazoo_globals.ei_cnode));
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -870,7 +870,7 @@ static switch_status_t handle_request_event(ei_node_t *ei_node, erlang_pid *pid,
 	if (!(event_stream = find_event_stream(ei_node->event_streams, pid))) {
 		event_stream = new_event_stream(&ei_node->event_streams, pid);
 		/* ensure we are notified if the requesting processes dies so we can clean up */
-		ei_link(ei_node, ei_self(&globals.ei_cnode), pid);
+		ei_link(ei_node, ei_self(&kazoo_globals.ei_cnode), pid);
 	}
 
 	for (int i = 1; i <= length; i++) {
@@ -947,19 +947,19 @@ static switch_status_t handle_request_fetch_reply(ei_node_t *ei_node, erlang_pid
 
 	switch(section) {
 	case SWITCH_XML_SECTION_CONFIG:
-		result = fetch_reply(uuid_str, xml_str, globals.config_fetch_binding);
+		result = fetch_reply(uuid_str, xml_str, kazoo_globals.config_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_DIRECTORY:
-		result = fetch_reply(uuid_str, xml_str, globals.directory_fetch_binding);
+		result = fetch_reply(uuid_str, xml_str, kazoo_globals.directory_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_DIALPLAN:
-		result = fetch_reply(uuid_str, xml_str, globals.dialplan_fetch_binding);
+		result = fetch_reply(uuid_str, xml_str, kazoo_globals.dialplan_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_CHATPLAN:
-		result = fetch_reply(uuid_str, xml_str, globals.chatplan_fetch_binding);
+		result = fetch_reply(uuid_str, xml_str, kazoo_globals.chatplan_fetch_binding);
 		break;
 	case SWITCH_XML_SECTION_CHANNELS:
-		result = fetch_reply(uuid_str, xml_str, globals.channels_fetch_binding);
+		result = fetch_reply(uuid_str, xml_str, kazoo_globals.channels_fetch_binding);
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Recieved fetch reply for an unknown configuration section: %s\n", section_str);
@@ -1252,14 +1252,14 @@ static switch_status_t handle_erl_msg(ei_node_t *ei_node, erlang_msg *msg, ei_x_
 static void *SWITCH_THREAD_FUNC receive_handler(switch_thread_t *thread, void *obj) {
 	ei_node_t *ei_node = (ei_node_t *) obj;
 
-	switch_atomic_inc(&globals.threads);
+	switch_atomic_inc(&kazoo_globals.threads);
 	switch_atomic_inc(&ei_node->receive_handlers);
 
 	switch_assert(ei_node != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting erlang receive handler %p: %s (%s:%d)\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port);
 
-	while (switch_test_flag(ei_node, LFLAG_RUNNING) && switch_test_flag(&globals, LFLAG_RUNNING)) {
+	while (switch_test_flag(ei_node, LFLAG_RUNNING) && switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		void *pop;
 
 		if (switch_queue_pop_timeout(ei_node->received_msgs, &pop, 500000) == SWITCH_STATUS_SUCCESS) {
@@ -1273,7 +1273,7 @@ static void *SWITCH_THREAD_FUNC receive_handler(switch_thread_t *thread, void *o
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutdown erlang receive handler %p: %s (%s:%d)\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port);
 
 	switch_atomic_dec(&ei_node->receive_handlers);
-	switch_atomic_dec(&globals.threads);
+	switch_atomic_dec(&kazoo_globals.threads);
 
 	return NULL;
 }
@@ -1283,7 +1283,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 	ei_received_msg_t *received_msg = NULL;
 	int fault_count = 0;
 
-	switch_atomic_inc(&globals.threads);
+	switch_atomic_inc(&kazoo_globals.threads);
 
 	switch_assert(ei_node != NULL);
 
@@ -1291,7 +1291,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 
 	add_to_ei_nodes(ei_node);
 
-	while (switch_test_flag(ei_node, LFLAG_RUNNING) && switch_test_flag(&globals, LFLAG_RUNNING)) {
+	while (switch_test_flag(ei_node, LFLAG_RUNNING) && switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		int status;
 		int send_msg_count = 0;
 		void *pop;
@@ -1299,9 +1299,9 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 		if (!received_msg) {
 			switch_malloc(received_msg, sizeof(*received_msg));
 			/* create a new buf for the erlang message and a rbuf for the reply */
-			if(globals.receive_msg_preallocate > 0) {
-				received_msg->buf.buff = malloc(globals.receive_msg_preallocate);
-				received_msg->buf.buffsz = globals.receive_msg_preallocate;
+			if(kazoo_globals.receive_msg_preallocate > 0) {
+				received_msg->buf.buff = malloc(kazoo_globals.receive_msg_preallocate);
+				received_msg->buf.buffsz = kazoo_globals.receive_msg_preallocate;
 				received_msg->buf.index = 0;
 				if(received_msg->buf.buff == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not pre-allocate memory for mod_kazoo message\n");
@@ -1313,7 +1313,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 		}
 
 		while (switch_queue_trypop(ei_node->send_msgs, &pop) == SWITCH_STATUS_SUCCESS
-			   && ++send_msg_count <= globals.send_msg_batch) {
+			   && ++send_msg_count <= kazoo_globals.send_msg_batch) {
 			ei_send_msg_t *send_msg = (ei_send_msg_t *) pop;
 			ei_helper_send(ei_node, &send_msg->pid, &send_msg->buf);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent erlang message to %s <%d.%d.%d>\n"
@@ -1326,7 +1326,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 		}
 
 		/* wait for a erlang message, or timeout to check if the module is still running */
-		status = ei_xreceive_msg_tmo(ei_node->nodefd, &received_msg->msg, &received_msg->buf, globals.receive_timeout);
+		status = ei_xreceive_msg_tmo(ei_node->nodefd, &received_msg->msg, &received_msg->buf, kazoo_globals.receive_timeout);
 
 		switch (status) {
 		case ERL_TICK:
@@ -1340,7 +1340,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 				switch_safe_free(received_msg);
 			}
 
-			if (globals.receive_msg_preallocate > 0 && received_msg->buf.buffsz > globals.receive_msg_preallocate) {
+			if (kazoo_globals.receive_msg_preallocate > 0 && received_msg->buf.buffsz > kazoo_globals.receive_msg_preallocate) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased received message buffer size to %d\n", received_msg->buf.buffsz);
 			}
 
@@ -1360,7 +1360,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 			case EIO:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Erlang communication fault with node %p %s (%s:%d): socket closed or I/O error [fault count %d]\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port, ++fault_count);
 
-				if (fault_count >= globals.io_fault_tolerance) {
+				if (fault_count >= kazoo_globals.io_fault_tolerance) {
 					switch_clear_flag(ei_node, LFLAG_RUNNING);
 				}
 
@@ -1397,7 +1397,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 
 	destroy_node_handler(ei_node);
 
-	switch_atomic_dec(&globals.threads);
+	switch_atomic_dec(&kazoo_globals.threads);
 	return NULL;
 }
 
@@ -1454,7 +1454,7 @@ switch_status_t new_kazoo_node(int nodefd, ErlConnect *conn) {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "New erlang connection from node %s (%s:%d)\n", ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "New erlang connection to node %s (%s:%d)\n", ei_node->peer_nodename, ei_node->local_ip, ei_node->local_port);
 
-	for(i = 0; i < globals.num_worker_threads; i++) {
+	for(i = 0; i < kazoo_globals.num_worker_threads; i++) {
 		switch_threadattr_create(&thd_attr, ei_node->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);

@@ -136,7 +136,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 
 	now = switch_micro_time_now();
 
-	if (!switch_test_flag(&globals, LFLAG_RUNNING)) {
+	if (!switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		return xml;
 	}
 
@@ -144,7 +144,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 	switch_thread_rwlock_rdlock(agent->lock);
 
 	/* serialize access to current, used to round-robin requests */
-	/* TODO: check globals for round-robin boolean or loop all clients */
+	/* TODO: check kazoo_globals for round-robin boolean or loop all clients */
 	switch_mutex_lock(agent->current_client_mutex);
 	if (!agent->current_client) {
 		client = agent->clients;
@@ -572,31 +572,31 @@ static switch_status_t handle_api_command_stream(ei_node_t *ei_node, switch_stre
 }
 
 switch_status_t bind_fetch_agents() {
-	bind_fetch_agent(SWITCH_XML_SECTION_CONFIG, &globals.config_fetch_binding);
-	bind_fetch_agent(SWITCH_XML_SECTION_DIRECTORY, &globals.directory_fetch_binding);
-	bind_fetch_agent(SWITCH_XML_SECTION_DIALPLAN, &globals.dialplan_fetch_binding);
-	bind_fetch_agent(SWITCH_XML_SECTION_CHATPLAN, &globals.chatplan_fetch_binding);
-	bind_fetch_agent(SWITCH_XML_SECTION_CHANNELS, &globals.channels_fetch_binding);
+	bind_fetch_agent(SWITCH_XML_SECTION_CONFIG, &kazoo_globals.config_fetch_binding);
+	bind_fetch_agent(SWITCH_XML_SECTION_DIRECTORY, &kazoo_globals.directory_fetch_binding);
+	bind_fetch_agent(SWITCH_XML_SECTION_DIALPLAN, &kazoo_globals.dialplan_fetch_binding);
+	bind_fetch_agent(SWITCH_XML_SECTION_CHATPLAN, &kazoo_globals.chatplan_fetch_binding);
+	bind_fetch_agent(SWITCH_XML_SECTION_CHANNELS, &kazoo_globals.channels_fetch_binding);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t unbind_fetch_agents() {
-	unbind_fetch_agent(&globals.config_fetch_binding);
-	unbind_fetch_agent(&globals.directory_fetch_binding);
-	unbind_fetch_agent(&globals.dialplan_fetch_binding);
-	unbind_fetch_agent(&globals.chatplan_fetch_binding);
-	unbind_fetch_agent(&globals.channels_fetch_binding);
+	unbind_fetch_agent(&kazoo_globals.config_fetch_binding);
+	unbind_fetch_agent(&kazoo_globals.directory_fetch_binding);
+	unbind_fetch_agent(&kazoo_globals.dialplan_fetch_binding);
+	unbind_fetch_agent(&kazoo_globals.chatplan_fetch_binding);
+	unbind_fetch_agent(&kazoo_globals.channels_fetch_binding);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t remove_xml_clients(ei_node_t *ei_node) {
-	remove_xml_client(ei_node, globals.config_fetch_binding);
-	remove_xml_client(ei_node, globals.directory_fetch_binding);
-	remove_xml_client(ei_node, globals.dialplan_fetch_binding);
-	remove_xml_client(ei_node, globals.chatplan_fetch_binding);
-	remove_xml_client(ei_node, globals.channels_fetch_binding);
+	remove_xml_client(ei_node, kazoo_globals.config_fetch_binding);
+	remove_xml_client(ei_node, kazoo_globals.directory_fetch_binding);
+	remove_xml_client(ei_node, kazoo_globals.dialplan_fetch_binding);
+	remove_xml_client(ei_node, kazoo_globals.chatplan_fetch_binding);
+	remove_xml_client(ei_node, kazoo_globals.channels_fetch_binding);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -644,17 +644,17 @@ switch_status_t add_fetch_handler(ei_node_t *ei_node, erlang_pid *from, switch_x
 
 	switch_thread_rwlock_unlock(agent->lock);
 
-	ei_link(ei_node, ei_self(&globals.ei_cnode), from);
+	ei_link(ei_node, ei_self(&kazoo_globals.ei_cnode), from);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t remove_fetch_handlers(ei_node_t *ei_node, erlang_pid *from) {
-	remove_fetch_handler(ei_node, from, globals.config_fetch_binding);
-	remove_fetch_handler(ei_node, from, globals.directory_fetch_binding);
-	remove_fetch_handler(ei_node, from, globals.dialplan_fetch_binding);
-	remove_fetch_handler(ei_node, from, globals.chatplan_fetch_binding);
-	remove_fetch_handler(ei_node, from, globals.channels_fetch_binding);
+	remove_fetch_handler(ei_node, from, kazoo_globals.config_fetch_binding);
+	remove_fetch_handler(ei_node, from, kazoo_globals.directory_fetch_binding);
+	remove_fetch_handler(ei_node, from, kazoo_globals.dialplan_fetch_binding);
+	remove_fetch_handler(ei_node, from, kazoo_globals.chatplan_fetch_binding);
+	remove_fetch_handler(ei_node, from, kazoo_globals.channels_fetch_binding);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -686,11 +686,11 @@ switch_status_t fetch_reply(char *uuid_str, char *xml_str, switch_xml_binding_t 
 }
 
 switch_status_t handle_api_command_streams(ei_node_t *ei_node, switch_stream_handle_t *stream) {
-	handle_api_command_stream(ei_node, stream, globals.config_fetch_binding);
-	handle_api_command_stream(ei_node, stream, globals.directory_fetch_binding);
-	handle_api_command_stream(ei_node, stream, globals.dialplan_fetch_binding);
-	handle_api_command_stream(ei_node, stream, globals.chatplan_fetch_binding);
-	handle_api_command_stream(ei_node, stream, globals.channels_fetch_binding);
+	handle_api_command_stream(ei_node, stream, kazoo_globals.config_fetch_binding);
+	handle_api_command_stream(ei_node, stream, kazoo_globals.directory_fetch_binding);
+	handle_api_command_stream(ei_node, stream, kazoo_globals.dialplan_fetch_binding);
+	handle_api_command_stream(ei_node, stream, kazoo_globals.chatplan_fetch_binding);
+	handle_api_command_stream(ei_node, stream, kazoo_globals.channels_fetch_binding);
 
 	return SWITCH_STATUS_SUCCESS;
 }

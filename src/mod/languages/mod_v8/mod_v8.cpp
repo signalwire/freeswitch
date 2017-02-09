@@ -118,7 +118,7 @@ typedef struct {
 	set<FSEventHandler *> *event_handlers;
 } mod_v8_global_t;
 
-mod_v8_global_t globals = { 0 };
+static mod_v8_global_t globals = { 0 };
 
 /* Loadable module struct, used for external extension modules */
 typedef struct {

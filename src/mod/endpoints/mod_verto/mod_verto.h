@@ -308,8 +308,6 @@ struct globals_s {
 };
 
 
-extern struct globals_s globals;
-
 typedef switch_bool_t (*jrpc_func_t)(const char *method, cJSON *params, jsock_t *jsock, cJSON **response);
 
 

@@ -187,7 +187,7 @@ typedef struct {
     size_t sample_count;
 } avmd_session_t;
 
-struct avmd_globals
+static struct avmd_globals
 {
     switch_mutex_t          *mutex;
     struct avmd_settings    settings;

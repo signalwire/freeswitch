@@ -35,7 +35,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_flowroute_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_flowroute_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sms_flowroute, mod_sms_flowroute_load, mod_sms_flowroute_shutdown, NULL);
 
-mod_sms_flowroute_globals_t mod_sms_flowroute_globals;
+static mod_sms_flowroute_globals_t mod_sms_flowroute_globals;
 
 static void on_accept(h2o_socket_t *listener, const char *error)
 {

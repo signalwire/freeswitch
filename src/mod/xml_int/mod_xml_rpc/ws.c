@@ -5,7 +5,7 @@
 #endif
 
 #define SHA1_HASH_SIZE 20
-struct globals_s globals;
+static struct globals_s globals;
 
 #ifndef WSS_STANDALONE
 

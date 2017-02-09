@@ -67,7 +67,7 @@ SWITCH_STANDARD_API(managedlist_api_function); /* List modules */
 #define MOD_MANAGED_IMAGE_NAME "FreeSWITCH"
 #define MOD_MANAGED_CLASS_NAME "Loader"
 
-mod_managed_globals globals = { 0 };
+mod_managed_globals managed_globals = { 0 };
 
 // Global delegates to call managed functions
 typedef int (*runFunction)(const char *data, void *sessionPtr);
@@ -201,14 +201,14 @@ switch_status_t loadRuntime()
 #endif
 
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
-	globals.domain = mono_jit_init(filename);
+	managed_globals.domain = mono_jit_init(filename);
 
 	/* Already got a Mono domain? */
-	if ((globals.domain = mono_get_root_domain())) {
-		mono_thread_attach(globals.domain);
-		globals.embedded = SWITCH_TRUE;
+	if ((managed_globals.domain = mono_get_root_domain())) {
+		mono_thread_attach(managed_globals.domain);
+		managed_globals.embedded = SWITCH_TRUE;
 	} else {
-		if (!(globals.domain = mono_jit_init(filename))) {
+		if (!(managed_globals.domain = mono_jit_init(filename))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_jit_init failed.\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -221,11 +221,11 @@ switch_status_t loadRuntime()
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
 
-	if (!(globals.mod_mono_asm = mono_assembly_loaded(name))) {
+	if (!(managed_globals.mod_mono_asm = mono_assembly_loaded(name))) {
 		/* Open the assembly */ 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open.\n");
-		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);
-		if (!globals.mod_mono_asm) {
+		managed_globals.mod_mono_asm = mono_domain_assembly_open(managed_globals.domain, filename);
+		if (!managed_globals.mod_mono_asm) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_domain_assembly_open failed.\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -254,14 +254,14 @@ switch_status_t findLoader()
 {
 	/* Find loader class and methods */ 
 	MonoClass * loaderClass;
-	MonoImage * img = mono_assembly_get_image(globals.mod_mono_asm);
+	MonoImage * img = mono_assembly_get_image(managed_globals.mod_mono_asm);
 
 	if (!(loaderClass = mono_class_from_name(img, MOD_MANAGED_IMAGE_NAME, MOD_MANAGED_CLASS_NAME))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find " MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME " class.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(globals.loadMethod = getMethod(MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME ":Load()", loaderClass))) {
+	if (!(managed_globals.loadMethod = getMethod(MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME ":Load()", loaderClass))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -317,7 +317,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), " MOD_MANAGED_VERSION "\n");
 
-	globals.pool = pool;
+	managed_globals.pool = pool;
 	
 	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {			
 		return SWITCH_STATUS_FALSE;
@@ -340,11 +340,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	}
 #else
 	/* Not sure if this is necesary on the loading thread */ 
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 
 	/* Run loader */ 
 	MonoObject * exception = NULL;
-	MonoObject * objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
+	MonoObject * objResult = mono_runtime_invoke(managed_globals.loadMethod, NULL, NULL, &exception);
 	if (exception) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load threw an exception.\n");
 		mono_print_unhandled_exception(exception);
@@ -381,7 +381,7 @@ SWITCH_STANDARD_API(managedrun_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 #endif
 	if (executeBackgroundDelegate(cmd)) {
 		stream->write_function(stream, "+OK\n");
@@ -401,7 +401,7 @@ SWITCH_STANDARD_API(managed_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 #endif
 	if (!(executeDelegate(cmd, stream, stream->param_event))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
@@ -419,7 +419,7 @@ SWITCH_STANDARD_APP(managed_app_function)
 		return;
 	}
 #ifndef _MANAGED
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 #endif
 	if (!(runDelegate(data, session))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module or exception).\n", data);
@@ -436,7 +436,7 @@ SWITCH_STANDARD_API(managedreload_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 #endif
 	if (!(reloadDelegate(cmd))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
@@ -450,7 +450,7 @@ SWITCH_STANDARD_API(managedreload_api_function)
 SWITCH_STANDARD_API(managedlist_api_function)
 {
 #ifndef _MANAGED
-	mono_thread_attach(globals.domain);
+	mono_thread_attach(managed_globals.domain);
 #endif
 	listDelegate(cmd, stream, stream->param_event);
 #ifndef _MANAGED

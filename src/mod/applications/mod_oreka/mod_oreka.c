@@ -60,7 +60,7 @@ typedef struct oreka_session_s {
     int mux_streams;
 } oreka_session_t;
 
-struct {
+static struct {
 	char local_ipv4_str[256];
 	char sip_server_addr_str[256];
 	char sip_server_ipv4_str[256];

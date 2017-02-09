@@ -35,17 +35,17 @@
 #define KAZOO_DESC "kazoo information"
 #define KAZOO_SYNTAX "<command> [<args>]"
 
-globals_t globals;
+globals_t kazoo_globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime);
 SWITCH_MODULE_DEFINITION(mod_kazoo, mod_kazoo_load, mod_kazoo_shutdown, mod_kazoo_runtime);
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, globals.ip);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ei_cookie, globals.ei_cookie);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ei_nodename, globals.ei_nodename);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_kazoo_var_prefix, globals.kazoo_var_prefix);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, kazoo_globals.ip);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ei_cookie, kazoo_globals.ei_cookie);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ei_nodename, kazoo_globals.ei_nodename);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_kazoo_var_prefix, kazoo_globals.kazoo_var_prefix);
 
 static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 	switch_sockaddr_t *sa;
@@ -54,21 +54,21 @@ static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 	const char *ip_addr;
 	ei_node_t *ei_node;
 
-	switch_socket_addr_get(&sa, SWITCH_FALSE, globals.acceptor);
+	switch_socket_addr_get(&sa, SWITCH_FALSE, kazoo_globals.acceptor);
 
 	port = switch_sockaddr_get_port(sa);
 	ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
 
 	stream->write_function(stream, "Running %s\n", VERSION);
-	stream->write_function(stream, "Listening for new Erlang connections on %s:%u with cookie %s\n", ip_addr, port, globals.ei_cookie);
-	stream->write_function(stream, "Registered as Erlang node %s, visible as %s\n", globals.ei_cnode.thisnodename, globals.ei_cnode.thisalivename);
+	stream->write_function(stream, "Listening for new Erlang connections on %s:%u with cookie %s\n", ip_addr, port, kazoo_globals.ei_cookie);
+	stream->write_function(stream, "Registered as Erlang node %s, visible as %s\n", kazoo_globals.ei_cnode.thisnodename, kazoo_globals.ei_cnode.thisalivename);
 
-	if (globals.ei_compat_rel) {
-		stream->write_function(stream, "Using Erlang compatibility mode: %d\n", globals.ei_compat_rel);
+	if (kazoo_globals.ei_compat_rel) {
+		stream->write_function(stream, "Using Erlang compatibility mode: %d\n", kazoo_globals.ei_compat_rel);
 	}
 
-	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
-	ei_node = globals.ei_nodes;
+	switch_thread_rwlock_rdlock(kazoo_globals.ei_nodes_lock);
+	ei_node = kazoo_globals.ei_nodes;
 	if (!ei_node) {
 		stream->write_function(stream, "No erlang nodes connected\n");
 	} else {
@@ -87,7 +87,7 @@ static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 			ei_node = ei_node->next;
 		}
 	}
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -96,7 +96,7 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 	switch_hash_index_t *hi = NULL;
 	int column = 0;
 
-	for (hi = (switch_hash_index_t *)switch_core_hash_first_iter(globals.event_filter, hi); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = (switch_hash_index_t *)switch_core_hash_first_iter(kazoo_globals.event_filter, hi); hi; hi = switch_core_hash_next(&hi)) {
 		const void *key;
 		void *val;
 		switch_core_hash_this(hi, &key, NULL, &val);
@@ -112,7 +112,7 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 		column = 0;
 	}
 
-	stream->write_function(stream, "%-50s", globals.kazoo_var_prefix);
+	stream->write_function(stream, "%-50s", kazoo_globals.kazoo_var_prefix);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -120,13 +120,13 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 static switch_status_t api_erlang_nodes_list(switch_stream_handle_t *stream) {
 	ei_node_t *ei_node;
 
-	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
-	ei_node = globals.ei_nodes;
+	switch_thread_rwlock_rdlock(kazoo_globals.ei_nodes_lock);
+	ei_node = kazoo_globals.ei_nodes;
 	while(ei_node != NULL) {
 		stream->write_function(stream, "%s (%s)\n", ei_node->peer_nodename, ei_node->remote_ip);
 		ei_node = ei_node->next;
 	}
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -135,13 +135,13 @@ static switch_status_t api_erlang_nodes_count(switch_stream_handle_t *stream) {
 	ei_node_t *ei_node;
 	int count = 0;
 
-	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
-	ei_node = globals.ei_nodes;
+	switch_thread_rwlock_rdlock(kazoo_globals.ei_nodes_lock);
+	ei_node = kazoo_globals.ei_nodes;
 	while(ei_node != NULL) {
 		count++;
 		ei_node = ei_node->next;
 	}
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	stream->write_function(stream, "%d\n", count);
 
@@ -153,13 +153,13 @@ static switch_status_t api_complete_erlang_node(const char *line, const char *cu
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	ei_node_t *ei_node;
 
-	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
-	ei_node = globals.ei_nodes;
+	switch_thread_rwlock_rdlock(kazoo_globals.ei_nodes_lock);
+	ei_node = kazoo_globals.ei_nodes;
 	while(ei_node != NULL) {
 		switch_console_push_match(&my_matches, ei_node->peer_nodename);
 		ei_node = ei_node->next;
 	}
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	if (my_matches) {
 		*matches = my_matches;
@@ -185,7 +185,7 @@ static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_str
 		ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
 
 		if (zstr(ip_addr)) {
-			ip_addr = globals.ip;
+			ip_addr = kazoo_globals.ip;
 		}
 
 		stream->write_function(stream, "%s:%d -> disconnected\n"
@@ -272,20 +272,20 @@ static switch_status_t handle_node_api_command(ei_node_t *ei_node, switch_stream
 static switch_status_t api_erlang_node_command(switch_stream_handle_t *stream, const char *nodename, uint32_t command) {
 	ei_node_t *ei_node;
 
-	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
-	ei_node = globals.ei_nodes;
+	switch_thread_rwlock_rdlock(kazoo_globals.ei_nodes_lock);
+	ei_node = kazoo_globals.ei_nodes;
 	while(ei_node != NULL) {
 		int length = strlen(ei_node->peer_nodename);
 
 		if (!strncmp(ei_node->peer_nodename, nodename, length)) {
 			handle_node_api_command(ei_node, stream, command);
-			switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+			switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 			return SWITCH_STATUS_SUCCESS;
 		}
 
 		ei_node = ei_node->next;
 	}
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
 
 	return SWITCH_STATUS_NOTFOUND;
 }
@@ -340,16 +340,16 @@ static int read_cookie_from_file(char *filename) {
 static switch_status_t config(void) {
 	char *cf = "kazoo.conf";
 	switch_xml_t cfg, xml, child, param;
-	globals.send_all_headers = 0;
-	globals.send_all_private_headers = 1;
-	globals.connection_timeout = 500;
-	globals.receive_timeout = 200;
-	globals.receive_msg_preallocate = 2000;
-	globals.event_stream_preallocate = 4000;
-	globals.send_msg_batch = 10;
-	globals.event_stream_framing = 2;
-	globals.port = 0;
-	globals.io_fault_tolerance = 10;
+	kazoo_globals.send_all_headers = 0;
+	kazoo_globals.send_all_private_headers = 1;
+	kazoo_globals.connection_timeout = 500;
+	kazoo_globals.receive_timeout = 200;
+	kazoo_globals.receive_msg_preallocate = 2000;
+	kazoo_globals.event_stream_preallocate = 4000;
+	kazoo_globals.send_msg_batch = 10;
+	kazoo_globals.event_stream_framing = 2;
+	kazoo_globals.port = 0;
+	kazoo_globals.io_fault_tolerance = 10;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
@@ -365,7 +365,7 @@ static switch_status_t config(void) {
 					set_pref_ip(val);
 				} else if (!strcmp(var, "listen-port")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set bind port: %s\n", val);
-					globals.port = atoi(val);
+					kazoo_globals.port = atoi(val);
 				} else if (!strcmp(var, "cookie")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set cookie: %s\n", val);
 					set_pref_ei_cookie(val);
@@ -377,43 +377,43 @@ static switch_status_t config(void) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set node name: %s\n", val);
 					set_pref_ei_nodename(val);
 				} else if (!strcmp(var, "shortname")) {
-					globals.ei_shortname = switch_true(val);
+					kazoo_globals.ei_shortname = switch_true(val);
 				} else if (!strcmp(var, "kazoo-var-prefix")) {
 					set_pref_kazoo_var_prefix(val);
 				} else if (!strcmp(var, "compat-rel")) {
 					if (atoi(val) >= 7)
-						globals.ei_compat_rel = atoi(val);
+						kazoo_globals.ei_compat_rel = atoi(val);
 					else
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid compatibility release '%s' specified\n", val);
 				} else if (!strcmp(var, "nat-map")) {
-					globals.nat_map = switch_true(val);
+					kazoo_globals.nat_map = switch_true(val);
 				} else if (!strcmp(var, "send-all-headers")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set send-all-headers: %s\n", val);
-					globals.send_all_headers = switch_true(val);
+					kazoo_globals.send_all_headers = switch_true(val);
 				} else if (!strcmp(var, "send-all-private-headers")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set send-all-private-headers: %s\n", val);
-					globals.send_all_private_headers = switch_true(val);
+					kazoo_globals.send_all_private_headers = switch_true(val);
 				} else if (!strcmp(var, "connection-timeout")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set connection-timeout: %s\n", val);
-					globals.connection_timeout = atoi(val);
+					kazoo_globals.connection_timeout = atoi(val);
 				} else if (!strcmp(var, "receive-timeout")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set receive-timeout: %s\n", val);
-					globals.receive_timeout = atoi(val);
+					kazoo_globals.receive_timeout = atoi(val);
 				} else if (!strcmp(var, "receive-msg-preallocate")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set receive-msg-preallocate: %s\n", val);
-					globals.receive_msg_preallocate = atoi(val);
+					kazoo_globals.receive_msg_preallocate = atoi(val);
 				} else if (!strcmp(var, "event-stream-preallocate")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-preallocate: %s\n", val);
-					globals.event_stream_preallocate = atoi(val);
+					kazoo_globals.event_stream_preallocate = atoi(val);
 				} else if (!strcmp(var, "send-msg-batch-size")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set send-msg-batch-size: %s\n", val);
-					globals.send_msg_batch = atoi(val);
+					kazoo_globals.send_msg_batch = atoi(val);
 				} else if (!strcmp(var, "event-stream-framing")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-framing: %s\n", val);
-					globals.event_stream_framing = atoi(val);
+					kazoo_globals.event_stream_framing = atoi(val);
 				} else if (!strcmp(var, "io-fault-tolerance")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);
-					globals.io_fault_tolerance = atoi(val);
+					kazoo_globals.io_fault_tolerance = atoi(val);
 				}
 			}
 		}
@@ -427,68 +427,68 @@ static switch_status_t config(void) {
 				switch_core_hash_insert(filter, var, "1");
 			}
 
-			globals.event_filter = filter;
+			kazoo_globals.event_filter = filter;
 		}
 
 		switch_xml_free(xml);
 	}
 
-	if (globals.receive_msg_preallocate < 0) {
+	if (kazoo_globals.receive_msg_preallocate < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid receive message preallocate value, disabled\n");
-		globals.receive_msg_preallocate = 0;
+		kazoo_globals.receive_msg_preallocate = 0;
 	}
 
-	if (globals.event_stream_preallocate < 0) {
+	if (kazoo_globals.event_stream_preallocate < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid event stream preallocate value, disabled\n");
-		globals.event_stream_preallocate = 0;
+		kazoo_globals.event_stream_preallocate = 0;
 	}
 
-	if (globals.send_msg_batch < 1) {
+	if (kazoo_globals.send_msg_batch < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid send message batch size, reverting to default\n");
-		globals.send_msg_batch = 10;
+		kazoo_globals.send_msg_batch = 10;
 	}
 
-	if (globals.io_fault_tolerance < 1) {
+	if (kazoo_globals.io_fault_tolerance < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid I/O fault tolerance, reverting to default\n");
-		globals.io_fault_tolerance = 10;
+		kazoo_globals.io_fault_tolerance = 10;
 	}
 
-	if (!globals.event_filter) {
+	if (!kazoo_globals.event_filter) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Event filter not found in configuration, using default\n");
-		globals.event_filter = create_default_filter();
+		kazoo_globals.event_filter = create_default_filter();
 	}
 
-	if (globals.event_stream_framing < 1 || globals.event_stream_framing > 4) {
+	if (kazoo_globals.event_stream_framing < 1 || kazoo_globals.event_stream_framing > 4) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid event stream framing value, using default\n");
-		globals.event_stream_framing = 2;
+		kazoo_globals.event_stream_framing = 2;
 	}
 
-	if (zstr(globals.kazoo_var_prefix)) {
+	if (zstr(kazoo_globals.kazoo_var_prefix)) {
 		set_pref_kazoo_var_prefix("variable_ecallmgr*");
-		globals.var_prefix_length = 17; //ignore the *
+		kazoo_globals.var_prefix_length = 17; //ignore the *
 	} else {
 		/* we could use the global pool but then we would have to conditionally
 		 * free the pointer if it was not drawn from the XML */
 		char *buf;
-		int size = switch_snprintf(NULL, 0, "variable_%s*", globals.kazoo_var_prefix) + 1;
+		int size = switch_snprintf(NULL, 0, "variable_%s*", kazoo_globals.kazoo_var_prefix) + 1;
 
 		switch_malloc(buf, size);
-		switch_snprintf(buf, size, "variable_%s*", globals.kazoo_var_prefix);
-		switch_safe_free(globals.kazoo_var_prefix);
-		globals.kazoo_var_prefix = buf;
-		globals.var_prefix_length = size - 2; //ignore the *
+		switch_snprintf(buf, size, "variable_%s*", kazoo_globals.kazoo_var_prefix);
+		switch_safe_free(kazoo_globals.kazoo_var_prefix);
+		kazoo_globals.kazoo_var_prefix = buf;
+		kazoo_globals.var_prefix_length = size - 2; //ignore the *
 	}
 
-	if (!globals.num_worker_threads) {
+	if (!kazoo_globals.num_worker_threads) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Number of worker threads not found in configuration, using default\n");
-		globals.num_worker_threads = 10;
+		kazoo_globals.num_worker_threads = 10;
 	}
 
-	if (zstr(globals.ip)) {
+	if (zstr(kazoo_globals.ip)) {
 		set_pref_ip("0.0.0.0");
 	}
 
-	if (zstr(globals.ei_cookie)) {
+	if (zstr(kazoo_globals.ei_cookie)) {
 		int res;
 		char *home_dir = getenv("HOME");
 		char path_buf[1024];
@@ -506,12 +506,12 @@ static switch_status_t config(void) {
 		}
 	}
 
-	if (!globals.ei_nodename) {
+	if (!kazoo_globals.ei_nodename) {
 		set_pref_ei_nodename("freeswitch");
 	}
 
-	if (!globals.nat_map) {
-		globals.nat_map = 0;
+	if (!kazoo_globals.nat_map) {
+		kazoo_globals.nat_map = 0;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -524,16 +524,16 @@ static switch_status_t create_acceptor() {
     const char *ip_addr;
 
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
-	if (globals.ei_compat_rel) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", globals.ei_compat_rel);
-		ei_set_compat_rel(globals.ei_compat_rel);
+	if (kazoo_globals.ei_compat_rel) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", kazoo_globals.ei_compat_rel);
+		ei_set_compat_rel(kazoo_globals.ei_compat_rel);
 	}
 
-	if (!(globals.acceptor = create_socket_with_port(globals.pool, globals.port))) {
+	if (!(kazoo_globals.acceptor = create_socket_with_port(kazoo_globals.pool, kazoo_globals.port))) {
 		return SWITCH_STATUS_SOCKERR;
 	}
 
-	switch_socket_addr_get(&sa, SWITCH_FALSE, globals.acceptor);
+	switch_socket_addr_get(&sa, SWITCH_FALSE, kazoo_globals.acceptor);
 
 	port = switch_sockaddr_get_port(sa);
 	ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
@@ -541,18 +541,18 @@ static switch_status_t create_acceptor() {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang connection acceptor listening on %s:%u\n", ip_addr, port);
 
 	/* try to initialize the erlang interface */
-	if (create_ei_cnode(ip_addr, globals.ei_nodename, &globals.ei_cnode) != SWITCH_STATUS_SUCCESS) {
+	if (create_ei_cnode(ip_addr, kazoo_globals.ei_nodename, &kazoo_globals.ei_cnode) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_SOCKERR;
 	}
 
 	/* tell the erlang port manager where we can be reached.  this returns a file descriptor pointing to epmd or -1 */
-	if ((globals.epmdfd = ei_publish(&globals.ei_cnode, port)) == -1) {
+	if ((kazoo_globals.epmdfd = ei_publish(&kazoo_globals.ei_cnode, port)) == -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Failed to publish port to epmd. Try starting it yourself or run an erl shell with the -sname or -name option.\n");
 		return SWITCH_STATUS_SOCKERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode name %s at port %d\n", globals.ei_cnode.thisnodename, port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode name %s at port %d\n", kazoo_globals.ei_cnode.thisnodename, port);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -638,10 +638,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	switch_api_interface_t *api_interface = NULL;
 	switch_application_interface_t *app_interface = NULL;
 
-	memset(&globals, 0, sizeof(globals));
+	memset(&kazoo_globals, 0, sizeof(kazoo_globals));
 
-	globals.pool = pool;
-	globals.ei_nodes = NULL;
+	kazoo_globals.pool = pool;
+	kazoo_globals.ei_nodes = NULL;
 
 	if(config() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here?
@@ -652,7 +652,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	if(create_acceptor() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create erlang connection acceptor!\n");
-		close_socket(&globals.acceptor);
+		close_socket(&kazoo_globals.acceptor);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -671,9 +671,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	switch_console_set_complete("add erlang node ::erlang::node fetch_bindings");
 	switch_console_add_complete_func("::erlang::node", api_complete_erlang_node);
 
-	switch_thread_rwlock_create(&globals.ei_nodes_lock, pool);
+	switch_thread_rwlock_create(&kazoo_globals.ei_nodes_lock, pool);
 
-	switch_set_flag(&globals, LFLAG_RUNNING);
+	switch_set_flag(&kazoo_globals, LFLAG_RUNNING);
 
 	/* create all XML fetch agents */
 	bind_fetch_agents();
@@ -695,10 +695,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	switch_console_del_complete_func("::erlang::node");
 
 	/* stop taking new requests and start shuting down the threads */
-	switch_clear_flag(&globals, LFLAG_RUNNING);
+	switch_clear_flag(&kazoo_globals, LFLAG_RUNNING);
 
 	/* give everyone time to cleanly shutdown */
-	while (switch_atomic_read(&globals.threads)) {
+	while (switch_atomic_read(&kazoo_globals.threads)) {
 		switch_yield(100000);
 		if (++sanity >= 200) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to kill all threads, continuing. This probably wont end well.....good luck!\n");
@@ -706,31 +706,31 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 		}
 	}
 
-	if (globals.event_filter) {
-		switch_core_hash_destroy(&globals.event_filter);
+	if (kazoo_globals.event_filter) {
+		switch_core_hash_destroy(&kazoo_globals.event_filter);
 	}
 
-	switch_thread_rwlock_wrlock(globals.ei_nodes_lock);
-	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	switch_thread_rwlock_destroy(globals.ei_nodes_lock);
+	switch_thread_rwlock_wrlock(kazoo_globals.ei_nodes_lock);
+	switch_thread_rwlock_unlock(kazoo_globals.ei_nodes_lock);
+	switch_thread_rwlock_destroy(kazoo_globals.ei_nodes_lock);
 
 	/* close the connection to epmd and the acceptor */
-	close_socketfd(&globals.epmdfd);
-	close_socket(&globals.acceptor);
+	close_socketfd(&kazoo_globals.epmdfd);
+	close_socket(&kazoo_globals.acceptor);
 
 	/* remove all XML fetch agents */
 	unbind_fetch_agents();
 
 	/* Close the port we reserved for uPnP/Switch behind firewall, if necessary */
-	//	if (globals.nat_map && switch_nat_get_type()) {
-	//		switch_nat_del_mapping(globals.port, SWITCH_NAT_TCP);
+	//	if (kazoo_globals.nat_map && switch_nat_get_type()) {
+	//		switch_nat_del_mapping(kazoo_globals.port, SWITCH_NAT_TCP);
 	//	}
 
 	/* clean up our allocated preferences */
-	switch_safe_free(globals.ip);
-	switch_safe_free(globals.ei_cookie);
-	switch_safe_free(globals.ei_nodename);
-	switch_safe_free(globals.kazoo_var_prefix);
+	switch_safe_free(kazoo_globals.ip);
+	switch_safe_free(kazoo_globals.ei_cookie);
+	switch_safe_free(kazoo_globals.ei_nodename);
+	switch_safe_free(kazoo_globals.kazoo_var_prefix);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -738,11 +738,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	switch_os_socket_t os_socket;
 
-	switch_atomic_inc(&globals.threads);
+	switch_atomic_inc(&kazoo_globals.threads);
 
-	switch_os_sock_get(&os_socket, globals.acceptor);
+	switch_os_sock_get(&os_socket, kazoo_globals.acceptor);
 
-	while (switch_test_flag(&globals, LFLAG_RUNNING)) {
+	while (switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		int nodefd;
 		ErlConnect conn;
 
@@ -752,19 +752,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 		errno = 0;
 
 		/* wait here for an erlang node to connect, timming out to check if our module is still running every now-and-again */
-		if ((nodefd = ei_accept_tmo(&globals.ei_cnode, (int) os_socket, &conn, globals.connection_timeout)) == ERL_ERROR) {
+		if ((nodefd = ei_accept_tmo(&kazoo_globals.ei_cnode, (int) os_socket, &conn, kazoo_globals.connection_timeout)) == ERL_ERROR) {
 			if (erl_errno == ETIMEDOUT) {
 				continue;
 			} else if (errno) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Erlang connection acceptor socket error %d %d\n", erl_errno, errno);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								  "Erlang node connection failed - ensure your cookie matches '%s' and you are using a good nodename\n", globals.ei_cookie);
+								  "Erlang node connection failed - ensure your cookie matches '%s' and you are using a good nodename\n", kazoo_globals.ei_cookie);
 			}
 			continue;
 		}
 
-		if (!switch_test_flag(&globals, LFLAG_RUNNING)) {
+		if (!switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 			break;
 		}
 
@@ -774,7 +774,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang connection acceptor shut down\n");
 
-	switch_atomic_dec(&globals.threads);
+	switch_atomic_dec(&kazoo_globals.threads);
 
 	return SWITCH_STATUS_TERM;
 }

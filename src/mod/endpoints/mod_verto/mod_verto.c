@@ -61,7 +61,7 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 
 #define die(...) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, __VA_ARGS__); goto error
 
-struct globals_s globals;
+static struct globals_s verto_globals;
 
 
 static struct {
@@ -290,7 +290,7 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 				head->node = np;
 			}
 
-			if (thisnp->jsock->profile->debug || globals.debug) {
+			if (thisnp->jsock->profile->debug || verto_globals.debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "UNSUBBING %s [%s]\n", thisnp->jsock->name, thisnp->head->event_channel);
 			}
 
@@ -313,22 +313,22 @@ static void unsub_all_jsock(void)
 	void *val;
 	jsock_sub_node_head_t *head;
 
-	switch_thread_rwlock_wrlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_wrlock(verto_globals.event_channel_rwlock);
  top:
 	head = NULL;
 
-	for (hi = switch_core_hash_first(globals.event_channel_hash); hi;) {
+	for (hi = switch_core_hash_first(verto_globals.event_channel_hash); hi;) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		head = (jsock_sub_node_head_t *) val;
 		jsock_unsub_head(NULL, head);
-		switch_core_hash_delete(globals.event_channel_hash, head->event_channel);
+		switch_core_hash_delete(verto_globals.event_channel_hash, head->event_channel);
 		free(head->event_channel);
 		free(head);
 		switch_safe_free(hi);
 		goto top;
 	}
 
-	switch_thread_rwlock_unlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 }
 
 static uint32_t jsock_unsub_channel(jsock_t *jsock, const char *event_channel)
@@ -336,13 +336,13 @@ static uint32_t jsock_unsub_channel(jsock_t *jsock, const char *event_channel)
 	jsock_sub_node_head_t *head;
 	uint32_t x = 0;
 
-	switch_thread_rwlock_wrlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_wrlock(verto_globals.event_channel_rwlock);
 
 	if (!event_channel) {
 		switch_hash_index_t *hi;
 		void *val;
 
-		for (hi = switch_core_hash_first(globals.event_channel_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(verto_globals.event_channel_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 
 			if (val) {
@@ -352,12 +352,12 @@ static uint32_t jsock_unsub_channel(jsock_t *jsock, const char *event_channel)
 		}
 
 	} else {
-		if ((head = switch_core_hash_find(globals.event_channel_hash, event_channel))) {
+		if ((head = switch_core_hash_find(verto_globals.event_channel_hash, event_channel))) {
 			x += jsock_unsub_head(jsock, head);
 		}
 	}
 
-	switch_thread_rwlock_unlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
 	return x;
 }
@@ -410,12 +410,12 @@ static switch_status_t jsock_sub_channel(jsock_t *jsock, const char *event_chann
 	jsock_sub_node_head_t *head;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_thread_rwlock_wrlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_wrlock(verto_globals.event_channel_rwlock);
 
-	if (!(head = switch_core_hash_find(globals.event_channel_hash, event_channel))) {
+	if (!(head = switch_core_hash_find(verto_globals.event_channel_hash, event_channel))) {
 		switch_zmalloc(head, sizeof(*head));
 		head->event_channel = strdup(event_channel);
-		switch_core_hash_insert(globals.event_channel_hash, event_channel, head);
+		switch_core_hash_insert(verto_globals.event_channel_hash, event_channel, head);
 
 		switch_zmalloc(node, sizeof(*node));
 		node->jsock = jsock;
@@ -449,7 +449,7 @@ static switch_status_t jsock_sub_channel(jsock_t *jsock, const char *event_chann
 		}
 	}
 
-	switch_thread_rwlock_unlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
 	if (status == SWITCH_STATUS_SUCCESS && !strncasecmp(event_channel, "presence", 8)) {
 		presence_ping(event_channel);
@@ -500,9 +500,9 @@ static uint32_t next_id(void)
 {
 	uint32_t id;
 
-	switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(verto_globals.mutex);
 	id = ID++;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 	return id;
 }
@@ -599,7 +599,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	}
 
 	if ((json_text = cJSON_PrintUnformatted(*json))) {
-		if (jsock->profile->debug || globals.debug) {
+		if (jsock->profile->debug || verto_globals.debug) {
 			char *log_text = cJSON_Print(*json);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE %s [%s]\n", jsock->name, log_text);
 			free(log_text);
@@ -665,7 +665,7 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 {
 	jsock_sub_node_head_t *head;
 
-	if ((head = switch_core_hash_find(globals.event_channel_hash, event_channel))) {   
+	if ((head = switch_core_hash_find(verto_globals.event_channel_hash, event_channel))) {   
 		jsock_sub_node_t *np;
 		
 		for(np = head->node; np; np = np->next) {
@@ -721,7 +721,7 @@ static void jsock_send_event(cJSON *event)
 		}
 	}
 
-	switch_thread_rwlock_rdlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_rdlock(verto_globals.event_channel_rwlock);
 	write_event(event_channel, use_jsock, event);
 	if (strchr(event_channel, '.')) {
 		char *main_channel = strdup(event_channel);
@@ -730,7 +730,7 @@ static void jsock_send_event(cJSON *event)
 		write_event(main_channel, use_jsock, event);		
 		free(main_channel);
 	}
-	switch_thread_rwlock_unlock(globals.event_channel_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
 	if (use_jsock) {
 		switch_thread_rwlock_unlock(use_jsock->rwlock);
@@ -759,9 +759,9 @@ static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
 		}
 	}
 
-	switch_mutex_lock(globals.method_mutex);
-	func = (jrpc_func_t) (intptr_t) switch_core_hash_find(globals.method_hash, method);
-	switch_mutex_unlock(globals.method_mutex);
+	switch_mutex_lock(verto_globals.method_mutex);
+	func = (jrpc_func_t) (intptr_t) switch_core_hash_find(verto_globals.method_hash, method);
+	switch_mutex_unlock(verto_globals.method_mutex);
 
  end:
 
@@ -776,9 +776,9 @@ static void jrpc_add_func(const char *method, jrpc_func_t func)
 	switch_assert(method);
 	switch_assert(func);
 
-	switch_mutex_lock(globals.method_mutex);
-	switch_core_hash_insert(globals.method_hash, method, (void *) (intptr_t) func);
-	switch_mutex_unlock(globals.method_mutex);
+	switch_mutex_lock(verto_globals.method_mutex);
+	switch_core_hash_insert(verto_globals.method_hash, method, (void *) (intptr_t) func);
+	switch_mutex_unlock(verto_globals.method_mutex);
 }
 
 static char *MARKER = "X";
@@ -1082,13 +1082,13 @@ static jsock_t *get_jsock(const char *uuid)
 {
 	jsock_t *jsock = NULL;
 
-	switch_mutex_lock(globals.jsock_mutex);
-	if ((jsock = switch_core_hash_find(globals.jsock_hash, uuid))) {
+	switch_mutex_lock(verto_globals.jsock_mutex);
+	if ((jsock = switch_core_hash_find(verto_globals.jsock_hash, uuid))) {
 		if (switch_thread_rwlock_tryrdlock(jsock->rwlock) != SWITCH_STATUS_SUCCESS) {
 			jsock = NULL;
 		}
 	}
-	switch_mutex_unlock(globals.jsock_mutex);
+	switch_mutex_unlock(verto_globals.jsock_mutex);
 
 	return jsock;
 }
@@ -1098,11 +1098,11 @@ static void attach_jsock(jsock_t *jsock)
 	jsock_t *jp;
 	int proceed = 1;
 
-	switch_mutex_lock(globals.jsock_mutex);
+	switch_mutex_lock(verto_globals.jsock_mutex);
 
 	switch_assert(jsock);
 
-	if ((jp = switch_core_hash_find(globals.jsock_hash, jsock->uuid_str))) {
+	if ((jp = switch_core_hash_find(verto_globals.jsock_hash, jsock->uuid_str))) {
 		if (jp == jsock) {
 			proceed = 0;
 		} else {
@@ -1110,7 +1110,7 @@ static void attach_jsock(jsock_t *jsock)
 			cJSON *msg = NULL;
 			msg = jrpc_new_req("verto.punt", NULL, &params);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "New connection for session %s dropping previous connection.\n", jsock->uuid_str);
-			switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
+			switch_core_hash_delete(verto_globals.jsock_hash, jsock->uuid_str);
 			ws_write_json(jp, &msg, SWITCH_TRUE);
 			cJSON_Delete(msg);
 			jp->nodelete = 1;
@@ -1119,10 +1119,10 @@ static void attach_jsock(jsock_t *jsock)
 	}
 
 	if (proceed) {
-		switch_core_hash_insert(globals.jsock_hash, jsock->uuid_str, jsock);
+		switch_core_hash_insert(verto_globals.jsock_hash, jsock->uuid_str, jsock);
 	}
 
-	switch_mutex_unlock(globals.jsock_mutex);
+	switch_mutex_unlock(verto_globals.jsock_mutex);
 }
 
 static void detach_jsock(jsock_t *jsock)
@@ -1131,9 +1131,9 @@ static void detach_jsock(jsock_t *jsock)
 		return;
 	}
 
-	switch_mutex_lock(globals.jsock_mutex);
-	switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
-	switch_mutex_unlock(globals.jsock_mutex);
+	switch_mutex_lock(verto_globals.jsock_mutex);
+	switch_core_hash_delete(verto_globals.jsock_hash, jsock->uuid_str);
+	switch_mutex_unlock(verto_globals.jsock_mutex);
 }
 
 static int attach_wake(void)
@@ -1143,15 +1143,15 @@ static int attach_wake(void)
 
  top:
 	
-	status = switch_mutex_trylock(globals.detach_mutex);
+	status = switch_mutex_trylock(verto_globals.detach_mutex);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_thread_cond_signal(globals.detach_cond);
-		switch_mutex_unlock(globals.detach_mutex);
+		switch_thread_cond_signal(verto_globals.detach_cond);
+		switch_mutex_unlock(verto_globals.detach_mutex);
 		return 1;
 	} else {
-		if (switch_mutex_trylock(globals.detach2_mutex) == SWITCH_STATUS_SUCCESS) {
-			switch_mutex_unlock(globals.detach2_mutex);
+		if (switch_mutex_trylock(verto_globals.detach2_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(verto_globals.detach2_mutex);
 		} else {
 			if (++tries < 10) {
 				switch_cond_next();
@@ -1169,7 +1169,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	cJSON *msg = NULL;
 
 	tech_pvt->detach_time = 0;
-	globals.detached--;
+	verto_globals.detached--;
 	attach_wake();
 	switch_set_flag(tech_pvt, TFLAG_ATTACH_REQ);
 	msg = jrpc_new_req("verto.attach", tech_pvt->call_id, &params);
@@ -1194,25 +1194,25 @@ static void drop_detached(void)
 	verto_pvt_t *tech_pvt;
 	switch_time_t now = switch_epoch_time_now(NULL);
 
-	switch_thread_rwlock_rdlock(globals.tech_rwlock);
-	for(tech_pvt = globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
+	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
+	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
 		if (!switch_channel_up_nosig(tech_pvt->channel)) {
 			continue;
 		}
 		
-		if (tech_pvt->detach_time && (now - tech_pvt->detach_time) > globals.detach_timeout) {
+		if (tech_pvt->detach_time && (now - tech_pvt->detach_time) > verto_globals.detach_timeout) {
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
 		}
 	}
-	switch_thread_rwlock_unlock(globals.tech_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
 static void attach_calls(jsock_t *jsock)
 {
 	verto_pvt_t *tech_pvt;
 
-	switch_thread_rwlock_rdlock(globals.tech_rwlock);
-	for(tech_pvt = globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
+	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
+	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
 		if (tech_pvt->detach_time && !strcmp(tech_pvt->jsock_uuid, jsock->uuid_str)) {
 			if (!switch_channel_up_nosig(tech_pvt->channel)) {
 				continue;
@@ -1221,15 +1221,15 @@ static void attach_calls(jsock_t *jsock)
 			tech_reattach(tech_pvt, jsock);
 		}
 	}
-	switch_thread_rwlock_unlock(globals.tech_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
 static void detach_calls(jsock_t *jsock)
 {
 	verto_pvt_t *tech_pvt;
 
-	switch_thread_rwlock_rdlock(globals.tech_rwlock);
-	for(tech_pvt = globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
+	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
+	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
 		if (!strcmp(tech_pvt->jsock_uuid, jsock->uuid_str)) {
 			if (!switch_channel_up_nosig(tech_pvt->channel)) {
 				continue;
@@ -1247,11 +1247,11 @@ static void detach_calls(jsock_t *jsock)
 
 			switch_core_session_stop_media(tech_pvt->session);
 			tech_pvt->detach_time = switch_epoch_time_now(NULL);
-			globals.detached++;
+			verto_globals.detached++;
 			attach_wake();
 		}
 	}
-	switch_thread_rwlock_unlock(globals.tech_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
 static void process_jrpc_response(jsock_t *jsock, cJSON *json)
@@ -1365,7 +1365,7 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 
 	if (json) {
 
-		if (jsock->profile->debug || globals.debug) {
+		if (jsock->profile->debug || verto_globals.debug) {
 			char *log_text = cJSON_Print(json);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "READ %s [%s]\n", jsock->name, log_text);
 			free(log_text);
@@ -2080,36 +2080,36 @@ static switch_bool_t auth_api_command(jsock_t *jsock, const char *api_cmd, const
 
 static void track_pvt(verto_pvt_t *tech_pvt)
 {
-	switch_thread_rwlock_wrlock(globals.tech_rwlock);
-	tech_pvt->next = globals.tech_head;
-	globals.tech_head = tech_pvt;
-	switch_thread_rwlock_unlock(globals.tech_rwlock);
+	switch_thread_rwlock_wrlock(verto_globals.tech_rwlock);
+	tech_pvt->next = verto_globals.tech_head;
+	verto_globals.tech_head = tech_pvt;
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
 static void untrack_pvt(verto_pvt_t *tech_pvt)
 {
 	verto_pvt_t *p, *last = NULL;
 
-	switch_thread_rwlock_wrlock(globals.tech_rwlock);
+	switch_thread_rwlock_wrlock(verto_globals.tech_rwlock);
 	if (tech_pvt->detach_time) {
-		globals.detached--;
+		verto_globals.detached--;
 		tech_pvt->detach_time = 0;
 		attach_wake();
 	}
 
-	for(p = globals.tech_head; p; p = p->next) {
+	for(p = verto_globals.tech_head; p; p = p->next) {
 		if (p == tech_pvt) {
 			if (last) {
 				last->next = p->next;
 			} else {
-				globals.tech_head = p->next;
+				verto_globals.tech_head = p->next;
 			}
 			break;
 		}
 
 		last = p;
 	}
-	switch_thread_rwlock_unlock(globals.tech_rwlock);
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
 switch_endpoint_interface_t *verto_endpoint_interface = NULL;
@@ -3674,7 +3674,7 @@ static switch_bool_t event_channel_check_auth(jsock_t *jsock, const char *event_
 			}
 		}
 
-		if ((!globals.enable_fs_events && (!strcasecmp(event_channel, "FSevent") || (main_event_channel && !strcasecmp(main_event_channel, "FSevent")))) || 
+		if ((!verto_globals.enable_fs_events && (!strcasecmp(event_channel, "FSevent") || (main_event_channel && !strcasecmp(main_event_channel, "FSevent")))) || 
 			!(switch_event_get_header(jsock->allowed_event_channels, event_channel) || 
 			  (main_event_channel && switch_event_get_header(jsock->allowed_event_channels, main_event_channel)))) {
 			ok = SWITCH_FALSE;
@@ -3854,7 +3854,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	if (broadcast && broadcast->type == cJSON_True) {
 		write_event(event_channel, NULL, jevent);
 	} else {
-		switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
+		switch_event_channel_broadcast(event_channel, &jevent, modname, verto_globals.event_channel_id);
 	}
 
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
@@ -4303,14 +4303,14 @@ static void kill_profiles(void)
 	verto_profile_t *pp;
 	int sanity = 50;
 
-	switch_mutex_lock(globals.mutex);
-	for(pp = globals.profile_head; pp; pp = pp->next) {	
+	switch_mutex_lock(verto_globals.mutex);
+	for(pp = verto_globals.profile_head; pp; pp = pp->next) {	
 		kill_profile(pp);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 
-	while(--sanity > 0 && globals.profile_threads > 0) {
+	while(--sanity > 0 && verto_globals.profile_threads > 0) {
 		switch_yield(100000);
 	}
 }
@@ -4379,9 +4379,9 @@ static int runtime(verto_profile_t *profile)
 
 static void do_shutdown(void)
 {
-	globals.running = 0;
+	verto_globals.running = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down (SIG %d)\n", globals.sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down (SIG %d)\n", verto_globals.sig);
 
 	kill_profiles();
 
@@ -4437,8 +4437,8 @@ static void parse_ip(char *host, switch_size_t host_len, uint16_t *port, char *i
 static verto_profile_t *find_profile(const char *name)
 {
 	verto_profile_t *p, *r = NULL;
-	switch_mutex_lock(globals.mutex);
-	for(p = globals.profile_head; p; p = p->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(p = verto_globals.profile_head; p; p = p->next) {
 		if (!strcmp(name, p->name)) {
 			r = p;
 			break;
@@ -4452,7 +4452,7 @@ static verto_profile_t *find_profile(const char *name)
 	if (r && switch_thread_rwlock_tryrdlock(r->rwlock) != SWITCH_STATUS_SUCCESS) {
 		r = NULL;
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 	return r;
 }
@@ -4462,14 +4462,14 @@ static switch_bool_t profile_exists(const char *name)
 	switch_bool_t r = SWITCH_FALSE;
 	verto_profile_t *p;
 
-	switch_mutex_lock(globals.mutex);
-	for(p = globals.profile_head; p; p = p->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(p = verto_globals.profile_head; p; p = p->next) {
 		if (!strcmp(p->name, name)) {
 			r = SWITCH_TRUE;
 			break;
 		}
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 	
 	return r;
 }
@@ -4478,40 +4478,40 @@ static void del_profile(verto_profile_t *profile)
 {
 	verto_profile_t *p, *last = NULL;
 
-	switch_mutex_lock(globals.mutex);
-	for(p = globals.profile_head; p; p = p->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(p = verto_globals.profile_head; p; p = p->next) {
 		if (p == profile) {
 			if (last) {
 				last->next = p->next;
 			} else {
-				globals.profile_head = p->next;
+				verto_globals.profile_head = p->next;
 			}
-			globals.profile_count--;
+			verto_globals.profile_count--;
 			break;
 		}
 
 		last = p;
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 }
 
 static switch_status_t add_profile(verto_profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(verto_globals.mutex);
 
 	if (!profile_exists(profile->name)) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	
 	if (status == SWITCH_STATUS_SUCCESS) {
-		profile->next = globals.profile_head;
-		globals.profile_head = profile;
-		globals.profile_count++;
+		profile->next = verto_globals.profile_head;
+		verto_globals.profile_head = profile;
+		verto_globals.profile_count++;
 	}
 
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 	
 	return status;
 }
@@ -4785,16 +4785,16 @@ static switch_status_t parse_config(const char *cf)
 
 			if (!strcasecmp(var, "debug")) {
 				if (val) {
-					globals.debug = atoi(val);
+					verto_globals.debug = atoi(val);
 				}
 			} else if (!strcasecmp(var, "enable-presence") && val) {
-				globals.enable_presence = switch_true(val);
+				verto_globals.enable_presence = switch_true(val);
 			} else if (!strcasecmp(var, "enable-fs-events") && val) {
-				globals.enable_fs_events = switch_true(val);
+				verto_globals.enable_fs_events = switch_true(val);
 			} else if (!strcasecmp(var, "detach-timeout-sec") && val) {
 				int tmp = atoi(val);
 				if (tmp > 0) {
-					globals.detach_timeout = tmp;
+					verto_globals.detach_timeout = tmp;
 				}
 			}
 		}
@@ -4811,13 +4811,13 @@ static int init(void)
 
 	parse_config("verto.conf");
 
-	switch_mutex_lock(globals.mutex);
-	for(p = globals.profile_head; p; p = p->next) {    
+	switch_mutex_lock(verto_globals.mutex);
+	for(p = verto_globals.profile_head; p; p = p->next) {    
 		verto_init_ssl(p);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
-	globals.running = 1;
+	verto_globals.running = 1;
 
 	return 0;
 }
@@ -4857,8 +4857,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", "Name", "   Type", "Data", "State");
 	stream->write_function(stream, "%s\n", line);
 
-	switch_mutex_lock(globals.mutex);
-	for(profile = globals.profile_head; profile; profile = profile->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
 		for (i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
 										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
@@ -4882,7 +4882,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		}
 		switch_mutex_unlock(profile->mutex);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 	stream->write_function(stream, "%s\n", line);
 	stream->write_function(stream, "%d profile%s , %d client%s\n", cp, cp == 1 ? "" : "s", cc, cc == 1 ? "" : "s");
@@ -4901,8 +4901,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 	stream->write_function(stream, "%s\n", header);
 	stream->write_function(stream, "<profiles>\n");
-	switch_mutex_lock(globals.mutex);
-	for(profile = globals.profile_head; profile; profile = profile->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
 		for (i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
 										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
@@ -4921,7 +4921,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		}
 		switch_mutex_unlock(profile->mutex);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 	stream->write_function(stream, "</profiles>\n");
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4983,9 +4983,9 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	verto_profile_t *profile = (verto_profile_t *) obj;
 	int sanity = 50;
 
-	switch_mutex_lock(globals.mutex);
-	globals.profile_threads++;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(verto_globals.mutex);
+	verto_globals.profile_threads++;
+	switch_mutex_unlock(verto_globals.mutex);
 
 	profile->in_thread = 1;
 	profile->running = 1;
@@ -5009,9 +5009,9 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	switch_thread_rwlock_unlock(profile->rwlock);
 	profile->in_thread = 0;
 
-	switch_mutex_lock(globals.mutex);
-	globals.profile_threads--;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(verto_globals.mutex);
+	verto_globals.profile_threads--;
+	switch_mutex_unlock(verto_globals.mutex);
 
 	return NULL;
 
@@ -5034,13 +5034,13 @@ static void run_profiles(void)
 {
 	verto_profile_t *p;
 
-	switch_mutex_lock(globals.mutex);
-	for(p = globals.profile_head; p; p = p->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(p = verto_globals.profile_head; p; p = p->next) {
 		if (!p->in_thread) {
 			run_profile_thread(p);
 		}
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 }
 
@@ -5079,8 +5079,8 @@ static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstr
 		use_stream = &stream;
 	}
 
-	switch_mutex_lock(globals.mutex);
-	for(profile = globals.profile_head; profile; profile = profile->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
 		
 		switch_mutex_lock(profile->mutex);
 		
@@ -5093,7 +5093,7 @@ static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstr
 
 		switch_mutex_unlock(profile->mutex);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 	switch_safe_free(gen_uid);
 
@@ -5253,7 +5253,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
-	if (globals.debug > 9) {
+	if (verto_globals.debug > 9) {
 		char *json_text;
 		if ((json_text = cJSON_Print(json))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "EVENT BROADCAST %s %s\n", event_channel, json_text);
@@ -5298,8 +5298,8 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 		return 1;
 	}
 
-	switch_mutex_lock(globals.mutex);
-	for(profile = globals.profile_head; profile; profile = profile->next) {
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
 		
 		switch_mutex_lock(profile->mutex);
 		
@@ -5312,7 +5312,7 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 
 		switch_mutex_unlock(profile->mutex);
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(verto_globals.mutex);
 
 	return hits;
 }
@@ -5726,11 +5726,11 @@ static void presence_event_handler(switch_event_t *event)
 	char *event_channel;
 	const char *presence_id = switch_event_get_header(event, "channel-presence-id");
 
-	if (!globals.running) {
+	if (!verto_globals.running) {
 		return;
 	}
 
-	if (!globals.enable_presence || zstr(presence_id)) {
+	if (!verto_globals.enable_presence || zstr(presence_id)) {
 		return;
 	}
 
@@ -5772,7 +5772,7 @@ static void event_handler(switch_event_t *event)
 	cJSON *msg = NULL, *data = NULL;
 	char *event_channel;
 
-	if (!globals.enable_fs_events) {
+	if (!verto_globals.enable_fs_events) {
 		return;
 	}
 
@@ -5826,31 +5826,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 		return SWITCH_STATUS_TERM;
 	}
 	
-	memset(&globals, 0, sizeof(globals));
-	globals.pool = pool;
+	memset(&verto_globals, 0, sizeof(verto_globals));
+	verto_globals.pool = pool;
 #ifndef WIN32
-	globals.ready = SIGUSR1;
+	verto_globals.ready = SIGUSR1;
 #endif
-	globals.enable_presence = SWITCH_TRUE;
-	globals.enable_fs_events = SWITCH_FALSE;
+	verto_globals.enable_presence = SWITCH_TRUE;
+	verto_globals.enable_fs_events = SWITCH_FALSE;
 
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&verto_globals.mutex, SWITCH_MUTEX_NESTED, verto_globals.pool);
 
-	switch_mutex_init(&globals.method_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.method_hash);
+	switch_mutex_init(&verto_globals.method_mutex, SWITCH_MUTEX_NESTED, verto_globals.pool);
+	switch_core_hash_init(&verto_globals.method_hash);
 
-	switch_thread_rwlock_create(&globals.event_channel_rwlock, globals.pool);
-	switch_core_hash_init(&globals.event_channel_hash);
+	switch_thread_rwlock_create(&verto_globals.event_channel_rwlock, verto_globals.pool);
+	switch_core_hash_init(&verto_globals.event_channel_hash);
 
-	switch_mutex_init(&globals.jsock_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.jsock_hash);
+	switch_mutex_init(&verto_globals.jsock_mutex, SWITCH_MUTEX_NESTED, verto_globals.pool);
+	switch_core_hash_init(&verto_globals.jsock_hash);
 
-	switch_thread_rwlock_create(&globals.tech_rwlock, globals.pool);
+	switch_thread_rwlock_create(&verto_globals.tech_rwlock, verto_globals.pool);
 
-	switch_mutex_init(&globals.detach_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_mutex_init(&globals.detach2_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_thread_cond_create(&globals.detach_cond, globals.pool);
-	globals.detach_timeout = 120;
+	switch_mutex_init(&verto_globals.detach_mutex, SWITCH_MUTEX_NESTED, verto_globals.pool);
+	switch_mutex_init(&verto_globals.detach2_mutex, SWITCH_MUTEX_NESTED, verto_globals.pool);
+	switch_thread_cond_create(&verto_globals.detach_cond, verto_globals.pool);
+	verto_globals.detach_timeout = 120;
 
 	
 
@@ -5866,7 +5866,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 
 
-	switch_event_channel_bind(SWITCH_EVENT_CHANNEL_GLOBAL, verto_broadcast, &globals.event_channel_id);
+	switch_event_channel_bind(SWITCH_EVENT_CHANNEL_GLOBAL, verto_broadcast, &verto_globals.event_channel_id);
 
 	
 	r = init();
@@ -5894,11 +5894,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	switch_core_register_secondary_recover_callback(modname, verto_recover_callback);
 
-	if (globals.enable_presence) {
+	if (verto_globals.enable_presence) {
 		switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
 	}
 
-	if (globals.enable_fs_events) {
+	if (verto_globals.enable_fs_events) {
 		if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 			return SWITCH_STATUS_GENERR;
@@ -5933,31 +5933,31 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	attach_wake();
 	attach_wake();
 
-	switch_core_hash_destroy(&globals.method_hash);
-	switch_core_hash_destroy(&globals.event_channel_hash);
-	switch_core_hash_destroy(&globals.jsock_hash);
+	switch_core_hash_destroy(&verto_globals.method_hash);
+	switch_core_hash_destroy(&verto_globals.event_channel_hash);
+	switch_core_hash_destroy(&verto_globals.jsock_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_verto_runtime)
 {
-	switch_mutex_lock(globals.detach_mutex);
+	switch_mutex_lock(verto_globals.detach_mutex);
 
-	while(globals.running) {
-		if (globals.detached) {
+	while(verto_globals.running) {
+		if (verto_globals.detached) {
 			drop_detached();
 			switch_yield(1000000);
 		} else {
-			switch_mutex_lock(globals.detach2_mutex);
-			if (globals.running) {
-				switch_thread_cond_wait(globals.detach_cond, globals.detach_mutex);
+			switch_mutex_lock(verto_globals.detach2_mutex);
+			if (verto_globals.running) {
+				switch_thread_cond_wait(verto_globals.detach_cond, verto_globals.detach_mutex);
 			}
-			switch_mutex_unlock(globals.detach2_mutex);
+			switch_mutex_unlock(verto_globals.detach2_mutex);
 		}
 	}
 
-	switch_mutex_unlock(globals.detach_mutex);
+	switch_mutex_unlock(verto_globals.detach_mutex);
 
 	return SWITCH_STATUS_TERM;
 }

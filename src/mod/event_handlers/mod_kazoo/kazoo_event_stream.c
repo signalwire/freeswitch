@@ -73,11 +73,11 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
 			continue;
 		}
 
-		if (strncmp(header->name, globals.kazoo_var_prefix, globals.var_prefix_length)
+		if (strncmp(header->name, kazoo_globals.kazoo_var_prefix, kazoo_globals.var_prefix_length)
 			&& filter
 			&& !switch_core_hash_find(filter, header->name)
-			&& (!globals.send_all_headers)
-			&& (!(globals.send_all_private_headers && is_private_header(header->name)))
+			&& (!kazoo_globals.send_all_headers)
+			&& (!(kazoo_globals.send_all_private_headers && is_private_header(header->name)))
 			)
 			{
 				continue;
@@ -107,7 +107,7 @@ static void event_handler(switch_event_t *event) {
 	ei_event_stream_t *event_stream = (ei_event_stream_t *) event->bind_user_data;
 
 	/* if mod_kazoo or the event stream isn't running dont push a new event */
-	if (!switch_test_flag(event_stream, LFLAG_RUNNING) || !switch_test_flag(&globals, LFLAG_RUNNING)) {
+	if (!switch_test_flag(event_stream, LFLAG_RUNNING) || !switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		return;
 	}
 
@@ -138,7 +138,7 @@ static void event_handler(switch_event_t *event) {
 	/* try to clone the event and push it to the event stream thread */
 	/* TODO: someday maybe the filter comes from the event_stream (set during init only)
 	 * and is per-binding so we only send headers that a process requests */
-	if (kazoo_event_dup(&clone, event, globals.event_filter) == SWITCH_STATUS_SUCCESS) {
+	if (kazoo_event_dup(&clone, event, kazoo_globals.event_filter) == SWITCH_STATUS_SUCCESS) {
 		if (switch_queue_trypush(event_stream->queue, clone) != SWITCH_STATUS_SUCCESS) {
 			/* if we couldn't place the cloned event into the listeners */
 			/* event queue make sure we destroy it, real good like */
@@ -157,9 +157,9 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
     char ipbuf[48];
     const char *ip_addr;
 	void *pop;
-	short event_stream_framing = globals.event_stream_framing;
+	short event_stream_framing = kazoo_globals.event_stream_framing;
 
-	switch_atomic_inc(&globals.threads);
+	switch_atomic_inc(&kazoo_globals.threads);
 
 	switch_assert(event_stream != NULL);
 
@@ -172,7 +172,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 					  ,(void *)event_stream, ip_addr, port, event_stream->pid.node, event_stream->pid.creation
 					  ,event_stream->pid.num, event_stream->pid.serial);
 
-	while (switch_test_flag(event_stream, LFLAG_RUNNING) && switch_test_flag(&globals, LFLAG_RUNNING)) {
+	while (switch_test_flag(event_stream, LFLAG_RUNNING) && switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		const switch_pollfd_t *fds;
 		int32_t numfds;
 
@@ -226,9 +226,9 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 				short i = event_stream_framing;
 				switch_size_t size = 1;
 
-				if(globals.event_stream_preallocate > 0) {
-					ebuf.buff = malloc(globals.event_stream_preallocate);
-					ebuf.buffsz = globals.event_stream_preallocate;
+				if(kazoo_globals.event_stream_preallocate > 0) {
+					ebuf.buff = malloc(kazoo_globals.event_stream_preallocate);
+					ebuf.buffsz = kazoo_globals.event_stream_preallocate;
 					ebuf.index = 0;
 					if(ebuf.buff == NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not pre-allocate memory for mod_kazoo message\n");
@@ -241,7 +241,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 
 				ei_encode_switch_event(&ebuf, event);
 
-				if (globals.event_stream_preallocate > 0 && ebuf.buffsz > globals.event_stream_preallocate) {
+				if (kazoo_globals.event_stream_preallocate > 0 && ebuf.buffsz > kazoo_globals.event_stream_preallocate) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased event stream buffer size to %d\n", ebuf.buffsz);
 				}
 
@@ -292,7 +292,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 	/* clean up the memory */
 	switch_core_destroy_memory_pool(&event_stream->pool);
 
-	switch_atomic_dec(&globals.threads);
+	switch_atomic_dec(&kazoo_globals.threads);
 
 	return NULL;
 }

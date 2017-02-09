@@ -142,7 +142,7 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 	switch_sockaddr_t *sa;
 	switch_socket_t *socket;
 
-	if(switch_sockaddr_info_get(&sa, globals.ip, SWITCH_UNSPEC, port, 0, pool)) {
+	if(switch_sockaddr_info_get(&sa, kazoo_globals.ip, SWITCH_UNSPEC, port, 0, pool)) {
 		return NULL;
 	}
 
@@ -162,9 +162,9 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 		return NULL;
 	}
 
-	switch_getnameinfo(&globals.hostname, sa, 0);
+	switch_getnameinfo(&kazoo_globals.hostname, sa, 0);
 
-	//	if (globals.nat_map && switch_nat_get_type()) {
+	//	if (kazoo_globals.nat_map && switch_nat_get_type()) {
 	//		switch_nat_add_mapping(port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
 	//	}
 
@@ -188,20 +188,20 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
 
     if ((atsign = strchr(cnodename, '@'))) {
         /* we got a qualified node name, don't guess the host/domain */
-        snprintf(nodename, MAXNODELEN + 1, "%s", globals.ei_nodename);
+        snprintf(nodename, MAXNODELEN + 1, "%s", kazoo_globals.ei_nodename);
         /* truncate the alivename at the @ */
         *atsign = '\0';
     } else {
-        if (zstr(globals.hostname) || !strncasecmp(globals.ip, "0.0.0.0", 7) || !strncasecmp(globals.ip, "::", 2)) {
+        if (zstr(kazoo_globals.hostname) || !strncasecmp(kazoo_globals.ip, "0.0.0.0", 7) || !strncasecmp(kazoo_globals.ip, "::", 2)) {
             memcpy(hostname, switch_core_get_hostname(), EI_MAXHOSTNAMELEN);
         } else {
-            memcpy(hostname, globals.hostname, EI_MAXHOSTNAMELEN);
+            memcpy(hostname, kazoo_globals.hostname, EI_MAXHOSTNAMELEN);
         }
 
-        snprintf(nodename, MAXNODELEN + 1, "%s@%s", globals.ei_nodename, hostname);
+        snprintf(nodename, MAXNODELEN + 1, "%s@%s", kazoo_globals.ei_nodename, hostname);
     }
 
-	if (globals.ei_shortname) {
+	if (kazoo_globals.ei_shortname) {
 		char *off;
 		if ((off = strchr(nodename, '.'))) {
 			*off = '\0';
@@ -209,7 +209,7 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
 	}
 
     /* init the ec stuff */
-    if (ei_connect_xinit(ei_cnode, hostname, cnodename, nodename, (Erl_IpAddr) ip_addr, globals.ei_cookie, 0) < 0) {
+    if (ei_connect_xinit(ei_cnode, hostname, cnodename, nodename, (Erl_IpAddr) ip_addr, kazoo_globals.ei_cookie, 0) < 0) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the erlang interface connection structure\n");
         return SWITCH_STATUS_FALSE;
     }
@@ -654,9 +654,9 @@ static void *SWITCH_THREAD_FUNC fetch_config_filters_exec(switch_thread_t *threa
 				switch_core_hash_insert(filter, var, "1");
 			}
 
-			old_filter = globals.event_filter;
-			globals.config_filters_fetched = 1;
-			globals.event_filter = filter;
+			old_filter = kazoo_globals.event_filter;
+			kazoo_globals.config_filters_fetched = 1;
+			kazoo_globals.event_filter = filter;
 			if (old_filter) {
 				switch_core_hash_destroy(&old_filter);
 			}

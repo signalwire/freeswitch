@@ -47,7 +47,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_rtp_timer_name, mod_h323_globals.rt
 
 
 #define CF_NEED_FLUSH (1 << 1)
-struct mod_h323_globals mod_h323_globals = { 0 };
+static struct mod_h323_globals mod_h323_globals = { 0 };
 
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
