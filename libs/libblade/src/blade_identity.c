@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,63 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_PEER_H_
-#define _BLADE_PEER_H_
-#include <blade.h>
+#include "blade.h"
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, blade_service_t *service);
-KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP);
-KS_DECLARE(ks_status_t) blade_peer_startup(blade_peer_t *bp, ks_socket_t sock);
-KS_DECLARE(ks_status_t) blade_peer_shutdown(blade_peer_t *bp);
-KS_DECLARE(void) blade_peer_disconnect(blade_peer_t *bp, blade_peerreason_t reason);
-KS_DECLARE(blade_peerstate_t) blade_peer_state(blade_peer_t *bp);
-KS_DECLARE(blade_peerreason_t) blade_peer_reason(blade_peer_t *bp);
-KS_DECLARE(ks_status_t) blade_peer_message_pop(blade_peer_t *peer, blade_message_t **message);
-KS_DECLARE(ks_status_t) blade_peer_message_push(blade_peer_t *peer, void *data, ks_size_t data_length);
-KS_END_EXTERN_C
+struct blade_identity_s {
+	ks_pool_t *pool;
 
-#endif
+	const char *uri;
+	// @todo breakdown of uri into constituent parts
+};
 
+
+KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t *pool)
+{
+	blade_identity_t *bi = NULL;
+
+	ks_assert(biP);
+	ks_assert(pool);
+
+	bi = ks_pool_alloc(pool, sizeof(blade_identity_t));
+	bi->pool = pool;
+	*biP = bi;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
+{
+	blade_identity_t *bi = NULL;
+	
+	ks_assert(biP);
+	ks_assert(*biP);
+
+	bi = *biP;
+
+	ks_pool_free(bi->pool, biP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *uri)
+{
+	ks_assert(bi);
+	ks_assert(uri);
+
+	if (bi->uri) ks_pool_free(bi->pool, &bi->uri);
+	
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_identity_uri(blade_identity_t *bi, const char **uri)
+{
+	ks_assert(bi);
+	ks_assert(uri);
+
+	*uri = bi->uri;
+	return KS_STATUS_SUCCESS;
+}
+	
 /* For Emacs:
  * Local Variables:
  * mode:c

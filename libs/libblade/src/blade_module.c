@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,37 +31,61 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_STACK_H_
-#define _BLADE_STACK_H_
-#include <blade.h>
+#include "blade.h"
 
-#define BLADE_HANDLE_TPOOL_MIN 2
-#define BLADE_HANDLE_TPOOL_MAX 8
-#define BLADE_HANDLE_TPOOL_STACK (1024 * 256)
-#define BLADE_HANDLE_TPOOL_IDLE 10
+struct blade_module_s {
+	blade_handle_t *handle;
+	ks_pool_t *pool;
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
-KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh);
-KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh);
+	void *module_data;
+	blade_module_callbacks_t *module_callbacks;
+};
 
-KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_message_t **message);
 
-KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
-													 blade_datastore_fetch_callback_t callback,
-													 const void *key,
-													 int32_t key_length,
-													 void *userdata);
-KS_END_EXTERN_C
+KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, void *module_data, blade_module_callbacks_t *module_callbacks)
+{
+	blade_module_t *bm = NULL;
+	ks_pool_t *pool = NULL;
 
-#endif
+	ks_assert(bmP);
+	ks_assert(bh);
+	ks_assert(module_data);
+	ks_assert(module_callbacks);
 
+	pool = blade_handle_pool_get(bh);
+
+	bm = ks_pool_alloc(pool, sizeof(blade_module_t));
+	bm->handle = bh;
+	bm->pool = pool;
+	bm->module_data = module_data;
+	bm->module_callbacks = module_callbacks;
+	*bmP = bm;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP)
+{
+	blade_module_t *bm = NULL;
+
+	ks_assert(bmP);
+	ks_assert(*bmP);
+
+	bm = *bmP;
+
+	ks_pool_free(bm->pool, bmP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->module_data;
+}
+
+	
 /* For Emacs:
  * Local Variables:
  * mode:c

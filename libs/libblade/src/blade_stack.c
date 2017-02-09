@@ -48,7 +48,6 @@ struct blade_handle_s {
 	config_setting_t *config_datastore;
 
 	ks_q_t *messages_discarded;
-	blade_service_t *service;
 
 	blade_datastore_t *datastore;
 };
@@ -143,7 +142,7 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config, blade_service_peer_state_callback_t service_peer_state_callback)
+KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config)
 {
 	ks_assert(bh);
 
@@ -152,15 +151,6 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 		return KS_STATUS_FAIL;
 	}
 
-	if (bh->config_service && !blade_handle_service_available(bh)) {
-		blade_service_create(&bh->service, bh->pool, bh->tpool, bh, service_peer_state_callback);
-		ks_assert(bh->service);
-		if (blade_service_startup(bh->service, bh->config_service) != KS_STATUS_SUCCESS) {
-			ks_log(KS_LOG_DEBUG, "blade_service_startup failed\n");
-			return KS_STATUS_FAIL;
-		}
-	}
-	
 	if (bh->config_datastore && !blade_handle_datastore_available(bh)) {
 		blade_datastore_create(&bh->datastore, bh->pool, bh->tpool);
 		ks_assert(bh->datastore);
@@ -177,11 +167,21 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
 	ks_assert(bh);
 
-	if (blade_handle_service_available(bh)) blade_service_destroy(&bh->service);
-	
 	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
 	
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh)
+{
+	ks_assert(bh);
+	return bh->pool;
+}
+
+KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh)
+{
+	ks_assert(bh);
+	return bh->tpool;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length)
@@ -218,12 +218,7 @@ KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_m
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_bool_t) blade_handle_service_available(blade_handle_t *bh)
-{
-	ks_assert(bh);
 
-	return bh->service != NULL;
-}
 
 KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
 {

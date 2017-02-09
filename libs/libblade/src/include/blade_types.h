@@ -37,27 +37,78 @@
 
 KS_BEGIN_EXTERN_C
 
-typedef enum {
-	BLADE_PEERSTATE_CONNECTING,
-	BLADE_PEERSTATE_DISCONNECTING,
-	BLADE_PEERSTATE_RUNNING,
-	BLADE_PEERSTATE_RECEIVING,
-} blade_peerstate_t;
-
-typedef enum {
-	BLADE_PEERREASON_NORMAL,
-	BLADE_PEERREASON_ERROR,
-	// @todo populate more reasons for disconnecting as neccessary
-} blade_peerreason_t;
-
 typedef struct blade_handle_s blade_handle_t;
-typedef struct blade_peer_s blade_peer_t;
-typedef struct blade_service_s blade_service_t;
+typedef struct blade_identity_s blade_identity_t;
+typedef struct blade_module_s blade_module_t;
+typedef struct blade_module_callbacks_s blade_module_callbacks_t;
+typedef struct blade_transport_callbacks_s blade_transport_callbacks_t;
+typedef struct blade_connection_s blade_connection_t;
+
 typedef struct blade_message_s blade_message_t;
 typedef struct blade_datastore_s blade_datastore_t;
 
-typedef void (*blade_service_peer_state_callback_t)(blade_service_t *bs, blade_peer_t *bp, blade_peerstate_t state);
 typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
+
+
+
+typedef enum {
+	BLADE_CONNECTION_STATE_NONE,
+	BLADE_CONNECTION_STATE_DISCONNECT,
+	BLADE_CONNECTION_STATE_NEW,
+	BLADE_CONNECTION_STATE_CONNECT,
+	BLADE_CONNECTION_STATE_ATTACH,
+	BLADE_CONNECTION_STATE_DETACH,
+	BLADE_CONNECTION_STATE_READY,
+} blade_connection_state_t;
+
+typedef enum {
+	BLADE_CONNECTION_DIRECTION_IN,
+	BLADE_CONNECTION_DIRECTION_OUT,
+} blade_connection_direction_t;
+
+typedef enum {
+	BLADE_CONNECTION_STATE_CONDITION_PRE,
+	BLADE_CONNECTION_STATE_CONDITION_POST,
+} blade_connection_state_condition_t;
+
+typedef enum {
+	BLADE_CONNECTION_STATE_HOOK_SUCCESS,
+	BLADE_CONNECTION_STATE_HOOK_DISCONNECT,
+	BLADE_CONNECTION_STATE_HOOK_BYPASS,
+} blade_connection_state_hook_t;
+
+typedef enum {
+	BLADE_CONNECTION_RANK_POOR,
+	BLADE_CONNECTION_RANK_AVERAGE,
+	BLADE_CONNECTION_RANK_GOOD,
+	BLADE_CONNECTION_RANK_GREAT,
+} blade_connection_rank_t;
+
+typedef ks_status_t (*blade_module_load_callback_t)(blade_module_t **bmP, blade_handle_t *bh);
+typedef ks_status_t (*blade_module_unload_callback_t)(blade_module_t *bm);
+typedef ks_status_t (*blade_module_startup_callback_t)(blade_module_t *bm, config_setting_t *config);
+typedef ks_status_t (*blade_module_shutdown_callback_t)(blade_module_t *bm);
+
+struct blade_module_callbacks_s {
+	blade_module_load_callback_t onload;
+	blade_module_unload_callback_t onunload;
+	blade_module_startup_callback_t onstartup;
+	blade_module_shutdown_callback_t onshutdown;
+};
+
+
+typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
+typedef blade_connection_rank_t (*blade_transport_rank_callback_t)(blade_connection_t *bc, blade_identity_t *target);
+typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc,
+																		  blade_connection_state_t state,
+																		  blade_connection_state_condition_t condition);
+
+struct blade_transport_callbacks_s {
+	blade_transport_connect_callback_t onconnect;
+	blade_transport_rank_callback_t onrank;
+	blade_transport_state_callback_t onstate;
+};
+
 
 KS_END_EXTERN_C
 

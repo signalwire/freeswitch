@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_STACK_H_
-#define _BLADE_STACK_H_
+#ifndef _BLADE_CONNECTION_H_
+#define _BLADE_CONNECTION_H_
 #include <blade.h>
 
-#define BLADE_HANDLE_TPOOL_MIN 2
-#define BLADE_HANDLE_TPOOL_MAX 8
-#define BLADE_HANDLE_TPOOL_STACK (1024 * 256)
-#define BLADE_HANDLE_TPOOL_IDLE 10
-
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
-KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh);
-KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh);
-
-KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_message_t **message);
-
-KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
-													 blade_datastore_fetch_callback_t callback,
-													 const void *key,
-													 int32_t key_length,
-													 void *userdata);
+KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
+												blade_handle_t *bh,
+												void *transport_data,
+												blade_transport_callbacks_t *transport_callbacks);
+KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP);
+KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc);
+KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc);
+KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc);
+KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state);
+KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc);
+KS_DECLARE(blade_connection_rank_t) blade_connection_rank(blade_connection_t *bc, blade_identity_t *target);
+KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
+KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, blade_identity_t **target, cJSON **json);
+KS_DECLARE(ks_status_t) blade_connection_receiving_push(blade_connection_t *bc, cJSON *json);
+KS_DECLARE(ks_status_t) blade_connection_receiving_pop(blade_connection_t *bc, cJSON **json);
 KS_END_EXTERN_C
 
 #endif

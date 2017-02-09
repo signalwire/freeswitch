@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,21 +31,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_SERVICE_H_
-#define _BLADE_SERVICE_H_
+#ifndef _BLADE_IDENTITY_H_
+#define _BLADE_IDENTITY_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_service_create(blade_service_t **bsP,
-											 ks_pool_t *pool,
-											 ks_thread_pool_t *tpool,
-											 blade_handle_t *handle,
-											 blade_service_peer_state_callback_t peer_state_callback);
-KS_DECLARE(ks_status_t) blade_service_destroy(blade_service_t **bsP);
-KS_DECLARE(blade_handle_t *) blade_service_handle(blade_service_t *bs);
-KS_DECLARE(ks_status_t) blade_service_startup(blade_service_t *bs, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_service_shutdown(blade_service_t *bs);
-KS_DECLARE(void) blade_service_peer_state_callback(blade_service_t *bs, blade_peer_t *bp, blade_peerstate_t state);
+KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP);
+KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *uri);
+KS_DECLARE(ks_status_t) blade_identity_uri(blade_identity_t *bi, const char **uri);
 KS_END_EXTERN_C
 
 #endif
