@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2017, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -150,8 +150,8 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	param->iMaxBitrate = UNSPECIFIED_BIT_RATE;
 
 #ifdef MT_ENABLED
-	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
-	param->sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
+	param->sSpatialLayers[iIndexLayer].sSliceArgument.uiSliceMode = SM_SIZELIMITED_SLICE;
+	param->sSpatialLayers[iIndexLayer].sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
 	param->uiMaxNalSize = SLICE_SIZE + NAL_HEADER_ADD_0X30BYTES;
 #else
 	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
@@ -175,7 +175,6 @@ long set_decoder_options(ISVCDecoder *decoder)
     // EBufferProperty	eOutputProperty = BUFFER_HOST;
     long ret = 0;
 
-	ret += decoder->SetOption(DECODER_OPTION_DATAFORMAT, &iColorFormat);
 	// ret += decoder->SetOption(DECODER_OPTION_OUTPUT_PROPERTY,  &eOutputProperty);
 
 	return ret;
@@ -458,7 +457,6 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 			return SWITCH_STATUS_FALSE;
 		}
 
-		context->decoder_params.eOutputColorFormat	= videoFormatI420;
 		context->decoder_params.uiTargetDqLayer	= (uint8_t) -1;
 		context->decoder_params.eEcActiveIdc	= ERROR_CON_SLICE_COPY;
 		context->decoder_params.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_AVC;
