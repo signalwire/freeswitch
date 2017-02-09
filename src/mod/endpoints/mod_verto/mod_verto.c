@@ -1227,6 +1227,7 @@ static void attach_calls(jsock_t *jsock)
 static void detach_calls(jsock_t *jsock)
 {
 	verto_pvt_t *tech_pvt;
+	int wake = 0;
 
 	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
 	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
@@ -1248,10 +1249,12 @@ static void detach_calls(jsock_t *jsock)
 			switch_core_session_stop_media(tech_pvt->session);
 			tech_pvt->detach_time = switch_epoch_time_now(NULL);
 			verto_globals.detached++;
-			attach_wake();
+			wake = 1;
 		}
 	}
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
+
+	if (wake) attach_wake();
 }
 
 static void process_jrpc_response(jsock_t *jsock, cJSON *json)
@@ -2089,12 +2092,13 @@ static void track_pvt(verto_pvt_t *tech_pvt)
 static void untrack_pvt(verto_pvt_t *tech_pvt)
 {
 	verto_pvt_t *p, *last = NULL;
+	int wake = 0;
 
 	switch_thread_rwlock_wrlock(verto_globals.tech_rwlock);
 	if (tech_pvt->detach_time) {
 		verto_globals.detached--;
 		tech_pvt->detach_time = 0;
-		attach_wake();
+		wake = 1;
 	}
 
 	for(p = verto_globals.tech_head; p; p = p->next) {
@@ -2110,6 +2114,8 @@ static void untrack_pvt(verto_pvt_t *tech_pvt)
 		last = p;
 	}
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
+
+	if (wake) attach_wake();
 }
 
 switch_endpoint_interface_t *verto_endpoint_interface = NULL;
