@@ -313,6 +313,9 @@ enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
 		}
 		if (!strncasecmp(ptr_cur, "in",len)) {
 			ret |= TPTLS_VERIFY_IN;
+		} else if (!strncasecmp(ptr_cur, "none",len)) {
+			ret = TPTLS_VERIFY_NONE;
+			break;
 		} else if (!strncasecmp(ptr_cur, "out",len)) {
 			ret |= TPTLS_VERIFY_OUT;
 		} else if (!strncasecmp(ptr_cur, "all",len)) {
