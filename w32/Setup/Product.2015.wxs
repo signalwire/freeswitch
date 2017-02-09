@@ -1,13 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Platform specific variables -->
 <?if $(var.Platform) = x64 ?>
-<?define Win64 = "yes" ?>
-<?define ProductName = "FreeSWITCH (64 bit)" ?>
-<?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define Win64 = "yes" ?>
+  <?if $(var.Configuration) = Debug ?>
+	<?define ProductName_Configuration = ", Debug" ?>
+  <?else ?>
+	<?define ProductName_Configuration = "" ?>
+  <?endif ?>
+  <?define ProductName = "FreeSWITCH (64 bit$(var.ProductName_Configuration))" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
 <?else ?>
-<?define Win64 = "no" ?>
-<?define ProductName = "FreeSWITCH" ?>
-<?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?define Win64 = "no" ?>
+  <?if $(var.Configuration) = Debug ?>
+	<?define ProductName_Configuration = " (Debug)" ?>
+  <?else ?>
+	<?define ProductName_Configuration = "" ?>
+  <?endif ?>
+  <?define ProductName = "FreeSWITCH$(var.ProductName_Configuration)" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?endif ?>
+
+<?if $(var.Configuration) = Debug ?>
+  <?define CRT_Configuration = "Debug" ?>
+<?else ?>
+  <?define CRT_Configuration = "" ?>
 <?endif ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
@@ -15,6 +31,22 @@
 		<Package InstallerVersion="405" Compressed="yes" />
 
 		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+		<CustomAction Id='CheckForUCRT' Error="Installation failed because the Universal C Runtime is not installed. Please run Windows Update and install all required Windows updates. You can download the UCRT separately from here: https://support.microsoft.com/en-us/kb/2999226" />
+
+		<Property Id="UCRTINSTALLED" Secure="yes">
+		  <DirectorySearch Id="searchSystem2" Path="[SystemFolder]" Depth="0">
+			<FileSearch Id="UCRT_FileSearch"
+					Name="ucrtbase.dll"
+					MinVersion="6.2.10585.0"/>
+		  </DirectorySearch>
+		</Property>
+
+		<InstallExecuteSequence>
+		  <Custom Action='CheckForUCRT' Before='LaunchConditions'>
+			<![CDATA[Not REMOVE="ALL" AND UCRTINSTALLED = ""]]>
+		  </Custom>
+		</InstallExecuteSequence>
 
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
@@ -31,13 +63,13 @@
 					<!-- </Component> -->
 					<?if $(var.Platform) != x64 ?>
 						<Merge Id="CrtFiles_x86"
-						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC110_CRT_x86.msm"
+						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC140_$(var.CRT_Configuration)CRT_x86.msm"
 						DiskId="1"
 						Language="1033"/>
 					<?endif ?>
 					<?if $(var.Platform) = x64 ?>
 						<Merge Id="CrtFiles_x64"
-						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC110_CRT_x64.msm"
+						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC140_$(var.CRT_Configuration)CRT_x64.msm"
 						DiskId="1"
 						Language="1033"/>
 					<?endif ?>

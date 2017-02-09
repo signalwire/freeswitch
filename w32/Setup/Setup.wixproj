@@ -19,7 +19,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\release\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
+    <DefineConstants>FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\x64\Debug\</OutputPath>
@@ -31,7 +31,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\x64\Release\</OutputPath>
     <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
+    <DefineConstants>FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
