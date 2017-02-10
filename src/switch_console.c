@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -247,7 +247,7 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 	switch_core_flag_t cflags = switch_core_flags();
 	int full = 0;
 
-	
+
 	if (!(cflags & SCF_USE_SQL)) {
 		return NULL;
 	}
@@ -502,7 +502,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 			char *s_argv[100] = { 0 };
 			char *r_argv[1] = { 0 }, *r_cols[1] = {0};
 			list = strdup(p);
-			
+
 			argc = switch_separate_string(list, ':', s_argv, (sizeof(s_argv) / sizeof(s_argv[0])));
 
 			for (i = 0; (int)i < argc; i++) {
@@ -859,7 +859,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		}
 
 		stream.write_function(&stream, " and hostname='%s' order by a%d", switch_core_get_hostname(), h.words + 1);
-		
+
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {
@@ -1848,7 +1848,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			switch_stream_handle_t mystream = { 0 };
 			SWITCH_STANDARD_STREAM(mystream);
-			
+
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
 				for (x = 0; x < 10; x++) {
@@ -1885,8 +1885,8 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
 				if (zstr(what)) {
-					switch_safe_free(mystream.data);  
-					switch_safe_free(mydata); 
+					switch_safe_free(mystream.data);
+					switch_safe_free(mydata);
 					return SWITCH_STATUS_FALSE;
 				} else if (!strcasecmp(what, "*")) {
 					mystream.write_function(&mystream, "delete from complete where hostname='%q'", switch_core_get_hostname());
@@ -1938,7 +1938,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				free(mydata);
 				return SWITCH_STATUS_FALSE;
 			}
-			
+
 			if (!strcasecmp(argv[0], "stickyadd") && argc == 3) {
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_switchname());
 				switch_cache_db_persistant_execute(db, sql, 5);

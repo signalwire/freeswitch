@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Raymond Chandler <intralanman@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
@@ -238,7 +238,7 @@ SWITCH_STANDARD_API(httapi_api_function)
 static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 {
 	action_binding_t *action_binding = (action_binding_t *) match->user_data;
-	
+
 	action_binding->client->matching_action_binding = action_binding;
 	action_binding->match_digits = switch_core_strdup(action_binding->client->pool, match->match_digits);
 
@@ -250,7 +250,7 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 	action_binding_t *action_binding = (action_binding_t *) match->user_data;
 
 	action_binding->client->no_matching_action_binding = action_binding;
-	
+
 	return SWITCH_STATUS_BREAK;
 }
 
@@ -339,7 +339,7 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 	}
 
 
-	if (client->profile->perms.get_vars && 
+	if (client->profile->perms.get_vars &&
 		(!client->profile->var_params.get_var_list || switch_event_check_permission_list(client->profile->var_params.get_var_list, var))) {
 		const char *vval = switch_channel_get_variable(client->channel, var);
 		if (vval) {
@@ -351,12 +351,12 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-	
+
 }
 
 static switch_status_t parse_continue(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -364,7 +364,7 @@ static switch_status_t parse_log(const char *tag_name, client_t *client, switch_
 {
 	const char *level = switch_xml_attr(tag, "level");
 	const char *clean = switch_xml_attr(tag, "clean");
-	
+
 	if (switch_true(clean)) {
 		console_clean_log(level, body);
 	} else {
@@ -414,7 +414,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		say_method = switch_xml_attr(tag, "method");
 		say_gender = switch_xml_attr(tag, "gender");
 		text = switch_xml_attr(tag, "text");
-		
+
 		if (zstr(text)) {
 			if (!zstr(file)) {
 				text = file;
@@ -427,9 +427,9 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "speak: missing required attributes or text! (language) (type) (method) \n");
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		say = 1;
-		
+
 	} else if (!strcasecmp(tag_name, "speak")) {
 		tts_engine = switch_xml_attr(tag, "engine");
 		tts_voice = switch_xml_attr(tag, "voice");
@@ -470,7 +470,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		char *p;
 
 		SWITCH_STANDARD_STREAM(stream);
-		
+
 		cmd = switch_mprintf("%s|name_path", id);
 
 		switch_api_execute("vm_prefs", cmd, NULL, &stream);
@@ -501,7 +501,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 			text = free_string;
 			switch_ivr_play_file(client->session, NULL, "voicemail/vm-person.wav", &nullargs);
-			
+
 		}
 
 		switch_safe_free(resp);
@@ -527,7 +527,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid digit timeout [%s]\n", digit_timeout_);
 		}
 	}
-	
+
 	if (input_timeout_) {
 		tmp = atol(input_timeout_);
 
@@ -541,7 +541,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	if ((bind = switch_xml_child(tag, "bind"))) {
 		action_binding_t *action_binding;
 		const char *realm = "default";
-	
+
 
 		input++;
 
@@ -550,9 +550,9 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		top_action_binding->action = (char *) action;
 		top_action_binding->error_file = (char *)error_file;
 
-		switch_ivr_dmachine_create(&dmachine, "HTTAPI", NULL, digit_timeout, 0, 
+		switch_ivr_dmachine_create(&dmachine, "HTTAPI", NULL, digit_timeout, 0,
 								   NULL, digit_nomatch_action_callback, top_action_binding);
-		
+
 		while(bind) {
 			action_binding = switch_core_session_alloc(client->session, sizeof(*action_binding));
 			action_binding->realm = (char *) realm;
@@ -562,11 +562,11 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			action_binding->strip = (char *) switch_xml_attr(bind, "strip");
 			action_binding->error_file = (char *) error_file;
 			action_binding->parent = top_action_binding;
-			
+
 			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, 0, digit_action_callback, action_binding);
 			bind = bind->next;
 		}
-		
+
 		switch_ivr_dmachine_set_realm(dmachine, realm);
 		if (!zstr(terminators)) {
 			switch_ivr_dmachine_set_terminators(dmachine, terminators);
@@ -597,7 +597,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			char *result = NULL;
 
 			status = switch_ivr_play_and_detect_speech(client->session, file, sp_engine, sp_grammar, &result, input_timeout, args);
-			
+
 			if (!zstr(result)) {
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, result);
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "detected_speech");
@@ -642,7 +642,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			break;
 		}
 	} while (loops-- > 0);
-	
+
 
 	if (submit) {
 		if (client->matching_action_binding) {
@@ -660,26 +660,26 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, client->matching_action_binding->match_digits);
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "dtmf");
 			}
-			
+
 			if (client->matching_action_binding->action) {
 				sub_action = client->matching_action_binding->action;
 			} else if (client->matching_action_binding->parent && client->matching_action_binding->parent->action) {
 				sub_action = client->matching_action_binding->parent->action;
 			}
 		}
-		
+
 		if (!sub_action && top_action_binding && top_action_binding->action) {
 			sub_action = top_action_binding->action;
 		}
-		
+
 		if (sub_action && client->matching_action_binding && client->matching_action_binding->match_digits) {
 			if (!strncasecmp(sub_action, "dial:", 5)) {
 				char *context = NULL;
 				char *dp = NULL;
-				
+
 				if (client->profile->perms.dial.set_context) {
 					context = switch_core_session_strdup(client->session, sub_action + 5);
-					
+
 					if ((dp = strchr(context, ':'))) {
 						*dp++ = '\0';
 						if (!client->profile->perms.dial.set_dp) {
@@ -690,19 +690,19 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 				switch_ivr_session_transfer(client->session, client->matching_action_binding->match_digits, dp, context);
 				status = SWITCH_STATUS_FALSE;
-				
+
 			} else {
 				switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
 			}
 		}
 	}
-	
+
 	if (dmachine) {
 		switch_ivr_dmachine_destroy(&dmachine);
 	}
 
 	switch_safe_free(free_string);
-	
+
 	return status;
 }
 
@@ -713,7 +713,7 @@ static switch_status_t parse_conference(const char *tag_name, client_t *client, 
 	const char *profile_name = switch_xml_attr(tag, "profile");
 	const char *pin = switch_xml_attr(tag, "pin");
 	const char *flags = switch_xml_attr(tag, "flags");
-	
+
 	if (!client->profile->perms.conference.enabled) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Permission Denied!\n");
 		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -742,7 +742,7 @@ static switch_status_t parse_conference(const char *tag_name, client_t *client, 
 
 static switch_status_t parse_dial(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
-	const char *context = NULL; 
+	const char *context = NULL;
 	const char *dp = NULL;
 	const char *cid_name = NULL;
 	const char *cid_number = NULL;
@@ -779,7 +779,7 @@ static switch_status_t parse_dial(const char *tag_name, client_t *client, switch
 			cid_number = switch_channel_get_variable(client->channel, "caller_id_number");
 		}
 
-		str = switch_core_session_sprintf(client->session, 
+		str = switch_core_session_sprintf(client->session,
 										  "{origination_caller_id_name='%s',origination_caller_id_number='%s'}%s", cid_name, cid_number, body);
 
 		switch_core_session_execute_application(client->session, "bridge", str);
@@ -812,7 +812,7 @@ static switch_status_t parse_sms(const char *tag_name, client_t *client, switch_
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", switch_channel_get_variable(client->channel, "caller_id_number"));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
-		
+
 		if (body) {
 			switch_event_add_body(event, "%s", body);
 		}
@@ -856,7 +856,7 @@ static switch_status_t parse_execute(const char *tag_name, client_t *client, swi
 
 	if (!client->profile->perms.expand_vars) {
 		const char *p;
-		
+
 		for(p = data; p && *p; p++) {
 			if (*p == '$') {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Expand Variables: Permission Denied!\n");
@@ -929,16 +929,16 @@ static switch_status_t parse_record_call(const char *tag_name, client_t *client,
 	} else {
 		client->record.action = (char *) action;
 		client->record.name = (char *)name;
-		client->record.file = switch_core_session_sprintf(client->session, "%s%s%s.wav", 
+		client->record.file = switch_core_session_sprintf(client->session, "%s%s%s.wav",
 														  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(client->session));
 		record_file = client->record.file;
 	}
-	
+
 	if (limit_) {
 		limit = atoi(limit_);
 		if (limit < 0) limit = 0;
 	}
-	
+
 
 	switch_ivr_record_session(client->session, (char *)record_file, limit, NULL);
 
@@ -982,7 +982,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	if (zstr(file)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	fname = switch_core_strdup(client->pool, file);
 
 	for(p = fname; p && *p; p++) {
@@ -1006,7 +1006,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		tmp_record_path = fname;
 		http = 1;
 	} else {
-		tmp_record_path = switch_core_sprintf(client->pool, "%s%s%s_%s.%s", 
+		tmp_record_path = switch_core_sprintf(client->pool, "%s%s%s_%s.%s",
 											  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, fname, ext);
 	}
 
@@ -1045,19 +1045,19 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid digit timeout [%s]\n", digit_timeout_);
 		}
 	}
-	
+
 	if ((bind = switch_xml_child(tag, "bind"))) {
 		action_binding_t *action_binding;
 		const char *realm = "default";
-		
+
 		top_action_binding = switch_core_session_alloc(client->session, sizeof(*action_binding));
 		top_action_binding->client = client;
 		top_action_binding->action = (char *) action;
 		top_action_binding->error_file = (char *)error_file;
 
-		switch_ivr_dmachine_create(&dmachine, "HTTAPI", NULL, digit_timeout, 0, 
+		switch_ivr_dmachine_create(&dmachine, "HTTAPI", NULL, digit_timeout, 0,
 								   NULL, digit_nomatch_action_callback, top_action_binding);
-		
+
 		while(bind) {
 			action_binding = switch_core_session_alloc(client->session, sizeof(*action_binding));
 			action_binding->realm = (char *) realm;
@@ -1066,11 +1066,11 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 			action_binding->action = (char *) switch_xml_attr(bind, "action");
 			action_binding->error_file = (char *) error_file;
 			action_binding->parent = top_action_binding;
-			
+
 			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, 0, digit_action_callback, action_binding);
 			bind = bind->next;
 		}
-		
+
 		switch_ivr_dmachine_set_realm(dmachine, realm);
 		if (!zstr(terminators)) {
 			switch_ivr_dmachine_set_terminators(dmachine, terminators);
@@ -1092,7 +1092,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		switch_file_handle_t fh = { 0 };
 		fh.thresh = thresh;
 		fh.silence_hits = silence_hits;
-		
+
 		status = switch_ivr_record_file(client->session, &fh, tmp_record_path, args, record_limit);
 	}
 
@@ -1142,7 +1142,7 @@ static switch_status_t parse_common(const char *tag_name, client_t *client, swit
 	if (tmp_action) {
 		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", tmp_action);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1155,7 +1155,7 @@ static switch_status_t parse_xml(client_t *client)
 
 	if ((len = switch_buffer_peek_zerocopy(client->buffer, &bdata)) && switch_buffer_len(client->buffer) > len) {
 		switch_xml_t xml, tag, category;
-		
+
 		if (globals.debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Debugging Return Data:\n%s\n", (char *)bdata);
 		}
@@ -1165,7 +1165,7 @@ static switch_status_t parse_xml(client_t *client)
 			if (client->profile->perms.set_params) {
 				if ((category = switch_xml_child(xml, "params"))) {
 					tag = category->child;
-					
+
 					while(tag) {
 						if (!zstr(tag->name)) {
 							char *val = tag->txt;
@@ -1182,7 +1182,7 @@ static switch_status_t parse_xml(client_t *client)
 			if (client->profile->perms.set_vars) {
 				if ((category = switch_xml_child(xml, "variables"))) {
 					tag = category->child;
-					
+
 					while(tag) {
 						if (!zstr(tag->name)) {
 							char *val = tag->txt;
@@ -1190,8 +1190,8 @@ static switch_status_t parse_xml(client_t *client)
 								val = NULL;
 							}
 
-							if (client->profile->perms.set_vars && 
-								(!client->profile->var_params.set_var_list || 
+							if (client->profile->perms.set_vars &&
+								(!client->profile->var_params.set_var_list ||
 								 switch_event_check_permission_list(client->profile->var_params.set_var_list, tag->name))) {
 								switch_channel_set_variable(client->channel, tag->name, val);
 							} else {
@@ -1204,7 +1204,7 @@ static switch_status_t parse_xml(client_t *client)
 			}
 
 			if ((category = switch_xml_child(xml, "work"))) {
-				
+
 				tag = category->child;
 				status = SWITCH_STATUS_SUCCESS;
 
@@ -1219,18 +1219,18 @@ static switch_status_t parse_xml(client_t *client)
 							if (tag->txt && client->profile->perms.expand_vars) {
 								switch_channel_get_variables(client->channel, &templ_data);
 								switch_event_merge(templ_data, client->params);
-								expanded = switch_event_expand_headers_check(templ_data, tag->txt, 
-																			 client->profile->var_params.expand_var_list, 
+								expanded = switch_event_expand_headers_check(templ_data, tag->txt,
+																			 client->profile->var_params.expand_var_list,
 																			 client->profile->var_params.api_list, 0);
 								switch_event_destroy(&templ_data);
 							}
 
 							runs++;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process Tag: [%s]\n", tag->name);
-							
+
 							parse_common(tag->name, client, tag, expanded);
 							status = handler(tag->name, client, tag, expanded);
-							
+
 							if (expanded && expanded != tag->txt) {
 								free(expanded);
 							}
@@ -1249,15 +1249,15 @@ static switch_status_t parse_xml(client_t *client)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No instructions found in result!\n");
 				status = SWITCH_STATUS_FALSE;
 			}
-			
+
 
 			switch_xml_free(xml);
 		}
 	}
-	
+
 	return status;
 }
-	
+
 
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
@@ -1285,7 +1285,7 @@ static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *us
 
 		switch_event_add_header_string(client->headers, SWITCH_STACK_BOTTOM, header, val);
 	}
-	
+
 	switch_safe_free(header);
 	return realsize;
 }
@@ -1305,7 +1305,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 
 	switch_buffer_write(client->buffer, ptr, realsize);
-	
+
 	return realsize;
 }
 
@@ -1313,7 +1313,7 @@ static void client_destroy(client_t **client)
 {
 	if (client && *client) {
 		switch_memory_pool_t *pool;
-		
+
 		switch_event_destroy(&(*client)->headers);
 		switch_event_destroy(&(*client)->params);
 		switch_event_destroy(&(*client)->one_time_params);
@@ -1333,7 +1333,7 @@ static void client_reset(client_t *client)
 	switch_event_destroy(&client->one_time_params);
 	switch_event_create(&client->one_time_params, SWITCH_EVENT_CLONE);
 	client->one_time_params->flags |= EF_UNIQ_HEADERS;
-	
+
 	switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
 
 
@@ -1367,13 +1367,13 @@ static client_t *client_create(switch_core_session_t *session, const char *profi
 	client->pool = pool;
 
 	switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
-	
+
 	if (session) {
 		client->session = session;
 		client->channel = switch_core_session_get_channel(session);
 	}
 
-	
+
 	client->profile = profile;
 
 	client->max_bytes = HTTAPI_MAX_API_BYTES;
@@ -1406,7 +1406,7 @@ static void cleanup_attachments(client_t *client)
 			if (switch_file_exists(hp->value, client->pool) == SWITCH_STATUS_SUCCESS) {
 				unlink(hp->value);
 			}
-		}	
+		}
 	}
 }
 
@@ -1416,7 +1416,7 @@ size_t put_file_read( void *ptr, size_t size, size_t nmemb, void *userdata)
 }
 
 static switch_status_t httapi_sync(client_t *client)
-								  
+
 {
 	switch_CURL *curl_handle = NULL;
 	char *data = NULL;
@@ -1433,7 +1433,7 @@ static switch_status_t httapi_sync(client_t *client)
 	FILE *fd = NULL;
 	char *creds, *dup_creds = NULL, *ua = NULL;
 
-	
+
 	if (client->one_time_params && client->one_time_params->headers) {
 		save_params = client->params;
 		switch_event_dup(&client->params, save_params);
@@ -1449,7 +1449,7 @@ static switch_status_t httapi_sync(client_t *client)
 	if (zstr(ua)) {
 		ua = client->profile->ua;
 	}
-	
+
 	if (!(session_id = switch_event_get_header(client->params, "HTTAPI_SESSION_ID"))) {
 		if (client->channel && !(session_id = switch_channel_get_variable(client->channel, "HTTAPI_SESSION_ID"))) {
 			session_id = switch_core_session_get_uuid(client->session);
@@ -1471,7 +1471,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 	get_style_method = method ? strcasecmp(method, "post") : 1;
-	
+
 	switch_event_add_header_string(client->params, SWITCH_STACK_TOP, "session_id", session_id);
 
 	dynamic_url = switch_event_expand_headers(client->params, url);
@@ -1484,7 +1484,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 	if (!put_file) {
-		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);	
+		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);
 	}
 
 	if (formpost) {
@@ -1495,11 +1495,11 @@ static switch_status_t httapi_sync(client_t *client)
 
 		if (get_style_method) {
 			char *tmp = switch_mprintf("%s%c%s", dynamic_url, strchr(dynamic_url, '?') != NULL ? '&' : '?', data);
-		
+
 			if (dynamic_url != url) {
 				free(dynamic_url);
 			}
-		
+
 			dynamic_url = tmp;
 		}
 	}
@@ -1525,7 +1525,7 @@ static switch_status_t httapi_sync(client_t *client)
 					if ((p = strstr(q, "://"))) {
 						*(p+3) = '\0';
 					}
-		
+
 					p = switch_mprintf("%s%s", q, r);
 					if (p) {
 						free(dynamic_url);
@@ -1546,9 +1546,9 @@ static switch_status_t httapi_sync(client_t *client)
 		*p = '\0';
 
 		if ((q = strchr(dup_creds, '@'))) *q = '\0';
-		
+
 		creds = dup_creds;
-		
+
 		p = switch_mprintf("%s%s", p, use_url);
 		free(dynamic_url);
 		dynamic_url = p;
@@ -1593,7 +1593,7 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
 		curl_easy_setopt(curl_handle, CURLOPT_READDATA, fd);
 		curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, put_file_read);
-		
+
 	} else if (formpost) {
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, formpost);
 	} else {
@@ -1646,7 +1646,7 @@ static switch_status_t httapi_sync(client_t *client)
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 	}
-	
+
 
 	if (client->profile->ssl_cacert_file) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, client->profile->ssl_cacert_file);
@@ -1891,7 +1891,7 @@ static switch_status_t do_config(void)
 		profile->perms.set_params = 1;
 		profile->perms.conference.enabled = 1;
 		profile->perms.dial.enabled = 1;
-		
+
 
 		if ((tag = switch_xml_child(profile_tag, "conference"))) {
 			for (param = switch_xml_child(tag, "param"); param; param = param->next) {
@@ -1937,7 +1937,7 @@ static switch_status_t do_config(void)
 						switch_xml_t x_list, x_var;
 						if ((x_list = switch_xml_child(param, "variable-list"))) {
 							char *var = (char *) switch_xml_attr_soft(param, "default");
-							
+
 							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
 							switch_event_create(&profile->var_params.set_var_list, SWITCH_EVENT_CLONE);
 							profile->var_params.set_var_list->flags |= EF_UNIQ_HEADERS;
@@ -1965,7 +1965,7 @@ static switch_status_t do_config(void)
 						switch_xml_t x_list, x_var;
 						if ((x_list = switch_xml_child(param, "variable-list"))) {
 							char *var = (char *) switch_xml_attr_soft(param, "default");
-							
+
 							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
 							switch_event_create(&profile->var_params.get_var_list, SWITCH_EVENT_CLONE);
 							profile->var_params.get_var_list->flags |= EF_UNIQ_HEADERS;
@@ -1990,12 +1990,12 @@ static switch_status_t do_config(void)
 					profile->perms.extended_data = switch_true_byte(val);
 				} else if (!strcasecmp(var, "execute-apps")) {
 					profile->perms.execute_apps = switch_true_byte(val);
-					
+
 					if (profile->perms.execute_apps) {
 						switch_xml_t x_list, x_app;
 						if ((x_list = switch_xml_child(param, "application-list"))) {
 							char *var = (char *) switch_xml_attr_soft(param, "default");
-							
+
 							profile->dial_params.default_allow = (var && !strcasecmp(var, "allow"));
 							switch_event_create(&profile->dial_params.app_list, SWITCH_EVENT_CLONE);
 							profile->dial_params.app_list->flags |= EF_UNIQ_HEADERS;
@@ -2016,7 +2016,7 @@ static switch_status_t do_config(void)
 							}
 						}
 					}
-					
+
 				} else if (!strcasecmp(var, "expand-vars")) {
 					profile->perms.expand_vars = switch_true_byte(val);
 
@@ -2024,7 +2024,7 @@ static switch_status_t do_config(void)
 						switch_xml_t x_list, x_var, x_api;
 						if ((x_list = switch_xml_child(param, "variable-list"))) {
 							char *var = (char *) switch_xml_attr_soft(param, "default");
-							
+
 							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
 							switch_event_create(&profile->var_params.expand_var_list, SWITCH_EVENT_CLONE);
 							profile->var_params.expand_var_list->flags |= EF_UNIQ_HEADERS;
@@ -2047,7 +2047,7 @@ static switch_status_t do_config(void)
 
 						if ((x_list = switch_xml_child(param, "api-list"))) {
 							char *api = (char *) switch_xml_attr_soft(param, "default");
-							
+
 							profile->var_params.default_allow = (api && !strcasecmp(api, "allow"));
 							switch_event_create(&profile->var_params.api_list, SWITCH_EVENT_CLONE);
 							profile->var_params.api_list->flags |= EF_UNIQ_HEADERS;
@@ -2202,7 +2202,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	}
 
 	switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
-	
+
 	if (client->record.file) {
 		char *key = switch_core_sprintf(client->pool, "attach_file:%s:%s.wav", client->record.name, switch_core_session_get_uuid(session));
 		switch_ivr_stop_record_session(client->session, client->record.file);
@@ -2221,7 +2221,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
 		}
 	}
-	
+
 	httapi_sync(client);
 
 	client_destroy(&client);
@@ -2264,7 +2264,7 @@ SWITCH_STANDARD_APP(httapi_function)
 		} else {
 			url = data;
 		}
-		
+
 		if (!zstr(url) && switch_stristr("://", url)) {
 			if (!params) {
 				switch_event_create(&params, SWITCH_EVENT_CLONE);
@@ -2288,7 +2288,7 @@ SWITCH_STANDARD_APP(httapi_function)
 		if (zstr(profile_name) && !(profile_name = switch_channel_get_variable(channel, "httapi_profile"))) {
 			profile_name = "default";
 		}
-		
+
 		if ((client = client_create(session, profile_name, &params))) {
 			switch_channel_set_private(channel, "_HTTAPI_CLIENT_", client);
 			switch_channel_add_state_handler(channel, &state_handlers);
@@ -2346,7 +2346,7 @@ SWITCH_STANDARD_APP(httapi_function)
 
 
 	switch_safe_free(parsed);
-	
+
 }
 
 
@@ -2355,7 +2355,7 @@ SWITCH_STANDARD_APP(httapi_function)
 static const char *find_ext(const char *in)
 {
 	const char *p = in + (strlen(in) - 1);
-	
+
 	while(p >= in && *p) {
 		if (*p == '/') return NULL;
 		if (*p == '.') return (p+1);
@@ -2379,11 +2379,11 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	if (context->url_params) {
 		ext = switch_event_get_header(context->url_params, "ext");
 	}
-	
+
 	if (zstr(ext)) {
 		ext = find_ext(url);
 	}
-	
+
 	if (ext && (p = strchr(ext, '?'))) {
 		dext = strdup(ext);
 		if ((p = strchr(dext, '?'))) {
@@ -2432,7 +2432,7 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 	unsigned char *buffer = (unsigned char *) ptr;
 
 	client->bytes += realsize;
-	
+
 	if (client->bytes > client->max_bytes) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) client->bytes);
 		client->err = 1;
@@ -2468,14 +2468,14 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	const char *profile_name = NULL;
 	int tries = 10;
 
-	if (context->url_params) { 
+	if (context->url_params) {
 		profile_name = switch_event_get_header(context->url_params, "profile_name");
 	}
 
 	if (zstr(profile_name)) {
 		if (globals.profile) profile_name = globals.profile->name;
 	}
-	
+
 	if (zstr(profile_name)) {
 		profile_name = "default";
 	}
@@ -2500,7 +2500,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	if (context->url_params) {
 		ua = switch_event_get_header(context->url_params, "user_agent");
 	}
-	
+
 	if (zstr(ua)) {
 		ua = "mod_httapi/1.0";
 	}
@@ -2520,7 +2520,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 		if ((p = strstr(q, "://"))) {
 			*(p+3) = '\0';
 		}
-		
+
 		p = switch_mprintf("%s%s", q, r);
 		dynamic_url = p;
 		free(q);
@@ -2617,12 +2617,12 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, dup_creds);
 	}
-	
+
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, ua);
 	switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
 	switch_curl_easy_cleanup(curl_handle);
-	
+
 	if (client->fd > -1) {
 		close(client->fd);
 		client->fd = -1;
@@ -2645,7 +2645,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	case 404:
 		status = SWITCH_STATUS_NOTFOUND;
 		break;
-		
+
 	default:
 		status = SWITCH_STATUS_FALSE;
 		break;
@@ -2695,7 +2695,7 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 		} else if (headers && (cc = switch_event_get_header(headers, "Cache-Control"))) {
 			if ((p = switch_stristr("max-age=", cc))) {
 				p += 8;
-				
+
 				if (!zstr(p)) {
 					x = atoi(p);
 
@@ -2710,11 +2710,11 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 			}
 		}
 
-		switch_snprintf(write_data, sizeof(write_data), 
+		switch_snprintf(write_data, sizeof(write_data),
 						"%" TIME_T_FMT ":%s",
 						switch_epoch_time_now(NULL) + ttl,
 						data);
-		
+
 
 		status = write(fd, write_data, (int)strlen(write_data) + 1) > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
@@ -2737,7 +2737,7 @@ static void lock_file(http_file_context_t *context, switch_bool_t lock)
 				switch_yield(100000);
 			}
 		} while(x);
-		
+
 		switch_core_hash_insert(globals.request_hash, context->dest_url, (void *)1);
 		switch_mutex_unlock(globals.request_mutex);
 	} else {
@@ -2768,7 +2768,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	if (context->url_params) {
 		ext = switch_event_get_header(context->url_params, "ext");
 	}
-	
+
 	if (zstr(ext)) {
 		ext = find_ext(context->cache_file);
 	}
@@ -2787,7 +2787,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 				unreachable = 1;
 			}
 		}
-		
+
 		if (zstr(ext) && headers && (ct = switch_event_get_header(headers, "content-type"))) {
 			newext = switch_core_mime_type2ext(ct);
 		}
@@ -2803,7 +2803,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			status = SWITCH_STATUS_NOTFOUND;
 			goto end;
 		}
-		
+
 		if (!unreachable && !zstr(context->metadata)) {
 			metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s:%s",
 										   url,
@@ -2818,7 +2818,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 				switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 			}
 		}
-		
+
 		switch_event_destroy(&headers);
 	}
 
@@ -2836,9 +2836,9 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 								   switch_event_get_header_nil(headers, "content-length"),
 								   ext
 								   );
-	
+
 	write_meta_file(context, metadata, headers);
-	
+
 	if (switch_file_exists(context->cache_file, context->pool) == SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -2851,7 +2851,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 	switch_event_destroy(&headers);
-	
+
 	return status;
 }
 
@@ -2916,21 +2916,21 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		context->fh.samples = handle->samples;
 		context->fh.samplerate = handle->samplerate;
 		context->fh.prefix = handle->prefix;
-		
-		
+
+
 		if (context->url_params) {
 			context->write.file_name = switch_event_get_header(context->url_params, "file");
 			context->write.profile_name = switch_event_get_header(context->url_params, "profile");
 			context->write.method = switch_event_get_header(context->url_params, "method");
 			context->write.name = switch_event_get_header(context->url_params, "name");
 		}
-		
+
 		if (!context->write.file_name) {
 			char *p;
 			if ((p = strrchr(context->dest_url, '/'))) {
 				p++;
 				context->write.file_name = switch_core_strdup(context->pool, p);
-			}	
+			}
 		}
 
 		if (!context->write.file_name) {
@@ -2943,16 +2943,16 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		} else {
 			ext = "wav";
 		}
-		
+
 		if (!context->write.profile_name) context->write.profile_name = "default";
 		if (!context->write.method) context->write.method = !strcasecmp(ext, "cgi") ? "post" : "put";
 		if (!context->write.name) context->write.name = "recorded_file";
 
 		switch_uuid_str(context->write.uuid_str, sizeof(context->write.uuid_str));
-		
+
 		context->write.file = switch_core_sprintf(context->pool, "%s%s%s_%s",
 												  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, context->write.uuid_str, context->write.file_name);
-		
+
 
 		if (switch_core_file_open(&context->fh, context->write.file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_GENERR;
@@ -2971,11 +2971,11 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		if (status != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		
+
 		if ((status = switch_core_file_open(&context->fh,
-											context->cache_file, 
-											handle->channels, 
-											handle->samplerate, 
+											context->cache_file,
+											handle->channels,
+											handle->samplerate,
 											handle->flags, NULL)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
 			unlink(context->cache_file);
@@ -3051,12 +3051,12 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find suitable profile\n");
 			switch_event_destroy(&params);
 		}
-			
+
 		unlink(context->write.file);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	
+
 	if (context->del_on_close) {
 		if (context->cache_file) {
 			unlink(context->cache_file);
@@ -3075,7 +3075,7 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 static switch_status_t http_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
 	http_file_context_t *context = handle->private_info;
-	
+
 	return switch_core_file_read_video(&context->fh, frame, flags);
 }
 
@@ -3089,7 +3089,7 @@ static switch_status_t http_file_write_video(switch_file_handle_t *handle, switc
 static switch_status_t http_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	http_file_context_t *context = handle->private_info;
-	
+
 	return switch_core_file_write(&context->fh, data, len);
 }
 
@@ -3127,7 +3127,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	switch_application_interface_t *app_interface;
 	switch_file_interface_t *http_file_interface;
 	switch_file_interface_t *https_file_interface;
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -3165,11 +3165,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	https_file_interface->file_seek = http_file_file_seek;
 	https_file_interface->file_read_video = http_file_read_video;
 	https_file_interface->file_write_video = http_file_write_video;
-	
+
 	switch_snprintf(globals.cache_path, sizeof(globals.cache_path), "%s%shttp_file_cache", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(globals.cache_path, SWITCH_DEFAULT_DIR_PERMS, pool);
 
-	
+
 	switch_core_hash_init(&globals.profile_hash);
 	switch_core_hash_init(&globals.request_hash);
 	switch_core_hash_init_case(&globals.parse_hash, SWITCH_FALSE);
@@ -3198,14 +3198,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	SWITCH_ADD_API(httapi_api_interface, "httapi",
 				   "HT-TAPI Hypertext Telephony API", httapi_api_function, HTTAPI_SYNTAX);
 
-	SWITCH_ADD_APP(app_interface, "httapi", 
-				   "HT-TAPI Hypertext Telephony API", 
+	SWITCH_ADD_APP(app_interface, "httapi",
+				   "HT-TAPI Hypertext Telephony API",
 				   "HT-TAPI Hypertext Telephony API", httapi_function, "{<param1>=<val1>}", SAF_SUPPORT_NOMEDIA);
-				   
+
 
 
 	switch_console_set_complete("add httapi debug_on");
@@ -3233,9 +3233,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 	}
 
 
-	switch_core_hash_destroy(&globals.profile_hash);	
-	switch_core_hash_destroy(&globals.parse_hash);	
-		
+	switch_core_hash_destroy(&globals.profile_hash);
+	switch_core_hash_destroy(&globals.parse_hash);
+
 	while (globals.hash_root) {
 		ptr = globals.hash_root;
 		switch_core_hash_destroy(&ptr->hash);

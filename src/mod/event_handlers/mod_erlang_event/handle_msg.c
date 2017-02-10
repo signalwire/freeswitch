@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Andrew Thompson <andrew@hijacked.us>
  * Rob Charlton <rob.charlton@savageminds.com>
@@ -180,7 +180,7 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 		/* reply mutex is locked */
 		if ((p = find_fetch_reply(uuid_str))) {
 			switch (p->state) {
-			case reply_waiting: 
+			case reply_waiting:
 				{
 					/* clone the reply so it doesn't get destroyed on us */
 					ei_x_buff *nbuf = malloc(sizeof(*nbuf));
@@ -188,14 +188,14 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 					memcpy(nbuf->buff, buf->buff, buf->buffsz);
 					nbuf->index = buf->index;
 					nbuf->buffsz = buf->buffsz;
-					
+
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got reply for %s\n", uuid_str);
-					
+
 					/* copy info into the reply struct */
 					p->state = reply_found;
 					p->reply = nbuf;
 					strncpy(p->winner, listener->peer_nodename, MAXNODELEN);
-					
+
 					/* signal waiting thread that its time to wake up */
 					switch_thread_cond_signal(p->ready_or_found);
 					/* reply OK */
@@ -440,7 +440,7 @@ static switch_status_t handle_msg_session_event(listener_t *listener, erlang_msg
 
 			switch_thread_rwlock_unlock(session->event_rwlock);
 			switch_thread_rwlock_unlock(session->rwlock);
-			
+
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
@@ -838,7 +838,7 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 					} else if (!fail)  {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
 					}
-					
+
 					/* Do not free malloc here! The above commands utilize the raw allocated memory and skip any copying/duplication. Faster. */
 				}
 
@@ -891,7 +891,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 						fail = SWITCH_TRUE;
 						break;
 					}
-					
+
 					ei_get_type(buf->buff, &buf->index, &type, &size);
 					value = malloc(size + 1);
 
@@ -1233,7 +1233,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 		switch_core_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
 		if (switch_test_flag(se, LFLAG_WAITING_FOR_PID) && se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
-			
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
 
 			switch_mutex_lock(se->spawn_reply->mutex);
@@ -1256,7 +1256,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 
 	if (found) {
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	ei_x_encode_tuple_header(rbuf, 2);
 	ei_x_encode_atom(rbuf, "error");

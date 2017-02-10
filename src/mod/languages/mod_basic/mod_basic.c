@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_basic_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_basic_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_basic_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_basic, mod_basic_load, mod_basic_shutdown, NULL);
@@ -58,7 +58,7 @@ static switch_status_t do_config(switch_bool_t reload)
 static void _on_error(mb_interpreter_t* s, mb_error_e e, char* m, int p, unsigned short row, unsigned short col, int abort_code) {
 	mb_unrefvar(s);
 	if(SE_NO_ERR != e) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Error:\n    [POS] %d, [ROW] %d, [COL] %d,\n    [CODE] %d, [MESSAGE] %s, [ABORT CODE] %d\n", p, row, col, e, m, abort_code);
 	}
 }
@@ -71,7 +71,7 @@ typedef struct fs_data {
 } fs_data_t;
 
 
-static int fun_execute(mb_interpreter_t* s, void** l) 
+static int fun_execute(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -104,10 +104,10 @@ static int fun_execute(mb_interpreter_t* s, void** l)
  end:
 
 	return result;
-}            
+}
 
 
-static int fun_setvar(mb_interpreter_t* s, void** l) 
+static int fun_setvar(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -139,9 +139,9 @@ static int fun_setvar(mb_interpreter_t* s, void** l)
  end:
 
 	return result;
-}            
+}
 
-static int fun_getarg(mb_interpreter_t* s, void** l) 
+static int fun_getarg(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -171,7 +171,7 @@ static int fun_getarg(mb_interpreter_t* s, void** l)
 	return result;
 }
 
-static int fun_getvar(mb_interpreter_t* s, void** l) 
+static int fun_getvar(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -188,7 +188,7 @@ static int fun_getvar(mb_interpreter_t* s, void** l)
 	if (var.type == MB_DT_STRING && fsdata->session) {
 		switch_channel_t *channel = switch_core_session_get_channel(fsdata->session);
 		const char *value = switch_channel_get_variable(channel, var.value.string);
-		
+
 		mb_push_string(s, l, strdup(value));
 
 	} else {
@@ -201,9 +201,9 @@ static int fun_getvar(mb_interpreter_t* s, void** l)
  end:
 
 	return result;
-}            
+}
 
-static int fun_api(mb_interpreter_t* s, void** l) 
+static int fun_api(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -238,10 +238,10 @@ static int fun_api(mb_interpreter_t* s, void** l)
  end:
 
 	return result;
-}            
+}
 
 
-static int fun_log(mb_interpreter_t* s, void** l) 
+static int fun_log(mb_interpreter_t* s, void** l)
 {
 	int result = MB_FUNC_OK;
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
@@ -262,7 +262,7 @@ static int fun_log(mb_interpreter_t* s, void** l)
 
 	if (level.type == MB_DT_STRING && data.type == MB_DT_STRING) {
 		switch_log_level_t fslevel = SWITCH_LOG_DEBUG;
-		
+
 		fslevel = switch_log_str2level(level.value.string);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fsdata->session), fslevel, "%s\n", data.value.string);
 	} else {
@@ -274,25 +274,25 @@ static int fun_log(mb_interpreter_t* s, void** l)
  end:
 
 	return result;
-}            
+}
 
 
-static int bprint(const char *fmt, ...) 
+static int bprint(const char *fmt, ...)
 {
 	char *data = NULL;
 	va_list ap;
 	int ret = 0;
-	
+
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
-	
+
 	if (data) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s\n", data);
 	}
 
-	switch_safe_free(data);	
-	
+	switch_safe_free(data);
+
 	return ret;
 
 }
@@ -329,7 +329,7 @@ SWITCH_STANDARD_APP(basic_function)
 	}
 
 	mb_open(&bi);
-	mb_set_error_handler(bi, _on_error); 
+	mb_set_error_handler(bi, _on_error);
 	mb_set_printer(bi, bprint);
 	fsdata.session = session;
 	mb_set_user_data(bi, (void *) &fsdata);
@@ -340,7 +340,7 @@ SWITCH_STANDARD_APP(basic_function)
 	mb_register_func(bi, "FS_SETVAR", fun_setvar);
 	mb_register_func(bi, "FS_API", fun_api);
 	mb_register_func(bi, "FS_LOG", fun_log);
-	
+
 	if (mb_load_file(bi, file) == MB_FUNC_OK) {
 		mb_run(bi);
 	} else {
@@ -358,7 +358,7 @@ SWITCH_STANDARD_API(basic_api_function)
 {
 
 	basic_function(session, cmd);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -12,7 +12,7 @@ under the License.
 
 The Original Code is MP4 Helper Library to the Freeswitch MP4 Module.
 
-The Initial Developer of the Original Code is 
+The Initial Developer of the Original Code is
 Paulo Rogério Panhoto <paulo@voicetechnology.com.br>.
 Portions created by the Initial Developer are Copyright (C)
 the Initial Developer. All Rights Reserved.
@@ -27,13 +27,13 @@ Contributors:
 
 namespace MP4
 {
-	
+
 	Context::Context(const char * file, bool newFile)
 	{
 		if(newFile) create(file);
 		else open(file);
 	}
-	
+
 	Context::~Context()
 	{
 		close();
@@ -45,7 +45,7 @@ namespace MP4
 		if (fh == MP4_INVALID_FILE_HANDLE) throw Exception(file, "Open failed");
 		getTracks(file);
 	}
-	
+
 	void Context::create(const char * file)
 	{
 		fh = MP4Create(file);

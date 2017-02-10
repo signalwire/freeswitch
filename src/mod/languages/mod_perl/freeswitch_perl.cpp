@@ -47,7 +47,7 @@ static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup);
 
 void Session::destroy(void)
 {
-	
+
 	if (!allocated) {
 		return;
 	}
@@ -63,7 +63,7 @@ void Session::destroy(void)
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
 	switch_safe_free(hangup_func_str);
-	switch_safe_free(hangup_func_arg);	
+	switch_safe_free(hangup_func_arg);
 
 	CoreSession::destroy();
 }
@@ -189,7 +189,7 @@ void Session::unsetInputCallback(void)
 	switch_channel_set_private(channel, "CoreSession", NULL);
 	args.input_callback = NULL;
 	ap = NULL;
-	
+
 }
 
 void Session::setInputCallback(char *cbfunc, char *funcargs)
@@ -229,7 +229,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			HV *hash;
 			SV *this_sv;
 			char *code;
-			
+
 			if (!(hash = get_hv("__dtmf", TRUE))) {
 				abort();
 			}
@@ -243,7 +243,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			this_sv = newSV(strlen(str) + 1);
 			sv_setpv(this_sv, str);
 			hv_store(hash, "duration", 8, this_sv, 0);
-			
+
 			code = switch_mprintf("eval { $__RV = &%s($%s, 'dtmf', \\%%__dtmf, %s);};", cb_function, suuid, switch_str_nil(cb_arg));
 			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);
@@ -272,7 +272,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			}
 
 			mod_perl_conjure_event(my_perl, event, var_name);
-			code = switch_mprintf("eval {$__RV = &%s($%s, 'event', $%s, '%s');};$%s = undef;", 
+			code = switch_mprintf("eval {$__RV = &%s($%s, 'event', $%s, '%s');};$%s = undef;",
 								  cb_function, suuid, var_name, switch_str_nil(cb_arg), var_name);
 			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);

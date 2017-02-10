@@ -44,7 +44,7 @@ findLADSPAPluginDescriptor(void * pvLADSPAPluginLibrary,
    style) and a LADSPA_DescriptorFunction (from which
    LADSPA_Descriptors can be acquired). */
 typedef void LADSPAPluginSearchCallbackFunction
-(const char * pcFullFilename, 
+(const char * pcFullFilename,
  void * pvPluginHandle,
  LADSPA_Descriptor_Function fDescriptorFunction);
 

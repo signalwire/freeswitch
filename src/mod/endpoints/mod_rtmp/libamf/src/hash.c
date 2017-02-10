@@ -144,7 +144,7 @@ static void insertElement(
 static void rehash(Hash *pH, int new_size){
   struct _ht *new_ht;          /* The new hash table */
   HashElem *elem, *next_elem;  /* For looping over existing elements */
-  
+
   assert( (new_size & (new_size-1))==0 );
   new_ht = (struct _ht *)pH->xMalloc( new_size*sizeof(struct _ht) );
   if( new_ht==0 ) return;
@@ -170,7 +170,7 @@ static HashElem *findElementGivenHash(
 ){
   HashElem *elem;            /* Used to loop thru the element list */
   int count;                     /* Number of elements left to test */
-  
+
   if( pH->ht ){
     struct _ht *pEntry = &pH->ht[h];
     elem = pEntry->chain;
@@ -262,7 +262,7 @@ void * HashInsert(
   int h;                    /* the hash of the key modulo hash table size */
   HashElem *elem;       /* Used to loop thru the element list */
   HashElem *new_elem;   /* New element added to the pH */
-  
+
   assert( pH!=0 );
   hraw = binHash(pKey, nKey);
   assert( (pH->htsize & (pH->htsize-1))==0 );

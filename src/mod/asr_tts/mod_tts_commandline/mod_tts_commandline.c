@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2009, Mathieu Parent <math.parent@gmail.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Parent <math.parent@gmail.com>
  *
  * mod_tts_commandline.c -- System command ASR TTS Interface
@@ -204,7 +204,7 @@ static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-	
+
 	if (info->fh != NULL && info->fh->file_interface != NULL) {
 		switch_core_file_close(info->fh);
 	}

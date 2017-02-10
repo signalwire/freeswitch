@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mrene@avgs.ca>
  *
  * fs_encode.c -- Encode a native file
@@ -53,7 +53,7 @@ static void fs_encode_cleanup()
 	switch_safe_free(SWITCH_GLOBAL_dirs.log_dir);
 }
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 	int r = 1;
 	switch_bool_t verbose = SWITCH_FALSE;
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 					i++;
 					/* Load extra modules */
 					if (strchr(argv[i], ','))  {
-						extra_modules_count = switch_split(argv[i], ',', extra_modules);	
+						extra_modules_count = switch_split(argv[i], ',', extra_modules);
 					} else {
 						extra_modules_count = 1;
 						extra_modules[0] = argv[i];
@@ -136,24 +136,24 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-	
+
 	if (argc - i < 2 || cmd_fail) {
 		goto usage;
 	}
-	
+
 	input = argv[i++];
 	output = argv[i++];
 	if (zstr(input) || zstr(output) || !(format = strchr(output, '.'))) {
 		goto usage;
 	}
-	
+
 	format++;
-	
+
 	if (switch_core_init(SCF_MINIMAL, verbose, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot init core [%s]\n", err);
 		goto end;
 	}
-	
+
 	switch_loadable_module_init(SWITCH_FALSE);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_TRUE, &err);
 	switch_loadable_module_load_module("", "CORE_SPEEX_MODULE", SWITCH_TRUE, &err);
@@ -165,17 +165,17 @@ int main(int argc, char *argv[])
 			goto end;
 		}
 	}
-	
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_spandsp", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot init mod_spandsp [%s]\n", err);
 		goto end;
 	}
-	
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_sndfile", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot init mod_sndfile [%s]\n", err);
 		goto end;
 	}
-	
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_native_file", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot init mod_native_file [%s]\n", err);
 		goto end;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Couldn't open %s\n", input);
 		goto end;
 	}
-	
+
 
 	if (verbose) {
 		fprintf(stderr, "Opening file %s\n", output);
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", p, rate, ptime);
 			goto end;
 		}
-		
+
 		if (switch_core_codec_init_with_bitrate(&raw_codec, "L16", NULL, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", "L16", rate, ptime);
 		goto end;
@@ -231,9 +231,9 @@ int main(int argc, char *argv[])
 
 	if (switch_core_file_open(&fh_output, output, channels, codec.implementation->actual_samples_per_second, out_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't open %s\n", output);
-		goto end;	
+		goto end;
 	}
-	
+
 	if (switch_test_flag(&fh_input, SWITCH_FILE_NATIVE)) {
 		in_asis = 1;
 	}
@@ -249,9 +249,9 @@ int main(int argc, char *argv[])
 	switch_assert(sizeof(buf) >= len * 2);
 
 	if (verbose) {
-		fprintf(stderr, "Frame size is %d\n", blocksize);	
+		fprintf(stderr, "Frame size is %d\n", blocksize);
 	}
-	
+
 	while (switch_core_file_read(&fh_input, buf, &len) == SWITCH_STATUS_SUCCESS) {
 		char encode_buf[2048];
 		uint32_t encoded_len = sizeof(buf);
@@ -263,13 +263,13 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Codec encoder error\n");
 				goto end;
 			}
-			
+
 			len = encoded_len;
 		} else {
 			if (!in_asis) {
 				encoded_len = len;
 			} else if (in_asis) {
-				
+
 				switch_core_codec_decode(&codec,
 										 &raw_codec,
 										 buf,
@@ -289,14 +289,14 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Write error\n");
 			goto end;
 		}
-		
+
 		if (len != encoded_len) {
 			printf("Short write: wrote %"SWITCH_SIZE_T_FMT"/%d bytes\n", len, encoded_len);
 		}
-		
+
 		len = blocksize;
 	}
-	
+
 	r = 0;
 
 end:
@@ -307,17 +307,17 @@ end:
 
 
 	if (fh_input.file_interface) {
-		switch_core_file_close(&fh_input);		
+		switch_core_file_close(&fh_input);
 	}
 
 	if (fh_output.file_interface) {
-		switch_core_file_close(&fh_output);		
+		switch_core_file_close(&fh_output);
 	}
 
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
-	
+
 	fs_encode_cleanup();
 
 	//switch_core_destroy();

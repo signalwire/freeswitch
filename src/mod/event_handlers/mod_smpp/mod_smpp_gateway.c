@@ -36,11 +36,11 @@
 
 static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *thread, void *obj);
 
-switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, char *host, int port, int debug, char *system_id, 
+switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, char *host, int port, int debug, char *system_id,
 										char *password, char *system_type, char *profile) {
 	mod_smpp_gateway_t *gateway = NULL;
 	switch_memory_pool_t *pool = NULL;
-	
+
   	switch_core_new_memory_pool(&pool);
 
 	gateway = switch_core_alloc(pool, sizeof(mod_smpp_gateway_t));
@@ -57,13 +57,13 @@ switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, cha
 	gateway->system_type = system_type ? switch_core_strdup(gateway->pool, system_type) : "freeswitch_smpp";
 	gateway->profile = profile ? switch_core_strdup(gateway->pool, profile) : "default";
 
-	if ( switch_sockaddr_info_get(&(gateway->socketaddr), gateway->host, SWITCH_INET, 
+	if ( switch_sockaddr_info_get(&(gateway->socketaddr), gateway->host, SWITCH_INET,
 								  gateway->port, 0, mod_smpp_globals.pool) != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get socketaddr info\n");
 		goto err;
 	}
 
-	if ( switch_socket_create(&(gateway->socket), switch_sockaddr_get_family(gateway->socketaddr), 
+	if ( switch_socket_create(&(gateway->socket), switch_sockaddr_get_family(gateway->socketaddr),
 							  SOCK_STREAM, SWITCH_PROTO_TCP, mod_smpp_globals.pool) != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create the socket\n");
 		goto err;
@@ -84,7 +84,7 @@ switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, cha
 	switch_core_hash_insert(mod_smpp_globals.gateways, name, (void *) gateway);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Gateway %s created\n", gateway->host);
-	
+
 	*gw = gateway;
 	return SWITCH_STATUS_SUCCESS;
 
@@ -110,15 +110,15 @@ switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway) {
     req_b->addr_ton         = 1;
 
 	strncpy( (char *)req_b->address_range, gateway->host, sizeof(req_b->address_range));
-	
+
 	if ( gateway->system_id ) {
 		strncpy((char *)req_b->system_id, gateway->system_id, sizeof(req_b->system_id));
 	}
-	
+
 	if ( gateway->password ) {
 		strncpy((char *)req_b->password, gateway->password, sizeof(req_b->password));
 	}
-	
+
 	if ( gateway->system_type ) {
 		strncpy((char *)req_b->system_type, gateway->system_type, sizeof(req_b->system_type));
 	}
@@ -146,7 +146,7 @@ switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway) {
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-    if( write_len != local_buffer_len ){ 
+    if( write_len != local_buffer_len ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Was not able to send entire buffer\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -170,7 +170,7 @@ switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway) {
 	if ( req_b ) {
 		switch_safe_free(req_b);
 	}
-	
+
 	return status;
 }
 
@@ -182,7 +182,7 @@ switch_status_t mod_smpp_gateway_connect(mod_smpp_gateway_t *gateway) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to connect the socket %d\n", status);
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	if ( mod_smpp_gateway_authenticate(gateway) != SWITCH_STATUS_SUCCESS ) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -210,7 +210,7 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	    switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-	if ( read_len != 4 ){ 
+	if ( read_len != 4 ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error in recv(PEEK) %d\n", (unsigned int )read_len);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -218,7 +218,7 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	read_len = ntohl(*local_buffer32 );
 
 	if ( read_len > 1500 ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Corrupted PDU size from gateway [%s]\n", gateway->name);		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Corrupted PDU size from gateway [%s]\n", gateway->name);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
@@ -252,14 +252,14 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	case DELIVER_SM:
 		if ( gennack->command_status == ESME_ROK ) {
 			deliver_sm_t *res = (deliver_sm_t *) data;
-			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New SMS received from[%s] to[%s] message[%s]\n", 
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New SMS received from[%s] to[%s] message[%s]\n",
 							  res->source_addr, res->destination_addr, res->short_message);
-			
+
 			mod_smpp_message_decode(gateway, res, &evt);
 		}
 		break;
-	case ENQUIRE_LINK: 
+	case ENQUIRE_LINK:
 	case ENQUIRE_LINK_RESP:
 	case SUBMIT_SM_RESP:
 		switch (gennack->command_status) {
@@ -287,7 +287,7 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 		*event = evt;
 	}
 
- done: 
+ done:
 	switch_safe_free(local_buffer);
 	return status;
 }
@@ -332,7 +332,7 @@ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *th
 			}
 
 			mod_smpp_gateway_send_deliver_sm_response(gateway, event);
-			
+
 			switch_core_chat_send("smpp", event);
 			switch_event_destroy(&event);
 			/* Fire message to the chat plan, then respond */
@@ -345,7 +345,7 @@ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *th
 			if ( event ) {
 				char *str = NULL;
 				switch_event_serialize(event, &str, SWITCH_FALSE);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown packet event: %s\n", str);				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown packet event: %s\n", str);
 				switch_safe_free(str);
 			}
 		}
@@ -383,7 +383,7 @@ switch_status_t mod_smpp_gateway_send_enquire_link_response(mod_smpp_gateway_t *
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-    if( write_len != local_buffer_len ){ 
+    if( write_len != local_buffer_len ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Was not able to send entire buffer\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -424,7 +424,7 @@ switch_status_t mod_smpp_gateway_send_deliver_sm_response(mod_smpp_gateway_t *ga
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-    if( write_len != local_buffer_len ){ 
+    if( write_len != local_buffer_len ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Was not able to send entire buffer\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -464,7 +464,7 @@ switch_status_t mod_smpp_gateway_send_unbind(mod_smpp_gateway_t *gateway)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-    if( write_len != local_buffer_len ){ 
+    if( write_len != local_buffer_len ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Was not able to send entire buffer\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -475,16 +475,16 @@ switch_status_t mod_smpp_gateway_send_unbind(mod_smpp_gateway_t *gateway)
 	return status;
 }
 
-switch_status_t mod_smpp_gateway_destroy(mod_smpp_gateway_t **gw) 
+switch_status_t mod_smpp_gateway_destroy(mod_smpp_gateway_t **gw)
 {
 	mod_smpp_gateway_t *gateway = NULL;
 
 	if ( !gw || !*gw ) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	gateway = *gw;
-	
+
 	switch_core_hash_delete(mod_smpp_globals.gateways, gateway->name);
 
 	gateway->running = 0;
@@ -518,7 +518,7 @@ switch_status_t mod_smpp_gateway_send_message(mod_smpp_gateway_t *gateway, switc
 	int local_buffer_len = sizeof(local_buffer);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_size_t write_len = 0;
-	
+
 	if ( mod_smpp_message_create(gateway, message, &msg) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to send message due to message_create failure\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
@@ -527,14 +527,14 @@ switch_status_t mod_smpp_gateway_send_message(mod_smpp_gateway_t *gateway, switc
     memset(local_buffer, 0, sizeof(local_buffer));
 
     if( smpp34_pack2( local_buffer, sizeof(local_buffer),	&local_buffer_len, (void*)&(msg->req)) != 0 ){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Unable to encode message:%d:\n%s\n", smpp34_errno, smpp34_strerror); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Unable to encode message:%d:\n%s\n", smpp34_errno, smpp34_strerror);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
 	write_len = local_buffer_len;
 
 	if ( mod_smpp_gateway_get_next_sequence(gateway, &(msg->req.sequence_number)) ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to fetch next gateway sequence number\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to fetch next gateway sequence number\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
@@ -547,7 +547,7 @@ switch_status_t mod_smpp_gateway_send_message(mod_smpp_gateway_t *gateway, switc
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-    if ( write_len != local_buffer_len ){ 
+    if ( write_len != local_buffer_len ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "smpp: Did not send all of message to gateway");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}

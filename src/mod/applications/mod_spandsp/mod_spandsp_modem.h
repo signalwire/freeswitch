@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -101,9 +101,9 @@
 
 
 typedef enum {
-	MODEM_STATE_INIT,	
-	MODEM_STATE_ONHOOK,	
-	MODEM_STATE_OFFHOOK,	
+	MODEM_STATE_INIT,
+	MODEM_STATE_ONHOOK,
+	MODEM_STATE_OFFHOOK,
 	MODEM_STATE_ACQUIRED,
 	MODEM_STATE_RINGING,
 	MODEM_STATE_ANSWERED,

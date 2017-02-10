@@ -35,31 +35,31 @@
 extern "C" {
 #endif
 
-/* Functions below should map quite nicely to Redis 1.02 command set. 
- * Refer to the official Redis documentation for further explanation of 
+/* Functions below should map quite nicely to Redis 1.02 command set.
+ * Refer to the official Redis documentation for further explanation of
  * each command. See credis examples that show how functions can be used.
- * Here is a brief example that connects to a Redis server and sets value 
- * of key `fruit' to `banana': 
+ * Here is a brief example that connects to a Redis server and sets value
+ * of key `fruit' to `banana':
  *
  *    REDIS rh = credis_connect("localhost", 6789, 2000);
  *    credis_set(rh, "fruit", "banana");
  *    credis_close(rh);
  *
  * In general, functions return 0 on success or a negative value on
- * error. Refer to CREDIS_ERR_* codes. The return code -1 is typically 
- * used when for instance a key is not found. 
+ * error. Refer to CREDIS_ERR_* codes. The return code -1 is typically
+ * used when for instance a key is not found.
  *
- * IMPORTANT! Memory buffers are allocated, used and managed by credis 
- * internally. Subsequent calls to credis functions _will_ destroy the 
- * data to which returned values reference to. If for instance the 
- * returned value by a call to credis_get() is to be used later in the 
- * program, a strdup() is highly recommended. However, each `REDIS' 
- * handle has its own state and manages its own memory buffer 
+ * IMPORTANT! Memory buffers are allocated, used and managed by credis
+ * internally. Subsequent calls to credis functions _will_ destroy the
+ * data to which returned values reference to. If for instance the
+ * returned value by a call to credis_get() is to be used later in the
+ * program, a strdup() is highly recommended. However, each `REDIS'
+ * handle has its own state and manages its own memory buffer
  * independently. That means that one of two handles can be destroyed
  * while the other keeps its connection and data.
- * 
+ *
  * TODO
- *  - Currently only support for zero-terminated strings, not for storing 
+ *  - Currently only support for zero-terminated strings, not for storing
  *    abritary binary data as bulk data. Basically an API issue since it
  *    is partially supported internally.
  *  - Support for Redis >= 1.1 protocol
@@ -108,7 +108,7 @@ typedef struct _cr_info {
  * Connection handling
  */
 
-/* setting host to NULL will use "localhost". setting port to 0 will use 
+/* setting host to NULL will use "localhost". setting port to 0 will use
  * default port 6379 */
 REDIS credis_connect(const char *host, int port, int timeout);
 
@@ -120,8 +120,8 @@ int credis_auth(REDIS rhnd, const char *password);
 
 int credis_ping(REDIS rhnd);
 
-/* 
- * Commands operating on string values 
+/*
+ * Commands operating on string values
  */
 
 int credis_set(REDIS rhnd, const char *key, const char *val);
@@ -156,14 +156,14 @@ int credis_del(REDIS rhnd, const char *key);
 /* returns type, refer to CREDIS_TYPE_* defines */
 int credis_type(REDIS rhnd, const char *key);
 
-/* TODO for Redis >= 1.1 
+/* TODO for Redis >= 1.1
  * MSET key1 value1 key2 value2 ... keyN valueN set a multiple keys to multiple values in a single atomic operation
  * MSETNX key1 value1 key2 value2 ... keyN valueN set a multiple keys to multiple values in a single atomic operation if none of
- * DEL key1 key2 ... keyN remove multiple keys 
+ * DEL key1 key2 ... keyN remove multiple keys
  */
 
 /*
- * Commands operating on key space 
+ * Commands operating on key space
  */
 
 int credis_keys(REDIS rhnd, const char *pattern, char **keyv, int len);
@@ -178,16 +178,16 @@ int credis_renamenx(REDIS rhnd, const char *key, const char *new_key_name);
 /* returns size of db */
 int credis_dbsize(REDIS rhnd);
 
-/* returns -1 if the timeout was not set; either due to key already has 
+/* returns -1 if the timeout was not set; either due to key already has
    an associated timeout or key does not exist */
 int credis_expire(REDIS rhnd, const char *key, int secs);
 
-/* returns time to live seconds or -1 if key does not exists or does not 
+/* returns time to live seconds or -1 if key does not exists or does not
  * have expire set */
 int credis_ttl(REDIS rhnd, const char *key);
 
 /*
- * Commands operating on lists 
+ * Commands operating on lists
  */
 
 int credis_rpush(REDIS rhnd, const char *key, const char *element);
@@ -216,8 +216,8 @@ int credis_lpop(REDIS rhnd, const char *key, char **val);
 /* returns -1 if the key doesn't exists */
 int credis_rpop(REDIS rhnd, const char *key, char **val);
 
-/* TODO for Redis >= 1.1 
- * RPOPLPUSH srckey dstkey 
+/* TODO for Redis >= 1.1
+ * RPOPLPUSH srckey dstkey
  *
  * TODO for Redis >= 1.3.1
  * BLPOP key1 key2 ... keyN timeout
@@ -225,7 +225,7 @@ int credis_rpop(REDIS rhnd, const char *key, char **val);
  */
 
 /*
- * Commands operating on sets 
+ * Commands operating on sets
  */
 
 /* returns -1 if the given member was already a member of the set */
@@ -241,7 +241,7 @@ int credis_sismember(REDIS rhnd, const char *key, const char *member);
 int credis_spop(REDIS rhnd, const char *key, char **member);
 
 /* returns -1 if the member doesn't exists in the source set */
-int credis_smove(REDIS rhnd, const char *sourcekey, const char *destkey, 
+int credis_smove(REDIS rhnd, const char *sourcekey, const char *destkey,
                  const char *member);
 
 /* returns cardinality (number of members) or 0 if the given key doesn't exists */
@@ -276,12 +276,12 @@ int credis_smembers(REDIS rhnd, const char *key, char ***members);
  */
 
 /*
- * Multiple databases handling commands 
+ * Multiple databases handling commands
  */
 
 int credis_select(REDIS rhnd, int index);
 
-/* returns -1 if the key was not moved; already present at target 
+/* returns -1 if the key was not moved; already present at target
  * or not found on current db */
 int credis_move(REDIS rhnd, const char *key, int index);
 
@@ -290,14 +290,14 @@ int credis_flushdb(REDIS rhnd);
 int credis_flushall(REDIS rhnd);
 
 /*
- * Sorting 
+ * Sorting
  */
 
 /* returns number of elements returned in vector `elementv' */
 int credis_sort(REDIS rhnd, const char *query, char ***elementv);
 
-/* 
- * Persistence control commands 
+/*
+ * Persistence control commands
  */
 
 int credis_save(REDIS rhnd);
@@ -310,7 +310,7 @@ int credis_lastsave(REDIS rhnd);
 int credis_shutdown(REDIS rhnd);
 
 /*
- * Remote server control commands 
+ * Remote server control commands
  */
 
 int credis_info(REDIS rhnd, REDIS_INFO *info);

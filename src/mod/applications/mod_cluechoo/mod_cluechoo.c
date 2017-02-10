@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  *
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cluechoo_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_cluechoo_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_cluechoo_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_cluechoo, mod_cluechoo_load, mod_cluechoo_shutdown, NULL);
@@ -102,7 +102,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cluechoo_shutdown)
 
 /*========================================
  *    sl.c:
- *	Copyright 1993,1998 Toyoda Masashi 
+ *	Copyright 1993,1998 Toyoda Masashi
  *		(toyoda@is.titech.ac.jp)
  *	Last Modified: 1998/ 7/22
  *========================================

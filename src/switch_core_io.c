@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Moular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -39,23 +39,23 @@
 SWITCH_DECLARE(void) switch_core_gen_encoded_silence(unsigned char *data, const switch_codec_implementation_t *read_impl, switch_size_t len)
 {
 	unsigned char g729_filler[] = {
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64,
 		229, 127, 79, 96, 207, 82, 216, 110, 245, 81
 	};
 
-	
+
 	if (read_impl->ianacode == 18 || switch_stristr("g729", read_impl->iananame)) {
 		memcpy(data, g729_filler, len);
 	} else {
@@ -122,7 +122,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_mutex_lock(session->read_codec->mutex);
 
   top:
-	
+
 	for(i = 0; i < 2; i++) {
 		if (session->dmachine[i]) {
 			switch_channel_dtmf_lock(session->channel);
@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_channel_dtmf_unlock(session->channel);
 		}
 	}
-	
+
 	if (switch_channel_down(session->channel) || !switch_core_codec_ready(session->read_codec)) {
 		*frame = NULL;
 		status = SWITCH_STATUS_FALSE;
@@ -153,7 +153,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			msg.message_id = SWITCH_MESSAGE_HEARTBEAT_EVENT;
 			msg.numeric_arg = session->track_duration;
 			switch_core_session_receive_message(session, &msg);
-			
+
 			switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_fire(&event);
@@ -205,7 +205,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (!switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
 			status = SWITCH_STATUS_FALSE;
-			goto even_more_done;			
+			goto even_more_done;
 		}
 	}
 
@@ -245,7 +245,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
-			
+
 			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 				continue;
 			}
@@ -253,11 +253,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				prune++;
 				continue;
 			}
-			
+
 			if (bp->ready) {
 				if (switch_test_flag(bp, SMBF_TAP_NATIVE_READ)) {
-					if ((*frame)->codec && (*frame)->codec->implementation && 
-						(*frame)->codec->implementation->encoded_bytes_per_packet && 
+					if ((*frame)->codec && (*frame)->codec->implementation &&
+						(*frame)->codec->implementation->encoded_bytes_per_packet &&
 						(*frame)->datalen != (*frame)->codec->implementation->encoded_bytes_per_packet) {
 						switch_set_flag((*frame), SFF_CNG);
 						break;
@@ -269,7 +269,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 				}
 			}
-			
+
 			if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
 				switch_set_flag(bp, SMBF_PRUNE);
 				prune++;
@@ -287,8 +287,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
 		need_codec = TRUE;
 		tap_only = 0;
-	} 
-	
+	}
+
 	if (codec_impl.actual_samples_per_second != session->read_impl.actual_samples_per_second) {
 		do_resample = 1;
 	}
@@ -296,7 +296,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (tap_only) {
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
-		int prune = 0;		
+		int prune = 0;
 
 		if (session->bugs && switch_test_flag((*frame), SFF_CNG)) {
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
@@ -306,7 +306,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
-			
+
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
@@ -314,29 +314,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					prune++;
 					continue;
 				}
-			
+
 				if (bp->ready && (*frame)->codec && (*frame)->codec->implementation && (*frame)->codec->implementation->encoded_bytes_per_packet) {
 					if (switch_test_flag(bp, SMBF_TAP_NATIVE_READ)) {
 						if (bp->callback) {
 							switch_frame_t tmp_frame = {0};
 							unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-							
-							
+
+
 							tmp_frame.codec = (*frame)->codec;
 							tmp_frame.datalen = (*frame)->codec->implementation->encoded_bytes_per_packet;
 							tmp_frame.samples = (*frame)->codec->implementation->samples_per_packet;
 							tmp_frame.channels = (*frame)->codec->implementation->number_of_channels;
 							tmp_frame.data = data;
-							
+
 							switch_core_gen_encoded_silence(data, (*frame)->codec->implementation, tmp_frame.datalen);
-							
+
 							bp->native_read_frame = &tmp_frame;
 							ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_READ);
 							bp->native_read_frame = NULL;
 						}
 					}
 				}
-				
+
 				if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
 					switch_set_flag(bp, SMBF_PRUNE);
 					prune++;
@@ -347,8 +347,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			if (prune) {
 				switch_core_media_bug_prune(session);
 			}
-			
-		
+
+
 		}
 
 
@@ -389,7 +389,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_core_session_t *other_session;
 		const char *uuid = switch_channel_get_partner_uuid(switch_core_session_get_channel(session));
 		switch_clear_flag(session, SSF_READ_TRANSCODE);
-		
+
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
 			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
@@ -403,7 +403,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_clear_flag(session, SSF_READ_CODEC_RESET);
 	}
 
-	
+
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame_t *enc_frame, *read_frame = *frame;
 
@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 										  read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL, NULL);
 						if (!switch_core_codec_ready(&session->bug_codec)) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Error setting BUG codec %s!\n", 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Error setting BUG codec %s!\n",
 											  switch_core_session_get_name(session), read_frame->codec->implementation->iananame);
 						}
 					}
@@ -472,7 +472,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					 switch_channel_test_flag(session->channel, CF_CNG_PLC)) && !session->plc) {
 					session->plc = plc_init(NULL);
 				}
-				
+
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) && session->plc && switch_test_flag(read_frame, SFF_PLC)) {
 					session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
 					session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
@@ -487,12 +487,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					if (!switch_core_codec_ready(codec)) {
 						codec = read_frame->codec;
 					}
-					
+
 					if (!switch_core_codec_ready(codec)) {
 						switch_thread_rwlock_unlock(session->bug_rwlock);
 						goto done;
 					}
-					
+
 					codec->cur_frame = read_frame;
 					session->read_codec->cur_frame = read_frame;
 					status = switch_core_codec_decode(codec,
@@ -500,7 +500,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 													  read_frame->data,
 													  read_frame->datalen,
 													  session->read_impl.actual_samples_per_second,
-													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
+													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate,
 													  &read_frame->flags);
 
 					if (status == SWITCH_STATUS_NOT_INITALIZED) {
@@ -515,7 +515,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_thread_rwlock_unlock(session->bug_rwlock);
 
 				}
-				
+
 				if (status == SWITCH_STATUS_SUCCESS && session->read_impl.number_of_channels == 1) {
 					if (session->plc) {
 						if (switch_test_flag(read_frame, SFF_PLC)) {
@@ -552,7 +552,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					status = switch_resample_create(&session->read_resampler,
 													read_frame->codec->implementation->actual_samples_per_second,
 													session->read_impl.actual_samples_per_second,
-													session->read_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 
+													session->read_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY,
 													session->read_impl.number_of_channels);
 
 					switch_mutex_unlock(session->resample_mutex);
@@ -729,8 +729,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						uint32_t samples = bytes / 2 / bp->read_demux_frame->channels;
 
 						memcpy(data, read_frame->data, read_frame->datalen);
-						datalen = switch_unmerge_sln((int16_t *)data, samples, 
-													 bp->read_demux_frame->data, samples, 
+						datalen = switch_unmerge_sln((int16_t *)data, samples,
+													 bp->read_demux_frame->data, samples,
 													 bp->read_demux_frame->channels) * 2 * bp->read_demux_frame->channels;
 
 						switch_buffer_write(bp->raw_read_buffer, data, datalen);
@@ -787,7 +787,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					goto done;
 				}
 			}
-			
+
 			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_impl.decoded_bytes_per_packet) {
 				if (perfect) {
 					enc_frame = read_frame;
@@ -936,7 +936,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
-	
+
 	if (status == SWITCH_STATUS_SUCCESS && switch_channel_get_callstate(session->channel) == CCS_UNHELD) {
 		switch_channel_set_callstate(session->channel, CCS_ACTIVE);
 	}
@@ -980,12 +980,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_status_t status;
 	switch_dtmf_t new_dtmf;
 	int fed = 0;
-	
+
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1004,7 +1004,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	} else if (!new_dtmf.duration) {
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
-	
+
 	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
 		if (session->dmachine[0]) {
 			char str[2] = { dtmf->digit, '\0' };
@@ -1032,7 +1032,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1064,7 +1064,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
-	
+
 	if (new_dtmf.digit != 'w' && new_dtmf.digit != 'W') {
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
@@ -1074,14 +1074,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
 						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_min_dtmf_duration(0);
-		} 
+		}
 	}
 
 	if (!new_dtmf.duration) {
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
 
-	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {	
+	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
 		for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
 			if ((status = ptr->send_dtmf(session, dtmf, SWITCH_DTMF_SEND)) != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_SUCCESS;
@@ -1098,7 +1098,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	if (session->endpoint_interface->io_routines->send_dtmf) {
 		int send = 0;
 		status = SWITCH_STATUS_SUCCESS;
-		
+
 		if (switch_channel_test_cap(session->channel, CC_QUEUEABLE_DTMF_DELAY) && (dtmf->digit == 'w' || dtmf->digit == 'W')) {
 			send = 1;
 		} else {
@@ -1180,13 +1180,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
 										  switch_channel_get_name(session->channel), dtmf.digit, dtmf.duration);
 						dtmf.duration = switch_core_min_dtmf_duration(0);
-					} 
+					}
 				}
 
 				if (!dtmf.duration) {
 					dtmf.duration = switch_core_default_dtmf_duration(0);
 				}
-				
+
 
 				if (switch_core_session_send_dtmf(session, &dtmf) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s send dtmf\ndigit=%c ms=%u samples=%u\n",

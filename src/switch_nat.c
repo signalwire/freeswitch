@@ -118,7 +118,7 @@ static int init_upnp(void)
 	} else if (devlist && !dev && !trydev) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice found and I am NOT going to try your printer because printers should not route to the internet, that would be DAFT\n");
 	}
-	
+
 	if (dev) {
 		descXML = miniwget(dev->descURL, &descXMLsize);
 

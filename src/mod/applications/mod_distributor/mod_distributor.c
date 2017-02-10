@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  *
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_distributor_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_distributor_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_distributor_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_distributor, mod_distributor_load, mod_distributor_shutdown, NULL);
@@ -173,7 +173,7 @@ static int load_config(int reloading)
 			switch_zmalloc(node, sizeof(*node));
 			node->name = strdup(name_attr);
 			node->wval = tmp;
-			
+
 			if (np) {
 				np->next = node;
 			} else {
@@ -228,7 +228,7 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 
 	for (;;) {
 	top:
-		
+
 		if (++loops > 1000) {
 			break;
 		}
@@ -253,7 +253,7 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 
 		if (match) {
 			int i;
-			
+
 			match->cur_weight++;
 			list->lastnode = match;
 			list->last = mx;
@@ -266,7 +266,7 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 					goto top;
 				}
 			}
-			
+
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Choose %s\n", match->name);
 			return match;
@@ -279,7 +279,7 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 		}
 
 	}
-	
+
 	return NULL;
 }
 
@@ -294,7 +294,7 @@ static char *dist_engine(const char *name)
 	int argc = 0;
 	char *argv[100] = { 0 };
 
-	
+
 	if ((except = strchr(myname, ' '))) {
 		*except++ = '\0';
 		argc = switch_split(except, ' ', argv);
@@ -443,7 +443,7 @@ SWITCH_STANDARD_API(distributor_ctl_function)
 							*e++ = '\0';
 							if ((np = find_node(list, argv[i]))) {
 								int tmp = -1;
-								
+
 								if (e) {
 									tmp = atoi(e);
 								}
@@ -476,7 +476,7 @@ SWITCH_STANDARD_API(distributor_ctl_function)
 			}
 		}
 	}
-	
+
  err:
 
 	if (err) {

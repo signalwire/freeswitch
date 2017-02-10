@@ -1,11 +1,11 @@
 //gcc -Wall -ggdb client.c -o client -lX11 -lpthread
 /*
-   
-   Interactive client for the Skype API 
+
+   Interactive client for the Skype API
 
 USAGE: client [Xserver instance]
 
-# ./client :103 
+# ./client :103
 
 */
 

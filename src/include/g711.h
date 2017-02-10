@@ -25,7 +25,7 @@ these routines are slow in C, is the lack of direct access to the CPU's "find
 the first 1" instruction. A little in-line assembler fixes that, and the
 conversion routines can be faster than lookup tables, in most real world usage.
 A "find the first 1" instruction is available on most modern CPUs, and is a
-much underused feature. 
+much underused feature.
 
 If an assembly language method of bit searching is not available, these routines
 revert to a method that can be a little slow, so the cache thrashing might not

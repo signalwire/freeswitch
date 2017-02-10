@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -64,7 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	switch_zmalloc(resampler, sizeof(*resampler));
 
 	if (!channels) channels = 1;
-	
+
 	resampler->resampler = speex_resampler_init(channels, from_rate, to_rate, quality, &err);
 
 	if (!resampler->resampler) {
@@ -80,7 +80,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	resampler->factor = (lto_rate / lfrom_rate);
 	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->channels = channels;
-	
+
 	//resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
 
 	resampler->to_size = switch_resample_calc_buffer_size(resampler->to_rate, resampler->from_rate, to_size) / 2;
@@ -99,7 +99,7 @@ SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resam
 		resampler->to = realloc(resampler->to, resampler->to_size * sizeof(int16_t) * resampler->channels);
 		switch_assert(resampler->to);
 	}
-	
+
 	resampler->to_len = resampler->to_size;
 	speex_resampler_process_interleaved_int(resampler->resampler, src, &srclen, resampler->to, &resampler->to_len);
 	return resampler->to_len;
@@ -217,11 +217,11 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 			sum_rnd += rnd2;
 		}
 
-		s = (int16_t) ((int16_t) sum_rnd / (int) divisor);		
+		s = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
 		for (j = 0; j < channels; j++) {
 			*data = s;
-			data++;			
+			data++;
 		}
 
 
@@ -299,12 +299,12 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 		}
 
 		for (i = 0; i < samples; i++) {
-			for (j = 0; j < channels; j++) { 
+			for (j = 0; j < channels; j++) {
 				data[k++] = data[i + samples];
 			}
 		}
 
-#else 
+#else
 		uint32_t k = 0, len = samples * 2 * orig_channels;
 		int16_t *orig = NULL;
 
@@ -312,11 +312,11 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 		memcpy(orig, data, len);
 
 		for (i = 0; i < samples; i++) {
-			for (j = 0; j < channels; j++) { 
+			for (j = 0; j < channels; j++) {
 				data[k++] = orig[i];
 			}
 		}
-		
+
 		free(orig);
 #endif
 
@@ -340,9 +340,9 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 	} else {
 		chart = neg;
 	}
-	
+
 	i = abs(vol) - 1;
-	
+
 	switch_assert(i < 13);
 
 	newrate = chart[i];
@@ -379,9 +379,9 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 	} else {
 		chart = neg;
 	}
-	
+
 	i = abs(vol) - 1;
-	
+
 	switch_assert(i < 4);
 
 	newrate = chart[i];

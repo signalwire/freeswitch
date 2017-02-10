@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * William King <william.king@quentustech.com>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
@@ -38,7 +38,7 @@
 /* Prototypes */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_valet_parking, mod_valet_parking_load, NULL, NULL);
@@ -135,7 +135,7 @@ static void check_timeouts(void)
 			switch_mutex_lock(lot->mutex);
 
 		top:
-		
+
 			for (i_hi = switch_core_hash_first_iter( lot->hash, i_hi); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
 				switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 				i_ext = (char *) i_var;
@@ -175,7 +175,7 @@ static int find_longest(valet_lot_t *lot, int min, int max)
 		token = (valet_token_t *) i_val;
 		cur = (now - token->start_time);
 		i = atoi(token->ext);
-		
+
 		if (cur > longest && i >= min && i <= max) {
 			longest = cur;
 			longest_ext = i;
@@ -247,7 +247,7 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 	return token;
 }
 
-static int valet_lot_count(valet_lot_t *lot) 
+static int valet_lot_count(valet_lot_t *lot)
 {
 	switch_hash_index_t *i_hi;
 	const void *i_var;
@@ -266,7 +266,7 @@ static int valet_lot_count(valet_lot_t *lot)
 			continue;
 		}
 		count++;
-	}	
+	}
 	switch_mutex_unlock(lot->mutex);
 
 	return count;
@@ -281,19 +281,19 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 	switch_event_t *event;
 	int count;
 
-	
+
 	dup_lot_name = strdup(lot_name);
 	lot_name = dup_lot_name;
 
 	if ((domain_name = strchr(dup_lot_name, '@'))) {
 		*domain_name++ = '\0';
 	}
-	
+
 	if (zstr(domain_name)) {
 		dup_domain_name = switch_core_get_domain(SWITCH_TRUE);
 		domain_name = dup_domain_name;
 	}
-	
+
 	if (zstr(domain_name)) {
 		domain_name = "cluecon.com";
 	}
@@ -306,7 +306,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-			
+
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -324,7 +324,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-			
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -335,9 +335,9 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
-		}		
+		}
 	}
-	
+
 
 
 	if (in) {
@@ -371,12 +371,12 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
-		}		
+		}
 	}
 
 	switch_safe_free(dup_domain_name);
 	switch_safe_free(dup_lot_name);
-						
+
 }
 
 struct read_frame_data {
@@ -394,7 +394,7 @@ static switch_status_t read_frame_callback(switch_core_session_t *session, switc
 		rf->to = -1;
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -529,10 +529,10 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 			if (token && !token->bridged) {
 				switch_core_session_t *b_session;
-			
+
 				if (token->timeout) {
 					const char *var = switch_channel_get_variable(channel, "valet_ticket");
-				
+
 					if (!zstr(var)) {
 						if (!strcmp(var, token->uuid)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
@@ -557,7 +557,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 						switch_core_session_rwunlock(b_session);
 						token->timeout = 0;
 						token->bridged = 1;
-						
+
 						switch_ivr_uuid_bridge(token->uuid, switch_core_session_get_uuid(session));
 
 						return;
@@ -592,7 +592,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		if (!strcasecmp(music, "silence")) {
 			music = "silence_stream://-1";
 		}
-		
+
 		if ((orbit_exten = switch_channel_get_variable(channel, "valet_parking_orbit_exten"))) {
 			orbit_exten_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_exten=%s,", orbit_exten);
 		}
@@ -606,11 +606,11 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		if ((timeout = switch_channel_get_variable(channel, "valet_parking_timeout"))) {
-			timeout_str = switch_core_session_sprintf(session, "set:valet_parking_timeout=%s,", timeout);			
+			timeout_str = switch_core_session_sprintf(session, "set:valet_parking_timeout=%s,", timeout);
 		}
 
 		dest = switch_core_session_sprintf(session, "%s%s%s%s"
-										   "set:valet_ticket=%s,set:valet_hold_music='%s',sleep:1000,valet_park:%s %s", 
+										   "set:valet_ticket=%s,set:valet_hold_music='%s',sleep:1000,valet_park:%s %s",
 										   timeout_str,
 										   orbit_exten_str,
 										   orbit_dialplan_str,
@@ -626,7 +626,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_core_session_t *b_session;
 
 				if ((b_session = switch_core_session_locate(uuid))) {
-					token->timeout = switch_epoch_time_now(NULL) + TOKEN_FREQ;		
+					token->timeout = switch_epoch_time_now(NULL) + TOKEN_FREQ;
 					if (play_announce) {
 						switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
@@ -668,11 +668,11 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				to_val = tmp;
 			}
 		}
-	
+
 		if (to_val) {
 			switch_codec_implementation_t read_impl;
 			switch_core_session_get_read_impl(session, &read_impl);
-			
+
 			rf.to = (1000 / (read_impl.microseconds_per_packet / 1000)) * to_val;
 			rf.dp = switch_channel_get_variable(channel, "valet_parking_orbit_dialplan");
 			rf.context = switch_channel_get_variable(channel, "valet_parking_orbit_context");
@@ -786,7 +786,7 @@ static void pres_event_handler(switch_event_t *event)
 	char *dup_to = NULL, *lot_name, *dup_lot_name = NULL, *domain_name;
 	valet_lot_t *lot;
 	int found = 0;
-	
+
 	if (!to || strncasecmp(to, "park+", 5) || !strchr(to, '@')) {
 		return;
 	}
@@ -839,7 +839,7 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 				switch_event_fire(&event);
-			}		
+			}
 		}
 	} else {
 		switch_console_callback_match_t *matches = NULL;
@@ -858,18 +858,18 @@ static void pres_event_handler(switch_event_t *event)
 				switch_console_push_match(&matches, nvar);
 			}
 		}
-		switch_mutex_unlock(globals.mutex);		
-		
+		switch_mutex_unlock(globals.mutex);
+
 		if (matches) {
 			valet_token_t *token;
-			
+
 			for (m = matches->head; !found && m; m = m->next) {
 				lot = valet_find_lot(m->val, SWITCH_FALSE);
 				switch_mutex_lock(lot->mutex);
 
 				if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, lot_name)) && !token->timeout) {
 					found++;
-					
+
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);

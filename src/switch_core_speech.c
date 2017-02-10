@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 		switch_mux_channels((int16_t *) data, rlen, 1, sh->channels);
 		*datalen = rlen * 2 * sh->channels;
 	}
-	
+
 	return status;
 
 }

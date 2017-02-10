@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<include>  
+<include>
   <extension name="test gateway distro">
       <condition field="destination_number" expression="^(.*)$">
           <action application="bridge" data="sofia/gateway/${distributor(test)}/$1"/>

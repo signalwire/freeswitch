@@ -237,7 +237,7 @@ static int check_fd(int fd, int ms)
 			}
 		}
 	}
-	
+
 	return r;
 }
 
@@ -305,7 +305,7 @@ static void daemonize(int *fds)
 			close(fds[0]);
 			fds[0] = -1;
 
-			
+
 			if (system_ready < 0) {
 				printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
 				kill(pid, 9);
@@ -1092,7 +1092,7 @@ int main(int argc, char *argv[])
 	if (switch_core_set_process_privileges() < 0) {
 		return 255;
 	}
-	
+
 	switch (priority) {
 	case 2:
 		set_realtime_priority();
@@ -1107,7 +1107,7 @@ int main(int argc, char *argv[])
 		set_auto_priority();
 		break;
 	}
-	
+
 	switch_core_setrlimits();
 
 
@@ -1193,7 +1193,7 @@ int main(int argc, char *argv[])
 			} else {
 				(void)read(fds[1], &v, sizeof(v));
 			}
-		
+
 			shutdown(fds[1], 2);
 			close(fds[1]);
 			fds[1] = -1;

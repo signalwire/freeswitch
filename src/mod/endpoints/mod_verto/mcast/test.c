@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 
 	mcast_socket_create("231.3.3.7", 1337, &handle, MCAST_SEND | MCAST_RECV | MCAST_TTL_HOST);
 	perror("create");
-	
+
 	if (!strcmp(argv[1], "send")) {
 		mcast_socket_send(&handle, argv[2], strlen(argv[2]));
 		exit(0);

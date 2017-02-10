@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
  *
@@ -22,21 +22,21 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
- * Jeff Lenk <jlenk@frontiernet.net> 
+ * Jeff Lenk <jlenk@frontiernet.net>
  * Artur Kraev <ravenox@gmail.com>
  *
  * mod_mono.cpp -- FreeSWITCH mod_mono main class
  *
- * Most of mod_mono is implmented in the mod_mono_managed Loader class. 
+ * Most of mod_mono is implmented in the mod_mono_managed Loader class.
  * The native code just handles getting the Mono runtime up and down
  * and passing pointers into managed code.
- */  
+ */
 
 #include <switch.h>
-#include "freeswitch_managed.h" 
+#include "freeswitch_managed.h"
 
 #ifdef _MANAGED
 #include <mscoree.h>
@@ -47,7 +47,7 @@ using namespace System::Runtime::InteropServices;
 #define MOD_MANAGED_VERSION "Mono Version"
 #endif
 
-SWITCH_BEGIN_EXTERN_C 
+SWITCH_BEGIN_EXTERN_C
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
 SWITCH_MODULE_DEFINITION_EX(mod_managed, mod_managed_load, NULL, NULL, SMODF_GLOBAL_SYMBOLS);
@@ -94,7 +94,7 @@ SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFun
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
 // Exported method.
-SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate)
 {
 	switch_assert(session);
 	if (!session) {
@@ -106,15 +106,15 @@ SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inpu
 	session->hangupDelegate = hangupDelegate;
 }
 
-#ifndef _MANAGED	
+#ifndef _MANAGED
 
 #ifdef WIN32
 #include <shlobj.h>
-#endif	
+#endif
 
-switch_status_t setMonoDirs() 
+switch_status_t setMonoDirs()
 {
-#ifdef WIN32	
+#ifdef WIN32
 	// Win32 Mono installs can't figure out their own path
 	// Guys in #mono say we should just deploy all the libs we need
 	// We'll first check for Program Files\Mono to allow people to use the symlink dir for a specific version.
@@ -171,7 +171,7 @@ switch_status_t setMonoDirs()
 		FindClose(hFind);
 	}
 
-	/* Got it */ 
+	/* Got it */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using Mono paths '%s' and '%s'.\n", libPath, etcPath);
 	mono_set_dirs(libPath, etcPath);
 	return SWITCH_STATUS_SUCCESS;
@@ -180,19 +180,19 @@ switch_status_t setMonoDirs()
 	// On other platforms, it should just work if it hasn't been relocated
 	mono_set_dirs(NULL, NULL);
 	return SWITCH_STATUS_SUCCESS;
-#endif	
+#endif
 }
 
-switch_status_t loadRuntime() 
+switch_status_t loadRuntime()
 {
-	/* Find and load mod_mono_managed.exe */ 
+	/* Find and load mod_mono_managed.exe */
 	char filename[256];
 
 	if (setMonoDirs() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-#ifndef WIN32 	
+#ifndef WIN32
 	// So linux can find the .so
 	char xmlConfig[300];
 	switch_snprintf(xmlConfig, 300, "<configuration><dllmap dll=\"mod_managed\" target=\"%s%smod_managed.so\"/></configuration>", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR);
@@ -218,7 +218,7 @@ switch_status_t loadRuntime()
 	MonoAssemblyName *name = mono_assembly_name_new (MOD_MANAGED_ASM_NAME);
 	//Note also that it can't be allocated on the stack anymore and you'll need to create and destroy it with the following API:
 	//mono_assembly_name_free (name);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
 
 	if (!(managed_globals.mod_mono_asm = mono_assembly_loaded(name))) {
@@ -234,7 +234,7 @@ switch_status_t loadRuntime()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-MonoMethod * getMethod(const char *name, MonoClass * klass) 
+MonoMethod * getMethod(const char *name, MonoClass * klass)
 {
 	MonoMethodDesc * desc;
 	MonoMethod * method;
@@ -250,9 +250,9 @@ MonoMethod * getMethod(const char *name, MonoClass * klass)
 	return method;
 }
 
-switch_status_t findLoader() 
+switch_status_t findLoader()
 {
-	/* Find loader class and methods */ 
+	/* Find loader class and methods */
 	MonoClass * loaderClass;
 	MonoImage * img = mono_assembly_get_image(managed_globals.mod_mono_asm);
 
@@ -276,9 +276,9 @@ switch_status_t findLoader()
 
 #ifdef _MANAGED
 
-switch_status_t loadRuntime() 
+switch_status_t loadRuntime()
 {
-	/* Find and load mod_dotnet_managed.dll */ 
+	/* Find and load mod_dotnet_managed.dll */
 	char filename[256];
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 
@@ -295,7 +295,7 @@ switch_status_t loadRuntime()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t findLoader() 
+switch_status_t findLoader()
 {
 	try {
 		FreeSwitchManaged::loadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType(MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME)->GetMethod("Load");
@@ -310,20 +310,20 @@ switch_status_t findLoader()
 }
 #endif
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load) 
+SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 {
 	int success;
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), " MOD_MANAGED_VERSION "\n");
 
 	managed_globals.pool = pool;
-	
-	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {			
+
+	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	if (findLoader() != SWITCH_STATUS_SUCCESS) {		
+
+	if (findLoader() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef _MANAGED
@@ -342,7 +342,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	/* Not sure if this is necesary on the loading thread */ 
 	mono_thread_attach(managed_globals.domain);
 
-	/* Run loader */ 
+	/* Run loader */
 	MonoObject * exception = NULL;
 	MonoObject * objResult = mono_runtime_invoke(managed_globals.loadMethod, NULL, NULL, &exception);
 	if (exception) {
@@ -354,12 +354,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 #endif
 	if (success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
-	} else {		
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load did not return true.\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	/* We're good to register */ 
+
+	/* We're good to register */
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
@@ -374,10 +374,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 #ifdef _MANAGED
 #pragma unmanaged
 #endif
-SWITCH_STANDARD_API(managedrun_api_function) 
+SWITCH_STANDARD_API(managedrun_api_function)
 {
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR no args specified!\n");	
+		stream->write_function(stream, "-ERR no args specified!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
@@ -385,7 +385,7 @@ SWITCH_STANDARD_API(managedrun_api_function)
 #endif
 	if (executeBackgroundDelegate(cmd)) {
 		stream->write_function(stream, "+OK\n");
-	} else {	
+	} else {
 		stream->write_function(stream, "-ERR ExecuteBackground returned false (unknown module or exception?).\n");
 	}
 #ifndef _MANAGED
@@ -394,17 +394,17 @@ SWITCH_STANDARD_API(managedrun_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(managed_api_function) 
+SWITCH_STANDARD_API(managed_api_function)
 {
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR no args specified!\n");	
+		stream->write_function(stream, "-ERR no args specified!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
 	mono_thread_attach(managed_globals.domain);
 #endif
 	if (!(executeDelegate(cmd, stream, stream->param_event))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd);
 	}
 #ifndef _MANAGED
 	mono_thread_detach(mono_thread_current());
@@ -412,7 +412,7 @@ SWITCH_STANDARD_API(managed_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_APP(managed_app_function) 
+SWITCH_STANDARD_APP(managed_app_function)
 {
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
@@ -429,17 +429,17 @@ SWITCH_STANDARD_APP(managed_app_function)
 #endif
 }
 
-SWITCH_STANDARD_API(managedreload_api_function) 
+SWITCH_STANDARD_API(managedreload_api_function)
 {
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR no args specified!\n");	
+		stream->write_function(stream, "-ERR no args specified!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 #ifndef _MANAGED
 	mono_thread_attach(managed_globals.domain);
 #endif
 	if (!(reloadDelegate(cmd))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd);
 	}
 #ifndef _MANAGED
 	mono_thread_detach(mono_thread_current());

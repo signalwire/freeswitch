@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2010, Mathieu Parent <math.parent@gmail.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Parent <math.parent@gmail.com>
  *
  *
@@ -140,15 +140,15 @@ struct skinny_profile {
 	char *dbname;
 	char *odbc_dsn;
 	switch_odbc_handle_t *master_odbc;
-	switch_mutex_t *sql_mutex;	
+	switch_mutex_t *sql_mutex;
 	/* stats */
 	uint32_t ib_calls;
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
-	uint32_t ob_failed_calls;	
+	uint32_t ob_failed_calls;
 	/* listener */
 	int listener_threads;
-	switch_mutex_t *listener_mutex;	
+	switch_mutex_t *listener_mutex;
 	switch_socket_t *sock;
 	switch_mutex_t *sock_mutex;
 	struct listener *listeners;
@@ -266,7 +266,7 @@ struct private_object {
 	uint32_t transfer_from_call_id;
 
 	/* codec */
-	char *iananame;	
+	char *iananame;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_codec_implementation_t read_impl;

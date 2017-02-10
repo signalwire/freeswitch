@@ -47,7 +47,7 @@ switch_status_t mod_smpp_interface_chat_send(switch_event_t *event)
 	if (zstr(gw_name)) {
 		gw_name = "default";
 	}
-	
+
 	gateway = switch_core_hash_find(mod_smpp_globals.gateways, gw_name);
 
 	if (!gateway) {
@@ -86,17 +86,17 @@ SWITCH_STANDARD_APP(mod_smpp_app_send_function)
 	if (switch_event_create(&message, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
-	
+
 	/* Copy over recognized channel vars. Then call the chat send function */
 	/* Cycle through all of the channel headers, and ones with 'smpp_' prefix copy over without the prefix */
 	for ( chan_var = switch_channel_variable_first(channel); chan_var; chan_var = chan_var->next) {
 		if ( !strncmp(chan_var->name, "smpp_", 5) ) {
 			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name + 5, chan_var->value);
 		} else {
-			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name, chan_var->value);			
+			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name, chan_var->value);
 		}
 	}
-	
+
 	/* Unlock the channel variables */
 	switch_channel_variable_last(channel);
 	mod_smpp_chat_send_function(message, data);
@@ -137,7 +137,7 @@ SWITCH_STANDARD_API(mod_smpp_send_api)
 	if (switch_event_create(&message, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "to_user", argv[1]);
 	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "from_user", argv[2]);
 	switch_event_set_body(message, argv[3]);
@@ -149,10 +149,10 @@ SWITCH_STANDARD_API(mod_smpp_send_api)
  done:
 	switch_safe_free(cmd_dup);
 	return status;
-									
+
 }
 
-switch_status_t mod_smpp_do_config() 
+switch_status_t mod_smpp_do_config()
 {
 	char *conf = "smpp.conf";
 	switch_xml_t xml, cfg, gateways, gateway, params, param;
@@ -163,11 +163,11 @@ switch_status_t mod_smpp_do_config()
 	}
 
 	if ( (gateways = switch_xml_child(cfg, "gateways")) != NULL) {
-		for (gateway = switch_xml_child(gateways, "gateway"); gateway; gateway = gateway->next) {		
+		for (gateway = switch_xml_child(gateways, "gateway"); gateway; gateway = gateway->next) {
 			mod_smpp_gateway_t *new_gateway = NULL;
 			char *host = NULL, *system_id = NULL, *password = NULL, *profile = NULL, *system_type = NULL;
 			int port = 0, debug = 0;
-			
+
 			char *name = (char *)switch_xml_attr_soft(gateway, "name");
 
 			// Load params
@@ -202,9 +202,9 @@ switch_status_t mod_smpp_do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateways config is missing\n");
 		goto err;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
-	
+
  err:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Configuration failed\n");
 	return SWITCH_STATUS_GENERR;
@@ -220,12 +220,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_smpp_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	memset(&mod_smpp_globals, 0, sizeof(mod_smpp_globals_t));
 	mod_smpp_globals.pool = pool;
 	mod_smpp_globals.debug = 0;
 	switch_core_hash_init(&(mod_smpp_globals.gateways));
-	
+
 	if ( mod_smpp_do_config() != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load due to bad configs\n");
 		return SWITCH_STATUS_TERM;
@@ -234,9 +234,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_smpp_load)
 	SWITCH_ADD_CHAT(mod_smpp_chat_interface, "smpp", mod_smpp_interface_chat_send);
 	SWITCH_ADD_API(mod_smpp_api_interface, "smpp_debug", "mod_smpp toggle debug", mod_smpp_debug_api, NULL);
 	SWITCH_ADD_API(mod_smpp_api_interface, "smpp_send", "mod_smpp send", mod_smpp_send_api, NULL);
-	SWITCH_ADD_CHAT_APP(mod_smpp_chat_app_interface, "smpp_send", "send message to gateway", "send message to gateway", 
+	SWITCH_ADD_CHAT_APP(mod_smpp_chat_app_interface, "smpp_send", "send message to gateway", "send message to gateway",
 						mod_smpp_chat_send_function, "", SCAF_NONE);
-	SWITCH_ADD_APP(mod_smpp_app_interface, "smpp_send", NULL, NULL, mod_smpp_app_send_function, 
+	SWITCH_ADD_APP(mod_smpp_app_interface, "smpp_send", NULL, NULL, mod_smpp_app_send_function,
 				   "smpp_send", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 	/* indicate that the module should continue to be loaded */

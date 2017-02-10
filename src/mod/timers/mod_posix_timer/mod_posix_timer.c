@@ -87,7 +87,7 @@ static struct {
 	interval_timer_t interval_timers[MAX_INTERVAL + 1][TIMERS_PER_INTERVAL];
 	/** Maps IDs to timers */
 	interval_timer_t *active_interval_timers[MAX_ACTIVE_TIMERS];
-	/** Next timer to assign for a particular interval */ 
+	/** Next timer to assign for a particular interval */
 	int next_interval_timer_num[MAX_INTERVAL + 1];
 	/** Synchronizes access to timer creation / deletion */
 	switch_mutex_t *interval_timers_mutex;
@@ -243,7 +243,7 @@ static switch_status_t interval_timer_stop(interval_timer_t *it)
  * Timer module interface: start a new timer
  * @param timer the timer
  * @return SWITCH_STATUS_SUCCESS if successful otherwise SWITCH_STATUS_GENERR
- */ 
+ */
 static switch_status_t mod_posix_timer_init(switch_timer_t *timer)
 {
 	interval_timer_t *it;
@@ -405,7 +405,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_posix_timer_load)
 		sigaddset(&sigmask, SIG);
 		sigprocmask(SIG_BLOCK, &sigmask, NULL);
 
-		/* set up signal handler */	
+		/* set up signal handler */
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_flags = SA_SIGINFO | SA_RESTART;
 		sa.sa_sigaction = timer_signal_handler;

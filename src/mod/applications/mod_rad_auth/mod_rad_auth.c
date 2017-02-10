@@ -47,7 +47,7 @@ struct config_vsas
 	int pec;
 	int expr;
 	int direction;
-	
+
 	struct config_vsas *pNext;
 };
 
@@ -55,7 +55,7 @@ struct config_client
 {
 	char* name;
 	char* value;
-	
+
 	struct config_client *pNext;
 };
 
@@ -77,7 +77,7 @@ void free_radius_auth_value_pair(VALUE_PAIR *send, VALUE_PAIR *received, rc_hand
 
 	if (received)
 		rc_avpair_free(received);
-		
+
 	if (rh)
 		rc_destroy(rh);
 	rh = NULL;
@@ -136,17 +136,17 @@ char* extract_out_variable(char* outvar)
 CONFIG_VSAS* GetVSAS(char* key)
 {
 	CONFIG_VSAS* PCONFIGVSAS = CONFIGVSAS;
-	
+
 	while(PCONFIGVSAS)
 	{
 		if (strcmp(key, PCONFIGVSAS->name) == 0)
 		{
 			return PCONFIGVSAS;
 		}
-		
+
 		PCONFIGVSAS = PCONFIGVSAS->pNext;
 	}
-	
+
 	return NULL;
 }
 
@@ -157,13 +157,13 @@ char* GetValue(switch_channel_t *channel, CONFIG_VSAS* VSAS, char* value)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal Error : VSAS is null object.\n");
 		return "";
 	}
-	
+
 	if (VSAS->value == NULL)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal Error : VSAS->value is null object.\n");
 		return "";
 	}
-	
+
 	if (VSAS->expr == 1)
 	{
 		const char* v = switch_channel_get_variable(channel, VSAS->value);
@@ -278,30 +278,30 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 
 	memset(msg, 0, STR_LENGTH * 10);
 	memset(username_realm, 0, STR_LENGTH);
-	
+
 	send = NULL;
-	
+
 
 
 	do
 	{
-		
+
 #if EMBENDED_CONFIG
 
 		CONFIG_CLIENT* PCONFIGCLIENT = CONFIGCLIENT;
-		
+
 		rh = rc_new();
-		if (rh == NULL) 
+		if (rh == NULL)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Failed to allocate initial structure.\n");
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "allocate initial structure.\n");
-	
+
 		/* Initialize the config structure */
-	
+
 		rh = rc_config_init(rh);
 		if (rh == NULL)
 		{
@@ -309,47 +309,47 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"initialzed configuration.\n");
-	
+
 		while(PCONFIGCLIENT)
 		{
-			//if (rc_add_config(rh, "auth_order", "radius", "config", 0) != 0) 
+			//if (rc_add_config(rh, "auth_order", "radius", "config", 0) != 0)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set %s := %s.\n", PCONFIGCLIENT->name, PCONFIGCLIENT->value);
-			if (rc_add_config(rh, PCONFIGCLIENT->name, PCONFIGCLIENT->value, "config", 0) != 0) 
+			if (rc_add_config(rh, PCONFIGCLIENT->name, PCONFIGCLIENT->value, "config", 0) != 0)
 			{
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Unable to set %s := %s.\n", PCONFIGCLIENT->name, PCONFIGCLIENT->value);
-				
+
 				result = ERROR_RC;
 				break;
 			}
-			
+
 			PCONFIGCLIENT = PCONFIGCLIENT->pNext;
 		}
-		
+
 		if (result == ERROR_RC)
 			break;
 
-		
+
 #else
 		if ((rh = rc_read_config(!rc_config_file ? RC_CONFIG_FILE : rc_config_file)) == NULL)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading radius config file\n");
-			
+
 			result = ERROR_RC;
 			break;
 		}
-		
+
 #endif
 
 		if (rc_read_dictionary(rh, rc_conf_str(rh, "dictionary")) != 0)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading radius dictionary\n");
-			
+
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		default_realm = rc_conf_str(rh, "default_realm");
 		if (default_realm == NULL)
 		{
@@ -357,7 +357,7 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		strncpy(username_realm, username, sizeof(username_realm));
 
 		if ((strchr(username_realm, '@') == NULL) && default_realm &&
@@ -366,8 +366,8 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			strncat(username_realm, "@", sizeof(username_realm)-strlen(username_realm)-1);
 			strncat(username_realm, default_realm, sizeof(username_realm)-strlen(username_realm)-1);
 		}
-		
-	
+
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 			"... radius: User-Name: %s\n", username);
 		if (rc_avpair_add(rh, &send, PW_USER_NAME, username_realm, -1, 0)== NULL)
@@ -376,7 +376,7 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 			"... radius: User-Password: %s\n", password);
 		if (rc_avpair_add(rh, &send, PW_USER_PASSWORD, password, -1, 0) == NULL)
@@ -385,7 +385,7 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			result = ERROR_RC;
 			break;
 		}
-		
+
 		if (!called_number || strcmp(called_number, "") == 0)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
@@ -403,41 +403,41 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			}
 		}
 
-		
+
 		PCONFIGVSAS = CONFIGVSAS;
-	
+
 		while(PCONFIGVSAS)
 		{
 			if (PCONFIGVSAS->direction == 1)
 			{
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle attribute: %s\n", PCONFIGVSAS->name	);
-				
+
 				memset(value, 0, STR_LENGTH);
 				GetValue(channel, PCONFIGVSAS, value);
-				
+
 				if (PCONFIGVSAS->pec != 0)
 					attrid = PCONFIGVSAS->id | (PCONFIGVSAS->pec << 16);
 				else
 					attrid = PCONFIGVSAS->id ;
-					
+
 				pda = rc_dict_getattr(rh, attrid);
-				
+
 				if (pda == NULL)
 				{
 					result = ERROR_RC;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown attribute: key:%s, not found in dictionary\n", PCONFIGVSAS->name);
-					break;	
+					break;
 				}
-				
+
 				if (PCONFIGVSAS->pec != 0 && rc_dict_getvend(rh, PCONFIGVSAS->pec) == NULL)
 				{
 					result = ERROR_RC;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown vendor specific id: key:%s, id:%dnot found in dictionary\n", PCONFIGVSAS->name, PCONFIGVSAS->pec);
-					break;	
+					break;
 				}
-				
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "... dictionary data: id:%d, vendor id:%d, attr type:%d, attr name:%s (%d)\n", PCONFIGVSAS->id, PCONFIGVSAS->pec, pda->type, pda->name, attrid);
-				
+
 				switch(pda->type)
 				{
 					case PW_TYPE_STRING:
@@ -449,13 +449,13 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 							break;
 						}
 						break;
-						
+
 					//case PW_TYPE_DATE:
 					case PW_TYPE_INTEGER:
 						integer = atoi(value);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "... radius: key:%s, value:%s (%d) as integer\n", PCONFIGVSAS->name, PCONFIGVSAS->value, integer);
-						
-						
+
+
 						if (rc_avpair_add(rh, &send, PCONFIGVSAS->id, &integer, -1, PCONFIGVSAS->pec) == NULL)
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "An Error occured during rc_avpair_add : %s\n", PCONFIGVSAS->name);
@@ -466,52 +466,52 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 					case PW_TYPE_IPADDR:
 						integer = rc_get_ipaddr(value);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "... radius: key:%s, value:%s (%d) as ipaddr\n", PCONFIGVSAS->name, PCONFIGVSAS->value, integer);
-						
-						
+
+
 						if (rc_avpair_add(rh, &send, PCONFIGVSAS->id, &integer, -1, PCONFIGVSAS->pec) == NULL)
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "An Error occured during rc_avpair_add : %s\n", PCONFIGVSAS->name);
 							result = ERROR_RC;
 							break;
 						}
-						break;						
-						
+						break;
+
 					default:
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown attribute type: key:%s, type %d\n", PCONFIGVSAS->name, pda->type);
 						break;
 				}
 			}
-			
+
 			PCONFIGVSAS = PCONFIGVSAS->pNext;
 		}
 
-		
+
 		if (result != ERROR_RC)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending radius packet ...\n"	);
 			result = rc_auth(rh, 0, send, &received, msg);
-		
-	
+
+
 			if (result == OK_RC)
 			{
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 					"RADIUS Authentication OK\n");
-					
+
 					strcpy(auth_result, "OK");
 			}
 			else
 			{
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-					" RADIUS Authentication failure (RC=%d)\n", 
+					" RADIUS Authentication failure (RC=%d)\n",
 					result);
-					
+
 					strcpy(auth_result, "NOK");
 			}
-			
-			
-			
+
+
+
 			PCONFIGVSAS = CONFIGVSAS;
-		
+
 			while(PCONFIGVSAS)
 			{
 				if (PCONFIGVSAS->direction == 0)
@@ -521,7 +521,7 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 					{
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\tattribute (%s) found in radius packet\n", PCONFIGVSAS->name);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\tset variable %s := %s\n", PCONFIGVSAS->value, service_vp->strvalue);
-						
+
 						switch_channel_set_variable(channel, PCONFIGVSAS->value, service_vp->strvalue);
 					}
 					else
@@ -529,7 +529,7 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\tNo found out attribute id: %d, pec:%d, (%s)\n", PCONFIGVSAS->id, PCONFIGVSAS->pec, PCONFIGVSAS->name	);
 					}
 				}
-				
+
 				PCONFIGVSAS = PCONFIGVSAS->pNext;
 			}
 		}
@@ -538,18 +538,18 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "abort sending radius packet.\n"	);
 			break;
 		}
-	
+
 	} while(1 == 0);
 
 	if (result == ERROR_RC)
 	{
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				"An error occured during RADIUS Authentication(RC=%d)\n", 
+				"An error occured during RADIUS Authentication(RC=%d)\n",
 				result);
 	}
-	
+
 	free_radius_auth_value_pair(send, received, rh);
-	
+
 	return result;
 }
 
@@ -558,23 +558,23 @@ SWITCH_STANDARD_APP(auth_function)
 	char* in_called_number = NULL;
 	char *in_username = NULL;
 	char *in_password = NULL;
-	
+
 	char *out_auth_result = NULL;
 	/*char *out_biling_model = NULL;
 	char *out_credit_amount = NULL;
 	char *out_currency = NULL;
 	char *out_preffered_lang = NULL;*/
-	
+
 	char auth_result[STR_LENGTH + 1];
-	/*char biling_model[STR_LENGTH + 1]; 
+	/*char biling_model[STR_LENGTH + 1];
 	char credit_amount[STR_LENGTH + 1];
 	char currency[STR_LENGTH + 1];
 	char preffered_lang[STR_LENGTH + 1];*/
 
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-		
+
 	memset(auth_result, 0, STR_LENGTH);
-	/*memset(biling_model, 0, STR_LENGTH); 
+	/*memset(biling_model, 0, STR_LENGTH);
 	memset(credit_amount, 0, STR_LENGTH);
 	memset(currency, 0, STR_LENGTH);
 	memset(preffered_lang, 0, STR_LENGTH);*/
@@ -586,14 +586,14 @@ SWITCH_STANDARD_APP(auth_function)
 	}
 	else
 	{
-		
+
 		char *in_called_number_expanded = NULL;
 		char *in_username_expanded = NULL;
 		char *in_password_expanded = NULL;
 
 
 		in_called_number = switch_core_session_strdup(session, data);
-		
+
 		in_username = strchr(in_called_number, ',');
 
 		if (in_username)
@@ -604,7 +604,7 @@ SWITCH_STANDARD_APP(auth_function)
 				in_username = NULL;
 			}
 		}
-		
+
 		in_password = strchr(in_username, ',');
 
 		if (in_password)
@@ -626,7 +626,7 @@ SWITCH_STANDARD_APP(auth_function)
 				out_auth_result = NULL;
 			}
 		}
-		
+
 		/*out_biling_model = strchr(out_auth_result, ',');
 
 		if (out_biling_model)
@@ -637,7 +637,7 @@ SWITCH_STANDARD_APP(auth_function)
 				out_biling_model = NULL;
 			}
 		}
-		
+
 		out_credit_amount = strchr(out_biling_model, ',');
 
 		if (out_credit_amount)
@@ -648,7 +648,7 @@ SWITCH_STANDARD_APP(auth_function)
 				out_credit_amount = NULL;
 			}
 		}
-		
+
 		out_currency = strchr(out_credit_amount, ',');
 
 		if (out_currency)
@@ -659,7 +659,7 @@ SWITCH_STANDARD_APP(auth_function)
 				out_currency = NULL;
 			}
 		}
-		
+
 		out_preffered_lang = strchr(out_currency, ',');
 
 		if (out_preffered_lang)
@@ -673,7 +673,7 @@ SWITCH_STANDARD_APP(auth_function)
 
 		if (in_called_number)
 			in_called_number = extract_in_variable(in_called_number);
-			
+
 		in_username = extract_in_variable(in_username);
 		in_password = extract_in_variable(in_password);
 		out_auth_result = extract_out_variable(out_auth_result);
@@ -691,7 +691,7 @@ SWITCH_STANDARD_APP(auth_function)
 
 		if (in_called_number)
 			in_called_number_expanded = switch_channel_expand_variables(channel, in_called_number);
-			
+
 		in_username_expanded = switch_channel_expand_variables(channel, in_username);
 		in_password_expanded = switch_channel_expand_variables(channel, in_password);
 
@@ -701,20 +701,20 @@ SWITCH_STANDARD_APP(auth_function)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "An error occured during radius authorization.\n");
 		}
-		
+
 
 		switch_channel_set_variable(channel, out_auth_result, auth_result);
-		
+
 		/*switch_channel_set_variable(channel, out_biling_model, biling_model);
 		switch_channel_set_variable(channel, out_credit_amount, credit_amount);
 		switch_channel_set_variable(channel, out_currency, currency);
 		switch_channel_set_variable(channel, out_preffered_lang, preffered_lang);*/
-		
+
 		if (in_called_number && in_called_number_expanded && in_called_number_expanded != in_called_number)
 		{
 			switch_safe_free(in_called_number_expanded);
 		}
-		
+
 		if (in_username_expanded && in_username_expanded != in_username)
 		{
 			switch_safe_free(in_username_expanded);
@@ -739,14 +739,14 @@ switch_status_t load_config()
 	switch_xml_t cfg, xml, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_event_t *params = NULL;
-	
+
 	char *name;
 	char *id;
 	char *value;
 	char *pec;
 	char *expr;
 	char* direction;
-			
+
 	CONFIGVSAS = NULL;
 	CONFIGCLIENT = NULL;
 
@@ -756,7 +756,7 @@ switch_status_t load_config()
 		"profile_rad_auth");
 
 	//vsas
-	
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params)))
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -764,7 +764,7 @@ switch_status_t load_config()
 		status = SWITCH_STATUS_FALSE;
 		return status;
 	}
-	
+
 	if ((settings = switch_xml_child(cfg, "settings")))
 	{
 		for (param = switch_xml_child(settings, "param"); param; param
@@ -772,18 +772,18 @@ switch_status_t load_config()
 		{
 			name = (char *) switch_xml_attr_soft(param, "name");
 			value = (char *) switch_xml_attr_soft(param, "value");
-			
+
 			if (strcmp(name, "radius_config") == 0)
 			{
 				if (rc_config_file == NULL)
 					rc_config_file = malloc(STR_LENGTH + 1);
 				strcpy(rc_config_file, value);
-				
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "radius config: %s\n", value);
 			}
 		}
 	}
-	
+
 	if ((settings = switch_xml_child(cfg, "vsas")))
 	{
 		for (param = switch_xml_child(settings, "param"); param; param
@@ -799,19 +799,19 @@ switch_status_t load_config()
 				PCONFIGVSAS->pNext = malloc(sizeof(CONFIG_VSAS));
 				PCONFIGVSAS = PCONFIGVSAS->pNext;
 			}
-			
+
 			name = (char *) switch_xml_attr_soft(param, "name");
 			id = (char *) switch_xml_attr_soft(param, "id");
 			value = (char *) switch_xml_attr_soft(param, "value");
 			pec = (char *) switch_xml_attr_soft(param, "pec");
 			expr = (char *) switch_xml_attr_soft(param, "expr");
 			direction = (char *) switch_xml_attr_soft(param, "direction");
-			
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "config attr: %s, %s, %s, %s, %s, %s\n", name, id, value, pec, expr, direction);
-			
+
 			PCONFIGVSAS->name = (char*) malloc(STR_LENGTH + 1);
 			PCONFIGVSAS->value = (char*) malloc(STR_LENGTH + 1);
-			
+
 			strncpy(PCONFIGVSAS->name, name, STR_LENGTH);
 			strncpy(PCONFIGVSAS->value, value, STR_LENGTH);
 			PCONFIGVSAS->id = atoi(id);
@@ -824,8 +824,8 @@ switch_status_t load_config()
 			PCONFIGVSAS->pNext = NULL;
 		}
 	}
-	
-	
+
+
 	if ((settings = switch_xml_child(cfg, "client")))
 	{
 		for (param = switch_xml_child(settings, "param"); param; param
@@ -841,15 +841,15 @@ switch_status_t load_config()
 				PCONFIGCLIENT->pNext = malloc(sizeof(CONFIG_CLIENT));
 				PCONFIGCLIENT = PCONFIGCLIENT->pNext;
 			}
-			
+
 			name = (char *) switch_xml_attr_soft(param, "name");
 			value = (char *) switch_xml_attr_soft(param, "value");
-			
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "config client: %s, %s\n", name, value);
-			
+
 			PCONFIGCLIENT->name = (char*) malloc(STR_LENGTH + 1);
 			PCONFIGCLIENT->value = (char*) malloc(STR_LENGTH + 1);
-			
+
 			strncpy(PCONFIGCLIENT->name, name, STR_LENGTH);
 			strncpy(PCONFIGCLIENT->value, value, STR_LENGTH);
 
@@ -869,11 +869,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rad_authload)
 	switch_application_interface_t *app_interface;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	SWITCH_ADD_APP(app_interface, "auth_function", NULL, NULL, auth_function, "in <USERNAME>, in <PASSWORD>, out <AUTH_RESULT>, out <BILING_MODEL>, out <CREDIT_AMOUNT>, out <CURRENCY>, out <PREFFERED_LANG>", SAF_SUPPORT_NOMEDIA);
 
 	load_config();
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 		"mod rad_auth services is loaded.\n");
 
@@ -885,51 +885,51 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_rad_authruntime)
 	return SWITCH_STATUS_TERM;
 }
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rad_authshutdown) 	
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rad_authshutdown)
 {
 	CONFIG_VSAS* PCONFIGVSAS = CONFIGVSAS;
 	CONFIG_CLIENT* PCONFIGCLIENT = CONFIGCLIENT;
-	
+
 	CONFIG_VSAS* tmpVSAS = NULL;
 	CONFIG_CLIENT* tmpCLIENT = NULL;
-	
+
 	while(PCONFIGVSAS)
 	{
 		if (PCONFIGVSAS->name)
 			free(PCONFIGVSAS->name);
 		PCONFIGVSAS->name = NULL;
-		
+
 		if (PCONFIGVSAS->value)
 			free(PCONFIGVSAS->value);
-		PCONFIGVSAS->value = NULL;		
-		
+		PCONFIGVSAS->value = NULL;
+
 		tmpVSAS = PCONFIGVSAS;
 		PCONFIGVSAS = PCONFIGVSAS->pNext;
-		
+
 		free(tmpVSAS);
 	}
-	
+
 	CONFIGVSAS = NULL;
-	
-	
+
+
 	while(PCONFIGCLIENT)
 	{
 		if (PCONFIGCLIENT->name)
 			free(PCONFIGCLIENT->name);
 		PCONFIGCLIENT->name = NULL;
-		
+
 		if (PCONFIGCLIENT->value)
 			free(PCONFIGCLIENT->value);
-		PCONFIGCLIENT->value = NULL;		
-		
+		PCONFIGCLIENT->value = NULL;
+
 		tmpCLIENT = PCONFIGCLIENT;
 		PCONFIGCLIENT = PCONFIGCLIENT->pNext;
-		
+
 		free(tmpCLIENT);
 	}
-	
+
 	CONFIGCLIENT = NULL;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

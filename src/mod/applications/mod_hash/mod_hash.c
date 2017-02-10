@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Ken Rice <krice at suspicious dot org
  * Mathieu Rene <mathieu.rene@gmail.com>
@@ -98,18 +98,18 @@ typedef struct {
 	const char *username;
 	const char *password;
 	int port;
-	
+
 	int interval;
-	
+
 	esl_handle_t handle;
 
 	switch_hash_t *index;
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
-	
+
 	switch_bool_t running;
 	switch_thread_t *thread;
-	
+
 	limit_remote_state_t state;
 } limit_remote_t;
 
@@ -232,24 +232,24 @@ SWITCH_HASH_DELETE_FUNC(limit_hash_cleanup_delete_callback) {
 	if (item->total_usage == 0 && item->rate_usage == 0) {
 		/* Noone is using this item anymore */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Freeing limit item: %s\n", (const char *) key);
-		
+
 		free(item);
 		return SWITCH_TRUE;
 	}
-	
+
 	return SWITCH_FALSE;
 }
 
-SWITCH_HASH_DELETE_FUNC(limit_hash_remote_cleanup_callback) 
+SWITCH_HASH_DELETE_FUNC(limit_hash_remote_cleanup_callback)
 {
 	limit_hash_item_t *item = (limit_hash_item_t *) val;
 	switch_time_t now = (switch_time_t)(intptr_t)pData;
-	
+
 	if (item->last_update != now) {
 		free(item);
 		return SWITCH_TRUE;
 	}
-	
+
 	return SWITCH_FALSE;
 }
 
@@ -262,7 +262,7 @@ SWITCH_STANDARD_SCHED_FUNC(limit_hash_cleanup_callback)
 	}
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 
-	if (globals.limit_hash) {	
+	if (globals.limit_hash) {
 		task->runtime = switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL;
 	}
 }
@@ -323,7 +323,7 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 	}
 
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -338,7 +338,7 @@ SWITCH_LIMIT_USAGE(limit_usage_hash)
 
 	hash_key = switch_mprintf("%s_%s", realm, resource);
 	remote_usage = get_remote_usage(hash_key);
-	
+
 	count = remote_usage.total_usage;
 	*rcount = remote_usage.rate_usage;
 
@@ -382,15 +382,15 @@ SWITCH_LIMIT_STATUS(limit_status_hash)
 	switch_hash_index_t *hi = NULL;
 	int count = 0;
 	char *ret = NULL;
-	
+
 	switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
-	
+
 	for (hi = switch_core_hash_first(globals.limit_hash); hi; switch_core_hash_next(hi)) {
 		count++;
 	}
-	
+
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
-	
+
 	ret = switch_mprintf("There are %d elements being tracked.", count);
 	return ret;
 	*/
@@ -577,7 +577,7 @@ SWITCH_STANDARD_API(hash_api_function)
 }
 
 #define HASH_DUMP_SYNTAX "all|limit|db [<realm>]"
-SWITCH_STANDARD_API(hash_dump_function) 
+SWITCH_STANDARD_API(hash_dump_function)
 {
 	int mode;
 	switch_hash_index_t *hi;
@@ -586,7 +586,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 	char *mydata = NULL;
 	int realm = 0;
 	char *realmvalue = NULL;
-	
+
 	if (zstr(cmd)) {
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		goto done;
@@ -600,8 +600,8 @@ SWITCH_STANDARD_API(hash_dump_function)
 	if (argc == 2) {
 		realm = 1;
 		realmvalue = switch_mprintf("%s_", argv[1]);
-	} 
-	
+	}
+
 	if (!strcmp(cmd, "all")) {
 		mode = 3;
 	} else if (!strcmp(cmd, "limit")) {
@@ -612,7 +612,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		goto done;
 	}
-	
+
 	if (mode & 1) {
 		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
 		for (hi = switch_core_hash_first(globals.limit_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -621,14 +621,14 @@ SWITCH_STANDARD_API(hash_dump_function)
 			switch_ssize_t keylen;
 			limit_hash_item_t *item;
 			switch_core_hash_this(hi, &key, &keylen, &val);
-						
+
 			item = (limit_hash_item_t *)val;
 
 			stream->write_function(stream, "L/%s/%d/%d/%d/%d\n", key, item->total_usage, item->rate_usage, item->interval, item->last_check);
 		}
 		switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 	}
-	
+
 	if (mode & 2) {
 		switch_thread_rwlock_rdlock(globals.db_hash_rwlock);
 		for (hi = switch_core_hash_first(globals.db_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -646,7 +646,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 		}
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	}
-	
+
  done:
 	switch_safe_free(mydata);
 	switch_safe_free(realmvalue);
@@ -655,38 +655,38 @@ SWITCH_STANDARD_API(hash_dump_function)
 }
 
 #define HASH_REMOTE_SYNTAX "list|kill [name]|rescan"
-SWITCH_STANDARD_API(hash_remote_function) 
+SWITCH_STANDARD_API(hash_remote_function)
 {
 	//int argc;
 	char *argv[10];
 	char *dup = NULL;
-	
+
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR Usage: "HASH_REMOTE_SYNTAX"\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	dup = strdup(cmd);
-	
+
 	switch_split(dup, ' ', argv);
 	if (argv[0] && !strcmp(argv[0], "list")) {
 		switch_hash_index_t *hi;
 		stream->write_function(stream, "Remote connections:\nName\t\t\tState\n");
-		
+
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 		for (hi = switch_core_hash_first(globals.remote_hash); hi; hi = switch_core_hash_next(&hi)) {
-			void *val;	
+			void *val;
 			const void *key;
 			switch_ssize_t keylen;
 			limit_remote_t *item;
 			switch_core_hash_this(hi, &key, &keylen, &val);
-								
+
 			item = (limit_remote_t *)val;
-			stream->write_function(stream, "%s\t\t\t%s\n", item->name, state_str(item->state));	
+			stream->write_function(stream, "%s\t\t\t%s\n", item->name, state_str(item->state));
 		}
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
 		stream->write_function(stream, "+OK\n");
-		
+
 	} else if (argv[0] && !strcmp(argv[0], "kill")) {
 		const char *name = argv[1];
 		limit_remote_t *remote;
@@ -697,15 +697,15 @@ SWITCH_STANDARD_API(hash_remote_function)
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 		remote = switch_core_hash_find(globals.remote_hash, name);
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-		
+
 		if (remote) {
 			limit_remote_destroy(&remote);
 
 			switch_thread_rwlock_wrlock(globals.remote_hash_rwlock);
 			switch_core_hash_delete(globals.remote_hash, name);
 			switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-			
-			stream->write_function(stream, "+OK\n");			
+
+			stream->write_function(stream, "+OK\n");
 		} else {
 			stream->write_function(stream, "-ERR No such remote instance %s\n", name);
 		}
@@ -714,9 +714,9 @@ SWITCH_STANDARD_API(hash_remote_function)
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR Usage: "HASH_REMOTE_SYNTAX"\n");
-		
+
 	}
-	
+
 done:
 
 	switch_safe_free(dup);
@@ -724,11 +724,11 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t port, const char *username, const char *password, int interval) 
+limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t port, const char *username, const char *password, int interval)
 {
 	limit_remote_t *r;
 	switch_memory_pool_t *pool;
-	
+
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 	if (switch_core_hash_find(globals.remote_hash, name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Already have a remote instance named %s\n", name);
@@ -736,11 +736,11 @@ limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t
 			return NULL;
 	}
 	switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-	
+
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
-	
+
 	r = switch_core_alloc(pool, sizeof(limit_remote_t));
 	r->pool = pool;
 	r->name = switch_core_strdup(r->pool, name);
@@ -749,10 +749,10 @@ limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t
 	r->username = switch_core_strdup(r->pool, username);
 	r->password = switch_core_strdup(r->pool, password);
 	r->interval = interval;
-	
+
 	switch_thread_rwlock_create(&r->rwlock, pool);
 	switch_core_hash_init(&r->index);
-	
+
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 	switch_core_hash_insert(globals.remote_hash, name, r);
 	switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
@@ -776,17 +776,17 @@ void limit_remote_destroy(limit_remote_t **r)
 
 		/* Free hashtable data */
 		for (hi = switch_core_hash_first((*r)->index); hi; hi = switch_core_hash_next(&hi)) {
-			void *val;	
+			void *val;
 			const void *key;
 			switch_ssize_t keylen;
 			switch_core_hash_this(hi, &key, &keylen, &val);
 
 			free(val);
 		}
-		
+
 		switch_thread_rwlock_unlock((*r)->rwlock);
 		switch_thread_rwlock_destroy((*r)->rwlock);
-					
+
 		switch_core_destroy_memory_pool(&((*r)->pool));
 		*r = NULL;
 	}
@@ -796,21 +796,21 @@ void limit_remote_destroy(limit_remote_t **r)
 static limit_hash_item_t get_remote_usage(const char *key) {
 	limit_hash_item_t usage = { 0 };
 	switch_hash_index_t *hi;
-	
+
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 	for (hi = switch_core_hash_first(globals.remote_hash); hi; hi = switch_core_hash_next(&hi)) {
-		void *val;	
+		void *val;
 		const void *hashkey;
 		switch_ssize_t keylen;
 		limit_remote_t *remote;
 		limit_hash_item_t *item;
 		switch_core_hash_this(hi, &hashkey, &keylen, &val);
-							
+
 		remote = (limit_remote_t *)val;
 		if (remote->state != REMOTE_UP) {
 			continue;
 		}
-		
+
 		switch_thread_rwlock_rdlock(remote->rwlock);
 		if ((item = switch_core_hash_find(remote->index, key))) {
 			usage.total_usage += item->total_usage;
@@ -821,9 +821,9 @@ static limit_hash_item_t get_remote_usage(const char *key) {
 		}
 		switch_thread_rwlock_unlock(remote->rwlock);
 	}
-	
+
 	switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-	
+
 	return usage;
 }
 
@@ -835,7 +835,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 			if  (esl_connect_timeout(&remote->handle, remote->host, (esl_port_t)remote->port, remote->username, remote->password, 5000) == ESL_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
-				
+
 				remote->state = REMOTE_UP;
 			} else {
 				esl_disconnect(&remote->handle);
@@ -860,20 +860,20 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					switch_time_t now = switch_epoch_time_now(NULL);
 					while (p && *p) {
 						/* We are getting the limit data as:
-							L/key/usage/rate/interval/last_checked 
+							L/key/usage/rate/interval/last_checked
 						*/
 						if ((p2 = strchr(p, '\n'))) {
 							*p2++ = '\0';
 						}
-						
-						/* Now p points at the beginning of the current line, 
+
+						/* Now p points at the beginning of the current line,
 						p2 at the start of the next one */
 						if (*p == 'L') { /* Limit data */
-							char *argv[5]; 
+							char *argv[5];
 							int argc = switch_split(p+2, '/', argv);
-							
+
 							if (argc < 5) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[%s] Protocol error: missing argument in line: %s\n", 
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[%s] Protocol error: missing argument in line: %s\n",
 									remote->name, p);
 							} else {
 								limit_hash_item_t *item;
@@ -890,11 +890,11 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								switch_thread_rwlock_unlock(remote->rwlock);
 							}
 						}
-						
+
 						p = p2;
 					}
 					free(data);
-					
+
 					/* Now free up anything that wasn't in this update since it means their usage is 0 */
 					switch_thread_rwlock_wrlock(remote->rwlock);
 					switch_core_hash_delete_multi(remote->index, limit_hash_remote_cleanup_callback, (void*)(intptr_t)now);
@@ -902,12 +902,12 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 				}
 			}
 		}
-		
+
 		switch_yield(remote->interval * 1000);
 	}
-	
+
 	remote->thread = NULL;
-	
+
 	return NULL;
 }
 
@@ -927,7 +927,7 @@ static void do_config(switch_bool_t reload)
 				int	interval = 0;
 				limit_remote_t *remote;
 				switch_threadattr_t *thd_attr = NULL;
-				
+
 				if (reload) {
 					switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 					if (switch_core_hash_find(globals.remote_hash, name)) {
@@ -940,15 +940,15 @@ static void do_config(switch_bool_t reload)
 				if (!zstr(szport)) {
 					port = (uint16_t)atoi(szport);
 				}
-				
+
 				if (!zstr(szinterval)) {
 					interval = atoi(szinterval);
 				}
-				
+
 				remote = limit_remote_create(name, host, port, username, password, interval);
-				
-				remote->state = REMOTE_DOWN;	
-				
+
+				remote->state = REMOTE_DOWN;
+
 				switch_threadattr_create(&thd_attr, remote->pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&remote->thread, thd_attr, limit_remote_thread, remote, remote->pool);
@@ -990,24 +990,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL, limit_hash_cleanup_callback, "limit_hash_cleanup", "mod_hash", 0, NULL,
 						  SSHF_NONE);
-	
+
 	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC)
 	SWITCH_ADD_API(commands_api_interface, "hash", "hash get/set", hash_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	SWITCH_ADD_API(commands_api_interface, "hash_dump", "dump hash/limit_hash data (used for synchronization)", hash_dump_function, HASH_DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "hash_remote", "hash remote", hash_remote_function, HASH_REMOTE_SYNTAX);
-	
+
 	switch_console_set_complete("add hash insert");
 	switch_console_set_complete("add hash delete");
 	switch_console_set_complete("add hash select");
-	
+
 	switch_console_set_complete("add hash_remote list");
 	switch_console_set_complete("add hash_remote kill");
 	switch_console_set_complete("add hash_remote rescan");
-	
+
 	do_config(SWITCH_FALSE);
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -1015,25 +1015,25 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 {
 	switch_hash_index_t *hi = NULL;
 	switch_bool_t remote_clean = SWITCH_TRUE;
-	
+
 	switch_scheduler_del_task_group("mod_hash");
 
 	/* Kill remote connections, destroy needs a wrlock so we unlock after finding a pointer */
 	while(remote_clean) {
-		void *val;	
+		void *val;
 		const void *key = NULL;
 		switch_ssize_t keylen;
 		limit_remote_t *item = NULL;
-		
+
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 		if ((hi = switch_core_hash_first(globals.remote_hash))) {
 			switch_core_hash_this(hi, &key, &keylen, &val);
 			item = (limit_remote_t *)val;
 		}
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-		
-		if (!item) { 
-			remote_clean = SWITCH_FALSE; 
+
+		if (!item) {
+			remote_clean = SWITCH_FALSE;
 		} else {
 			limit_remote_destroy(&item);
 			switch_thread_rwlock_wrlock(globals.remote_hash_rwlock);
@@ -1044,7 +1044,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 
 	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
 	switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
-	
+
 	while ((hi = switch_core_hash_first_iter( globals.limit_hash, hi))) {
 		void *val = NULL;
 		const void *key;
@@ -1053,7 +1053,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 		free(val);
 		switch_core_hash_delete(globals.limit_hash, key);
 	}
-	
+
 	while ((hi = switch_core_hash_first_iter( globals.db_hash, hi))) {
 		void *val = NULL;
 		const void *key;
@@ -1064,7 +1064,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 	}
 
 	switch_core_hash_destroy(&globals.limit_hash);
-	switch_core_hash_destroy(&globals.db_hash);	
+	switch_core_hash_destroy(&globals.db_hash);
 	switch_core_hash_destroy(&globals.remote_hash);
 
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);

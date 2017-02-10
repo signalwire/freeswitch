@@ -933,7 +933,7 @@ WebRtcIsac_EncodeUb12(
 
   WebRtcIsac_GetLpcGain(s2nr, percepFilterParams, SUBFRAMES, lpcGains,
                        corr, varscale);
-  
+
   /* Store the state of arithmetic coder before coding LPC gains */
   transcodingParam.W_upper = ISACencUB_obj->bitstr_obj.W_upper;
 

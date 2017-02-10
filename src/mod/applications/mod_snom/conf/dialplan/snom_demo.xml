@@ -1,4 +1,4 @@
-<include>		
+<include>
 	<extension name="snom-demo-1">
 		<condition field="destination_number" expression="^9000$">
 			<!-- <key> <light> <label> <user> <host> <profile> <action_name> <action> -->

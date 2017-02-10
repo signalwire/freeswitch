@@ -674,17 +674,17 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			switch_core_media_proxy_remote_addr(tech_pvt->session, NULL);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 						  "3PCC-PROXY nomedia - sending ack, SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
 
-		
+
 		if (sofia_use_soa(tech_pvt)) {
 			nua_ack(tech_pvt->nh,
 					TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 					SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 					SOATAG_REUSE_REJECTED(1),
-					SOATAG_RTP_SELECT(1), 
+					SOATAG_RTP_SELECT(1),
 					SOATAG_AUDIO_AUX("cn telephone-event"),
 					TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 					TAG_END());
@@ -696,7 +696,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
 					TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str)),
 					SOATAG_AUDIO_AUX("cn telephone-event"),
-					TAG_END());			
+					TAG_END());
 		}
 
 
@@ -768,7 +768,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-								SOATAG_REUSE_REJECTED(1), 
+								SOATAG_REUSE_REJECTED(1),
 								SOATAG_RTP_SELECT(1),
 								SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -897,7 +897,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
-		if ((tech_pvt->mparams.last_sdp_str && strstr(tech_pvt->mparams.last_sdp_str, "a=setup")) || 
+		if ((tech_pvt->mparams.last_sdp_str && strstr(tech_pvt->mparams.last_sdp_str, "a=setup")) ||
 			(tech_pvt->mparams.local_sdp_str && strstr(tech_pvt->mparams.local_sdp_str, "a=setup"))) {
 			session_timeout = 0;
 		}
@@ -1457,7 +1457,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch (msg->message_id) {
 
 	case SWITCH_MESSAGE_INDICATE_DEFLECT: {
-		
+
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 		char ref_to[1024] = "";
 		const char *var;
@@ -1498,18 +1498,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!switch_channel_test_flag(channel, CF_AVPF) && switch_true(switch_core_get_variable("sofia_send_info_vid_refresh"))) {
 			const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control><vc_primitive><to_encoder><picture_fast_update /></to_encoder></vc_primitive></media_control>\n";
 			switch_time_t now = switch_micro_time_now();
-			
+
 			if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 500000) {
-				
+
 				tech_pvt->last_vid_info = now;
-				
+
 				if (!zstr(msg->string_arg)) {
 					pl = msg->string_arg;
 				}
-				
+
 				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 			}
-			
+
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BROADCAST:
@@ -1648,10 +1648,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			nua_invite(tech_pvt->nh,
 					   NUTAG_MEDIA_ENABLE(0),
-					   TAG_IF(msg->string_arg, SIPTAG_CONTENT_TYPE_STR("application/sdp")), 
+					   TAG_IF(msg->string_arg, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
 					   SIPTAG_PAYLOAD_STR(msg->string_arg),
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
-			
+
 			switch_safe_free(extra_headers);
 		}
 		break;
@@ -1667,7 +1667,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			sofia_glue_clear_soa(session, SWITCH_TRUE);
 
-			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), 
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""),
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 
 			switch_safe_free(extra_headers);
@@ -1699,12 +1699,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_core_media_set_sdp_codec_string(tech_pvt->session, r_sdp, SDP_TYPE_RESPONSE);
 			switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", switch_channel_get_variable(tech_pvt->channel, "ep_codec_string"));
 			switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-			
+
 			if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				goto end_lock;
 			}
-			
+
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
 
 			if (!msg->numeric_arg) {
@@ -1737,7 +1737,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 								  "Operation not permitted on an inbound non-answered call leg!\n");
 			} else {
-				full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));				
+				full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active),
 						   TAG_IF((full_to), SIPTAG_TO_STR(full_to)),SIPTAG_SUBSCRIPTION_STATE_STR("active"),
 						   SIPTAG_EVENT_STR(event), TAG_END());
@@ -2185,7 +2185,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 					goto end_lock;
 				}
-				
+
 				if (code == 302 && !zstr(msg->string_arg)) {
 					char *p;
 
@@ -3038,7 +3038,7 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
 	stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
 	stream->write_function(stream, "    <pingmin>%d</pingmin>\n", gp->ping_min);
-	stream->write_function(stream, "    <pingcount>%d</pingcount>\n", gp->ping_count);	
+	stream->write_function(stream, "    <pingcount>%d</pingcount>\n", gp->ping_count);
 	stream->write_function(stream, "    <pingmax>%d</pingmax>\n", gp->ping_max);
 	stream->write_function(stream, "    <pingtime>%0.2f</pingtime>\n", gp->ping_time);
 	stream->write_function(stream, "    <pinging>%d</pinging>\n", gp->pinging);
@@ -3856,7 +3856,7 @@ static void select_from_profile(sofia_profile_t *profile,
 	if (exclude_contact) {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
 							 "from sip_registrations where profile_name='%q' "
-							 "and upper(sip_user)=upper('%q') " 
+							 "and upper(sip_user)=upper('%q') "
 							 "and (sip_host='%q' or presence_hosts like '%%%q%%') "
 							 "and contact not like '%%%q%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
 	} else {
@@ -4511,14 +4511,14 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 				go = 1;
 			}
 		}
-		
+
 		if (!go) return 0;
-		
+
 		*q++ = '\0';
 	} else {
 		return 0;
 	}
-	
+
 	if (!strncasecmp(q, "sips:", 5)) {
 		q += 5;
 	} else if (!strncasecmp(q, "sip:", 4)) {
@@ -4537,7 +4537,7 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 		switch_url_encode(q, qenc, enclen);
 		mod = 1;
 	}
-	
+
 	cp->destination_number = switch_core_sprintf(cp->pool, "%s/%s@%s", o, qenc ? qenc : q, e);
 
 	return mod;
@@ -5727,7 +5727,7 @@ static void general_queue_event_handler(switch_event_t *event)
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwdtype)
 {
 	const char *device = switch_event_get_header(event, "device");
-	
+
 	switch_assert(csta_event);
 
 	stream.write_function(&stream, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<%s xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">\n", csta_event);
@@ -6263,7 +6263,7 @@ void mod_sofia_shutdown_cleanup() {
 	switch_event_free_subclass(MY_EVENT_REGISTER);
 	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
 	switch_event_free_subclass(MY_EVENT_BYE_RESPONSE);
-	
+
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 

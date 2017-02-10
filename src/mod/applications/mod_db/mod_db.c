@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Ken Rice <krice@freeswitch.org>
  * Mathieu Rene <mathieu.rene@gmail.com>
@@ -89,7 +89,7 @@ switch_cache_db_handle_t *limit_get_db_handle(void)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -99,7 +99,7 @@ switch_cache_db_handle_t *limit_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 
 }
@@ -158,7 +158,7 @@ static char * limit_execute_sql2str(char *sql, char *str, size_t len)
 	cbt.len = len;
 
 	limit_execute_sql_callback(sql, sql2str_callback, &cbt);
-	
+
 	return cbt.buf;
 }
 
@@ -229,7 +229,7 @@ SWITCH_LIMIT_RELEASE(limit_release_db)
 	}
 	limit_execute_sql(sql);
 	switch_safe_free(sql);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -238,12 +238,12 @@ SWITCH_LIMIT_USAGE(limit_usage_db)
 	char usagestr[128] = "";
 	int usage = 0;
 	char *sql = NULL;
-	
+
 	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id='%q'", realm, resource);
 	limit_execute_sql2str(sql, usagestr, sizeof(usagestr));
 	switch_safe_free(sql);
 	usage = atoi(usagestr);
-	
+
 	return usage;
 }
 
@@ -253,7 +253,7 @@ SWITCH_LIMIT_RESET(limit_reset_db)
 	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
 	limit_execute_sql(sql);
 	switch_safe_free(sql);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -262,7 +262,7 @@ SWITCH_LIMIT_STATUS(limit_status_db)
 	char count[128] = "";
 	char *ret = NULL;
 	char *sql = NULL;
-	
+
 	sql = switch_mprintf("select count(hostname) from limit_data where hostname='%q'", globals.hostname);
 	limit_execute_sql2str(sql, count, sizeof(count));
 	switch_safe_free(sql);
@@ -686,7 +686,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
-	
+
 }
 
 

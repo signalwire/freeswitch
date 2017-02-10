@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Andrew Thompson <andrew@hijacked.us>
  * Rob Charlton <rob.charlton@savageminds.com>
@@ -42,7 +42,7 @@
 
 /* Stolen from code added to ei in R12B-5.
  * Since not everyone has this version yet;
- * provide our own version. 
+ * provide our own version.
  * */
 
 #define put8(s,n) do { \
@@ -132,7 +132,7 @@ void ei_encode_switch_event_tag(ei_x_buff * ebuf, switch_event_t *event, char *t
 	ei_encode_switch_event_headers(ebuf, event);
 }
 
-/* function to make rpc call to remote node to retrieve a pid - 
+/* function to make rpc call to remote node to retrieve a pid -
    calls module:function(Ref). The response comes back as
    {rex, {Ref, Pid}}
  */

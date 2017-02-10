@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -41,7 +41,7 @@
 #else
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/wait.h> 
+#include <sys/wait.h>
 #endif
 #include <string.h>
 #ifndef WIN32
@@ -70,8 +70,8 @@
 
 #define VERTO_CHAT_PROTO "verto"
 
-#define copy_string(x,y,z) strncpy(x, y, z - 1) 
-#define set_string(x,y) strncpy(x, y, sizeof(x)-1) 
+#define copy_string(x,y,z) strncpy(x, y, z - 1)
+#define set_string(x,y) strncpy(x, y, sizeof(x)-1)
 
 #define CODE_INVALID -32600
 #define CODE_AUTH_REQUIRED -32000
@@ -131,7 +131,7 @@ struct jsock_s {
 	char *uid;
 	char *dialplan;
 	char *context;
-	
+
 
 	char remote_host[256];
 	int remote_port;
@@ -139,7 +139,7 @@ struct jsock_s {
 
 	struct verto_profile_s *profile;
 	switch_thread_rwlock_t *rwlock;
-	
+
 	switch_mutex_t *write_mutex;
 	switch_mutex_t *filter_mutex;
 
@@ -189,9 +189,9 @@ typedef struct verto_pvt_s {
 	switch_frame_t text_read_frame;
 
 	switch_thread_cond_t *text_cond;
-	switch_mutex_t *text_cond_mutex; 
-	switch_mutex_t *text_read_mutex; 
-	switch_mutex_t *text_write_mutex; 
+	switch_mutex_t *text_cond_mutex;
+	switch_mutex_t *text_read_mutex;
+	switch_mutex_t *text_write_mutex;
 
 	switch_buffer_t *text_read_buffer;
 	switch_buffer_t *text_write_buffer;
@@ -235,7 +235,7 @@ struct verto_profile_s {
 	int ssl_ready;
 	int ready;
 	int debug;
-	
+
 	int in_thread;
 	int blind_reg;
 
@@ -310,8 +310,8 @@ struct globals_s {
 	switch_thread_rwlock_t *tech_rwlock;
 
 	switch_thread_cond_t *detach_cond;
-	switch_mutex_t *detach_mutex; 
-	switch_mutex_t *detach2_mutex; 
+	switch_mutex_t *detach_mutex;
+	switch_mutex_t *detach2_mutex;
 
 	uint32_t detached;
 	uint32_t detach_timeout;

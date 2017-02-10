@@ -1391,13 +1391,13 @@ int skypopen_audio_init(private_t *tech_pvt)
 #ifdef WIN32
 
 enum {
-	SKYPECONTROLAPI_ATTACH_SUCCESS = 0,	/*  Client is successfully 
+	SKYPECONTROLAPI_ATTACH_SUCCESS = 0,	/*  Client is successfully
 										   attached and API window handle can be found
 										   in wParam parameter */
 	SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION = 1,	/*  Skype has acknowledged
 														   connection request and is waiting
 														   for confirmation from the user. */
-	/*  The client is not yet attached 
+	/*  The client is not yet attached
 	 * and should wait for SKYPECONTROLAPI_ATTACH_SUCCESS message */
 	SKYPECONTROLAPI_ATTACH_REFUSED = 2,	/*  User has explicitly
 										   denied access to client */
@@ -1405,8 +1405,8 @@ enum {
 												   at the moment.
 												   For example, this happens when no user
 												   is currently logged in. */
-	/*  Client should wait for 
-	 * SKYPECONTROLAPI_ATTACH_API_AVAILABLE 
+	/*  Client should wait for
+	 * SKYPECONTROLAPI_ATTACH_API_AVAILABLE
 	 * broadcast before making any further */
 	/*  connection attempts. */
 	SKYPECONTROLAPI_ATTACH_API_AVAILABLE = 0x8001
@@ -2080,7 +2080,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 							}
 							if (continue_is_broken) {
 								XFlush(disp);
-								skypopen_sleep(20000);	//20 msec 
+								skypopen_sleep(20000);	//20 msec
 								WARNINGA("continue_is_broken\n", SKYPOPEN_P_LOG);
 								continue;
 							}

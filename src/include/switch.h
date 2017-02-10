@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * switch.h -- Main Library Header
@@ -164,7 +164,7 @@
  *  - OpenBSD 5.x
  *
  * \section depends Dependencies
- *  Freeswitch makes heavy use of external libraries.  
+ *  Freeswitch makes heavy use of external libraries.
  *
  *  libFreeSWITCH:
  *		- APR (http://apr.apache.org)
@@ -199,7 +199,7 @@
  *
  *  mod_b64
  *      - Base64 codec tranfers data base64 encoded (http://www.b64codec.org)
- * 
+ *
  *  mod_bv
  *      - BroadVoice16 (8kHz) and BroadVoice32 (16kHz) (https://www.broadcom.com/support/broadvoice)
  *
@@ -219,7 +219,7 @@
  *  Directories
  *	mod_ldap
  *		- openldap (*nix only http://www.openldap.org/)
- * 
+ *
  *  Endpoints
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -230,7 +230,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 
 		/* Proceed to read and process the received frame ...
 		 * Note that switch_core_session_read_frame is a blocking operation, we could do reathing in another thread like the playback() app
-		 * does using switch_core_service_session() but OTOH that would lead to more load/cpu usage, extra threads being launched per call leg 
+		 * does using switch_core_service_session() but OTOH that would lead to more load/cpu usage, extra threads being launched per call leg
 		 * and most likely reduce the overall capacity of the test system */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -381,23 +381,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_TIMEOUT);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 
 	if (switch_event_reserve_subclass(BERT_EVENT_LOST_SYNC) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_LOST_SYNC);
 		return SWITCH_STATUS_TERM;
 	}
-	
-	
+
+
 	if (switch_event_reserve_subclass(BERT_EVENT_IN_SYNC) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_IN_SYNC);
 		return SWITCH_STATUS_TERM;
 	}
-	
-	
+
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "bert_test", "Start BERT Test", "Start BERT Test", bert_test_function, "", SAF_NONE); 
+	SWITCH_ADD_APP(app_interface, "bert_test", "Start BERT Test", "Start BERT Test", bert_test_function, "", SAF_NONE);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -406,7 +406,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown)
 	switch_event_free_subclass(BERT_EVENT_TIMEOUT);
 	switch_event_free_subclass(BERT_EVENT_LOST_SYNC);
 	switch_event_free_subclass(BERT_EVENT_IN_SYNC);
-	
+
 	return SWITCH_STATUS_UNLOAD;
 }
 

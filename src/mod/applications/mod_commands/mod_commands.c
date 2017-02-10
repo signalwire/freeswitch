@@ -445,7 +445,7 @@ SWITCH_STANDARD_API(list_users_function)
 			}
 		}
 	}
-	
+
 	if (_domain) {
 		tag_name = "domain";
 		key_name = "name";
@@ -3147,7 +3147,7 @@ SWITCH_STANDARD_API(uuid_drop_dtmf)
 	if (argv[0]) {
 		uuid = argv[0];
 	}
-	
+
 	if (argv[1]) {
 		action = argv[1];
 	}
@@ -3191,15 +3191,15 @@ SWITCH_STANDARD_API(uuid_drop_dtmf)
 					switch_channel_set_variable(channel, "drop_dtmf", "false");
 				}
 			}
-			
+
 			is_on = switch_channel_test_flag(channel, CF_DROP_DTMF);
 			file = switch_channel_get_variable_dup(channel, "drop_dtmf_masking_file", SWITCH_FALSE, -1);
 			digits = switch_channel_get_variable_dup(channel, "drop_dtmf_masking_digits", SWITCH_FALSE, -1);
 
-			stream->write_function(stream, "+OK %s is %s DTMF. mask_file: %s mask_digits: %s\n", uuid, is_on ? "dropping" : "not dropping", 
+			stream->write_function(stream, "+OK %s is %s DTMF. mask_file: %s mask_digits: %s\n", uuid, is_on ? "dropping" : "not dropping",
 								   file ? file : "NONE",
 								   digits ? digits : "NONE");
-								   
+
 			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
@@ -3308,7 +3308,7 @@ SWITCH_STANDARD_API(uuid_set_media_stats)
 static void jsonify_stats(cJSON *json, const char *name, switch_rtp_stats_t *stats)
 {
 	cJSON *jstats = cJSON_CreateObject();
-	cJSON_AddItemToObject(json, name, jstats);	
+	cJSON_AddItemToObject(json, name, jstats);
 
 	stats->inbound.std_deviation = sqrt(stats->inbound.variance);
 
@@ -3345,7 +3345,7 @@ static void jsonify_stats(cJSON *json, const char *name, switch_rtp_stats_t *sta
 
 	add_stat(stats->rtcp.packet_count, "rtcp_packet_count");
 	add_stat(stats->rtcp.octet_count, "rtcp_octet_count");
-	
+
 }
 
 static switch_bool_t true_enough(cJSON *json)
@@ -3367,37 +3367,37 @@ SWITCH_STANDARD_JSON_API(json_stats_function)
 	switch_core_session_t *tsession;
 
 	reply = cJSON_CreateObject();
-	*json_reply = reply;	
+	*json_reply = reply;
 
 	if (zstr(uuid)) {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
 		goto end;
 	}
 
-	
+
 	if ((tsession = switch_core_session_locate(uuid))) {
 		cJSON *jevent;
 		switch_rtp_stats_t *audio_stats = NULL, *video_stats = NULL;
 
 		switch_core_media_set_stats(tsession);
-		
+
 		audio_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(tsession));
 		video_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_VIDEO, switch_core_session_get_pool(tsession));
-		
+
 		if (audio_stats) {
 			jsonify_stats(reply, "audio", audio_stats);
 		}
-		
+
 		if (video_stats) {
 			jsonify_stats(reply, "video", video_stats);
 		}
-		
+
 		if (true_enough(cdata) && switch_ivr_generate_json_cdr(tsession, &jevent, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			cJSON_AddItemToObject(reply, "channelData", jevent);
 		}
 
 		switch_core_session_rwunlock(tsession);
-		
+
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("Session does not exist"));
@@ -4225,7 +4225,7 @@ SWITCH_STANDARD_API(uuid_video_bitrate_function)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 			msg.numeric_arg = kps * 1024;
 			msg.from = __FILE__;
-			
+
 			switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_video_reinit(lsession);
 			switch_channel_video_sync(switch_core_session_get_channel(lsession));
@@ -4276,7 +4276,7 @@ SWITCH_STANDARD_API(uuid_codec_debug_function)
 			msg.numeric_arg = level;
 			msg.numeric_reply = type;
 			msg.from = __FILE__;
-			
+
 			switch_core_session_receive_message(lsession, &msg);
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
@@ -4321,7 +4321,7 @@ SWITCH_STANDARD_API(uuid_codec_param_function)
 			msg.string_array_arg[2] = argv[3];
 			msg.string_array_arg[3] = argv[4];
 			msg.from = __FILE__;
-			
+
 			switch_core_session_receive_message(lsession, &msg);
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
@@ -5918,7 +5918,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 						char *ptr = NULL;
 						int idx = -1;
 						char *vname = strdup(var_name);
-						
+
 						if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
 							*ptr++ = '\0';
 							idx = atoi(ptr);
@@ -5927,11 +5927,11 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 
 						free(vname);
 					}
-					
+
 					if (!var_value) {
 						var_value = switch_channel_get_variable(channel, var_name);
 					}
-						
+
 					if (var_value != NULL) {
 						stream->write_function(stream, "%s", var_value);
 					} else {
@@ -6389,7 +6389,7 @@ SWITCH_STANDARD_API(quote_shell_arg_function)
 }
 
 #define GETCPUTIME_SYNTAX "[reset]"
-SWITCH_STANDARD_API(getcputime_function) 
+SWITCH_STANDARD_API(getcputime_function)
 {
 	static int64_t reset_ums = 0, reset_kms = 0; // Last reset times in ms
 	switch_cputime t = { 0 };
@@ -6885,14 +6885,14 @@ SWITCH_STANDARD_JSON_API(json_channel_data_function)
 
 
 	reply = cJSON_CreateObject();
-	*json_reply = reply;	
+	*json_reply = reply;
 
 	if (zstr(uuid)) {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
 		goto end;
 	}
 
-	
+
 	if ((tsession = switch_core_session_locate(uuid))) {
 		cJSON *jevent;
 
@@ -6901,7 +6901,7 @@ SWITCH_STANDARD_JSON_API(json_channel_data_function)
 		}
 
 		switch_core_session_rwunlock(tsession);
-		
+
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("Session does not exist"));
@@ -6921,7 +6921,7 @@ SWITCH_STANDARD_JSON_API(json_execute_function)
 	switch_core_session_t *tsession;
 
 	reply = cJSON_CreateObject();
-	*json_reply = reply;	
+	*json_reply = reply;
 
 	if (!data) {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
@@ -6938,7 +6938,7 @@ SWITCH_STANDARD_JSON_API(json_execute_function)
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
 		goto end;
 	}
-	
+
 	if ((tsession = switch_core_session_locate(uuid))) {
 		if (switch_true(edata)) {
 			cJSON *jevent = NULL;
@@ -6974,7 +6974,7 @@ SWITCH_STANDARD_API(event_channel_broadcast_api_function)
 {
 	cJSON *jdata = NULL;
 	const char *channel;
-	
+
 	if (!cmd) {
 		stream->write_function(stream, "-ERR parsing channel\n", SWITCH_VA_NONE);
 		return SWITCH_STATUS_SUCCESS;
@@ -6999,7 +6999,7 @@ SWITCH_STANDARD_API(event_channel_broadcast_api_function)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-	
+
 }
 
 SWITCH_STANDARD_JSON_API(json_api_function)
@@ -7024,7 +7024,7 @@ SWITCH_STANDARD_JSON_API(json_api_function)
 	reply = cJSON_CreateObject();
 
 	SWITCH_STANDARD_STREAM(stream);
-	
+
 	if (cmd && (status = switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, session, &stream)) == SWITCH_STATUS_SUCCESS) {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString((char *) stream.data));
 	} else {
@@ -7067,10 +7067,10 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 	cJSON_AddItemToObject(o, "seconds", cJSON_CreateNumber(duration.sec));
 	cJSON_AddItemToObject(o, "milliseconds", cJSON_CreateNumber(duration.ms));
 	cJSON_AddItemToObject(o, "microseconds", cJSON_CreateNumber(duration.mms));
-	
+
 	cJSON_AddItemToObject(reply, "uptime", o);
 	cJSON_AddItemToObject(reply, "version", cJSON_CreateString(switch_version_full_human()));
-	
+
 	o = cJSON_CreateObject();
 	cJSON_AddItemToObject(reply, "sessions", o);
 
@@ -7091,7 +7091,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 	cJSON_AddItemToObject(oo, "max", cJSON_CreateNumber(sps));
 	cJSON_AddItemToObject(oo, "peak", cJSON_CreateNumber(max_sps));
 	cJSON_AddItemToObject(oo, "peak5Min", cJSON_CreateNumber(max_sps_fivemin));
-	
+
 
 	o = cJSON_CreateObject();
 	cJSON_AddItemToObject(reply, "idleCPU", o);
@@ -7099,7 +7099,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 	cJSON_AddItemToObject(o, "used", cJSON_CreateNumber(switch_core_min_idle_cpu(-1.0)));
 	cJSON_AddItemToObject(o, "allowed", cJSON_CreateNumber(switch_core_idle_cpu()));
 
-	
+
 	if (switch_core_get_stacksizes(&cur, &max) == SWITCH_STATUS_SUCCESS) {
 		o = cJSON_CreateObject();
 		cJSON_AddItemToObject(reply, "stackSizeKB", o);
@@ -7107,10 +7107,10 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 		cJSON_AddItemToObject(o, "current", cJSON_CreateNumber((double)(cur / 1024)));
 		cJSON_AddItemToObject(o, "max", cJSON_CreateNumber((double)(max / 1024)));
 	}
-	
+
 
 	*json_reply = reply;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -7119,7 +7119,7 @@ SWITCH_STANDARD_API(json_function)
 	cJSON *jcmd = NULL, *format = NULL;
 	const char *message = "";
 	char *response = NULL;
-   
+
 	if (zstr(cmd)) {
 		message = "No JSON supplied.";
 		goto err;
@@ -7142,13 +7142,13 @@ SWITCH_STANDARD_API(json_function)
 	} else {
 		response = cJSON_PrintUnformatted(jcmd);
 	}
-	
+
 	stream->write_function(stream, "%s\n", switch_str_nil(response));
-	
+
 	switch_safe_free(response);
 
 	cJSON_Delete(jcmd);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 
  err:

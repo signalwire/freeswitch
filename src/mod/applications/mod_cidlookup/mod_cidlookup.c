@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Rupa Schomaker <rupa@rupa.com>
  *
  * mod_cidlookup.c -- API for querying cid->name services and local data
@@ -39,7 +39,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_cidlookup_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_cidlookup, mod_cidlookup_load, mod_cidlookup_shutdown, NULL);
@@ -90,7 +90,7 @@ static switch_cache_db_handle_t *cidlookup_get_db_handle(void)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -100,7 +100,7 @@ static switch_cache_db_handle_t *cidlookup_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 }
 
@@ -383,7 +383,7 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	/*
-	   TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree 
+	   TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree
 	 */
 #ifdef CURLOPT_TIMEOUT_MS
 	if (timeout > 0) {
@@ -452,12 +452,12 @@ static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event
 
 	query = switch_event_expand_headers(event, "http://api.whitepages.com/reverse_phone/1.0/?phone=${whitepages-cid};api_key=${whitepages-api-key}");
 	do_lookup_url(pool, event, &xml_s, query, NULL, NULL, 0);
-	
+
 	if (zstr(xml_s)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No XML returned for number %s\n", num);
 		goto done;
 	}
-	
+
 	xml = switch_xml_parse_str_dup(xml_s);
 
 	if (!xml) {
@@ -706,7 +706,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 			const char *uuid = switch_channel_get_partner_uuid(channel);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
-			
+
 			if (uuid) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
 			}

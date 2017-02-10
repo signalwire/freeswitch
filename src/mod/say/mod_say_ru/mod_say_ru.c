@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Boris Buklov (BBV) <buklov@mail.ru>
@@ -174,7 +174,7 @@ static switch_status_t ru_say_count(switch_say_file_handle_t *sh, char *tosay, s
 			}
 		}
 
-		//миллионы      
+		//миллионы
 		if (places[8] || places[7] || places[6]) {
 			if ((in_ % 1000000 > 0) && (matrix[cases][gender].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
 				if ((status = play_group(male, nominativus, places[8], places[7], places[6], million, sh)) != SWITCH_STATUS_SUCCESS) {
@@ -188,7 +188,7 @@ static switch_status_t ru_say_count(switch_say_file_handle_t *sh, char *tosay, s
 				}
 			}
 		}
-		//тысячи      
+		//тысячи
 		if (places[5] || places[4] || places[3]) {
 			if ((in_ % 1000 > 0) && (matrix[cases][gender].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
 				if ((status = play_group(male, nominativus, places[5], places[4], places[3], thousand, sh)) != SWITCH_STATUS_SUCCESS) {
@@ -313,8 +313,8 @@ static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	else {
 	    switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].first[5]);
 	}
-	    
-	    
+
+
 	/* Say kopecks */
 	ru_say_count(sh, kopecks, matrix_currency[say_opt->currency].second_gender,matrix_currency[say_opt->currency].second_cases);
 
@@ -348,7 +348,7 @@ static switch_status_t ru_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	const char *tz = NULL;
-	tz = switch_say_file_handle_get_variable(sh, "timezone");    
+	tz = switch_say_file_handle_get_variable(sh, "timezone");
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_time %s  type=%d method=%d\n", tosay, say_args->type, say_args->method);
 
@@ -603,7 +603,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 	case SST_ITEMS:
 	case SST_PERSONS:
 	case SST_MESSAGES:
-	
+
 		say_cb = ru_say_general_count;
 		break;
 	case SST_TIME_MEASUREMENT:
@@ -640,7 +640,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 }
 
 
-                                                                                                
+
 
 
 static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *tosay, switch_say_args_t *say_args, switch_core_session_t *session, char **rstr)
@@ -665,7 +665,7 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
                 //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s  %s   %s !\n",gender, cases,currency);
                 if (cases) {
 		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", cases);
-                
+
 		    if ((strcmp(cases,"nominativus")==0) || (strcmp(cases,"именительный")==0)) {
 			say_opt.cases=(cases_t)0;
 		    }
@@ -690,7 +690,7 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
 		}
                 if (gender) {
 		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", gender);
-                
+
 		    if ((strcmp(gender,"male")==0) || (strcmp(gender,"мужской")==0)) {
 			say_opt.gender=(say_gender_t)0;
 		    }
@@ -715,15 +715,15 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
 		    if ((strcmp(gender,"plural_h")==0) || (strcmp(gender,"множественное_порядковый")==0)) {
 			say_opt.gender=(say_gender_t)7;
 		    }
-            
+
     		}
                 if (currency) {
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", currency);
-                
+
 		    if ((strcmp(currency,"ruble")==0) || (strcmp(currency,"рубль")==0)) {
 			say_opt.currency=(currency_t)0;
 //			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rul!!!  \n");
-			
+
 		    }
 		    if ((strcmp(currency,"dollar")==0) || (strcmp(currency,"доллар")==0)) {
 //			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dollar!!!  !\n");
@@ -731,7 +731,7 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
 		    }
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!   say_opt.gender=%d   say_opt.cases=%d\n", tosay,say_opt.gender,say_opt.cases);
-                                                                                
+
 	}
         switch_say_file_handle_create(&sh, say_args->ext, &var_event);
 //запуск ru_ip,ru_say_money ...
@@ -754,9 +754,9 @@ static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switc
         switch_new_say_callback_ru_t say_cb = NULL;
         char *string = NULL;
         switch_status_t status;
-        
+
         status = SWITCH_STATUS_FALSE;
-        
+
         say_cb = choose_callback(say_args);
 
         if (say_cb) {

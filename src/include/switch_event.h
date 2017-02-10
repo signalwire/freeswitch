@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -31,20 +31,20 @@
  */
 /*! \file switch_event.h
     \brief Event System
-	
+
 	The event system uses a backend thread and an APR threadsafe FIFO queue to accept event objects from various threads
 	and allow the backend to take control and deliver the events to registered callbacks.
 
 	The typical usage would be to bind to one or all of the events and use a callback function to react in various ways
 	(see the more_xmpp_event_handler or mod_event_test modules for examples).
 
-	Builtin events are fired by the core at various points in the execution of the application and custom events can be 
+	Builtin events are fired by the core at various points in the execution of the application and custom events can be
 	reserved and registered so events from an external module can be rendered and handled by an another even handler module.
 
 	If the work time to process an event in a callback is anticipated to grow beyond a very small amount of time it is recommended
-	that you implement your own handler thread and FIFO queue so you can accept the events in the callback and queue them 
-	into your own thread rather than tie up the delivery agent.  It is in the opinion of the author that such a necessity 
-	should be judged on a per-use basis and therefore it does not fall within the scope of this system to provide that 
+	that you implement your own handler thread and FIFO queue so you can accept the events in the callback and queue them
+	into your own thread rather than tie up the delivery agent.  It is in the opinion of the author that such a necessity
+	should be judged on a per-use basis and therefore it does not fall within the scope of this system to provide that
 	functionality at a core level.
 
 */
@@ -52,7 +52,7 @@
 /*!
   \defgroup events Eventing Engine
   \ingroup core1
-  \{ 
+  \{
 */
 
 #ifndef SWITCH_EVENT_H
@@ -304,7 +304,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *owner, const char *subclass_name);
 
 /*!
-  \brief Render a string representation of an event suitable for printing or network transport 
+  \brief Render a string representation of an event suitable for printing or network transport
   \param event the event to render
   \param str a string pointer to point at the allocated data
   \param encode url encode the headers
@@ -430,7 +430,7 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max);
 SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event_channel, cJSON **json, const char *key, switch_event_channel_id_t id);
 SWITCH_DECLARE(uint32_t) switch_event_channel_unbind(const char *event_channel, switch_event_channel_func_t func);
 SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t *id);
-														  
+
 
 typedef void (*switch_live_array_command_handler_t)(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data);
 

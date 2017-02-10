@@ -182,7 +182,7 @@ static int msrp_init_ssl()
 
 	globals.ssl_ready = 0;
 	msrp_deinit_ssl();
-	
+
 	return 0;
 }
 

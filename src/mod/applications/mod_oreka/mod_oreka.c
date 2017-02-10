@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -87,7 +87,7 @@ static int oreka_write_udp(oreka_session_t *oreka, switch_stream_handle_t *udp)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oreka->session), SWITCH_LOG_DEBUG, "Oreka SIP Packet:\n%s", (const char *)udp->data);
 	switch_socket_sendto(globals.sip_socket, globals.sip_server_addr, 0, (void *)udp->data, &udplen);
 	if (udplen != udp->data_len) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oreka->session), SWITCH_LOG_ERROR, "Failed to write SIP Packet of len %zd (wrote=%zd)", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oreka->session), SWITCH_LOG_ERROR, "Failed to write SIP Packet of len %zd (wrote=%zd)",
 				udp->data_len, udplen);
 	}
 	return 0;
@@ -142,20 +142,20 @@ static int oreka_setup_rtp(oreka_session_t *oreka, oreka_stream_type_t type)
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated %s port %d for local IP %s, destination IP %s\n", type_str,
 			rtp_port, globals.local_ipv4_str, globals.sip_server_ipv4_str);
-	rtp_stream = switch_rtp_new(globals.local_ipv4_str, rtp_port, 
+	rtp_stream = switch_rtp_new(globals.local_ipv4_str, rtp_port,
 			globals.sip_server_ipv4_str, rtp_port,
 			0, /* PCMU IANA*/
 			codec_impl->samples_per_packet,
 			codec_impl->microseconds_per_packet,
 			flags, NULL, &err, switch_core_session_get_pool(oreka->session));
 	if (!rtp_stream) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create %s RTP stream at %s:%d: %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create %s RTP stream at %s:%d: %s\n",
 				type_str, globals.local_ipv4_str, rtp_port, err);
 		res = -1;
 		goto done;
 	}
 
-    switch_rtp_intentional_bugs(rtp_stream, RTP_BUG_SEND_LINEAR_TIMESTAMPS); 
+    switch_rtp_intentional_bugs(rtp_stream, RTP_BUG_SEND_LINEAR_TIMESTAMPS);
 
 
 done:
@@ -175,7 +175,7 @@ done:
 			oreka->write_rtp_port = rtp_port;
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Successfully created %s RTP stream at %s:%d at %dms@%dHz\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Successfully created %s RTP stream at %s:%d at %dms@%dHz\n",
 				type_str, globals.local_ipv4_str, rtp_port, codec_impl->microseconds_per_packet/1000, codec_impl->samples_per_second);
 	return res;
 }
@@ -272,7 +272,7 @@ static int oreka_send_sip_message(oreka_session_t *oreka, oreka_recording_status
 
 	/* Get caller meta data */
 	caller_id_number = switch_caller_get_field_by_name(caller_profile, "caller_id_number");
-	
+
 	caller_id_name = switch_caller_get_field_by_name(caller_profile, "caller_id_name");
 	if (zstr(caller_id_name)) {
 		caller_id_name = caller_id_number;
@@ -308,7 +308,7 @@ static int oreka_send_sip_message(oreka_session_t *oreka, oreka_recording_status
 		sdp.write_function(&sdp, "s=Phone Recording (%s)\r\n", type == FS_OREKA_READ ? "RX" : "TX");
 		sdp.write_function(&sdp, "i=FreeSWITCH Oreka Recorder (pid=%d)\r\n", globals.our_pid);
 		sdp.write_function(&sdp, "m=audio %d RTP/AVP 0\r\n", type == FS_OREKA_READ ? oreka->read_rtp_port : oreka->write_rtp_port);
-		sdp.write_function(&sdp, "a=rtpmap:0 PCMU/%d\r\n", type == FS_OREKA_READ 
+		sdp.write_function(&sdp, "a=rtpmap:0 PCMU/%d\r\n", type == FS_OREKA_READ
 				? oreka->read_impl.samples_per_second : oreka->write_impl.samples_per_second);
 	}
 
@@ -337,7 +337,7 @@ static int oreka_send_sip_message(oreka_session_t *oreka, oreka_recording_status
 	sip_header.write_function(&sip_header, "Max-Forwards: 70\r\n", method);
 
 	/* Subject */
-	sip_header.write_function(&sip_header, "Subject: %s %s recording of %s\r\n", 
+	sip_header.write_function(&sip_header, "Subject: %s %s recording of %s\r\n",
 					status == FS_OREKA_START ? "BEGIN": "END",
 					type == FS_OREKA_READ ? "RX" : "TX", caller_id_name);
 
@@ -400,7 +400,7 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
 	uint32_t i = 0;
 	int16_t *linear_samples = NULL;
 
-    
+
 
 	if (type == SWITCH_ABC_TYPE_READ_REPLACE || type == SWITCH_ABC_TYPE_WRITE_REPLACE || type == SWITCH_ABC_TYPE_READ_PING) {
         int16_t *data;
@@ -476,7 +476,7 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
                 switch_resample_create(&oreka->write_resampler,
                                        read_impl.actual_samples_per_second,
                                        8000,
-                                       320, SWITCH_RESAMPLE_QUALITY, 1);                
+                                       320, SWITCH_RESAMPLE_QUALITY, 1);
             }
 
 
@@ -510,7 +510,7 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
                         linear_samples = linear_frame->data;
                         linear_len = linear_frame->datalen;
                     }
-                    
+
                     memset(&pcmu_frame, 0, sizeof(pcmu_frame));
                     for (i = 0; i < linear_len / sizeof(int16_t); i++) {
                         pcmu_data[i] = linear_to_ulaw(linear_samples[i]);
@@ -629,9 +629,9 @@ SWITCH_STANDARD_APP(oreka_start_function)
     } else {
         flags = SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_ANSWER_REQ;
     }
-    
+
 	status = switch_core_media_bug_add(session, OREKA_BUG_NAME_READ, NULL, oreka_audio_callback, oreka, 0, flags, &bug);
-                                       
+
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to attach oreka to media stream!\n");
 		return;
@@ -719,8 +719,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_oreka_load)
 	switch_get_addr(globals.sip_server_ipv4_str, sizeof(globals.sip_server_ipv4_str), globals.sip_server_addr);
 	globals.our_pid = getpid();
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
-		"Loading mod_oreka, sip_server_addr=%s, sip_server_ipv4_str=%s, sip_server_port=%d, local_ipv4_str=%s\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Loading mod_oreka, sip_server_addr=%s, sip_server_ipv4_str=%s, sip_server_port=%d, local_ipv4_str=%s\n",
 		globals.sip_server_addr_str, globals.sip_server_ipv4_str, globals.sip_server_port, globals.local_ipv4_str);
 
 #if 0
@@ -765,8 +765,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_oreka_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "oreka_record", "Send media to Oreka recording server", "Send media to Oreka recording server", 
-	oreka_start_function, "[stop]", SAF_NONE); 
+	SWITCH_ADD_APP(app_interface, "oreka_record", "Send media to Oreka recording server", "Send media to Oreka recording server",
+	oreka_start_function, "[stop]", SAF_NONE);
 	return SWITCH_STATUS_SUCCESS;
 }
 

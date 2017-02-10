@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -313,7 +313,7 @@ static void event_handler(switch_event_t *event)
 				const char *hval;
 
 				send = 0;
-				
+
 				for (hp = l->filters->headers; hp; hp = hp->next) {
 					if ((hval = switch_event_get_header(event, hp->name))) {
 						const char *comp_to = hp->value;
@@ -515,8 +515,8 @@ SWITCH_STANDARD_APP(socket_function)
 
 		switch_ivr_parse_all_events(session);
 
-		if (switch_channel_get_state(channel) != CS_HIBERNATE && 
-			!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET) 
+		if (switch_channel_get_state(channel) != CS_HIBERNATE &&
+			!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET)
 			&& (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
@@ -602,7 +602,7 @@ static void remove_listener(listener_t *listener)
 
 static void send_disconnect(listener_t *listener, const char *message)
 {
-	
+
 	char disco_buf[512] = "";
 	switch_size_t len, mlen;
 
@@ -611,7 +611,7 @@ static void send_disconnect(listener_t *listener, const char *message)
 	}
 
 	mlen = strlen(message);
-	
+
 	if (listener->session) {
 		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 						"Controlled-Session-UUID: %s\n"
@@ -1226,7 +1226,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			ptr = (mbuf + pos);
 
 		}
-		
+
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
 		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
@@ -1298,7 +1298,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 											status = switch_socket_recv(listener->sock, p, &mlen);
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
-												free(body);												
+												free(body);
 												switch_goto_status(SWITCH_STATUS_FALSE, end);
 											}
 
@@ -1426,7 +1426,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
-		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && 
+		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) &&
 			listener->linger_timeout != (time_t) -1 && switch_epoch_time_now(NULL) > listener->linger_timeout) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "linger timeout, closing socket\n");
 			status = SWITCH_STATUS_FALSE;
@@ -1437,23 +1437,23 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
 				char disco_buf[512] = "";
-				
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "%s Socket Linger %d\n", 
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "%s Socket Linger %d\n",
 								  switch_channel_get_name(channel), (int)listener->linger_timeout);
-				
+
 				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 								"Controlled-Session-UUID: %s\n"
-								"Content-Disposition: linger\n" 
+								"Content-Disposition: linger\n"
 								"Channel-Name: %s\n"
 								"Linger-Time: %d\n"
-								"Content-Length: 0\n\n", 
+								"Content-Length: 0\n\n",
 								switch_core_session_get_uuid(listener->session), switch_channel_get_name(channel), (int)listener->linger_timeout);
 
 
 				if (listener->linger_timeout != (time_t) -1) {
 					listener->linger_timeout += switch_epoch_time_now(NULL);
 				}
-				
+
 				len = strlen(disco_buf);
 				switch_socket_send(listener->sock, disco_buf, &len);
 			} else {
@@ -1608,7 +1608,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 	switch_bool_t ok = SWITCH_TRUE;
 
   top:
-	
+
 	if (!switch_core_hash_find(listener->allowed_api_hash, check_cmd)) {
 		ok = SWITCH_FALSE;
 		goto end;
@@ -1662,7 +1662,7 @@ static void set_all_custom(listener_t *listener)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ADDING CUSTOM EVENT: %s\n", m->val);
 			switch_core_hash_insert(listener->event_hash, m->val, MARKER);
 		}
-		
+
 		switch_console_free_matches(&events);
 	}
 }
@@ -1674,7 +1674,7 @@ static void set_allowed_custom(listener_t *listener)
 	void *val;
 
 	switch_assert(listener->allowed_event_hash);
-	
+
 	for (hi = switch_core_hash_first(listener->allowed_event_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		switch_core_hash_insert(listener->event_hash, (char *)var, MARKER);
@@ -1759,7 +1759,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				*tmp++ = '\0';
 				pass = tmp;
 			}
-			
+
 			if (zstr(user) || zstr(domain_name)) {
 				switch_snprintf(reply, reply_len, "-ERR invalid");
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
@@ -2039,11 +2039,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				if ((uuid = cmd + 9)) {
 					char *fmt;
 					strip_cr(uuid);
-					
+
 					if ((fmt = strchr(uuid, ' '))) {
 						*fmt++ = '\0';
 					}
-						
+
 					if (!(listener->session = switch_core_session_locate(uuid))) {
 						if (fmt) {
 							switch_snprintf(reply, reply_len, "-ERR invalid uuid");
@@ -2060,7 +2060,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 							listener->format = EVENT_FORMAT_PLAIN;
 						} else if (!strcasecmp(fmt, "json")) {
 							listener->format = EVENT_FORMAT_JSON;
-						}						
+						}
 					}
 
 					switch_set_flag_locked(listener, LFLAG_SESSION);
@@ -2216,7 +2216,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		const char *uuid = NULL;
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
-		
+
 		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-UUID", uuid_str);
 
 		strip_cr(cmd);
@@ -2274,7 +2274,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if ((arg_copy = strchr(api_copy, ' '))) {
 				*arg_copy++ = '\0';
 			}
-			
+
 			ok = auth_api_command(listener, api_copy, arg_copy);
 			free(api_copy);
 
@@ -2284,13 +2284,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				goto done;
 			}
 		}
-		
+
 		if (!(acs.console_execute = switch_true(console_execute))) {
 			if ((arg = strchr(api_cmd, ' '))) {
 				*arg++ = '\0';
 			}
 		}
-		
+
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;
@@ -3011,13 +3011,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			if (listener->sa && (listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
 				launch_listener_thread(listener);
 				continue;
-			} 
+			}
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initilizing connection\n");
 		close_socket(&listener->sock);
 		expire_listener(&listener);
-	
+
 	}
 
   end:

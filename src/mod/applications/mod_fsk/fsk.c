@@ -211,7 +211,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 /*
  *	dsp_fsk_destroy
  *
- *	Destroys a handle, releasing any associated memory.  Sets handle pointer to NULL 
+ *	Destroys a handle, releasing any associated memory.  Sets handle pointer to NULL
  *	so A destroyed handle can not be used for anything after the destroy.
 */
 
@@ -306,11 +306,11 @@ dsp_fsk_sample (dsp_fsk_handle_t *handle, double normalized_sample)
 
 	if (handle->cellpos > 1.0) {
 		handle->cellpos -= 1.0;
-		
+
 		switch (handle->state) {
 		case FSK_STATE_DATA:
-			{		
-				
+			{
+
 				(*handle->attr.bithandler) (handle->attr.bithandler_arg, handle->current_bit);
 			}
 			break;

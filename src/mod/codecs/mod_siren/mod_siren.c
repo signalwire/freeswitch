@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,13 +22,13 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian K. West <brian@freeswitch.org>
  * Steve Underwood <steveu@coppice.org>
  *
  * mod_siren.c -- ITU-T G.722.1 (Siren7) and ITU-T G.722.1 Annex C (Siren14) licensed from Polycom(R)
  *
- * Using mod_siren in a commercial product will require you to acquire a patent 
+ * Using mod_siren in a commercial product will require you to acquire a patent
  * license directly from Polycom(R) for your company.
  *
  * http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_g7221.html

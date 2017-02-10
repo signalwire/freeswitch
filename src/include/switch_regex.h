@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Michael Jerris <mike@jerris.com>
  *
  * switch_regex.h -- pcre wrapper and extensions Header
@@ -70,7 +70,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 */
 SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial_match);
 
-SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, const char *field_data, 
+SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, const char *field_data,
 										  int *ovector, const char *var, switch_cap_callback_t callback, void *user_data);
 
 SWITCH_DECLARE_NONSTD(void) switch_regex_set_var_callback(const char *var, const char *val, void *user_data);

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  *
@@ -43,7 +43,7 @@ SWITCH_BEGIN_EXTERN_C
  */
 /**
  * @defgroup switch_core_db Database Routines
- * @ingroup switch_sqlite_top 
+ * @ingroup switch_sqlite_top
  * @{
  */
 /**
@@ -60,7 +60,7 @@ typedef int (*switch_core_db_err_callback_func_t) (void *pArg, const char *errms
 ** These are special value for the destructor that is passed in as the
 ** final argument to routines like switch_core_db_result_blob().  If the destructor
 ** argument is SWITCH_CORE_DB_STATIC, it means that the content pointer is constant
-** and will never change.  It does not need to be destroyed.  The 
+** and will never change.  It does not need to be destroyed.  The
 ** SWITCH_CORE_DB_TRANSIENT value means that the content will likely change in
 ** the near future and that the db should make its own private copy of
 ** the content before returning.
@@ -107,7 +107,7 @@ SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t *
  * in a single column of the current result row of a query.  In every
  * case the first parameter is a pointer to the SQL statement that is being
  * executed (the switch_core_db_stmt_t* that was returned from switch_core_db_prepare()) and
- * the second argument is the index of the column for which information 
+ * the second argument is the index of the column for which information
  * should be returned.  iCol is zero-indexed.  The left-most column as an
  * index of 0.
  *
@@ -200,7 +200,7 @@ SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db);
  *
  * The return value is is SWITCH_CORE_DB_OK if there are no errors and
  * some other return code if there is an error.  The particular
- * return value depends on the type of error. 
+ * return value depends on the type of error.
  *
  * If the query could not be executed because a database file is
  * locked or busy, then this function returns SWITCH_CORE_DB_BUSY.  (This
@@ -214,7 +214,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
  * SQL statement obtained by a previous call to switch_core_db_prepare().
  * If the statement was executed successfully, or
  * not executed at all, then SWITCH_CORE_DB_OK is returned. If execution of the
- * statement failed then an error code is returned. 
+ * statement failed then an error code is returned.
  *
  * This routine can be called at any point during the execution of the
  * virtual machine.  If the virtual machine has not completed execution
@@ -249,12 +249,12 @@ SWITCH_DECLARE(int) switch_core_db_finalize(switch_core_db_stmt_t *pStmt);
  */
 SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db, const char *zSql, int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail);
 
-/** 
+/**
  * After an SQL query has been compiled with a call to either
  * switch_core_db_prepare(), then this function must be
  * called one or more times to execute the statement.
  *
- * The return value will be either SWITCH_CORE_DB_BUSY, SWITCH_CORE_DB_DONE, 
+ * The return value will be either SWITCH_CORE_DB_BUSY, SWITCH_CORE_DB_DONE,
  * SWITCH_CORE_DB_ROW, SWITCH_CORE_DB_ERROR, or SWITCH_CORE_DB_MISUSE.
  *
  * SWITCH_CORE_DB_BUSY means that the database engine attempted to open
@@ -265,12 +265,12 @@ SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db, const char *zSq
  * successfully.  switch_core_db_step() should not be called again on this virtual
  * machine.
  *
- * If the SQL statement being executed returns any data, then 
+ * If the SQL statement being executed returns any data, then
  * SWITCH_CORE_DB_ROW is returned each time a new row of data is ready
  * for processing by the caller. The values may be accessed using
  * the switch_core_db_column_*() functions described below. switch_core_db_step()
  * is called again to retrieve the next row of data.
- * 
+ *
  * SWITCH_CORE_DB_ERROR means that a run-time error (such as a constraint
  * violation) has occurred.  switch_core_db_step() should not be called again on
  * the VM. More information may be found by calling switch_core_db_errmsg().
@@ -303,7 +303,7 @@ SWITCH_DECLARE(int) switch_core_db_reset(switch_core_db_stmt_t *pStmt);
  * In every case, the first parameter is a pointer to the sqlite3_stmt
  * structure returned from switch_core_db_prepare().  The second parameter is the
  * index of the parameter.  The first parameter as an index of 1.  For
- * named parameters (":AAA" or "$VVV") you can use 
+ * named parameters (":AAA" or "$VVV") you can use
  * switch_core_db_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
@@ -325,7 +325,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_int(switch_core_db_stmt_t *pStmt, int i,
  * In every case, the first parameter is a pointer to the sqlite3_stmt
  * structure returned from switch_core_db_prepare().  The second parameter is the
  * index of the parameter.  The first parameter as an index of 1.  For
- * named parameters (":AAA" or "$VVV") you can use 
+ * named parameters (":AAA" or "$VVV") you can use
  * switch_core_db_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
@@ -347,7 +347,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int 
  * In every case, the first parameter is a pointer to the sqlite3_stmt
  * structure returned from switch_core_db_prepare().  The second parameter is the
  * index of the parameter.  The first parameter as an index of 1.  For
- * named parameters (":AAA" or "$VVV") you can use 
+ * named parameters (":AAA" or "$VVV") you can use
  * switch_core_db_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
@@ -377,7 +377,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i
  * In every case, the first parameter is a pointer to the sqlite3_stmt
  * structure returned from switch_core_db_prepare().  The second parameter is the
  * index of the parameter.  The first parameter as an index of 1.  For
- * named parameters (":AAA" or "$VVV") you can use 
+ * named parameters (":AAA" or "$VVV") you can use
  * sqlite3_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
@@ -404,7 +404,7 @@ SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
  * Instead of invoking a user-supplied callback for each row of the
  * result, this routine remembers each row of the result in memory
  * obtained from malloc(), then returns all of the result after the
- * query has finished. 
+ * query has finished.
  *
  * As an example, suppose the query result where this table:
  *
@@ -431,11 +431,11 @@ SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
  * set to 2.  In general, the number of values inserted into azResult
  * will be ((*nrow) + 1)*(*ncolumn).
  *
- * After the calling function has finished using the result, it should 
- * pass the result data pointer to switch_core_db_free_table() in order to 
- * release the memory that was malloc-ed.  Because of the way the 
- * malloc() happens, the calling function must not try to call 
- * free() directly.  Only switch_core_db_free_table() is able to release 
+ * After the calling function has finished using the result, it should
+ * pass the result data pointer to switch_core_db_free_table() in order to
+ * release the memory that was malloc-ed.  Because of the way the
+ * malloc() happens, the calling function must not try to call
+ * free() directly.  Only switch_core_db_free_table() is able to release
  * the memory properly and safely.
  *
  * The return value of this routine is the same as from switch_core_db_exec().
@@ -542,7 +542,7 @@ SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const ch
  *      INSERT INTO table1 VALUES('It's a happy day!');
  *
  * This second example is an SQL syntax error.  As a general rule you
- * should always use %q instead of %s when inserting text into a string 
+ * should always use %q instead of %s when inserting text into a string
  * literal.
  */
 

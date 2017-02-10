@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <arpa/inet.h>
-#include <sys/wait.h> 
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #else
@@ -25,7 +25,7 @@
 //#include "sha1.h"
 #include <openssl/ssl.h>
 
-#if defined(_MSC_VER) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__SVR4) && defined(__sun)) 
+#if defined(_MSC_VER) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__SVR4) && defined(__sun))
 #define __bswap_64(x) \
   x = (x>>56) | \
     ((x<<40) & 0x00FF000000000000) | \
@@ -137,7 +137,7 @@ int xp_is_blocking(int errcode);
 
 #ifndef _MSC_VER
 static inline uint64_t get_unaligned_uint64(const void *p)
-{   
+{
     const struct { uint64_t d; } __attribute__((packed)) *pp = p;
     return pp->d;
 }

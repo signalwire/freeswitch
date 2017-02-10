@@ -163,7 +163,7 @@ void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_correlation, WebRtc_Word16*
         seq2Ptr = seq2 + (step_seq2 * i);
         (*CrossCorrPtr) = 0;
 
-#ifndef _ARM_OPT_ 
+#ifndef _ARM_OPT_
 #ifdef _WIN32
 #pragma message("NOTE: default implementation is used")
 #endif

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Brian K. West <brian@freeswitch.org>
  *
@@ -51,16 +51,16 @@ typedef enum {
 
 SWITCH_DECLARE(const char *) switch_nat_get_type(void);
 
-/*! 
+/*!
   \brief Initilize the NAT Traversal System
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
 */
 SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool, switch_bool_t mapping);
 
-/*! 
+/*!
   \brief Initilize the rest of the NAT Traversal System
-  \note nat_init is called prior to some other modules being loaded.  
+  \note nat_init is called prior to some other modules being loaded.
         This method allows us to init the rest of the NAT system.
 */
 SWITCH_DECLARE(void) switch_nat_late_init(void);
@@ -95,7 +95,7 @@ SWITCH_DECLARE(void) switch_nat_set_mapping(switch_bool_t mapping);
  \brief Maps a port through the NAT Traversal System
  \param port Internal port to map
  \param proto Protocol
- \param external_port [out] Mapped external port 
+ \param external_port [out] Mapped external port
  \param sticky make the mapping permanent
 */
 SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port,

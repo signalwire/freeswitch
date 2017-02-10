@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,14 +22,14 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * switch_buffer.h -- Data Buffering Code
  *
  */
-/** 
+/**
  * @file switch_buffer.h
  * @brief Data Buffering Code
  * @see switch_buffer
@@ -56,7 +56,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_partition(switch_memory_poo
 SWITCH_DECLARE(switch_status_t) switch_buffer_set_partition_data(switch_buffer_t *buffer, void *data, switch_size_t datalen);
 SWITCH_DECLARE(switch_status_t) switch_buffer_reset_partition_data(switch_buffer_t *buffer);
 
-/*! \brief Allocate a new switch_buffer 
+/*! \brief Allocate a new switch_buffer
  * \param pool Pool to allocate the buffer from
  * \param buffer returned pointer to the new buffer
  * \param max_len length required by the buffer
@@ -64,7 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_reset_partition_data(switch_buffer
  */
 SWITCH_DECLARE(switch_status_t) switch_buffer_create(_In_ switch_memory_pool_t *pool, _Out_ switch_buffer_t **buffer, _In_ switch_size_t max_len);
 
-/*! \brief Allocate a new dynamic switch_buffer 
+/*! \brief Allocate a new dynamic switch_buffer
  * \param buffer returned pointer to the new buffer
  * \param blocksize length to realloc by as data is added
  * \param start_len ammount of memory to reserve initially
@@ -79,25 +79,25 @@ SWITCH_DECLARE(void) switch_buffer_lock(_In_ switch_buffer_t *buffer);
 SWITCH_DECLARE(switch_status_t) switch_buffer_trylock(_In_ switch_buffer_t *buffer);
 SWITCH_DECLARE(void) switch_buffer_unlock(_In_ switch_buffer_t *buffer);
 
-/*! \brief Get the length of a switch_buffer_t 
+/*! \brief Get the length of a switch_buffer_t
  * \param buffer any buffer of type switch_buffer_t
  * \return int size of the buffer.
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_len(_In_ switch_buffer_t *buffer);
 
-/*! \brief Get the freespace of a switch_buffer_t 
+/*! \brief Get the freespace of a switch_buffer_t
  * \param buffer any buffer of type switch_buffer_t
  * \return int freespace in the buffer.
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(_In_ switch_buffer_t *buffer);
 
-/*! \brief Get the in use amount of a switch_buffer_t 
+/*! \brief Get the in use amount of a switch_buffer_t
  * \param buffer any buffer of type switch_buffer_t
  * \return int ammount of buffer curently in use
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(_In_ switch_buffer_t *buffer);
 
-/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer. 
+/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer.
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned
@@ -105,7 +105,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(_In_ switch_buffer_t *buffer);
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_read(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
 
-/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available, without removing read data from buffer. 
+/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available, without removing read data from buffer.
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned
@@ -115,7 +115,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_peek(_In_ switch_buffer_t *buffer, _
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_peek_zerocopy(_In_ switch_buffer_t *buffer, _Out_ const void **ptr);
 
-/*! \brief Read data endlessly from a switch_buffer_t 
+/*! \brief Read data endlessly from a switch_buffer_t
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned

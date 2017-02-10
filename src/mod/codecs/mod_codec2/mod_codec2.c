@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -32,8 +32,8 @@
 #include <switch.h>
 #include <codec2.h>
 
-/* Uncomment to log input/output data for debugging 
-#define LOG_DATA 
+/* Uncomment to log input/output data for debugging
+#define LOG_DATA
 #define CODEC2_DEBUG
 */
 
@@ -42,7 +42,7 @@
 #ifdef CODEC2_DEBUG
 #define codec2_assert(_x) switch_assert(_x)
 #else
-#define codec2_assert(_x) 
+#define codec2_assert(_x)
 #endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load);
@@ -56,7 +56,7 @@ struct codec2_context {
 	int nbit; /* nr of bits per frame */
 	int nbyte; /* nr of bytes per frame */
 	int nsam; /* nr of samples per frame */
-#ifdef LOG_DATA	
+#ifdef LOG_DATA
 	FILE *encoder_in;
 	FILE *encoder_out;
 	FILE *encoder_out_unpacked;
@@ -107,13 +107,13 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 	} else {
 		/* 3200 might be better for VOIP, but forcing 2400 for backwards compatibility  */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mode not supported, forcing CODEC2_MODE_2400. You can try mode 3200 too!\n");
-		context->mode = CODEC2_MODE_2400; 
+		context->mode = CODEC2_MODE_2400;
 	}
-	
+
 	if (encoding) {
 		context->encoder = codec2_create(context->mode);
 	}
-	
+
 	if (decoding) {
 		context->decoder = codec2_create(context->mode);
 	}
@@ -126,32 +126,32 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 	context->nbyte = (context->nbit + 7) / 8;
 
 	codec->private_info = context;
-	
-#ifdef LOG_DATA		
+
+#ifdef LOG_DATA
 	{
-		
+
 		int c = c2_count++;
 		char buf[1024];
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logging as /tmp/c2-%d-*\n", c);
-		
+
 		if (encoding) {
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-in", c);
 			context->encoder_in = fopen(buf, "w");
-		
+
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out", c);
 			context->encoder_out = fopen(buf, "w");
-		
+
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out-unpacked", c);
 			context->encoder_out_unpacked = fopen(buf, "w");
 		}
 		if (decoding) {
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-in", c);
 			context->decoder_in = fopen(buf, "w");
-		
+
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out", c);
 			context->decoder_out = fopen(buf, "w");
-		
+
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out-unpacked", c);
 			context->decoder_in_unpacked = fopen(buf, "w");
 		}
@@ -171,23 +171,23 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	
+
 	codec2_assert(decoded_data_len == context->nsam * 2);
-	
-#ifdef LOG_DATA	
+
+#ifdef LOG_DATA
 	fwrite(decoded_data, decoded_data_len, 1, context->encoder_in);
 	fflush(context->encoder_in);
 #endif
 
 	codec2_encode(context->encoder, encoded_data, decoded_data);
-	
-#ifdef LOG_DATA	
+
+#ifdef LOG_DATA
 	fwrite(encode_buf, sizeof(encode_buf), 1, context->encoder_out_unpacked);
 	fflush(context->encoder_out_unpacked);
 	fwrite(encoded_data, context->nbyte, 1, context->encoder_out);
 	fflush(context->encoder_out);
 #endif
-	
+
 	*encoded_data_len = context->nbyte;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -204,32 +204,32 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	
+
 	codec2_assert(encoded_data_len == 8);
-	
-#ifdef LOG_DATA	
+
+#ifdef LOG_DATA
 	fwrite(encoded_data, encoded_data_len, 1, context->decoder_in);
 	fflush(context->decoder_in);
 	fwrite(bits, sizeof(bits), 1, context->decoder_in_unpacked);
 	fflush(context->decoder_in_unpacked);
 #endif
-	
+
 	codec2_decode(context->decoder, decoded_data, encoded_data);
 
-#ifdef LOG_DATA	
+#ifdef LOG_DATA
 	fwrite(decoded_data, context->nsam, 2, context->decoder_out);
 	fflush(context->decoder_out);
 #endif
 
 	*decoded_data_len = context->nsam * 2; /* eg: 160 samples for 3200,2400 */
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_codec2_destroy(switch_codec_t *codec)
 {
 	struct codec2_context *context = codec->private_info;
-	
+
 	codec2_destroy(context->encoder);
 	codec2_destroy(context->decoder);
 
@@ -266,7 +266,7 @@ static switch_status_t codec2_load_config(switch_bool_t reload) {
 	switch_xml_t cfg, xml = NULL, param, settings;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	codec2_prefs.mode = 2400 ; 
+	codec2_prefs.mode = 2400 ;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opening of %s failed\n", cf);
@@ -283,7 +283,7 @@ static switch_status_t codec2_load_config(switch_bool_t reload) {
 			}
 		}
 	}
-	
+
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -301,14 +301,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load)
 	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	/*there is no API call to retrieve ptime per mode, so hardcoding here*/
 	if ((codec2_prefs.mode == 3200) ||(codec2_prefs.mode == 2400)) {
 		codec2_prefs.ptime = 20000;
-		codec2_prefs.samples_per_frame = CODEC2_SAMPLES_PER_FRAME;  
+		codec2_prefs.samples_per_frame = CODEC2_SAMPLES_PER_FRAME;
 	} else {
 		codec2_prefs.ptime = 40000;
-		codec2_prefs.samples_per_frame = CODEC2_SAMPLES_PER_FRAME * 2;  
+		codec2_prefs.samples_per_frame = CODEC2_SAMPLES_PER_FRAME * 2;
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "CODEC2 3200/2400/1400/1200bps");

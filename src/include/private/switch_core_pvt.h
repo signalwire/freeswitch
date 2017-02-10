@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -235,11 +235,11 @@ struct switch_media_bug {
 	switch_image_t *spy_img[2];
 	switch_vid_spy_fmt_t spy_fmt;
 	switch_thread_t *video_bug_thread;
-	
+
 	switch_buffer_t *text_buffer;
 	char *text_framedata;
 	uint32_t text_framesize;
-	
+
 	struct switch_media_bug *next;
 };
 

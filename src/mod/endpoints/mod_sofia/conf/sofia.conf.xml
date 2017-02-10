@@ -495,9 +495,9 @@
              really need to change this.
         -->
         <!-- <param name="renegotiate-codec-on-hold" value="true"/> -->
-        <!-- Turn on proxy hold when proxy media and proxy mode are disabled 
+        <!-- Turn on proxy hold when proxy media and proxy mode are disabled
              By default it is not set
-        --> 
+        -->
         <!-- <param name="proxy-hold" value="true"/> -->
         <!-- Choose the proxy notify events. Default is not set
 

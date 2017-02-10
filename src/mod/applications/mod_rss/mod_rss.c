@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  *
@@ -84,7 +84,7 @@ static uint32_t match_count(char *str, uint32_t max)
 
 
 /*
-  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+  dtmf handler function you can hook up to be executed when a digit is dialed during playback
   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
@@ -351,8 +351,8 @@ SWITCH_STANDARD_APP(rss_function)
 			if ((p = strchr(cmd, '#'))) {
 				*p = '\0';
 #ifdef MATCH_COUNT
-				/* Hmmm... I know there are no more matches so I don't *need* them to press pound but 
-				   I already told them to press it.  Will this confuse people or not?  Let's make em press 
+				/* Hmmm... I know there are no more matches so I don't *need* them to press pound but
+				   I already told them to press it.  Will this confuse people or not?  Let's make em press
 				   pound unless this define is enabled for now.
 				 */
 			} else if (match_count(cmd, feed_index) > 1) {

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
@@ -644,7 +644,7 @@ typedef struct {
 	switch_size_t flush_packet_count;
 	switch_size_t largest_jb_size;
 	/* Jitter */
-	int64_t last_proc_time;		
+	int64_t last_proc_time;
 	int64_t jitter_n;
 	int64_t jitter_add;
 	int64_t jitter_addsq;
@@ -660,7 +660,7 @@ typedef struct {
 	double mean_interval;
 	int loss[LOST_BURST_CAPTURE];
 	int last_loss;
-	int recved;	
+	int recved;
 	int last_processed_seq;
 	switch_size_t flaws;
 	switch_size_t last_flaw;
@@ -688,7 +688,7 @@ typedef struct {
 	uint16_t cycle;               /* Packet loss calculation, sequence number cycle of the current RTCP report interval */
 	uint32_t bad_seq;             /* Bad SEQ found, used to detect reset on the other side */
 	uint16_t base_seq;            /* Packet loss calculation, first sequence number received */
-	uint32_t cum_lost;            /* Packet loss calculation, cumulative number of packet lost */ 
+	uint32_t cum_lost;            /* Packet loss calculation, cumulative number of packet lost */
 	uint32_t last_recv_lsr_local; /* RTT calculation, When receiving an SR we save our local timestamp in fraction of 65536 seconds */
 	uint32_t last_recv_lsr_peer;  /* RTT calculation, When receiving an SR we extract the middle 32bits of the remote NTP timestamp to include it in the next SR LSR */
 	uint32_t init;
@@ -725,7 +725,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 	SWITCH_RTP_FLAG_BUGGY_2833    - Emulate the bug in cisco equipment to allow interop
 	SWITCH_RTP_FLAG_PASS_RFC2833  - Pass 2833 (ignore it)
-	SWITCH_RTP_FLAG_AUTO_CNG      - Generate outbound CNG frames when idle    
+	SWITCH_RTP_FLAG_AUTO_CNG      - Generate outbound CNG frames when idle
 </pre>
  */
 typedef enum {
@@ -804,10 +804,10 @@ typedef enum {
 		   final_duration - initial_timestamp = total_samples
 
 		   However, if the duration value exceeds the space allocated (16 bits), The sender should increment
-		   the timestamp one unit and reset the duration to 0. 
+		   the timestamp one unit and reset the duration to 0.
 
 		   Always sending a duration of 0 with a new timestamp should be tolerated but is rarely intentional
-		   and is mistakenly done by many devices.  
+		   and is mistakenly done by many devices.
 		   The issue is that the Sonus expects everyone to do it this way instead of tolerating either way.
 		   Sonus will actually ignore every packet with the same timestamp before concluding if it's DTMF.
 
@@ -825,19 +825,19 @@ typedef enum {
 
 	 */
 
-	
+
 	RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
 
 	/*
 	  Our friends at Sonus get real mad when the timestamps are not in perfect sequence even during periods of silence.
 	  With this flag, we will only increment the timestamp when write packets even if they are eons apart.
-	  
+
 	 */
 
 	RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
 
 	/*
-	  Our friends at Sonus also get real mad if the sequence number does not start at 0.  
+	  Our friends at Sonus also get real mad if the sequence number does not start at 0.
 	  Typically, we set this to a random starting value for your saftey.
 	  This is a security risk you take upon yourself when you enable this flag.
 	 */
@@ -849,9 +849,9 @@ typedef enum {
 	  Our friends at Sonus are on a roll, They also get easily dumbfounded by marker bits.
 	  This flag will never send any. Sheesh....
 	 */
-	
+
 	RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6),
-	
+
 	/*
 	  Guess Who? ... Yep, Sonus (and who know's who else) likes to interweave DTMF with the audio stream making it take
 	  2X as long as it should and sending an incorrect duration making the DTMF very delayed.
@@ -890,12 +890,12 @@ typedef enum {
 	 */
 
 	RTP_BUG_FLUSH_JB_ON_DTMF = (1 << 10),
-	
+
 	/* FLUSH JITTERBUFFER When getting RFC2833 to reduce bleed through */
 
 	RTP_BUG_ACCEPT_ANY_PAYLOAD = (1 << 11),
 
-	/* 
+	/*
 	  Make FS accept any payload type instead of dropping and returning CNG frame. Workaround while FS only supports a single payload per rtp session.
 	  This can be used by endpoint modules to detect payload changes and act appropriately (ex: sofia could send a reINVITE with single codec).
 	  This should probably be a flag, but flag enum is already full!
@@ -1032,7 +1032,7 @@ typedef uint32_t switch_ivr_option_t;
 	SWITCH_MESSAGE_REDIRECT_AUDIO     - Indication to redirect audio to another location if possible
 	SWITCH_MESSAGE_TRANSMIT_TEXT      - A text message
 	SWITCH_MESSAGE_INDICATE_ANSWER    - indicate answer
-	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress 
+	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress
 	SWITCH_MESSAGE_INDICATE_BRIDGE    - indicate a bridge starting
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE  - indicate a bridge ending
 	SWITCH_MESSAGE_INDICATE_TRANSFER  - indicate a transfer is taking place
@@ -1339,7 +1339,7 @@ typedef enum {
 <pre>
 CF_ANSWERED			- Channel is answered
 CF_OUTBOUND			- Channel is an outbound channel
-CF_EARLY_MEDIA		- Channel is ready for audio before answer 
+CF_EARLY_MEDIA		- Channel is ready for audio before answer
 CF_ORIGINATOR		- Channel is an originator
 CF_TRANSFER			- Channel is being transfered
 CF_ACCEPT_CNG		- Channel will accept CNG frames
@@ -1679,7 +1679,7 @@ typedef uint32_t switch_codec_flag_t;
 SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  0) - Interface is has text to read.
 SWITCH_SPEECH_FLAG_PEEK =			(1 <<  1) - Read data but do not erase it.
 SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  2) - Free interface's pool on destruction.
-SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  3) - Indicate that a blocking call is desired 
+SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  3) - Indicate that a blocking call is desired
 SWITCH_SPEECH_FLAG_PAUSE = 			(1 <<  4) - Pause toggle for playback
 </pre>
 */
@@ -1780,8 +1780,8 @@ SMBF_STEREO - Record in stereo
 SMBF_ANSWER_REQ - Don't record until the channel is answered
 SMBF_BRIDGE_REQ - Don't record until the channel is bridged
 SMBF_THREAD_LOCK - Only let the same thread who created the bug remove it.
-SMBF_PRUNE - 
-SMBF_NO_PAUSE - 
+SMBF_PRUNE -
+SMBF_NO_PAUSE -
 SMBF_STEREO_SWAP - Record in stereo: Write Stream - left channel, Read Stream - right channel
 </pre>
 */
@@ -1925,7 +1925,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_BACKGROUND_JOB		- Background Job
     SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
     SWITCH_EVENT_DETECTED_TONE      - Detected Tone
-    SWITCH_EVENT_PRIVATE_COMMAND	- A private command event 
+    SWITCH_EVENT_PRIVATE_COMMAND	- A private command event
     SWITCH_EVENT_HEARTBEAT			- Machine is alive
     SWITCH_EVENT_TRAP				- Error Trap
     SWITCH_EVENT_ADD_SCHEDULE		- Something has been scheduled
@@ -2325,15 +2325,15 @@ typedef enum {
 	SWITCH_IO_WRITE
 } switch_io_type_t;
 
-typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *codec, 
-																   switch_codec_control_command_t cmd, 
+typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *codec,
+																   switch_codec_control_command_t cmd,
 																   switch_codec_control_type_t ctype,
 																   void *cmd_data,
 																   switch_codec_control_type_t atype,
 																   void *cmd_arg,
 																   switch_codec_control_type_t *rtype,
 																   void **ret_data);
-																   
+
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
@@ -2444,7 +2444,7 @@ typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session
 typedef switch_status_t (*switch_say_string_callback_t) (switch_core_session_t *session,
 														 char *tosay,
 														 switch_say_args_t *say_args, char **rstr);
-														 
+
 struct switch_say_file_handle;
 typedef struct switch_say_file_handle switch_say_file_handle_t;
 

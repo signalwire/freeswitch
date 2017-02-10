@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
 
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -53,7 +53,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 
 	switch_uuid_str(uuid_str, sizeof(uuid_str));
 	profile->uuid_str = switch_core_strdup(pool, uuid_str);
-	
+
 	if (!context) {
 		context = "default";
 	}
@@ -163,10 +163,10 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 				profile->soft = n;
 			} else {
 				for(pp = profile->soft; pp && pp->next; pp = pp->next);
-			
+
 				if (pp) {
 					pp->next = n;
-				}	
+				}
 			}
 		}
 
@@ -311,13 +311,13 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_channel_timetable_t *times = NULL;
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Direction", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ?
 								   "inbound" : "outbound");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Logical-Direction", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ? 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ?
 								   "inbound" : "outbound");
-	
+
 	if (!zstr(caller_profile->username)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->username);
@@ -403,7 +403,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		}
 
 	}
-	
+
 	if (!(times = caller_profile->times)) {
 		times = caller_profile->old_times;
 	}
@@ -546,11 +546,11 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 
 		if (caller_application->application_data && strstr(caller_application->application_data, "\\'")) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n",
 							  caller_application->application_data);
 			return;
 		}
-		
+
 		if (!caller_extension->applications) {
 			caller_extension->applications = caller_application;
 		} else if (caller_extension->last_application) {

@@ -7,7 +7,7 @@
 
     <!-- Default Technology and profile -->
     <param name="default-techprofile" value="sofia/default"/>
-    
+
     <!-- IP or Hostname of Default Route -->
     <param name="default-gateway" value="192.168.66.6"/>
 
@@ -21,7 +21,7 @@
 	 call_limit varchar(16) - contains optional call limit
 	 tech_prefix varchar(128) - tech prefix used to build dial string (ex: sofia/default )
 	 acctcode varchar(128) - used to set channel variable acctcode for logging into the CDRs
-	 destination_number varchar(16) - Number returning for the query for building the dial string. (ex: 18005551212) 
+	 destination_number varchar(16) - Number returning for the query for building the dial string. (ex: 18005551212)
 	 See Documentation on the Wiki for further information -->
     <!-- <param name="custom-query" value="call  FS_GET_SIP_LOCATION(%s);"/> -->
   </settings>

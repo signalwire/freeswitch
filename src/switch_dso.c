@@ -1,4 +1,4 @@
-/* 
+/*
  * Cross Platform dso/dll load abstraction
  * Copyright(C) 2008 Michael Jerris
  *
@@ -13,7 +13,7 @@
  * code prove defective in any respect, you (not the initial developer or any other contributor)
  * assume the cost of any necessary servicing, repair or correction. This disclaimer of warranty
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
- * except under this disclaimer. 
+ * except under this disclaimer.
  *
  */
 

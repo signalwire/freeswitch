@@ -1,4 +1,4 @@
-/* 
+/*
  * mod_graylog2 for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2014-2015, Grasshopper
  *
@@ -179,9 +179,9 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 
 	gelf_text = cJSON_PrintUnformatted(gelf);
 	cJSON_Delete(gelf);
-	
+
 	switch_safe_free(parsed_full_message);
-	
+
 	return gelf_text;
 }
 
@@ -343,13 +343,13 @@ static switch_status_t do_config(void)
 			}
 
 			if (zstr(value)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty value for param \"%s\"\n", name); 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty value for param \"%s\"\n", name);
 				continue;
 			}
 
 			if (!strcmp(name, "server-host")) {
 				globals.server_host = switch_core_strdup(globals.pool, value);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
 			} else if (!strcasecmp(name, "server-port")) {
 				int port = -1;
 				if (switch_is_number(value)) {
@@ -357,21 +357,21 @@ static switch_status_t do_config(void)
 				}
 				if (port > 0 && port <= 65535) {
 					globals.server_port = port;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid port: \"%s\"\n", value); 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid port: \"%s\"\n", value);
 				}
 			} else if (!strcasecmp(name, "loglevel")) {
 				switch_log_level_t log_level = switch_log_str2level(value);
 				if (log_level == SWITCH_LOG_INVALID) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring invalid log level: \"%s\"\n", value);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
 					globals.log_level = log_level;
 				}
 			} else if (!strcasecmp(name, "send-uncompressed-header")) {
 				globals.send_uncompressed_header = switch_true(value);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param: \"%s\"\n", name);
 			}

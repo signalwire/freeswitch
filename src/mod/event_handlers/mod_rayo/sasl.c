@@ -63,7 +63,7 @@ void parse_plain_auth_message(const char *message, char **authzid, char **authci
 	} else {
 		*authzid = strdup(decoded);
 	}
-	
+
  end:
 	switch_safe_free(decoded);
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -101,7 +101,7 @@ struct switch_xml {
 	uint32_t refs;
 };
 
-/*! 
+/*!
  * \brief Parses a string into a switch_xml_t, ensuring the memory will be freed with switch_xml_free
  * \param s The string to parse
  * \param dup true if you want the string to be strdup()'d automatically
@@ -109,8 +109,8 @@ struct switch_xml {
  */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(_In_z_ char *s, _In_ switch_bool_t dup);
 
-/*! 
- * \brief Parses a string into a switch_xml_t 
+/*!
+ * \brief Parses a string into a switch_xml_t
  * \param s The string to parse
  * \return the switch_xml_t or NULL if an error occured
  */
@@ -200,7 +200,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(_In_ switch_xml_t xml, _In_z_ 
 
 ///\brief Traverses the switch_xml structure to retrieve a specific subtag. Takes a
 ///\ variable length list of tag names and indexes. The argument list must be
-///\ terminated by either an index of -1 or an empty string tag name. Example: 
+///\ terminated by either an index of -1 or an empty string tag name. Example:
 ///\ title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
 ///\ This retrieves the title of the 3rd book on the 1st shelf of library.
 ///\ Returns NULL if not found.

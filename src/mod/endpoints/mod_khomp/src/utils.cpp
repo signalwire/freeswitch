@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -112,7 +112,7 @@ void Kflags::init()
     _flags[SMS_DOING_UPLOAD]._value = false;
 
     /*
-    NOW LOADING ... 
+    NOW LOADING ...
 
     _flags[BRIDGED]._name = "BRIDGED";
     _flags[BRIDGED]._value = false;
@@ -144,10 +144,10 @@ bool ChanCommandHandler::write(const CommandRequest & cmd)
 
 void ChanCommandHandler::unreference()
 {
-    
+
     if (!_fifo)
         return;
-    
+
     if(_fifo->_thread)
     {
         _fifo->_thread->join();
@@ -200,10 +200,10 @@ bool ChanEventHandler::write(const EventRequest & evt)
 
 void ChanEventHandler::unreference()
 {
-    
+
     if (!_fifo)
         return;
-    
+
     if(_fifo->_thread)
     {
         _fifo->_thread->join();
@@ -218,7 +218,7 @@ void ChanEventHandler::unreference()
 const char * answerInfoToString(int answer_info)
 {
     switch (answer_info)
-    {    
+    {
         case Board::KhompPvt::CI_MESSAGE_BOX:
             return "MessageBox";
         case Board::KhompPvt::CI_HUMAN_ANSWER:
@@ -231,12 +231,12 @@ const char * answerInfoToString(int answer_info)
             return "Unknown";
         case Board::KhompPvt::CI_FAX:
             return "Fax";
-    }    
+    }
 
     return NULL;
 }
 /******************************* Match functions ******************************/
-bool MatchExtension::canMatch(std::string & context, std::string & exten, 
+bool MatchExtension::canMatch(std::string & context, std::string & exten,
                               std::string & caller_id, bool match_more)
 {
     if(!match_more)
@@ -249,7 +249,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
         char key_digit  = '#';
         size_t finished = exten.find_last_of(key_digit);
         char last_char  = exten.at(exten.size() - 1);
-    
+
         if(finished != std::string::npos && last_char == key_digit)
         {
             if(exten.size() <= 1)
@@ -263,7 +263,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
             return false;
         }
     }
-    
+
     return true;
 
 /*
@@ -281,7 +281,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
             DBG(FUNC,"extension cannot match, returning");
 
             if(xml)
-                switch_xml_free(xml); 
+                switch_xml_free(xml);
 
             return false;
         }
@@ -294,24 +294,24 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
             {
                 std::string expression;
 
-                if (switch_xml_child(xcond, "condition")) 
-                { 
+                if (switch_xml_child(xcond, "condition"))
+                {
                     LOG(ERROR,"Nested conditions are not allowed");
-                }  
+                }
 
                 switch_xml_t xexpression = switch_xml_child(xcond, "expression");
 
-                if ((xexpression = switch_xml_child(xcond, "expression"))) 
+                if ((xexpression = switch_xml_child(xcond, "expression")))
                 {
                     expression = switch_str_nil(xexpression->txt);
                 }
-                else 
+                else
                 {
                     expression =  switch_xml_attr_soft(xcond, "expression");
-                }  
+                }
 
                 if(expression.empty() || expression == "^(.*)$")
-                {                    
+                {
                     //We're not gonna take it
                     //No, we ain't gonna take it
                     // We're not gonna take it anymore
@@ -319,7 +319,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
                     continue;
                 }
 
-                int pm = -1; 
+                int pm = -1;
                 switch_status_t is_match = SWITCH_STATUS_FALSE;
                 is_match =  switch_regex_match_partial(exten.c_str(),expression.c_str(),&pm);
 
@@ -343,7 +343,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
                 {
                     // not match
                 }
-            }            
+            }
 
             xexten = xexten->next;
         }
@@ -354,7 +354,7 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
     }
 
     if(xml)
-        switch_xml_free(xml); 
+        switch_xml_free(xml);
 
     return false;
 */
@@ -362,9 +362,9 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
 
 
 MatchExtension::MatchType MatchExtension::matchExtension(
-                                        std::string & context, 
+                                        std::string & context,
                                         std::string & exten,
-                                        std::string & callerid, 
+                                        std::string & callerid,
                                         bool match_only)
 {
     if(!canMatch(context,exten,callerid))
@@ -447,7 +447,7 @@ MatchExtension::MatchType MatchExtension::findExtension(
             }
         }
     }
-            
+
     ref_context.clear();
     ref_extension.clear();
 
@@ -489,7 +489,7 @@ bool Kommuter::initialize(K3L_EVENT *e)
 {
     /* get total of kommuter devices */
     _kommuter_count = e->AddInfo;
-   
+
     if(Opt::_options._kommuter_activation() == "manual")
     {
         if (_kommuter_count > 0)
@@ -500,15 +500,15 @@ bool Kommuter::initialize(K3L_EVENT *e)
         return true;
     }
 
-    if (_kommuter_count > 0) 
-    {    
+    if (_kommuter_count > 0)
+    {
         bool start_timer = false;
         int timeout = Opt::_options._kommuter_timeout();
 
         std::string param = STG(FMT("timeout=%d") % timeout);
 
         for (int kommuter = 0; kommuter < _kommuter_count; kommuter++)
-        {   
+        {
             try
             {
                 Globals::k3lapi.command(-1, kommuter, CM_START_WATCHDOG, param.c_str());
@@ -535,15 +535,15 @@ bool Kommuter::initialize(K3L_EVENT *e)
         }
 
         if(timeout == 0)
-        {    
+        {
             DBG(FUNC, D("kommuter watchdog timer not created because timeout is 0."));
             return true;
-        }    
+        }
 
         if (start_timer)
-        {    
+        {
             if (!Globals::global_timer)
-            {    
+            {
                 LOG(ERROR, D("error creating the timer for kommuter."));
             }
             else
@@ -559,7 +559,7 @@ bool Kommuter::initialize(K3L_EVENT *e)
     {
         DBG(FUNC, D("no kommuter devices were found on system."));
     }
- 
+
     return true;
 }
 
@@ -627,7 +627,7 @@ ESL::~ESL()
 
     //Remove one from vector
     //_events->pop_back();
-    
+
     if(_events->size() == 0)
     {
         delete _events;
@@ -663,7 +663,7 @@ bool ESL::registerEvents()
 bool ESL::unregisterEvents()
 {
     DBG(FUNC, "Unregister ESLs");
-    
+
     if(!_events)
         return true;
 

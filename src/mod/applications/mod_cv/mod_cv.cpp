@@ -728,11 +728,11 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
         switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
-		
+
 		if (context->shape_idx && context->shape[0].w && context->last_shape[0].w) {
 			int max, min;
 			int pct;
-			
+
 			if (context->shape[0].w > context->last_shape[0].w) {
 				max = context->shape[0].w;
 				min = context->last_shape[0].w;
@@ -742,7 +742,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 			}
 
 			pct = 100 - (((double)min / (double)max) * 100.0f );
-			
+
 			if (pct > 25) {
 				context->detected.simo_count = 0;
 				memset(context->last_shape, 0, sizeof(context->last_shape[0]) * MAX_SHAPES);
@@ -1331,7 +1331,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 		flags = SMBF_VIDEO_PATCH;
 	}
 
-    if ((status = switch_core_media_bug_add(rsession, function, NULL, 
+    if ((status = switch_core_media_bug_add(rsession, function, NULL,
 											cv_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
         stream->write_function(stream, "-ERR Failure!\n");
         switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
@@ -1367,7 +1367,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_VIDEO_DETECT);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
     MODULE_INTERFACE = *module_interface;
@@ -1390,7 +1390,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown)
 {
 
 	switch_event_free_subclass(MY_EVENT_VIDEO_DETECT);
-	
+
 	return SWITCH_STATUS_UNLOAD;
 }
 

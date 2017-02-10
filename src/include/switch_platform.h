@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * switch_platform.h -- Platform Specific Header
@@ -51,10 +51,10 @@ SWITCH_BEGIN_EXTERN_C
 #define __SWITCH_FUNC__ (const char *)__func__
 #endif
 #ifdef _MSC_VER
-/* disable the following warnings 
- * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored. 
+/* disable the following warnings
+ * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored.
  * C4200: Non standard extension C zero sized array
- * C4204: nonstandard extension used : non-constant aggregate initializer 
+ * C4204: nonstandard extension used : non-constant aggregate initializer
  * C4706: assignment within conditional expression
  * C4819: The file contains a character that cannot be represented in the current code page
  * C4132: 'object' : const object should be initialized (fires innapropriately for prototyped forward declaration of cost var)
@@ -317,7 +317,7 @@ SWITCH_END_EXTERN_C
 #define NOIME
 #endif
 #include <windows.h>
-/* 
+/*
  * Add a _very_few_ declarations missing from the restricted set of headers
  * (If this list becomes extensive, re-enable the required headers above!)
  * winsock headers were excluded by WIN32_LEAN_AND_MEAN, so include them now

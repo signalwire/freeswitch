@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mrene@avgs.ca>
  * Raymond Chandler <intralanman@freeswitch.org>
  *
@@ -53,19 +53,19 @@ static struct {
 	switch_memory_pool_t *pool;
 } globals;
 
-blacklist_t *blacklist_create(const char *name) 
+blacklist_t *blacklist_create(const char *name)
 {
 	switch_memory_pool_t *pool = NULL;
 	blacklist_t *bl = NULL;
-	
+
 	switch_core_new_memory_pool(&pool);
 	bl = switch_core_alloc(pool, sizeof(*bl));
 	switch_assert(bl);
 	bl->pool = pool;
-	
+
 	switch_core_hash_init(&bl->list);
 	switch_mutex_init(&bl->list_mutex, SWITCH_MUTEX_NESTED, pool);
-	
+
 	return bl;
 }
 
@@ -117,14 +117,14 @@ static switch_status_t do_config(switch_bool_t reload)
 	/* Load up blacklists */
 	switch_xml_t xml, cfg, lists, list;
 	switch_hash_index_t *hi = NULL;
-	
+
 	if (!(xml = switch_xml_open_cfg("mod_blacklist.conf", &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load configuration section\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch_mutex_lock(globals.lists_mutex);
-	
+
 	/* Destroy any active lists */
 	while ((hi = switch_core_hash_first_iter( globals.lists, hi))) {
 		const void *key;
@@ -133,7 +133,7 @@ static switch_status_t do_config(switch_bool_t reload)
 		blacklist_free((blacklist_t*)val);
 		switch_core_hash_delete(globals.lists, (const char*)key);
 	}
-	
+
 	if ((lists = switch_xml_child(cfg, "lists"))) {
 		for (list = switch_xml_child(lists, "list"); list; list = list->next) {
 			const char *name = switch_xml_attr_soft(list, "name");
@@ -151,9 +151,9 @@ static switch_status_t do_config(switch_bool_t reload)
 			load_list(name, filename);
 		}
 	}
-	
+
 	switch_mutex_unlock(globals.lists_mutex);
-	
+
 	if (xml) {
 		switch_xml_free(xml);
 		xml = NULL;
@@ -175,33 +175,33 @@ SWITCH_STANDARD_API(blacklist_api_function)
 	char *data;
 	int argc;
 	char *argv[3];
-	
+
 	data = strdup(cmd);
 	trim(data);
 	if (!(argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid usage\n");
 		goto done;
 	}
-	
+
 	if (!strcasecmp(argv[0], "check")) {
 		blacklist_t *bl = NULL;
 		switch_bool_t result;
-		
+
 		if (argc < 2 || zstr(argv[1]) || zstr(argv[2])) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrong syntax");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(globals.lists_mutex);
 		bl = switch_core_hash_find(globals.lists, argv[1]);
 		switch_mutex_unlock(globals.lists_mutex);
-		
+
 		if (!bl) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown blacklist [%s]\n", argv[1]);
 			stream->write_function(stream, "false");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(bl->list_mutex);
 		result = (switch_bool_t)(intptr_t)switch_core_hash_find(bl->list, argv[2]);
 		stream->write_function(stream, "%s", result ? "true" : "false");
@@ -212,17 +212,17 @@ SWITCH_STANDARD_API(blacklist_api_function)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrong syntax");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(globals.lists_mutex);
 		bl = switch_core_hash_find(globals.lists, argv[1]);
 		switch_mutex_unlock(globals.lists_mutex);
-		
+
 		if (!bl) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown blacklist [%s]\n", argv[1]);
 			stream->write_function(stream, "-ERR Unknown blacklist\n");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(bl->list_mutex);
 		switch_core_hash_insert(bl->list, argv[2], (void*)SWITCH_TRUE);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added [%s] to list [%s]\n", argv[2], argv[1]);
@@ -234,17 +234,17 @@ SWITCH_STANDARD_API(blacklist_api_function)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrong syntax");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(globals.lists_mutex);
 		bl = switch_core_hash_find(globals.lists, argv[1]);
 		switch_mutex_unlock(globals.lists_mutex);
-		
+
 		if (!bl) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown blacklist [%s]\n", argv[1]);
 			stream->write_function(stream, "-ERR Unknown blacklist\n");
 			goto done;
 		}
-		
+
 		switch_mutex_lock(bl->list_mutex);
 		switch_core_hash_delete(bl->list, argv[2]);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Removed [%s] from list [%s]\n", argv[2], argv[1]);
@@ -278,7 +278,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Saving %s to %s\n", argv[1], filename);
-		
+
 		switch_mutex_lock(globals.lists_mutex);
 		if (switch_file_open(&fd, filename, SWITCH_FOPEN_WRITE | SWITCH_FOPEN_TRUNCATE | SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, globals.pool)
 			== SWITCH_STATUS_SUCCESS) {
@@ -287,7 +287,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 				switch_file_printf(fd, "%s\n", (char *)var);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to the dump file\n", (char *)var);
 			}
-			stream->write_function(stream, "+OK\n");			
+			stream->write_function(stream, "+OK\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "couldn't open %s for writing\n", filename);
 		}
@@ -300,7 +300,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 	} else if (!zstr(argv[0])) {
 		stream->write_function(stream, "-ERR: No such command: %s (see 'blacklist help')\n", argv[0]);
 	}
-	
+
 done:
 	switch_safe_free(data);
 	return SWITCH_STATUS_SUCCESS;
@@ -313,7 +313,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_blacklist_load)
 	//switch_application_interface_t *app_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 

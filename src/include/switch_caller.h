@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -45,7 +45,7 @@
  *
  *	In addition, this module implements an abstract interface for extensions and applications.
  *	A connected session's channel has one extension object which may have one or more applications
- *	linked into a stack which will be executed in order by the session's state machine when the 
+ *	linked into a stack which will be executed in order by the session's state machine when the
  *	current state is CS_EXECUTE.
  * @{
  */
@@ -217,7 +217,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(_In_ switch_
   \param ani ANI information
   \param aniii ANI II information
   \param rdnis RDNIS
-  \param source the source 
+  \param source the source
   \param context a logical context
   \param destination_number destination number
   \return a new profile object allocated from the session's memory pool

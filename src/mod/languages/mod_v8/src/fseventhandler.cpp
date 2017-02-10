@@ -207,7 +207,7 @@ void FSEventHandler::DoSubscribe(const v8::FunctionCallbackInfo<v8::Value>& info
 			}
 		}
 	}
-	
+
 	info.GetReturnValue().Set(ret);
 }
 
@@ -257,7 +257,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(UnSubscribe)
 			}
 		}
 	}
-	
+
 	info.GetReturnValue().Set(ret);
 }
 

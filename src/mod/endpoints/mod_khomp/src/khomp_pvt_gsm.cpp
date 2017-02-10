@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -88,7 +88,7 @@ bool BoardGSM::KhompPvtGSM::onChannelRelease(K3L_EVENT *e)
 
         call()->_flags.clear(Kflags::HAS_PRE_AUDIO);
         command(KHOMP_LOG, CM_ENABLE_CALL_ANSWER_INFO);
-   
+
         ret = KhompPvt::onChannelRelease(e);
     }
     catch(ScopedLockFailed & err)
@@ -96,8 +96,8 @@ bool BoardGSM::KhompPvtGSM::onChannelRelease(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "(GSM) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    
-    DBG(FUNC, PVT_FMT(_target, "(GSM) r"));   
+
+    DBG(FUNC, PVT_FMT(_target, "(GSM) r"));
     return ret;
 }
 
@@ -132,7 +132,7 @@ bool BoardGSM::KhompPvtGSM::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "(GSM) r (%s)") % err._msg.c_str() );
         return false;
     }
-        
+
     DBG(FUNC, PVT_FMT(_target, "(GSM) r"));
 
     return ret;
@@ -147,7 +147,7 @@ void BoardGSM::KhompPvtGSM::setAnswerInfo(int answer_info)
         DBG(FUNC, PVT_FMT(_target,"signaled unknown call answer info '%d', using 'Unknown'...") % answer_info);
         value = "Unknown";
     }
-   
+
     DBG(FUNC,PVT_FMT(_target,"KCallAnswerInfo: %s") % value);
 
     try
@@ -195,8 +195,8 @@ bool BoardGSM::KhompPvtGSM::onCallAnswerInfo(K3L_EVENT *e)
         {
             if (callGSM()->_call_info_report)
             {
-                //TODO: HOW WE TREAT THAT 
-                // make the channel export this 
+                //TODO: HOW WE TREAT THAT
+                // make the channel export this
                 setAnswerInfo(info_code);
             }
 
@@ -224,7 +224,7 @@ bool BoardGSM::KhompPvtGSM::onDtmfDetected(K3L_EVENT *e)
     try
     {
         ScopedPvtLock lock(this);
-        
+
 
     }
     catch (ScopedLockFailed & err)
@@ -238,12 +238,12 @@ bool BoardGSM::KhompPvtGSM::onDtmfDetected(K3L_EVENT *e)
 bool BoardGSM::KhompPvtGSM::onNewCall(K3L_EVENT *e)
 {
     DBG(FUNC,PVT_FMT(_target,"(GSM) c"));
-    
+
     try
     {
         ScopedPvtLock lock(this);
 
-        bool ret = KhompPvtGSM::onNewCall(e); 
+        bool ret = KhompPvtGSM::onNewCall(e);
 
     }
     catch(ScopedLockFailed & err)
@@ -262,7 +262,7 @@ bool BoardGSM::KhompPvtGSM::onNewCall(K3L_EVENT *e)
 
 bool BoardGSM::KhompPvtGSM::onCallFail(K3L_EVENT *e)
 {
-    bool ret = true; 
+    bool ret = true;
     try
     {
         ScopedPvtLock lock(this);
@@ -306,7 +306,7 @@ bool BoardGSM::KhompPvtGSM::onDisconnect(K3L_EVENT *e)
 int BoardGSM::KhompPvtGSM::makeCall(std::string params)
 {
     DBG(FUNC,PVT_FMT(_target, "(GSM) c"));
-    
+
     if(callGSM()->_call_info_drop == 0 && !callGSM()->_call_info_report)
     {
         command(KHOMP_LOG, CM_DISABLE_CALL_ANSWER_INFO);
@@ -366,7 +366,7 @@ bool BoardGSM::KhompPvtGSM::doChannelHangup(CommandRequest &cmd)
 
         int owner_nr = 0;
 
-        command(KHOMP_LOG, CM_DISCONNECT, 
+        command(KHOMP_LOG, CM_DISCONNECT,
                 STG(FMT("gsm_call_ref=%d") % (int)owner_nr).c_str());
 
 
@@ -476,8 +476,8 @@ bool BoardGSM::KhompPvtGSM::indicateBusyUnlocked(int cause, bool sent_signaling)
     }
 
     DBG(FUNC,PVT_FMT(_target, "(GSM) r"));
-    
-    return true; 
+
+    return true;
 }
 
 void BoardGSM::KhompPvtGSM::reportFailToReceive(int fail_code)
@@ -500,9 +500,9 @@ int BoardGSM::KhompPvtGSM::causeFromCallFail(int fail)
 {
     int switch_cause = SWITCH_CAUSE_USER_BUSY;
 
-    if (fail <= 127) 
+    if (fail <= 127)
         switch_cause = fail;
-    else 
+    else
         switch_cause = SWITCH_CAUSE_INTERWORKING;
 
     return switch_cause;
@@ -512,10 +512,10 @@ int BoardGSM::KhompPvtGSM::callFailFromCause(int cause)
 {
     int k3l_fail = -1; // default
 
-    if (cause <= 127) 
+    if (cause <= 127)
         k3l_fail = cause;
     else
-        k3l_fail = kgccInterworking; 
+        k3l_fail = kgccInterworking;
 
     return k3l_fail;
 }
@@ -531,36 +531,36 @@ bool BoardGSM::KhompPvtGSM::validContexts(
     }
 
     if (!extra_context.empty())
-    {    
+    {
         if (!_group_context.empty())
-        {    
+        {
             std::string pvt_context(_group_context);
-            pvt_context += "-"; 
+            pvt_context += "-";
             pvt_context += extra_context;
             contexts.push_back(pvt_context);
-        }    
+        }
 
         if (!Opt::_options._context_gsm_call().empty())
-        {    
+        {
             std::string context(Opt::_options._context_gsm_call());
-            context += "-"; 
+            context += "-";
             context += extra_context;
             contexts.push_back(_group_context);
         }
 
         if (!Opt::_options._context2_gsm_call().empty())
-        {    
+        {
             std::string context(Opt::_options._context2_gsm_call());
-            context += "-"; 
+            context += "-";
             context += extra_context;
             contexts.push_back(_group_context);
-        }    
-    }  
+        }
+    }
 
     contexts.push_back(Opt::_options._context_gsm_call());
     contexts.push_back(Opt::_options._context2_gsm_call());
 
-    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
         replaceTemplate((*i), "CC", _target.object);
 
     bool ret = Board::KhompPvt::validContexts(contexts,extra_context);

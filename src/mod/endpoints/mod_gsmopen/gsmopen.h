@@ -219,7 +219,7 @@ struct GSMopenHandles {
 
 #endif //WIN32
 
-/*! 
+/*!
  * \brief structure for storing the results of AT commands, in an array of AT_MESG_MAX_LINES * AT_MESG_MAX_LENGTH chars
  */
 struct s_result {

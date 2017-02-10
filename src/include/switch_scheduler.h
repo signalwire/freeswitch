@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -59,7 +59,7 @@ SWITCH_BEGIN_EXTERN_C
   \param group a group id tag to link multiple tasks to a single entity.
   \param cmd_id an arbitrary index number be used in the callback.
   \param cmd_arg user data to be passed to the callback.
-  \param flags flags to alter behaviour 
+  \param flags flags to alter behaviour
   \return the id of the task
 */
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,

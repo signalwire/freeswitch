@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian Fertig <brian.fertig@convergencetek.com>
  * Johny Kadarisman <jkr888@gmail.com>
  * Traun Leyden <tleyden@branchcut.com>
@@ -77,7 +77,7 @@ static switch_mutex_t *THREAD_POOL_LOCK = NULL;
 
 
 /**
-* This function is similiar to PyErr_Print. It uses the freeswitch print/log mechanism instead of the python sys.stderr 
+* This function is similiar to PyErr_Print. It uses the freeswitch print/log mechanism instead of the python sys.stderr
 */
 static void print_python_error(const char * script)
 {
@@ -91,7 +91,7 @@ static void print_python_error(const char * script)
 	if (buffer == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer");
 	}
-   
+
 	/* just for security that we will always have a string terminater */
 	memset(buffer, 0,  20 * 1024  * sizeof(char) );
 
@@ -113,7 +113,7 @@ static void print_python_error(const char * script)
 
 	/*Print error message*/
 	if (pyValue != NULL && (pyString=PyObject_Str(pyValue))!=NULL && (PyString_Check(pyString))) {
-		strcat(buffer, "\nMessage: ");	  
+		strcat(buffer, "\nMessage: ");
 		strcat(buffer, PyString_AsString(pyString));
 	} else {
 		strcat(buffer, "\nMessage: <unknown exception date> ");
@@ -279,7 +279,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		arg = Py_BuildValue("(s)", switch_str_nil(argv[1]));
 	}
 
-	// invoke the handler 
+	// invoke the handler
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
 	Py_DECREF(function);
@@ -291,7 +291,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 			*str = strdup((char *) PyString_AsString(result));
 		}
 	} else if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
-		// Print error, but ignore SystemExit 
+		// Print error, but ignore SystemExit
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
 		print_python_error(script);
 		PyErr_Clear();
@@ -602,7 +602,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Had to kill %d threads\n", thread_cnt);
 
-	/* Give threads a few seconds to terminate. 
+	/* Give threads a few seconds to terminate.
 	   Not using switch_thread_join() since if threads refuse to die
 	   then freeswitch will hang */
 	for (i = 0; i < 10 && thread_pool_head; i++) {

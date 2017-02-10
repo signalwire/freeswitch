@@ -16,7 +16,7 @@
     <!-- in additon to cookie, optionally restrict by ACL -->
     <!--<param name="apply-inbound-acl" value="lan"/>-->
     <!-- alternative is "binary" -->
-    <!--<param name="encoding" value="string"/>--> 
+    <!--<param name="encoding" value="string"/>-->
     <!-- provide compatability with previous OTP release (use with care) -->
     <!--<param name="compat-rel" value="12"/> -->
   </settings>

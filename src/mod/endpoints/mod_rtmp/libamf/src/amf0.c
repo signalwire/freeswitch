@@ -41,7 +41,7 @@ static amf0_data * amf0_list_insert_before(amf0_list * list, amf0_node * node, a
         if (new_node != NULL) {
             new_node->next = node;
             new_node->prev = node->prev;
-	    
+
             if (node->prev != NULL) {
                 node->prev->next = new_node;
             }
@@ -317,7 +317,7 @@ static amf0_data * amf0_array_read(read_proc_t read_proc, void * user_data) {
         uint32_t array_size;
         if (read_proc(&array_size, sizeof(uint32_t), user_data) == sizeof(uint32_t)) {
             array_size = swap_uint32(array_size);
-            
+
             for (i = 0; i < array_size; ++i) {
                 element = amf0_data_read(read_proc, user_data);
 
@@ -651,7 +651,7 @@ void amf0_data_free(amf0_data * data) {
                 if (data->u.string_data.mbstr) {
                     free(data->u.string_data.mbstr);
 		    data->u.string_data.mbstr = NULL;
-                } 
+                }
 		break;
             case AMF0_TYPE_NULL: break;
             case AMF0_TYPE_UNDEFINED: break;

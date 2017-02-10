@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -41,7 +41,7 @@
 
 /*
  * some rules to keep in mind for G729 (the frame size may be different for G723)
- * we cannot write more than SFRAME_SIZE (320) - sizeof(struct rtp_packet) which 
+ * we cannot write more than SFRAME_SIZE (320) - sizeof(struct rtp_packet) which
  * seems to be 266 bytes
  * if we write less than 160 bytes (1 ulaw frame which is 20 bytes of G729 bytes, a read will block forever)
  * TODO: do buffering ourselves to provide just the fixed amount of samples that the card expects
@@ -60,7 +60,7 @@ static uint32_t total_encoders_usage = 0;
 static uint32_t total_decoders = 0;
 static uint32_t total_decoders_usage = 0;
 
-/* 
+/*
    Zaptel/DAHDI definitions to not require the headers installed
    Zaptel and DAHDI are binary compatible (at least in the transcoder interface)
  */
@@ -122,7 +122,7 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 		if (fcntl(fd, F_SETFL, fdflags)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not set non-block mode in %s transcoder FD: %s\n",
 							  transcoder_name, strerror(errno));
-			/* should we abort? this may cause channels to hangup when overruning the device 
+			/* should we abort? this may cause channels to hangup when overruning the device
 			 * see jira dahdi codec issue MODCODEC-8 (Hung Calls and Codec DAHDI G.729A 8.0k decoder error!)
 			 * */
 		}
@@ -216,7 +216,7 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 	context->encoding_fd = -1;
 	context->decoding_fd = -1;
 
-	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? 
+	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right?
 	 * this can be used to calculate the target buffer when encoding and decoding
 	 * */
 	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE)

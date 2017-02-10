@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,10 +22,10 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
- * mod_ladspa.c -- LADSPA 
+ * mod_ladspa.c -- LADSPA
  *
  */
 #include <switch.h>
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_ladspa_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_ladspa_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_ladspa_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_ladspa, mod_ladspa_load, mod_ladspa_shutdown, NULL);
@@ -68,9 +68,9 @@ typedef struct {
 
 int check_range(const LADSPA_Descriptor *ldesc, int i, LADSPA_Data val)
 {
-	if (ldesc->PortRangeHints[i].LowerBound && ldesc->PortRangeHints[i].UpperBound && 
+	if (ldesc->PortRangeHints[i].LowerBound && ldesc->PortRangeHints[i].UpperBound &&
 		(val < ldesc->PortRangeHints[i].LowerBound || val > ldesc->PortRangeHints[i].UpperBound)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Param %f out of bounds %f-%f\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Param %f out of bounds %f-%f\n",
 						  val, ldesc->PortRangeHints[i].LowerBound, ldesc->PortRangeHints[i].UpperBound);
 		return 0;
 	}
@@ -79,13 +79,13 @@ int check_range(const LADSPA_Descriptor *ldesc, int i, LADSPA_Data val)
 }
 
 int find_default(const LADSPA_Descriptor *ldesc, int i, LADSPA_Data *ptr)
-						 
+
 {
 	LADSPA_Data dftval = 0;
 	int fail = 0;
 
 	LADSPA_PortRangeHintDescriptor port_hint = ldesc->PortRangeHints[i].HintDescriptor;
-	
+
 	switch (port_hint & LADSPA_HINT_DEFAULT_MASK) {
 	case LADSPA_HINT_DEFAULT_NONE:
 		break;
@@ -235,15 +235,15 @@ static void dump_info(const LADSPA_Descriptor *ldesc)
 
 		if (LADSPA_IS_PORT_CONTROL(ldesc->PortDescriptors[i])) {
 			if (found) {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n    RANGE: %f-%f DEFAULT: %f\n", 
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n    RANGE: %f-%f DEFAULT: %f\n",
 								  ldesc->PortRangeHints[i].LowerBound, ldesc->PortRangeHints[i].UpperBound, dft);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n    RANGE: %f-%f DEFAULT: none.\n", 
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n    RANGE: %f-%f DEFAULT: none.\n",
 								  ldesc->PortRangeHints[i].LowerBound, ldesc->PortRangeHints[i].UpperBound);
 			}
 		}
 
-		
+
 
 	}
 
@@ -261,18 +261,18 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
 
 	switch (type) {
-	case SWITCH_ABC_TYPE_INIT: 
+	case SWITCH_ABC_TYPE_INIT:
 		{
 			switch_codec_implementation_t read_impl = { 0 };
 			LADSPA_PortDescriptor port_desc;
 			int i = 0, j = 0, k = 0, str_idx = 0;
-			
+
 			switch_core_session_get_read_impl(pvt->session, &read_impl);
 
 			if (!(pvt->library_handle = loadLADSPAPluginLibrary(pvt->plugin_name))) {
 				return SWITCH_FALSE;
 			}
-			
+
 			if (!(pvt->ldesc = findLADSPAPluginDescriptor(pvt->library_handle, pvt->plugin_name, pvt->label_name))) {
 				return SWITCH_FALSE;
 			}
@@ -281,15 +281,15 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 			pvt->handle = pvt->ldesc->instantiate(pvt->ldesc, read_impl.actual_samples_per_second);
 
 			dump_info(pvt->ldesc);
-			
+
 
 			for (i = 0; i < pvt->ldesc->PortCount; i++) {
 				port_desc = pvt->ldesc->PortDescriptors[i];
-				
+
 				if (LADSPA_IS_PORT_CONTROL(port_desc) && LADSPA_IS_PORT_INPUT(port_desc)) {
 					LADSPA_Data dft = 0.0f;
 					int found = find_default(pvt->ldesc, i, &dft);
-					
+
 					if (found && !pvt->has_config[j]) {
 						pvt->config[j] = dft;
 						pvt->has_config[j] = 1;
@@ -298,14 +298,14 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 					if (pvt->has_config[j]) {
 						if (!check_range(pvt->ldesc, i, pvt->config[j])) {
 							pvt->config[j] = dft;
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_WARNING, "FALLING TO DEFAULT PARAM %d [%s] (%f)\n", 
-											  j+1, 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_WARNING, "FALLING TO DEFAULT PARAM %d [%s] (%f)\n",
+											  j+1,
 											  pvt->ldesc->PortNames[i],
-											  pvt->config[j]);							
+											  pvt->config[j]);
 						}
-						
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "ADDING PARAM %d [%s] (%f)\n", 
-										  j+1, 
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "ADDING PARAM %d [%s] (%f)\n",
+										  j+1,
 										  pvt->ldesc->PortNames[i],
 										  pvt->config[j]);
 						pvt->ldesc->connect_port(pvt->handle, i, &pvt->config[j++]);
@@ -319,7 +319,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 					if (pvt->str_idx && !zstr(pvt->str_config[str_idx])) {
 
 						if (!strcasecmp(pvt->str_config[str_idx], "none")) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT NOTHING to port: %s\n", 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT NOTHING to port: %s\n",
 											  pvt->ldesc->PortNames[i]
 											  );
 							mapped = 1;
@@ -327,20 +327,20 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 							char *file = pvt->str_config[str_idx] + 5;
 
 							if (switch_test_flag((&pvt->fh), SWITCH_FILE_OPEN)) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), 
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session),
 												  SWITCH_LOG_ERROR, "CAN'T CONNECT FILE [%s] File already mapped\n", file);
 							} else {
 								if (switch_core_file_open(&pvt->fh,
 														  file,
 														  read_impl.number_of_channels,
-														  read_impl.actual_samples_per_second, 
+														  read_impl.actual_samples_per_second,
 														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
 									return SWITCH_FALSE;
 								}
-							
-							
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT FILE [%s] to port: %s\n", 
+
+
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT FILE [%s] to port: %s\n",
 												  file,
 												  pvt->ldesc->PortNames[i]
 												  );
@@ -355,7 +355,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 
 					if (!mapped) {
 						pvt->ldesc->connect_port(pvt->handle, i, pvt->in_buf);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT CHANNEL AUDIO to port: %s\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT CHANNEL AUDIO to port: %s\n",
 										  pvt->ldesc->PortNames[i]
 										  );
 					}
@@ -373,7 +373,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 		}
 
 		break;
-	
+
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
 
@@ -387,7 +387,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 
 			if (pvt->library_handle) {
 				unloadLADSPAPluginLibrary(pvt->library_handle);
-			}			
+			}
 		}
 		break;
 
@@ -406,7 +406,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 
 			slin = rframe->data;
-			
+
 			if (switch_channel_media_ready(channel)) {
 				switch_short_to_float(slin, pvt->in_buf, rframe->samples);
 
@@ -418,15 +418,15 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 						switch_core_session_get_read_impl(pvt->session, &read_impl);
 
 						switch_core_file_close(&pvt->fh);
-						
+
 						if (switch_core_file_open(&pvt->fh,
 												  file,
 												  read_impl.number_of_channels,
-												  read_impl.actual_samples_per_second, 
+												  read_impl.actual_samples_per_second,
 												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
 							return SWITCH_FALSE;
-						}						
+						}
 
 						olen = rframe->samples;
 						if (switch_core_file_read(&pvt->fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
@@ -434,7 +434,7 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 							return SWITCH_FALSE;
 						}
 					}
-					
+
 					switch_short_to_float(abuf, pvt->file_buf, olen);
 				}
 
@@ -498,12 +498,12 @@ switch_status_t ladspa_session(switch_core_session_t *session, const char *flags
 	if (zstr(flags)) {
 		flags = "r";
 	}
-	
+
 	if (strchr(flags, 'w')) {
 		bflags = SMBF_WRITE_REPLACE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "FLAGS: %s PLUGIN: %s LABEL: %s PARAMS: %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "FLAGS: %s PLUGIN: %s LABEL: %s PARAMS: %s\n",
 					  flags, plugin_name, label, params);
 
 	switch_core_session_get_read_impl(session, &read_impl);
@@ -526,7 +526,7 @@ switch_status_t ladspa_session(switch_core_session_t *session, const char *flags
 	} else {
 		pvt->plugin_name = switch_core_session_sprintf(session, "%s.so", plugin_name);
 	}
-	
+
 	dparams = switch_core_session_strdup(session, params);
 
 	argc = switch_split(dparams, ' ', argv);
@@ -576,7 +576,7 @@ static void ladspa_parse(switch_core_session_t *session, const char *data)
 }
 
 #define APP_SYNTAX "<flags>|<plugin>|<label>|<params>"
-SWITCH_STANDARD_APP(ladspa_run_function) 
+SWITCH_STANDARD_APP(ladspa_run_function)
 {
 	ladspa_parse(session, data);
 }
@@ -604,11 +604,11 @@ SWITCH_STANDARD_API(ladspa_api)
 
 		if (!(ksession = switch_core_session_locate(uuid))) {
 			stream->write_function(stream, "-ERR non-existant UUID\n");
-			goto done;	
-		} 
+			goto done;
+		}
 
 		if ((action = strstr(cmd, "stop"))) {
-			stop_ladspa_session(ksession);			
+			stop_ladspa_session(ksession);
 			switch_core_session_rwunlock(ksession);
 			stream->write_function(stream, "+OK\n");
 			goto done;
@@ -623,7 +623,7 @@ SWITCH_STANDARD_API(ladspa_api)
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR Usage %s\n", API_SYNTAX);
-	}	
+	}
 
 done:
 

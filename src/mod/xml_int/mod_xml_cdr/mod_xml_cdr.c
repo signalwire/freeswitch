@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian West <brian@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
@@ -79,7 +79,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, mod_xml_cdr_shutdown, NULL);
 
-/* this function would have access to the HTML returned by the webserver, we don't need it 
+/* this function would have access to the HTML returned by the webserver, we don't need it
  * and the default curl activity is to print to stdout, something not as desirable
  * so we have a dummy function here
  */
@@ -347,7 +347,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		if (globals.ssl_cacert_file) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
-		
+
 		if (globals.cookie_file) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, globals.cookie_file);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, globals.cookie_file);
@@ -622,7 +622,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.cookie_file = switch_core_strdup(globals.pool, val);
 			}
 		}
-		
+
 		if (zstr(globals.base_err_log_dir)) {
 			if (!zstr(globals.base_log_dir)) {
 				globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
@@ -630,7 +630,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 			}
 		}
-		
+
 	}
 
 	if (globals.retries && globals.delay == 0) {

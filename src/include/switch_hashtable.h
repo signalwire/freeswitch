@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
  * switch_hashtable.h -- Hashtable
@@ -39,7 +39,7 @@ typedef struct switch_hashtable_iterator switch_hashtable_iterator_t;
  *      v = (struct some_value *)   malloc(sizeof(struct some_value));
  *
  *      (initialise k and v to suitable values)
- * 
+ *
  *      if (! hashtable_insert(h,k,v) )
  *      {     exit(-1);               }
  *
@@ -53,7 +53,7 @@ typedef struct switch_hashtable_iterator switch_hashtable_iterator_t;
 
 /* Macros may be used to define type-safe(r) hashtable access functions, with
  * methods specialized to take known key and value types as parameters.
- * 
+ *
  * Example:
  *
  * Insert this at the start of your file:
@@ -83,7 +83,7 @@ typedef struct switch_hashtable_iterator switch_hashtable_iterator_t;
 
 /*****************************************************************************
  * create_hashtable
-   
+
  * @name                    create_hashtable
  * @param   minsize         minimum initial size of hashtable
  * @param   hashfunction    function for hashing keys
@@ -98,7 +98,7 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 
 /*****************************************************************************
  * hashtable_insert
-   
+
  * @name        hashtable_insert
  * @param   h   the hashtable to insert into
  * @param   k   the key - hashtable claims ownership and will free on removal
@@ -135,7 +135,7 @@ switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hash
 
 /*****************************************************************************
  * hashtable_search
-   
+
  * @name        hashtable_search
  * @param   h   the hashtable to search
  * @param   k   the key to search for  - does not claim ownership
@@ -153,7 +153,7 @@ switch_hashtable_search(switch_hashtable_t *h, void *k);
 
 /*****************************************************************************
  * hashtable_remove
-   
+
  * @name        hashtable_remove
  * @param   h   the hashtable to remove the item from
  * @param   k   the key to search for  - does not claim ownership
@@ -172,7 +172,7 @@ switch_hashtable_remove(switch_hashtable_t *h, void *k);
 
 /*****************************************************************************
  * hashtable_count
-   
+
  * @name        hashtable_count
  * @param   h   the hashtable
  * @return      the number of items stored in the hashtable
@@ -183,7 +183,7 @@ switch_hashtable_count(switch_hashtable_t *h);
 
 /*****************************************************************************
  * hashtable_destroy
-   
+
  * @name        hashtable_destroy
  * @param   h   the hashtable
  * @param       free_values     whether to call 'free' on the remaining values
@@ -226,7 +226,7 @@ static inline uint32_t switch_hash_default(void *ky)
 	unsigned char *str = (unsigned char *) ky;
 	uint32_t hash = 0;
     int c;
-	
+
 	while ((c = *str)) {
 		str++;
         hash = c + (hash << 6) + (hash << 16) - hash;
@@ -240,7 +240,7 @@ static inline uint32_t switch_hash_default_ci(void *ky)
 	unsigned char *str = (unsigned char *) ky;
 	uint32_t hash = 0;
     int c;
-	
+
 	while ((c = switch_tolower(*str))) {
 		str++;
         hash = c + (hash << 6) + (hash << 16) - hash;
@@ -261,23 +261,23 @@ static inline uint32_t switch_hash_default_ci(void *ky)
 /*
  * Copyright (c) 2002, Christopher Clark
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

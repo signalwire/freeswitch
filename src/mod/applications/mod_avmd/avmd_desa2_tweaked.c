@@ -1,4 +1,4 @@
-/* 
+/*
  * Contributor(s):
  *
  * Piotr Gregor     <piotrgregor@rsyncme.org>

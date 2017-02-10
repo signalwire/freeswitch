@@ -522,7 +522,7 @@ WebRtc_Word16 WebRtcIsac_UpdateUplinkBwImpl(
   {
     if(index > 11)
     {
-      index -= 12;   
+      index -= 12;
       /* compute the jitter estimate as decoded on the other side */
       bwest_str->send_max_delay_avg = 0.9f * bwest_str->send_max_delay_avg +
           0.1f * (float)MAX_ISAC_MD;

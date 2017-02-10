@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,13 +22,13 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * William King <william.king@quentustech.com>
  * Seven Du <dujinfang@gmail.com>
  *
  * mod_sonar.c -- Sonar ping timer
  *
- * 
+ *
  */
 
 /*
@@ -54,7 +54,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sonar_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_sonar_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_sonar_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_sonar, mod_sonar_load, mod_sonar_shutdown, NULL);
@@ -95,7 +95,7 @@ switch_bool_t sonar_ping_callback(switch_core_session_t *session, const char *ap
 	ph->max = MAX(ph->max, diff);
 	ph->min = MIN(ph->min, diff);
 	ph->samples[ph->received++] = diff;
-	
+
 	return SWITCH_TRUE;
 }
 
@@ -123,16 +123,16 @@ SWITCH_STANDARD_APP(sonar_app)
 	} else if (loops > 1024) {
 		loops = 1024;
 	}
-	
+
 	switch_channel_answer(channel);
 	switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
 	switch_channel_set_private(channel, "__sonar_ping__", &ph);
 
-	switch_ivr_tone_detect_session(session, 
+	switch_ivr_tone_detect_session(session,
 								   "soar_ping", "1004",
-								   "r", 0, 
+								   "r", 0,
 								   1, NULL, NULL, sonar_ping_callback);
-	
+
 	switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
 
 	ph.min = 999999;
@@ -147,7 +147,7 @@ SWITCH_STANDARD_APP(sonar_app)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost sonar ping\n");
 		}
 	}
-	
+
 	switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
 	switch_ivr_stop_tone_detect_session(session);
 
@@ -223,7 +223,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sonar_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -240,7 +240,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sonar_shutdown)
 {
 
 	switch_event_free_subclass("sonar::ping");
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

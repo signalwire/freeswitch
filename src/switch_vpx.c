@@ -225,7 +225,7 @@ typedef struct {
 
 
 #define __IS_VP8_KEY_FRAME(byte) !(((byte) & 0x01))
-static inline int IS_VP8_KEY_FRAME(uint8_t *data) 
+static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 {
 	uint8_t S;
 	uint8_t DES;
@@ -247,7 +247,7 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 		if (X & 0x40) data++; // L
 		if (X & 0x30) data++; // T/K
 	}
-	
+
 	if (S && (PID == 0)) {
 		return __IS_VP8_KEY_FRAME(*data);
 	} else {
@@ -336,7 +336,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		
+
 		context->last_ts = 0;
 		context->last_received_timestamp = 0;
 		context->last_received_complete_picture = 0;
@@ -370,7 +370,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
 	int sane, threads = 1;
-	
+
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
 	}
@@ -382,7 +382,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth == -1) {
 		context->codec_settings.video.bandwidth = 0;
 	}
-	
+
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
@@ -400,23 +400,23 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	context->pkt = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE,
-					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
+					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n",
 					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
 	context->start_time = switch_micro_time_now();
-	
+
 	config->g_timebase.num = 1;
 	config->g_timebase.den = 1000;
 	config->g_pass = VPX_RC_ONE_PASS;
 	config->g_w = context->codec_settings.video.width;
-	config->g_h = context->codec_settings.video.height;	
+	config->g_h = context->codec_settings.video.height;
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 360;//2000;
 	threads = cpus / 4;
 	if (threads < 1) threads = 1;
 	config->g_threads = threads;
-	
+
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;
 		token_parts = (cpus > 1) ? 3 : 0;
@@ -545,7 +545,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		context->encoder_init = 1;
 
 		if (context->is_vp9) {
@@ -566,7 +566,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
 			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
 			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
-			
+
 			// Enable noise reduction
 			vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, 1);
 			//Set max data rate for Intra frames.
@@ -822,7 +822,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		context->need_key_frame = 3;
 	}
 
-	
+
 	if (!context->encoder_init) {
 		if (init_encoder(codec) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
@@ -871,7 +871,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	context->enc_iter = NULL;
 	context->last_ts = frame->timestamp;
 	context->last_ms = now;
-		
+
 	return consume_partition(context, frame);
 }
 
@@ -885,7 +885,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 #if 0
 	int key = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 					  "VIDEO VPX: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
 					  frame->seq, frame->timestamp, frame->datalen,
 					  *((uint8_t *)data), *((uint8_t *)data + 1),
@@ -896,14 +896,14 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 					  *((uint8_t *)data + 10), frame->m);
 #endif
 
-	
+
 	DES = *data;
 	data++;
 	S = (DES & 0x10);
 	//	PID = DES & 0x07;
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATA LEN %d S BIT %d PID: %d\n", frame->datalen, S, PID);
-			
+
 	if (DES & 0x80) { // X
 		uint8_t X = *data;
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "X BIT SET\n");
@@ -948,7 +948,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 
 	len = frame->datalen - (data - (uint8_t *)frame->data);
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "POST PARSE: DATA LEN %d KEY %d KEYBYTE = %0x\n", len, key, *data);
-	
+
 	if (len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid packet %d\n", len);
 		return SWITCH_STATUS_RESTART;
@@ -1156,7 +1156,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		init_decoder(codec);
 		context->need_decoder_reset = 0;
 	}
-	
+
 	if (!context->decoder_init) {
 		init_decoder(codec);
 	}
@@ -1167,7 +1167,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	}
 
 	decoder = &context->decoder;
-	
+
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, frame->timestamp, frame->m);
 
 	// context->last_received_timestamp = frame->timestamp;
@@ -1176,7 +1176,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (is_start) {
 		context->got_start_frame = 1;
 	}
-	
+
 	if (is_keyframe) {
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
@@ -1239,7 +1239,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX control error!\n");
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
-		
+
 		if (corrupted) {
 			frame->img = NULL;
 #ifdef DEBUG_VP9
@@ -1252,9 +1252,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "decoded: %dx%d\n", frame->img->d_w, frame->img->d_h);
 #endif
 		}
-		
+
 		switch_buffer_zero(context->vpx_packet_buffer);
-		
+
 		if (!frame->img) {
 			//context->need_decoder_reset = 1;
 			context->got_key_frame = 0;
@@ -1291,14 +1291,14 @@ end:
 }
 
 
-static switch_status_t switch_vpx_control(switch_codec_t *codec, 
-										  switch_codec_control_command_t cmd, 
+static switch_status_t switch_vpx_control(switch_codec_t *codec,
+										  switch_codec_control_command_t cmd,
 										  switch_codec_control_type_t ctype,
 										  void *cmd_data,
 										  switch_codec_control_type_t atype,
 										  void *cmd_arg,
 										  switch_codec_control_type_t *rtype,
-										  void **ret_data) 
+										  void **ret_data)
 {
 
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
@@ -1316,7 +1316,7 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 		}
 		break;
 	case SCC_VIDEO_GEN_KEYFRAME:
-		context->need_key_frame = 1;		
+		context->need_key_frame = 1;
 		break;
 	case SCC_VIDEO_BANDWIDTH:
 		{
@@ -1349,7 +1349,7 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 
 	if (context) {
-		
+
 		switch_img_free(&context->patch_img);
 
 		if ((codec->flags & SWITCH_CODEC_FLAG_ENCODE)) {

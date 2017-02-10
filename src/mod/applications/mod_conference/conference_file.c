@@ -277,7 +277,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		const char *canvasstr = switch_event_get_header(fnode->fh.params, "canvas");
 		const char *loopsstr = switch_event_get_header(fnode->fh.params, "loops");
 		int canvas_id = -1;
-		
+
 		if (loopsstr) {
 			fnode->loops = atoi(loopsstr);
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_abstraction_load);
 
 const char *global_cf = "abstraction.conf";
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_abstraction, mod_abstraction_load, mod_abstraction_shutdown, NULL);
@@ -86,12 +86,12 @@ SWITCH_STANDARD_API(api_abstraction_function)
 			}
 			switch_api_execute(destination, api_args, session, stream);
 
-			switch_safe_free(substituted);	
+			switch_safe_free(substituted);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No match for API %s  (%s != %s)\n", api_name, parse, cmd);
 		}
 		switch_regex_safe_free(re);
-	
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "API %s doesn't exist inside the xml structure.  You might have forgot to reload the module after editing it\n", api_name);
 	}

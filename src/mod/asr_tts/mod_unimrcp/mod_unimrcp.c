@@ -625,7 +625,7 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 
 	lname = zstr(name) ? "" : switch_core_strdup(pool, name);
 	lsession_uuid = zstr(session_uuid) ? NULL : switch_core_strdup(pool, session_uuid);
-	
+
 	if (zstr(name)) {
 		lname = "";
 	} else {
@@ -4397,17 +4397,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PROFILE_CREATE);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (switch_event_reserve_subclass(MY_EVENT_PROFILE_CLOSE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PROFILE_CLOSE);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (switch_event_reserve_subclass(MY_EVENT_PROFILE_OPEN) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PROFILE_OPEN);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -4468,7 +4468,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_unimrcp_shutdown)
 	switch_event_free_subclass(MY_EVENT_PROFILE_CREATE);
 	switch_event_free_subclass(MY_EVENT_PROFILE_CLOSE);
 	switch_event_free_subclass(MY_EVENT_PROFILE_OPEN);
-	
+
 	synth_shutdown();
 	recog_shutdown();
 

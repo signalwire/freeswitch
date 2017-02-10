@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -359,7 +359,7 @@ SWITCH_DECLARE(char *) switch_core_get_domain(switch_bool_t dup)
 	char *domain;
 	const char *var;
 
-	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);  
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
 	if (!(var = switch_core_get_variable("domain"))) {
 		var = "freeswitch.local";
 	}
@@ -556,7 +556,7 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_session_t *sessi
 	switch_channel_clear_flag(channel, CF_SERVICE_VIDEO);
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
-	
+
 }
 
 SWITCH_DECLARE(void) switch_core_service_session_av(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video)
@@ -900,7 +900,7 @@ SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void)
 {
 #ifdef SOLARIS_PRIVILEGES
 	priv_set_t *basicset;
-	
+
 	/* make the process privilege-aware */
 	setpflags(PRIV_AWARE, 1);
 
@@ -909,7 +909,7 @@ SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void)
 	if (setppriv(PRIV_SET, PRIV_EFFECTIVE, basicset) != 0) {
 		fprintf(stderr, "ERROR: Failed to acquire basic privileges (%s)\n", strerror(errno));
 	}
-	
+
 	/* we need high-resolution clock, and this requires a non-basic privilege */
 	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_CLOCK_HIGHRES, NULL) < 0) {
 		fprintf(stderr, "ERROR: Failed to acquire proc_clock_highres privilege (%s)\n", strerror(errno));
@@ -921,7 +921,7 @@ SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void)
 		fprintf(stderr, "ERROR: Failed to acquire sys_resource privilege (%s)\n", strerror(errno));
 		return -1;
 	}
-	
+
 	/* we need to read directories belonging to other uid */
 	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_FILE_DAC_SEARCH, NULL) < 0) {
 		fprintf(stderr, "ERROR: Failed to acquire file_dac_search privilege (%s)\n", strerror(errno));
@@ -1317,11 +1317,11 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 #ifdef HAVE_SETRLIMIT
 	struct rlimit rlp;
 
-	/* 
+	/*
 	   Setting the stack size on FreeBSD results in an instant crash.
 
 	   If anyone knows how to fix this,
-	   feel free to submit a patch to https://freeswitch.org/jira 
+	   feel free to submit a patch to https://freeswitch.org/jira
 	 */
 
 #ifndef __FreeBSD__
@@ -1740,7 +1740,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 		if (!sched_setaffinity(0, sizeof(set), &set)) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
-		
+
 #else
 #if WIN32
 		if (SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR) cpu)) {
@@ -1754,7 +1754,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 }
 
 
-#ifdef ENABLE_ZRTP 
+#ifdef ENABLE_ZRTP
 static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
@@ -1820,13 +1820,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		/* one per customer */
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	memset(&runtime, 0, sizeof(runtime));
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
-	
+
 	runtime.runlevel++;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
@@ -1857,7 +1857,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		GetSystemInfo( &sysinfo );
 		runtime.cpu_count = sysinfo.dwNumberOfProcessors;
 	}
-#endif	
+#endif
 
 	if (!runtime.cpu_count) runtime.cpu_count = 1;
 
@@ -1968,7 +1968,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
-			
+
 	runtime.tipping_point = 0;
 	runtime.timer_affinity = -1;
 	runtime.microseconds_per_tick = 20000;
@@ -1992,7 +1992,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	runtime.running = 1;
 	runtime.initiated = switch_mono_micro_time_now();
-	
+
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), check_ip_callback, "check_ip", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL | SSHF_OWN_THREAD);
@@ -2071,7 +2071,7 @@ static void switch_load_core_config(const char *file)
 			for (param = switch_xml_child(settings, "codec"); param; param = param->next) {
 				const char *var = switch_xml_attr_soft(param, "name");
 				const char *val = switch_xml_attr_soft(param, "ptime");
-				
+
 				if (!zstr(var) && !zstr(val)) {
 					uint32_t *p;
 					uint32_t v = switch_atoul(val);
@@ -2080,7 +2080,7 @@ static void switch_load_core_config(const char *file)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, defaults cannot be changed\n", var);
 						continue;
 					}
-					
+
 					if (v == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, invalid ptime\n", var);
 						continue;
@@ -2133,13 +2133,13 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "db-handle-timeout")) {
 					long tmp = atol(val);
-					
+
 					if (tmp > 0 && tmp < 5001) {
 						runtime.db_handle_timeout = (uint32_t) tmp * 1000000;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "db-handle-timeout must be between 1 and 5000\n");
 					}
-					
+
 				} else if (!strcasecmp(var, "multiple-registrations")) {
 					runtime.multiple_registrations = switch_true(val);
 				} else if (!strcasecmp(var, "auto-create-schemas")) {
@@ -2270,7 +2270,7 @@ static void switch_load_core_config(const char *file)
 
 					if (tmp > runtime.cpu_count / 2) {
 						tmp = runtime.cpu_count / 2;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This value cannot be higher than %d so setting it to that value\n", 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This value cannot be higher than %d so setting it to that value\n",
 										  runtime.cpu_count / 2);
 					}
 
@@ -2361,8 +2361,8 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 			"|   Anthony Minessale II, Michael Jerris, Brian West, Others  |\n"
 			"|   FreeSWITCH (http://www.freeswitch.org)                    |\n"
 			"|   Paypal Donations Appreciated: paypal@freeswitch.org       |\n"
-			"|   Brought to you by ClueCon http://www.cluecon.com/         |\n" 
-			".=============================================================.\n" 
+			"|   Brought to you by ClueCon http://www.cluecon.com/         |\n"
+			".=============================================================.\n"
 			"\n");
 }
 
@@ -2379,7 +2379,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	if (runtime.runlevel > 1) {
 		/* one per customer */
 		return SWITCH_STATUS_SUCCESS;
@@ -2419,12 +2419,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #ifdef WIN32
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), use);
 #else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n",
 					  SWITCH_SEQ_DEFAULT_COLOR,
 					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
-					  switch_core_banner(), 
+					  switch_core_banner(),
 					  use, SWITCH_SEQ_DEFAULT_COLOR);
-	
+
 #endif
 
 
@@ -2565,7 +2565,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 {
 	int *intval = (int *) val;
 	int oldintval = 0, newintval = 0;
-	
+
 	if (intval) {
 		oldintval = *intval;
 	}
@@ -2583,7 +2583,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 
 			if (!zstr(arg)) {
 				tech = strdup(arg);
-				
+
 				if ((prof = strchr(tech, ':'))) {
 					*prof++ = '\0';
 				}
@@ -3193,7 +3193,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 	switch_core_set_signal_handlers();
 
 	pid = switch_fork();
-	
+
 	if (pid) {
 		if (wait) {
 			waitpid(pid, NULL, 0);

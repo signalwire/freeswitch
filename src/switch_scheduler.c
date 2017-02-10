@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,11 +22,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * switch_scheduler.c -- Switch Scheduler 
+ * switch_scheduler.c -- Switch Scheduler
  *
  */
 
@@ -300,7 +300,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 	if (zstr(group)) {
 		return 0;
 	}
-	
+
 	hash = switch_ci_hashfunc_default(group, &hlen);
 
 	switch_mutex_lock(globals.task_mutex);
@@ -356,7 +356,7 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 			}
 		}
 	}
-	
+
 	switch_core_destroy_memory_pool(&globals.memory_pool);
 
 }

@@ -54,7 +54,7 @@ typedef struct {
 
   unsigned char auth_b64[512];
   int auth_b64_size;
-  
+
   h2o_url_t url_parsed;
   h2o_socketpool_t *sockpool;
 

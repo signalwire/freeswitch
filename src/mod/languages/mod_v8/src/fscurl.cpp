@@ -70,7 +70,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 
 	HandleScope handle_scope(obj->GetIsolate());
 	Handle<Function> func;
-	
+
 	if (!obj->_function.IsEmpty()) {
 		func = Local<Function>::New(obj->GetIsolate(), obj->_function);
 	}

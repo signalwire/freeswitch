@@ -8,7 +8,7 @@
 
   <extension name="rejections">
     <condition field="${radius_auth_result}" expression="^2$">
-      <action application="hangup" data="CALL_REJECTED"/>      
+      <action application="hangup" data="CALL_REJECTED"/>
     </condition>
   </extension>
 

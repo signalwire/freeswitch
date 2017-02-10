@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Chris Parker <cparker@segv.org>
  * Mathieu Rene <mrene@avgs.ca>
  *
@@ -225,7 +225,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 		   return SWITCH_STATUS_TERM;
 		   }
 		 */
-		
+
 		if ((signal_bond = switch_channel_get_partner_uuid(channel)) && !zstr(signal_bond)) {
 			if (rc_avpair_add(rad_config, &send, PW_FS_OTHER_LEG_ID, (void*) signal_bond, -1, PW_FS_PEC) == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[mod_radius_cdr] Failed adding Freeswitch-Other-Leg-Id: %s\n", uuid_str);
@@ -687,10 +687,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				rc_destroy(rad_config);
 				goto end;
 			}
-			
+
 			{
 				const char *direction_str = profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? "inbound" : "outbound";
-				
+
 				if (rc_avpair_add(rad_config, &send, PW_FS_DIRECTION, (void *) direction_str, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "failed adding Freeswitch-Direction: %s\n", direction_str);
 					rc_destroy(rad_config);

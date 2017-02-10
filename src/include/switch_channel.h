@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,14 +22,14 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * switch_channel.h -- Media Channel Interface
  *
  */
-/** 
+/**
  * @file switch_channel.h
  * @brief Media Channel Interface
  * @see switch_channel
@@ -292,16 +292,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_c
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
 
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, 
-																		 const char *varname, const char *val, 
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel,
+																		 const char *varname, const char *val,
 																		 const char *export_varname,
 																		 switch_bool_t var_check);
 
-SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, switch_channel_t *peer_channel, 
+SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, switch_channel_t *peer_channel,
 												   switch_event_t *var_event, const char *export_varname);
 
 #define switch_channel_export_variable(_channel, _varname, _value, _ev) switch_channel_export_variable_var_check(_channel, _varname, _value, _ev, SWITCH_TRUE)
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, 
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname,
 																	  const char *export_varname, const char *fmt, ...);
 
 SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event);
@@ -333,7 +333,7 @@ static inline int switch_channel_var_true(switch_channel_t *channel, const char 
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel);
 
 /*!
- * \brief Stop iterating over channel variables. 
+ * \brief Stop iterating over channel variables.
  * \remark Unlocks the profile mutex initially locked in switch_channel_variable_first
  */
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel);
@@ -363,7 +363,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
 
 /*!
   \brief Test for presence of given flag on a given channel
-  \param channel channel to test 
+  \param channel channel to test
   \param flag to test
   \return TRUE if flags were present
 */
@@ -447,7 +447,7 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel);
 */
 #define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_channel_t *channel, 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_channel_t *channel,
 																		switch_ring_ready_t rv,
 																		const char *file, const char *func, int line);
 /*!
@@ -464,7 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel, 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel,
 																			 switch_ring_ready_t rv,
 																			 const char *file, const char *func, int line);
 
@@ -561,9 +561,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
   \return number of digits in the queue
 */
 SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(_In_ switch_channel_t *channel);
-SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_lock(switch_channel_t *channel); 
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_lock(switch_channel_t *channel);
 SWITCH_DECLARE(switch_status_t) switch_channel_try_dtmf_lock(switch_channel_t *channel);
-SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_unlock(switch_channel_t *channel); 
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_unlock(switch_channel_t *channel);
 
 
 /*!
@@ -658,7 +658,7 @@ SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel)
 SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel);
 SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel);
 
-SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate, 
+SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate,
 														  const char *file, const char *func, int line);
 #define switch_channel_set_callstate(channel, state) switch_channel_perform_set_callstate(channel, state, __FILE__, __SWITCH_FUNC__, __LINE__)
 SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_get_callstate(switch_channel_t *channel);

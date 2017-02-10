@@ -251,7 +251,7 @@ int WebRtcSpl_ComplexFFT(WebRtc_Word16 frfi[], int stages, int mode)
                         "r"(wri), "r"(frfi_r), "r"(CFFTRND));
                     __asm__("smladx %0, %1, %2, %3" : "=r"(ti32) :
                         "r"(wri), "r"(frfi_r), "r"(CFFTRND));
-    
+
 #else
                     tr32 = WEBRTC_SPL_MUL_16_16(wr, frfi[2 * j])
                             - WEBRTC_SPL_MUL_16_16(wi, frfi[2 * j + 1]) + CFFTRND;

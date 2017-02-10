@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2011-2012, Shahar Hadas
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -40,7 +40,7 @@
  * the Initial Developers. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * mod_say_he.c -- Say for Hebrew
  *
  */
@@ -80,7 +80,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 
 	/* Check for special cases of thousands */
 	if (range == PGR_THOUSANDS && a == 0) {
-		/* Check for special cases of 1000, 2000 ... 8000, 9000 */	
+		/* Check for special cases of 1000, 2000 ... 8000, 9000 */
 		if (b == 0 && c != 0) {
 			switch_say_file(sh, "digits/%d000", c);
 			return SWITCH_STATUS_SUCCESS;
@@ -90,16 +90,16 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		if (b == 1 && c == 0) {
 			switch_say_file(sh, "digits/10000");
 			return SWITCH_STATUS_SUCCESS;
-		}		
+		}
 	}
-	
+
 	/* Check for special case of million */
 	if (range == PGR_MILLIONS && a == 0 && b == 0 && c == 1) {
 		switch_say_file(sh, "digits/million");
-		return SWITCH_STATUS_SUCCESS;		
+		return SWITCH_STATUS_SUCCESS;
 	}
 
-	/* Check for Hebrew SSM_COUNTED special case. Anything above 10 needs to said differently */		
+	/* Check for Hebrew SSM_COUNTED special case. Anything above 10 needs to said differently */
 	if (method == SSM_COUNTED && range == PGR_HUNDREDS && total <= 10) {
 		if (b) {
 			switch_say_file(sh, "digits/h-10%s", gender == SSG_MASCULINE ? "_m" : "");
@@ -111,7 +111,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 
 	/* In Hebrew, hundreds can be said as "<number> hundreds", but the more correct
 	 * form of pronunciation required it to be recorded separately.
-	 * Note that hundreds are always pronounced in SSG_FEMININE form in hebrew, and were recorded as such. 
+	 * Note that hundreds are always pronounced in SSG_FEMININE form in hebrew, and were recorded as such.
 	 */
 	if (a) {
 		switch_say_file(sh, "digits/%d00", a);
@@ -129,26 +129,26 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 					case 5:
 						switch_say_file(sh, "digits/va");
 						break;
-						
+
 					case 2:
 					case 3:
 					case 8:
-					case 9:					
+					case 9:
 						switch_say_file(sh, "digits/uu");
-						break;					
+						break;
 
 					case 1:
 					case 4:
 					case 6:
-					case 7:					
+					case 7:
 						switch_say_file(sh, "digits/ve");
-						break;			
-					
+						break;
+
 					default:
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_group unkonwn digit (%d) Error! (SSG_MASCULINE)\n", c);
-						break;			
-					}					
-				}				
+						break;
+					}
+				}
 				switch_say_file(sh, "digits/%d%d_m", b, c);
 			} else {
 				if ((range == PGR_MILLIONS && a) || (range != PGR_MILLIONS && total > 9)){ /* Check if need to say "and" */
@@ -157,23 +157,23 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 					case 3:
 					case 7:
 					case 8:
-					case 9:					
+					case 9:
 						switch_say_file(sh, "digits/uu");
-						break;					
-					
+						break;
+
 					case 0:
 					case 1:
 					case 4:
 					case 5:
-					case 6:															
+					case 6:
 						switch_say_file(sh, "digits/ve");
-						break;			
+						break;
 
 					default:
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_group unkonwn digit (%d) Error! (SSG_FEMININE)\n", c);
-						break;									
-					}				
-				}								
+						break;
+					}
+				}
 				switch_say_file(sh, "digits/%d%d", b, c);
 			}
 			c = 0;	/* Skip the pronunciation on the c value */
@@ -187,26 +187,26 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				case 5:
 					switch_say_file(sh, "digits/va");
 					break;
-											
+
 				case 2:
-				case 3:					
-				case 8:					
+				case 3:
+				case 8:
 					switch_say_file(sh, "digits/uu");
 					break;
-										
+
 				case 1:
 				case 4:
 				case 6:
 				case 7:
-				case 9:																				
+				case 9:
 					switch_say_file(sh, "digits/ve");
 					break;
-															
+
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_group unkonwn digit (%d) Error! (SSG_MASCULINE)\n", c);
-					break;			
-				}					
-			}				
+					break;
+				}
+			}
 			switch_say_file(sh, "digits/%d_m", c);
 		} else {
 			if ((range == PGR_MILLIONS && (b || a)) || (range != PGR_MILLIONS && total > 9)){ /* Check if need to say "and" */
@@ -215,24 +215,24 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				case 8:
 					switch_say_file(sh, "digits/uu");
 					break;
-															
+
 				case 1:
-				case 3:				
+				case 3:
 				case 4:
 				case 5:
 				case 6:
 				case 7:
-				case 9:																									
+				case 9:
 					switch_say_file(sh, "digits/ve");
 					break;
-														
+
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_group unkonwn digit (%d) Error! (SSG_FEMININE)\n", c);
-					break;									
-				}				
-			}								
+					break;
+				}
+			}
 			switch_say_file(sh, "digits/%d", c);
-		}													 
+		}
 	}
 
 	if (what && (a || b || c)) {
@@ -290,7 +290,7 @@ static switch_status_t he_say_general_count(switch_say_file_handle_t *sh, char *
 		switch (say_args->method) {
 		case SSM_COUNTED:
 			/* TODO add 'ha' (the)? */
-		case SSM_PRONOUNCED:		
+		case SSM_PRONOUNCED:
 			if ((status = play_group(SSM_PRONOUNCED, say_args->gender, inCopy, PGR_MILLIONS, places[8], places[7], places[6], "digits/million", sh)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
@@ -319,7 +319,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	const char *tz = NULL;
 
-	tz = switch_say_file_handle_get_variable(sh, "timezone");		
+	tz = switch_say_file_handle_get_variable(sh, "timezone");
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -363,7 +363,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 		say_args->gender = SSG_FEMININE;
 
-		if (hours) {						
+		if (hours) {
 			switch_say_file(sh, "time/hour");
 			say_num(sh, hours, SSM_PRONOUNCED);
 		} else {
@@ -384,7 +384,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			switch_say_file(sh, "time/minutes");
 		}
 
-		if (seconds) {			
+		if (seconds) {
 			if (seconds == 1) {
 				switch_say_file(sh, "time/second");
 				say_num(sh, seconds, SSM_PRONOUNCED);
@@ -410,7 +410,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 	if (tz) {
 		int check = atoi(tz);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
 		if (check) {
 			switch_time_exp_tz(&tm, target, check);
 			switch_time_exp_tz(&tm_now, target_now, check);
@@ -482,7 +482,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	if (say_day) {
 		say_args->gender = SSG_MASCULINE;
 		say_num(sh, tm.tm_mday, SSM_PRONOUNCED);
-	}	
+	}
 	if (say_month) {
 		switch_say_file(sh, "time/at");
 		switch_say_file(sh, "time/mon-%d", tm.tm_mon);
@@ -515,7 +515,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		say_args->gender = SSG_FEMININE;
 		say_num(sh, hour, SSM_PRONOUNCED);
 
-		if (tm.tm_min) {		
+		if (tm.tm_min) {
 			switch (tm.tm_min) {
 			case 2:
 			case 8:
@@ -527,14 +527,14 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			case 30:
 				switch_say_file(sh, "digits/uu");
 				break;
-									
+
 			case 50:
 				switch_say_file(sh, "digits/va");
 				break;
-																	
+
 			default:
 				switch_say_file(sh, "digits/ve");
-				break;									
+				break;
 			}
 
 			if (tm.tm_min == 1) {
@@ -542,10 +542,10 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 				switch_say_file(sh, "digits/1");
 			} else {
 				say_num(sh, tm.tm_min, SSM_PRONOUNCED);
-				switch_say_file(sh, "time/minutes");				
-			}							
+				switch_say_file(sh, "time/minutes");
+			}
 		}
-		
+
 		switch_say_file(sh, "time/%s", pm ? "p-m" : "a-m");
 	}
 
@@ -554,7 +554,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 
 static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
-{	
+{
 	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *currency = NULL;
 	char *cents = NULL;
@@ -566,7 +566,7 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	}
 
 	currency = sbuf;
-	
+
 	if ((cents = strchr(sbuf, '.'))) {
 		*cents++ = '\0';
 		if (strlen(cents) > 2) {
@@ -585,31 +585,31 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		++currency;
 	}
 
-	/* Say shekel amount (Israel currency) */	
+	/* Say shekel amount (Israel currency) */
 	switch (atoi(currency)) {
 	case 1:
 		switch_say_file(sh, "currency/shekel");
 		switch_say_file(sh, "digits/1_m");
 		break;
-		
+
 	case 2:
 		/* In the case of 2, because currency, we need a special case of 2 pronunciation */
-		switch_say_file(sh, "digits/shney");		
+		switch_say_file(sh, "digits/shney");
 		switch_say_file(sh, "currency/shkalim");
 		break;
-		
+
 	default:
 		say_args->gender = SSG_MASCULINE;
 		he_say_general_count(sh, currency, say_args);
 		switch_say_file(sh, "currency/shkalim");
-		break;		
+		break;
 	}
 
-	if (cents) {		
+	if (cents) {
 		/* We need to use the value twice, so speed it up by atoi only once */
 		icents = atoi(cents);
-		
-		/* Say "and" */	
+
+		/* Say "and" */
 		switch (icents) {
 		case 2:
 		case 8:
@@ -621,40 +621,40 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		case 30:
 		case 80:
 			switch_say_file(sh, "digits/uu");
-			break;	
-							
+			break;
+
 		case 50:
 			switch_say_file(sh, "digits/va");
 			break;
-														
+
 		default:
 			switch_say_file(sh, "digits/ve");
-			break;									
-		}	
-	
+			break;
+		}
+
 		/* Say agorot (Israel currency equivalent for "cents") */
 		switch (icents) {
 		case 0:
 			switch_say_file(sh, "digits/0");
 			switch_say_file(sh, "currency/agorot");
 			break;
-					
+
 		case 1:
 			switch_say_file(sh, "currency/agora");
 			switch_say_file(sh, "digits/1");
 			break;
-			
+
 		case 2:
 			/* In the case of 2, because currency, we need a special case of 2 pronunciation */
-			switch_say_file(sh, "digits/shtey");		
+			switch_say_file(sh, "digits/shtey");
 			switch_say_file(sh, "currency/agorot");
 			break;
-			
+
 		default:
 			say_args->gender = SSG_FEMININE;
 			he_say_general_count(sh, cents, say_args);
 			switch_say_file(sh, "currency/agorot");
-			break;		
+			break;
 		}
 	}
 
@@ -664,11 +664,11 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 static switch_status_t say_ip(switch_say_file_handle_t *sh,
 							  char *tosay,
 							  switch_say_args_t *say_args)
-	
+
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!(a = strdup(tosay))) {
 		abort();
 	}
@@ -700,7 +700,7 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh,
 	say_num(sh, atoi(d), say_args->method);
 
  end:
-	
+
 	free(a);
 
 	return status;
@@ -772,14 +772,14 @@ static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosa
 	switch_say_file_handle_t *sh;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *var_event = NULL;
-	
+
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_get_variables(channel, &var_event);
 	}
 
 	switch_say_file_handle_create(&sh, say_args->ext, &var_event);
-	
+
 	status = say_cb(sh, tosay, say_args);
 
 	if ((*rstr = switch_say_file_handle_detach_path(sh))) {
@@ -808,7 +808,7 @@ static switch_status_t he_say(switch_core_session_t *session, char *tosay, switc
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "** he_say [%s]\n", string);
 			status = switch_ivr_play_file(session, NULL, string, args);
 		}
-		
+
 		switch_safe_free(string);
 	}
 

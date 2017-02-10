@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Eliot Gable <egable@gmail.com>
  *
@@ -37,7 +37,7 @@
 
 #define DEFAULT_PGSQL_RETRIES 120
 
-SWITCH_BEGIN_EXTERN_C 
+SWITCH_BEGIN_EXTERN_C
 
 struct switch_pgsql_handle;
 struct switch_pgsql_result;
@@ -57,7 +57,7 @@ typedef enum {
 
 /*!
   \brief Create a new handle for the PGSQL connection.
-  \param dsn The DSN of the database to connect to. See documentation for PQconnectdb() at 
+  \param dsn The DSN of the database to connect to. See documentation for PQconnectdb() at
              http://www.postgresql.org/docs/9.0/static/libpq-connect.html. The DSN *MUST* be
 			 prefixed with 'pgsql;' to use the switch_cache_db* functionality. However, the DSN
 			 passed to this function directly *MUST NOT* be prefixed with 'pgsql;'.
@@ -82,7 +82,7 @@ SWITCH_DECLARE(switch_pgsql_status_t ) switch_pgsql_handle_disconnect(switch_pgs
 									   ) /* Emacs formatting issue */
 #endif
 /*!
-  \brief Connect to the database specified by the DSN passed to the switch_pgsql_handle_new() call which 
+  \brief Connect to the database specified by the DSN passed to the switch_pgsql_handle_new() call which
          initialized this handle.
   \param The database handle to connect to the database.
   \return Returns SWITCH_PGSQL_SUCCESS or SWITCH_PGSQL_FAIL.

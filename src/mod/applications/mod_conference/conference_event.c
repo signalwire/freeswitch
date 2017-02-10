@@ -45,7 +45,7 @@
 static cJSON *get_canvas_info(mcu_canvas_t *canvas)
 {
 	cJSON *obj = cJSON_CreateObject();
-	
+
 	cJSON_AddItemToObject(obj, "canvasID", cJSON_CreateNumber(canvas->canvas_id));
 	cJSON_AddItemToObject(obj, "totalLayers", cJSON_CreateNumber(canvas->total_layers));
 	cJSON_AddItemToObject(obj, "layersUsed", cJSON_CreateNumber(canvas->layers_used));
@@ -53,7 +53,7 @@ static cJSON *get_canvas_info(mcu_canvas_t *canvas)
 	if (canvas->vlayout) {
 		cJSON_AddItemToObject(obj, "layoutName", cJSON_CreateString(canvas->vlayout->name));
 	}
-	
+
 	return obj;
 }
 
@@ -188,24 +188,24 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 				}
 				if (member_id < 0) member_id = 0;
 			}
-		
+
 			if (member_id > 0) {
 				conference_member_t *member;
-				
+
 				if ((member = conference_member_get(conference, member_id))) {
 					mcu_canvas_t *canvas;
-					
+
 					if ((canvas = conference_video_get_canvas_locked(member))) {
 						cJSON *obj;
-						
+
 						if ((obj = get_canvas_info(canvas))) {
-							cJSON_AddItemToObject(obj, "layerID", cJSON_CreateNumber(member->video_layer_id));	
+							cJSON_AddItemToObject(obj, "layerID", cJSON_CreateNumber(member->video_layer_id));
 							cJSON_AddItemToArray(array, obj);
 						}
-						
+
 						conference_video_release_canvas(&canvas);
 					}
-					
+
 					switch_thread_rwlock_unlock(member->rwlock);
 				}
 
@@ -225,12 +225,12 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 				switch_mutex_unlock(conference->canvas_mutex);
 			}
-			
+
 			switch_thread_rwlock_unlock(conference->rwlock);
 		}
-	
+
 		addobj = array;
-		
+
 	} else if (!strcasecmp(action, "list-videoLayouts")) {
 		switch_hash_index_t *hi;
 		void *val;
@@ -245,15 +245,15 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 					cJSON *obj = cJSON_CreateObject();
 					cJSON *resarray = cJSON_CreateArray();
 					int i;
-					
+
 					switch_core_hash_this(hi, &vvar, NULL, &val);
 					vlayout = (video_layout_t *)val;
 					for (i = 0; i < vlayout->layers; i++) {
 						if (vlayout->images[i].res_id) {
 							cJSON_AddItemToArray(resarray, cJSON_CreateString((char *)vlayout->images[i].res_id));
 						}
-					}					
-					
+					}
+
 					cJSON_AddItemToObject(obj, "type", cJSON_CreateString("layout"));
 					cJSON_AddItemToObject(obj, "name", cJSON_CreateString((char *)vvar));
 					cJSON_AddItemToObject(obj, "resIDS", resarray);
@@ -274,11 +274,11 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 					lg = (layout_group_t *) val;
 
 					name = switch_mprintf("group:%s", (char *)vvar);
-					
+
 					for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
 						cJSON_AddItemToArray(grouparray, cJSON_CreateString(vlnode->vlayout->name));
 					}
-					
+
 					cJSON_AddItemToObject(obj, "type", cJSON_CreateString("layoutGroup"));
 					cJSON_AddItemToObject(obj, "name", cJSON_CreateString(name));
 					cJSON_AddItemToObject(obj, "groupLayouts", grouparray);

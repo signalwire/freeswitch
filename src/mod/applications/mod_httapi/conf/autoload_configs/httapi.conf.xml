@@ -29,20 +29,20 @@
 	<permission name="set-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
 	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
-	  <!-- 
+	  <!--
 	  <variable-list default="deny">
 	    <variable name="caller_id_name"/>
-	    <variable name="hangup"/> 
+	    <variable name="hangup"/>
 	  </variable-list>
 	  -->
 	</permission>
 	<permission name="get-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
 	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
-	  <!-- 
+	  <!--
 	  <variable-list default="deny">
 	    <variable name="caller_id_name"/>
-	    <variable name="hangup"/> 
+	    <variable name="hangup"/>
 	  </variable-list>
 	  -->
 	</permission>
@@ -58,15 +58,15 @@
 	<permission name="expand-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
 	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
-	  <!-- 
+	  <!--
 	  <variable-list default="deny">
 	    <variable name="caller_id_name"/>
-	    <variable name="hangup"/> 
+	    <variable name="hangup"/>
 	  </variable-list>
 
 	  <api-list default="deny">
 	    <api name="expr"/>
-	    <api name="lua"/> 
+	    <api name="lua"/>
 	  </api-list>
 	  -->
 	</permission>
@@ -79,11 +79,11 @@
 	<permission name="conference" value="true"/>
 	<permission name="conference-set-profile" value="false"/>
       </permissions>
-      
+
       <params>
 	<!-- default url can be overridden by app data -->
 	<param name="gateway-url" value="http://www.freeswitch.org/api/index.cgi" />
-	
+
 	<!-- set this to provide authentication credentials to the server -->
 	<!--<param name="gateway-credentials" value="muser:mypass"/>-->
 	<!--<param name="auth-scheme" value="basic"/>-->

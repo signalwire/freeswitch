@@ -192,7 +192,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	member->frame = switch_core_alloc(member->pool, member->frame_size);
 	member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
-	
+
 	if (conference->canvases[0]) {
 		member->canvas_id = rec->canvas_id;
 		canvas = conference->canvases[member->canvas_id];

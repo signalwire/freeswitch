@@ -119,7 +119,7 @@ switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *na
 {
 	hiredis_profile_t *profile = NULL;
 	switch_memory_pool_t *pool = NULL;
-	
+
 	switch_core_new_memory_pool(&pool);
 
 	profile = switch_core_alloc(pool, sizeof(hiredis_profile_t));

@@ -1,4 +1,4 @@
-<!-- http://wiki.freeswitch.org/wiki/Mod_conference --> 
+<!-- http://wiki.freeswitch.org/wiki/Mod_conference -->
 <!-- None of these paths are real if you want any of these options you need to really set them up -->
 <configuration name="conference.conf" description="Audio Conference">
   <!-- Advertise certain presence on startup . -->
@@ -6,8 +6,8 @@
     <room name="3001@$${domain}" status="FreeSWITCH"/>
   </advertise>
 
-  <!-- These are the default keys that map when you do not specify a caller control group -->	
-  <!-- Note: none and default are reserved names for group names.  Disabled if dist-dtmf member flag is set. -->	
+  <!-- These are the default keys that map when you do not specify a caller control group -->
+  <!-- Note: none and default are reserved names for group names.  Disabled if dist-dtmf member flag is set. -->
   <caller-controls>
     <group name="default">
       <control action="mute" digits="0"/>
@@ -29,19 +29,19 @@
   <profiles>
     <!--If no profile is specified it will default to "default"-->
     <profile name="default">
-      <!-- Directory to drop CDR's 
+      <!-- Directory to drop CDR's
 	   'auto' means $PREFIX/logs/conference_cdr/<confernece_uuid>.cdr.xml
 	   a non-absolute path means $PREFIX/logs/<value>/<confernece_uuid>.cdr.xml
 	   absolute path means <value>/<confernece_uuid>.cdr.xml
       -->
       <!-- <param name="cdr-log-dir" value="auto"/> -->
-      <!-- How to create a CDR event 
+      <!-- How to create a CDR event
 	   'content' means event body will contain CDR as XML
 	   'file' means 'CDR-Path' header will contain a path to file created in 'cdr-log-dir'
 	   'none' for no event
       -->
       <!-- <param name="cdr-event-mode" value="content"/> -->
-      
+
       <!-- Domain (for presence) -->
       <param name="domain" value="$${domain}"/>
       <!-- Sample Rate-->

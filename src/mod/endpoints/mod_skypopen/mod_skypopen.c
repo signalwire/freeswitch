@@ -435,8 +435,8 @@ static switch_status_t interface_exists(char *the_interface)
 }
 
 
-/* 
-   State methods they get called when the state changes to the specific state 
+/*
+   State methods they get called when the state changes to the specific state
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
@@ -2486,7 +2486,7 @@ private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling)
 	switch_mutex_lock(globals.mutex);
 
 	/* Fact is the real interface start from 1 */
-	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)  
+	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)
 
 	for (i = 0; i < SKYPOPEN_MAX_INTERFACES; i++) {
 		int interface_id;
@@ -3384,7 +3384,7 @@ struct SkypopenHandles *skypopen_list_find(struct SkypopenList *list, struct Sky
 }
 #endif
 
-// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list? 
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
 int skypopen_list_size(struct SkypopenList *list)
 {
 	return list->entries;

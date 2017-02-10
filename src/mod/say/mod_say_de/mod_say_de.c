@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Daniel Swarbrick <daniel.swarbrick@gmail.com>
@@ -102,14 +102,14 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 					say_file("digits/1_n.wav");
 				} else {
 					say_file("digits/%d.wav", c);
-				} 
+				}
 				say_file("currency/and.wav");
 			}
 			if (method == SSM_COUNTED) {
 				if ( gender == SSG_MASCULINE ) {
-					say_file("digits/h-%d0_m.wav", b);				
+					say_file("digits/h-%d0_m.wav", b);
 				} else if  ( gender == SSG_NEUTER ) {
-					say_file("digits/h-%d0_n.wav", b);				
+					say_file("digits/h-%d0_n.wav", b);
 				} else {
 					say_file("digits/h-%d0.wav", b);
 				}
@@ -119,9 +119,9 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		} else {
 			if (method == SSM_COUNTED) {
 				if ( gender == SSG_MASCULINE ) {
-					say_file("digits/h-%d%d_m.wav", b,c);				
+					say_file("digits/h-%d%d_m.wav", b,c);
 				} else if  ( gender == SSG_NEUTER ) {
-					say_file("digits/h-%d%d_n.wav", b,c);				
+					say_file("digits/h-%d%d_n.wav", b,c);
 				} else {
 					say_file("digits/h-%d%d.wav", b,c);
 				}
@@ -135,16 +135,16 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 	if (c) {
 		if (method == SSM_COUNTED) {
 			if ( gender == SSG_MASCULINE ) {
-				say_file("digits/h-%d_m.wav", c);				
+				say_file("digits/h-%d_m.wav", c);
 			} else if  ( gender == SSG_NEUTER ) {
-				say_file("digits/h-%d_n.wav", c);				
+				say_file("digits/h-%d_n.wav", c);
 			} else {
 				say_file("digits/h-%d.wav", c);
 			}
 		} else {
 			/*"one" used as an article is feminine or masculine in german, e.g. voicemail-message is feminine
 			only applies to the likes of 1, 101, 1001 etc.*/
-			if ( b == 0  && c == 1 && gender == SSG_FEMININE ) {        
+			if ( b == 0  && c == 1 && gender == SSG_FEMININE ) {
 				say_file("digits/1_f.wav");
 			} else if ( b == 0 && c == 1 && what ) {
 				say_file("digits/1_n.wav");
@@ -393,7 +393,7 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_dow) {
 		say_file("time/day-%d.wav", tm.tm_wday);
 	}
-    
+
     if (say_month) {
         say_file("time/mon-%d.wav", tm.tm_mon);
     }
@@ -426,7 +426,7 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
             }
 
             say_file("time/oclock.wav");
- 
+
             if (tm.tm_min < 10) {
                 say_file("digits/0.wav");
                 say_num(tm.tm_min, SSM_PRONOUNCED);
@@ -470,7 +470,7 @@ static switch_status_t de_say_money(switch_core_session_t *session, char *tosay,
 		dollars++;
 	}
 
- 
+
 	/* Say dollar amount */
 	if (atoi(dollars) == 1) {
 		say_file("digits/1_n.wav");

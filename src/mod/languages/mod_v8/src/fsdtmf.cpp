@@ -62,7 +62,7 @@ Handle<Object> FSDTMF::New(switch_dtmf_t *dtmf, const char *name, JSMain *js)
 			delete obj;
 		}
 	}
-	
+
 	return Handle<Object>();
 }
 

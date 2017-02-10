@@ -1,4 +1,4 @@
-/* 
+/*
  * Freeswitch Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -168,7 +168,7 @@ static void close_socket(ws_socket_t *sock)
 void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 static int ssl_init = 0;
 
-static int verto_init_ssl(verto_profile_t *profile) 
+static int verto_init_ssl(verto_profile_t *profile)
 {
 	const char *err = "";
 	int i = 0;
@@ -246,7 +246,7 @@ static int verto_init_ssl(verto_profile_t *profile)
 
 	for (i = 0; i < profile->i; i++) {
 		if (profile->ip[i].secure) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL NOT ENABLED FOR LISTENER %s:%d. REVERTING TO WS\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL NOT ENABLED FOR LISTENER %s:%d. REVERTING TO WS\n",
 							  profile->ip[i].local_ip, profile->ip[i].local_port);
 			profile->ip[i].secure = 0;
 		}
@@ -279,7 +279,7 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 	jsock_sub_node_t *thisnp = NULL, *np, *last = NULL;
 
 	np = head->tail = head->node;
-	
+
 	while (np) {
 
 		thisnp = np;
@@ -287,7 +287,7 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 
 		if (!jsock || thisnp->jsock == jsock) {
 			x++;
-			
+
 			if (last) {
 				last->next = np;
 			} else {
@@ -399,11 +399,11 @@ static void presence_ping(const char *event_channel)
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
 				}
-	
+
 				switch_core_session_rwunlock(session);
 			}
 		}
-		
+
 		switch_console_free_matches(&matches);
 	}
 }
@@ -441,7 +441,7 @@ static switch_status_t jsock_sub_channel(jsock_t *jsock, const char *event_chann
 			switch_zmalloc(node, sizeof(*node));
 			node->jsock = jsock;
 			node->head = head;
-			
+
 			if (!head->node) {
 				head->node = node;
 				head->tail = node;
@@ -540,7 +540,7 @@ static cJSON *jrpc_new_req(const char *method, const char *call_id, cJSON **para
 
 	cJSON_AddItemToObject(msg, "method", cJSON_CreateString(method));
 	cJSON_AddItemToObject(msg, "params", params);
-	
+
 	if (call_id) {
 		cJSON_AddItemToObject(params, "callID", cJSON_CreateString(call_id));
 	}
@@ -548,7 +548,7 @@ static cJSON *jrpc_new_req(const char *method, const char *call_id, cJSON **para
 	if (paramsP) {
 		*paramsP = params;
 	}
-	
+
 	return msg;
 }
 
@@ -641,7 +641,7 @@ static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json, switch_bo
 
 	if (switch_queue_trypush(jsock->event_queue, jp) == SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_SUCCESS;
-		
+
 		if (jsock->lost_events) {
 			int le = jsock->lost_events;
 			jsock->lost_events = 0;
@@ -669,12 +669,12 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 {
 	jsock_sub_node_head_t *head;
 
-	if ((head = switch_core_hash_find(verto_globals.event_channel_hash, event_channel))) {   
+	if ((head = switch_core_hash_find(verto_globals.event_channel_hash, event_channel))) {
 		jsock_sub_node_t *np;
-		
+
 		for(np = head->node; np; np = np->next) {
 			cJSON *msg = NULL, *params;
-			
+
 			if (!use_jsock || use_jsock == np->jsock) {
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
@@ -731,7 +731,7 @@ static void jsock_send_event(cJSON *event)
 		char *main_channel = strdup(event_channel);
 		char *p = strchr(main_channel, '.');
 		if (p) *p = '\0';
-		write_event(main_channel, use_jsock, event);		
+		write_event(main_channel, use_jsock, event);
 		free(main_channel);
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
@@ -744,7 +744,7 @@ static void jsock_send_event(cJSON *event)
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
 {
-	jrpc_func_t func = NULL; 
+	jrpc_func_t func = NULL;
 	char *main_method = NULL;
 
 	switch_assert(method);
@@ -820,7 +820,7 @@ static void set_perm(const char *str, switch_event_t **event)
 			cur = next;
 		}
 
-		switch_safe_free(edup);		
+		switch_safe_free(edup);
 
 	}
 }
@@ -862,7 +862,7 @@ static void check_permissions(jsock_t *jsock, switch_xml_t x_user, cJSON *params
 	set_perm(allowed_jsapi, &jsock->allowed_jsapi);
 	set_perm(allowed_fsapi, &jsock->allowed_fsapi);
 	set_perm(allowed_event_channels, &jsock->allowed_event_channels);
-	
+
 	switch_event_add_header_string(jsock->allowed_methods, SWITCH_STACK_BOTTOM, "login", MARKER);
 
 }
@@ -900,8 +900,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		goto end;
 	}
 
-	login = cJSON_GetObjectCstr(params, "login"); 
-	passwd = cJSON_GetObjectCstr(params, "passwd"); 
+	login = cJSON_GetObjectCstr(params, "login");
+	passwd = cJSON_GetObjectCstr(params, "passwd");
 
 	if (zstr(login)) {
 		goto end;
@@ -954,7 +954,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		if ((json_ptr = cJSON_GetObjectItem(params, "loginParams"))) {
 			cJSON * i;
-			
+
 			for(i = json_ptr->child; i; i = i->next) {
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
@@ -969,7 +969,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
 			cJSON * i;
-			
+
 			for(i = json_ptr->child; i; i = i->next) {
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
@@ -982,7 +982,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		}
 
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
-		
+
 		if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, req_params) != SWITCH_STATUS_SUCCESS && !jsock->profile->blind_reg) {
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Login Incorrect");
@@ -995,7 +995,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			jsock->domain = switch_core_strdup(jsock->pool, domain);
 			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
 			jsock->ready = 1;
-			
+
 			if (!x_user) {
 				switch_event_destroy(&req_params);
 				r = SWITCH_TRUE;
@@ -1006,7 +1006,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
-					
+
 					if (!use_passwd && !strcasecmp(var, "password")) {
 						use_passwd = val;
 					} else if (!strcasecmp(var, "jsonrpc-password")) {
@@ -1032,7 +1032,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
-					
+
 					switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
 				}
 			}
@@ -1062,14 +1062,14 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 			switch_xml_free(x_user);
 		}
-		
+
 		switch_event_destroy(&req_params);
 	}
 
  end:
 
 	return r;
-	
+
 }
 
 static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
@@ -1079,7 +1079,7 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	const char *callee_id_number = NULL;
 
 	caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
-	caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");	
+	caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");
 	callee_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	callee_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
 
@@ -1088,8 +1088,8 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 
 	if (callee_id_name) cJSON_AddItemToObject(params, "callee_id_name", cJSON_CreateString(callee_id_name));
 	if (callee_id_number) cJSON_AddItemToObject(params, "callee_id_number", cJSON_CreateString(callee_id_number));
-	
-	cJSON_AddItemToObject(params, "display_direction", 
+
+	cJSON_AddItemToObject(params, "display_direction",
 						  cJSON_CreateString(switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound"));
 
 
@@ -1160,7 +1160,7 @@ static int attach_wake(void)
 	int tries = 0;
 
  top:
-	
+
 	status = switch_mutex_trylock(verto_globals.detach_mutex);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
@@ -1200,7 +1200,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	switch_core_session_request_video_refresh(tech_pvt->session);
 
 	cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Local attach SDP %s:\n%s\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Local attach SDP %s:\n%s\n",
 					  switch_channel_get_name(tech_pvt->channel),
 					  tech_pvt->mparams->local_sdp_str);
 	set_call_params(params, tech_pvt);
@@ -1217,7 +1217,7 @@ static void drop_detached(void)
 		if (!switch_channel_up_nosig(tech_pvt->channel)) {
 			continue;
 		}
-		
+
 		if (tech_pvt->detach_time && (now - tech_pvt->detach_time) > verto_globals.detach_timeout) {
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
 		}
@@ -1282,7 +1282,7 @@ static void process_jrpc_response(jsock_t *jsock, cJSON *json)
 static void set_session_id(jsock_t *jsock, const char *uuid)
 {
 	//cJSON *params, *msg = jrpc_new(0);
-	
+
 	if (!zstr(uuid)) {
 		switch_set_string(jsock->uuid_str, uuid);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
@@ -1307,7 +1307,7 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 	result = cJSON_GetObjectItem(json, "result");
 	version = cJSON_GetObjectCstr(json, "jsonrpc");
 	id = cJSON_GetObjectItem(json, "id");
-	
+
 	if ((params = cJSON_GetObjectItem(json, "params"))) {
 		sessid = cJSON_GetObjectCstr(params, "sessid");
 	}
@@ -1327,7 +1327,7 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 		process_jrpc_response(jsock, json);
 		return NULL;
 	}
-	
+
 	reply = jrpc_new(0);
 
 	jrpc_add_id(reply, id, "", 0);
@@ -1347,7 +1347,7 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 		jrpc_add_error(reply, -32601, "Invalid Method, Missing Method or Permission Denied", id);
 	} else {
 		if (func(method, params, jsock, &response) == SWITCH_TRUE) {
-			
+
 			if (params) {
 				echo = cJSON_GetObjectItem(params, "echoParams");
 			}
@@ -1411,11 +1411,11 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 		reply = jrpc_new(0);
 		jrpc_add_error(reply, -32600, "Invalid Request", NULL);
 	}
-	
+
 	if (reply) {
 		ws_write_json(jsock, &reply, SWITCH_TRUE);
 	}
-	
+
 	if (json) {
 		cJSON_Delete(json);
 	}
@@ -1876,9 +1876,9 @@ static void client_run(jsock_t *jsock)
 			switch_ssize_t bytes;
 			ws_opcode_t oc;
 			uint8_t *data;
-			
+
 			bytes = ws_read_frame(&jsock->ws, &oc, &data);
-			
+
 			if (bytes < 0) {
 				die("BAD READ %" SWITCH_SSIZE_T_FMT "\n", bytes);
 				break;
@@ -1890,7 +1890,7 @@ static void client_run(jsock_t *jsock)
 				if (*s == '#') {
 					char repl[2048] = "";
 					switch_time_t a, b;
-					
+
 					if (s[1] == 'S' && s[2] == 'P') {
 
 						if (s[3] == 'U') {
@@ -1903,7 +1903,7 @@ static void client_run(jsock_t *jsock)
 							if (!(size = atoi(p))) {
 								continue;
 							}
-							
+
 							a = switch_time_now();
 							do {
 								bytes = ws_read_frame(&jsock->ws, &oc, &data);
@@ -1912,7 +1912,7 @@ static void client_run(jsock_t *jsock)
 							b = switch_time_now();
 
 							if (!bytes || !data) continue;
-					
+
 							if (s[0] != '#') goto nm;
 
 							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (long)((b - a) / 1000));
@@ -1952,7 +1952,7 @@ static void client_run(jsock_t *jsock)
 				if (process_input(jsock, data, bytes) != SWITCH_STATUS_SUCCESS) {
 					die("Input Error\n");
 				}
-				
+
 				if (!switch_test_flag(jsock, JPFLAG_CHECK_ATTACH) && switch_test_flag(jsock, JPFLAG_AUTHED)) {
 					attach_calls(jsock);
 					switch_set_flag(jsock, JPFLAG_CHECK_ATTACH);
@@ -1997,7 +1997,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	add_jsock(jsock);
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Starting client thread.\n", jsock->name);
-	
+
 	if ((jsock->ptype & PTYPE_CLIENT) || (jsock->ptype & PTYPE_CLIENT_SSL)) {
 		client_run(jsock);
 	} else {
@@ -2015,7 +2015,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	if (jsock->client_socket != ws_sock_invalid) {
 		close_socket(&jsock->client_socket);
 	}
-	
+
 	switch_event_destroy(&jsock->allowed_methods);
 	switch_event_destroy(&jsock->allowed_fsapi);
 	switch_event_destroy(&jsock->allowed_jsapi);
@@ -2033,7 +2033,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	switch_thread_rwlock_wrlock(jsock->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Thread ended\n", jsock->name);
 	switch_thread_rwlock_unlock(jsock->rwlock);
-	
+
 	return NULL;
 }
 
@@ -2048,7 +2048,7 @@ static switch_bool_t auth_api_command(jsock_t *jsock, const char *api_cmd, const
 	switch_bool_t ok = SWITCH_TRUE;
 
   top:
-	
+
 	if (!jsock->allowed_fsapi) {
 		ok = SWITCH_FALSE;
 		goto end;
@@ -2201,7 +2201,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 		for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
 			switch_channel_set_variable(tech_pvt->channel, hp->name, hp->value);
 		}
-		
+
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 			caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, var);
 		}
@@ -2231,29 +2231,29 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 					return status;
 				}
 			}
- 
+
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
 		}
 
         msg = jrpc_new_req(method, tech_pvt->call_id, &params);
- 
+
         if (tech_pvt->mparams->local_sdp_str) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local %s SDP %s:\n%s\n", 
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local %s SDP %s:\n%s\n",
 							  method,
 							  switch_channel_get_name(tech_pvt->channel),
                               tech_pvt->mparams->local_sdp_str);
- 
+
             cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			set_call_params(params, tech_pvt);
-			
+
             jsock_queue_event(jsock, &msg, SWITCH_TRUE);
         } else {
             status = SWITCH_STATUS_FALSE;
         }
- 
+
         switch_thread_rwlock_unlock(jsock->rwlock);
     }
- 
+
     return status;
 }
 
@@ -2299,7 +2299,7 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 		switch_core_session_clear_crypto(session);
 
 		while(--tries > 0) {
-			
+
 			status = verto_connect(session, "verto.attach");
 
 			if (status == SWITCH_STATUS_SUCCESS) {
@@ -2383,14 +2383,14 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 		if (zstr(tech_pvt->mparams->rtpip)) {
 			tech_pvt->mparams->rtpip = tech_pvt->mparams->rtpip6;
 		}
-		
+
 		if (profile->rtpip_cur6 == profile->rtpip_index6) {
 			profile->rtpip_cur6 = 0;
 		}
 	}
 
 	if (zstr(tech_pvt->mparams->rtpip)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "%s has no media ip, check your configuration\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "%s has no media ip, check your configuration\n",
 						  switch_channel_get_name(tech_pvt->channel));
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
 	}
@@ -2414,7 +2414,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 
 	tech_pvt->mparams->inbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->inbound_codec_string);
 	tech_pvt->mparams->outbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->outbound_codec_string);
-	
+
 	tech_pvt->mparams->jb_msec = "-1";
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
@@ -2425,7 +2425,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	//tech_pvt->mparams->manual_video_rtp_bugs = profile->manual_video_rtp_bugs;
 
 	tech_pvt->mparams->local_network = switch_core_session_strdup(tech_pvt->session, profile->local_network);
-	
+
 
 	//tech_pvt->mparams->rtcp_audio_interval_msec = profile->rtpp_audio_interval_msec;
 	//tech_pvt->mparams->rtcp_video_interval_msec = profile->rtpp_video_interval_msec;
@@ -2448,7 +2448,7 @@ static switch_status_t verto_media(switch_core_session_t *session)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-	
+
 	if (tech_pvt->r_sdp) {
 		if (verto_tech_media(tech_pvt, tech_pvt->r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
@@ -2610,20 +2610,20 @@ static int verto_recover_callback(switch_core_session_t *session)
 	tech_pvt->channel = channel;
 	tech_pvt->jsock_uuid = (char *) jsock_uuid_str;
 	switch_core_session_set_private_class(session, tech_pvt, SWITCH_PVT_SECONDARY);
-		
-		
+
+
 	tech_pvt->call_id = switch_core_session_strdup(session, switch_core_session_get_uuid(session));
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
 		tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
 		verto_set_media_options(tech_pvt, profile);
 	}
-	
+
 	switch_snprintf(name, sizeof(name), "verto.rtc/%s", tech_pvt->jsock_uuid);
 	switch_channel_set_name(channel, name);
 
 	switch_channel_add_state_handler(channel, &verto_state_handlers);
 	switch_core_event_hook_add_receive_message(session, messagehook);
-	
+
 	track_pvt(tech_pvt);
 
 	//switch_channel_clear_flag(tech_pvt->channel, CF_ANSWERED);
@@ -2659,7 +2659,7 @@ static void pass_sdp(verto_pvt_t *tech_pvt)
 
 static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(); 
+	cJSON *obj = cJSON_CreateObject();
 	switch_core_session_t *session;
 	cJSON *dialog = NULL;
 	const char *call_id = NULL, *sdp = NULL;
@@ -2677,7 +2677,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CallID missing"));
 		err = 1; goto cleanup;
 	}
-	
+
 	if (!(sdp = cJSON_GetObjectCstr(params, "sdp"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("SDP missing"));
 		err = 1; goto cleanup;
@@ -2692,7 +2692,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_core_session_t *other_session = NULL;
 
 		tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
-		switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, sdp);		
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, sdp);
 		switch_channel_set_variable(tech_pvt->channel, "verto_client_address", jsock->name);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
@@ -2713,14 +2713,14 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CODEC ERROR"));
 				err = 1;
 			}
-			
+
 			if (!err && switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("MEDIA ERROR"));
 				err = 1;
 			}
 		}
-		
+
 		if (!err) {
 			if (callee_id_name) {
 				switch_channel_set_profile_var(tech_pvt->channel, "callee_id_name", callee_id_name);
@@ -2739,7 +2739,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
  cleanup:
 
-	
+
 	if (!err) return SWITCH_TRUE;
 
 
@@ -2752,13 +2752,13 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(); 
+	cJSON *obj = cJSON_CreateObject();
 	switch_core_session_t *session;
 	cJSON *dialog = NULL;
 	const char *call_id = NULL, *cause_str = NULL;
 	int err = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-	
+
 	*response = obj;
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
@@ -2779,7 +2779,7 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 		}
 	}
 
-	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(call_id)); 
+	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(call_id));
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
@@ -2798,7 +2798,7 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 
  cleanup:
 
-	
+
 	if (!err) return SWITCH_TRUE;
 
 
@@ -2917,7 +2917,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 	if (tech_pvt && b_tech_pvt) {
 		switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
 		switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
-	
+
 		br_a = switch_channel_get_partner_uuid(tech_pvt->channel);
 		br_b = switch_channel_get_partner_uuid(b_tech_pvt->channel);
 
@@ -3000,7 +3000,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 			switch_channel_set_flag(tchannel, CF_ATTENDED_TRANSFER);
 			switch_core_session_rwunlock(tmp);
 		}
-		
+
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "recording_follow_transfer")) &&
 			(tmp = switch_core_session_locate(br_a))) {
 			switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
@@ -3083,12 +3083,12 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(); 
+	cJSON *obj = cJSON_CreateObject();
 	switch_core_session_t *session;
 	cJSON *dialog = NULL;
 	const char *call_id = NULL, *destination = NULL, *action = NULL;
 	int err = 0;
-	
+
 	*response = obj;
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
@@ -3106,14 +3106,14 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 		err = 1; goto cleanup;
 	}
 
-	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(call_id)); 
-	cJSON_AddItemToObject(obj, "action", cJSON_CreateString(action)); 
+	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(call_id));
+	cJSON_AddItemToObject(obj, "action", cJSON_CreateString(action));
 
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-		
-		if (!strcasecmp(action, "transfer")) {			
+
+		if (!strcasecmp(action, "transfer")) {
 			switch_core_session_t *other_session = NULL;
 
 			if (!(destination = cJSON_GetObjectCstr(params, "destination"))) {
@@ -3121,7 +3121,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 				err = 1; goto rwunlock;
 			}
 
-			if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {			
+			if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_ivr_session_transfer(other_session, destination, NULL, NULL);
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL TRANSFERRED"));
 				switch_core_session_rwunlock(other_session);
@@ -3157,11 +3157,11 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			switch_core_media_toggle_hold(session, !!!switch_channel_test_flag(tech_pvt->channel, CF_PROTO_HOLD));
 		}
 
-		cJSON_AddItemToObject(obj, "holdState", cJSON_CreateString(switch_channel_test_flag(tech_pvt->channel, CF_PROTO_HOLD) ? "held" : "active")); 
+		cJSON_AddItemToObject(obj, "holdState", cJSON_CreateString(switch_channel_test_flag(tech_pvt->channel, CF_PROTO_HOLD) ? "held" : "active"));
 
 
 	rwunlock:
-		
+
 		switch_core_session_rwunlock(session);
 	} else {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
@@ -3170,7 +3170,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 
  cleanup:
 
-	
+
 	if (!err) return SWITCH_TRUE;
 
 
@@ -3224,7 +3224,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, tech_pvt->r_sdp);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->r_sdp);
 
 	switch_core_media_clear_ice(tech_pvt->session);
@@ -3246,7 +3246,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CODEC NEGOTIATION ERROR"));
 		err = 1; goto cleanup;
 	}
-	
+
  cleanup:
 
 	if (tech_pvt) {
@@ -3273,7 +3273,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
-	return SWITCH_FALSE;	
+	return SWITCH_FALSE;
 }
 
 static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
@@ -3310,21 +3310,21 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	char *pproto = NULL;
 
 	*response = cJSON_CreateObject();
-	
+
 	if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
 		switch_core_session_t *session = NULL;
-		
+
 		if ((session = switch_core_session_locate(call_id))) {
 
 			parse_user_vars(dialog, session);
 
-			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {  
+			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {
 				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 				char *send = switch_mprintf("~%s", dtmf);
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 					switch_core_session_t *other_session = NULL;
-					
+
 					if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						switch_core_session_send_dtmf_string(other_session, send);
 						switch_core_session_rwunlock(other_session);
@@ -3339,7 +3339,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			switch_core_session_rwunlock(session);
 		}
 	}
-	
+
 	if ((txt = cJSON_GetObjectItem(params, "txt"))) {
 		switch_core_session_t *session;
 
@@ -3348,7 +3348,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			char charbuf[2] = "";
 			char *chardata = NULL;
 			cJSON *data;
-			
+
 			if ((data = cJSON_GetObjectItem(txt, "code"))) {
 				charbuf[0] = data->valueint;
 				chardata = charbuf;
@@ -3366,7 +3366,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 				switch_mutex_lock(tech_pvt->text_read_mutex);
 				switch_buffer_write(tech_pvt->text_read_buffer, chardata, strlen(chardata));
 				switch_mutex_unlock(tech_pvt->text_read_mutex);
-			
+
 				if ((switch_mutex_trylock(tech_pvt->text_cond_mutex) == SWITCH_STATUS_SUCCESS)) {
 					switch_thread_cond_signal(tech_pvt->text_cond);
 					switch_mutex_unlock(tech_pvt->text_cond_mutex);
@@ -3374,7 +3374,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			}
 			switch_core_session_rwunlock(session);
 		}
-		
+
 	}
 
 	if ((msg = cJSON_GetObjectItem(params, "msg"))) {
@@ -3384,7 +3384,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
-		
+
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
 				pproto = strdup(to);
@@ -3394,21 +3394,21 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 				proto = pproto;
 			}
 		}
-		
+
 		if (!zstr(to) && !zstr(body) && switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VERTO_CHAT_PROTO);
-			
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", jsock->uid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", jsock->id);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", jsock->domain);
 
-			
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", jsock->id);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "verto_profile", jsock->profile->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "verto_jsock_uuid", jsock->uuid_str);
-			
+
 			for(i = msg->child; i; i = i->next) {
 				if (!zstr(i->string) && !zstr(i->valuestring) && (!strncasecmp(i->string, "from_", 5) || !strncasecmp(i->string, "to_", 3))) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
@@ -3424,11 +3424,11 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			if (strcasecmp(proto, VERTO_CHAT_PROTO)) {
 				switch_core_chat_send(proto, event);
 			}
-			
+
 			if (is_dialog) {
 				if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
 					switch_core_session_t *session = NULL;
-					
+
 					if ((session = switch_core_session_locate(call_id))) {
 						switch_core_session_queue_event(session, &event);
 						switch_core_session_rwunlock(session);
@@ -3438,7 +3438,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			} else {
 				switch_core_chat_send("GLOBAL", event);
 			}
-			
+
 			if (event) {
 				switch_event_destroy(&event);
 			}
@@ -3448,10 +3448,10 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 		} else {
 			r = SWITCH_FALSE;
-			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("INVALID MESSAGE to and body params required")); 
+			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("INVALID MESSAGE to and body params required"));
 		}
-		
-		
+
+
 		switch_safe_free(pproto);
 	}
 
@@ -3476,7 +3476,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	const char *var, *destination_number, *call_id = NULL, *sdp = NULL,
 		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
 	switch_event_header_t *hp;
-	
+
 	*response = obj;
 
 	if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
@@ -3549,7 +3549,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	if ((canvas = cJSON_GetObjectItem(dialog, "conferenceCanvasID"))) {
 		int canvas_id = 0;
-		
+
 		if (!zstr(canvas->valuestring)) {
 			canvas_id = atoi(canvas->valuestring);
 		} else if (canvas->valueint) {
@@ -3575,9 +3575,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		} else if (bandwidth->valueint) {
 			bwval = bandwidth->valueint;
 		}
-		
+
 		if (bwval < 0) bwval = 0;
-		
+
 		if (core_bw && bwval && bwval < core_bw) {
 			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bwval);
 		}
@@ -3622,7 +3622,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	remote_caller_id_name = cJSON_GetObjectCstr(dialog, "remote_caller_id_name");
 	remote_caller_id_number = cJSON_GetObjectCstr(dialog, "remote_caller_id_number");
-	
+
 	if (zstr(caller_id_name)) {
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 			caller_id_name = var;
@@ -3636,7 +3636,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 			caller_id_number = var;
 		}
 	}
-	
+
 	if (!(context = switch_event_get_header(jsock->vars, "user_context"))) {
 		context = switch_either(jsock->context, jsock->profile->context);
 	}
@@ -3649,13 +3649,13 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 													jsock->remote_host,
 													cJSON_GetObjectCstr(dialog, "ani"),
 													cJSON_GetObjectCstr(dialog, "aniii"),
-													cJSON_GetObjectCstr(dialog, "rdnis"), 
-													modname, 
+													cJSON_GetObjectCstr(dialog, "rdnis"),
+													modname,
 													context,
 													destination_number))) {
-			
+
 		switch_channel_set_caller_profile(channel, caller_profile);
-		
+
 	}
 
 	switch_ivr_set_user(session, jsock->uid);
@@ -3677,15 +3677,15 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, sdp);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 
-	cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL CREATED")); 
-	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(tech_pvt->call_id)); 
+	cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL CREATED"));
+	cJSON_AddItemToObject(obj, "callID", cJSON_CreateString(tech_pvt->call_id));
 
 	switch_channel_add_state_handler(channel, &verto_state_handlers);
 	switch_core_event_hook_add_receive_message(session, messagehook);
 	switch_channel_set_state(channel, CS_INIT);
 	track_pvt(tech_pvt);
 	switch_core_session_thread_launch(session);
-	
+
  cleanup:
 
 	switch_event_destroy(&var_event);
@@ -3706,7 +3706,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
 	return SWITCH_FALSE;
-	
+
 }
 
 static switch_bool_t event_channel_check_auth(jsock_t *jsock, const char *event_channel)
@@ -3762,14 +3762,14 @@ static switch_bool_t parse_subs(jsock_t *jsock, const char *event_channel, cJSON
 
 	if (event_channel_check_auth(jsock, event_channel)) {
 		if (!*sub_list) {
-			*sub_list = cJSON_CreateArray(); 
+			*sub_list = cJSON_CreateArray();
 		}
 
 		if (jsock_sub_channel(jsock, event_channel) == SWITCH_STATUS_SUCCESS) {
 			cJSON_AddItemToArray(*sub_list, cJSON_CreateString(event_channel));
 		} else {
 			if (!*exist_list) {
-				*exist_list = cJSON_CreateArray(); 
+				*exist_list = cJSON_CreateArray();
 			}
 			cJSON_AddItemToArray(*exist_list, cJSON_CreateString(event_channel));
 		}
@@ -3777,7 +3777,7 @@ static switch_bool_t parse_subs(jsock_t *jsock, const char *event_channel, cJSON
 		r = SWITCH_TRUE;
 	} else {
 		if (!*err_list) {
-			*err_list = cJSON_CreateArray(); 
+			*err_list = cJSON_CreateArray();
 		}
 		cJSON_AddItemToArray(*err_list, cJSON_CreateString(event_channel));
 	}
@@ -3800,7 +3800,7 @@ static switch_bool_t verto__subscribe_func(const char *method, cJSON *params, js
 				parse_subs(jsock, jchannel->valuestring, &subs, &errs, &exist);
 			} else if (jchannel->type == cJSON_Array) {
 				int i, len = cJSON_GetArraySize(jchannel);
-				
+
 				for(i = 0; i < len; i++) {
 					cJSON *str = cJSON_GetArrayItem(jchannel, i);
 					if (str->type == cJSON_String) {
@@ -3830,16 +3830,16 @@ static switch_bool_t verto__subscribe_func(const char *method, cJSON *params, js
 	return r;
 }
 
-static void do_unsub(jsock_t *jsock, const char *event_channel, cJSON **subs, cJSON **errs) 
+static void do_unsub(jsock_t *jsock, const char *event_channel, cJSON **subs, cJSON **errs)
 {
 	if (jsock_unsub_channel(jsock, event_channel)) {
 		if (!*subs) {
-			*subs = cJSON_CreateArray(); 
+			*subs = cJSON_CreateArray();
 		}
 		cJSON_AddItemToArray(*subs, cJSON_CreateString(event_channel));
 	} else {
 		if (!*errs) {
-			*errs = cJSON_CreateArray(); 
+			*errs = cJSON_CreateArray();
 		}
 		cJSON_AddItemToArray(*errs, cJSON_CreateString(event_channel));
 	}
@@ -3860,7 +3860,7 @@ static switch_bool_t verto__unsubscribe_func(const char *method, cJSON *params, 
 				do_unsub(jsock, jchannel->valuestring, &subs, &errs);
 			} else if (jchannel->type == cJSON_Array) {
 				int i, len = cJSON_GetArraySize(jchannel);
-				
+
 				for(i = 0; i < len; i++) {
 					cJSON *str = cJSON_GetArrayItem(jchannel, i);
 					if (str->type == cJSON_String) {
@@ -3910,7 +3910,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 
-	cJSON_AddItemToObject(params, "userid", cJSON_CreateString(jsock->uid)); 
+	cJSON_AddItemToObject(params, "userid", cJSON_CreateString(jsock->uid));
 
 	display = switch_event_get_header(jsock->params, "caller-id-name");
 	if (display) {
@@ -3918,7 +3918,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 	jevent = cJSON_Duplicate(params, 1);
-	
+
 	broadcast = cJSON_GetObjectItem(params, "localBroadcast");
 
 	if (broadcast && broadcast->type == cJSON_True) {
@@ -4025,7 +4025,7 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 	reply = cJSON_CreateObject();
 
 	SWITCH_STANDARD_STREAM(stream);
-	
+
 	if (cmd && (status = switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString((char *) stream.data));
 	} else {
@@ -4060,7 +4060,7 @@ static void jrpc_init(void)
 	jrpc_add_func("verto.unsubscribe", verto__unsubscribe_func);
 	jrpc_add_func("verto.broadcast", verto__broadcast_func);
 	jrpc_add_func("verto.modify", verto__modify_func);
-	
+
 }
 
 
@@ -4101,7 +4101,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 			die("ACCEPT FAILED\n");
 		}
 	}
-	
+
 	for (i = 0; i < profile->i; i++) {
 		if ( profile->server_socket[i] == sock ) {
 			if (profile->ip[i].secure) {
@@ -4113,7 +4113,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 
 	jsock->local_sock = sock;
 	jsock->profile = profile;
-	
+
 	if (zstr(jsock->name)) {
 		if (family == PF_INET) {
 			jsock->remote_port = ntohs(jsock->remote_addr.sin_port);
@@ -4125,18 +4125,18 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 			jsock->name = switch_core_sprintf(pool, "[%s]:%d", jsock->remote_host, jsock->remote_port);
 		}
 	}
-	
+
 	jsock->ptype = ptype;
 
 	for(i = 0; i < profile->conn_acl_count; i++) {
 		if (!switch_check_network_list_ip(jsock->remote_host, profile->conn_acl[i])) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d refused by ACL %s\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d refused by ACL %s\n",
 							  jsock->name, jsock->remote_host, jsock->remote_port, profile->conn_acl[i]);
 			goto error;
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d accepted\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d accepted\n",
 					  jsock->name, jsock->remote_host, jsock->remote_port);
 
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
@@ -4176,7 +4176,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 	return 0;
 
  error:
-	
+
 	if (jsock) {
 		if (jsock->client_socket != ws_sock_invalid) {
 			close_socket(&jsock->client_socket);
@@ -4188,7 +4188,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 	return -1;
 }
 
-static ws_socket_t prepare_socket(ips_t *ips) 
+static ws_socket_t prepare_socket(ips_t *ips)
 {
 	ws_socket_t sock = ws_sock_invalid;
 #ifndef WIN32
@@ -4209,7 +4209,7 @@ static ws_socket_t prepare_socket(ips_t *ips)
 	if ((sock = socket(family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		die("Socket Error!\n");
 	}
-	
+
 	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr)) < 0 ) {
 		die("Socket setsockopt Error!\n");
 	}
@@ -4231,7 +4231,7 @@ static ws_socket_t prepare_socket(ips_t *ips)
 			die("Bind Error!\n");
 		}
 	}
-	
+
     if (listen(sock, MAXPENDING) < 0) {
 		die("Listen error\n");
 	}
@@ -4268,7 +4268,7 @@ static void handle_mcast_sub(verto_profile_t *profile)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MCAST JSON PARSE ERR: %s\n", (char *)profile->mcast_sub.buffer);
 		}
-		
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MCAST INVALID READ %d\n", bytes);
 	}
@@ -4283,7 +4283,7 @@ static int profile_one_loop(verto_profile_t *profile)
 	int max = 2;
 
 	memset(&pfds[0], 0, sizeof(pfds[0]) * MAX_BIND+2);
-		
+
 	for (i = 0; i < profile->i; i++)  {
 		pfds[i].sock = profile->server_socket[i];
 		pfds[i].events = SWITCH_POLL_READ|SWITCH_POLL_ERROR;
@@ -4305,7 +4305,7 @@ static int profile_one_loop(verto_profile_t *profile)
 	if (res == 0) {
 		return 0;
 	}
-			
+
 	for (x = 0; x < max; x++) {
 		if (pfds[x].revents & SWITCH_POLL_ERROR) {
 			die("POLL ERROR\n");
@@ -4314,7 +4314,7 @@ static int profile_one_loop(verto_profile_t *profile)
 		if (pfds[x].revents & SWITCH_POLL_HUP) {
 			die("POLL HUP\n");
 		}
-			
+
 		if (pfds[x].revents & SWITCH_POLL_READ) {
 			if (profile->mcast_ip && pfds[x].sock == (switch_os_socket_t)profile->mcast_sub.sock) {
 				handle_mcast_sub(profile);
@@ -4374,7 +4374,7 @@ static void kill_profiles(void)
 	int sanity = 50;
 
 	switch_mutex_lock(verto_globals.mutex);
-	for(pp = verto_globals.profile_head; pp; pp = pp->next) {	
+	for(pp = verto_globals.profile_head; pp; pp = pp->next) {
 		kill_profile(pp);
 	}
 	switch_mutex_unlock(verto_globals.mutex);
@@ -4398,7 +4398,7 @@ static int runtime(verto_profile_t *profile)
 			listeners++;
 		}
 	}
-	
+
 	if (!listeners) {
 		die("Client Socket Error! No Listeners!\n");
 	}
@@ -4409,7 +4409,7 @@ static int runtime(verto_profile_t *profile)
 		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port, &profile->mcast_sub, MCAST_RECV | MCAST_TTL_HOST) < 0) {
 			ok++;
 		}
-		
+
 		if (ok && mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
 			mcast_socket_close(&profile->mcast_sub);
 			ok = 0;
@@ -4421,8 +4421,8 @@ static int runtime(verto_profile_t *profile)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Disabled\n");
 		}
 	}
-	
-	
+
+
 	while(profile->running) {
 		if (profile_one_loop(profile) < 0) {
 			goto error;
@@ -4444,7 +4444,7 @@ static int runtime(verto_profile_t *profile)
 	}
 
 	return r;
-	
+
 }
 
 static void do_shutdown(void)
@@ -4540,7 +4540,7 @@ static switch_bool_t profile_exists(const char *name)
 		}
 	}
 	switch_mutex_unlock(verto_globals.mutex);
-	
+
 	return r;
 }
 
@@ -4574,7 +4574,7 @@ static switch_status_t add_profile(verto_profile_t *profile)
 	if (!profile_exists(profile->name)) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		profile->next = verto_globals.profile_head;
 		verto_globals.profile_head = profile;
@@ -4582,13 +4582,13 @@ static switch_status_t add_profile(verto_profile_t *profile)
 	}
 
 	switch_mutex_unlock(verto_globals.mutex);
-	
+
 	return status;
 }
 
 static switch_status_t parse_config(const char *cf)
 {
-	
+
 	switch_xml_t cfg, xml, settings, param, xprofile, xprofiles;
 	switch_xml_t xvhosts, xvhost, rewrites, rule;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -4636,7 +4636,7 @@ static switch_status_t parse_config(const char *cf)
 
 				var = (char *) switch_xml_attr_soft(param, "name");
 				val = (char *) switch_xml_attr_soft(param, "value");
-			
+
 				if (!strcasecmp(var, "bind-local")) {
 					const char *secure = switch_xml_attr_soft(param, "secure");
 					if (i < MAX_BIND) {
@@ -4659,9 +4659,9 @@ static switch_status_t parse_config(const char *cf)
 				} else if (!strcasecmp(var, "secure-chain")) {
 					set_string(profile->chain, val);
 				} else if (!strcasecmp(var, "inbound-codec-string") && !zstr(val)) {
-					profile->inbound_codec_string = switch_core_strdup(profile->pool, val); 
+					profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "outbound-codec-string") && !zstr(val)) {
-					profile->outbound_codec_string = switch_core_strdup(profile->pool, val); 
+					profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "blind-reg") && !zstr(val)) {
 					profile->blind_reg = switch_true(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
@@ -4717,7 +4717,7 @@ static switch_status_t parse_config(const char *cf)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid External RTP IP.\n");
 					} else {
 						profile->extrtpip = switch_core_strdup(profile->pool, val);
-					}					
+					}
 				} else if (!strcasecmp(var, "debug")) {
 					if (val) {
 						profile->debug = atoi(val);
@@ -4747,7 +4747,7 @@ static switch_status_t parse_config(const char *cf)
 
 			if (zstr(profile->ip[0].local_ip) ) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: local_ip bad\n", profile->name);
 			if (profile->ip[0].local_port <= 0  ) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: local_port bad\n", profile->name);
-			
+
 			if (zstr(profile->ip[0].local_ip) || profile->ip[0].local_port <= 0) {
 				del_profile(profile);
 				switch_core_destroy_memory_pool(&pool);
@@ -4756,7 +4756,7 @@ static switch_status_t parse_config(const char *cf)
 
 				for (i = 0; i < profile->i; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-									  strchr(profile->ip[i].local_ip, ':') ? "%s Bound to [%s]:%d\n" : "%s Bound to %s:%d\n", 
+									  strchr(profile->ip[i].local_ip, ':') ? "%s Bound to [%s]:%d\n" : "%s Bound to %s:%d\n",
 									  profile->name, profile->ip[i].local_ip, profile->ip[i].local_port);
 				}
 			}
@@ -4882,7 +4882,7 @@ static int init(void)
 	parse_config("verto.conf");
 
 	switch_mutex_lock(verto_globals.mutex);
-	for(p = verto_globals.profile_head; p; p = p->next) {    
+	for(p = verto_globals.profile_head; p; p = p->next) {
 		verto_init_ssl(p);
 	}
 	switch_mutex_unlock(verto_globals.mutex);
@@ -4903,7 +4903,7 @@ static void print_status(verto_profile_t *profile, switch_stream_handle_t *strea
 	for(p = profile->jsock_head; p; p = p->next) {
 		if (p->ptype & PTYPE_CLIENT) {
 			int i;
-			
+
 			for (i = 0; i < profile->i; i++) {
 				if (profile->server_socket[i] == p->local_sock) {
 					stream->write_function(stream, "%s\t%s:%d\n", p->name, profile->ip[i].local_ip, profile->ip[i].local_port);
@@ -5065,7 +5065,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	profile->running = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
-	
+
 	while(--sanity > 0 && profile->jsock_count > 0) {
 		switch_yield(100000);
 	}
@@ -5121,8 +5121,8 @@ static void run_profiles(void)
 static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session,
 												  switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile,
-												  switch_core_session_t **new_session, 
-												  switch_memory_pool_t **pool, 
+												  switch_core_session_t **new_session,
+												  switch_memory_pool_t **pool,
 												  switch_originate_flag_t flags,
 												  switch_call_cause_t *cancel_cause);
 switch_io_routines_t verto_io_routines = {
@@ -5152,7 +5152,7 @@ static switch_status_t verto_read_text_frame(switch_core_session_t *session, swi
 {
 	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 	switch_status_t status;
-	
+
 	switch_mutex_lock(tech_pvt->text_cond_mutex);
 
 	status = switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
@@ -5183,7 +5183,7 @@ static switch_status_t verto_write_text_frame(switch_core_session_t *session, sw
 
 	switch_mutex_lock(tech_pvt->text_write_mutex);
 
-	
+
 	if (frame) {
 		switch_buffer_write(tech_pvt->text_write_buffer, frame->data, frame->datalen);
 	}
@@ -5208,7 +5208,7 @@ static switch_status_t verto_write_text_frame(switch_core_session_t *session, sw
 			}
 		}
 	}
-	
+
 
 	switch_mutex_unlock(tech_pvt->text_write_mutex);
 
@@ -5260,9 +5260,9 @@ static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstr
 
 	switch_mutex_lock(verto_globals.mutex);
 	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
-		
+
 		switch_mutex_lock(profile->mutex);
-		
+
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			if (jsock->ready && !zstr(jsock->uid) && !zstr(uid) && !strcmp(uid, jsock->uid)) {
 				use_stream->write_function(use_stream, "%s/u:%s,", EP_NAME, jsock->uuid_str);
@@ -5305,8 +5305,8 @@ SWITCH_STANDARD_API(verto_contact_function)
 static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session,
 												  switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile,
-												  switch_core_session_t **new_session, 
-												  switch_memory_pool_t **pool, 
+												  switch_core_session_t **new_session,
+												  switch_memory_pool_t **pool,
 												  switch_originate_flag_t flags,
 												  switch_call_cause_t *cancel_cause)
 {
@@ -5343,16 +5343,16 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 			if ((flags & SOF_NO_LIMITS)) {
 				myflags |= SOF_NO_LIMITS;
 			}
-			
+
 			if ((flags & SOF_FORKED_DIAL)) {
 				myflags |= SOF_NOBLOCK;
 			}
-			
+
 			if (switch_ivr_originate(session, new_session, &cause, dial_str, 0, NULL,
 									 NULL, NULL, outbound_profile, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_rwunlock(*new_session);
 			}
-			
+
 			free(dial_str);
 		}
 
@@ -5360,7 +5360,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 	} else {
 		const char *dialed_user = switch_event_get_header(var_event, "dialed_user");
 		const char *dialed_domain = switch_event_get_header(var_event, "dialed_domain");
-		
+
 		if (dialed_user) {
 			if (dialed_domain) {
 				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "verto_orig_dest", "%s@%s", dialed_user, dialed_domain);
@@ -5381,7 +5381,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		switch_caller_profile_t *caller_profile;
 		verto_pvt_t *tech_pvt = NULL;
 		char name[512];
-		
+
 		tech_pvt = switch_core_session_alloc(*new_session, sizeof(*tech_pvt));
 		tech_pvt->pool = switch_core_session_get_pool(*new_session);
 		tech_pvt->session = *new_session;
@@ -5393,7 +5393,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 		if (session) {
 			switch_channel_t *ochannel = switch_core_session_get_channel(session);
-			
+
 			if (switch_true(switch_channel_get_variable(ochannel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
 				switch_channel_set_flag(channel, CF_PROXY_MODE);
 				switch_channel_set_flag(ochannel, CF_PROXY_MODE);
@@ -5405,7 +5405,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		if ((tech_pvt->smh = switch_core_session_get_media_handle(*new_session))) {
 			tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
 		}
-		
+
 		switch_snprintf(name, sizeof(name), "verto.rtc/%s", tech_pvt->jsock_uuid);
 		switch_channel_set_name(channel, name);
 		switch_channel_set_variable(channel, "jsock_uuid_str", tech_pvt->jsock_uuid);
@@ -5413,9 +5413,9 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 
 		if ((caller_profile = switch_caller_profile_dup(switch_core_session_get_pool(*new_session), outbound_profile))) {
-			switch_channel_set_caller_profile(channel, caller_profile);        
-		} 
-		
+			switch_channel_set_caller_profile(channel, caller_profile);
+		}
+
 		switch_channel_add_state_handler(channel, &verto_state_handlers);
 		switch_core_event_hook_add_receive_message(*new_session, messagehook);
 		switch_channel_set_state(channel, CS_INIT);
@@ -5482,9 +5482,9 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 
 	switch_mutex_lock(verto_globals.mutex);
 	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
-		
+	
 		switch_mutex_lock(profile->mutex);
-		
+
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			if (jsock->ready && !zstr(jsock->uid) && !strcmp(uid, jsock->uid)) {
 				jsock_queue_event(jsock, &msg, SWITCH_FALSE);
@@ -5505,7 +5505,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *to = switch_event_get_header(message_event, "to");
 	const char *from = switch_event_get_header(message_event, "from");
 	const char *body = switch_event_get_body(message_event);
-	const char *call_id = switch_event_get_header(message_event, "call_id"); 
+	const char *call_id = switch_event_get_header(message_event, "call_id");
 
 	//DUMP_EVENT(message_event);
 
@@ -5516,14 +5516,14 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 		obj = jrpc_new_req("verto.info", call_id, &params);
 		msg = json_add_child_obj(params, "msg", NULL);
-		
+
 		cJSON_AddItemToObject(msg, "from", cJSON_CreateString(from));
 		cJSON_AddItemToObject(msg, "to", cJSON_CreateString(to));
 		cJSON_AddItemToObject(msg, "body", cJSON_CreateString(body));
 
 		for (eh = message_event->headers; eh; eh = eh->next) {
 			if ((!strncasecmp(eh->name, "from_", 5) || !strncasecmp(eh->name, "to_", 3))) {
-				cJSON_AddItemToObject(msg, eh->name, cJSON_CreateString(eh->value)); 
+				cJSON_AddItemToObject(msg, eh->name, cJSON_CreateString(eh->value));
 			}
 		}
 
@@ -5546,7 +5546,7 @@ static switch_cache_db_handle_t *json_get_db_handle(void)
 
 	switch_cache_db_handle_t *dbh = NULL;
 	const char *dsn;
-	
+
 
 	if (!(dsn = switch_core_get_variable("json_db_handle"))) {
 		dsn = "json";
@@ -5556,7 +5556,7 @@ static switch_cache_db_handle_t *json_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 }
 
@@ -5564,7 +5564,7 @@ static switch_cache_db_handle_t *json_get_db_handle(void)
 static int jcallback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	char **data = (char **) pArg;
-	
+
 	if (argv[0] && !*data) {
 		*data = strdup(argv[0]);
 	}
@@ -5767,7 +5767,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 		switch_mutex_unlock(json_GLOBALS.store_mutex);
 	} else {
 		JSON_STORE = switch_core_hash_find(json_GLOBALS.store_hash, storename);
-		
+
 		if (!JSON_STORE) {
 			JSON_STORE = cJSON_CreateObject();
 			switch_core_hash_insert(json_GLOBALS.store_hash, storename, JSON_STORE);
@@ -5778,7 +5778,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 	switch(cmd) {
 	case CMD_RETRIEVE:
 		obj = json_retrieve(file, NULL);
-		
+
 		if (!obj) {
 			error = "CANNOT LOAD DATA";
 
@@ -5787,7 +5787,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 			} else {
 				switch_mutex_unlock(json_GLOBALS.store_mutex);
 			}
-			
+
 			goto end;
 		}
 
@@ -5831,7 +5831,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 	default:
 		break;
 	}
-	
+
 
 	if (switch_true(verbose) || cmd == CMD_DUMP) {
 		cJSON *dump;
@@ -5856,7 +5856,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 	} else {
 		switch_mutex_unlock(json_GLOBALS.store_mutex);
 	}
-	
+
 	if (cmd == CMD_COMMIT || commit) {
 		switch_bool_t ok;
 
@@ -5879,7 +5879,7 @@ SWITCH_STANDARD_JSON_API(json_store_function)
 
 
  end:
-	
+
 	if (!zstr(error)) {
 		cJSON_AddItemToObject(reply, "errorMessage", cJSON_CreateString(error));
 	}
@@ -5932,7 +5932,7 @@ static void presence_event_handler(switch_event_t *event)
 	add_it("calleeIDName", "caller-callee-id-name");
 	add_it("calleeIDNumber", "caller-callee-id-number");
 	add_it("channelUUID", "unique-id");
-	
+
 	add_it("presenceCallDirection", "presence-call-direction");
 	add_it("channelPresenceID", "channel-presence-id");
 	add_it("channelPresenceData", "channel-presence-data");
@@ -5942,7 +5942,7 @@ static void presence_event_handler(switch_event_t *event)
 			add_it(hp->name, hp->name);
 		}
 	}
-	
+
 	switch_event_channel_broadcast(event_channel, &msg, __FILE__, NO_EVENT_CHANNEL_ID);
 
 	free(event_channel);
@@ -5970,7 +5970,7 @@ static void event_handler(switch_event_t *event)
 		event_channel = switch_mprintf("FSevent.%s", switch_event_name(event->event_id));
 		switch_tolower_max(event_channel + 8);
 	}
-	
+
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 	cJSON_AddItemToObject(msg, "data", data);
 
@@ -5997,17 +5997,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_LOGIN);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_DISCONNECT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_DISCONNECT);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_CONNECT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_CONNECT);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	memset(&verto_globals, 0, sizeof(verto_globals));
 	verto_globals.pool = pool;
 #ifndef WIN32
@@ -6034,7 +6034,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	switch_thread_cond_create(&verto_globals.detach_cond, verto_globals.pool);
 	verto_globals.detach_timeout = 120;
 
-	
+
 
 
 	memset(&json_GLOBALS, 0, sizeof(json_GLOBALS));
@@ -6050,7 +6050,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	switch_event_channel_bind(SWITCH_EVENT_CHANNEL_GLOBAL, verto_broadcast, &verto_globals.event_channel_id);
 
-	
+
 	r = init();
 
 	if (r) return SWITCH_STATUS_TERM;
@@ -6102,7 +6102,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	switch_event_free_subclass(MY_EVENT_LOGIN);
 	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
 	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
-	
+
 	json_cleanup();
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
 

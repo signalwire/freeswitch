@@ -17,12 +17,12 @@
 
     <!-- comment out sql to not setup a database (directory) lookup -->
     <param name="sql" value="
-     SELECT name||' ('||type||')' AS name 
+     SELECT name||' ('||type||')' AS name
       FROM phonebook p JOIN numbers n ON p.id = n.phonebook_id
-      WHERE n.number='${caller_id_number}' 
+      WHERE n.number='${caller_id_number}'
       LIMIT 1
       "/>
-    <!-- comment out citystate-sql to not setup a database (city/state) 
+    <!-- comment out citystate-sql to not setup a database (city/state)
          lookup -->
     <param name="citystate-sql" value="
      SELECT ratecenter||' '||state as name

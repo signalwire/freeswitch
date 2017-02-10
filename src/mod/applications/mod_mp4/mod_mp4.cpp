@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -146,13 +146,13 @@ SWITCH_STANDARD_APP(record_mp4_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
 			count = 100;
 			if (!--sanity) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n",
 								  switch_channel_get_name(channel));
 				return;
 			}
 		}
 	}
-	
+
 	if (!switch_channel_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
 		return;
@@ -312,7 +312,7 @@ static void *SWITCH_THREAD_FUNC play_video_function(switch_thread_t *thread, voi
 				sent = true;
 			}
 
-		} 
+		}
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pt->session), SWITCH_LOG_DEBUG, "Video thread ended\n");
 	pt->done = true;
@@ -330,7 +330,7 @@ static void *SWITCH_THREAD_FUNC play_audio_function(switch_thread_t *thread, voi
 	switch_dtmf_t dtmf = {0};
 	pt->done = false;
 	switch_frame_t * read_frame;
-	
+
 	while (!*pt->quit && switch_channel_ready(pt->channel)) {
 		// event processing.
 		// -- SEE switch_ivr_play_say.c:1231 && mod_dptools.c:1428 && mod_dptools.c:1919
@@ -354,7 +354,7 @@ static void *SWITCH_THREAD_FUNC play_audio_function(switch_thread_t *thread, voi
 				break;
 			}
 		}
-		
+
 		switch_mutex_lock(pt->mutex);
 		pt->frame->datalen = pt->frame->buflen;
 		ok = pt->vc->getAudioPacket(pt->frame->data, pt->frame->datalen, next);
@@ -404,13 +404,13 @@ SWITCH_STANDARD_APP(play_mp4_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 			return;
 		}
-		
+
 		if(!vc.isSupported())
 		{
 			char msgbuf[1024];
 			sprintf(msgbuf, "PLAYBACK ERROR (%s): UNSUPPORTED FORMAT OR FILE NOT HINTED.", (char*) data);
 			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, msgbuf);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
 				"Error reading track info. Maybe this file is not hinted.\n");
 			throw 1;
 		}
@@ -478,7 +478,7 @@ SWITCH_STANDARD_APP(play_mp4_function)
 		vpt.vc = &vc;
 		switch_mutex_init(&vpt.mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(session));
 		vpt.quit = &done;
-		
+
 		switch_threadattr_t * thd_attr;
 		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
 		switch_threadattr_detach_set(thd_attr, 1);
@@ -503,7 +503,7 @@ SWITCH_STANDARD_APP(play_mp4_function)
 		}
 
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
-	} catch(const std::exception & e) 
+	} catch(const std::exception & e)
 	{
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s\n", e.what());
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE,

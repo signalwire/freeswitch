@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -51,7 +51,7 @@ static int match_dtmf(switch_core_session_t *session, ivre_data_t *loc) {
 			if (is_invalid[j])
 				continue;
 
-			test[0] = loc->dtmf_stored[i];	
+			test[0] = loc->dtmf_stored[i];
 			if (loc->dtmf_accepted[j][i] == 'N' && atoi(test) >= 2 && atoi(test) <= 9)
 				cMatch = SWITCH_TRUE;
 			if (loc->dtmf_accepted[j][i] == 'X' && atoi(test) >= 0 && atoi(test) <= 9) {
@@ -69,7 +69,7 @@ static int match_dtmf(switch_core_session_t *session, ivre_data_t *loc) {
 
 			if (i == strlen(loc->dtmf_accepted[j]) - 1 && loc->dtmf_accepted[j][strlen(loc->dtmf_accepted[j])-1] == '.') {
 				loc->completeMatch = loc->dtmf_accepted[j];
-			} 
+			}
 			if (i == loc->dtmf_received - 1 && loc->dtmf_received == strlen(loc->dtmf_accepted[j]) && loc->dtmf_accepted[j][strlen(loc->dtmf_accepted[j])-1] != '.') {
 				loc->completeMatch = loc->dtmf_accepted[j];
 				continue;
@@ -105,7 +105,7 @@ static switch_status_t cb_on_dtmf(switch_core_session_t *session, void *input, s
 		case SWITCH_INPUT_TYPE_DTMF:
 			{
 				switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-				switch_bool_t audio_was_stopped = loc->audio_stopped;	
+				switch_bool_t audio_was_stopped = loc->audio_stopped;
 				loc->audio_stopped = SWITCH_TRUE;
 
 				if (loc->dtmf_received >= sizeof(loc->dtmf_stored)) {

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -95,22 +95,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		char *modname;
 		const char *val;
 		int tmp;
-		
+
 		fp = switch_core_strdup(fh->memory_pool, file_path);
 
 		while (*fp == '{') {
 			char *parsed = NULL;
-			
+
 			if (switch_event_create_brackets(fp, '{', '}', ',', &fh->params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 				goto fail;
 			}
-			
+
 			fp = parsed;
 		}
 
 		file_path = fp;
-		
+
 		if ((timeout = switch_event_get_header(fh->params, "timeout"))) {
 			if ((to = atoi(timeout)) < 1) {
 				to = 0;
@@ -149,7 +149,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 		if ((val = switch_event_get_header(fh->params, "vb"))) {
 			tmp = atoi(val);
-			
+
 			if (strrchr(val, 'k')) {
 				tmp *= 1024;
 			} else if (strrchr(val, 'm')) {
@@ -192,7 +192,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			} else if (strrchr(val, 'm')) {
 				tmp *= 1048576;
 			}
-			
+
 			if (tmp > 0 && tmp < 104857600 /*100mb*/) {
 				fh->mm.vbuf = tmp;
 			} else {
@@ -365,7 +365,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	fh->samples_in = 0;
 	fh->max_samples = 0;
-	
+
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);
 	}
@@ -419,7 +419,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) == SWITCH_STATUS_BREAK) {
 					return SWITCH_STATUS_BREAK;
 				}
-				
+
 
 				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
@@ -636,7 +636,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 {
 	switch_status_t status;
 	int ok = 1;
-	
+
 	switch_assert(fh != NULL);
 
 	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) || !fh->file_interface->file_seek) {
@@ -648,11 +648,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	} else if (!switch_test_flag(fh, SWITCH_FILE_FLAG_READ)) {
 		ok = 0;
 	}
-	
+
 	if (!ok) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (fh->buffer) {
 		switch_buffer_zero(fh->buffer);
 	}
@@ -748,7 +748,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *
 SWITCH_DECLARE(switch_status_t) switch_core_file_command(switch_file_handle_t *fh, switch_file_command_t command)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 

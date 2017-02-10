@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,14 +22,14 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * switch_config.h -- Configuration File Parser
  *
  */
-/** 
+/**
  * @file switch_config.h
  * @brief Basic Configuration File Parser
  * @see config
@@ -42,8 +42,8 @@
  * or expanded to tie to external handlers in the future as necessary.
  * <pre>
  *
- * EXAMPLE 
- * 
+ * EXAMPLE
+ *
  * [category1]
  * var1 => val1
  * var2 => val2

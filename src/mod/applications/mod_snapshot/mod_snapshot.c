@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
@@ -35,7 +35,7 @@
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_snapshot_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_snapshot_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_snapshot, mod_snapshot_load, NULL, NULL);
@@ -193,7 +193,7 @@ static switch_status_t do_snap(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Bug is not attached.\n", switch_channel_get_name(channel));
 	return SWITCH_STATUS_FALSE;
-	
+
 }
 
 #define SNAP_SYNTAX "start <sec> <read|write>"

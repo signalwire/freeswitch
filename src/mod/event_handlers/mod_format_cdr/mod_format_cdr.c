@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian West <brian@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
@@ -90,7 +90,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_format_cdr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_format_cdr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_format_cdr, mod_format_cdr_load, mod_format_cdr_shutdown, NULL);
 
-/* this function would have access to the HTML returned by the webserver, we don't need it 
+/* this function would have access to the HTML returned by the webserver, we don't need it
  * and the default curl activity is to print to stdout, something not as desirable
  * so we have a dummy function here
  */
@@ -382,7 +382,7 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 		if (!zstr(profile->ssl_cacert_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, profile->ssl_cacert_file);
 		}
-		
+
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, profile->timeout);
 
 		/* these were used for testing, optionally they may be enabled if someone desires
@@ -496,7 +496,7 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 	{
 		switch_xml_free(xml_cdr);
 	}
-	
+
 	if ( json_cdr )
 	{
 		cJSON_Delete(json_cdr);
@@ -660,7 +660,7 @@ switch_status_t mod_format_cdr_load_profile_xml(switch_xml_t xprofile)
 							profile->base_err_log_dir[profile->err_dir_count++] = switch_core_sprintf(profile->pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 						}
 					}
-					
+
 				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				profile->enable_cacert_check = 1;
@@ -697,12 +697,12 @@ switch_status_t mod_format_cdr_load_profile_xml(switch_xml_t xprofile)
 				profile->encode_values = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;
 			}
 		}
-		
+
 		if (!profile->err_dir_count) {
 			if (!zstr(profile->base_log_dir)) {
 				profile->base_err_log_dir[profile->err_dir_count++] = switch_core_strdup(profile->pool, profile->base_log_dir);
 			} else {
-				profile->base_err_log_dir[profile->err_dir_count++] = switch_core_sprintf(profile->pool, "%s%sformat_cdr", 
+				profile->base_err_log_dir[profile->err_dir_count++] = switch_core_sprintf(profile->pool, "%s%sformat_cdr",
 					SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 			}
 		}
@@ -743,7 +743,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_format_cdr_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, 
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY,
 			event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -789,7 +789,7 @@ void mod_format_cdr_profile_shutdown(cdr_profile_t *profile)
 	}
 
 	switch_safe_free(profile->log_dir);
-	
+
 	switch_thread_rwlock_destroy(profile->log_path_lock);
 
 	switch_core_destroy_memory_pool(&profile->pool);

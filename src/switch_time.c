@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Massimo Cetra <devel@navynet.it> - Timezone functionality
  *
@@ -220,7 +220,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	if (res > 900 && res < 1100) {
 		one_k = 1;
 	}
-	
+
 	if (res > 1500) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
@@ -382,7 +382,7 @@ static switch_status_t timer_generic_sync(switch_timer_t *timer)
 {
 	switch_time_t now = switch_micro_time_now();
 	int64_t elapsed = (now - timer->start);
-	
+
 	timer->tick = (elapsed / timer->interval) / 1000;
 	timer->samplecount = (uint32_t)(timer->tick * timer->samples);
 
@@ -429,7 +429,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 	}
 
 	it->fd = fd;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -489,7 +489,7 @@ static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 
 	timerfd_gettime(it->fd, &val);
 	diff = val.it_interval.tv_nsec / 1000;
-	
+
 	if (diff > 0) {
 		/* still pending */
 		timer->diff = diff;
@@ -532,7 +532,7 @@ static switch_time_t time_now(int64_t offset)
 		if (offset == 0) {
 			return switch_time_now();
 		} else if (offset < 0) offset = 0;
-		
+
 
 		if (win32_use_qpc) {
 			/* Use QueryPerformanceCounter */
@@ -1040,7 +1040,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
 			spec.it_value.tv_sec = 0;
 			spec.it_value.tv_nsec = 100000;
-		
+
 			if (timerfd_settime(tfd, 0, &spec, NULL)) {
 				close(tfd);
 				tfd = -1;
@@ -1056,7 +1056,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 
-	if (runtime.timer_affinity > -1) { 
+	if (runtime.timer_affinity > -1) {
 		switch_core_thread_set_cpu_affinity(runtime.timer_affinity);
 	}
 
@@ -1111,7 +1111,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
 			timerfd_settime(tfd, 0, &spec, NULL);
 		}
-		
+
 		last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
 #endif
 
@@ -1222,7 +1222,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 				profile_tick = 0;
 			}
-			
+
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
@@ -1238,7 +1238,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 
 			sps_interval_ticks++;
-			
+
 			if (runtime.sps_last > runtime.sps_peak_fivemin) {
 				runtime.sps_peak_fivemin = runtime.sps_last;
 			}
@@ -1290,7 +1290,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 
 	globals.use_cond_yield = 0;
-	
+
 	for (x = (runtime.microseconds_per_tick / 1000); x <= MAX_ELEMENTS; x += (runtime.microseconds_per_tick / 1000)) {
 		if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
@@ -1315,7 +1315,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	return SWITCH_STATUS_TERM;
 }
 
-/* 
+/*
    This converts a struct tm to a switch_time_exp_t
    We have to use UNIX structures to do our exams
    and use switch_* functions for the output.
@@ -1365,7 +1365,7 @@ SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 	if (zstr(tz_name) || !TIMEZONES_LIST.hash) {
 		return NULL;
 	}
-	
+
 	if ((value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
 	}
@@ -1602,9 +1602,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 
 
 /*
- *    This file was originally written for NetBSD and is in the public domain, 
+ *    This file was originally written for NetBSD and is in the public domain,
  *    so clarified as of 1996-06-05 by Arthur David Olson (arthur_david_olson@nih.gov).
- *    
+ *
  *    Iw was modified by Massimo Cetra in order to be used with Callweaver and Freeswitch.
  */
 
@@ -1784,7 +1784,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 
 
 /* **************************************************************************
-	    
+
    ************************************************************************** */
 
 static const char gmt[] = "GMT";
@@ -1837,7 +1837,7 @@ static const int year_lengths[2] = {
 
 
 /* **************************************************************************
-	    
+
    ************************************************************************** */
 
 
@@ -2314,7 +2314,7 @@ static int tzparse(const char *name, register struct state *const sp, const int 
 }
 
 /* **************************************************************************
-	    
+
    ************************************************************************** */
 #if (_MSC_VER >= 1400)			// VC8+
 #define switch_assert(expr) assert(expr);__analysis_assume( expr )
@@ -2425,7 +2425,7 @@ static void timesub(const time_t *const timep, const long offset, register const
 }
 
 /* **************************************************************************
-	    
+
    ************************************************************************** */
 
 static void tztime(const time_t *const timep, const char *tzstring, struct tm *const tmp)

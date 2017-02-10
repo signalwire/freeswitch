@@ -1,4 +1,4 @@
-/* 
+/*
  * Contributor(s):
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>
@@ -43,7 +43,7 @@ typedef union {
     float f;
 } float_conv_t;
 
-/* 
+/*
  * Manipulate these parameters to change
  * mapping's resolution. The sine tone
  * of 1600Hz is detected even with 20
@@ -241,7 +241,7 @@ dump_table_summary(void)
     i_1 = index_from_float(1.0);
     di = (i_1 - i_0)/100;
     if (di == 0)  di = 1;
- 
+
     for (; i < ACOS_TABLE_LENGTH; i += di )
     {
         f = float_from_index(i);

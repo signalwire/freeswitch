@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2010, Mathieu Parent <math.parent@gmail.com>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Parent <math.parent@gmail.com>
  *
  *
@@ -314,7 +314,7 @@ typedef struct {
 	uint32_t serviceNumber;                                                 /*!< Service Number */
 } levelPreference_t;                                                            /*!< Level Preference Structure */
 
-/*! 
+/*!
  * \brief Layout Config Structure (Update Capabilities Message Struct)
  * \since 20080111
  */
@@ -344,7 +344,7 @@ typedef struct {
 	skinny_codecs payload_capability;                                   /*!< PayLoad Capability */
 	uint32_t maxFramesPerPacket;                                        /*!< Maximum Number of Frames per IP Packet */
 	uint32_t unknown[2];                                                /*!< this are related to G.723 */
-} audioCap_t;  
+} audioCap_t;
 
 /*!
  * \brief Video Capabilities Structure
@@ -418,7 +418,7 @@ struct PACKED update_capabilities_message {
 	dataCap_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];               /*!< Data Capabilities */
 
 	uint32_t unknown;                                               /*!< Unknown */
-}; 
+};
 
 
 /* ServiceUrlStatReqMessage */

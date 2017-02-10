@@ -280,7 +280,7 @@ static switch_status_t input_handler_on_dtmf(switch_core_session_t *session, con
 		switch_hash_index_t *hi;
 
 		switch_mutex_lock(handler->mutex);
-	
+
 		/* check input on each component */
 		for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(&hi)) {
 			const void *jid;

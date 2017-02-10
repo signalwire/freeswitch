@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_shell_stream.c -- Local Streaming Audio
@@ -176,7 +176,7 @@ static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 	if (context->thread) {
 		switch_thread_join(&st, context->thread);
 	}
-	
+
 	if (context->audio_buffer) {
 		switch_buffer_destroy(&context->audio_buffer);
 	}

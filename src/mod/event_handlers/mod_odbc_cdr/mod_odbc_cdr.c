@@ -304,7 +304,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 				char *full_path = NULL;
 				switch_stream_handle_t stream_field = { 0 };
 				switch_stream_handle_t stream_value = { 0 };
-				switch_bool_t insert_fail = SWITCH_FALSE;				
+				switch_bool_t insert_fail = SWITCH_FALSE;
 
 				SWITCH_STANDARD_STREAM(stream_field);
 				SWITCH_STANDARD_STREAM(stream_value);

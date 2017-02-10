@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  *
@@ -37,7 +37,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, mod_skel_shutdown, NULL);
@@ -65,7 +65,7 @@ static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, 
 	/*
 	   if ((callback_type == CONFIG_LOG || callback_type == CONFIG_RELOAD) && changed) {
 	   nua_set_params(((sofia_profile_t*)data->functiondata)->nua, TPTAG_LOG(value), TAG_END());
-	   } 
+	   }
 	 */
 
 	return SWITCH_STATUS_SUCCESS;
@@ -188,7 +188,7 @@ SWITCH_STANDARD_API(skel_function)
 			switch_snprintf(name, sizeof(name), "test-header-%d", x);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, name, "value-%d", x);
 		}
-		
+
 
 		/* Nothing up my sleeve, here is the event */
 
@@ -218,8 +218,8 @@ static void mycb(switch_core_session_t *session, switch_channel_callstate_t call
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, 
-					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u Active:%u Held:%u Hungup:%u Dur: %u %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT,
+					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u Active:%u Held:%u Hungup:%u Dur: %u %s\n",
 					  switch_channel_get_name(channel),
 					  drec->device_id,
 					  switch_channel_callstate2str(callstate),

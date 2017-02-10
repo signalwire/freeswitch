@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  *
@@ -39,7 +39,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_ivr_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_voicemail_ivr_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_ivr_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_voicemail_ivr, mod_voicemail_ivr_load, mod_voicemail_ivr_shutdown, NULL);
@@ -54,7 +54,7 @@ SWITCH_STANDARD_APP(voicemail_ivr_function)
 	const char *domain = NULL;
 	const char *profile_name = NULL;
 	vmivr_profile_t *profile = NULL;
-	char *argv[6] = { 0 }; 
+	char *argv[6] = { 0 };
 	char *mydata = NULL;
 
 	if (!zstr(data)) {

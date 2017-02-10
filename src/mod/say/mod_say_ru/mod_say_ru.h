@@ -12,7 +12,7 @@
 //http://ru.wiktionary.org/wiki/%D0%BE%D0%B4%D0%B8%D0%BD
 //http://ru.wiktionary.org/wiki/%D0%BF%D0%B5%D1%80%D0%B2%D1%8B%D0%B9
 
-                                                                                                                                                                                                                    
+
 
 typedef enum {
 	million,
@@ -58,7 +58,7 @@ typedef enum {
 typedef struct {
 	say_gender_t gender;
 	cases_t    cases;
-	currency_t currency;	    
+	currency_t currency;
 } say_opt_t;
 
 
@@ -75,7 +75,7 @@ struct say_cur_t {
 	char *second[6];
 	say_gender_t second_gender;
 	cases_t second_cases;
-	
+
 };
 
 // описываем как произносить валяюты от 0 до 5 дальше идёт номер рода и падежа (с нуля)
@@ -94,7 +94,7 @@ struct say_cur_t {
 
 typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt);
 
-//именительный 
+//именительный
 //именительный количественный/числительное
 
 //мужской род родительный падеж
@@ -235,7 +235,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//дательный    Кого? Что? 
+//дательный    Кого? Что?
 //количественный/числительное
 //мужской
 #define m_20 {\
@@ -301,7 +301,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//Винительный  Кого? animate - одушевлённый 
+//Винительный  Кого? animate - одушевлённый
 //количественный/числительное
 //мужской
 #define m_30 {\
@@ -367,7 +367,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//Винительный  Что?  inanimate - неодушевлённый 
+//Винительный  Что?  inanimate - неодушевлённый
 //количественный/числительное
 //мужской
 #define m_40 {\
@@ -433,7 +433,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//Творительный Кем? Чем? 
+//Творительный Кем? Чем?
 //количественный/числительное
 //мужской
 #define m_50 {\
@@ -499,7 +499,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//Предложный   О ком? О чём? 
+//Предложный   О ком? О чём?
 //количественный/числительное
 //мужской
 #define m_60 {\
@@ -565,7 +565,7 @@ typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_
 
 
 
-//именительный 
+//именительный
 //именительный количественный/числительное
 //мужской
 #define m_60 {\

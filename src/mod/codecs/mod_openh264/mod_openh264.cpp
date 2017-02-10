@@ -82,7 +82,7 @@ typedef struct h264_codec_context_s {
 int FillSpecificParameters(h264_codec_context_t *context) {
 	int sane = 0;
 	SEncParamExt *param;
-	
+
 	param = &context->encoder_params;
 
 	if (!context->codec_settings.video.width) {
@@ -216,11 +216,11 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 
 	/* hack for phones sending sps/pps with frame->m = 1 such as grandstream */
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
-	
+
 	if (nalu_type == 28) { // 0x1c FU-A
 		int start = *(data + 1) & 0x80;
 		int end = *(data + 1) & 0x40;
-		
+
 		nalu_type = *(data + 1) & 0x1f;
 
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "WTF start:%d end:%d mark:%d\n", start, end, frame->m);
@@ -731,8 +731,8 @@ end:
 	return status;
 }
 
-static switch_status_t switch_h264_control(switch_codec_t *codec, 
-										   switch_codec_control_command_t cmd, 
+static switch_status_t switch_h264_control(switch_codec_t *codec,
+										   switch_codec_control_command_t cmd,
 										   switch_codec_control_type_t ctype,
 										   void *cmd_data,
 										   switch_codec_control_type_t atype,
@@ -746,7 +746,7 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 
 	switch(cmd) {
 	case SCC_VIDEO_GEN_KEYFRAME:
-		context->need_key_frame = 1;		
+		context->need_key_frame = 1;
 		break;
 	case SCC_VIDEO_BANDWIDTH:
 		{

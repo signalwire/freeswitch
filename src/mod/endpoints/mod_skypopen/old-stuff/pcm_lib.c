@@ -469,7 +469,7 @@ void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops
 {
 	struct snd_pcm_str *stream = &pcm->streams[direction];
 	struct snd_pcm_substream *substream;
-	
+
 	for (substream = stream->substream; substream != NULL; substream = substream->next)
 		substream->ops = ops;
 }
@@ -485,7 +485,7 @@ EXPORT_SYMBOL(snd_pcm_set_ops);
 void snd_pcm_set_sync(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	
+
 	runtime->sync.id32[0] = substream->pcm->card->number;
 	runtime->sync.id32[1] = -1;
 	runtime->sync.id32[2] = -1;
@@ -498,7 +498,7 @@ EXPORT_SYMBOL(snd_pcm_set_sync);
  *  Standard ioctl routine
  */
 
-static inline unsigned int div32(unsigned int a, unsigned int b, 
+static inline unsigned int div32(unsigned int a, unsigned int b,
 				 unsigned int *r)
 {
 	if (b == 0) {
@@ -757,7 +757,7 @@ void snd_interval_mulkdiv(const struct snd_interval *a, unsigned int k,
 /**
  * snd_interval_ratnum - refine the interval value
  * @i: interval to refine
- * @rats_count: number of ratnum_t 
+ * @rats_count: number of ratnum_t
  * @rats: ratnum_t array
  * @nump: pointer to store the resultant numerator
  * @denp: pointer to store the resultant denominator
@@ -811,7 +811,7 @@ int snd_interval_ratnum(struct snd_interval *i,
 	}
 	t.min = div_down(best_num, best_den);
 	t.openmin = !!(best_num % best_den);
-	
+
 	result_num = best_num;
 	result_diff = best_diff;
 	result_den = best_den;
@@ -922,7 +922,7 @@ static int snd_interval_ratden(struct snd_interval *i,
 	}
 	t.min = div_down(best_num, best_den);
 	t.openmin = !!(best_num % best_den);
-	
+
 	best_num = best_den = best_diff = 0;
 	for (k = 0; k < rats_count; ++k) {
 		unsigned int num;
@@ -1081,7 +1081,7 @@ int snd_pcm_hw_rule_add(struct snd_pcm_runtime *runtime, unsigned int cond,
 	constrs->rules_num++;
 	va_end(args);
 	return 0;
-}				    
+}
 
 EXPORT_SYMBOL(snd_pcm_hw_rule_add);
 
@@ -1147,7 +1147,7 @@ EXPORT_SYMBOL(snd_pcm_hw_constraint_integer);
  * @var: hw_params variable to apply the range
  * @min: the minimal value
  * @max: the maximal value
- * 
+ *
  * Apply the min/max range constraint to an interval parameter.
  */
 int snd_pcm_hw_constraint_minmax(struct snd_pcm_runtime *runtime, snd_pcm_hw_param_t var,
@@ -1169,7 +1169,7 @@ static int snd_pcm_hw_rule_list(struct snd_pcm_hw_params *params,
 {
 	struct snd_pcm_hw_constraint_list *list = rule->private;
 	return snd_interval_list(hw_param_interval(params, rule->var), list->count, list->list, list->mask);
-}		
+}
 
 
 /**
@@ -1178,7 +1178,7 @@ static int snd_pcm_hw_rule_list(struct snd_pcm_hw_params *params,
  * @cond: condition bits
  * @var: hw_params variable to apply the list constraint
  * @l: list
- * 
+ *
  * Apply the list of constraints to an interval parameter.
  */
 int snd_pcm_hw_constraint_list(struct snd_pcm_runtime *runtime,
@@ -1215,7 +1215,7 @@ static int snd_pcm_hw_rule_ratnums(struct snd_pcm_hw_params *params,
  * @var: hw_params variable to apply the ratnums constraint
  * @r: struct snd_ratnums constriants
  */
-int snd_pcm_hw_constraint_ratnums(struct snd_pcm_runtime *runtime, 
+int snd_pcm_hw_constraint_ratnums(struct snd_pcm_runtime *runtime,
 				  unsigned int cond,
 				  snd_pcm_hw_param_t var,
 				  struct snd_pcm_hw_constraint_ratnums *r)
@@ -1248,7 +1248,7 @@ static int snd_pcm_hw_rule_ratdens(struct snd_pcm_hw_params *params,
  * @var: hw_params variable to apply the ratdens constraint
  * @r: struct snd_ratdens constriants
  */
-int snd_pcm_hw_constraint_ratdens(struct snd_pcm_runtime *runtime, 
+int snd_pcm_hw_constraint_ratdens(struct snd_pcm_runtime *runtime,
 				  unsigned int cond,
 				  snd_pcm_hw_param_t var,
 				  struct snd_pcm_hw_constraint_ratdens *r)
@@ -1279,7 +1279,7 @@ static int snd_pcm_hw_rule_msbits(struct snd_pcm_hw_params *params,
  * @width: sample bits width
  * @msbits: msbits width
  */
-int snd_pcm_hw_constraint_msbits(struct snd_pcm_runtime *runtime, 
+int snd_pcm_hw_constraint_msbits(struct snd_pcm_runtime *runtime,
 				 unsigned int cond,
 				 unsigned int width,
 				 unsigned int msbits)
@@ -1312,7 +1312,7 @@ int snd_pcm_hw_constraint_step(struct snd_pcm_runtime *runtime,
 			       snd_pcm_hw_param_t var,
 			       unsigned long step)
 {
-	return snd_pcm_hw_rule_add(runtime, cond, var, 
+	return snd_pcm_hw_rule_add(runtime, cond, var,
 				   snd_pcm_hw_rule_step, (void *) step,
 				   var, -1);
 }
@@ -1329,7 +1329,7 @@ static int snd_pcm_hw_rule_pow2(struct snd_pcm_hw_params *params, struct snd_pcm
 	};
 	return snd_interval_list(hw_param_interval(params, rule->var),
 				 ARRAY_SIZE(pow2_sizes), pow2_sizes, 0);
-}		
+}
 
 /**
  * snd_pcm_hw_constraint_pow2 - add a hw constraint power-of-2 rule
@@ -1341,7 +1341,7 @@ int snd_pcm_hw_constraint_pow2(struct snd_pcm_runtime *runtime,
 			       unsigned int cond,
 			       snd_pcm_hw_param_t var)
 {
-	return snd_pcm_hw_rule_add(runtime, cond, var, 
+	return snd_pcm_hw_rule_add(runtime, cond, var,
 				   snd_pcm_hw_rule_pow2, NULL,
 				   var, -1);
 }
@@ -1459,8 +1459,8 @@ static int _snd_pcm_hw_param_first(struct snd_pcm_hw_params *params,
  * values > minimum. Reduce configuration space accordingly.
  * Return the minimum.
  */
-int snd_pcm_hw_param_first(struct snd_pcm_substream *pcm, 
-			   struct snd_pcm_hw_params *params, 
+int snd_pcm_hw_param_first(struct snd_pcm_substream *pcm,
+			   struct snd_pcm_hw_params *params,
 			   snd_pcm_hw_param_t var, int *dir)
 {
 	int changed = _snd_pcm_hw_param_first(params, var);
@@ -1505,7 +1505,7 @@ static int _snd_pcm_hw_param_last(struct snd_pcm_hw_params *params,
  * values < maximum. Reduce configuration space accordingly.
  * Return the maximum.
  */
-int snd_pcm_hw_param_last(struct snd_pcm_substream *pcm, 
+int snd_pcm_hw_param_last(struct snd_pcm_substream *pcm,
 			  struct snd_pcm_hw_params *params,
 			  snd_pcm_hw_param_t var, int *dir)
 {
@@ -1731,7 +1731,7 @@ static int wait_for_avail_min(struct snd_pcm_substream *substream,
 		case SNDRV_PCM_STATE_DRAINING:
 			if (is_playback)
 				err = -EPIPE;
-			else 
+			else
 				avail = 0; /* indicate draining */
 			goto _endloop;
 		case SNDRV_PCM_STATE_OPEN:
@@ -1758,7 +1758,7 @@ static int wait_for_avail_min(struct snd_pcm_substream *substream,
 	*availp = avail;
 	return err;
 }
-	
+
 static int snd_pcm_lib_write_transfer(struct snd_pcm_substream *substream,
 				      unsigned int hwoff,
 				      unsigned long data, unsigned int off,
@@ -1777,12 +1777,12 @@ static int snd_pcm_lib_write_transfer(struct snd_pcm_substream *substream,
 	}
 	return 0;
 }
- 
+
 typedef int (*transfer_f)(struct snd_pcm_substream *substream, unsigned int hwoff,
 			  unsigned long data, unsigned int off,
 			  snd_pcm_uframes_t size);
 
-static snd_pcm_sframes_t snd_pcm_lib_write1(struct snd_pcm_substream *substream, 
+static snd_pcm_sframes_t snd_pcm_lib_write1(struct snd_pcm_substream *substream,
 					    unsigned long data,
 					    snd_pcm_uframes_t size,
 					    int nonblock,
@@ -1955,7 +1955,7 @@ static int snd_pcm_lib_writev_transfer(struct snd_pcm_substream *substream,
 	}
 	return 0;
 }
- 
+
 snd_pcm_sframes_t snd_pcm_lib_writev(struct snd_pcm_substream *substream,
 				     void __user **bufs,
 				     snd_pcm_uframes_t frames)
@@ -1978,7 +1978,7 @@ snd_pcm_sframes_t snd_pcm_lib_writev(struct snd_pcm_substream *substream,
 
 EXPORT_SYMBOL(snd_pcm_lib_writev);
 
-static int snd_pcm_lib_read_transfer(struct snd_pcm_substream *substream, 
+static int snd_pcm_lib_read_transfer(struct snd_pcm_substream *substream,
 				     unsigned int hwoff,
 				     unsigned long data, unsigned int off,
 				     snd_pcm_uframes_t frames)
@@ -2109,7 +2109,7 @@ snd_pcm_sframes_t snd_pcm_lib_read(struct snd_pcm_substream *substream, void __u
 	struct snd_pcm_runtime *runtime;
 	int nonblock;
 	int err;
-	
+
 	err = pcm_sanity_check(substream);
 	if (err < 0)
 		return err;
@@ -2157,7 +2157,7 @@ static int snd_pcm_lib_readv_transfer(struct snd_pcm_substream *substream,
 	}
 	return 0;
 }
- 
+
 snd_pcm_sframes_t snd_pcm_lib_readv(struct snd_pcm_substream *substream,
 				    void __user **bufs,
 				    snd_pcm_uframes_t frames)

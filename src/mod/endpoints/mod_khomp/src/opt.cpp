@@ -3,10 +3,10 @@
     KHOMP generic endpoint/channel library.
     Copyright (C) 2007-2010 Khomp Ind. & Com.
 
-  The contents of this file are subject to the Mozilla Public License 
-  Version 1.1 (the "License"); you may not use this file except in compliance 
-  with the License. You may obtain a copy of the License at 
-  http://www.mozilla.org/MPL/ 
+  The contents of this file are subject to the Mozilla Public License
+  Version 1.1 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.mozilla.org/MPL/
 
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -17,10 +17,10 @@
   case the provisions of "LGPL License" are applicable instead of those above.
 
   If you wish to allow use of your version of this file only under the terms of
-  the LGPL License and not to allow others to use your version of this file 
-  under the MPL, indicate your decision by deleting the provisions above and 
-  replace them with the notice and other provisions required by the LGPL 
-  License. If you do not delete the provisions above, a recipient may use your 
+  the LGPL License and not to allow others to use your version of this file
+  under the MPL, indicate your decision by deleting the provisions above and
+  replace them with the notice and other provisions required by the LGPL
+  License. If you do not delete the provisions above, a recipient may use your
   version of this file under either the MPL or the LGPL License.
 
   The LGPL header follows below:
@@ -36,7 +36,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with this library; if not, write to the Free Software Foundation, 
+    along with this library; if not, write to the Free Software Foundation,
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 *******************************************************************************/
@@ -60,8 +60,8 @@ BranchToObjectMapType Opt::_fxs_branch_map;
 /* not beautiful, should think of something! */
 #define FUNCTION_VALUE(x) reinterpret_cast< Config::FunctionValue Options::* >( x )
 
-void Opt::initialize(void) 
-{ 
+void Opt::initialize(void)
+{
     Globals::options.add(Config::Option("debug",    &Options::_debug,    false));
     Globals::options.add(Config::Option("dialplan", &Options::_dialplan, "XML"));
     Globals::options.add(Config::Option("context",  &Options::_context,  "default"));
@@ -97,33 +97,33 @@ void Opt::initialize(void)
 
     Globals::options.add(Config::Option("flash-to-digits", &Options::_flash, "*1"));
 
-    Globals::options.add(Config::Option("delay-ringback-co",  &Options::_ringback_co_delay,  1500u, 0u, 999000u)); 
+    Globals::options.add(Config::Option("delay-ringback-co",  &Options::_ringback_co_delay,  1500u, 0u, 999000u));
     Globals::options.add(Config::Option("delay-ringback-pbx", &Options::_ringback_pbx_delay, 2500u, 0u, 999000u));
-    
-    Globals::options.add(Config::Option("disconnect-delay", &Options::_disconnect_delay, 0u, 0u, 100000u)); 
+
+    Globals::options.add(Config::Option("disconnect-delay", &Options::_disconnect_delay, 0u, 0u, 100000u));
 
     Globals::options.add(Config::Option("input-volume",  &Options::_input_volume, 0, -10, 10));
     Globals::options.add(Config::Option("output-volume", &Options::_output_volume, 0, -10, 10));
 
-    Globals::options.add(Config::Option("fxs-co-dialtone", 
+    Globals::options.add(Config::Option("fxs-co-dialtone",
         FUNCTION_VALUE(&Options::_fxs_co_dialtone), ""));
 
-    Globals::options.add(Config::Option("log-to-disk",   
+    Globals::options.add(Config::Option("log-to-disk",
         FUNCTION_VALUE(&Options::_log_disk_option),    "standard", false));
 
     Globals::options.add(Config::Option("callgroup", &Options::_callgroup,   "0"));
 
     Globals::options.add(Config::Option("pickupgroup", &Options::_pickupgroup, "0"));
-    
+
     Globals::options.add(Config::Option("log-to-console",
         FUNCTION_VALUE(&Options::_log_console_option), "standard", false));
 
     Globals::options.add(Config::Option("trace",
         FUNCTION_VALUE(&Options::_log_trace_option), "", false));
 
-    Globals::options.add(Config::Option("record-prefix", 
+    Globals::options.add(Config::Option("record-prefix",
         FUNCTION_VALUE(&Options::_record_prefix), "/var/spool/freeswitch/monitor/"));
-    
+
     Globals::options.add(Config::Option("fxs-global-orig", &Options::_fxs_global_orig_base,  "0"));
 
     Globals::options.add(Config::Option("language", &Options::_global_language, ""));
@@ -152,7 +152,7 @@ void Opt::initialize(void)
          (unsigned int)KHOMP_READ_PACKET_SIZE, (unsigned int)KHOMP_MIN_READ_PACKET_SIZE, (unsigned int)KHOMP_MAX_READ_PACKET_SIZE, 8u));
 
     Globals::options.add(Config::Option("user-transfer-digits", &Options::_user_xfer_digits, ""));
-    
+
     /* aliases */
     Globals::options.synonym("context-gsm", "context-gsm-call");
     Globals::options.synonym("context-gsm-alt", "context-gsm-call-alt");
@@ -173,7 +173,7 @@ void Opt::obtain(void)
     try
     {
         /* everything should start clean! */
-        cleanConfiguration();        
+        cleanConfiguration();
 
         /* reset loaded options */
         Globals::options.reset(&Opt::_options);
@@ -190,10 +190,10 @@ void Opt::obtain(void)
             DBG(FUNC,FMT("%s") % (*i).c_str());
         }
     }
-    catch (std::runtime_error & e) 
-    {    
+    catch (std::runtime_error & e)
+    {
         LOG(ERROR, FMT("unable to obtain general options: %s: procedure aborted!") % e.what());
-    }    
+    }
 }
 
 void Opt::commit(void)
@@ -204,28 +204,28 @@ void Opt::commit(void)
     OrigToDestMapType::const_iterator endOfHotlines = _fxs_hotline.end();
 
     for (OrigToDestMapType::const_iterator i = _fxs_hotline.begin(); i != endOfHotlines; i++)
-    {  
+    {
         BranchToObjectMapType::const_iterator j = _fxs_branch_map.find(i->first);
 
         if (j == _fxs_branch_map.end())
-        {   
+        {
             LOG(ERROR, FMT("unable to find branch '%s': hotline '%s' to '%s' is invalid!")
                 % i->first % i->first % i->second);
-        } 
-    }   
+        }
+    }
 
     /* Check FXS options correcteness */
     BranchToOptMapType::const_iterator endOfOptions = _branch_options.end();
-        
+
     for (BranchToOptMapType::const_iterator i = _branch_options.begin(); i != endOfOptions; i++)
-    {   
-        BranchToObjectMapType::const_iterator j = _fxs_branch_map.find(i->first);        
+    {
+        BranchToObjectMapType::const_iterator j = _fxs_branch_map.find(i->first);
         if (j == _fxs_branch_map.end())
-        {   
+        {
             LOG(ERROR, FMT("unable to find branch '%s' for options '%s'")
                 % i->first % i->second);
-        } 
-    }   
+        }
+    }
 }
 
 void Opt::loadConfiguration(const char *file_name, const char **section, bool show_errors)
@@ -244,7 +244,7 @@ void Opt::loadConfiguration(const char *file_name, const char **section, bool sh
 
     /* Load all the global settings pertinent to all boards */
     settings = processSimpleXML(cfg,"settings");
-    
+
     /* Process channel settings */
     processSimpleXML(settings,"channels");
 
@@ -262,7 +262,7 @@ void Opt::loadConfiguration(const char *file_name, const char **section, bool sh
 
     /* Process fxs options settings */
     processFXSOptions(settings);
-    
+
     switch_xml_free(xml);
 }
 
@@ -307,24 +307,24 @@ void Options::RecordPrefixOption::operator()(const Config::StringType & str)
     if (mkdir(str.c_str(), 493 /* 0755 */) < 0 && errno != EEXIST)
         throw Config::Failure("the default recording directory could not be created.");
 
-    _value = str; 
+    _value = str;
 }
 
-void Options::CentralOfficeDialtone::operator()(const Config::StringType & str) 
+void Options::CentralOfficeDialtone::operator()(const Config::StringType & str)
 {
     Strings::vector_type tokens;
     Strings::tokenize(str, tokens, ",");
 
-    for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++) 
+    for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++)
         _value.push_back(*i);
 }
 
-void Options::LogDiskOption::operator()(const Config::StringType & str) 
+void Options::LogDiskOption::operator()(const Config::StringType & str)
 {
     K::Logger::processLogDisk(NULL, str, false, true);
 }
 
-void Options::LogConsoleOption::operator()(const Config::StringType & str) 
+void Options::LogConsoleOption::operator()(const Config::StringType & str)
 {
     K::Logger::processLogConsole(NULL, str, false, true);
 }
@@ -408,7 +408,7 @@ switch_xml_t Opt::processSimpleXML(switch_xml_t &xml, const std::string& child_n
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
                     % val);
@@ -442,7 +442,7 @@ void Opt::processGroupXML(switch_xml_t &xml)
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
                     % val);
@@ -485,30 +485,30 @@ void Opt::processCadenceXML(switch_xml_t &xml)
                     cadence.ring_s     = Strings::toulong(Strings::trim(values[1]));
 
                     if (values.size() == 4)
-                    {   
+                    {
                         cadence.ring_ext   = Strings::toulong(Strings::trim(values[2]));
                         cadence.ring_ext_s = Strings::toulong(Strings::trim(values[3]));
-                    }   
+                    }
 
                     _cadences.erase(var); /* erases previous (possibly predefined) cadence */
                     _cadences.insert(CadencesPairType(var, cadence));
-                } 
+                }
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
                     % val);
 
-            }                  
+            }
             catch (Strings::invalid_value e)
-            {   
-               LOG(ERROR,FMT("file '%s': number expected at cadence '%s', got '%s'.") 
+            {
+               LOG(ERROR,FMT("file '%s': number expected at cadence '%s', got '%s'.")
                     % "khomp.conf.xml"
                     % var
                     % e.value().c_str());
-            }   
+            }
         }
     }
 }
@@ -571,7 +571,7 @@ void Opt::processFXSBranchesXML(switch_xml_t &xml)
 
                     if (!found)
                     {
-                        LOG(WARNING, FMT("file 'khomp.conf.xml': board with serial number '%u' not found!") 
+                        LOG(WARNING, FMT("file 'khomp.conf.xml': board with serial number '%u' not found!")
                         % serial_number);
 
                         break;
@@ -580,7 +580,7 @@ void Opt::processFXSBranchesXML(switch_xml_t &xml)
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
                     % val);
@@ -623,16 +623,16 @@ void Opt::processFXSHotlines(switch_xml_t &xml)
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
-                    % val);        
+                    % val);
             }
             catch (Strings::invalid_value e)
             {
-                LOG(WARNING, FMT("file '%s': number expected, got '%s'!") 
+                LOG(WARNING, FMT("file '%s': number expected, got '%s'!")
                     % "khomp.conf.xml" % e.value().c_str());
-            }  
+            }
         }
     }
 }
@@ -658,16 +658,16 @@ void Opt::processFXSOptions(switch_xml_t &xml)
                 Strings::tokenize(var, branches, " ,");
 
                 if (branches.size() < 1)
-                {   
+                {
                     //TODO: Get linenumber
-                    LOG(WARNING, FMT("file '%s': no branches specified in line %d!") 
+                    LOG(WARNING, FMT("file '%s': no branches specified in line %d!")
                     % "khomp.conf.xml" % 0);
-                }           
+                }
                 else
-                {   
+                {
                     for (Strings::vector_type::iterator iter = branches.begin();
                             iter != branches.end(); iter++)
-                    {                   
+                    {
                         std::string tmp_branch = Strings::trim(*iter);
 
                         unsigned long branch_number = Strings::toulong(tmp_branch);
@@ -679,14 +679,14 @@ void Opt::processFXSOptions(switch_xml_t &xml)
             }
             catch (Config::Failure e)
             {
-                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
+                LOG(ERROR,FMT("config processing error: %s. [%s=%s]")
                     % e.what()
                     % var
-                    % val);      
+                    % val);
             }
             catch (Strings::invalid_value e)
             {
-                LOG(WARNING, FMT("file '%s': number expected, got '%s'!") 
+                LOG(WARNING, FMT("file '%s': number expected, got '%s'!")
                     % "khomp.conf.xml" % e.value().c_str());
             }
         }

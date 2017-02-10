@@ -208,7 +208,7 @@ int fs_switch_ivr_collect_digits_count(switch_core_session_t *session,
   switch_core_session_t *peer_session,
   switch_input_callback_function_t dtmf_callback,
   void *session_data,
-  void *peer_session_data)  
+  void *peer_session_data)
   {
   switch_status_t status;
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Michael Jerris <mike@jerris.com>
  * Eliot Gable <egable@gmail.com>
  * William King <william.king@quentustech.com>
@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
 SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t *pool)
 {
 #ifdef WIN32
-	/* Old version of APR misunderstands mutexes. On Windows, mutexes are cross-process. 
+	/* Old version of APR misunderstands mutexes. On Windows, mutexes are cross-process.
 	   APR has no reason to not use critical sections instead of mutexes. */
 	if (flags == SWITCH_MUTEX_NESTED) flags = SWITCH_MUTEX_DEFAULT;
 #endif
@@ -772,7 +772,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send_nonblock(switch_socket_t *soc
 	if (!sock || !buf || !len) {
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	return apr_socket_send(sock, buf, len);
 }
 
@@ -830,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 {
 	if (opt == SWITCH_SO_TCP_KEEPIDLE) {
 		int r = -10;
-		
+
 #if defined(TCP_KEEPIDLE)
 		r = setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPIDLE, (void *)&on, sizeof(on));
 #endif
@@ -838,7 +838,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 			return SWITCH_STATUS_NOTIMPL;
 		}
 
-	
+
 		return r ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 	}
 
@@ -902,7 +902,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
 {
 	return apr_mcast_interface(sock, iface);
 }
-												 
+
 
 /* socket functions */
 
@@ -986,8 +986,8 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_remove(switch_pollset_t *pollset,
 {
 	if (!pollset || !descriptor) {
 		return SWITCH_STATUS_FALSE;
-	}	
-	
+	}
+
 	return apr_pollset_remove((apr_pollset_t *) pollset, (const apr_pollfd_t *) descriptor);
 }
 
@@ -996,18 +996,18 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 	if (!pollfd || !sock) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if ((*pollfd = (switch_pollfd_t*)apr_palloc(pool, sizeof(switch_pollfd_t))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	memset(*pollfd, 0, sizeof(switch_pollfd_t));
 
 	(*pollfd)->desc_type = (switch_pollset_type_t) APR_POLL_SOCKET;
 	(*pollfd)->reqevents = flags;
 	(*pollfd)->desc.s = sock;
 	(*pollfd)->client_data = client_data;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1015,15 +1015,15 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 SWITCH_DECLARE(switch_status_t) switch_pollset_poll(switch_pollset_t *pollset, switch_interval_time_t timeout, int32_t *num, const switch_pollfd_t **descriptors)
 {
 	apr_status_t st = SWITCH_STATUS_FALSE;
-	
+
 	if (pollset) {
 		st = apr_pollset_poll((apr_pollset_t *) pollset, timeout, num, (const apr_pollfd_t **) descriptors);
-		
+
 		if (st == APR_TIMEUP) {
 			st = SWITCH_STATUS_TIMEOUT;
 		}
 	}
-	
+
 	return st;
 }
 
@@ -1256,7 +1256,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, swi
 /**
  * Get the timeout value for a pipe or manipulate the blocking state.
  * @param thepipe The pipe we are getting a timeout for.
- * @param timeout The current timeout value in microseconds. 
+ * @param timeout The current timeout value in microseconds.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_get(switch_file_t *thepipe, switch_interval_time_t *timeout)
 {
@@ -1266,7 +1266,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_get(switch_file_t *thep
 /**
  * Set the timeout value for a pipe or manipulate the blocking state.
  * @param thepipe The pipe we are setting a timeout on.
- * @param timeout The timeout value in microseconds.  Values < 0 mean wait 
+ * @param timeout The timeout value in microseconds.  Values < 0 mean wait
  *        forever, 0 means do not wait at all.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_set(switch_file_t *thepipe, switch_interval_time_t timeout)

@@ -77,7 +77,7 @@ typedef struct mod_smpp_message_s {
 /* mod_smpp_gateway.c */
 switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway);
 switch_status_t mod_smpp_gateway_connect(mod_smpp_gateway_t *gateway);
-switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, char*host, int port, int debug, char *system_id, 
+switch_status_t mod_smpp_gateway_create(mod_smpp_gateway_t **gw, char *name, char*host, int port, int debug, char *system_id,
 										char *password, char *system_type, char *profile);
 switch_status_t mod_smpp_gateway_destroy(mod_smpp_gateway_t **gateway);
 switch_status_t mod_smpp_gateway_send_message(mod_smpp_gateway_t *gateway, switch_event_t *message);

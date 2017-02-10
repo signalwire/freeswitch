@@ -564,7 +564,7 @@ MONGO_EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
 
 MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     bson query;
-    
+
     bson_iterator it;
     bson_oid_t id;
     int result;

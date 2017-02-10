@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Chris Parker <cparker AT segv.org>
  *
  * Description: Contains definitions and structs used by the radius cdr module.

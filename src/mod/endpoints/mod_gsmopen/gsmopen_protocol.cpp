@@ -1086,7 +1086,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				} else if (option_debug) {
 					DEBUGA_GSMOPEN("|%s| +CNUM: Subscriber number = %s, Type = %d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], number, type);
 				}
-				
+
 				/* Copy only the first number listed if there are more then one */
 				if (tech_pvt->requesting_subscriber_number && !strlen(tech_pvt->subscriber_number))
 					strncpy(tech_pvt->subscriber_number, number, sizeof(tech_pvt->subscriber_number));
@@ -1496,8 +1496,8 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 
 					//identifying dcs alphabet according to GSM 03.38 Cell Broadcast Data Coding Scheme
 					//CBDataCodingScheme should be used here, but it appears to be buggy (ucs2 messages are not recognized)
-					int alphabet = DCS_RESERVED_ALPHABET;  
-					if (dcs == 0x11) { 
+					int alphabet = DCS_RESERVED_ALPHABET;
+					if (dcs == 0x11) {
 						alphabet = DCS_SIXTEEN_BIT_ALPHABET;
 					} else if ((dcs & 0xF0) <= 0x30){
 						alphabet = DCS_DEFAULT_ALPHABET;
@@ -1531,7 +1531,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						ERRORA("USSD data coding scheme not supported=%d\n", GSMOPEN_P_LOG, dcs);
 					}
 
-					NOTICA("USSD received: status=%d, message='%s', dcs='%d'\n", 
+					NOTICA("USSD received: status=%d, message='%s', dcs='%d'\n",
 						GSMOPEN_P_LOG, tech_pvt->ussd_status, tech_pvt->ussd_message, dcs);
 
 					ussd_incoming(tech_pvt);
@@ -1841,7 +1841,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 #if 0
 							char letsee[1024];
 							memset(letsee, '\0', sizeof(letsee));
-	
+
 							DEBUGA_GSMOPEN("about to letsee\n", GSMOPEN_P_LOG);
 							try {
 								sprintf(letsee, "|%s|\n", sms->toString().c_str());
@@ -1852,7 +1852,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 								return -1;
 							}
 							DEBUGA_GSMOPEN("after letsee\n", GSMOPEN_P_LOG);
-						
+
 							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, letsee);
 #endif //0
 							memset(content2, '\0', sizeof(content2));
@@ -3041,7 +3041,7 @@ int gsmopen_ussd(private_t *tech_pvt, char *ussd, int waittime)
 
 		memset(at_command, '\0', sizeof(at_command));
 		tech_pvt->ussd_received = 0;
-		if (tech_pvt->ussd_request_encoding == USSD_ENCODING_PLAIN  
+		if (tech_pvt->ussd_request_encoding == USSD_ENCODING_PLAIN
 					||tech_pvt->ussd_request_encoding == USSD_ENCODING_AUTO) {
 			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_enc.c_str());
 			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
@@ -3058,7 +3058,7 @@ int gsmopen_ussd(private_t *tech_pvt, char *ussd, int waittime)
 			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_hex.c_str());
 			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
 		} else if (tech_pvt->ussd_request_encoding == USSD_ENCODING_HEX_8BIT) {
-			string ussd_h8 = bufToHex((const unsigned char*)ussd_enc.c_str(), ussd_enc.length()); 
+			string ussd_h8 = bufToHex((const unsigned char*)ussd_enc.c_str(), ussd_enc.length());
 			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_h8.c_str());
 			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
 		} else if (tech_pvt->ussd_request_encoding == USSD_ENCODING_UCS2) {

@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
@@ -138,7 +138,7 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 		switch_core_recovery_untrack(session, SWITCH_TRUE);
 	}
 
-	
+
 	if (!switch_channel_test_flag(session->channel, CF_ZOMBIE_EXEC)) {
 		return;
 	}
@@ -155,8 +155,8 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 		status = switch_core_session_execute_application(session,
 														 current_application->application_name, current_application->application_data);
-														 
-		
+
+
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_IGNORE) {
 			return;
 		}
@@ -236,7 +236,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
 	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
-		
+
 	if ((switch_channel_test_flag(session->channel, CF_ANSWERED) ||
 		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
 		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -339,7 +339,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	switch_channel_clear_flag(session->channel, CF_RESET);
 
 	switch_core_session_video_reset(session);
-	
+
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;
@@ -362,13 +362,13 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	}
 
-	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE && 
-		switch_channel_test_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER) && 
+	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE &&
+		switch_channel_test_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER) &&
 		(uuid = switch_channel_get_variable(session->channel, "blind_transfer_uuid"))) {
 		switch_core_session_t *other_session;
 
 		if ((other_session = switch_core_session_locate(uuid))) {
-			switch_core_session_message_t msg = { 0 };			
+			switch_core_session_message_t msg = { 0 };
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
 			msg.from = __FILE__;
 			msg.numeric_arg = 0;
@@ -380,7 +380,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			switch_channel_clear_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER);
 		}
 	}
-	
+
 	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has executed the last dialplan instruction, hanging up.\n",
 						  switch_channel_get_name(session->channel));
@@ -589,7 +589,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			if (session->endpoint_interface->io_routines->state_run) {
 				rstatus = session->endpoint_interface->io_routines->state_run(session);
 			}
-			
+
 			if (rstatus == SWITCH_STATUS_SUCCESS) {
 				for (ptr = session->event_hooks.state_run; ptr; ptr = ptr->next) {
 					if ((rstatus = ptr->state_run(session)) != SWITCH_STATUS_SUCCESS) {
@@ -625,7 +625,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_event_t *event;
 
 					STATE_MACRO(init, "INIT");
-					
+
 					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
 						switch_channel_event_set_data(session->channel, event);
 						switch_event_fire(&event);
@@ -698,11 +698,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
 					if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
 						switch_ivr_parse_all_events(session);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread sleep state: %s!\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread sleep state: %s!\n",
 										  switch_channel_get_name(session->channel),
 										  switch_channel_state_name(switch_channel_get_running_state(session->channel)));
 						switch_thread_cond_wait(session->cond, session->mutex);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread wake state: %s!\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread wake state: %s!\n",
 										  switch_channel_get_name(session->channel),
 										  switch_channel_state_name(switch_channel_get_running_state(session->channel)));
 
@@ -789,7 +789,7 @@ static void api_hook(switch_core_session_t *session, const char *hook_var, int u
 		}
 
 		switch_safe_free(cmd);
-		
+
 		switch_safe_free(stream.data);
 	}
 }
@@ -863,7 +863,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	}
 
 	switch_channel_process_device_hangup(session->channel);
-	
+
 	switch_set_flag(session, SSF_HANGUP);
 
 }
@@ -952,7 +952,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 		if (switch_true(switch_channel_get_variable(session->channel, "hangup_complete_with_xml"))) {
 			switch_xml_t cdr = NULL;
 			char *xml_cdr_text;
-			
+
 			if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 				xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Attached", "xml");

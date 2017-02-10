@@ -212,7 +212,7 @@ int  WebRtcIsac_Fftns(unsigned int ndim, const int dims[],
     {
       max_factors = (int)nSpan;
     }
-    if ((int)nSpan > max_perm) 
+    if ((int)nSpan > max_perm)
     {
       max_perm = (int)nSpan;
     }

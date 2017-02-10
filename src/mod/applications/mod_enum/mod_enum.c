@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Jay Binks <jaybinks@gmail.com>
  *
@@ -117,7 +117,7 @@ static switch_status_t load_config(void)
 	globals.timeout = 5000;
 	globals.retries = 3;
 	globals.random  = 0;
-	
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
@@ -165,8 +165,8 @@ static switch_status_t load_config(void)
 		HKEY hKey;
 		DWORD data_sz;
 		char* buf;
-		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 
+		RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
 			0, KEY_QUERY_VALUE, &hKey);
 
 		if (hKey) {
@@ -249,7 +249,7 @@ static void add_result(enum_record_t **results, int order, int preference, char 
 	new_result->service = strdup(service);
 	new_result->route = strdup(route);
 	new_result->supported = supported;
-	
+
 
 	if (!*results) {
 		*results = new_result;
@@ -310,7 +310,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	char *packstr;
 
 	char *regex, *replace;
-	
+
 	if (zstr(str)) {
 		if (str != NULL) {
 			/* In this case ldns_rr2str returned a malloc'd null terminated string */
@@ -339,7 +339,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	if (zstr(service) || zstr(packstr)) {
 		goto end;
 	}
-	
+
 	if (!zstr(argv[4])) {
 		order = atoi(argv[4]);
 	}
@@ -355,7 +355,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	} else {
 		goto end;
 	}
-	
+
 	for (p = replace; p && *p; p++) {
 		if (*p == '\\') {
 			*p = '$';
@@ -388,11 +388,11 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 			} else {
 				orig_uri = replace;
 			}
-			
+
 			switch_mutex_lock(MUTEX);
 			for (route = globals.route_order; route; route = route->next) {
 				char *uri = orig_uri;
-				
+
 				if (strcasecmp(service, route->service)) {
 					continue;
 				}
@@ -429,13 +429,13 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 
 					supported++;
 					add_result(results, order, preference, service, uri, supported);
-					
+
 				}
 				switch_safe_free(uri_expanded);
 				switch_safe_free(substituted_2);
 				switch_regex_safe_free(re2);
 			}
-			switch_mutex_unlock(MUTEX);			
+			switch_mutex_unlock(MUTEX);
 
 			if (!supported) {
 				add_result(results, order, preference, service, orig_uri, 0);
@@ -449,7 +449,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
  end:
 
 	switch_safe_free(str);
-	
+
 	return;
 }
 
@@ -471,15 +471,15 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
 		goto end;
 	}
-	
+
 	if (!(domain = ldns_dname_new_frm_str(name))) {
 		goto end;
 	}
-	
+
 	if (server_name) {
 		res = ldns_resolver_new();
 		switch_assert(res);
-		
+
 		for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
 			if ( server_name[inameserver] != NULL ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Nameserver [%s]\n", server_name[inameserver]);
@@ -488,9 +488,9 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 					ldns_rdf_deep_free(serv_rdf);
 					added_server = 1;
 				}
-			} 
+			}
 		}
-	} 
+	}
 	if (!added_server) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Nameservers specified, using host default\n");
 		/* create a new resolver from /etc/resolv.conf */
@@ -520,7 +520,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 		if ((naptr = ldns_pkt_rr_list_by_type(p, LDNS_RR_TYPE_NAPTR, LDNS_SECTION_ANSWER))) {
 			size_t i;
 
-			ldns_rr_list_sort(naptr); 
+			ldns_rr_list_sort(naptr);
 
 			for (i = 0; i < ldns_rr_list_rr_count(naptr); i++) {
 				parse_naptr(ldns_rr_list_rr(naptr, i), number, results);
@@ -535,7 +535,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
  end:
 
 	switch_safe_free(name);
-	
+
 	if (domain) {
 		ldns_rdf_deep_free(domain);
 	}
@@ -556,7 +556,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char *mnum = NULL, *mroot = NULL, *p;
 	char *server[ENUM_MAXNAMESERVERS];
-	int inameserver = 0;  
+	int inameserver = 0;
 	char *argv[ ENUM_MAXNAMESERVERS ] = { 0 };
 	int argc;
 	int x = 0;
@@ -580,12 +580,12 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	/* Empty the server array */
 	for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
 		server[inameserver] = NULL;
-	}  
+	}
 
 	inameserver = 0;
 
 	/* check for enum_nameserver channel var */
-	
+
 	if (channel) {
 		enum_nameserver = switch_channel_get_variable(channel, "enum_nameserver");
 	}
@@ -691,7 +691,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 		root = argv[1];
 		if (enum_lookup(root, dest, &results, channel, session) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *vars;
-			
+
 			if (switch_channel_get_variables(channel, &vars) == SWITCH_STATUS_SUCCESS) {
 				switch_event_header_t *hi;
 				for (hi = vars->headers; hi; hi = hi->next) {
@@ -921,7 +921,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 
 	switch_safe_free(globals.root);
 	switch_safe_free(globals.isn_root);
-	
+
 	return SWITCH_STATUS_UNLOAD;
 }
 

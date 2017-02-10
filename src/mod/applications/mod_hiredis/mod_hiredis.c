@@ -457,7 +457,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hiredis_shutdown)
 	}
 
 	switch_core_hash_destroy(&(mod_hiredis_globals.profiles));
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

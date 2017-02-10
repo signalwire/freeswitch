@@ -376,7 +376,7 @@ static int mongo_check_is_master( mongo *conn ) {
         if( bson_find( &it, &out, "ismaster" ) )
             ismaster = bson_iterator_bool( &it );
         if( bson_find( &it, &out, "maxBsonObjectSize" ) ) {
-            max_bson_size = bson_iterator_int( &it ); 
+            max_bson_size = bson_iterator_int( &it );
         }
         conn->max_bson_size = max_bson_size;
     } else {
@@ -556,7 +556,7 @@ static int mongo_replset_check_host( mongo *conn ) {
             ismaster = bson_iterator_bool( &it );
 
         if( bson_find( &it, &out, "maxBsonObjectSize" ) )
-            max_bson_size = bson_iterator_int( &it ); 
+            max_bson_size = bson_iterator_int( &it );
         conn->max_bson_size = max_bson_size;
 
         if( bson_find( &it, &out, "setName" ) ) {

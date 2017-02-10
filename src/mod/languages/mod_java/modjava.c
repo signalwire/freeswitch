@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2007, Damjan Jovanovic <d a m j a n d o t j o v a t g m a i l d o t c o m>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Damjan Jovanovic <d a m j a n d o t j o v a t g m a i l d o t c o m>
  *
  *
@@ -299,7 +299,7 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm
 	char *derr = NULL;
 
 	pJNI_CreateJavaVM = (jint (*)(JavaVM **, void **, void *))switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr);
-		
+
     if (!derr)
     {
         JNIEnv *env;

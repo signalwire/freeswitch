@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_fsk -- FSK data transfer
@@ -39,7 +39,7 @@ void bitstream_init(bitstream_t *bsp, uint8_t *data, uint32_t datalen, endian_t 
 	bsp->datalen = datalen;
 	bsp->endian = endian;
 	bsp->ss = ss;
-	
+
 	if (endian < 0) {
 		bsp->top = bsp->bit_index = 7;
 		bsp->bot = 0;
@@ -53,7 +53,7 @@ void bitstream_init(bitstream_t *bsp, uint8_t *data, uint32_t datalen, endian_t 
 int8_t bitstream_get_bit(bitstream_t *bsp)
 {
 	int8_t bit = -1;
-	
+
 
 	if (bsp->byte_index >= bsp->datalen) {
 		goto done;
@@ -71,19 +71,19 @@ int8_t bitstream_get_bit(bitstream_t *bsp)
 	}
 
 	bit = (bsp->data[bsp->byte_index] >> (bsp->bit_index)) & 1;
-	
+
 	if (bsp->bit_index == bsp->bot) {
 		bsp->bit_index = bsp->top;
 		if (bsp->ss) {
 			bsp->ssv = 2;
 			goto done;
-		} 
+		}
 
 		if (++bsp->byte_index > bsp->datalen) {
 			bit = -1;
 			goto done;
 		}
-		
+
 	} else {
 		bsp->bit_index = bsp->bit_index + bsp->endian;
 	}
@@ -109,7 +109,7 @@ static void fsk_byte_handler (void *x, int data)
 	if (state->dlen) {
 		goto add_byte;
 	}
-	
+
 	if (state->bpos == 1) {
 		state->blen = byte;
 
@@ -189,7 +189,7 @@ switch_status_t fsk_data_parse(fsk_data_state_t *state, size_t *type, char **dat
 
 	size_t i;
 	int sum = 0;
-	
+
  top:
 
 	if (state->checksum != 0 || state->ppos >= state->dlen - 1) {
@@ -201,7 +201,7 @@ switch_status_t fsk_data_parse(fsk_data_state_t *state, size_t *type, char **dat
 			sum += state->buf[i];
 		}
 		state->checksum = sum % 256;
-		state->ppos = 2;		
+		state->ppos = 2;
 
 		if (state->buf[0] != CID_TYPE_MDMF && state->buf[0] != CID_TYPE_SDMF) {
 			state->checksum = -1;
@@ -224,7 +224,7 @@ switch_status_t fsk_data_parse(fsk_data_state_t *state, size_t *type, char **dat
 			}
 		}
 		*data = (char *)&state->buf[state->ppos];
-		state->ppos += *len;		
+		state->ppos += *len;
 		return SWITCH_STATUS_SUCCESS;
 	} else if (state->buf[0] == CID_TYPE_MDMF) {
 		*type = state->buf[state->ppos++];
@@ -277,7 +277,7 @@ int fsk_demod_init(fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsi
 	memset(buf, 0, bufsize);
 	state->buf = buf;
 	state->bufsize = bufsize;
-	
+
 	dsp_fsk_attr_init (&fsk1200_attr);
 	dsp_fsk_attr_set_samplerate (&fsk1200_attr, rate);
 	dsp_fsk_attr_set_bytehandler (&fsk1200_attr, fsk_byte_handler, state);
@@ -293,7 +293,7 @@ int fsk_demod_init(fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsi
 size_t fsk_modulator_generate_bit(fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, size_t buflen)
 {
 	size_t i;
-		
+
 	for(i = 0 ; i < buflen; i++) {
 		fsk_trans->bit_accum += fsk_trans->bit_factor;
 		if (fsk_trans->bit_accum >= FSK_MOD_FACTOR) {
@@ -333,7 +333,7 @@ void fsk_modulator_generate_chan_sieze(fsk_modulator_t *fsk_trans)
 	uint32_t i = 0;
 	size_t r = 0;
 	int8_t bit = 0;
-	
+
 	for (i = 0; i < fsk_trans->chan_sieze_bits; i++) {
 		if ((r = fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
 			if (fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data) != SWITCH_STATUS_SUCCESS) {
@@ -344,7 +344,7 @@ void fsk_modulator_generate_chan_sieze(fsk_modulator_t *fsk_trans)
 		}
 		bit = !bit;
 	}
-	
+
 
 }
 

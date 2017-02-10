@@ -316,7 +316,7 @@ JS_ODBC_FUNCTION_IMPL(GetData)
 			SQLCHAR name[1024] = "";
 			SQLCHAR *data = _colbuf;
 			SQLLEN pcbValue;
-			
+
 			SQLDescribeCol(_stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 			SQLGetData(_stmt, x, SQL_C_CHAR, _colbuf, _cblen, &pcbValue);
 
