@@ -37,6 +37,7 @@
 
 typedef struct blade_module_wss_s blade_module_wss_t;
 typedef struct blade_transport_wss_s blade_transport_wss_t;
+typedef struct blade_transport_wss_init_s blade_transport_wss_init_t;
 
 struct blade_module_wss_s {
 	blade_handle_t *handle;
@@ -70,42 +71,81 @@ struct blade_transport_wss_s {
 	kws_t *kws;
 };
 
+struct blade_transport_wss_init_s {
+	blade_module_wss_t *module;
+	ks_pool_t *pool;
+
+	ks_socket_t sock;
+};
+
 
 
 ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh);
 ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP);
 
-ks_status_t blade_module_wss_onload(blade_module_t **bmP, blade_handle_t *bh);
-ks_status_t blade_module_wss_onunload(blade_module_t *bm);
-ks_status_t blade_module_wss_onstartup(blade_module_t *bm, config_setting_t *config);
-ks_status_t blade_module_wss_onshutdown(blade_module_t *bm);
+ks_status_t blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
+ks_status_t blade_module_wss_on_unload(blade_module_t *bm);
+ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
+ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm);
 
 ks_status_t blade_module_wss_listen(blade_module_wss_t *bm, ks_sockaddr_t *addr);
 void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data);
 
 
+
 ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, blade_module_wss_t *bm_wss, ks_socket_t sock);
 ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP);
 
-ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
-blade_connection_rank_t blade_transport_wss_onrank(blade_connection_t *bc, blade_identity_t *target);
-blade_connection_state_hook_t blade_transport_wss_onstate(blade_connection_t *bc, blade_connection_state_t state, blade_connection_state_condition_t condition);
+ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
+blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blade_identity_t *target);
+
+ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
+ks_status_t blade_transport_wss_on_receive(blade_connection_t *bc, cJSON **json);
+
+blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_new_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_new_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_connect_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_connect_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connection_t *bc, blade_connection_state_condition_t condition);
+
+
+
+ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssiP, blade_module_wss_t *bm_wss, ks_socket_t sock);
+ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP);
 
 
 
 static blade_module_callbacks_t g_module_wss_callbacks =
 {
-	blade_module_wss_onload,
-	blade_module_wss_onunload,
-	blade_module_wss_onstartup,
-	blade_module_wss_onshutdown,
+	blade_module_wss_on_load,
+	blade_module_wss_on_unload,
+	blade_module_wss_on_startup,
+	blade_module_wss_on_shutdown,
 };
 
 static blade_transport_callbacks_t g_transport_wss_callbacks =
 {
-	blade_transport_wss_onconnect,
-	blade_transport_wss_onrank,
-	blade_transport_wss_onstate,
+	blade_transport_wss_on_connect,
+	blade_transport_wss_on_rank,
+	blade_transport_wss_on_send,
+	blade_transport_wss_on_receive,
+	
+	blade_transport_wss_on_state_disconnect,
+	blade_transport_wss_on_state_disconnect,
+	blade_transport_wss_on_state_new_inbound,
+	blade_transport_wss_on_state_new_outbound,
+	blade_transport_wss_on_state_connect_inbound,
+	blade_transport_wss_on_state_connect_outbound,
+	blade_transport_wss_on_state_attach_inbound,
+	blade_transport_wss_on_state_attach_outbound,
+	blade_transport_wss_on_state_detach,
+	blade_transport_wss_on_state_detach,
+	blade_transport_wss_on_state_ready,
+	blade_transport_wss_on_state_ready,
 };
 
 
@@ -144,7 +184,7 @@ ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 
 	bm_wss = *bm_wssP;
 
-	blade_module_wss_onshutdown(bm_wss->module);
+	blade_module_wss_on_shutdown(bm_wss->module);
 	
 	blade_module_destroy(&bm_wss->module);
 
@@ -156,7 +196,7 @@ ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_onload(blade_module_t **bmP, blade_handle_t *bh)
+ks_status_t blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh)
 {
 	blade_module_wss_t *bm_wss = NULL;
 
@@ -171,7 +211,7 @@ ks_status_t blade_module_wss_onload(blade_module_t **bmP, blade_handle_t *bh)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_onunload(blade_module_t *bm)
+ks_status_t blade_module_wss_on_unload(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 
@@ -293,7 +333,7 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_onstartup(blade_module_t *bm, config_setting_t *config)
+ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	
@@ -331,7 +371,7 @@ ks_status_t blade_module_wss_onstartup(blade_module_t *bm, config_setting_t *con
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_onshutdown(blade_module_t *bm)
+ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	blade_transport_wss_t *bt_wss = NULL;
@@ -423,6 +463,7 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 {
 	blade_module_wss_t *bm_wss = NULL;
+	blade_transport_wss_init_t *bt_wss_init = NULL;
 	blade_transport_wss_t *bt_wss = NULL;
 	blade_connection_t *bc = NULL;
 
@@ -448,27 +489,32 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 					continue;
 				}
 
-				blade_transport_wss_create(&bt_wss, bm_wss, sock);
-				ks_assert(bt_wss);
+				blade_transport_wss_init_create(&bt_wss_init, bm_wss, sock);
+				ks_assert(bt_wss_init);
 				
-                blade_connection_create(&bc, bm_wss->handle, bt_wss, bm_wss->transport_callbacks);
+                blade_connection_create(&bc, bm_wss->handle, bt_wss_init, bm_wss->transport_callbacks);
 				ks_assert(bc);
 
-				blade_connection_startup(bc);
-
+				if (blade_connection_startup(bc, BLADE_CONNECTION_DIRECTION_INBOUND) != KS_STATUS_SUCCESS) {
+					blade_connection_destroy(&bc);
+					blade_transport_wss_init_destroy(&bt_wss_init);
+					ks_socket_close(&sock);
+					continue;
+				}
 				list_append(&bm_wss->connected, bc);
-
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
 			}
 		}
 
 		while (ks_q_trypop(bm_wss->disconnected, (void **)&bc) == KS_STATUS_SUCCESS) {
+			bt_wss_init = (blade_transport_wss_init_t *)blade_connection_transport_init_get(bc);
 			bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
 			list_delete(&bm_wss->connected, bc);
 
+			if (bt_wss_init) blade_transport_wss_init_destroy(&bt_wss_init);
 			blade_connection_destroy(&bc);
-			blade_transport_wss_destroy(&bt_wss);
+			if (bt_wss) blade_transport_wss_destroy(&bt_wss);
 		}
 	}
 
@@ -512,7 +558,7 @@ ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target)
+ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target)
 {
 	ks_assert(bcP);
 	ks_assert(bm);
@@ -525,12 +571,42 @@ ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_module
 	return KS_STATUS_SUCCESS;
 }
 
-blade_connection_rank_t blade_transport_wss_onrank(blade_connection_t *bc, blade_identity_t *target)
+blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blade_identity_t *target)
 {
 	ks_assert(bc);
 	ks_assert(target);
 	
+	return BLADE_CONNECTION_RANK_POOR;
+}
+
+ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json)
+{
+	char *json_str = cJSON_PrintUnformatted(json);
+	ks_size_t json_str_len = 0;
+	if (!json_str) {
+		// @todo error logging
+		return KS_STATUS_FAIL;
+	}
+	json_str_len = strlen(json_str) + 1; // @todo determine if WSOC_TEXT null terminates when read_frame is called, or if it's safe to include like this
+	kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len);
+
+	free(json_str);
+
 	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
+{
+	blade_transport_wss_t *bt_wss = NULL;
+
+	ks_assert(bc);
+	ks_assert(json);
+
+	ks_log(KS_LOG_DEBUG, "Send Callback\n");
+
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
+
+	return blade_transport_wss_write(bt_wss, json);
 }
 
 ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json)
@@ -559,12 +635,6 @@ ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json
 			return KS_STATUS_FAIL;
 		}
 
-		//if (blade_handle_message_claim(blade_service_handle(peer->service), &message, frame_data, frame_data_len) != KS_STATUS_SUCCESS || !message) {
-		// @todo error logging
-		//	return KS_STATUS_FAIL;
-		//}
-				
-		// @todo convert frame_data to cJSON safely, make sure data is null-terminated at frame_data_len
 		if (!(*json = cJSON_Parse((char *)frame_data))) {
 			return KS_STATUS_FAIL;
 		}
@@ -572,75 +642,168 @@ ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json)
-{
-	//blade_message_get(message, &target, &json);
-	char *json_str = cJSON_PrintUnformatted(json);
-	ks_size_t json_str_len = 0;
-	if (!json_str) {
-		// @todo error logging
-		return KS_STATUS_FAIL;
-	}
-	json_str_len = strlen(json_str) + 1;
-	kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len);
-
-	return KS_STATUS_SUCCESS;
-}
-
-blade_connection_state_hook_t blade_transport_wss_onstate(blade_connection_t *bc, blade_connection_state_t state, blade_connection_state_condition_t condition)
+ks_status_t blade_transport_wss_on_receive(blade_connection_t *bc, cJSON **json)
 {
 	blade_transport_wss_t *bt_wss = NULL;
-	//cJSON *json = NULL;
 
 	ks_assert(bc);
+	ks_assert(json);
+
+	ks_log(KS_LOG_DEBUG, "Receive Callback\n");
 
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
-	switch (state) {
-	case BLADE_CONNECTION_STATE_DISCONNECT:
-		{
-			if (condition == BLADE_CONNECTION_STATE_CONDITION_POST) {
-				ks_q_push(bt_wss->module->disconnected, bc);
-				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NONE);
-			}
-			break;
-		}
-	case BLADE_CONNECTION_STATE_NEW:
-		{
-			if (condition == BLADE_CONNECTION_STATE_CONDITION_POST) {
-				// @todo: SSL init stuffs based on data from peer->service->config_websockets_ssl to pass into kws_init
-				if (kws_init(&bt_wss->kws, bt_wss->sock, NULL, NULL, KWS_BLOCK, bt_wss->pool) != KS_STATUS_SUCCESS) {
-					// @todo error logging
-					return BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
-				}
-			}
-			break;
-		}
-	case BLADE_CONNECTION_STATE_CONNECT:
-		{
-			// @todo abstract read message and write message, so these can be called from connection and processed from there
-			
-			//if (blade_transport_wss_read(bt_wss, &json) != KS_STATUS_SUCCESS) return BLADE_CONNECTION_STATEHOOK_DISCONNECT;
+	return blade_transport_wss_read(bt_wss, json);
+}
 
-			//if (json) {
-				// @todo processing connectin messages for identity registration
-			//	cJSON_Delete(json);
-				//blade_connection_receiving_push(conn, json);
-			//}
+blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	blade_transport_wss_t *bt_wss = NULL;
 
-			// @todo wrap identity + json into an envelope for queueing through the connection
-			//while (blade_connection_sending_pop(bc, (void **)&json) == KS_STATUS_SUCCESS && json) {
-			//	ks_status_t ret = blade_transport_wss_write(bt_wss, json);
-			//	cJSON_Delete(json);
-			//	if (ret != KS_STATUS_SUCCESS) return BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
-			//}
-			return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
-			//break;
-		}
-	default: break;
-	}
-	
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
+
+	ks_q_push(bt_wss->module->disconnected, bc);
+
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_new_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	blade_transport_wss_t *bt_wss = NULL;
+	blade_transport_wss_init_t *bt_wss_init = NULL;
+
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	bt_wss_init = (blade_transport_wss_init_t *)blade_connection_transport_init_get(bc);
+
+	blade_transport_wss_create(&bt_wss, bt_wss_init->module, bt_wss_init->sock);
+	ks_assert(bt_wss);
+
+	blade_connection_transport_set(bc, bt_wss);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_new_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_connect_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	blade_transport_wss_t *bt_wss = NULL;
+
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
+
+	// @todo: SSL init stuffs based on data from config to pass into kws_init
+	if (kws_init(&bt_wss->kws, bt_wss->sock, NULL, NULL, KWS_BLOCK, bt_wss->pool) != KS_STATUS_SUCCESS) {
+		// @todo error logging
+		return BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+	}
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_connect_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+	// @todo Establish sessid and discover existing session or create and register new session through BLADE commands
+	// Set session state to CONNECT if its new or RECONNECT if existing
+	// start session and its thread if its new
+																								
+	return BLADE_CONNECTION_STATE_HOOK_BYPASS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssiP, blade_module_wss_t *bm_wss, ks_socket_t sock)
+{
+	blade_transport_wss_init_t *bt_wssi = NULL;
+
+	ks_assert(bt_wssiP);
+	ks_assert(bm_wss);
+	ks_assert(sock != KS_SOCK_INVALID);
+
+    bt_wssi = ks_pool_alloc(bm_wss->pool, sizeof(blade_transport_wss_init_t));
+	bt_wssi->module = bm_wss;
+	bt_wssi->pool = bm_wss->pool;
+	bt_wssi->sock = sock;
+
+	*bt_wssiP = bt_wssi;
+	
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP)
+{
+	blade_transport_wss_init_t *bt_wssi = NULL;
+	
+	ks_assert(bt_wssiP);
+	ks_assert(*bt_wssiP);
+
+	bt_wssi = *bt_wssiP;
+
+	ks_pool_free(bt_wssi->pool, bt_wssiP);
+	
+	return KS_STATUS_SUCCESS;
 }
 
 /* For Emacs:

@@ -62,8 +62,8 @@ typedef enum {
 } blade_connection_state_t;
 
 typedef enum {
-	BLADE_CONNECTION_DIRECTION_IN,
-	BLADE_CONNECTION_DIRECTION_OUT,
+	BLADE_CONNECTION_DIRECTION_INBOUND,
+	BLADE_CONNECTION_DIRECTION_OUTBOUND,
 } blade_connection_direction_t;
 
 typedef enum {
@@ -99,14 +99,28 @@ struct blade_module_callbacks_s {
 
 typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
 typedef blade_connection_rank_t (*blade_transport_rank_callback_t)(blade_connection_t *bc, blade_identity_t *target);
-typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc,
-																		  blade_connection_state_t state,
-																		  blade_connection_state_condition_t condition);
+typedef ks_status_t (*blade_transport_send_callback_t)(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
+typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc, cJSON **json);
+typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
 struct blade_transport_callbacks_s {
 	blade_transport_connect_callback_t onconnect;
 	blade_transport_rank_callback_t onrank;
-	blade_transport_state_callback_t onstate;
+	blade_transport_send_callback_t onsend;
+	blade_transport_receive_callback_t onreceive;
+
+	blade_transport_state_callback_t onstate_disconnect_inbound;
+	blade_transport_state_callback_t onstate_disconnect_outbound;
+	blade_transport_state_callback_t onstate_new_inbound;
+	blade_transport_state_callback_t onstate_new_outbound;
+	blade_transport_state_callback_t onstate_connect_inbound;
+	blade_transport_state_callback_t onstate_connect_outbound;
+	blade_transport_state_callback_t onstate_attach_inbound;
+	blade_transport_state_callback_t onstate_attach_outbound;
+	blade_transport_state_callback_t onstate_detach_inbound;
+	blade_transport_state_callback_t onstate_detach_outbound;
+	blade_transport_state_callback_t onstate_ready_inbound;
+	blade_transport_state_callback_t onstate_ready_outbound;
 };
 
 

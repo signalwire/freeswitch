@@ -37,16 +37,18 @@ struct blade_connection_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
 
+	void *transport_init_data;
 	void *transport_data;
 	blade_transport_callbacks_t *transport_callbacks;
 
 	ks_bool_t shutdown;
 	// @todo add auto generated UUID
+	blade_connection_direction_t direction;
     ks_thread_t *state_thread;
 	blade_connection_state_t state;
 	
 	ks_q_t *sending;
-	ks_q_t *receiving;
+	//ks_q_t *receiving;
 };
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data);
@@ -54,7 +56,7 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data);
 
 KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 												blade_handle_t *bh,
-												void *transport_data,
+												void *transport_init_data,
 												blade_transport_callbacks_t *transport_callbacks)
 {
 	blade_connection_t *bc = NULL;
@@ -62,7 +64,6 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 
 	ks_assert(bcP);
 	ks_assert(bh);
-	ks_assert(transport_data);
 	ks_assert(transport_callbacks);
 
 	pool = blade_handle_pool_get(bh);
@@ -70,10 +71,10 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 	bc = ks_pool_alloc(pool, sizeof(blade_connection_t));
 	bc->handle = bh;
 	bc->pool = pool;
-	bc->transport_data = transport_data;
+	bc->transport_init_data = transport_init_data;
 	bc->transport_callbacks = transport_callbacks;
 	ks_q_create(&bc->sending, pool, 0);
-	ks_q_create(&bc->receiving, pool, 0);
+	//ks_q_create(&bc->receiving, pool, 0);
 	*bcP = bc;
 
 	return KS_STATUS_SUCCESS;
@@ -91,17 +92,18 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 	blade_connection_shutdown(bc);
 
 	ks_q_destroy(&bc->sending);
-	ks_q_destroy(&bc->receiving);
+	//ks_q_destroy(&bc->receiving);
 
 	ks_pool_free(bc->pool, bcP);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc)
+KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction)
 {
 	ks_assert(bc);
 
+	bc->direction = direction;
 	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NONE);
 
     if (ks_thread_create_ex(&bc->state_thread,
@@ -112,7 +114,6 @@ KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc)
 							KS_PRI_NORMAL,
 							bc->pool) != KS_STATUS_SUCCESS) {
 		// @todo error logging
-		blade_connection_disconnect(bc);
 		return KS_STATUS_FAIL;
 	}
 	
@@ -136,6 +137,13 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return bc->transport_init_data;
+}
+
 KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc)
 {
 	ks_assert(bc);
@@ -143,19 +151,72 @@ KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc)
 	return bc->transport_data;
 }
 
-KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state)
+KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data)
 {
 	ks_assert(bc);
 
-	bc->transport_callbacks->onstate(bc, state, BLADE_CONNECTION_STATE_CONDITION_PRE);
+	bc->transport_data = transport_data;
+}
+
+blade_transport_state_callback_t blade_connection_state_callback_lookup(blade_connection_t *bc, blade_connection_state_t state)
+{
+	blade_transport_state_callback_t callback = NULL;
+	
+	ks_assert(bc);
+
+	switch (state) {
+	case BLADE_CONNECTION_STATE_DISCONNECT:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_disconnect_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_disconnect_outbound;
+		break;
+	case BLADE_CONNECTION_STATE_NEW:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_new_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_new_outbound;
+		break;
+	case BLADE_CONNECTION_STATE_CONNECT:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_connect_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_connect_outbound;
+		break;
+	case BLADE_CONNECTION_STATE_ATTACH:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_attach_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_attach_outbound;
+		break;
+	case BLADE_CONNECTION_STATE_DETACH:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_detach_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_detach_outbound;
+		break;
+	case BLADE_CONNECTION_STATE_READY:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_ready_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_ready_outbound;
+		break;
+	default: break;
+	}
+
+	return callback;
+}
+
+KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state)
+{
+	blade_transport_state_callback_t callback = NULL;
+	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	ks_assert(bc);
+
+	callback = blade_connection_state_callback_lookup(bc, state);
+
+	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_PRE);
+
 	bc->state = state;
+	
+	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT) blade_connection_disconnect(bc);
 }
 
 KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 {
 	ks_assert(bc);
 
-	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
+	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT)
+		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DETACH);
 }
 
 KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
@@ -178,26 +239,30 @@ KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, bla
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_connection_receiving_push(blade_connection_t *bc, cJSON *json)
-{
-	ks_assert(bc);
-	ks_assert(json);
+// @todo may not need receiving queue on connection, by the time we are queueing we should have a session to receive into
+//KS_DECLARE(ks_status_t) blade_connection_receiving_push(blade_connection_t *bc, cJSON *json)
+//{
+//	ks_assert(bc);
+//	ks_assert(json);
 
-	return ks_q_push(bc->receiving, json);
-}
+//	return ks_q_push(bc->receiving, json);
+//}
 
-KS_DECLARE(ks_status_t) blade_connection_receiving_pop(blade_connection_t *bc, cJSON **json)
-{
-	ks_assert(bc);
-	ks_assert(json);
+//KS_DECLARE(ks_status_t) blade_connection_receiving_pop(blade_connection_t *bc, cJSON **json)
+//{
+//	ks_assert(bc);
+//	ks_assert(json);
 	
-	return ks_q_trypop(bc->receiving, (void **)json);
-}
+//	return ks_q_trypop(bc->receiving, (void **)json);
+//}
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 {
 	blade_connection_t *bc = NULL;
-	blade_connection_state_hook_t hook;
+	blade_connection_state_t state;
+	blade_transport_state_callback_t callback = NULL;
+	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+	cJSON *json = NULL;
 
 	ks_assert(thread);
 	ks_assert(data);
@@ -205,20 +270,34 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 	bc = (blade_connection_t *)data;
 
 	while (!bc->shutdown) {
-		// @todo need to get messages from the transport into receiving queue, and pop messages from sending queue to write out using transport
-		// sending is relatively easy, but receiving cannot occur universally due to cases like kws_init() blocking and expecting data to be on the wire
-		// and other transports may have similar behaviours, but CONNECTIN, ATTACH, and READY require async message passing into application layer
-		// and sending whenever the response hits the queue
+
+		// @todo pop from connection sending queue and call transport callback to write one message (passing target identity too)
+		// and delete the cJSON object here after returning from callback
+				
 		
-		// @todo it's possible that onstate could handle receiving and sending messages during the appropriate states, but this means some states
-		// like CONNECTIN which may send and receive multiple messages require BYPASSing until the application layer updates the state or disconnects
+		// @todo seems like connection will not need a receiving queue as the session will exist prior to async transmissions
+
+		state = bc->state;
+		hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+		callback = blade_connection_state_callback_lookup(bc, state);
+
+		// @todo should this just go in the ready state callback? it's generalized here, so the callback for READY doesn't really
+		// need to do anything
+		if (state == BLADE_CONNECTION_STATE_READY && bc->transport_callbacks->onreceive(bc, &json) == KS_STATUS_SUCCESS && json) {
+			// @todo push json to session receiving queue
+			
+		}
 		
-		hook = bc->transport_callbacks->onstate(bc, bc->state, BLADE_CONNECTION_STATE_CONDITION_POST);
-		if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)
-			blade_connection_disconnect(bc);
+		if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
+
+		if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT && (state == BLADE_CONNECTION_STATE_DETACH || state == BLADE_CONNECTION_STATE_DISCONNECT))
+			hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+		if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
 		else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
-			// @todo pop from sending queue, and pass to transport callback to send out
-			switch (bc->state) {
+			switch (state) {
+			case BLADE_CONNECTION_STATE_DISCONNECT:
+				return NULL;
 			case BLADE_CONNECTION_STATE_NEW:
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CONNECT);
 				break;
@@ -226,10 +305,14 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_ATTACH);
 				break;
 			case BLADE_CONNECTION_STATE_ATTACH:
+				// @todo receive message with nullable session id for reconnect and some sort of secure token for a reconnect challenge?
+				// determine how much of session management is handled here... do we process these session negotiation messages without
+				// passing it up to the application layer? or does the application layer give back a session and build the response?
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_READY);
 				break;
 			case BLADE_CONNECTION_STATE_DETACH:
-				blade_connection_disconnect(bc);
+				// @todo detach from session if this connection is attached
+				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
 				break;
 			default: break;
 			}

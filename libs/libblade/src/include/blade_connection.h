@@ -41,9 +41,11 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 												void *transport_data,
 												blade_transport_callbacks_t *transport_callbacks);
 KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP);
-KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc);
+KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction);
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc);
+KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc);
 KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc);
+KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data);
 KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state);
 KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc);
 KS_DECLARE(blade_connection_rank_t) blade_connection_rank(blade_connection_t *bc, blade_identity_t *target);
