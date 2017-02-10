@@ -45,6 +45,7 @@ int main(int argc, char **argv)
 	blade_handle_t *bh = NULL;
 	config_t config;
 	config_setting_t *config_blade = NULL;
+	blade_module_t *mod_wss = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 	
@@ -75,7 +76,14 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	// @todo get to wss module callbacks, call onload to kick off registration
+	if (blade_module_wss_on_load(&mod_wss, bh) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_ERROR, "Blade WSS module load failed\n");
+		return EXIT_FAILURE;
+	}
+	if (blade_module_wss_on_startup(mod_wss, config_blade) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_ERROR, "Blade WSS module startup failed\n");
+		return EXIT_FAILURE;
+	}
 
 	loop(bh);
 

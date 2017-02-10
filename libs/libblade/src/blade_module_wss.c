@@ -83,10 +83,11 @@ struct blade_transport_wss_init_s {
 ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh);
 ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP);
 
-ks_status_t blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
-ks_status_t blade_module_wss_on_unload(blade_module_t *bm);
-ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
-ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm);
+// @todo remove exporting this, it's only temporary until DSO loading is in place so wss module can be loaded
+KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm);
+KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm);
 
 ks_status_t blade_module_wss_listen(blade_module_wss_t *bm, ks_sockaddr_t *addr);
 void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data);
@@ -153,19 +154,22 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh)
 {
 	blade_module_wss_t *bm_wss = NULL;
+	ks_pool_t *pool = NULL;
 	
 	ks_assert(bm_wssP);
 	ks_assert(bh);
 
-    bm_wss = ks_pool_alloc(bm_wss->pool, sizeof(blade_module_wss_t));
+	pool = blade_handle_pool_get(bh);
+
+    bm_wss = ks_pool_alloc(pool, sizeof(blade_module_wss_t));
 	bm_wss->handle = bh;
-	bm_wss->pool = blade_handle_pool_get(bh);
+	bm_wss->pool = pool;
 	bm_wss->tpool = blade_handle_tpool_get(bh);
 
 	blade_module_create(&bm_wss->module, bh, bm_wss, &g_module_wss_callbacks);
 	bm_wss->module_callbacks = &g_module_wss_callbacks;
 	bm_wss->transport_callbacks = &g_transport_wss_callbacks;
- 
+
 	list_init(&bm_wss->connected);
 	ks_q_create(&bm_wss->disconnected, bm_wss->pool, 0);
 	ks_assert(bm_wss->disconnected);
@@ -196,7 +200,7 @@ ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh)
+KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh)
 {
 	blade_module_wss_t *bm_wss = NULL;
 
@@ -211,7 +215,7 @@ ks_status_t blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_on_unload(blade_module_t *bm)
+KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 
@@ -333,7 +337,7 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config)
+KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	
@@ -373,7 +377,7 @@ ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *co
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm)
+KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	blade_transport_wss_t *bt_wss = NULL;
