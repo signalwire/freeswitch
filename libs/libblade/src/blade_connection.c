@@ -51,6 +51,49 @@ struct blade_connection_s {
 	//ks_q_t *receiving;
 };
 
+// @todo may want to make this reusable for session as it'll need to queue the same details during temporary connection loss
+typedef struct blade_connection_sending_s blade_connection_sending_t;
+struct blade_connection_sending_s {
+	ks_pool_t *pool;
+	blade_identity_t *target;
+	cJSON *json;
+};
+
+ks_status_t blade_connection_sending_create(blade_connection_sending_t **bcsP, ks_pool_t *pool, blade_identity_t *target, cJSON *json)
+{
+	blade_connection_sending_t *bcs = NULL;
+
+	ks_assert(bcsP);
+	ks_assert(pool);
+	ks_assert(json);
+
+	bcs = ks_pool_alloc(pool, sizeof(blade_connection_sending_t));
+	bcs->pool = pool;
+	bcs->target = target;
+	bcs->json = json;
+	*bcsP = bcs;
+	
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_connection_sending_destroy(blade_connection_sending_t **bcsP)
+{
+	blade_connection_sending_t *bcs = NULL;
+
+	ks_assert(bcsP);
+	ks_assert(*bcsP);
+
+	bcs = *bcsP;
+
+	if (bcs->target) blade_identity_destroy(&bcs->target);
+	if (bcs->json) cJSON_Delete(bcs->json);
+
+	ks_pool_free(bcs->pool, bcsP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+
 void *blade_connection_state_thread(ks_thread_t *thread, void *data);
 
 
@@ -74,7 +117,8 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 	bc->transport_init_data = transport_init_data;
 	bc->transport_callbacks = transport_callbacks;
 	ks_q_create(&bc->sending, pool, 0);
-	//ks_q_create(&bc->receiving, pool, 0);
+	ks_assert(bc->sending);
+
 	*bcP = bc;
 
 	return KS_STATUS_SUCCESS;
@@ -92,7 +136,6 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 	blade_connection_shutdown(bc);
 
 	ks_q_destroy(&bc->sending);
-	//ks_q_destroy(&bc->receiving);
 
 	ks_pool_free(bc->pool, bcP);
 
@@ -122,6 +165,8 @@ KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_c
 
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 {
+	blade_connection_sending_t *bcs = NULL;
+
 	ks_assert(bc);
 
 	if (bc->state_thread) {
@@ -131,8 +176,7 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 		bc->shutdown = KS_FALSE;
 	}
 
-	//while (ks_q_trypop(bc->sending, (void **)&message) == KS_STATUS_SUCCESS && message) blade_message_discard(&message);
-	//while (ks_q_trypop(bc->receiving, (void **)&message) == KS_STATUS_SUCCESS && message) blade_message_discard(&message);
+	while (ks_q_trypop(bc->sending, (void **)&bcs) == KS_STATUS_SUCCESS && bcs) blade_connection_sending_destroy(&bcs);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -221,40 +265,40 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 
 KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
 {
+	blade_connection_sending_t *bcs = NULL;
+
 	ks_assert(bc);
 	ks_assert(json);
 
-	// @todo need internal envelope to wrap an identity object and a json object just for the queue
+	blade_connection_sending_create(&bcs, bc->pool, target, json);
+	ks_assert(bcs);
 
-	return KS_STATUS_SUCCESS;
+	return ks_q_push(bc->sending, bcs);
 }
 
 KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, blade_identity_t **target, cJSON **json)
 {
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_connection_sending_t *bcs = NULL;
+	
 	ks_assert(bc);
 	ks_assert(json);
 
-	// @todo need internal envelope to wrap an identity object and a json object just for the queue
-	
-	return KS_STATUS_SUCCESS;
+	ret = ks_q_trypop(bc->sending, (void **)&bcs);
+
+	if (bcs) {
+		if (target) *target = bcs->target;
+		*json = bcs->json;
+
+		bcs->target = NULL;
+		bcs->json = NULL;
+
+		blade_connection_sending_destroy(&bcs);
+	}
+
+	return ret;
 }
 
-// @todo may not need receiving queue on connection, by the time we are queueing we should have a session to receive into
-//KS_DECLARE(ks_status_t) blade_connection_receiving_push(blade_connection_t *bc, cJSON *json)
-//{
-//	ks_assert(bc);
-//	ks_assert(json);
-
-//	return ks_q_push(bc->receiving, json);
-//}
-
-//KS_DECLARE(ks_status_t) blade_connection_receiving_pop(blade_connection_t *bc, cJSON **json)
-//{
-//	ks_assert(bc);
-//	ks_assert(json);
-	
-//	return ks_q_trypop(bc->receiving, (void **)json);
-//}
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 {
@@ -262,6 +306,7 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 	blade_connection_state_t state;
 	blade_transport_state_callback_t callback = NULL;
 	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+	blade_identity_t *target = NULL;
 	cJSON *json = NULL;
 
 	ks_assert(thread);
@@ -270,22 +315,28 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 	bc = (blade_connection_t *)data;
 
 	while (!bc->shutdown) {
-
-		// @todo pop from connection sending queue and call transport callback to write one message (passing target identity too)
-		// and delete the cJSON object here after returning from callback
-				
 		
-		// @todo seems like connection will not need a receiving queue as the session will exist prior to async transmissions
-
 		state = bc->state;
 		hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 		callback = blade_connection_state_callback_lookup(bc, state);
 
-		// @todo should this just go in the ready state callback? it's generalized here, so the callback for READY doesn't really
-		// need to do anything
-		if (state == BLADE_CONNECTION_STATE_READY && bc->transport_callbacks->onreceive(bc, &json) == KS_STATUS_SUCCESS && json) {
-			// @todo push json to session receiving queue
-			
+		while (blade_connection_sending_pop(bc, &target, &json) == KS_STATUS_SUCCESS && json) {
+			if (bc->transport_callbacks->onsend(bc, target, json) != KS_STATUS_SUCCESS) {
+				blade_connection_disconnect(bc);
+				break;
+			}
+		}
+
+		if (state == BLADE_CONNECTION_STATE_READY) {
+			do {
+				if (bc->transport_callbacks->onreceive(bc, &json) != KS_STATUS_SUCCESS) {
+					blade_connection_disconnect(bc);
+					break;
+				}
+				if (json) {
+					// @todo push json to session receiving queue
+				}
+			} while (json) ;
 		}
 		
 		if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);

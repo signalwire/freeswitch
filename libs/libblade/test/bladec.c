@@ -16,7 +16,6 @@ char g_console_input[CONSOLE_INPUT_MAX];
 size_t g_console_input_length = 0;
 size_t g_console_input_eol = 0;
 
-void service_peer_state_callback(blade_service_t *service, blade_peer_t *peer, blade_peerstate_t state);
 void loop(blade_handle_t *bh);
 void process_console_input(blade_handle_t *bh, char *line);
 
@@ -71,10 +70,12 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	if (blade_handle_startup(bh, config_blade, service_peer_state_callback) != KS_STATUS_SUCCESS) {
+	if (blade_handle_startup(bh, config_blade) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_ERROR, "Blade startup failed\n");
 		return EXIT_FAILURE;
 	}
+
+	// @todo get to wss module callbacks, call onload to kick off registration
 
 	loop(bh);
 
@@ -85,12 +86,8 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void service_peer_state_callback(blade_service_t *service, blade_peer_t *peer, blade_peerstate_t state)
-{
-	// @todo log output and pop peer messages if state == BLADE_PEERSTATE_RECEIVING
-	ks_log(KS_LOG_INFO, "service peer state callback: %d\n", (int)state);
-}
-		
+
+
 void buffer_console_input(void)
 {
 	ssize_t bytes = 0;

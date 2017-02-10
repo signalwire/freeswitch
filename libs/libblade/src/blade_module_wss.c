@@ -342,6 +342,8 @@ ks_status_t blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *co
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
+	// @todo register wss transport to the blade_handle_t
+
     if (blade_module_wss_config(bm_wss, config) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "blade_module_wss_config failed\n");
 		return KS_STATUS_FAIL;
@@ -381,6 +383,8 @@ ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm)
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
+	// @todo unregister wss transport from the blade_handle_t
+
 	if (bm_wss->listeners_thread) {
 		bm_wss->shutdown = KS_TRUE;
 		ks_thread_join(bm_wss->listeners_thread);
@@ -396,6 +400,9 @@ ks_status_t blade_module_wss_on_shutdown(blade_module_t *bm)
 	bm_wss->listeners_count = 0;
 	if (bm_wss->listeners_poll) ks_pool_free(bm_wss->pool, &bm_wss->listeners_poll);
 
+	// @todo connections should be gracefully disconnected so that they detach from sessions properly
+	// which means this should occur before the listeners thread is terminated, which requires that
+	// the listener sockets be made inactive (or closed) to stop accepting while shutting down
 	while (ks_q_trypop(bm_wss->disconnected, (void **)&bc) == KS_STATUS_SUCCESS) ;
 	list_iterator_start(&bm_wss->connected);
 	while (list_iterator_hasnext(&bm_wss->connected)) {
@@ -581,22 +588,30 @@ blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blad
 
 ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json)
 {
+	ks_status_t ret = KS_STATUS_SUCCESS;
 	char *json_str = cJSON_PrintUnformatted(json);
 	ks_size_t json_str_len = 0;
 	if (!json_str) {
 		// @todo error logging
-		return KS_STATUS_FAIL;
+		ret = KS_STATUS_FAIL;
+		goto done;
 	}
 	json_str_len = strlen(json_str) + 1; // @todo determine if WSOC_TEXT null terminates when read_frame is called, or if it's safe to include like this
-	kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len);
+	if (kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len) != json_str_len) {
+		// @todo error logging
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
 
-	free(json_str);
+ done:
+	if (json_str) free(json_str);
 
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
 ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
 {
+	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_transport_wss_t *bt_wss = NULL;
 
 	ks_assert(bc);
@@ -606,7 +621,13 @@ ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t
 
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
-	return blade_transport_wss_write(bt_wss, json);
+	ret = blade_transport_wss_write(bt_wss, json);
+
+	// @todo use reference counting on blade_identity_t and cJSON objects
+	if (target) blade_identity_destroy(&target);
+	cJSON_Delete(json);
+
+	return ret;
 }
 
 ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json)
@@ -743,7 +764,8 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	// @todo Establish sessid and discover existing session or create and register new session through BLADE commands
 	// Set session state to CONNECT if its new or RECONNECT if existing
 	// start session and its thread if its new
-																								
+
+	ks_sleep_ms(1000); // @todo temporary testing, remove this and return success once negotiations are done
 	return BLADE_CONNECTION_STATE_HOOK_BYPASS;
 }
 

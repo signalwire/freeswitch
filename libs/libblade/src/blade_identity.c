@@ -75,6 +75,9 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 	ks_assert(uri);
 
 	if (bi->uri) ks_pool_free(bi->pool, &bi->uri);
+	bi->uri = ks_pstrdup(bi->pool, uri);
+
+	// @todo parse into components
 	
 	return KS_STATUS_SUCCESS;
 }
