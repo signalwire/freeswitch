@@ -1353,6 +1353,8 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 {
 	video_layout_node_t *vlnode = NULL, *last = NULL;
 
+	if (count == 1 && file_count == 1) file_count = 0;
+
 	if (!count) {
 		count = conference->members_with_video;
 		file_count = 0;
@@ -1374,7 +1376,7 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 				file_layers++;
 			}
 		}
-
+		
 		if ((vlnode->vlayout->layers - file_layers >= member_count && file_layers >= file_count) || vlnode->vlayout->layers - file_layers > (int)count) {
 			break;
 		}
@@ -2761,7 +2763,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						total = 0;
 					}
 					
-					if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
+					if (conference->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group))) {
 						if ((vlayout = conference_video_find_best_layout(conference, lg, total + file_count, file_count))) {
 							conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
 						}
