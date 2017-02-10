@@ -106,8 +106,8 @@ KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* templat
  * peer create/destroy
  * -------------------
  */
-KS_DECLARE(ks_status_t) blade_rpc_onconnect(ks_pool_t *pool, blade_peer_t* peer);
-KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer);
+//KS_DECLARE(ks_status_t) blade_rpc_onconnect(ks_pool_t *pool, blade_peer_t* peer);
+//KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer);
 
 /* 
  * send message

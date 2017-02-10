@@ -167,18 +167,18 @@ KS_DECLARE(ks_status_t) blade_rpc_init(ks_pool_t *pool)
 }
 
 
-KS_DECLARE(ks_status_t) blade_rpc_onconnect(ks_pool_t *pool, blade_peer_t* peer)
-{
-
-
-	return KS_STATUS_FAIL;
-}
-
-KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer)
-{
-
-	return KS_STATUS_FAIL;
-}
+//KS_DECLARE(ks_status_t) blade_rpc_onconnect(ks_pool_t *pool, blade_peer_t* peer)
+//{
+//
+//
+//	return KS_STATUS_FAIL;
+//}
+//
+//KS_DECLARE(ks_status_t) blade_rpc_disconnect(blade_peer_t* peer)
+//{
+//
+//	return KS_STATUS_FAIL;
+//}
 
 
 

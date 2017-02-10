@@ -34,6 +34,7 @@
 #ifndef _BLADE_TYPES_H_
 #define _BLADE_TYPES_H_
 #include <ks.h>
+#include <libconfig.h>
 
 KS_BEGIN_EXTERN_C
 
