@@ -27,7 +27,7 @@
 <?endif ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="b004a325-1272-47e5-a415-a74e9fc99865" Name="$(var.ProductName)" Language="1033" Version="1.0.0.0" Manufacturer="FreeSWITCH" UpgradeCode="3af7020b-1348-45e8-a0cf-80909d4eb421">
+	<Product Id="b004a325-1272-47e5-a415-a74e9fc99865" Name="$(var.ProductName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="FreeSWITCH" UpgradeCode="3af7020b-1348-45e8-a0cf-80909d4eb421">
 		<Package InstallerVersion="405" Compressed="yes" />
 
 		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />

@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" InitialTargets="LoadDynamicVariables" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProductVersion>3.5</ProductVersion>
     <ProjectGuid>{47213370-b933-487d-9f45-bca26d7e2b6f}</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>FreeSWITCH</OutputName>
@@ -10,7 +9,7 @@
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <OutputPath>bin\Win32\Debug\</OutputPath>
+    <OutputPath>bin\x86\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;FreeSWITCHBaseDir=$(SolutionDir)Win32\$(Configuration);PlatformDir=Win32;</DefineConstants>
     <WixVariables>
@@ -415,17 +414,46 @@
     <Content Include="filter.xslt" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
-  <PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
+    <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)Win32\$(Configuration)\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)Win32\$(Configuration)" -t $(ProjectDir)filter.xslt -cg FreeSWITCHBaseFiles -gg -scom -sreg -sfrag -srd -dr INSTALLLOCATION -var var.FreeSWITCHBaseDir -out "$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'x64' ">
     <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
 "$(WixToolPath)\heat.exe" dir "$(SolutionDir)x64\$(Configuration)\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
 "$(WixToolPath)\heat.exe" dir "$(SolutionDir)x64\$(Configuration)" -t $(ProjectDir)filter.xslt -cg FreeSWITCHBaseFiles -gg -scom -sreg -sfrag -srd -dr INSTALLLOCATION -var var.FreeSWITCHBaseDir -out "$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"</PreBuildEvent>
   </PropertyGroup>
+      <Target Name="LoadDynamicVariables">
+          <Exec Command="$(SolutionDir)w32\Setup\FullVersion.cmd" ConsoleToMSBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="FullVersion" />
+          </Exec>
+          <CreateProperty Condition="$(FullVersion) != ''" Value="ProductVersion=$(FullVersion);$(DefineConstants)">
+            <Output TaskParameter="Value" PropertyName="DefineConstants" />
+          </CreateProperty>
+          <CreateProperty Condition="'$(Platform)'=='x86'" Value="win32">
+            <Output TaskParameter="Value" PropertyName="UserFriendlyPlatform" />
+          </CreateProperty>
+          <CreateProperty Condition="'$(Platform)'=='x64'" Value="x64">
+            <Output TaskParameter="Value" PropertyName="UserFriendlyPlatform" />
+          </CreateProperty>
+          <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)-$(UserFriendlyPlatform)-$(Configuration).msi">
+            <Output TaskParameter="Value" PropertyName="DestinationFileName" />
+          </CreateProperty>
+      </Target>
+
   <!--
-	To modify your build process, add your task inside one of the targets below and uncomment it.
-	Other similar extension points exist, see Wix.targets.
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+      To modify your build process, add your task inside one of the targets below.
+      Other similar extension points exist, see Wix.targets.
+  -->
+      <Target Name="BeforeBuild">
+          <Message Importance="High" Text="Deleting previously created MSI files."/>
+          <Delete Files="$(OutputPath)$(OutputName).msi" />  
+          <Delete Files="$(DestinationFileName)" />  
+      </Target>
+
+      <Target Name="AfterBuild">
+          <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />
+          <Message Importance="High" Condition="Exists('$(DestinationFileName)')" Text="Success. An output MSI has been copied to $(DestinationFileName)"/>
+      </Target>
 </Project>
