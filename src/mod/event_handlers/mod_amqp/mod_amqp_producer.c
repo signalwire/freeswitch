@@ -264,7 +264,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 				/* Parse new events */
 				profile->event_subscriptions = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Found %d subscriptions\n", profile->event_subscriptions);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found %d subscriptions\n", profile->event_subscriptions);
 
 				for (arg = 0; arg < profile->event_subscriptions; arg++) {
 					if (switch_name_event(argv[arg], &(profile->event_ids[arg])) != SWITCH_STATUS_SUCCESS) {
@@ -371,7 +371,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 		goto err;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] Successfully started\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Profile[%s] Successfully started\n", profile->name);
 	return SWITCH_STATUS_SUCCESS;
 
  err:

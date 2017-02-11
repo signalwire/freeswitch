@@ -295,8 +295,8 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 				break;
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created command queue %.*s", (int)queueName.len, (char *)queueName.bytes);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Binding command queue to exchange %s", profile->exchange);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created command queue %.*s\n", (int)queueName.len, (char *)queueName.bytes);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Binding command queue to exchange %s\n", profile->exchange);
 
 			/* Bind the queue to the exchange */
 			amqp_queue_bind(profile->conn_active->state,                   // state
