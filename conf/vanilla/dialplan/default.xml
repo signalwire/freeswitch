@@ -828,5 +828,13 @@
       </condition>
     </extension>
 
+    <extension name="acknowledge_call">
+      <condition field="destination_number" expression="^(.*)$">
+	<action application="acknowledge_call"/>
+	<action application="ring_ready"/>
+	<action application="playback" data="$${hold_music}"/>
+      </condition>
+    </extension>
+
   </context>
 </include>

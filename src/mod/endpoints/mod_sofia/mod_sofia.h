@@ -307,6 +307,7 @@ typedef enum {
 	PFLAG_PROXY_INFO,
 	PFLAG_PROXY_MESSAGE,
 	PFLAG_FIRE_BYE_RESPONSE_EVENTS,
+	PFLAG_AUTO_INVITE_100,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -839,6 +840,7 @@ struct private_object {
 	sip_contact_t *contact;
 	int q850_cause;
 	int got_bye;
+	int sent_100;
 	nua_event_t want_event;
 	switch_rtp_bug_flag_t rtp_bugs;
 	char *user_via;

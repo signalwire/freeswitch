@@ -418,5 +418,9 @@
     -->
     <!--<param name="renegotiate-codec-on-hold" value="true"/>-->
 
+    <!-- By default mod_sofia will send "100 Trying" in response to a SIP INVITE. Set this to false if
+         you want to turn off this behavior and manually send the "100 Trying" via the acknowledge_call application.
+    -->
+    <!--<param name="auto-invite-100" value="false"/>-->
   </settings>
 </profile>

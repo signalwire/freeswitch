@@ -447,6 +447,10 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel);
 */
 #define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_acknowledge_call(switch_channel_t *channel,
+																		const char *file, const char *func, int line);
+#define switch_channel_acknowledge_call(channel) switch_channel_perform_acknowledge_call(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_channel_t *channel,
 																		switch_ring_ready_t rv,
 																		const char *file, const char *func, int line);

@@ -262,7 +262,8 @@ int nua_stack_process_request(nua_handle_t *nh,
 
   if (sr->sr_status <= 100) {
 	  	  SR_STATUS1(sr, SIP_100_TRYING);
-    if (method == sip_method_invite || sip->sip_timestamp) {
+    if ((method == sip_method_invite && nh->nh_prefs->nhp_auto_invite_100) ||
+        sip->sip_timestamp) {
 		nta_incoming_treply(irq, SIP_100_TRYING,
 							SIPTAG_USER_AGENT_STR(user_agent),
 							TAG_END());
@@ -459,7 +460,12 @@ nua_stack_respond(nua_t *nua, nua_handle_t *nh,
 
   nua_server_params(sr, tags);
   nua_server_respond(sr, tags);
-  nua_server_report(sr);
+
+  if (!(sr->sr_method == sip_method_invite && status == 100)) {
+    /* Since we don't change state, do not notify application when
+       we send 100 Trying for INVITE */
+    nua_server_report(sr);
+  }
 }
 
 int nua_server_params(nua_server_request_t *sr, tagi_t const *tags)
@@ -526,6 +532,13 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	  //assert(sr->sr_status == 500);
 	  SU_DEBUG_0(("sr without msg, sr_status=%u", sr->sr_status));
     goto internal_error;
+  }
+
+  if (sr->sr_status == 100) {
+    return nta_incoming_treply(sr->sr_irq, SIP_100_TRYING,
+                               SIPTAG_USER_AGENT_STR(NH_PGET(nh, user_agent)),
+                               TAG_END());
+    return 0;
   }
 
   if (sr->sr_status < 200) {

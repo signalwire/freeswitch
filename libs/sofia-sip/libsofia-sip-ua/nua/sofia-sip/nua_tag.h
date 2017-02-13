@@ -611,6 +611,13 @@ SOFIAPUBVAR tag_typedef_t nutag_shutdown_events;
   nutag_shutdown_events_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_shutdown_events_ref;
 
+#define NUTAG_AUTO_INVITE_100(x) \
+  nutag_auto_invite_100, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_auto_invite_100;
+#define NUTAG_AUTO_INVITE_100_REF(x) \
+  nutag_auto_invite_100_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_auto_invite_100_ref;
+
 /* Pass nua handle as tagged argument */
 #if SU_INLINE_TAG_CAST
 su_inline tag_value_t nutag_handle_v(nua_handle_t *v) { return (tag_value_t)v; }

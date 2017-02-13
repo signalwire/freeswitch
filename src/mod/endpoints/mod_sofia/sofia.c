@@ -3155,6 +3155,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								  NTATAG_TCP_RPORT(0),
 								  NTATAG_TLS_RPORT(0),
 								  NUTAG_RETRY_AFTER_ENABLE(0),
+								  NUTAG_AUTO_INVITE_100(0),
 								  TAG_IF(!strchr(profile->sipip, ':'),
 										 SOATAG_AF(SOA_AF_IP4_ONLY)),
 								  TAG_IF(strchr(profile->sipip, ':'),
@@ -4517,6 +4518,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					profile->tls_verify_policy = TPTLS_VERIFY_NONE;
+					sofia_set_pflag(profile, PFLAG_AUTO_INVITE_100);
 					/* lib default */
 					profile->tls_verify_depth = 2;
 
@@ -5325,6 +5327,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_SECURE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SECURE);
+						}
+					} else if (!strcasecmp(var, "auto-invite-100")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_AUTO_INVITE_100);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_AUTO_INVITE_100);
 						}
 					} else {
 						found = 0;
@@ -9832,6 +9840,8 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	char *call_info = NULL;
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
+
+	nua_respond(nh, SIP_100_TRYING, TAG_END());
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
