@@ -88,19 +88,11 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\libeay32\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
-</Command>
-    </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-$(OpenSSLVersion)\include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include_x86;include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINDOWS;WIN32;_DEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -115,21 +107,13 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)libeay32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>true</AssemblyDebug>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
-</Command>
-    </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
@@ -137,7 +121,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-$(OpenSSLVersion)\include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include_x64;include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINDOWS;WIN32;_DEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -151,26 +135,18 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)libeay32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>true</AssemblyDebug>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
-</Command>
-    </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Full</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-$(OpenSSLVersion)\include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include_x86;include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -185,21 +161,13 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)libeay32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>true</AssemblyDebug>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
-</Command>
-    </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
@@ -207,7 +175,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Full</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-$(OpenSSLVersion)\include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include_x64;include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -221,7 +189,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)libeay32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>true</AssemblyDebug>
       <TargetMachine>MachineX64</TargetMachine>
@@ -235,6 +203,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cmac\cm_ameth.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cmac\cm_pmeth.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cms\cms_pwri.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cms\cms_kari.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cpt_err.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cryptlib.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\cversion.c" />
@@ -245,10 +214,9 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ec\ecp_oct.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ec\ec_oct.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\engine\eng_rdrand.c" />
-    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\engine\eng_rsax.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\evp_cnf.c" />
-    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\evp_fips.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\e_aes_cbc_hmac_sha1.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\e_aes_cbc_hmac_sha256.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\e_rc4_hmac_md5.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ex_data.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\mem.c" />
@@ -256,6 +224,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\mem_dbg.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\modes\ccm128.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\modes\gcm128.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\modes\wrap128.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\modes\xts128.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\o_dir.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\o_fips.c" />
@@ -653,10 +622,12 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_depr.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_err.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_gen.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_kdf.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_key.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_lib.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_pmeth.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_prn.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\dh\dh_rfc5114.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ocsp\ocsp_asn.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ocsp\ocsp_cl.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ocsp\ocsp_err.c" />
@@ -698,6 +669,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_pmaps.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_prn.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_purp.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_scts.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_skey.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_sxnet.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\x509v3\v3_utl.c" />
@@ -738,6 +710,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ec\ecp_nist.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ec\ecp_smpl.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ecdh\ech_err.c" />
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ecdh\ech_kdf.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ecdh\ech_key.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ecdh\ech_lib.c" />
     <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\crypto\ecdh\ech_ossl.c" />
@@ -819,77 +792,77 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\o_str.h" />
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\o_time.h" />
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\evp_locl.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\aes.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\asn1.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\asn1_mac.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\asn1t.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\bio.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\blowfish.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\bn.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\buffer.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\camellia.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\cast.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\cms.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\comp.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\conf.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\conf_api.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\crypto.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\des.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\des_old.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\dh.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\dsa.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\dso.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\dtls1.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os2.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ebcdic.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ec.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ecdh.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ecdsa.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\engine.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\err.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\evp.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\hmac.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\idea.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\krb5_asn.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\kssl.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\lhash.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\md4.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\md5.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\mdc2.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\modes.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\obj_mac.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\objects.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ocsp.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslv.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ossl_typ.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\pem.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\pem2.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\pkcs12.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\pkcs7.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\pqueue.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\rand.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\rc2.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\rc4.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ripemd.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\rsa.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\safestack.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\seed.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\sha.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ssl.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ssl2.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ssl23.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ssl3.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\stack.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\symhacks.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\tls1.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ts.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\txt_db.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ui.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\ui_compat.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\whrlpool.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\x509.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\x509_vfy.h" />
-    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\include\openssl\x509v3.h" />
+    <ClInclude Include="include\openssl\aes.h" />
+    <ClInclude Include="include\openssl\asn1.h" />
+    <ClInclude Include="include\openssl\asn1_mac.h" />
+    <ClInclude Include="include\openssl\asn1t.h" />
+    <ClInclude Include="include\openssl\bio.h" />
+    <ClInclude Include="include\openssl\blowfish.h" />
+    <ClInclude Include="include\openssl\bn.h" />
+    <ClInclude Include="include\openssl\buffer.h" />
+    <ClInclude Include="include\openssl\camellia.h" />
+    <ClInclude Include="include\openssl\cast.h" />
+    <ClInclude Include="include\openssl\cms.h" />
+    <ClInclude Include="include\openssl\comp.h" />
+    <ClInclude Include="include\openssl\conf.h" />
+    <ClInclude Include="include\openssl\conf_api.h" />
+    <ClInclude Include="include\openssl\crypto.h" />
+    <ClInclude Include="include\openssl\des.h" />
+    <ClInclude Include="include\openssl\des_old.h" />
+    <ClInclude Include="include\openssl\dh.h" />
+    <ClInclude Include="include\openssl\dsa.h" />
+    <ClInclude Include="include\openssl\dso.h" />
+    <ClInclude Include="include\openssl\dtls1.h" />
+    <ClInclude Include="include\openssl\e_os2.h" />
+    <ClInclude Include="include\openssl\ebcdic.h" />
+    <ClInclude Include="include\openssl\ec.h" />
+    <ClInclude Include="include\openssl\ecdh.h" />
+    <ClInclude Include="include\openssl\ecdsa.h" />
+    <ClInclude Include="include\openssl\engine.h" />
+    <ClInclude Include="include\openssl\err.h" />
+    <ClInclude Include="include\openssl\evp.h" />
+    <ClInclude Include="include\openssl\hmac.h" />
+    <ClInclude Include="include\openssl\idea.h" />
+    <ClInclude Include="include\openssl\krb5_asn.h" />
+    <ClInclude Include="include\openssl\kssl.h" />
+    <ClInclude Include="include\openssl\lhash.h" />
+    <ClInclude Include="include\openssl\md4.h" />
+    <ClInclude Include="include\openssl\md5.h" />
+    <ClInclude Include="include\openssl\mdc2.h" />
+    <ClInclude Include="include\openssl\modes.h" />
+    <ClInclude Include="include\openssl\obj_mac.h" />
+    <ClInclude Include="include\openssl\objects.h" />
+    <ClInclude Include="include\openssl\ocsp.h" />
+    <ClInclude Include="include\openssl\opensslv.h" />
+    <ClInclude Include="include\openssl\ossl_typ.h" />
+    <ClInclude Include="include\openssl\pem.h" />
+    <ClInclude Include="include\openssl\pem2.h" />
+    <ClInclude Include="include\openssl\pkcs12.h" />
+    <ClInclude Include="include\openssl\pkcs7.h" />
+    <ClInclude Include="include\openssl\pqueue.h" />
+    <ClInclude Include="include\openssl\rand.h" />
+    <ClInclude Include="include\openssl\rc2.h" />
+    <ClInclude Include="include\openssl\rc4.h" />
+    <ClInclude Include="include\openssl\ripemd.h" />
+    <ClInclude Include="include\openssl\rsa.h" />
+    <ClInclude Include="include\openssl\safestack.h" />
+    <ClInclude Include="include\openssl\seed.h" />
+    <ClInclude Include="include\openssl\sha.h" />
+    <ClInclude Include="include\openssl\ssl.h" />
+    <ClInclude Include="include\openssl\ssl2.h" />
+    <ClInclude Include="include\openssl\ssl23.h" />
+    <ClInclude Include="include\openssl\ssl3.h" />
+    <ClInclude Include="include\openssl\stack.h" />
+    <ClInclude Include="include\openssl\symhacks.h" />
+    <ClInclude Include="include\openssl\tls1.h" />
+    <ClInclude Include="include\openssl\ts.h" />
+    <ClInclude Include="include\openssl\txt_db.h" />
+    <ClInclude Include="include\openssl\ui.h" />
+    <ClInclude Include="include\openssl\ui_compat.h" />
+    <ClInclude Include="include\openssl\whrlpool.h" />
+    <ClInclude Include="include\openssl\x509.h" />
+    <ClInclude Include="include\openssl\x509_vfy.h" />
+    <ClInclude Include="include\openssl\x509v3.h" />
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\bf\bf_locl.h" />
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\bf\bf_pi.h" />
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\bf\blowfish.h" />
