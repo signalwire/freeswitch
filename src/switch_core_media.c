@@ -13936,6 +13936,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
 	if ((*frame) && (*frame)->codec) {
+		(*frame)->pmap = NULL;
+
 		if (patchers) {
 			switch_set_flag((*frame)->codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
 		} else {
