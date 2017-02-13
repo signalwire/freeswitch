@@ -3421,6 +3421,7 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 
 		if (switch_channel_test_flag(channel, CF_ORIGINATOR) || switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR) ||
 			switch_channel_inbound_display(channel) || switch_channel_test_flag(channel, CF_SLA_BARGING)) {
+			if (!switch_channel_test_flag(channel, CF_ANSWERED)) state = "progressing";
 			callee_name = switch_channel_get_variable(channel, "callee_id_name");
 			callee_number = switch_channel_get_variable(channel, "callee_id_number");
 
