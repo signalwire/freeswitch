@@ -47,6 +47,7 @@ struct blade_handle_s {
 	config_setting_t *config_service;
 	config_setting_t *config_datastore;
 
+	ks_hash_t *transports;
 	ks_q_t *messages_discarded;
 
 	blade_datastore_t *datastore;
@@ -75,6 +76,8 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 		// @todo make sure messages are cleaned up
 		ks_q_destroy(&bh->messages_discarded);
 	}
+
+	ks_hash_destroy(&bh->transports);
 
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
 
@@ -109,6 +112,9 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	bh->pool = pool;
 	bh->tpool = tpool;
 
+	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->transports);
+	
 	// @todo check thresholds from config, for now just ensure it doesn't grow out of control, allow 100 discarded messages
 	ks_q_create(&bh->messages_discarded, bh->pool, 100);
 	ks_assert(bh->messages_discarded);
@@ -182,6 +188,46 @@ KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh)
 {
 	ks_assert(bh);
 	return bh->tpool;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blade_transport_callbacks_t *callbacks)
+{
+	ks_assert(bh);
+	ks_assert(callbacks);
+
+	ks_hash_write_lock(bh->transports);
+	ks_hash_insert(bh->transports, (void *)callbacks->name, callbacks);
+	ks_hash_write_unlock(bh->transports);
+
+	ks_log(KS_LOG_DEBUG, "Transport Registered: %s\n", callbacks->name);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, blade_transport_callbacks_t *callbacks)
+{
+	ks_assert(bh);
+	ks_assert(callbacks);
+
+	ks_hash_write_lock(bh->transports);
+	ks_hash_remove(bh->transports, (void *)callbacks->name);
+	ks_hash_write_unlock(bh->transports);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target)
+{
+	ks_assert(bh);
+	ks_assert(target);
+
+	ks_hash_read_lock(bh->transports);
+	// @todo find transport for target, check if target specifies explicit transport parameter first, otherwise use onrank and keep highest ranked callbacks
+	ks_hash_read_unlock(bh->transports);
+
+	// transport_callbacks->onconnect(bcP, target);
+
+	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length)

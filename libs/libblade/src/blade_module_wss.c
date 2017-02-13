@@ -130,6 +130,8 @@ static blade_module_callbacks_t g_module_wss_callbacks =
 
 static blade_transport_callbacks_t g_transport_wss_callbacks =
 {
+	"wss",
+	
 	blade_transport_wss_on_connect,
 	blade_transport_wss_on_rank,
 	blade_transport_wss_on_send,
@@ -346,8 +348,6 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
-	// @todo register wss transport to the blade_handle_t
-
     if (blade_module_wss_config(bm_wss, config) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "blade_module_wss_config failed\n");
 		return KS_STATUS_FAIL;
@@ -374,6 +374,8 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 							KS_PRI_NORMAL,
 							bm_wss->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 	
+	blade_handle_transport_register(bm_wss->handle, bm_wss->transport_callbacks);
+	
 	return KS_STATUS_SUCCESS;
 }
 
@@ -387,7 +389,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
-	// @todo unregister wss transport from the blade_handle_t
+	blade_handle_transport_unregister(bm_wss->handle, bm_wss->transport_callbacks);
 
 	if (bm_wss->listeners_thread) {
 		bm_wss->shutdown = KS_TRUE;

@@ -105,6 +105,8 @@ typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc
 typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
 struct blade_transport_callbacks_s {
+	const char *name;
+	
 	blade_transport_connect_callback_t onconnect;
 	blade_transport_rank_callback_t onrank;
 	blade_transport_send_callback_t onsend;

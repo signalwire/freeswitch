@@ -37,7 +37,12 @@ struct blade_identity_s {
 	ks_pool_t *pool;
 
 	const char *uri;
-	// @todo breakdown of uri into constituent parts
+	
+	const char *components;
+	const char *name;
+	const char *domain;
+	const char *resource;
+	ks_hash_t *parameters;
 };
 
 
@@ -63,6 +68,11 @@ KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
 	ks_assert(*biP);
 
 	bi = *biP;
+	if (bi->uri) {
+		ks_pool_free(bi->pool, &bi->uri);
+		ks_pool_free(bi->pool, &bi->components);
+	}
+	if (bi->parameters) ks_hash_destroy(&bi->parameters);
 
 	ks_pool_free(bi->pool, biP);
 
@@ -71,14 +81,50 @@ KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
 
 KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *uri)
 {
+	char *tmp = NULL;
+	char *tmp2 = NULL;
+	
 	ks_assert(bi);
 	ks_assert(uri);
 
-	if (bi->uri) ks_pool_free(bi->pool, &bi->uri);
+	if (bi->uri) {
+		ks_pool_free(bi->pool, &bi->uri);
+		ks_pool_free(bi->pool, &bi->components);
+	}
 	bi->uri = ks_pstrdup(bi->pool, uri);
+	bi->components = tmp = ks_pstrdup(bi->pool, uri);
 
-	// @todo parse into components
+	bi->name = tmp;
+	if (!(tmp = strchr(tmp, '@'))) return KS_STATUS_FAIL;
+	*tmp++ = '\0';
 	
+	bi->domain = tmp2 = tmp;
+	if ((tmp = strchr(tmp, '/'))) {
+		*tmp++ = '\0';
+		bi->resource = tmp2 = tmp;
+	} else tmp = tmp2;
+	
+	if ((tmp = strchr(tmp, '?'))) {
+		*tmp++ = '\0';
+
+		while (tmp) {
+			char *key = tmp;
+			char *val = NULL;
+			if (!(tmp = strchr(tmp, '='))) return KS_STATUS_FAIL;
+			*tmp++ = '\0';
+			val = tmp;
+			if ((tmp = strchr(tmp, '&'))) {
+				*tmp++ = '\0';
+			}
+
+			if (!bi->parameters) {
+				ks_hash_create(&bi->parameters, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bi->pool);
+				ks_assert(bi->parameters);
+			}
+			ks_hash_insert(bi->parameters, key, val);
+		}
+	}
+
 	return KS_STATUS_SUCCESS;
 }
 
