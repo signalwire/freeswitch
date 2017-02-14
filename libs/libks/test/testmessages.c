@@ -18,8 +18,8 @@ void test01()
 	cJSON* parms1    = NULL;
     cJSON* response1 = NULL;
 
-														 /*namespace, method, sessionid, version, params, **request */	
-	ks_rpcmessage_id msgid = ks_rpcmessage_create_request("app1",     "func1", "s001",   "1.0",   &parms1, &request1);
+														 /*namespace, method,  params, **request */	
+	ks_rpcmessageid_t msgid = ks_rpcmessage_create_request("app1",     "func1", &parms1, &request1);
 	if (msgid == 0) {
 		printf("message create failed %d\n", msgid);
 	}	
@@ -37,7 +37,7 @@ void test01()
 
 	ks_buffer_create(&buffer, 256, 256, 1024);
 
-    ks_size_t n = ks_rpc_create_buffer("app2", "func2", "s002", "1.1", &parms2, buffer);
+    ks_size_t n = ks_rpc_create_buffer("app2", "func2", &parms2, buffer);
 
 	ks_size_t size =  ks_buffer_len(buffer);
 	char *b = (char *)ks_pool_alloc(pool, size+1);
@@ -51,7 +51,7 @@ void test01()
 	cJSON *parms3 = cJSON_CreateNumber(1);
     cJSON *request3  = NULL;
 
-    msgid = ks_rpcmessage_create_request("app1", "badbunny",  "s002",   "1.1",  &parms3, &request3);
+    msgid = ks_rpcmessage_create_request("app1", "badbunny",  &parms3, &request3);
 	data = cJSON_PrintUnformatted(request3);
 	printf("\ntest01i request: %d\n%s\n\n", msgid, data);
 

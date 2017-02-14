@@ -45,7 +45,7 @@ KS_BEGIN_EXTERN_C
 #define KS_RPCMESSAGE_VERSION_LENGTH 9
 
 
-typedef uint32_t ks_rpcmessage_id;
+typedef uint32_t ks_rpcmessageid_t;
 
 
 KS_DECLARE(void) ks_rpcmessage_init(ks_pool_t *pool);
@@ -54,26 +54,22 @@ KS_DECLARE(void*) ks_json_pool_alloc(ks_size_t size);
 KS_DECLARE(void) ks_json_pool_free(void *ptr);
 
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace, 
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_request(char *namespace, 
 											char *method,
-											char *sessionid,
-											char *version, 
-											cJSON **parmsP,
+											cJSON **paramsP,
 											cJSON **requestP);
 
 KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
                                             char *method,
-											char *sessionid,
-											char *version,
-                                            cJSON **parmsP,
+                                            cJSON **paramsP,
                                             ks_buffer_t *buffer);
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_response( 
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_response( 
 											const cJSON *request, 
 											cJSON **resultP, 
 											cJSON **responseP);
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse(
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_errorresponse(
                                             const cJSON *request,
                                             cJSON **errorP,
                                             cJSON **responseP);

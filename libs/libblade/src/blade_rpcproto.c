@@ -34,7 +34,6 @@
 #pragma GCC optimize ("O0")
 
 #include <blade_rpcproto.h>
-#include <blade_message.h>
 
 /* 
  * internal shared structure grounded in global 
@@ -700,6 +699,172 @@ KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* templat
 }
 		
 
+/*
+ * create a request message
+ */
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_request(char *namespace,
+                                                    char *method,
+                                                    blade_rpc_fields_t* fields,
+                                                    cJSON **paramsP,
+                                                    cJSON **requestP)
+{
+	cJSON *jversion = NULL;
+	blade_rpc_callbackpair_t* callbacks = NULL;
+
+	*requestP = NULL;
+
+    ks_hash_read_lock(g_handle->namespace_hash);
+    blade_rpc_namespace_t *n =  ks_hash_search(g_handle->namespace_hash, namespace, KS_UNLOCKED);
+
+	if (n) {
+		ks_hash_read_lock(n->method_hash);
+		callbacks = ks_hash_search(n->method_hash, method, KS_UNLOCKED);				
+		if (callbacks) {
+			jversion = cJSON_CreateString(n->version);
+		}
+		ks_hash_read_unlock(n->method_hash);
+	}
+
+	ks_hash_read_unlock(g_handle->namespace_hash);
+
+	if (!n) {
+		ks_log(KS_LOG_ERROR, "No namespace %s found\n", namespace);
+		return 0;
+	}	
+
+	if (!callbacks) {
+        ks_log(KS_LOG_ERROR, "No method %s.%s found\n", namespace, method);
+        return 0;
+	}
+
+	ks_rpcmessageid_t msgid = ks_rpcmessage_create_request(namespace, method, paramsP, requestP);
+	
+	if (!msgid || *requestP == NULL) {
+		ks_log(KS_LOG_ERROR, "Unable to create rpc message for method %s.%s\n", namespace, method);
+		return 0;		
+	}
+  
+	cJSON *jfields = cJSON_CreateObject();
+
+	cJSON_AddItemToObject(jfields, "version", jversion);
+
+	if (fields->to) {
+		cJSON_AddStringToObject(jfields, "to", fields->to);
+	}
+
+	if (fields->from) {
+		cJSON_AddStringToObject(jfields, "from", fields->from);
+	}
+
+    if (fields->token) {
+        cJSON_AddStringToObject(jfields, "token", fields->token);
+    }
+
+	 cJSON_AddItemToObject(*requestP, "blade", jfields);
+
+	return msgid;
+}
+
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
+                                                    cJSON **replyP,
+                                                    cJSON **responseP)
+{
+	cJSON *jfields = cJSON_GetObjectItem(request, "blade");
+
+	if (!jfields) {
+		ks_log(KS_LOG_ERROR, "No blade routing info found.  Unable to create response\n");
+		return 0;	
+	}
+
+	ks_rpcmessageid_t msgid = ks_rpcmessage_create_response(request, replyP, responseP);
+
+	if (!msgid || *responseP == NULL) {
+		ks_log(KS_LOG_ERROR, "Unable to create rpc response message\n");  //TODO : Add namespace, method from request 
+		return 0;
+	}
+
+	const char *to =    cJSON_GetObjectCstr(jfields, "to");
+	const char *from =  cJSON_GetObjectCstr(jfields, "from");
+	const char *token = cJSON_GetObjectCstr(jfields, "token");
+	const char *version =  cJSON_GetObjectCstr(jfields, "version");
+
+	cJSON *blade = cJSON_CreateObject(); 
+
+	if (to) {
+        cJSON_AddStringToObject(blade, "to", from);
+    }
+
+	if (from) {
+		cJSON_AddStringToObject(blade, "from", to);
+	}
+
+	if (token) {
+		cJSON_AddStringToObject(blade, "token", token);
+	}
+
+    if (version) {
+        cJSON_AddStringToObject(blade, "version", version);
+    }
+
+	cJSON_AddItemToObject(*responseP, "blade", blade);
+
+	return msgid;
+}
+
+const char BLADE_JRPC_METHOD[] = "method";
+const char BLADE_JRPC_FIELDS[] = "blade";
+const char BLADE_JRPC_TO[]     = "to";
+const char BLADE_JRPC_FROM[]   = "from";
+const char BLADE_JRPC_TOKEN[]  = "token";
+const char BLADE_JRPC_VERSION[] = "version";
+
+KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
+													char **namespaceP,
+													char **methodP,
+													char **versionP,
+													blade_rpc_fields_t **fieldsP)
+{
+	const char *m = cJSON_GetObjectCstr(message, BLADE_JRPC_METHOD);
+	cJSON *blade  = cJSON_GetObjectItem(message, BLADE_JRPC_FIELDS);
+
+	*fieldsP    = NULL;
+	*namespaceP = NULL;
+	*versionP   = NULL;
+	*methodP    = NULL;
+
+	if (!m || !blade) {
+		const char *buffer = cJSON_PrintUnformatted(message);
+		ks_log(KS_LOG_ERROR, "Unable to locate necessary fields in message:\n%s\n", buffer);
+		ks_pool_free(g_handle->pool, buffer);
+		return KS_STATUS_FAIL;	
+	}
+
+	ks_size_t len = KS_RPCMESSAGE_COMMAND_LENGTH   + 1 + 
+					KS_RPCMESSAGE_NAMESPACE_LENGTH + 1 +
+					KS_RPCMESSAGE_VERSION_LENGTH   + 1 +
+					sizeof(blade_rpc_fields_t) + 1;
+
+	blade_rpc_fields_t *fields =  (blade_rpc_fields_t *)ks_pool_alloc(g_handle->pool, len);
+	
+	fields->to = cJSON_GetObjectCstr(blade, BLADE_JRPC_TO);
+	fields->from = cJSON_GetObjectCstr(blade, BLADE_JRPC_FROM);
+	fields->from = cJSON_GetObjectCstr(blade, BLADE_JRPC_TOKEN);
+	
+	char *namespace = (char*)fields + sizeof(blade_rpc_fields_t);
+	char *command   = namespace + KS_RPCMESSAGE_NAMESPACE_LENGTH + 1; 
+	char *version   = command + KS_RPCMESSAGE_COMMAND_LENGTH + 1;
+
+    blade_rpc_parse_fqcommand(m, namespace, command);
+	
+	strcpy(version, cJSON_GetObjectCstr(blade, BLADE_JRPC_VERSION));
+
+	*fieldsP    = fields;	
+	*namespaceP = namespace;
+	*methodP    = command;
+
+	return KS_STATUS_SUCCESS;
+}
+
 
 /*
  * send message
@@ -769,7 +934,7 @@ static ks_status_t blade_rpc_process_jsonmessage_all(cJSON *request)
 	if (!fqcommand) {
 		error = cJSON_CreateObject();
 		cJSON_AddStringToObject(error, "errormessage", "Command not specified");
-        ks_rpcmessage_create_request("rpcprotocol", "unknowncommand", NULL, NULL,  &error, &responseP);
+        ks_rpcmessage_create_request("rpcprotocol", "unknowncommand", &error, &responseP);
 		blade_rpc_write_json(responseP);
         return KS_STATUS_FAIL;
 	}
@@ -907,23 +1072,23 @@ KS_DECLARE(ks_status_t) blade_rpc_process_data(const uint8_t *data,
 	return KS_STATUS_FAIL;
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_process_blademessage(blade_message_t *message)
-{
-	uint8_t* data = NULL;
-	ks_size_t size = 0;
-
-	blade_message_get(message, (void **)&data, &size);
-
-	if (data && size>0) {
-		ks_status_t s = blade_rpc_process_data(data, size);
-		blade_message_discard(&message);
-		return s;
-	} 
-	
-	ks_log(KS_LOG_ERROR, "Message read failed\n");
-	return KS_STATUS_FAIL;
-
-}
+//KS_DECLARE(ks_status_t) blade_rpc_process_blademessage(blade_message_t *message)
+//{
+//	uint8_t* data = NULL;
+//	ks_size_t size = 0;
+//
+//	blade_message_get(message, (void **)&data, &size);
+//
+//	if (data && size>0) {
+//		ks_status_t s = blade_rpc_process_data(data, size);
+//		blade_message_discard(&message);
+//		return s;
+//	} 
+//	
+//	ks_log(KS_LOG_ERROR, "Message read failed\n");
+//	return KS_STATUS_FAIL;
+//
+//}
 
 
 /* For Emacs:

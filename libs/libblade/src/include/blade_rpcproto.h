@@ -39,13 +39,26 @@
 
 // temp typedefs to get compile going 
 //typedef struct blade_peer_s  blade_peer_t;
-//typedef struct blade_message_s blade_message_t;
 //typedef struct blade_event_s blade_event_t;
 
 #define KS_RPCMESSAGE_NAMESPACE_LENGTH 16
 #define KS_RPCMESSAGE_COMMAND_LENGTH  238
 #define KS_RPCMESSAGE_FQCOMMAND_LENGTH  (KS_RPCMESSAGE_NAMESPACE_LENGTH+KS_RPCMESSAGE_COMMAND_LENGTH+1)
 #define KS_RPCMESSAGE_VERSION_LENGTH 9
+
+
+/* 
+ *  contents to add to the "blade" field in rpc
+ */
+
+typedef struct blade_rpc_fields_s {
+
+	const char *to;
+	const char *from;
+	const char *token;
+
+}  blade_rpc_fields_t;
+
 
 
 enum jrpc_status_t { 
@@ -101,6 +114,24 @@ KS_DECLARE(ks_status_t)blade_rpc_register_template_function(char *name,
 KS_DECLARE(ks_status_t)blade_rpc_inherit_template(char *namespace, char* template);
 
 
+/*
+ * create a request message
+ */
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_request(char *namespace,
+													char *method,
+													blade_rpc_fields_t* fields,
+													cJSON **paramsP,
+													cJSON **requestP);
+
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
+													cJSON **reply,
+													cJSON **response);
+
+KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
+													char **namespace,
+													char **method,
+													char **version,	
+													blade_rpc_fields_t **fieldsP);
 
 /*
  * peer create/destroy
@@ -121,7 +152,6 @@ KS_DECLARE(ks_status_t) blade_rpc_write_json(cJSON* json);
  * process inbound message
  * -----------------------
  */
-KS_DECLARE(ks_status_t) blade_rpc_process_blademessage(blade_message_t *message);
 KS_DECLARE(ks_status_t) blade_rpc_process_data(const uint8_t *data, ks_size_t size);
 
 KS_DECLARE(ks_status_t) blade_rpc_process_jsonmessage(cJSON *request);

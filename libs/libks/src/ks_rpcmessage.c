@@ -48,6 +48,16 @@ struct
 
 } handle = {NULL, 0, NULL};
 
+const char PROTOCOL[] = "jsonrpc";
+const char PROTOCOL_VERSION[] = "2.0";
+const char ID[]      = "id";
+const char METHOD[]  = "method";
+const char PARAMS[]  = "params";
+const char ERROR[]   = "error";
+const char RESULT[]  = "result";
+
+
+
 KS_DECLARE(void*) ks_json_pool_alloc(ks_size_t size)
 {
 	return ks_pool_alloc(handle.pool, size);
@@ -96,10 +106,10 @@ static uint32_t ks_rpcmessage_next_id()
 static cJSON *ks_rpcmessage_new(uint32_t id)
 {
     cJSON *obj = cJSON_CreateObject();
-    cJSON_AddItemToObject(obj, "jsonrpc", cJSON_CreateString("2.0"));
+    cJSON_AddItemToObject(obj, PROTOCOL, cJSON_CreateString(PROTOCOL_VERSION));
 
     if (id) {
-        cJSON_AddItemToObject(obj, "id", cJSON_CreateNumber(id));
+        cJSON_AddItemToObject(obj, ID, cJSON_CreateNumber(id));
     }
 
     return obj;
@@ -108,10 +118,10 @@ static cJSON *ks_rpcmessage_new(uint32_t id)
 static cJSON *ks_rpcmessage_dup(cJSON *msgid)
 {
     cJSON *obj = cJSON_CreateObject();
-    cJSON_AddItemToObject(obj, "jsonrpc", cJSON_CreateString("2.0"));
+    cJSON_AddItemToObject(obj, PROTOCOL, cJSON_CreateString(PROTOCOL_VERSION));
 
     if (msgid) {
-        cJSON_AddItemToObject(obj, "id",  cJSON_Duplicate(msgid, 0));
+        cJSON_AddItemToObject(obj, ID,  cJSON_Duplicate(msgid, 0));
     }
 
     return obj;
@@ -119,8 +129,8 @@ static cJSON *ks_rpcmessage_dup(cJSON *msgid)
 
 KS_DECLARE(ks_bool_t) ks_rpcmessage_isrequest(cJSON *msg)
 {
-    cJSON *result = cJSON_GetObjectItem(msg, "result");
-    cJSON *error  = cJSON_GetObjectItem(msg, "error");
+    cJSON *result = cJSON_GetObjectItem(msg, RESULT);
+    cJSON *error  = cJSON_GetObjectItem(msg, ERROR);
 
 	if (result || error) {
 		return  KS_FALSE;
@@ -131,7 +141,7 @@ KS_DECLARE(ks_bool_t) ks_rpcmessage_isrequest(cJSON *msg)
 
 KS_DECLARE(ks_bool_t) ks_rpcmessage_isrpc(cJSON *msg)
 {
-    cJSON *rpc = cJSON_GetObjectItem(msg, "json-rpc");
+    cJSON *rpc = cJSON_GetObjectItem(msg, PROTOCOL);
 
     if (rpc) {
         return  KS_FALSE;
@@ -143,51 +153,28 @@ KS_DECLARE(ks_bool_t) ks_rpcmessage_isrpc(cJSON *msg)
 
 
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace,
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_request(char *namespace,
 												char *command,
-												char *sessionid,
-												char *version,
 												cJSON **paramsP,
 												cJSON **requestP)
 {
     cJSON *msg, *params = NULL;
 	*requestP = NULL;
 
-	ks_rpcmessage_id msgid = ks_rpcmessage_next_id();
+	ks_rpcmessageid_t msgid = ks_rpcmessage_next_id();
     msg = ks_rpcmessage_new(msgid);
 
-    if (paramsP && *paramsP) {   /* parameters have been passed */
+    if (paramsP) {
 
-		cJSON *p = *paramsP;
-		
-		if (p->type != cJSON_Object) {    /* need to wrap this in a param field */
-			params = cJSON_CreateObject();
-			cJSON_AddItemToObject(params, "param", p);
-		}
-		else {
+		if (*paramsP) {   /* parameters have been passed */
 			params = *paramsP;
 		}
-
-		cJSON *v = cJSON_GetObjectItem(params, "version");
-
-		if (!v) {                /* add version if needed  */
-			 cJSON_AddStringToObject(params, "version", version);
-		}
 		else {
-			cJSON_AddStringToObject(params, "version", "0");
-		}
-    }
-
-    if (!params) {
-        params = cJSON_CreateObject();
-
-		if (version && version[0] != 0) {		
-			cJSON_AddStringToObject(params, "version", version);
-		}
-		else {
-			cJSON_AddStringToObject(params, "version", "0");
+			params = cJSON_CreateObject();
+			*paramsP = params;
 		}
 
+		cJSON_AddItemToObject(msg, PARAMS, params);
     }
 
     char fqcommand[KS_RPCMESSAGE_FQCOMMAND_LENGTH];
@@ -195,17 +182,7 @@ KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace,
 
 	sprintf(fqcommand, "%s.%s", namespace, command);
 
-    cJSON_AddItemToObject(msg, "method", cJSON_CreateString(fqcommand));
-
-	if (sessionid && sessionid[0] != 0) {
-		cJSON_AddStringToObject(params, "sessionid", sessionid);
-	}
-
-    cJSON_AddItemToObject(msg, "params", params);
-
-    if (paramsP) {
-        *paramsP = params;
-    }
+    cJSON_AddItemToObject(msg, METHOD, cJSON_CreateString(fqcommand));
 
 	*requestP = msg;
     return msgid;
@@ -213,17 +190,20 @@ KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_request(char *namespace,
 
 KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
                                             char *method,
-											char *sessionid,
-											char *version,
-                                            cJSON **parms,
+                                            cJSON **params,
                                             ks_buffer_t *buffer)
 {
+
 	cJSON *message;
 
-	ks_rpcmessage_id msgid = ks_rpcmessage_create_request(namespace, method, sessionid, version, parms, &message);
+	ks_rpcmessageid_t msgid = ks_rpcmessage_create_request(namespace, method, params, &message);
 
 	if (!msgid) {
 		return 0;
+	}
+
+	if ( (*params)->child == NULL) {
+		cJSON_AddNullToObject(*params, "bladenull");
 	}
 
 	const char* b = cJSON_PrintUnformatted(message);
@@ -236,14 +216,14 @@ KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
 }
 
 
-static ks_rpcmessage_id ks_rpcmessage_get_messageid(const cJSON *msg, cJSON **cmsgidP)
+static ks_rpcmessageid_t ks_rpcmessage_get_messageid(const cJSON *msg, cJSON **cmsgidP)
 {
-	uint32_t msgid = 0;
+	ks_rpcmessageid_t msgid = 0;
 
-	cJSON *cmsgid = cJSON_GetObjectItem(msg, "id");
+	cJSON *cmsgid = cJSON_GetObjectItem(msg, ID);
 
 	if (cmsgid->type == cJSON_Number) {
-		msgid = (uint32_t) cmsgid->valueint;
+		msgid = (ks_rpcmessageid_t) cmsgid->valueint;
 	}
  	
 	*cmsgidP = cmsgid;	
@@ -252,24 +232,17 @@ static ks_rpcmessage_id ks_rpcmessage_get_messageid(const cJSON *msg, cJSON **cm
 } 
 
 
-static ks_rpcmessage_id ks_rpcmessage_new_response(
+static ks_rpcmessageid_t ks_rpcmessage_new_response(
                                                 const cJSON *request,
-                                                cJSON *result,
+                                                cJSON **result,
                                                 cJSON **pmsg)
 {
     cJSON *respmsg = NULL;
     cJSON *cmsgid  = NULL;
-	cJSON *version = NULL;
-	cJSON *sessionid = NULL;
 
-    cJSON *command = cJSON_GetObjectItem(request, "method");
-	cJSON *params =  cJSON_GetObjectItem(request, "params");
+    cJSON *command = cJSON_GetObjectItem(request, METHOD);
 
-	if (params) {
-		version = cJSON_GetObjectItem(request, "version");
-	}
-
-	ks_rpcmessage_id msgid = ks_rpcmessage_get_messageid(request, &cmsgid );
+	ks_rpcmessageid_t msgid = ks_rpcmessage_get_messageid(request, &cmsgid );
 
     if (!msgid || !command) {
         return 0;
@@ -277,91 +250,51 @@ static ks_rpcmessage_id ks_rpcmessage_new_response(
 
     *pmsg = respmsg = ks_rpcmessage_dup(cmsgid);
 
-    cJSON_AddItemToObject(respmsg, "method", cJSON_Duplicate(command, 0));
+    cJSON_AddItemToObject(respmsg, METHOD, cJSON_Duplicate(command, 0));
 
-    if (result) {
-
-	    cJSON *params =  cJSON_GetObjectItem(request, "params");
-
-		if (params) {
-			version = cJSON_GetObjectItem(params, "version");
-
-			if (version) {
-				cJSON_AddItemToObject(result, "version", cJSON_Duplicate(version, 0));
-			}
-		
-			sessionid = cJSON_GetObjectItem(params, "sessionid");
-
-            if (sessionid) {
-                cJSON_AddItemToObject(result, "sessionid", cJSON_Duplicate(sessionid, 0));
-            }
-
-		}
-		
-        cJSON_AddItemToObject(respmsg, "result", result);
+    if (result && *result) {
+        cJSON_AddItemToObject(respmsg, RESULT, *result);
     }
 
     return msgid;
 }
 
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_response(
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_response(
 												const cJSON *request,
 												cJSON **resultP,
 												cJSON **responseP)
 {
-	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(request, *resultP, responseP);
+	ks_rpcmessageid_t msgid = ks_rpcmessage_new_response(request, resultP, responseP);
 
 	cJSON *respmsg = *responseP;
 
     if (msgid) {
 
-		if (*resultP == NULL) {
-			*resultP = cJSON_CreateObject();
-			cJSON *result = *resultP;
-
-		    cJSON *params =  cJSON_GetObjectItem(request, "params");
-
-			if (params) {
-				cJSON *version = cJSON_GetObjectItem(request, "version");
-				cJSON *sessionid = cJSON_GetObjectItem(request, "sessionid");
-
-				if (version) {
-					cJSON_AddItemToObject(result, "version", cJSON_Duplicate(version, 0));
-				}
-				else {
-					cJSON_AddStringToObject(result, "version", "0");
-				}
-
-				if (sessionid) {
-					cJSON_AddItemToObject(result, "sessionid", cJSON_Duplicate(sessionid, 0));
-				}
-				
-			}
-			else {
-				cJSON_AddStringToObject(result, "version", "0");
-			}
-
-			cJSON_AddItemToObject(respmsg, "result", result);
+		if (resultP && *resultP == NULL) {
+			cJSON *result = cJSON_CreateObject();
+			*resultP = result;
+			cJSON_AddItemToObject(respmsg, RESULT, result);
 		}
 	}
 
     return msgid;
 }
 
-KS_DECLARE(ks_rpcmessage_id) ks_rpcmessage_create_errorresponse( 
+KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_errorresponse( 
 												const cJSON *request, 
 												cJSON **errorP, 
 												cJSON **responseP)
 {
-	ks_rpcmessage_id msgid = ks_rpcmessage_new_response(request, *errorP, responseP);
+	ks_rpcmessageid_t msgid = ks_rpcmessage_new_response(request, errorP, responseP);
 	cJSON *respmsg = *responseP;
 
 	if (msgid) { 
-  
-		if (*errorP == NULL) {
-			*errorP = cJSON_CreateObject();
-			cJSON_AddItemToObject(respmsg, "error", *errorP);
+
+		if (errorP && *errorP == NULL) {
+			cJSON *error = cJSON_CreateObject();
+			*errorP = error;
+			cJSON_AddItemToObject(respmsg, ERROR, error);
 		}
 	}
 

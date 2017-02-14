@@ -29,7 +29,7 @@ static enum jrpc_status_t  process_widget(cJSON *msg, cJSON **response)
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddNumberToObject(resp, "code", 199);
 
-    ks_rpcmessage_id msgid = ks_rpcmessage_create_response(msg, &resp, response);
+    ks_rpcmessageid_t msgid = ks_rpcmessage_create_response(msg, &resp, response);
 
     char *b1 = cJSON_PrintUnformatted(*response);   //(*response);
     printf("Response: msgid %d\n%s\n", msgid, b1);
@@ -62,7 +62,8 @@ static enum jrpc_status_t  process_wombat(cJSON *msg, cJSON **replyP)
 	cJSON_AddNumberToObject(result, "code", 99);
 	cJSON *response;
 
-    ks_rpcmessage_id msgid = ks_rpcmessage_create_response(msg, &result, &response);
+//    ks_rpcmessageid_t msgid = ks_rpcmessage_create_response(msg, &result, &response);
+	ks_rpcmessageid_t msgid = blade_rpc_create_response(msg, &result, &response);
 
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
     blade_rpc_process_jsonmessage(response_copy);
@@ -80,7 +81,18 @@ static enum jrpc_status_t  process_wombat(cJSON *msg, cJSON **replyP)
 
 
 	cJSON *parms2 = NULL;
-	msgid = ks_rpcmessage_create_request("app1", "widget", "99", "1.0", &parms2, replyP);
+
+    char to[] = "tony@freeswitch.com/laptop?transport=wss&host=server1.freeswitch.com&port=1234";
+    char from[] = "colm@freeswitch.com/laptop?transport=wss&host=server2.freeswitch.com&port=4321";
+    char token[] = "abcdefhgjojklmnopqrst";
+
+    blade_rpc_fields_t  fields;
+    fields.to = to;
+    fields.from = from;
+    fields.token = token;
+
+//	msgid = ks_rpcmessage_create_request("app1", "widget", &parms2, replyP);
+	msgid = blade_rpc_create_request("app1", "widget", &fields, &parms2, replyP);
 
     printf("\n\nexiting process_wombat with a reply to send\n");
 
@@ -120,7 +132,7 @@ static enum jrpc_status_t  process_wombat_preresponse(cJSON *request, cJSON **ms
 
 	cJSON *parms2 = NULL;
 
-	//ks_rpcmessage_id msgid = ks_rpcmessage_create_request("app1", "widget", "99", "1.0", &parms2, msg);	
+	//ks_rpcmessageid_t msgid = ks_rpcmessage_create_request("app1", "widget", &parms2, msg);	
 
     printf("exiting process_wombat_preresponse\n");
     return JRPC_SEND;
@@ -146,7 +158,7 @@ static enum jrpc_status_t  process_badbunny( cJSON *msg, cJSON **response)
 
     cJSON *respvalue;
 
-    ks_rpcmessage_id msgid = ks_rpcmessage_create_errorresponse(msg, &respvalue, response);
+    ks_rpcmessageid_t msgid = ks_rpcmessage_create_errorresponse(msg, &respvalue, response);
 
     char *b2 = cJSON_PrintUnformatted(*response);
     printf("\nRequest: msgid %d\n%s\n\n", msgid, b2);
@@ -187,9 +199,9 @@ void test01()
     cJSON* request1 = NULL;
     cJSON* parms1   = NULL;
 
-	printf("\n\n\n - message1 - basic message\n\n\n");
+	printf("\n\n\n - test01 message1 - basic message\n\n\n");
 
-	ks_rpcmessage_id msgid = ks_rpcmessage_create_request("app1", "wombat", "99", "1.0", &parms1, &request1);
+	ks_rpcmessageid_t msgid = ks_rpcmessage_create_request("app1", "wombat", &parms1, &request1);
 	if (msgid == 0) {
 		printf("test01.1: unable to create message 1\n");
 		return;
@@ -200,6 +212,8 @@ void test01()
 		return;
 	}
 
+    cJSON_AddStringToObject(parms1, "hello", "cruel world");
+
 	char *pdata = cJSON_PrintUnformatted(request1);
 
 	if (!pdata) {
@@ -207,9 +221,8 @@ void test01()
 		return;
 	}
 
-	printf("request:\n%s\n", pdata);
+	printf("test01 request:\n%s\n", pdata);
 
-    cJSON_AddStringToObject(parms1, "hello", "cruel world");
 
 	blade_rpc_process_jsonmessage(request1);
 
@@ -223,14 +236,16 @@ void test01()
 	/* message 2 */
 	/* --------- */
 
-    printf("\n\n\n - message2 - test inherit\n\n\n");
+    printf("\n\n\n test01 - message2 - test inherit\n\n\n");
 
 	blade_rpc_inherit_template("app1", "temp1");
 
     cJSON* request2 = NULL;
-    cJSON* parms2   = NULL;
+    cJSON* parms2   = cJSON_CreateObject();
 
-    msgid = ks_rpcmessage_create_request("app1", "temp1.widget", "99", "1.0", &parms2, &request2); 
+    cJSON_AddStringToObject(parms2, "hello2", "cruel world once again");
+
+    msgid = ks_rpcmessage_create_request("app1", "temp1.widget", &parms2, &request2); 
 	if (msgid == 0) {
 		printf("test01.2: failed to create a wombat\n");
 		return;
@@ -248,9 +263,7 @@ void test01()
 		return;
 	}
 
-    printf("request:\n%s\n", pdata);
-
-    cJSON_AddStringToObject(parms2, "hello2", "cruel world2");
+    printf("\ntest01 request:\n%s\n\n\n", pdata);
 
     blade_rpc_process_jsonmessage(request2);
 
@@ -265,12 +278,316 @@ void test01()
 
 void test02()
 {
-	printf("**** testmessages - test02 start\n"); fflush(stdout);
+	printf("**** testrpcmessages - test02 start\n"); fflush(stdout);
 
-	printf("****  testmessages - test02 finished\n"); fflush(stdout);
+    blade_rpc_declare_namespace("app2", "1.0");
+
+    blade_rpc_register_function("app2", "wombat", process_wombat, process_wombat_response);
+
+    blade_rpc_inherit_template("app2", "temp1");
+
+    blade_rpc_register_custom_request_function("app2", "wombat", process_wombat_prerequest, process_wombat_postresponse);
+    blade_rpc_register_custom_response_function("app2", "wombat", process_wombat_preresponse, process_wombat_postresponse);
+
+    blade_rpc_register_function("app2", "bunny", process_badbunny, NULL);
+
+	char to[] = "tony@freeswitch.com/laptop?transport=wss&host=server1.freeswitch.com&port=1234";
+	char from[] = "colm@freeswitch.com/laptop?transport=wss&host=server2.freeswitch.com&port=4321";
+	char token[] = "abcdefhgjojklmnopqrst";
+
+	blade_rpc_fields_t  fields;
+	fields.to = to;
+	fields.from = from;
+	fields.token = token;
+
+
+	/* test the 4 different ways to handle param messages */
+
+	cJSON *params1 = NULL;
+	cJSON *request1;
+
+	ks_rpcmessageid_t msgid =  blade_rpc_create_request("app2", "temp1.widget2", &fields, &params1, &request1); 
+
+	if (!msgid) {
+		 printf("test02.1: create_request failed\n");
+		return;
+	}
+
+    cJSON_AddStringToObject(params1, "hello", "cruel world");
+
+    char *pdata = cJSON_PrintUnformatted(request1);
+
+    if (!pdata) {
+        printf("test02.1: unable to parse cJSON object\n");
+        return;
+    }
+
+	printf("\ntest02.1 request:\n\n%s\n\n\n", pdata);
+
+	printf("\n\n -----------------------------------------\n\n");
+
+	ks_status_t s1 = blade_rpc_process_jsonmessage(request1);
+	if (s1 == KS_STATUS_FAIL) {
+		printf("test02.1:  process request1 failed\n");
+		return;
+	}
+ 
+	printf(" -----------------------------------------\n\n\n\n");
+
+	ks_pool_free(pool, &pdata);
+
+	cJSON *reply1 = NULL;
+	cJSON *response1 = NULL;
+
+	ks_rpcmessageid_t msgid2 = blade_rpc_create_response(request1, &reply1, &response1);
+
+	if (!msgid2) {
+		printf("test02.1: create_response failed\n");
+		return;
+	}
+
+	cJSON_AddNumberToObject(reply1, "code", 10);
+	cJSON_AddStringToObject(reply1, "farewell", "cruel server");
+
+	pdata = cJSON_PrintUnformatted(response1);
+
+	if (!pdata) {
+        printf("test02.1: unable to parse cJSON response object\n");
+        return;
+	}
+
+    printf("\ntest02.1 response:\n\n%s\n\n\n", pdata);
+
+    printf("\n\n -----------------------------------------\n\n");
+
+    s1 = blade_rpc_process_jsonmessage(response1);
+    if (s1 == KS_STATUS_FAIL) {
+        printf("test02.1:  process request1 failed\n");
+        return;
+    }
+
+    printf(" -----------------------------------------\n\n\n\n");
+
+
+	ks_pool_free(pool, &pdata);
+
+	printf("****  testrpcmessages - test02 finished\n"); fflush(stdout);
 
 	return;
 }
+
+
+void test02a()
+{
+	printf("**** testrpcmessages - test02a start\n"); fflush(stdout);
+
+	char to[] = "tony@freeswitch.com/laptop?transport=wss&host=server1.freeswitch.com&port=1234";
+	char from[] = "colm@freeswitch.com/laptop?transport=wss&host=server2.freeswitch.com&port=4321";
+	char token[] = "abcdefhgjojklmnopqrst";
+
+	blade_rpc_fields_t  fields;
+	fields.to = to;
+	fields.from = from;
+	fields.token = token;
+
+
+	/* test the 4 different ways to handle param messages */
+
+	cJSON *request1;
+
+	ks_rpcmessageid_t msgid =  blade_rpc_create_request("app2", "wombat", &fields, NULL, &request1);
+
+	if (!msgid) {
+		printf("test02.1: create_request failed\n");
+		return;
+	}
+
+	char *pdata = cJSON_PrintUnformatted(request1);
+
+	if (!pdata) {
+		printf("test02.1: unable to parse cJSON object\n");
+		return;
+	}
+
+	printf("\ntest02.1 request:\n\n%s\n\n\n", pdata);
+
+    printf("\n\n -----------------------------------------\n\n");
+
+    ks_status_t s1 = blade_rpc_process_jsonmessage(request1);
+    if (s1 == KS_STATUS_FAIL) {
+        printf("test02.1:  process request1 failed\n");
+        return;
+    }
+
+    printf(" -----------------------------------------\n\n\n\n");
+
+
+
+	
+	ks_pool_free(pool, &pdata);
+
+	cJSON *response1 = NULL;
+
+	ks_rpcmessageid_t msgid2 = blade_rpc_create_response(request1, NULL, &response1);
+
+	if (!msgid2) {
+		printf("test02.1: create_response failed\n");
+		return;
+	}
+
+	pdata = cJSON_PrintUnformatted(response1);
+
+	printf("\ntest02.1 response:\n\n%s\n\n\n", pdata);
+
+	ks_pool_free(pool, &pdata);
+
+	printf("****  testrpcmessages - test02a finished\n\n\n"); fflush(stdout);
+
+	return;
+}
+
+
+void test02b()
+{
+    printf("**** testrpcmessages - test02b start\n"); fflush(stdout);
+
+    char to[] = "tony@freeswitch.com/laptop?transport=wss&host=server1.freeswitch.com&port=1234";
+    char from[] = "colm@freeswitch.com/laptop?transport=wss&host=server2.freeswitch.com&port=4321";
+    char token[] = "abcdefhgjojklmnopqrst";
+
+    blade_rpc_fields_t  fields;
+    fields.to = to;
+    fields.from = from;
+    fields.token = token;
+
+
+    /* test the 4 different ways to handle param messages */
+
+    cJSON *params1 = cJSON_CreateNumber(4321);
+    cJSON *request1;
+
+    ks_rpcmessageid_t msgid =  blade_rpc_create_request("app2", "temp1.widget", &fields, &params1, &request1);
+
+    if (!msgid) {
+         printf("test02.1: create_request failed\n");
+        return;
+    }
+
+    char *pdata = cJSON_PrintUnformatted(request1);
+
+    if (!pdata) {
+        printf("test02.1: unable to parse cJSON object\n");
+        return;
+    }
+
+    printf("\ntest02.1 request:\n\n%s\n\n\n", pdata);
+	
+	    ks_pool_free(pool, &pdata);
+
+    cJSON *reply1 = cJSON_CreateString("successful");
+    cJSON *response1 = NULL;
+
+    ks_rpcmessageid_t msgid2 = blade_rpc_create_response(request1, &reply1, &response1);
+
+    if (!msgid2) {
+        printf("test02.1: create_response failed\n");
+        return;
+    }
+
+     pdata = cJSON_PrintUnformatted(response1);
+
+    printf("\ntest02.1 response:\n\n%s\n\n\n", pdata);
+
+    ks_pool_free(pool, &pdata);
+
+    printf("****  testrpcmessages - test02b finished\n"); fflush(stdout);
+
+    return;
+}
+
+
+void test02c()	
+{
+
+    printf("**** testrpcmessages - test02c start\n"); fflush(stdout);
+
+    char to[] = "tony@freeswitch.com/laptop?transport=wss&host=server1.freeswitch.com&port=1234";
+    char from[] = "colm@freeswitch.com/laptop?transport=wss&host=server2.freeswitch.com&port=4321";
+    char token[] = "abcdefhgjojklmnopqrst";
+
+    blade_rpc_fields_t  fields;
+    fields.to    = to;
+    fields.from  = from;
+    fields.token = token;
+
+
+    /* test the 4 different ways to handle param messages */
+
+    cJSON *params1 = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(params1, "string1", "here is a string");
+	cJSON_AddNumberToObject(params1, "number1", 4242);
+
+    cJSON *request1;
+
+    ks_rpcmessageid_t msgid =  blade_rpc_create_request("app2", "bunny", &fields, &params1, &request1);
+
+    if (!msgid) {
+         printf("test02.1: create_request failed\n");
+        return;
+    }
+
+    cJSON_AddStringToObject(params1, "hello", "cruel world");
+
+    char *pdata = cJSON_PrintUnformatted(request1);
+
+    if (!pdata) {
+        printf("test02.1: unable to parse cJSON object\n");
+        return;
+    }
+
+    printf("\ntest02.1 request:\n\n%s\n\n\n", pdata);
+	
+	    ks_pool_free(pool, &pdata);
+
+
+    cJSON *reply1 = cJSON_CreateObject();
+    cJSON_AddNumberToObject(reply1, "code", 10);
+    cJSON_AddStringToObject(reply1, "farewell", "cruel server");
+
+
+    cJSON *response1 = NULL;
+
+    ks_rpcmessageid_t msgid2 = blade_rpc_create_response(request1, &reply1, &response1);
+
+    if (!msgid2) {
+        printf("test02.1: create_response failed\n");
+        return;
+    }
+
+
+     pdata = cJSON_PrintUnformatted(response1);
+
+    printf("\ntest02.1 response:\n\n%s\n\n\n", pdata);
+
+    ks_pool_free(pool, &pdata);
+
+    printf("****  testrpcmessages - test02c finished\n"); fflush(stdout);
+
+    return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -340,6 +657,13 @@ int main(int argc, char *argv[]) {
 
 	blade_rpc_init(pool);
 
+    blade_rpc_declare_template("temp1", "1.0");
+
+    blade_rpc_register_template_function("temp1", "widget", process_widget, process_widget_response);
+    blade_rpc_register_template_function("temp1", "widget2", process_widget, process_widget_response);
+    blade_rpc_register_template_function("temp1", "widget3", process_widget, process_widget_response);
+
+
 	for (int tix=0; tix<argc; ++tix) {
 
 
@@ -350,6 +674,13 @@ int main(int argc, char *argv[]) {
 
 		if (tests[tix] == 2) {
 			test02();
+			printf("\n\n");
+			test02a();
+            printf("\n\n");
+			test02b();
+            printf("\n\n");
+			test02c();
+            printf("\n\n");
 			continue;
 		}
 
