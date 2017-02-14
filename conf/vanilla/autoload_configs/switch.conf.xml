@@ -48,6 +48,9 @@
     <!-- Minimum idle CPU before refusing calls -->
     <!-- <param name="min-idle-cpu" value="25"/> -->
 
+    <!-- Interval between heartbeat events -->
+    <!-- <param name="event-heartbeat-interval" value="20"/> -->
+
     <!--
 	Max number of sessions to allow at any given time.
 	
