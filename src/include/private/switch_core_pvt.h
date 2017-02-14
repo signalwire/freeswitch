@@ -302,6 +302,7 @@ struct switch_runtime {
 	int multiple_registrations;
 	uint32_t max_db_handles;
 	uint32_t db_handle_timeout;
+	uint32_t event_heartbeat_interval;
 	int cpu_count;
 	uint32_t time_sync;
 	char *core_db_pre_trans_execute;

@@ -206,7 +206,7 @@ SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 	send_heartbeat();
 
 	/* reschedule this task */
-	task->runtime = switch_epoch_time_now(NULL) + 20;
+	task->runtime = switch_epoch_time_now(NULL) + runtime.event_heartbeat_interval;
 }
 
 
@@ -1826,6 +1826,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
+	runtime.event_heartbeat_interval = 20;
 
 	runtime.runlevel++;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
@@ -2138,6 +2139,15 @@ static void switch_load_core_config(const char *file)
 						runtime.db_handle_timeout = (uint32_t) tmp * 1000000;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "db-handle-timeout must be between 1 and 5000\n");
+					}
+
+				} else if (!strcasecmp(var, "event-heartbeat-interval")) {
+					long tmp = atol(val);
+
+					if (tmp > 0) {
+						runtime.event_heartbeat_interval = (uint32_t) tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "heartbeat-interval must be a greater than 0\n");
 					}
 
 				} else if (!strcasecmp(var, "multiple-registrations")) {
