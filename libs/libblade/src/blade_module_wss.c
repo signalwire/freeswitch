@@ -33,6 +33,7 @@
 
 #include "blade.h"
 
+#define BLADE_MODULE_WSS_TRANSPORT_NAME "wss"
 #define BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX 16
 
 typedef struct blade_module_wss_s blade_module_wss_t;
@@ -130,8 +131,6 @@ static blade_module_callbacks_t g_module_wss_callbacks =
 
 static blade_transport_callbacks_t g_transport_wss_callbacks =
 {
-	"wss",
-	
 	blade_transport_wss_on_connect,
 	blade_transport_wss_on_rank,
 	blade_transport_wss_on_send,
@@ -374,7 +373,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 							KS_PRI_NORMAL,
 							bm_wss->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 	
-	blade_handle_transport_register(bm_wss->handle, bm_wss->transport_callbacks);
+	blade_handle_transport_register(bm_wss->handle, bm, BLADE_MODULE_WSS_TRANSPORT_NAME, bm_wss->transport_callbacks);
 	
 	return KS_STATUS_SUCCESS;
 }
@@ -389,7 +388,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
-	blade_handle_transport_unregister(bm_wss->handle, bm_wss->transport_callbacks);
+	blade_handle_transport_unregister(bm_wss->handle, BLADE_MODULE_WSS_TRANSPORT_NAME);
 
 	if (bm_wss->listeners_thread) {
 		bm_wss->shutdown = KS_TRUE;
@@ -580,6 +579,7 @@ ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_modul
 	*bcP = NULL;
 
 	// @todo connect-out equivilent of accept
+	ks_log(KS_LOG_DEBUG, "Connect Callback: %s\n", blade_identity_uri(target));
 
 	return KS_STATUS_SUCCESS;
 }

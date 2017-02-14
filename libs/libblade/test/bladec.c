@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 	config_t config;
 	config_setting_t *config_blade = NULL;
 	blade_module_t *mod_wss = NULL;
+	//blade_identity_t *id = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 	
@@ -53,6 +54,9 @@ int main(int argc, char **argv)
 
 	blade_handle_create(&bh, NULL, NULL);
 
+	//blade_identity_create(&id, blade_handle_pool_get(bh));
+	//blade_identity_parse(id, "test@domain.com/laptop?transport=wss&host=127.0.0.1&port=1234");
+	
 	// @todo load config file, and lookup "blade" setting to put into config_blade
 	config_init(&config);
 	if (!config_read_file(&config, "bladec.cfg")) {

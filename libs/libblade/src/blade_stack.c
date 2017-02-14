@@ -48,11 +48,88 @@ struct blade_handle_s {
 	config_setting_t *config_datastore;
 
 	ks_hash_t *transports;
-	ks_q_t *messages_discarded;
 
 	blade_datastore_t *datastore;
 };
 
+
+typedef struct blade_handle_transport_registration_s blade_handle_transport_registration_t;
+struct blade_handle_transport_registration_s {
+	ks_pool_t *pool;
+
+	blade_module_t *module;
+	blade_transport_callbacks_t *callbacks;
+};
+
+KS_DECLARE(ks_status_t) blade_handle_transport_registration_create(blade_handle_transport_registration_t **bhtrP,
+																   ks_pool_t *pool,
+																   blade_module_t *module,
+																   blade_transport_callbacks_t *callbacks)
+{
+	blade_handle_transport_registration_t *bhtr = NULL;
+
+	ks_assert(bhtrP);
+	ks_assert(pool);
+	ks_assert(module);
+	ks_assert(callbacks);
+
+	bhtr = ks_pool_alloc(pool, sizeof(blade_handle_transport_registration_t));
+	bhtr->pool = pool;
+	bhtr->module = module;
+	bhtr->callbacks = callbacks;
+
+	*bhtrP = bhtr;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_transport_registration_destroy(blade_handle_transport_registration_t **bhtrP)
+{
+	blade_handle_transport_registration_t *bhtr = NULL;
+
+	ks_assert(bhtrP);
+
+	bhtr = *bhtrP;
+	*bhtrP = NULL;
+
+	ks_assert(bhtr);
+
+	ks_pool_free(bhtr->pool, &bhtr);
+
+	return KS_STATUS_SUCCESS;
+}
+
+
+
+KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool)
+{
+	bhpvt_flag_t newflags = BH_NONE;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(bhP);
+
+	if (!pool) {
+		newflags |= BH_MYPOOL;
+		ks_pool_open(&pool);
+	}
+    if (!tpool) {
+		newflags |= BH_MYTPOOL;
+		ks_thread_pool_create(&tpool, BLADE_HANDLE_TPOOL_MIN, BLADE_HANDLE_TPOOL_MAX, BLADE_HANDLE_TPOOL_STACK, KS_PRI_NORMAL, BLADE_HANDLE_TPOOL_IDLE);
+		ks_assert(tpool);
+	}
+	
+	bh = ks_pool_alloc(pool, sizeof(blade_handle_t));
+	bh->flags = newflags;
+	bh->pool = pool;
+	bh->tpool = tpool;
+
+	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->transports);
+	
+	*bhP = bh;
+
+	return KS_STATUS_SUCCESS;
+}
 
 KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 {
@@ -72,11 +149,6 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 
 	blade_handle_shutdown(bh);
 
-	if (bh->messages_discarded) {
-		// @todo make sure messages are cleaned up
-		ks_q_destroy(&bh->messages_discarded);
-	}
-
 	ks_hash_destroy(&bh->transports);
 
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
@@ -90,40 +162,6 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool)
-{
-	bhpvt_flag_t newflags = BH_NONE;
-	blade_handle_t *bh = NULL;
-
-	ks_assert(bhP);
-
-	if (!pool) {
-		newflags |= BH_MYPOOL;
-		ks_pool_open(&pool);
-	}
-    if (!tpool) {
-		newflags |= BH_MYTPOOL;
-		ks_thread_pool_create(&tpool, BLADE_HANDLE_TPOOL_MIN, BLADE_HANDLE_TPOOL_MAX, BLADE_HANDLE_TPOOL_STACK, KS_PRI_NORMAL, BLADE_HANDLE_TPOOL_IDLE);
-		ks_assert(tpool);
-	}
-	
-	bh = ks_pool_alloc(pool, sizeof(*bh));
-	bh->flags = newflags;
-	bh->pool = pool;
-	bh->tpool = tpool;
-
-	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
-	ks_assert(bh->transports);
-	
-	// @todo check thresholds from config, for now just ensure it doesn't grow out of control, allow 100 discarded messages
-	ks_q_create(&bh->messages_discarded, bh->pool, 100);
-	ks_assert(bh->messages_discarded);
-
-	*bhP = bh;
-
-	return KS_STATUS_SUCCESS;
-}
-
 ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
 	config_setting_t *service = NULL;
@@ -133,8 +171,6 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 
 	if (!config) return KS_STATUS_FAIL;
     if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
-
-	// @todo config for messages_discarded threshold (ie, message count, message memory, etc)
 
     service = config_setting_get_member(config, "service");
 	
@@ -173,6 +209,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
 	ks_assert(bh);
 
+	// @todo cleanup registered transports
 	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
 	
 	return KS_STATUS_SUCCESS;
@@ -190,79 +227,82 @@ KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh)
 	return bh->tpool;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blade_transport_callbacks_t *callbacks)
+KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blade_module_t *bm, const char *name, blade_transport_callbacks_t *callbacks)
 {
+	blade_handle_transport_registration_t *bhtr = NULL;
+	blade_handle_transport_registration_t *bhtr_old = NULL;
+	
 	ks_assert(bh);
+	ks_assert(bm);
+	ks_assert(name);
 	ks_assert(callbacks);
 
+	blade_handle_transport_registration_create(&bhtr, bh->pool, bm, callbacks);
+	ks_assert(bhtr);
+
 	ks_hash_write_lock(bh->transports);
-	ks_hash_insert(bh->transports, (void *)callbacks->name, callbacks);
+	bhtr_old = ks_hash_search(bh->transports, (void *)name, KS_UNLOCKED);
+	if (bhtr_old) ks_hash_remove(bh->transports, (void *)name);
+	ks_hash_insert(bh->transports, (void *)name, bhtr);
 	ks_hash_write_unlock(bh->transports);
 
-	ks_log(KS_LOG_DEBUG, "Transport Registered: %s\n", callbacks->name);
+	if (bhtr_old) blade_handle_transport_registration_destroy(&bhtr_old);
+
+	ks_log(KS_LOG_DEBUG, "Transport Registered: %s\n", name);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, blade_transport_callbacks_t *callbacks)
+KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, const char *name)
 {
+	blade_handle_transport_registration_t *bhtr = NULL;
+
 	ks_assert(bh);
-	ks_assert(callbacks);
+	ks_assert(name);
 
 	ks_hash_write_lock(bh->transports);
-	ks_hash_remove(bh->transports, (void *)callbacks->name);
+	bhtr = ks_hash_search(bh->transports, (void *)name, KS_UNLOCKED);
+	if (bhtr) ks_hash_remove(bh->transports, (void *)name);
 	ks_hash_write_unlock(bh->transports);
+
+	if (bhtr) blade_handle_transport_registration_destroy(&bhtr);
 
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target)
 {
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_transport_registration_t *bhtr = NULL;
+	const char *tname = NULL;
+	
 	ks_assert(bh);
 	ks_assert(target);
 
 	ks_hash_read_lock(bh->transports);
-	// @todo find transport for target, check if target specifies explicit transport parameter first, otherwise use onrank and keep highest ranked callbacks
+
+	blade_identity_parameter_get(target, "transport", &tname);
+	if (tname) {
+		bhtr = ks_hash_search(bh->transports, (void *)tname, KS_UNLOCKED);
+		if (!bhtr) {
+			// @todo error logging, target has an explicit transport that is not available in the local transports registry
+			// discuss later whether this scenario should still attempt other transports when target is explicit
+		}
+	} else {
+		for (ks_hash_iterator_t *it = ks_hash_first(bh->transports, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			// @todo use onrank (or replace with whatever method is used for determining what transport to use) and keep highest ranked callbacks
+		}
+	}
 	ks_hash_read_unlock(bh->transports);
 
-	// transport_callbacks->onconnect(bcP, target);
+	// @todo need to be able to get to the blade_module_t from the callbacks, may require envelope around registration of callbacks to include module
+	// this is required because onconnect transport callback needs to be able to get back to the module data to create the connection being returned
+	if (bhtr) ret = bhtr->callbacks->onconnect(bcP, bhtr->module, target);
+	else ret = KS_STATUS_FAIL;
 
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_message_claim(blade_handle_t *bh, blade_message_t **message, void *data, ks_size_t data_length)
-{
-	blade_message_t *msg = NULL;
-	
-	ks_assert(bh);
-	ks_assert(message);
-	ks_assert(data);
-
-	*message = NULL;
-	
-	if (ks_q_trypop(bh->messages_discarded, (void **)&msg) != KS_STATUS_SUCCESS || !msg) blade_message_create(&msg, bh->pool, bh);
-	ks_assert(msg);
-
-	if (blade_message_set(msg, data, data_length) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-	
-	*message = msg;
-		
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_handle_message_discard(blade_handle_t *bh, blade_message_t **message)
-{
-	ks_assert(bh);
-	ks_assert(message);
-	ks_assert(*message);
-
-	// @todo check thresholds for discarded messages, if the queue is full just destroy the message for now (currently 100 messages)
-	if (ks_q_push(bh->messages_discarded, *message) != KS_STATUS_SUCCESS) blade_message_destroy(message);
-
-	*message = NULL;
-
-	return KS_STATUS_SUCCESS;
-}
 
 
 

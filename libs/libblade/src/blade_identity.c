@@ -87,6 +87,8 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 	ks_assert(bi);
 	ks_assert(uri);
 
+	ks_log(KS_LOG_DEBUG, "Parsing URI: %s\n", uri);
+	
 	if (bi->uri) {
 		ks_pool_free(bi->pool, &bi->uri);
 		ks_pool_free(bi->pool, &bi->components);
@@ -97,13 +99,13 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 	bi->name = tmp;
 	if (!(tmp = strchr(tmp, '@'))) return KS_STATUS_FAIL;
 	*tmp++ = '\0';
-	
+		
 	bi->domain = tmp2 = tmp;
 	if ((tmp = strchr(tmp, '/'))) {
 		*tmp++ = '\0';
 		bi->resource = tmp2 = tmp;
 	} else tmp = tmp2;
-	
+
 	if ((tmp = strchr(tmp, '?'))) {
 		*tmp++ = '\0';
 
@@ -125,18 +127,41 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 		}
 	}
 
+	// @todo remove this, temporary for testing
+	ks_log(KS_LOG_DEBUG, "       name: %s\n", bi->name);
+	ks_log(KS_LOG_DEBUG, "     domain: %s\n", bi->domain);
+	ks_log(KS_LOG_DEBUG, "   resource: %s\n", bi->resource);
+	for (ks_hash_iterator_t *it = ks_hash_first(bi->parameters, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		const char *key = NULL;
+		const char *val = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&val);
+		
+		ks_log(KS_LOG_DEBUG, "        key: %s = %s\n", key, val);
+	}
+		
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_identity_uri(blade_identity_t *bi, const char **uri)
+KS_DECLARE(const char *) blade_identity_uri(blade_identity_t *bi)
 {
 	ks_assert(bi);
-	ks_assert(uri);
 
-	*uri = bi->uri;
+	return bi->uri;
+}
+
+KS_DECLARE(ks_status_t) blade_identity_parameter_get(blade_identity_t *bi, const char *key, const char **value)
+{
+	ks_assert(bi);
+	ks_assert(key);
+	ks_assert(value);
+
+	*value = (const char *)ks_hash_search(bi->parameters, (void *)key, KS_UNLOCKED);
+
 	return KS_STATUS_SUCCESS;
 }
-	
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

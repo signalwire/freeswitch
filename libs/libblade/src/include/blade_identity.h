@@ -39,7 +39,8 @@ KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP);
 KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *uri);
-KS_DECLARE(ks_status_t) blade_identity_uri(blade_identity_t *bi, const char **uri);
+KS_DECLARE(const char *) blade_identity_uri(blade_identity_t *bi);
+KS_DECLARE(ks_status_t) blade_identity_parameter_get(blade_identity_t *bi, const char *key, const char **value);
 KS_END_EXTERN_C
 
 #endif

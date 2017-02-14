@@ -45,7 +45,6 @@ typedef struct blade_module_callbacks_s blade_module_callbacks_t;
 typedef struct blade_transport_callbacks_s blade_transport_callbacks_t;
 typedef struct blade_connection_s blade_connection_t;
 
-typedef struct blade_message_s blade_message_t;
 typedef struct blade_datastore_s blade_datastore_t;
 
 typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
@@ -105,8 +104,6 @@ typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc
 typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
 struct blade_transport_callbacks_s {
-	const char *name;
-	
 	blade_transport_connect_callback_t onconnect;
 	blade_transport_rank_callback_t onrank;
 	blade_transport_send_callback_t onsend;

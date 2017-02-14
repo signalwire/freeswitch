@@ -40,13 +40,11 @@
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
-#include "blade_message.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
-
 #include "blade_identity.h"
 #include "blade_module.h"
 #include "blade_connection.h"
+#include "blade_datastore.h"
+#include "bpcp.h"
 
 KS_BEGIN_EXTERN_C
 
