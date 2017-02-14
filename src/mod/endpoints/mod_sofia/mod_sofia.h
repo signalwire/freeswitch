@@ -797,6 +797,7 @@ struct private_object {
 	sofia_profile_t *profile;
 	char *reply_contact;
 	char *from_uri;
+	char *from_user;
 	char *to_uri;
 	char *callid;
 	char *contact_url;
