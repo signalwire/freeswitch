@@ -2415,6 +2415,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX) {
 		conference_video_launch_muxing_write_thread(&member);
+		conference_video_launch_layer_thread(&member);
 	}
 
 	msg.from = __FILE__;
@@ -2453,11 +2454,25 @@ SWITCH_STANDARD_APP(conference_function)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	switch_core_session_receive_message(session, &msg);
 
+	conference_utils_member_clear_flag(&member, MFLAG_RUNNING);
+	
 	if (member.video_muxing_write_thread) {
 		switch_status_t st = SWITCH_STATUS_SUCCESS;
 		switch_frame_buffer_push(member.fb, NULL);
 		switch_thread_join(&st, member.video_muxing_write_thread);
 		member.video_muxing_write_thread = NULL;
+	}
+
+	if (member.video_layer_thread) {
+		switch_status_t st = SWITCH_STATUS_SUCCESS;
+
+		while(member.layer_thread_running) {
+			conference_video_wake_layer_thread(&member);
+			switch_yield(10000);
+		}
+		
+		switch_thread_join(&st, member.video_layer_thread);
+		member.video_layer_thread = NULL;
 	}
 
 	/* Remove the caller from the conference */
