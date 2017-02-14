@@ -275,7 +275,7 @@ switch_status_t mod_amqp_logging_create(char *name, switch_xml_t cfg)
 		goto err;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] Successfully started\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Profile[%s] Successfully started\n", profile->name);
 	return SWITCH_STATUS_SUCCESS;
 
  err:
