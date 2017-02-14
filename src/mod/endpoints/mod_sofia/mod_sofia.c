@@ -683,7 +683,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Dialplan did not acknowledge_call; sent 100 Trying");
 	}
 
-	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
+	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !zstr(tech_pvt->reply_contact) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
 		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
 	}
 
@@ -1313,7 +1313,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		goto end;
 	}
 
-	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
+	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !zstr(tech_pvt->reply_contact) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
 		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
 	}
 
