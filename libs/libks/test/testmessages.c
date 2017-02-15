@@ -43,7 +43,7 @@ void test01()
 	char *b = (char *)ks_pool_alloc(pool, size+1);
 	ks_buffer_read(buffer, b, size); 
 	
-	printf("test01 request2: %d %d  from ks_buffer\n%s\n\n\n", n, size, b); 
+	printf("test01 request2: %zd %zd  from ks_buffer\n%s\n\n\n", n, size, b); 
 	
 
 	/* create message 3 */
@@ -56,9 +56,8 @@ void test01()
 	printf("\ntest01i request: %d\n%s\n\n", msgid, data);
 
 	cJSON *response3 = NULL;
-	cJSON *reply3 = NULL;
 
-	ks_rpcmessage_create_response(request3,  &reply3, &response3);  
+	ks_rpcmessage_create_response(request3,  NULL, &response3);  
 
 	data = cJSON_PrintUnformatted(response3);
     printf("\ntest01 response3: %d\n%s\n\n", msgid, data);
