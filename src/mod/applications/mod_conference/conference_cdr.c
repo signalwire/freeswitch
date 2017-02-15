@@ -488,16 +488,20 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 
 void conference_cdr_del(conference_member_t *member)
 {
-	if (!member->cdr_node) return;
-
-	if (member->channel) {
-		switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
-	}
+	switch_mutex_lock(member->conference->member_mutex);
 	if (member->cdr_node) {
-		member->cdr_node->leave_time = switch_epoch_time_now(NULL);
-		memcpy(member->cdr_node->mflags, member->flags, sizeof(member->flags));
-		member->cdr_node->member = NULL;
+
+		if (member->channel) {
+			switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
+		}
+
+		if (member->cdr_node) {
+			member->cdr_node->leave_time = switch_epoch_time_now(NULL);
+			memcpy(member->cdr_node->mflags, member->flags, sizeof(member->flags));
+			member->cdr_node->member = NULL;
+		}
 	}
+	switch_mutex_unlock(member->conference->member_mutex);
 }
 
 void conference_cdr_add(conference_member_t *member)
@@ -506,10 +510,12 @@ void conference_cdr_add(conference_member_t *member)
 	switch_caller_profile_t *cp;
 	switch_channel_t *channel;
 
+	switch_mutex_lock(member->conference->member_mutex);
+
 	if (zstr(member->conference->log_dir) &&
 		(member->conference->cdr_event_mode == CDRE_NONE) &&
 		!conference_utils_test_flag(member->conference, CFLAG_RFC4579)) {
-		return;
+		goto end;
 	}
 
 	np = switch_core_alloc(member->conference->pool, sizeof(*np));
@@ -521,20 +527,22 @@ void conference_cdr_add(conference_member_t *member)
 
 	if (!member->session) {
 		member->cdr_node->record_path = switch_core_strdup(member->conference->pool, member->rec_path);
-		return;
+		goto end;
 	}
 
 	channel = switch_core_session_get_channel(member->session);
 
 	if (!(cp = switch_channel_get_caller_profile(channel))) {
-		return;
+		goto end;
 	}
 
 	member->cdr_node->cp = switch_caller_profile_dup(member->conference->pool, cp);
 
 	member->cdr_node->id = member->id;
 
+ end:
 
+	switch_mutex_unlock(member->conference->member_mutex);
 
 }
 
