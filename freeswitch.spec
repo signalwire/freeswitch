@@ -735,6 +735,8 @@ H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
 Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       ilbc2
+
 
 %description codec-ilbc
 iLBC Codec support for FreeSWITCH open source telephony platform
