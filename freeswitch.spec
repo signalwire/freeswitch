@@ -1372,7 +1372,7 @@ Requires:	freeswitch-codec-bv
 Requires:	freeswitch-codec-passthru-g723_1
 Requires:	freeswitch-codec-passthru-g729
 Requires:	freeswitch-codec-h26x
-Requires:	freeswitch-codec-ilbc2
+Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
 Requires:	freeswitch-format-local-stream
 Requires:	freeswitch-format-native-file
