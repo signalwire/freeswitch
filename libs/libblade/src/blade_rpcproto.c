@@ -812,6 +812,7 @@ KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
 }
 
 const char BLADE_JRPC_METHOD[] = "method";
+const char BLADE_JRPC_ID[]     = "id";
 const char BLADE_JRPC_FIELDS[] = "blade";
 const char BLADE_JRPC_TO[]     = "to";
 const char BLADE_JRPC_FROM[]   = "from";
@@ -822,15 +823,22 @@ KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
 													char **namespaceP,
 													char **methodP,
 													char **versionP,
+													uint32_t *idP,
 													blade_rpc_fields_t **fieldsP)
 {
 	const char *m = cJSON_GetObjectCstr(message, BLADE_JRPC_METHOD);
 	cJSON *blade  = cJSON_GetObjectItem(message, BLADE_JRPC_FIELDS);
+	cJSON *jid    = cJSON_GetObjectItem(message, BLADE_JRPC_ID);
 
 	*fieldsP    = NULL;
 	*namespaceP = NULL;
 	*versionP   = NULL;
 	*methodP    = NULL;
+	*idP        = 0;
+
+	if (jid) {
+		*idP = jid->valueint; 
+	}
 
 	if (!m || !blade) {
 		const char *buffer = cJSON_PrintUnformatted(message);
@@ -839,20 +847,60 @@ KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
 		return KS_STATUS_FAIL;	
 	}
 
+    cJSON *jto    = cJSON_GetObjectItem(blade, BLADE_JRPC_TO);
+    cJSON *jfrom  = cJSON_GetObjectItem(blade, BLADE_JRPC_FROM);
+    cJSON *jtoken = cJSON_GetObjectItem(blade, BLADE_JRPC_TOKEN);
+
+
 	ks_size_t len = KS_RPCMESSAGE_COMMAND_LENGTH   + 1 + 
 					KS_RPCMESSAGE_NAMESPACE_LENGTH + 1 +
 					KS_RPCMESSAGE_VERSION_LENGTH   + 1 +
 					sizeof(blade_rpc_fields_t) + 1;
 
+	uint32_t lento = 0;
+	uint32_t lenfrom = 0;
+	uint32_t lentoken = 0;
+
+	if (jto) {
+		lento = strlen(jto->valuestring) + 1;
+		len += lento;
+	}
+
+	if (jfrom) {
+		lenfrom += strlen(jfrom->valuestring) + 1;
+		len += lenfrom;
+	}
+
+	if (jtoken) {
+		lentoken += strlen(jtoken->valuestring) + 1;
+		len += lentoken;
+	}
+
 	blade_rpc_fields_t *fields =  (blade_rpc_fields_t *)ks_pool_alloc(g_handle->pool, len);
+
+    char *namespace = (char*)fields + sizeof(blade_rpc_fields_t);
+    char *command   = namespace + KS_RPCMESSAGE_NAMESPACE_LENGTH + 1;
+    char *version   = command + KS_RPCMESSAGE_COMMAND_LENGTH + 1;
 	
-	fields->to = cJSON_GetObjectCstr(blade, BLADE_JRPC_TO);
-	fields->from = cJSON_GetObjectCstr(blade, BLADE_JRPC_FROM);
-	fields->from = cJSON_GetObjectCstr(blade, BLADE_JRPC_TOKEN);
-	
-	char *namespace = (char*)fields + sizeof(blade_rpc_fields_t);
-	char *command   = namespace + KS_RPCMESSAGE_NAMESPACE_LENGTH + 1; 
-	char *version   = command + KS_RPCMESSAGE_COMMAND_LENGTH + 1;
+	char *ptr = version + KS_RPCMESSAGE_VERSION_LENGTH + 1;
+
+	if (jto) {
+		strcpy(ptr, jto->valuestring);
+		fields->to = ptr;
+		ptr += strlen(jto->valuestring) + 1;
+	}
+
+	if (jfrom) {
+		strcpy(ptr, jfrom->valuestring);
+		fields->from = ptr;
+		ptr += strlen(jfrom->valuestring) + 1;
+	}
+
+	if (jtoken) {
+		strcpy(ptr, jtoken->valuestring);
+		fields->token = ptr;
+		ptr += strlen(jtoken->valuestring) + 1;
+    }
 
     blade_rpc_parse_fqcommand(m, namespace, command);
 	
@@ -861,6 +909,7 @@ KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
 	*fieldsP    = fields;	
 	*namespaceP = namespace;
 	*methodP    = command;
+	*versionP   = version;
 
 	return KS_STATUS_SUCCESS;
 }

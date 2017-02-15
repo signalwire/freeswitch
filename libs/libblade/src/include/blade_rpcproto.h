@@ -130,7 +130,8 @@ KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
 KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
 													char **namespace,
 													char **method,
-													char **version,	
+													char **version,
+													uint32_t *idP,	
 													blade_rpc_fields_t **fieldsP);
 
 /*

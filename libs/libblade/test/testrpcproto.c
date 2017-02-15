@@ -29,7 +29,8 @@ static enum jrpc_status_t  process_widget(cJSON *msg, cJSON **response)
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddNumberToObject(resp, "code", 199);
 
-    ks_rpcmessageid_t msgid = ks_rpcmessage_create_response(msg, &resp, response);
+    //ks_rpcmessageid_t msgid = ks_rpcmessage_create_response(msg, &resp, response);
+	ks_rpcmessageid_t msgid = blade_rpc_create_response(msg, &resp, response);
 
     char *b1 = cJSON_PrintUnformatted(*response);   //(*response);
     printf("Response: msgid %d\n%s\n", msgid, b1);
@@ -75,10 +76,27 @@ static enum jrpc_status_t  process_wombat(cJSON *msg, cJSON **replyP)
 		ks_pool_free(pool, &b1);
     }
     else {
-        printf("process_wombat_preresponse: unable to create response \n");
+        printf("process_wombat: unable to create response \n");
         return JRPC_ERROR;
     }
 
+	blade_rpc_fields_t *r_fields;
+
+	char *r_method;
+	char *r_namespace;
+	char *r_version;
+	uint32_t r_id;
+
+	ks_status_t s1 = blade_rpc_parse_message(msg, &r_namespace, &r_method, &r_version, &r_id, &r_fields);
+
+	if (s1 == KS_STATUS_FAIL) {
+		printf("process_wombat:  blade_rpc_parse_message failed\n");
+		return JRPC_ERROR;
+	}
+	
+	printf("\nprocess_wombat:  blade_rpc_parse_message namespace %s,  method %s, id %d,  version %s,  to %s, from %s,  token %s\n\n",
+											r_namespace, r_method, r_id, r_version,
+											r_fields->to, r_fields->from, r_fields->token);
 
 	cJSON *parms2 = NULL;
 
@@ -92,7 +110,23 @@ static enum jrpc_status_t  process_wombat(cJSON *msg, cJSON **replyP)
     fields.token = token;
 
 //	msgid = ks_rpcmessage_create_request("app1", "widget", &parms2, replyP);
-	msgid = blade_rpc_create_request("app1", "widget", &fields, &parms2, replyP);
+	msgid = blade_rpc_create_request(r_namespace, r_method, &fields, NULL, replyP);
+
+	if (!msgid) {
+		printf("process wombat:  create of next request failed\n");
+		return  JRPC_ERROR;
+	}
+
+	b0 = cJSON_PrintUnformatted(*replyP);
+	
+	if (!b0) {	
+        printf("process wombat:  create of next request cannot be formatted\n");
+        return  JRPC_ERROR;
+    }
+
+
+	printf("\nprocess wombat: next request\n%s\n\n", b0);    
+	
 
     printf("\n\nexiting process_wombat with a reply to send\n");
 
