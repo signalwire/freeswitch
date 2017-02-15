@@ -166,10 +166,16 @@ int main(int argc, char **argv)
 
 
 	printf("RESIZE:\n");
+
+
+	ks_snprintf(str, bytes, "%s", "ABCDEFGHIJKLM");
+	printf("1 STR [%s]\n", str);
 	bytes *= 2;
 	str = ks_pool_resize(pool, str, bytes);
+	printf("2 STR [%s]\n", str);
 
-	ok(str != NULL);
+	ok(!strcmp(str, "ABCDEFGHIJKLM"));
+
 	if (!str) {
 		fprintf(stderr, "RESIZE ERR: [FAILED]\n");
 		exit(255);

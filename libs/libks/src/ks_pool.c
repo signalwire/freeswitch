@@ -1695,6 +1695,7 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 	ks_pool_block_t *block_p;
 	int ret;
 	alloc_prefix_t *prefix;
+	void *orig_old_addr = NULL;
 
 	ks_assert(mp_p);
 	//ks_assert(old_addr);
@@ -1754,6 +1755,7 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 		}
 	}
 
+	orig_old_addr = old_addr;
 	/* move pointer to actual beginning */
 	old_addr = prefix;
 
@@ -1779,12 +1781,12 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 		goto end;
 	}
 
-	if (new_byte_size > old_byte_size) {
-		copy_size = old_byte_size;
-	} else {
-		copy_size = new_byte_size;
+	copy_size = old_byte_size;
+	memcpy(new_addr, orig_old_addr, copy_size);
+
+	if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ZERO)) {
+		memset(((unsigned char *)new_addr) + copy_size, 0, new_byte_size - old_byte_size);
 	}
-	memcpy(new_addr, old_addr, copy_size);
 
 	/* free the old address */
 	ret = free_mem(mp_p, (uint8_t *)old_addr + PREFIX_SIZE);
