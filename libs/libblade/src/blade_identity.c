@@ -150,15 +150,12 @@ KS_DECLARE(const char *) blade_identity_uri(blade_identity_t *bi)
 	return bi->uri;
 }
 
-KS_DECLARE(ks_status_t) blade_identity_parameter_get(blade_identity_t *bi, const char *key, const char **value)
+KS_DECLARE(const char *) blade_identity_parameter_get(blade_identity_t *bi, const char *key)
 {
 	ks_assert(bi);
 	ks_assert(key);
-	ks_assert(value);
 
-	*value = (const char *)ks_hash_search(bi->parameters, (void *)key, KS_UNLOCKED);
-
-	return KS_STATUS_SUCCESS;
+	return (const char *)ks_hash_search(bi->parameters, (void *)key, KS_UNLOCKED);
 }
 
 

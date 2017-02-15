@@ -229,6 +229,38 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm)
 	return KS_STATUS_SUCCESS;
 }
 
+ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssiP, blade_module_wss_t *bm_wss, ks_socket_t sock)
+{
+	blade_transport_wss_init_t *bt_wssi = NULL;
+
+	ks_assert(bt_wssiP);
+	ks_assert(bm_wss);
+	ks_assert(sock != KS_SOCK_INVALID);
+
+    bt_wssi = ks_pool_alloc(bm_wss->pool, sizeof(blade_transport_wss_init_t));
+	bt_wssi->module = bm_wss;
+	bt_wssi->pool = bm_wss->pool;
+	bt_wssi->sock = sock;
+
+	*bt_wssiP = bt_wssi;
+	
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP)
+{
+	blade_transport_wss_init_t *bt_wssi = NULL;
+	
+	ks_assert(bt_wssiP);
+	ks_assert(*bt_wssiP);
+
+	bt_wssi = *bt_wssiP;
+
+	ks_pool_free(bt_wssi->pool, bt_wssiP);
+	
+	return KS_STATUS_SUCCESS;
+}
+
 ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t *config)
 {
 	config_setting_t *wss = NULL;
@@ -254,73 +286,71 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 	}
 
 	wss = config_setting_get_member(config, "wss");
-	if (!wss) {
-		ks_log(KS_LOG_DEBUG, "!wss\n");
-		return KS_STATUS_FAIL;
-	}
-	wss_endpoints = config_setting_get_member(wss, "endpoints");
-	if (!wss_endpoints) {
-		ks_log(KS_LOG_DEBUG, "!wss_endpoints\n");
-		return KS_STATUS_FAIL;
-	}
-	wss_endpoints_ipv4 = config_lookup_from(wss_endpoints, "ipv4");
-	wss_endpoints_ipv6 = config_lookup_from(wss_endpoints, "ipv6");
-	if (wss_endpoints_ipv4) {
-		if (config_setting_type(wss_endpoints_ipv4) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
-		if ((config_wss_endpoints_ipv4_length = config_setting_length(wss_endpoints_ipv4)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
+	if (wss) {
+		wss_endpoints = config_setting_get_member(wss, "endpoints");
+		if (!wss_endpoints) {
+			ks_log(KS_LOG_DEBUG, "!wss_endpoints\n");
 			return KS_STATUS_FAIL;
-		
-		for (int32_t index = 0; index < config_wss_endpoints_ipv4_length; ++index) {
-			element = config_setting_get_elem(wss_endpoints_ipv4, index);
-            tmp1 = config_lookup_from(element, "address");
-            tmp2 = config_lookup_from(element, "port");
-			if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
-			if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-			if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-			
-			if (ks_addr_set(&config_wss_endpoints_ipv4[index],
-							config_setting_get_string(tmp1),
-							config_setting_get_int(tmp2),
-							AF_INET) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-			ks_log(KS_LOG_DEBUG,
-				   "Binding to IPV4 %s on port %d\n",
-				   ks_addr_get_host(&config_wss_endpoints_ipv4[index]),
-				   ks_addr_get_port(&config_wss_endpoints_ipv4[index]));
 		}
-	}
-	if (wss_endpoints_ipv6) {
-		if (config_setting_type(wss_endpoints_ipv6) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
-		if ((config_wss_endpoints_ipv6_length = config_setting_length(wss_endpoints_ipv6)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
-			return KS_STATUS_FAIL;
+		wss_endpoints_ipv4 = config_lookup_from(wss_endpoints, "ipv4");
+		wss_endpoints_ipv6 = config_lookup_from(wss_endpoints, "ipv6");
+		if (wss_endpoints_ipv4) {
+			if (config_setting_type(wss_endpoints_ipv4) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
+			if ((config_wss_endpoints_ipv4_length = config_setting_length(wss_endpoints_ipv4)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
+				return KS_STATUS_FAIL;
 		
-		for (int32_t index = 0; index < config_wss_endpoints_ipv6_length; ++index) {
-			element = config_setting_get_elem(wss_endpoints_ipv6, index);
-            tmp1 = config_lookup_from(element, "address");
-            tmp2 = config_lookup_from(element, "port");
-			if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
-			if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-			if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-			
-			
-			if (ks_addr_set(&config_wss_endpoints_ipv6[index],
-							config_setting_get_string(tmp1),
-							config_setting_get_int(tmp2),
-							AF_INET6) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-			ks_log(KS_LOG_DEBUG,
-				   "Binding to IPV6 %s on port %d\n",
-				   ks_addr_get_host(&config_wss_endpoints_ipv6[index]),
-				   ks_addr_get_port(&config_wss_endpoints_ipv6[index]));
+			for (int32_t index = 0; index < config_wss_endpoints_ipv4_length; ++index) {
+				element = config_setting_get_elem(wss_endpoints_ipv4, index);
+				tmp1 = config_lookup_from(element, "address");
+				tmp2 = config_lookup_from(element, "port");
+				if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
+				if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+				if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+
+				if (ks_addr_set(&config_wss_endpoints_ipv4[index],
+								config_setting_get_string(tmp1),
+								config_setting_get_int(tmp2),
+								AF_INET) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+				ks_log(KS_LOG_DEBUG,
+					   "Binding to IPV4 %s on port %d\n",
+					   ks_addr_get_host(&config_wss_endpoints_ipv4[index]),
+					   ks_addr_get_port(&config_wss_endpoints_ipv4[index]));
+			}
 		}
-	}
-	if (config_wss_endpoints_ipv4_length + config_wss_endpoints_ipv6_length <= 0) return KS_STATUS_FAIL;
-	tmp1 = config_lookup_from(wss_endpoints, "backlog");
-	if (tmp1) {
-		if (config_setting_type(tmp1) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-		config_wss_endpoints_backlog = config_setting_get_int(tmp1);
-	}
-	wss_ssl = config_setting_get_member(wss, "ssl");
-	if (wss_ssl) {
-		// @todo: SSL stuffs from wss_ssl into config_wss_ssl envelope
+		if (wss_endpoints_ipv6) {
+			if (config_setting_type(wss_endpoints_ipv6) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
+			if ((config_wss_endpoints_ipv6_length = config_setting_length(wss_endpoints_ipv6)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
+				return KS_STATUS_FAIL;
+
+			for (int32_t index = 0; index < config_wss_endpoints_ipv6_length; ++index) {
+				element = config_setting_get_elem(wss_endpoints_ipv6, index);
+				tmp1 = config_lookup_from(element, "address");
+				tmp2 = config_lookup_from(element, "port");
+				if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
+				if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+				if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+
+
+				if (ks_addr_set(&config_wss_endpoints_ipv6[index],
+								config_setting_get_string(tmp1),
+								config_setting_get_int(tmp2),
+								AF_INET6) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+				ks_log(KS_LOG_DEBUG,
+					   "Binding to IPV6 %s on port %d\n",
+					   ks_addr_get_host(&config_wss_endpoints_ipv6[index]),
+					   ks_addr_get_port(&config_wss_endpoints_ipv6[index]));
+			}
+		}
+		if (config_wss_endpoints_ipv4_length + config_wss_endpoints_ipv6_length <= 0) return KS_STATUS_FAIL;
+		tmp1 = config_lookup_from(wss_endpoints, "backlog");
+		if (tmp1) {
+			if (config_setting_type(tmp1) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+			config_wss_endpoints_backlog = config_setting_get_int(tmp1);
+		}
+		wss_ssl = config_setting_get_member(wss, "ssl");
+		if (wss_ssl) {
+			// @todo: SSL stuffs from wss_ssl into config_wss_ssl envelope
+		}
 	}
 
 
@@ -454,6 +484,11 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 		goto done;
 	}
 
+	ks_log(KS_LOG_DEBUG, "Listeners Before\n");
+	for (int index = 0; index < bm_wss->listeners_count; ++index) {
+		ks_log(KS_LOG_DEBUG, "  Listener %d = %d\n", index, bm_wss->listeners_poll[index].fd);
+	}
+	
 	listener_index = bm_wss->listeners_count++;
 	bm_wss->listeners_poll = (struct pollfd *)ks_pool_resize(bm_wss->pool,
 															 bm_wss->listeners_poll,
@@ -461,6 +496,11 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 	ks_assert(bm_wss->listeners_poll);
 	bm_wss->listeners_poll[listener_index].fd = listener;
 	bm_wss->listeners_poll[listener_index].events = POLLIN | POLLERR;
+
+	ks_log(KS_LOG_DEBUG, "Listeners After\n");
+	for (int index = 0; index < bm_wss->listeners_count; ++index) {
+		ks_log(KS_LOG_DEBUG, "  Listener %d = %d\n", index, bm_wss->listeners_poll[index].fd);
+	}
 
  done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -484,26 +524,30 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 
 	bm_wss = (blade_module_wss_t *)data;
 
+	ks_log(KS_LOG_DEBUG, "Started\n");
 	while (!bm_wss->shutdown) {
 		// @todo take exact timeout from a setting in config_wss_endpoints
 		if (ks_poll(bm_wss->listeners_poll, bm_wss->listeners_count, 100) > 0) {
 			for (int32_t index = 0; index < bm_wss->listeners_count; ++index) {
 				ks_socket_t sock = KS_SOCK_INVALID;
 
-				if (!(bm_wss->listeners_poll[index].revents & POLLIN)) continue;
 				if (bm_wss->listeners_poll[index].revents & POLLERR) {
 					// @todo: error handling, just skip the listener for now, it might recover, could skip X times before closing?
+					ks_log(KS_LOG_DEBUG, "Listener POLLERR\n");
 					continue;
 				}
+				if (!(bm_wss->listeners_poll[index].revents & POLLIN)) continue;
 
 				if ((sock = accept(bm_wss->listeners_poll[index].fd, NULL, NULL)) == KS_SOCK_INVALID) {
 					// @todo: error handling, just skip the socket for now as most causes are because remote side became unreachable
 					continue;
 				}
 
+				ks_log(KS_LOG_DEBUG, "Socket Accepted\n");
+
 				blade_transport_wss_init_create(&bt_wss_init, bm_wss, sock);
 				ks_assert(bt_wss_init);
-				
+
                 blade_connection_create(&bc, bm_wss->handle, bt_wss_init, bm_wss->transport_callbacks);
 				ks_assert(bc);
 
@@ -529,6 +573,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 			if (bt_wss) blade_transport_wss_destroy(&bt_wss);
 		}
 	}
+	ks_log(KS_LOG_DEBUG, "Stopped\n");
 
     return NULL;
 }
@@ -572,16 +617,86 @@ ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP)
 
 ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target)
 {
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_module_wss_t *bm_wss = NULL;
+	ks_sockaddr_t addr;
+	ks_socket_t sock = KS_SOCK_INVALID;
+	int family = AF_INET;
+	const char *ip = NULL;
+	const char *portstr = NULL;
+	ks_port_t port = 1234;
+	blade_transport_wss_init_t *bt_wss_init = NULL;
+	blade_connection_t *bc = NULL;
+
 	ks_assert(bcP);
 	ks_assert(bm);
 	ks_assert(target);
 
+	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
+	
 	*bcP = NULL;
 
-	// @todo connect-out equivilent of accept
 	ks_log(KS_LOG_DEBUG, "Connect Callback: %s\n", blade_identity_uri(target));
 
-	return KS_STATUS_SUCCESS;
+	// @todo completely rework all of this once more is known about connecting when an identity has no explicit transport details but this transport
+	// has been choosen anyway
+	ip = blade_identity_parameter_get(target, "host");
+	portstr = blade_identity_parameter_get(target, "port");
+	if (!ip) {
+		// @todo: temporary, this should fall back on DNS SRV or whatever else can turn "a@b.com" into an ip (and port?) to connect to
+		// also need to deal with hostname lookup, so identities with wss transport need to have a host parameter that is an IP for the moment
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	// @todo wrap this code to get address family from string IP between IPV4 and IPV6, and put it in libks somewhere
+	{
+		ks_size_t len = strlen(ip);
+
+		if (len <= 3) {
+			ret = KS_STATUS_FAIL;
+			goto done;
+		}
+		if (ip[1] == '.' || ip[2] == '.' || (len > 3 && ip[3] == '.')) family = AF_INET;
+		else family = AF_INET6;
+	}
+	
+	if (portstr) {
+		int p = atoi(portstr);
+		if (p > 0 && p <= UINT16_MAX) port = p;
+	}
+	
+	ks_addr_set(&addr, ip, port, family);
+	if ((sock = ks_socket_connect(SOCK_STREAM, IPPROTO_TCP, &addr)) == KS_SOCK_INVALID) {
+		// @todo: error handling, just fail for now as most causes are because remote side became unreachable
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	ks_log(KS_LOG_DEBUG, "Socket Connected\n");
+
+	blade_transport_wss_init_create(&bt_wss_init, bm_wss, sock);
+	ks_assert(bt_wss_init);
+
+	blade_connection_create(&bc, bm_wss->handle, bt_wss_init, bm_wss->transport_callbacks);
+	ks_assert(bc);
+
+	if (blade_connection_startup(bc, BLADE_CONNECTION_DIRECTION_OUTBOUND) != KS_STATUS_SUCCESS) {
+		blade_connection_destroy(&bc);
+		blade_transport_wss_init_destroy(&bt_wss_init);
+		ks_socket_close(&sock);
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+	// @todo make sure it's sensible to be mixing outbound and inbound connections in the same list, but this allows entering the destruction pipeline
+	// for module shutdown, disconnects and errors without special considerations
+	list_append(&bm_wss->connected, bc);
+	*bcP = bc;
+	
+	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
+
+ done:
+	return ret;
 }
 
 blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blade_identity_t *target)
@@ -723,11 +838,21 @@ blade_connection_state_hook_t blade_transport_wss_on_state_new_inbound(blade_con
 
 blade_connection_state_hook_t blade_transport_wss_on_state_new_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
 {
+	blade_transport_wss_t *bt_wss = NULL;
+	blade_transport_wss_init_t *bt_wss_init = NULL;
+
 	ks_assert(bc);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
 	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	bt_wss_init = (blade_transport_wss_init_t *)blade_connection_transport_init_get(bc);
+
+	blade_transport_wss_create(&bt_wss, bt_wss_init->module, bt_wss_init->sock);
+	ks_assert(bt_wss);
+
+	blade_connection_transport_set(bc, bt_wss);
 
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
@@ -755,9 +880,21 @@ blade_connection_state_hook_t blade_transport_wss_on_state_connect_inbound(blade
 
 blade_connection_state_hook_t blade_transport_wss_on_state_connect_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
 {
+	blade_transport_wss_t *bt_wss = NULL;
+
 	ks_assert(bc);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
+
+	// @todo: SSL init stuffs based on data from config to pass into kws_init
+	if (kws_init(&bt_wss->kws, bt_wss->sock, NULL, "/blade:blade.invalid:blade", KWS_BLOCK, bt_wss->pool) != KS_STATUS_SUCCESS) {
+		// @todo error logging
+		return BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+	}
 
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
@@ -781,7 +918,8 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
-	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+	ks_sleep_ms(1000); // @todo temporary testing, remove this and return success once negotiations are done
+	return BLADE_CONNECTION_STATE_HOOK_BYPASS;
 }
 
 blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connection_t *bc, blade_connection_state_condition_t condition)
@@ -800,38 +938,6 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connectio
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
-}
-
-ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssiP, blade_module_wss_t *bm_wss, ks_socket_t sock)
-{
-	blade_transport_wss_init_t *bt_wssi = NULL;
-
-	ks_assert(bt_wssiP);
-	ks_assert(bm_wss);
-	ks_assert(sock != KS_SOCK_INVALID);
-
-    bt_wssi = ks_pool_alloc(bm_wss->pool, sizeof(blade_transport_wss_init_t));
-	bt_wssi->module = bm_wss;
-	bt_wssi->pool = bm_wss->pool;
-	bt_wssi->sock = sock;
-
-	*bt_wssiP = bt_wssi;
-	
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP)
-{
-	blade_transport_wss_init_t *bt_wssi = NULL;
-	
-	ks_assert(bt_wssiP);
-	ks_assert(*bt_wssiP);
-
-	bt_wssi = *bt_wssiP;
-
-	ks_pool_free(bt_wssi->pool, bt_wssiP);
-	
-	return KS_STATUS_SUCCESS;
 }
 
 /* For Emacs:

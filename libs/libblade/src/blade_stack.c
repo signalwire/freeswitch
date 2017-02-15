@@ -44,11 +44,12 @@ struct blade_handle_s {
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 	
-	config_setting_t *config_service;
+	config_setting_t *config_directory;
 	config_setting_t *config_datastore;
 
 	ks_hash_t *transports;
 
+	blade_identity_t *identity;
 	blade_datastore_t *datastore;
 };
 
@@ -164,7 +165,7 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 
 ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
-	config_setting_t *service = NULL;
+	config_setting_t *directory = NULL;
 	config_setting_t *datastore = NULL;
 	
 	ks_assert(bh);
@@ -172,13 +173,13 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 	if (!config) return KS_STATUS_FAIL;
     if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
 
-    service = config_setting_get_member(config, "service");
+	directory = config_setting_get_member(config, "directory");
 	
     datastore = config_setting_get_member(config, "datastore");
     //if (datastore && !config_setting_is_group(datastore)) return KS_STATUS_FAIL;
 
 
-	bh->config_service = service;
+	bh->config_directory = directory;
 	bh->config_datastore = datastore;
 	
 	return KS_STATUS_SUCCESS;
@@ -201,7 +202,11 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 			return KS_STATUS_FAIL;
 		}
 	}
+
+	// @todo load DSOs
 	
+	// @todo call onload and onstartup callbacks for modules from DSOs
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -209,9 +214,12 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
 	ks_assert(bh);
 
-	// @todo cleanup registered transports
+	// @todo call onshutdown and onunload callbacks for modules from DSOs
+
+	// @todo unload DSOs
+
 	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
-	
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -279,14 +287,33 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 	ks_assert(bh);
 	ks_assert(target);
 
+	// @todo this should take a callback, and push this to a queue to be processed async from another thread on the handle
+	// which will allow the onconnect callback to block while doing things like DNS lookups without having unknown
+	// impact depending on the caller thread
+
 	ks_hash_read_lock(bh->transports);
 
-	blade_identity_parameter_get(target, "transport", &tname);
+	tname = blade_identity_parameter_get(target, "transport");
 	if (tname) {
 		bhtr = ks_hash_search(bh->transports, (void *)tname, KS_UNLOCKED);
 		if (!bhtr) {
 			// @todo error logging, target has an explicit transport that is not available in the local transports registry
 			// discuss later whether this scenario should still attempt other transports when target is explicit
+			// @note discussions indicate that by default messages should favor relaying through a master service, unless
+			// an existing direct connection already exists to the target (which if the target is the master node, then there is
+			// no conflict of proper routing). This also applies to routing for identities which relate to groups, relaying should
+			// most often occur through a master service, however there may be scenarios that exist where an existing session
+			// exists dedicated to faster delivery for a group (IE, through an ampq cluster directly, such as master services
+			// syncing with each other through a pub/sub).  There is also the potential that instead of a separate session, the
+			// current session with a master service may be able to have another connection attached which represents access through
+			// amqp, which in turn acts as a preferred router for only group identities
+			// This information does not directly apply to connecting, but should be noted for the next level up where you simply
+			// send a message which will not actually connect, only check for existing sessions for the target and master service
+			// @note relaying by master services should take a slightly different path, when they receive something not for the
+			// master service itself, it should relay this on to all other master services, which in turn all including original
+			// receiver pass on to any sessions matching an identity that is part of the group, alternatively they can use a pub/sub
+			// like amqp to relay between the master services more efficiently than using the websocket to send every master service
+			// session the message individually
 		}
 	} else {
 		for (ks_hash_iterator_t *it = ks_hash_first(bh->transports, KS_UNLOCKED); it; it = ks_hash_next(&it)) {

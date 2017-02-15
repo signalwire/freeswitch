@@ -30,12 +30,14 @@ void command_test(blade_handle_t *bh, char *args);
 void command_quit(blade_handle_t *bh, char *args);
 void command_store(blade_handle_t *bh, char *args);
 void command_fetch(blade_handle_t *bh, char *args);
+void command_connect(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "test", command_test },
 	{ "quit", command_quit },
 	{ "store", command_store },
 	{ "fetch", command_fetch },
+	{ "connect", command_connect },
 	
 	{ NULL, NULL }
 };
@@ -47,6 +49,8 @@ int main(int argc, char **argv)
 	config_setting_t *config_blade = NULL;
 	blade_module_t *mod_wss = NULL;
 	//blade_identity_t *id = NULL;
+	const char *cfgpath = "bladec.cfg";
+	
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 	
@@ -54,12 +58,10 @@ int main(int argc, char **argv)
 
 	blade_handle_create(&bh, NULL, NULL);
 
-	//blade_identity_create(&id, blade_handle_pool_get(bh));
-	//blade_identity_parse(id, "test@domain.com/laptop?transport=wss&host=127.0.0.1&port=1234");
+	if (argc > 1) cfgpath = argv[1];
 	
-	// @todo load config file, and lookup "blade" setting to put into config_blade
 	config_init(&config);
-	if (!config_read_file(&config, "bladec.cfg")) {
+	if (!config_read_file(&config, cfgpath)) {
 		ks_log(KS_LOG_ERROR, "%s:%d - %s\n", config_error_file(&config), config_error_line(&config), config_error_text(&config));
 		config_destroy(&config);
 		return EXIT_FAILURE;
@@ -90,6 +92,10 @@ int main(int argc, char **argv)
 	}
 
 	loop(bh);
+
+	blade_module_wss_on_shutdown(mod_wss);
+
+	blade_module_wss_on_unload(mod_wss);
 
 	blade_handle_destroy(&bh);
 
@@ -235,4 +241,19 @@ void command_fetch(blade_handle_t *bh, char *args)
 	parse_argument(&args, &key, ' ');
 
 	blade_handle_datastore_fetch(bh, blade_datastore_fetch_callback, key, strlen(key), bh);
+}
+
+void command_connect(blade_handle_t *bh, char *args)
+{
+	blade_connection_t *bc = NULL;
+	blade_identity_t *target = NULL;
+	
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_identity_create(&target, blade_handle_pool_get(bh));
+	
+	if (blade_identity_parse(target, args) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target);
+
+	blade_identity_destroy(&target);
 }
