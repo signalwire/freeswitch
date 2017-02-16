@@ -1,5 +1,6 @@
 #applications/mod_abstraction
 #applications/mod_av
+#applications/mod_video_filter
 #applications/mod_avmd
 #applications/mod_bert
 #applications/mod_blacklist
