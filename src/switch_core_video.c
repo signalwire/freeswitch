@@ -73,6 +73,13 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
 #endif
 
+/*!\brief compute distance between two colors
+*
+* \param[in]    c1        RGB color1
+* \param[in]    c2        RGB color2
+*/
+static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2);
+
 /*!\brief Draw a pixel on an image
 *
 * \param[in]    img       Image descriptor
@@ -527,6 +534,27 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
+SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold)
+{
+	uint8_t *pixel;
+	switch_assert(img);
+
+	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
+
+	pixel = img->planes[SWITCH_PLANE_PACKED];
+
+	for (; pixel < (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4); pixel += 4) {
+		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
+		int distance = switch_color_distance(color, mask);
+
+		if (distance <= threshold) {
+			*pixel = 0;
+		}
+	}
+
+	return;
+}
+
 static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
 #ifdef SWITCH_HAVE_YUV
@@ -766,6 +794,16 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
 }
 #endif
+
+static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
+{
+    int rmean = ( c1->r + c2->r ) / 2;
+	int r = c1->r - c2->r;
+    int g = c1->g - c2->g;
+    int b = c1->b - c2->b;
+
+    return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
+}
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 
@@ -2008,7 +2046,7 @@ static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 		case SWITCH_IMG_FMT_YVYU:      fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_BGR24:     fourcc = (uint32_t)FOURCC_RAW ; break;
 		case SWITCH_IMG_FMT_RGB32_LE:  fourcc = (uint32_t)FOURCC_ANY ; break;
-		case SWITCH_IMG_FMT_ARGB:      fourcc = (uint32_t)FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_ARGB:      fourcc = (uint32_t)FOURCC_BGRA; break;
 		case SWITCH_IMG_FMT_ARGB_LE:   fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_RGB565_LE: fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_RGB555_LE: fourcc = (uint32_t)FOURCC_ANY ; break;
