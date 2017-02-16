@@ -811,6 +811,31 @@ KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
 	return msgid;
 }
 
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_errorresponse(cJSON *request,
+                                                    cJSON **errorP,
+                                                    cJSON **responseP)
+{
+	ks_rpcmessageid_t msgid = blade_rpc_create_response(request, NULL, responseP);
+
+	if (msgid) {
+
+		if 	(errorP) {
+
+			if (*errorP) {
+				cJSON_AddItemToObject(*responseP, "error", *errorP);
+			}
+			else {
+				cJSON *error = cJSON_CreateObject();
+				cJSON_AddItemToObject(*responseP, "error", error);
+				*errorP = error;
+			}
+		}	
+	}	
+	
+	return msgid;	
+}
+
+
 const char BLADE_JRPC_METHOD[] = "method";
 const char BLADE_JRPC_ID[]     = "id";
 const char BLADE_JRPC_FIELDS[] = "blade";

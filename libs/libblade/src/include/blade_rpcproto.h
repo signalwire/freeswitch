@@ -127,6 +127,10 @@ KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_response(cJSON *request,
 													cJSON **reply,
 													cJSON **response);
 
+KS_DECLARE(ks_rpcmessageid_t) blade_rpc_create_errorresponse(cJSON *request,
+													cJSON **reply,
+													cJSON **response);
+
 KS_DECLARE(ks_status_t) blade_rpc_parse_message(cJSON *message,
 													char **namespace,
 													char **method,

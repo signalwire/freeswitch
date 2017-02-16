@@ -286,7 +286,7 @@ KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_errorresponse(
 												cJSON **errorP, 
 												cJSON **responseP)
 {
-	ks_rpcmessageid_t msgid = ks_rpcmessage_new_response(request, errorP, responseP);
+	ks_rpcmessageid_t msgid = ks_rpcmessage_new_response(request, NULL, responseP);
 	cJSON *respmsg = *responseP;
 
 	if (msgid) { 
@@ -295,6 +295,9 @@ KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_errorresponse(
 			cJSON *error = cJSON_CreateObject();
 			*errorP = error;
 			cJSON_AddItemToObject(respmsg, ERROR, error);
+		}
+		else if (errorP && *errorP) {
+			cJSON_AddItemToObject(*responseP, ERROR, *errorP);	
 		}
 	}
 
