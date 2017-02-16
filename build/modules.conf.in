@@ -1,6 +1,5 @@
 #applications/mod_abstraction
 #applications/mod_av
-#applications/mod_video_filter
 #applications/mod_avmd
 #applications/mod_bert
 #applications/mod_blacklist
@@ -51,6 +50,7 @@ applications/mod_spandsp
 #applications/mod_stress
 #applications/mod_translate
 applications/mod_valet_parking
+#applications/mod_video_filter
 #applications/mod_vmd
 applications/mod_voicemail
 #applications/mod_voicemail_ivr

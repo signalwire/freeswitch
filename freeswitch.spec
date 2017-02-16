@@ -609,6 +609,14 @@ Provides FreeSWITCH mod_valet_parking. Provides 'Call Parking' in the switch
 as opposed to on the phone and allows for a number of options to handle call
 retrieval
 
+%package application-video_filter
+Summary:	FreeSWITCH video filter bugs
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description application-video_filter
+Provide a chromakey video filter media bug
+
 %package application-voicemail
 Summary:	FreeSWITCH mod_voicemail
 Group:          System/Libraries
@@ -1366,6 +1374,7 @@ Requires:	freeswitch-application-soundtouch
 Requires:	freeswitch-application-spy
 Requires:	freeswitch-application-stress
 Requires:	freeswitch-application-valet_parking
+Requires:	freeswitch-application-video_filter
 Requires:	freeswitch-application-voicemail
 Requires:	freeswitch-application-voicemail-ivr
 Requires:	freeswitch-codec-passthru-amr
@@ -1446,7 +1455,7 @@ APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/
 APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
 			applications/mod_spandsp applications/mod_spy applications/mod_stress \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
-			applications/mod_voicemail_ivr"
+			applications/mod_voicemail_ivr applications/mod_video_filter"
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATION_MODULES_FR $APPLICATION_MODULES_SZ"
 
@@ -2120,6 +2129,9 @@ fi
 
 %files application-valet_parking
 %{MODINSTDIR}/mod_valet_parking.so*
+
+%files application-video_filter
+%{MODINSTDIR}/mod_video_filter.so*
 
 %files application-voicemail
 %{MODINSTDIR}/mod_voicemail.so*

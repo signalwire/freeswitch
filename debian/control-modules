@@ -250,6 +250,10 @@ Module: applications/mod_valet_parking
 Description: Valet parking
  This module implements the valet call parking strategy.
 
+Module: applications/mod_video_filter
+Description: Video filter chromakey
+ This module provides a media bug for chromakey functionality
+
 Module: applications/mod_vmd
 Description: Voicemail detection
  This module detects voicemail beeps at any frequency in O(1) time.

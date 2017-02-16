@@ -48,6 +48,7 @@ applications/mod_spy
 applications/mod_stress
 applications/mod_translate
 applications/mod_valet_parking
+applications/mod_video_filter
 applications/mod_vmd
 applications/mod_voicemail
 applications/mod_voicemail_ivr
