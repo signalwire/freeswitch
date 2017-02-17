@@ -67,6 +67,8 @@ typedef enum {
 #define KS_POOL_FUNC_CALLOC 4	/* ks_pool_calloc function called */
 #define KS_POOL_FUNC_FREE  5	/* ks_pool_free function called */
 #define KS_POOL_FUNC_RESIZE 6	/* ks_pool_resize function called */
+#define KS_POOL_FUNC_INCREF 7	/* reference count incremented */
+#define KS_POOL_FUNC_DECREF 8	/* reference count decremented */
 
 /*
  * void ks_pool_log_func_t
@@ -292,6 +294,34 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
  */
 
 KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
+
+
+/*
+ * void *ks_pool_ref_ex
+ *
+ * DESCRIPTION:
+ *
+ * Ref count increment an address in a memoory pool.
+ *
+ * RETURNS:
+ *
+ * Success - The same pointer
+ *
+ * Failure - NULL
+ *
+ * ARGUMENTS:
+ *
+ * mp_p <-> Pointer to the memory pool.
+ *
+ * addr -> The addr to ref
+ *
+ * error_p <- Pointer to integer which, if not NULL, will be set with
+ * a ks_pool error code.
+ */
+
+KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *error_p);
+
+#define ks_pool_ref(_p, _x) ks_pool_ref_ex(_p, _x, NULL)
 
 /*
  * void *ks_pool_resize

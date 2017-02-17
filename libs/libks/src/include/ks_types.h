@@ -85,6 +85,7 @@ KS_BEGIN_EXTERN_C
 		KS_STATUS_INACTIVE,
 		KS_STATUS_TIMEOUT,
 		/* Memory pool errors */
+		KS_STATUS_REFS_EXIST,      /* references exist */
 		KS_STATUS_ARG_NULL,        /* function argument is null */
 		KS_STATUS_ARG_INVALID,     /* function argument is invalid */
 		KS_STATUS_PNT,	           /* invalid ks_pool pointer */
@@ -105,6 +106,7 @@ KS_BEGIN_EXTERN_C
 		KS_STATUS_ALLOC,	       /* calloc,malloc,free,realloc failed */
 		KS_STATUS_PNT_OVER,	       /* pointer structure was overwritten */
 		KS_STATUS_INVALID_POINTER, /* address is not valid */
+		KS_STATUS_NOT_ALLOWED,     /* operation is not allowed */
 		/* Always insert new entries above this line*/
 		KS_STATUS_COUNT
 	} ks_status_t;

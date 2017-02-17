@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "tap.h"
+#define STR "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 static void fill(char *str, int bytes, char c)
 {
@@ -48,7 +49,7 @@ int main(int argc, char **argv)
 
 	ks_init();
 
-	plan(11);
+	plan(14);
 
 	if (argc > 1) {
 		int tmp = atoi(argv[1]);
@@ -100,9 +101,37 @@ int main(int argc, char **argv)
 		exit(255);
 	}
 
-	fill(str, bytes, '-');
+
+	ks_snprintf(str, bytes, "%s", STR);
 	printf("%s\n", str);
 
+
+	printf("ALLOC3 (refs):\n");
+
+	str = ks_pool_ref(pool, str);
+
+	printf("STR [%s]\n", str);
+
+	ks_pool_free(pool, &str);
+
+	ok(str != NULL && !strcmp(str, STR));
+
+	printf("STR [%s]\n", str);
+
+	ks_pool_free(pool, &str);
+
+	ok(str == NULL);
+
+	str = ks_pool_alloc(pool, bytes);
+
+	ok(str != NULL);
+	if (!str) {
+		fprintf(stderr, "ALLOC2 ERR: [FAILED]\n");
+		exit(255);
+	}
+
+	fill(str, bytes, '-');
+	printf("%s\n", str);
 
 	printf("ALLOC OBJ:\n");
 
@@ -168,13 +197,13 @@ int main(int argc, char **argv)
 	printf("RESIZE:\n");
 
 
-	ks_snprintf(str, bytes, "%s", "ABCDEFGHIJKLM");
+	ks_snprintf(str, bytes, "%s", STR);
 	printf("1 STR [%s]\n", str);
 	bytes *= 2;
 	str = ks_pool_resize(pool, str, bytes);
 	printf("2 STR [%s]\n", str);
 
-	ok(!strcmp(str, "ABCDEFGHIJKLM"));
+	ok(!strcmp(str, STR));
 
 	if (!str) {
 		fprintf(stderr, "RESIZE ERR: [FAILED]\n");

@@ -52,6 +52,7 @@ typedef struct alloc_prefix_s {
 	unsigned char m1;
 	unsigned long size;
 	unsigned char m2;
+	unsigned int refs;
 } alloc_prefix_t;
 
 #define PREFIX_SIZE sizeof(struct alloc_prefix_s)
@@ -949,6 +950,12 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	prefix->m1 = PRE_MAGIC1;
 	prefix->m2 = PRE_MAGIC2;
 	prefix->size = size;
+	prefix->refs++;
+
+	if (mp_p->mp_log_func != NULL) {
+		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
+		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
+	}
 
 	/* maintain our stats */
 	mp_p->mp_alloc_c++;
@@ -993,6 +1000,14 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 	prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
 	if (!(prefix->m1 == PRE_MAGIC1 && prefix->m2 == PRE_MAGIC2)) {
 		return KS_STATUS_INVALID_POINTER;
+	}
+
+	if (prefix->refs > 0) {
+		prefix->refs--;
+	}
+
+	if (prefix->refs > 0) {
+		return KS_STATUS_REFS_EXIST;
 	}
 
 	size = prefix->size;
@@ -1645,7 +1660,11 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 
 	if (mp_p->mp_log_func != NULL) {
 		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
-		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_FREE, prefix->size, 0, NULL, addr, 0);
+		if (prefix->refs == 1) {
+			mp_p->mp_log_func(mp_p, KS_POOL_FUNC_FREE, prefix->size, prefix->refs - 1, NULL, addr, 0);
+		} else {
+			mp_p->mp_log_func(mp_p, KS_POOL_FUNC_DECREF, prefix->size, prefix->refs - 1, NULL, addr, 0);
+		}
 	}
 
 	r = free_mem(mp_p, addr);
@@ -1663,12 +1682,67 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 }
 
 /*
+ * void *ks_pool_ref_ex
+ *
+ * DESCRIPTION:
+ *
+ * Ref count increment an address in a memoory pool.
+ *
+ * RETURNS:
+ *
+ * Success - The same pointer
+ *
+ * Failure - NULL
+ *
+ * ARGUMENTS:
+ *
+ * mp_p <-> Pointer to the memory pool.
+ *
+ * addr -> The addr to ref
+ *
+ * error_p <- Pointer to integer which, if not NULL, will be set with
+ * a ks_pool error code.
+ */
+KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *error_p)
+{
+	alloc_prefix_t *prefix;
+
+	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		SET_POINTER(error_p, KS_STATUS_PNT);
+		return NULL;
+	}
+
+	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		SET_POINTER(error_p, KS_STATUS_POOL_OVER);
+		return NULL;
+	}
+
+	ks_mutex_lock(mp_p->mutex);
+	prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
+
+	if (!(prefix->m1 == PRE_MAGIC1 && prefix->m2 == PRE_MAGIC2)) {
+		SET_POINTER(error_p, KS_STATUS_INVALID_POINTER);
+		return NULL;
+	}
+
+	prefix->refs++;
+
+	if (mp_p->mp_log_func != NULL) {
+		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
+		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
+	}
+
+	ks_mutex_unlock(mp_p->mutex);
+
+	return addr;
+}
+
+/*
  * void *ks_pool_resize_ex
  *
  * DESCRIPTION:
  *
- * Reallocate an address in a mmeory pool to a new size.  This is
- * different from realloc in that it needs the old address' size.  
+ * Reallocate an address in a memory pool to a new size.  This is
  *
  * RETURNS:
  *
@@ -1722,6 +1796,12 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 
 
 	ks_mutex_lock(mp_p->mutex);
+
+	if (prefix->refs > 1) {
+		SET_POINTER(error_p,KS_STATUS_NOT_ALLOWED);
+		return NULL;
+	}
+
 	old_byte_size = prefix->size;
 
 	/*
