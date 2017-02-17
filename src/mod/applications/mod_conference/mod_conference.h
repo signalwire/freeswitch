@@ -601,6 +601,7 @@ typedef struct conference_obj {
 	member_flag_t mflags[MFLAG_MAX];
 	switch_call_cause_t bridge_hangup_cause;
 	switch_mutex_t *flag_mutex;
+	switch_mutex_t *file_mutex;
 	uint32_t rate;
 	uint32_t interval;
 	uint32_t channels;
