@@ -699,16 +699,19 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				conference_video_canvas_del_fnode_layer(conference, conference->async_fnode);
 			}
 
+			switch_mutex_lock(conference->file_mutex);
 			conference_file_close(conference, conference->async_fnode);
 			pool = conference->async_fnode->pool;
 			conference->async_fnode = NULL;
 			switch_core_destroy_memory_pool(&pool);
+			switch_mutex_unlock(conference->file_mutex);
 		}
 
 		if (conference->fnode && conference->fnode->done) {
 			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
+			switch_mutex_lock(conference->file_mutex);
 			if (conference->fnode->type != NODE_TYPE_SPEECH) {
 				conference_file_close(conference, conference->fnode);
 			}
@@ -717,6 +720,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				conference_video_canvas_del_fnode_layer(conference, conference->fnode);
 			}
 
+			
 			fnode = conference->fnode;
 			conference->fnode = conference->fnode->next;
 
@@ -728,6 +732,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			pool = fnode->pool;
 			fnode = NULL;
 			switch_core_destroy_memory_pool(&pool);
+			switch_mutex_unlock(conference->file_mutex);
 		}
 
 		if (!conference->end_count && conference->endconference_time &&
@@ -821,37 +826,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 	}
 
-	switch_mutex_lock(conference->mutex);
-
-	/* Close Unused Handles */
-	if (conference->fnode) {
-		conference_file_node_t *fnode, *cur;
-		switch_memory_pool_t *pool;
-
-		fnode = conference->fnode;
-		while (fnode) {
-			cur = fnode;
-			fnode = fnode->next;
-
-			if (cur->type != NODE_TYPE_SPEECH) {
-				conference_file_close(conference, cur);
-			}
-
-			pool = cur->pool;
-			switch_core_destroy_memory_pool(&pool);
-		}
-		conference->fnode = NULL;
-	}
-
-	if (conference->async_fnode) {
-		switch_memory_pool_t *pool;
-		conference_file_close(conference, conference->async_fnode);
-		pool = conference->async_fnode->pool;
-		conference->async_fnode = NULL;
-		switch_core_destroy_memory_pool(&pool);
-	}
-
-	switch_mutex_unlock(conference->mutex);
+	conference_close_open_files(conference);
 
 	/* Wait till everybody is out */
 	conference_utils_clear_flag_locked(conference, CFLAG_RUNNING);
@@ -3457,6 +3432,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	/* Activate the conference mutex for exclusivity */
 	switch_mutex_init(&conference->mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+	switch_mutex_init(&conference->file_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->canvas_mutex, SWITCH_MUTEX_NESTED, conference->pool);

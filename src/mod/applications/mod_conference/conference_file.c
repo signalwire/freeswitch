@@ -423,7 +423,7 @@ switch_status_t conference_close_open_files(conference_obj_t *conference)
 {
 	int x = 0;
 
-	switch_mutex_lock(conference->mutex);
+	switch_mutex_lock(conference->file_mutex);
 	/* Close Unused Handles */
 	if (conference->fnode) {
 		conference_file_node_t *fnode, *cur;
@@ -453,7 +453,7 @@ switch_status_t conference_close_open_files(conference_obj_t *conference)
 		switch_core_destroy_memory_pool(&pool);
 		x++;
 	}
-	switch_mutex_unlock(conference->mutex);
+	switch_mutex_unlock(conference->file_mutex);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
