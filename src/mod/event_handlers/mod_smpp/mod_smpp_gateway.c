@@ -178,6 +178,22 @@ switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway) {
 switch_status_t mod_smpp_gateway_connect(mod_smpp_gateway_t *gateway) {
 	switch_status_t status;
 
+	if (gateway->socket) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing existing socket\n");
+		switch_socket_shutdown(gateway->socket, SWITCH_SHUTDOWN_READWRITE);
+		switch_socket_close(gateway->socket);
+		gateway->socket = NULL;
+	}
+
+
+	if (!gateway->socket) {
+		if ( switch_socket_create(&(gateway->socket), switch_sockaddr_get_family(gateway->socketaddr),
+								  SOCK_STREAM, SWITCH_PROTO_TCP, mod_smpp_globals.pool) != SWITCH_STATUS_SUCCESS ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create the socket\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+	
 	if ( (status = switch_socket_connect(gateway->socket, gateway->socketaddr)) != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to connect the socket %d\n", status);
 		return SWITCH_STATUS_GENERR;
@@ -189,7 +205,6 @@ switch_status_t mod_smpp_gateway_connect(mod_smpp_gateway_t *gateway) {
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 /* Expects the gateway to be locked already */
 switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, switch_event_t **event, unsigned int *command_id)
@@ -302,7 +317,9 @@ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *th
 
 		if ( mod_smpp_gateway_connection_read(gateway, &event, &command_id) != SWITCH_STATUS_SUCCESS) {
 			if ( gateway->running ) {
+				printf("WTF??\n");
 				if ( mod_smpp_gateway_connect(gateway) != SWITCH_STATUS_SUCCESS) {
+				printf("WTF2??\n");
 					switch_sleep(1000 * 1000);
 				}
 			}
