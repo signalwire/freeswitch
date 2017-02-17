@@ -58,7 +58,7 @@ static void uninit_context(chromakey_context_t *context)
 	switch_img_free(&context->bgimg);
 }
 
-static void parse_params(chromakey_context_t *context, int start, int argc, char **argv)
+static void parse_params(chromakey_context_t *context, int start, int argc, char **argv, const char **function, switch_media_bug_flag_t *flags)
 {
 	int n = argc - start;
 	int i = start;
@@ -86,6 +86,15 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 			}
 		}
 	}
+
+	if (n > 3 && argv[i]) {
+		if (!strcasecmp(argv[i], "patch")) {
+			*function = "patch:video";
+			*flags = SMBF_VIDEO_PATCH;
+		}
+	}
+
+	i++;
 }
 
 static switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
@@ -190,7 +199,7 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 
     if (data && (lbuf = switch_core_session_strdup(session, data))
         && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-        parse_params(context, 1, argc, argv);
+        parse_params(context, 1, argc, argv, &function, &flags);
     }
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
@@ -252,7 +261,7 @@ SWITCH_STANDARD_API(chromakey_api_function)
 			} else if (!strcasecmp(action, "start")) {
 				context = (chromakey_context_t *) switch_core_media_bug_get_user_data(bug);
 				switch_assert(context);
-				parse_params(context, 2, argc, argv);
+				parse_params(context, 2, argc, argv, &function, &flags);
 				stream->write_function(stream, "+OK Success\n");
 			}
 		} else {
@@ -270,7 +279,7 @@ SWITCH_STANDARD_API(chromakey_api_function)
 	context->session = rsession;
 
 	init_context(context);
-	parse_params(context, 2, argc, argv);
+	parse_params(context, 2, argc, argv, &function, &flags);
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
