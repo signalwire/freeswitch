@@ -317,9 +317,7 @@ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *th
 
 		if ( mod_smpp_gateway_connection_read(gateway, &event, &command_id) != SWITCH_STATUS_SUCCESS) {
 			if ( gateway->running ) {
-				printf("WTF??\n");
 				if ( mod_smpp_gateway_connect(gateway) != SWITCH_STATUS_SUCCESS) {
-				printf("WTF2??\n");
 					switch_sleep(1000 * 1000);
 				}
 			}
