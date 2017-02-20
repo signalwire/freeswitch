@@ -566,6 +566,11 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
 				file_data_len = file_sample_len * 2 * member->fnode->fh.channels;
+					if (member->fnode->fh.vol) {
+						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * member->fnode->fh.channels,
+														  member->fnode->fh.vol);
+					}
+
 			}
 
 			if (file_sample_len <= 0) {
@@ -1398,7 +1403,13 @@ switch_status_t conference_member_play_file(conference_member_t *member, char *f
 	fnode->file = switch_core_strdup(fnode->pool, file);
 
 	if (fnode->fh.params) {
+		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
 		const char *position = switch_event_get_header(fnode->fh.params, "position");
+
+		if (!zstr(vol)) {
+			fnode->fh.vol = atoi(vol);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Set playback volume for file: %d\n",fnode->fh.vol);
+		}
 
 		if (!bad_params && !zstr(position) && member->conference->channels == 2) {
 			fnode->al = conference_al_create(pool);
