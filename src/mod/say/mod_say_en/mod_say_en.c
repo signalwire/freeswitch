@@ -392,7 +392,12 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		}
 
 		if (hour > 12) {
-			mil++;
+			if ( mil ) {
+				mil++;
+			} else {
+				hour -= 12;
+				pm = 1;
+			}
 		} else if (hour == 12) {
 			pm = 1;
 		} else if (hour == 0) {
