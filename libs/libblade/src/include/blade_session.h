@@ -38,12 +38,19 @@
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh);
 KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP);
-KS_DECLARE(ks_status_t) blade_sesssion_startup(blade_session_t *bs);
+KS_DECLARE(ks_status_t) blade_session_startup(blade_session_t *bs);
 KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs);
+KS_DECLARE(blade_handle_t *) blade_session_handle_get(blade_session_t *bs);
 KS_DECLARE(const char *) blade_session_id_get(blade_session_t *bs);
 KS_DECLARE(void) blade_session_id_set(blade_session_t *bs, const char *id);
+KS_DECLARE(ks_status_t) blade_session_read_lock(blade_session_t *bs, ks_bool_t block);
+KS_DECLARE(ks_status_t) blade_session_read_unlock(blade_session_t *bs);
+KS_DECLARE(ks_status_t) blade_session_write_lock(blade_session_t *bs, ks_bool_t block);
+KS_DECLARE(ks_status_t) blade_session_write_unlock(blade_session_t *bs);
 KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_state_t state);
 KS_DECLARE(void) blade_session_hangup(blade_session_t *bs);
+KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const char *id);
+KS_DECLARE(ks_status_t) blade_session_connections_remove(blade_session_t *bs, const char *id);
 KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json);
 KS_DECLARE(ks_status_t) blade_session_sending_push(blade_session_t *bs, cJSON *json);
 KS_DECLARE(ks_status_t) blade_session_sending_pop(blade_session_t *bs, cJSON **json);

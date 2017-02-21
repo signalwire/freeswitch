@@ -419,6 +419,60 @@ KS_DECLARE(ks_status_t) blade_handle_connections_remove(blade_connection_t *bc)
 }
 
 
+KS_DECLARE(blade_session_t *) blade_handle_sessions_get(blade_handle_t *bh, const char *sid)
+{
+	blade_session_t *bs = NULL;
+
+	ks_assert(bs);
+	ks_assert(sid);
+
+	ks_hash_read_lock(bh->sessions);
+	bs = ks_hash_search(bh->sessions, (void *)sid, KS_UNLOCKED);
+	if (bs && blade_session_read_lock(bs, KS_FALSE) != KS_STATUS_SUCCESS) bs = NULL;
+	ks_hash_read_unlock(bh->sessions);
+
+	return bs;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_sessions_add(blade_session_t *bs)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(bs);
+
+	bh = blade_session_handle_get(bs);
+	ks_assert(bh);
+
+	ks_hash_write_lock(bh->sessions);
+	ret = ks_hash_insert(bh->sessions, (void *)blade_session_id_get(bs), bs);
+	ks_hash_write_unlock(bh->sessions);
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(bs);
+
+	bh = blade_session_handle_get(bs);
+	ks_assert(bh);
+
+	blade_session_write_lock(bs, KS_TRUE);
+
+	ks_hash_write_lock(bh->sessions);
+	if (ks_hash_remove(bh->sessions, (void *)blade_session_id_get(bs)) == NULL) ret = KS_STATUS_FAIL;
+	ks_hash_write_unlock(bh->sessions);
+
+	blade_session_write_unlock(bs);
+
+	return ret;
+}
+
+
 
 KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
 {

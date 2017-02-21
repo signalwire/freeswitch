@@ -57,6 +57,8 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc);
 KS_DECLARE(blade_connection_rank_t) blade_connection_rank(blade_connection_t *bc, blade_identity_t *target);
 KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, cJSON *json);
 KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, cJSON **json);
+KS_DECLARE(const char *) blade_connection_session_get(blade_connection_t *bc);
+KS_DECLARE(void) blade_connection_session_set(blade_connection_t *bc, const char *id);
 KS_END_EXTERN_C
 
 #endif

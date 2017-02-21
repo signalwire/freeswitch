@@ -895,35 +895,104 @@ blade_connection_state_hook_t blade_transport_wss_on_state_connect_outbound(blad
 
 blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
 {
+	blade_connection_state_hook_t ret = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+	blade_transport_wss_t *bt_wss = NULL;
+	cJSON *json = NULL;
+	cJSON *params = NULL;
+	blade_session_t *bs = NULL;
+	blade_handle_t *bh = NULL;
+	const char *jsonrpc = NULL;
+	const char *method = NULL;
+	const char *id = NULL;
+	const char *sid = NULL;
+	ks_time_t timeout;
+
 	ks_assert(bc);
+
+	bh = blade_connection_handle_get(bc);
+	ks_assert(bh);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
-	// @todo block while reading expected message with blade_transport_wss_read(bt_wss, json)
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
-	// @todo check if expected message is a request by confirming it has a method field (along with json field validation, stay compliant with jsonrpc)
+	// @todo very temporary, really need monotonic clock and get timeout delay and sleep delay from config
+	timeout = ks_time_now() + (5 * KS_USEC_PER_SEC);
+	while (blade_transport_wss_read(bt_wss, &json) == KS_STATUS_SUCCESS) {
+		if (json) break;
+		ks_sleep(250);
+		if (ks_time_now() >= timeout) break;
+	}
 
-	// @todo validate method is "blade.session.attach"
+	if (!json) {
+		// @todo error logging
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
 
-	// @todo validate parameters "session-id" and "session-token" must both be present or omitted, validate both are strings and valid uuid format
-	// if both are omitted, params may be omitted entirely by jsonrpc spec
+	// @todo validation wrapper for request and response/error to confirm jsonrpc and provide enum for output as to which it is
+	jsonrpc = cJSON_GetObjectCstr(json, "jsonrpc"); // @todo check for definitions of these keys and fixed values
+	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
+		// @todo error logging
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
 
-	// @todo if session-id is provided, lookup existing session within the blade_handle_t
+	id = cJSON_GetObjectCstr(json, "id"); // @todo switch to number if we are not using a uuid for message id
+	if (!id) {
+		// @todo error logging
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
 
-	// @todo if the session exists, verify the session-token, if it matches then use this session
+	method = cJSON_GetObjectCstr(json, "method");
+	if (!method || strcasecmp(method, "blade.session.attach")) {
+		// @todo error logging
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
 
-	// @todo if the session-token does not match, or the session does not exist, or the session-id and session-token are not provided then create a new session
+	params = cJSON_GetObjectItem(json, "params");
+	if (params) {
+		sid = cJSON_GetObjectCstr(params, "session-id");
+		if (sid) {
+			// @todo validate uuid format by parsing, not currently available in uuid functions
+			ks_log(KS_LOG_DEBUG, "Session Requested: %s\n", sid);
+		}
+	}
 
-	// @todo once session is established, associate it to the connection
-
-	// @todo if anything fails, return HOOK_DISCONNECT, otherwise return HOOK_SUCCESS which will continue the rest of the session attaching process
-	// which is to grab the expected session off the connection and attach the connection to the connection list on the session, start the session thread if
-	// it hasn't already been started, and set the session state to CONNECT or ATTACH... discuss with tony, finalize session state machine regarding multiple
-	// connections attempting to attach at the same time to the session and changing the session state, may need to queue pending connections to the session
-	// and process them from within the session state machine thread
+	if (sid) {
+		bs = blade_handle_sessions_get(bh, sid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+		if (bs) {
+			ks_log(KS_LOG_DEBUG, "Session Located: %s\n", blade_session_id_get(bs));
+		}
+	}
 	
-	ks_sleep_ms(1000); // @todo temporary testing, remove this and return success once negotiations are done
-	return BLADE_CONNECTION_STATE_HOOK_BYPASS;
+	if (!bs) {
+		blade_session_create(&bs, bh);
+		ks_assert(bs);
+
+		ks_log(KS_LOG_DEBUG, "Session Created: %s\n", blade_session_id_get(bs));
+
+		blade_session_read_lock(bs, KS_TRUE); // this will be done by blade_handle_sessions_get() otherwise
+
+		if (blade_session_startup(bs) != KS_STATUS_SUCCESS) {
+			blade_session_read_unlock(bs);
+			blade_session_destroy(&bs);
+			ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+			goto done;
+		}
+		blade_handle_sessions_add(bs);
+	}
+
+	blade_connection_session_set(bc, blade_session_id_get(bs));
+	
+ done:
+	// @note the state machine expects if we return SUCCESS, that the session assigned to the connection will be read locked to ensure that the state
+	// machine can finish attaching the session, if you BYPASS then you can handle everything here in the callback, but this should be fairly standard
+	// behaviour to simply go as far as assigning a session to the connection and let the system handle the rest
+	if (json) cJSON_Delete(json);
+	return ret;
 }
 
 blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
@@ -961,6 +1030,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connecti
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
+	ks_sleep(1000);
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 
@@ -970,6 +1040,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connectio
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
+	ks_sleep(1000);
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 

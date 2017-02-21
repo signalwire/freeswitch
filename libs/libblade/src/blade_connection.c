@@ -50,6 +50,8 @@ struct blade_connection_s {
 	ks_rwl_t *lock;
 	
 	ks_q_t *sending;
+
+	const char *session;
 };
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data);
@@ -146,6 +148,8 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 		ks_pool_free(bc->pool, &bc->state_thread);
 		bc->shutdown = KS_FALSE;
 	}
+
+	if (bc->session) ks_pool_free(bc->pool, &bc->session);
 
 	while (ks_q_trypop(bc->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 
@@ -304,6 +308,20 @@ KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, cJS
 	return ks_q_trypop(bc->sending, (void **)json);
 }
 
+KS_DECLARE(const char *) blade_connection_session_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return bc->session;
+}
+
+KS_DECLARE(void) blade_connection_session_set(blade_connection_t *bc, const char *id)
+{
+	ks_assert(bc);
+
+	if (bc->session) ks_pool_free(bc->pool, &bc->session);
+	bc->session = ks_pstrdup(bc->pool, id);
+}
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 {
@@ -369,11 +387,18 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_ATTACH);
 				break;
 			case BLADE_CONNECTION_STATE_ATTACH:
-				// @todo receive message with nullable session id for reconnect and some sort of secure token for a reconnect challenge?
-				// determine how much of session management is handled here... do we process these session negotiation messages without
-				// passing it up to the application layer? or does the application layer give back a session and build the response?
-				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_READY);
-				break;
+				{
+					blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
+					ks_assert(bs); // should not happen because bs should still be locked
+					
+					blade_session_connections_add(bs, bc->id);
+					
+					blade_connection_state_set(bc, BLADE_CONNECTION_STATE_READY);
+					blade_session_state_set(bs, BLADE_SESSION_STATE_READY);
+					
+					blade_session_read_unlock(bs); // unlock the session we expect to be locked during the callback to ensure we can finish attaching
+					break;
+				}
 			case BLADE_CONNECTION_STATE_DETACH:
 				// @todo detach from session if this connection is attached
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
