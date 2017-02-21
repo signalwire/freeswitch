@@ -1286,6 +1286,7 @@ struct av_file_context {
 	int64_t seek_ts;
 	switch_bool_t read_paused;
 	int errs;
+	switch_file_handle_t *handle;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1574,6 +1575,7 @@ again:
 				}
 
 				img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, vframe->width, vframe->height, 1);
+
 				if (img) {
 					int64_t *pts = malloc(sizeof(int64_t));
 
@@ -1706,6 +1708,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	context->pool = handle->memory_pool;
 	context->seek_ts = -1;
 	context->offset = DFT_RECORD_OFFSET;
+	context->handle = handle;
+
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 		context->offset = atoi(tmp);
 	}
@@ -2180,6 +2184,13 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		context->vid_ready = 1;
 
 		frame->img = (switch_image_t *) pop;
+
+		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
+			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
+				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SIZE);
+			}
+		}
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 

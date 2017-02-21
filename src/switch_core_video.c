@@ -80,6 +80,15 @@ static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_colo
 */
 static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2);
 
+/*!\brief compute distance between a color and a list of colors
+*
+* \param[in]    c1        RGB color1
+* \param[in]    clist     RGB color list
+* \param[in]    count     number of colors in list
+* \param[in]    threshold hint of target threshold to stop processing list
+*/
+static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds);
+
 /*!\brief Draw a pixel on an image
 *
 * \param[in]    img       Image descriptor
@@ -534,9 +543,10 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold)
+SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_rgb_color_t *mask, int *thresholds, int count)
 {
-	uint8_t *pixel;
+	uint8_t *pixel, *last_pixel = NULL;
+	int last_hits = 0;
 	switch_assert(img);
 
 	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
@@ -545,9 +555,49 @@ SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_
 
 	for (; pixel < (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4); pixel += 4) {
 		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
-		int distance = switch_color_distance(color, mask);
+		int hits = 0;
 
-		if (distance <= threshold) {
+		if (last_pixel && (*(uint32_t *)pixel & 0xFFFFFF) == (*(uint32_t *)last_pixel & 0xFFFFFF)) {
+			hits = last_hits;
+		} else {
+			hits = switch_color_distance_multi(color, mask, count, thresholds);
+		}
+
+		last_hits = hits;
+		last_pixel = pixel;
+
+		if (hits) {
+			*pixel = 0;
+		}
+	}
+
+	return;
+}
+
+SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold)
+{
+	uint8_t *pixel, *last_pixel = NULL;
+	int last_threshold = 0;
+	switch_assert(img);
+
+	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
+
+	pixel = img->planes[SWITCH_PLANE_PACKED];
+
+	for (; pixel < (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4); pixel += 4) {
+		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
+		int threshold = 0;
+
+		if (last_pixel && (*(uint32_t *)pixel & 0xFFFFFF) == (*(uint32_t *)last_pixel & 0xFFFFFF)) {
+			threshold = last_threshold;
+		} else {
+			threshold = switch_color_distance(color, mask);
+		}
+
+		last_threshold = threshold;
+		last_pixel = pixel;
+
+		if (threshold) {
 			*pixel = 0;
 		}
 	}
@@ -804,6 +854,23 @@ static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color
 
     return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
 }
+
+static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds)
+{
+	int x = 0, hits = 0;
+
+	for (x = 0; x < count; x++) {
+		int distance = switch_color_distance(c1, &clist[x]);
+
+		if (distance < thresholds[x]) {
+			hits++;
+		}
+	}
+
+	return hits;
+}
+
+
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 

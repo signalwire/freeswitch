@@ -391,6 +391,7 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 /*!\brief chromakey an img, img must be RGBA and return modified img */
 
 SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold);
+SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_rgb_color_t *mask, int *thresholds, int count);
 
 
 SWITCH_END_EXTERN_C
