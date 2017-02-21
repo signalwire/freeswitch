@@ -43,16 +43,20 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP);
 KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction);
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc);
+KS_DECLARE(blade_handle_t *) blade_connection_handle_get(blade_connection_t *bc);
+KS_DECLARE(const char *) blade_connection_id_get(blade_connection_t *bc);
+KS_DECLARE(ks_status_t) blade_connection_read_lock(blade_connection_t *bc, ks_bool_t block);
+KS_DECLARE(ks_status_t) blade_connection_read_unlock(blade_connection_t *bc);
+KS_DECLARE(ks_status_t) blade_connection_write_lock(blade_connection_t *bc, ks_bool_t block);
+KS_DECLARE(ks_status_t) blade_connection_write_unlock(blade_connection_t *bc);
 KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc);
 KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc);
 KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data);
 KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state);
 KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc);
 KS_DECLARE(blade_connection_rank_t) blade_connection_rank(blade_connection_t *bc, blade_identity_t *target);
-KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
-KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, blade_identity_t **target, cJSON **json);
-KS_DECLARE(ks_status_t) blade_connection_receiving_push(blade_connection_t *bc, cJSON *json);
-KS_DECLARE(ks_status_t) blade_connection_receiving_pop(blade_connection_t *bc, cJSON **json);
+KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, cJSON *json);
+KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, cJSON **json);
 KS_END_EXTERN_C
 
 #endif

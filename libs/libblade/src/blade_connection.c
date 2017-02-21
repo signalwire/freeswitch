@@ -42,57 +42,15 @@ struct blade_connection_s {
 	blade_transport_callbacks_t *transport_callbacks;
 
 	ks_bool_t shutdown;
-	// @todo add auto generated UUID
 	blade_connection_direction_t direction;
     ks_thread_t *state_thread;
 	blade_connection_state_t state;
+
+	const char *id;
+	ks_rwl_t *lock;
 	
 	ks_q_t *sending;
-	//ks_q_t *receiving;
 };
-
-// @todo may want to make this reusable for session as it'll need to queue the same details during temporary connection loss
-typedef struct blade_connection_sending_s blade_connection_sending_t;
-struct blade_connection_sending_s {
-	ks_pool_t *pool;
-	blade_identity_t *target;
-	cJSON *json;
-};
-
-ks_status_t blade_connection_sending_create(blade_connection_sending_t **bcsP, ks_pool_t *pool, blade_identity_t *target, cJSON *json)
-{
-	blade_connection_sending_t *bcs = NULL;
-
-	ks_assert(bcsP);
-	ks_assert(pool);
-	ks_assert(json);
-
-	bcs = ks_pool_alloc(pool, sizeof(blade_connection_sending_t));
-	bcs->pool = pool;
-	bcs->target = target;
-	bcs->json = json;
-	*bcsP = bcs;
-	
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_connection_sending_destroy(blade_connection_sending_t **bcsP)
-{
-	blade_connection_sending_t *bcs = NULL;
-
-	ks_assert(bcsP);
-	ks_assert(*bcsP);
-
-	bcs = *bcsP;
-
-	if (bcs->target) blade_identity_destroy(&bcs->target);
-	if (bcs->json) cJSON_Delete(bcs->json);
-
-	ks_pool_free(bcs->pool, bcsP);
-
-	return KS_STATUS_SUCCESS;
-}
-
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data);
 
@@ -104,6 +62,7 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 {
 	blade_connection_t *bc = NULL;
 	ks_pool_t *pool = NULL;
+	uuid_t id;
 
 	ks_assert(bcP);
 	ks_assert(bh);
@@ -116,6 +75,14 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 	bc->pool = pool;
 	bc->transport_init_data = transport_init_data;
 	bc->transport_callbacks = transport_callbacks;
+
+	ks_uuid(&id);
+	bc->id = ks_uuid_str(pool, &id);
+	ks_assert(bc->id);
+
+	ks_rwl_create(&bc->lock, pool);
+	ks_assert(bc->lock);
+	
 	ks_q_create(&bc->sending, pool, 0);
 	ks_assert(bc->sending);
 
@@ -127,7 +94,7 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 {
 	blade_connection_t *bc = NULL;
-	
+
 	ks_assert(bcP);
 	ks_assert(*bcP);
 
@@ -136,6 +103,10 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 	blade_connection_shutdown(bc);
 
 	ks_q_destroy(&bc->sending);
+
+	ks_rwl_destroy(&bc->lock);
+
+	ks_pool_free(bc->pool, &bc->id);
 
 	ks_pool_free(bc->pool, bcP);
 
@@ -165,7 +136,7 @@ KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_c
 
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 {
-	blade_connection_sending_t *bcs = NULL;
+	cJSON *json = NULL;
 
 	ks_assert(bc);
 
@@ -176,10 +147,61 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 		bc->shutdown = KS_FALSE;
 	}
 
-	while (ks_q_trypop(bc->sending, (void **)&bcs) == KS_STATUS_SUCCESS && bcs) blade_connection_sending_destroy(&bcs);
+	while (ks_q_trypop(bc->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 
 	return KS_STATUS_SUCCESS;
 }
+
+KS_DECLARE(blade_handle_t *) blade_connection_handle_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return bc->handle;
+}
+
+KS_DECLARE(const char *) blade_connection_id_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return bc->id;
+}
+
+KS_DECLARE(ks_status_t) blade_connection_read_lock(blade_connection_t *bc, ks_bool_t block)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(bc);
+
+	if (block) ret = ks_rwl_read_lock(bc->lock);
+	else ret = ks_rwl_try_read_lock(bc->lock);
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_connection_read_unlock(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return ks_rwl_read_unlock(bc->lock);
+}
+
+KS_DECLARE(ks_status_t) blade_connection_write_lock(blade_connection_t *bc, ks_bool_t block)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(bc);
+
+	if (block) ret = ks_rwl_write_lock(bc->lock);
+	else ret = ks_rwl_try_write_lock(bc->lock);
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_connection_write_unlock(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return ks_rwl_write_unlock(bc->lock);
+}
+
 
 KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc)
 {
@@ -263,40 +285,23 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DETACH);
 }
 
-KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
+KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, cJSON *json)
 {
-	blade_connection_sending_t *bcs = NULL;
-
-	ks_assert(bc);
-	ks_assert(json);
-
-	blade_connection_sending_create(&bcs, bc->pool, target, json);
-	ks_assert(bcs);
-
-	return ks_q_push(bc->sending, bcs);
-}
-
-KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, blade_identity_t **target, cJSON **json)
-{
-	ks_status_t ret = KS_STATUS_SUCCESS;
-	blade_connection_sending_t *bcs = NULL;
+	cJSON *json_copy = NULL;
 	
 	ks_assert(bc);
 	ks_assert(json);
 
-	ret = ks_q_trypop(bc->sending, (void **)&bcs);
+	json_copy = cJSON_Duplicate(json, 1);
+	return ks_q_push(bc->sending, json_copy);
+}
 
-	if (bcs) {
-		if (target) *target = bcs->target;
-		*json = bcs->json;
+KS_DECLARE(ks_status_t) blade_connection_sending_pop(blade_connection_t *bc, cJSON **json)
+{
+	ks_assert(bc);
+	ks_assert(json);
 
-		bcs->target = NULL;
-		bcs->json = NULL;
-
-		blade_connection_sending_destroy(&bcs);
-	}
-
-	return ret;
+	return ks_q_trypop(bc->sending, (void **)json);
 }
 
 
@@ -306,7 +311,6 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 	blade_connection_state_t state;
 	blade_transport_state_callback_t callback = NULL;
 	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
-	blade_identity_t *target = NULL;
 	cJSON *json = NULL;
 
 	ks_assert(thread);
@@ -320,23 +324,32 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 		hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 		callback = blade_connection_state_callback_lookup(bc, state);
 
-		while (blade_connection_sending_pop(bc, &target, &json) == KS_STATUS_SUCCESS && json) {
-			if (bc->transport_callbacks->onsend(bc, target, json) != KS_STATUS_SUCCESS) {
-				blade_connection_disconnect(bc);
-				break;
+		// @todo only READY state?
+		if (state != BLADE_CONNECTION_STATE_DETACH && state != BLADE_CONNECTION_STATE_DISCONNECT) {
+			while (blade_connection_sending_pop(bc, &json) == KS_STATUS_SUCCESS && json) {
+				ks_status_t ret = bc->transport_callbacks->onsend(bc, json);
+				cJSON_Delete(json);
+
+				if (ret != KS_STATUS_SUCCESS) {
+					blade_connection_disconnect(bc);
+					break;
+				}
 			}
 		}
 
 		if (state == BLADE_CONNECTION_STATE_READY) {
-			do {
+			ks_bool_t done = KS_FALSE;
+			while (!done) {
 				if (bc->transport_callbacks->onreceive(bc, &json) != KS_STATUS_SUCCESS) {
 					blade_connection_disconnect(bc);
 					break;
 				}
-				if (json) {
+				if (!(done = (json == NULL))) {
 					// @todo push json to session receiving queue
+					cJSON_Delete(json);
+					json = NULL;
 				}
-			} while (json) ;
+			}
 		}
 		
 		if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);

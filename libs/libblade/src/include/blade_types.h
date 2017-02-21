@@ -44,6 +44,9 @@ typedef struct blade_module_s blade_module_t;
 typedef struct blade_module_callbacks_s blade_module_callbacks_t;
 typedef struct blade_transport_callbacks_s blade_transport_callbacks_t;
 typedef struct blade_connection_s blade_connection_t;
+typedef struct blade_session_s blade_session_t;
+typedef struct blade_request_s blade_request_t;
+typedef struct blade_response_s blade_response_t;
 
 typedef struct blade_datastore_s blade_datastore_t;
 
@@ -84,6 +87,18 @@ typedef enum {
 	BLADE_CONNECTION_RANK_GREAT,
 } blade_connection_rank_t;
 
+
+typedef enum {
+	BLADE_SESSION_STATE_NONE,
+	BLADE_SESSION_STATE_DESTROY,
+	BLADE_SESSION_STATE_HANGUP,
+	BLADE_SESSION_STATE_ATTACH,
+	BLADE_SESSION_STATE_DETACH,
+	BLADE_SESSION_STATE_READY,
+} blade_session_state_t;
+
+
+
 typedef ks_status_t (*blade_module_load_callback_t)(blade_module_t **bmP, blade_handle_t *bh);
 typedef ks_status_t (*blade_module_unload_callback_t)(blade_module_t *bm);
 typedef ks_status_t (*blade_module_startup_callback_t)(blade_module_t *bm, config_setting_t *config);
@@ -99,7 +114,7 @@ struct blade_module_callbacks_s {
 
 typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
 typedef blade_connection_rank_t (*blade_transport_rank_callback_t)(blade_connection_t *bc, blade_identity_t *target);
-typedef ks_status_t (*blade_transport_send_callback_t)(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
+typedef ks_status_t (*blade_transport_send_callback_t)(blade_connection_t *bc, cJSON *json);
 typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc, cJSON **json);
 typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
@@ -123,6 +138,26 @@ struct blade_transport_callbacks_s {
 	blade_transport_state_callback_t onstate_ready_outbound;
 };
 
+
+struct blade_request_s {
+	ks_pool_t *pool;
+	uint32_t refs;
+	const char *session_id;
+
+	cJSON *message;
+	const char *message_id; // pulled from message for easier keying
+	// @todo ttl to wait for response before injecting an error response locally
+	// @todo rpc response callback
+};
+
+struct blade_response_s {
+	ks_pool_t *pool;
+	uint32_t refs;
+	const char *session_id;
+	blade_request_t *request;
+
+	cJSON *message;
+};
 
 KS_END_EXTERN_C
 

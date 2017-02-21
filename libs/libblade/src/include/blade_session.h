@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <ks_dht.h>
-#include <sodium.h>
-#include <libconfig.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_identity.h"
-#include "blade_module.h"
-#include "blade_connection.h"
-#include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
+#ifndef _BLADE_SESSION_H_
+#define _BLADE_SESSION_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
-
+KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP);
+KS_DECLARE(ks_status_t) blade_sesssion_startup(blade_session_t *bs);
+KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs);
+KS_DECLARE(const char *) blade_session_id_get(blade_session_t *bs);
+KS_DECLARE(void) blade_session_id_set(blade_session_t *bs, const char *id);
+KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_state_t state);
+KS_DECLARE(void) blade_session_hangup(blade_session_t *bs);
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json);
+KS_DECLARE(ks_status_t) blade_session_sending_push(blade_session_t *bs, cJSON *json);
+KS_DECLARE(ks_status_t) blade_session_sending_pop(blade_session_t *bs, cJSON **json);
 KS_END_EXTERN_C
 
 #endif

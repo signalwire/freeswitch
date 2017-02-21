@@ -101,7 +101,7 @@ ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP);
 ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
 blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blade_identity_t *target);
 
-ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t *target, cJSON *json);
+ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json);
 ks_status_t blade_transport_wss_on_receive(blade_connection_t *bc, cJSON **json);
 
 blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_connection_t *bc, blade_connection_state_condition_t condition);
@@ -484,11 +484,6 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 		goto done;
 	}
 
-	ks_log(KS_LOG_DEBUG, "Listeners Before\n");
-	for (int index = 0; index < bm_wss->listeners_count; ++index) {
-		ks_log(KS_LOG_DEBUG, "  Listener %d = %d\n", index, bm_wss->listeners_poll[index].fd);
-	}
-	
 	listener_index = bm_wss->listeners_count++;
 	bm_wss->listeners_poll = (struct pollfd *)ks_pool_resize(bm_wss->pool,
 															 bm_wss->listeners_poll,
@@ -496,11 +491,6 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 	ks_assert(bm_wss->listeners_poll);
 	bm_wss->listeners_poll[listener_index].fd = listener;
 	bm_wss->listeners_poll[listener_index].events = POLLIN | POLLERR;
-
-	ks_log(KS_LOG_DEBUG, "Listeners After\n");
-	for (int index = 0; index < bm_wss->listeners_count; ++index) {
-		ks_log(KS_LOG_DEBUG, "  Listener %d = %d\n", index, bm_wss->listeners_poll[index].fd);
-	}
 
  done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -533,7 +523,6 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 
 				if (bm_wss->listeners_poll[index].revents & POLLERR) {
 					// @todo: error handling, just skip the listener for now, it might recover, could skip X times before closing?
-					ks_log(KS_LOG_DEBUG, "Listener POLLERR\n");
 					continue;
 				}
 				if (!(bm_wss->listeners_poll[index].revents & POLLIN)) continue;
@@ -550,6 +539,8 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 
                 blade_connection_create(&bc, bm_wss->handle, bt_wss_init, bm_wss->transport_callbacks);
 				ks_assert(bc);
+				
+				blade_connection_read_lock(bc, KS_TRUE);
 
 				if (blade_connection_startup(bc, BLADE_CONNECTION_DIRECTION_INBOUND) != KS_STATUS_SUCCESS) {
 					blade_connection_destroy(&bc);
@@ -557,8 +548,11 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 					ks_socket_close(&sock);
 					continue;
 				}
+				blade_handle_connections_add(bc);
 				list_append(&bm_wss->connected, bc);
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
+
+				blade_connection_read_unlock(bc);
 			}
 		}
 
@@ -566,6 +560,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 			bt_wss_init = (blade_transport_wss_init_t *)blade_connection_transport_init_get(bc);
 			bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
+			blade_handle_connections_remove(bc);
 			list_delete(&bm_wss->connected, bc);
 
 			if (bt_wss_init) blade_transport_wss_init_destroy(&bt_wss_init);
@@ -730,7 +725,7 @@ ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json
 	return ret;
 }
 
-ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t *target, cJSON *json)
+ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_transport_wss_t *bt_wss = NULL;
@@ -745,7 +740,6 @@ ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, blade_identity_t
 	ret = blade_transport_wss_write(bt_wss, json);
 
 	// @todo use reference counting on blade_identity_t and cJSON objects
-	if (target) blade_identity_destroy(&target);
 	cJSON_Delete(json);
 
 	return ret;
@@ -904,10 +898,30 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	ks_assert(bc);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
-	// @todo Establish sessid and discover existing session or create and register new session through BLADE commands
-	// Set session state to CONNECT if its new or RECONNECT if existing
-	// start session and its thread if its new
 
+	// @todo block while reading expected message with blade_transport_wss_read(bt_wss, json)
+
+	// @todo check if expected message is a request by confirming it has a method field (along with json field validation, stay compliant with jsonrpc)
+
+	// @todo validate method is "blade.session.attach"
+
+	// @todo validate parameters "session-id" and "session-token" must both be present or omitted, validate both are strings and valid uuid format
+	// if both are omitted, params may be omitted entirely by jsonrpc spec
+
+	// @todo if session-id is provided, lookup existing session within the blade_handle_t
+
+	// @todo if the session exists, verify the session-token, if it matches then use this session
+
+	// @todo if the session-token does not match, or the session does not exist, or the session-id and session-token are not provided then create a new session
+
+	// @todo once session is established, associate it to the connection
+
+	// @todo if anything fails, return HOOK_DISCONNECT, otherwise return HOOK_SUCCESS which will continue the rest of the session attaching process
+	// which is to grab the expected session off the connection and attach the connection to the connection list on the session, start the session thread if
+	// it hasn't already been started, and set the session state to CONNECT or ATTACH... discuss with tony, finalize session state machine regarding multiple
+	// connections attempting to attach at the same time to the session and changing the session state, may need to queue pending connections to the session
+	// and process them from within the session state machine thread
+	
 	ks_sleep_ms(1000); // @todo temporary testing, remove this and return success once negotiations are done
 	return BLADE_CONNECTION_STATE_HOOK_BYPASS;
 }
@@ -917,6 +931,25 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	ks_assert(bc);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	// @todo produce jsonrpc compliant message to call method "blade.session.attach"
+
+	// @todo add params with nested session-id and session-token if attempting to reconnect as a client, this should probably be passed in from
+	// the blade_handle_connect() call and then through the init parameters for the transport (do not directly use the old session, but copy the id and token)
+
+	// @todo block while sending message with blade_transport_wss_write(bt_wss, json)
+
+	// @todo block while receiving expected response with blade_transport_wss_read(bt_wss, json)
+
+	// @todo check for error field, log and return HOOK_DISCONNECT if any errors occur
+
+	// @todo check for result field, and nested session-id and session-token
+
+	// @todo lookup the old session from the blade_handle_t, if it still exists then use this session
+
+	// @todo if the old session does not exist, then create a new session and populate with the parameters from the results
+	
+	// @todo once session is established, associate it to the connection, see attach_inbound for notes regarding universal actions after returning SUCCESS
 
 	ks_sleep_ms(1000); // @todo temporary testing, remove this and return success once negotiations are done
 	return BLADE_CONNECTION_STATE_HOOK_BYPASS;

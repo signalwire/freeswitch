@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <ks_dht.h>
-#include <sodium.h>
-#include <libconfig.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_identity.h"
-#include "blade_module.h"
-#include "blade_connection.h"
-#include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
+#ifndef _BLADE_PROTOCOL_H_
+#define _BLADE_PROTOCOL_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
-
+KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP, ks_pool_t *pool, const char *session_id, cJSON *json /*, response_callback*/);
+KS_DECLARE(ks_status_t) blade_request_destroy(blade_request_t **breqP);
 KS_END_EXTERN_C
 
 #endif

@@ -47,10 +47,17 @@ struct blade_handle_s {
 	config_setting_t *config_directory;
 	config_setting_t *config_datastore;
 
-	ks_hash_t *transports;
+	ks_hash_t *transports; // registered transports exposed by modules, NOT active connections
 
-	blade_identity_t *identity;
+	//blade_identity_t *identity;
 	blade_datastore_t *datastore;
+
+	// @todo insert on connection creations, remove on connection destructions, key based on a UUID for the connection
+	ks_hash_t *connections; // active connections keyed by connection id
+	// @todo insert on session creations, remove on session destructions, key based on a UUID for the session
+	ks_hash_t *sessions; // active sessions keyed by session id
+	// @todo another hash with sessions keyed by the remote identity without parameters for quick lookup by target identity on sending?
+	ks_hash_t *requests; // outgoing requests waiting for a response keyed by the message id
 };
 
 
@@ -127,6 +134,14 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->transports);
 	
+	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->connections);
+	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->sessions);
+	// @todo decide if this is uint32_t or uuid string, prefer uuid string to avoid needing another lock and variable for next id
+	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->requests);
+	
 	*bhP = bh;
 
 	return KS_STATUS_SUCCESS;
@@ -150,6 +165,9 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 
 	blade_handle_shutdown(bh);
 
+	ks_hash_destroy(&bh->requests);
+	ks_hash_destroy(&bh->sessions);
+	ks_hash_destroy(&bh->connections);
 	ks_hash_destroy(&bh->transports);
 
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
@@ -212,9 +230,23 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 
 KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
+	ks_hash_iterator_t *it = NULL;
+
 	ks_assert(bh);
 
-	// @todo call onshutdown and onunload callbacks for modules from DSOs
+	for (it = ks_hash_first(bh->requests, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		blade_request_t *value = NULL;
+		
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+		ks_hash_remove(bh->requests, key);
+		
+		blade_request_destroy(&value);
+	}
+	
+	// @todo terminate all sessions, which will disconnect all attached connections
+	
+	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and disconnect remaining unattached connections
 
 	// @todo unload DSOs
 
@@ -244,6 +276,8 @@ KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blad
 	ks_assert(bm);
 	ks_assert(name);
 	ks_assert(callbacks);
+
+	// @todo reduce blade_handle_t parameter, pull from blade_module_t parameter
 
 	blade_handle_transport_registration_create(&bhtr, bh->pool, bm, callbacks);
 	ks_assert(bhtr);
@@ -330,6 +364,59 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 	return ret;
 }
 
+
+KS_DECLARE(blade_connection_t *) blade_handle_connections_get(blade_handle_t *bh, const char *cid)
+{
+	blade_connection_t *bc = NULL;
+
+	ks_assert(bh);
+	ks_assert(cid);
+
+	ks_hash_read_lock(bh->connections);
+	bc = ks_hash_search(bh->connections, (void *)cid, KS_UNLOCKED);
+	if (bc && blade_connection_read_lock(bc, KS_FALSE) != KS_STATUS_SUCCESS) bc = NULL;
+	ks_hash_read_unlock(bh->connections);
+
+	return bc;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_connections_add(blade_connection_t *bc)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(bc);
+
+	bh = blade_connection_handle_get(bc);
+	ks_assert(bh);
+
+	ks_hash_write_lock(bh->connections);
+	ret = ks_hash_insert(bh->connections, (void *)blade_connection_id_get(bc), bc);
+	ks_hash_write_unlock(bh->connections);
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_connections_remove(blade_connection_t *bc)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(bc);
+
+	bh = blade_connection_handle_get(bc);
+	ks_assert(bh);
+
+	blade_connection_write_lock(bc, KS_TRUE);
+
+	ks_hash_write_lock(bh->connections);
+	if (ks_hash_remove(bh->connections, (void *)blade_connection_id_get(bc)) == NULL) ret = KS_STATUS_FAIL;
+	ks_hash_write_unlock(bh->connections);
+
+	blade_connection_write_unlock(bc);
+
+	return ret;
+}
 
 
 

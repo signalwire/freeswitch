@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <ks_dht.h>
-#include <sodium.h>
-#include <libconfig.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_identity.h"
-#include "blade_module.h"
-#include "blade_connection.h"
-#include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_datastore.h"
-#include "bpcp.h"
+#include "blade.h"
 
-KS_BEGIN_EXTERN_C
+KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP, ks_pool_t *pool, const char *session_id, cJSON *json /*, response_callback*/)
+{
+	blade_request_t *breq = NULL;
 
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
+	ks_assert(breqP);
+	ks_assert(pool);
+	ks_assert(session_id);
+	ks_assert(json);
 
-KS_END_EXTERN_C
+	breq = ks_pool_alloc(pool, sizeof(blade_request_t));
+	breq->pool = pool;
+	breq->refs = 1;
+	breq->session_id = ks_pstrdup(pool, session_id);
+	breq->message = json;
+	breq->message_id = cJSON_GetObjectCstr(json, "id");
+	//breq->response_callback = response_callback;
+	*breqP = breq;
 
-#endif
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_request_destroy(blade_request_t **breqP)
+{
+	blade_request_t *breq = NULL;
+
+	ks_assert(breqP);
+	ks_assert(*breqP);
+
+	breq = *breqP;
+
+	ks_pool_free(breq->pool, (void **)&breq->session_id);
+	cJSON_Delete(breq->message);
+
+	ks_pool_free(breq->pool, breqP);
+
+	return KS_STATUS_SUCCESS;
+}
+
 
 /* For Emacs:
  * Local Variables:
