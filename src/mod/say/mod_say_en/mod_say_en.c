@@ -381,7 +381,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0, mil = 0;
+		int32_t hour = tm.tm_hour, mil = 0;
 
 		if (say_args->method == SSM_ITERATED) {
 			mil = 1;
@@ -391,27 +391,11 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			switch_say_file(sh, "time/at");
 		}
 
-		if (hour > 12) {
-			if ( mil ) {
-				mil++;
-			} else {
-				hour -= 12;
-				pm = 1;
-			}
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			if (mil) {
-				if (tm.tm_min == 0) {
-					hour = 24;
-				}
-			} else {
-				hour = 12;
-				pm = 0;
-			}
-		}
-
 		if (mil) {
+
+			if (hour == 0 && tm.tm_min == 0) {
+				hour = 24;
+			}
 
 			if (hour < 10) {
 				say_num(sh, 0, SSM_PRONOUNCED);
@@ -431,6 +415,18 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			switch_say_file(sh, "time/hours");
 
 		} else {
+			switch_bool_t pm = 0;
+
+			if (hour >= 12) {
+				pm = 1;
+			}
+
+			if (hour > 12) {
+				hour -= 12;
+			} else if (hour == 0) {
+				hour = 12;
+			}
+
 			say_num(sh, hour, SSM_PRONOUNCED);
 			
 			if (tm.tm_min > 9) {
