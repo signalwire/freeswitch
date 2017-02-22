@@ -847,12 +847,14 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 
 static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
 {
-    int rmean = ( c1->r + c2->r ) / 2;
+    //int rmean = ( c1->r + c2->r ) / 2;
 	int r = c1->r - c2->r;
     int g = c1->g - c2->g;
     int b = c1->b - c2->b;
 
-    return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
+	return sqrt((2*r*r) + (4*g*g) + (3*b*b));
+	//return (3*abs(r)) + (4*abs(g)) + (3*abs(b)) / 3;
+    //return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
 }
 
 static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds)
@@ -862,7 +864,7 @@ static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb
 	for (x = 0; x < count; x++) {
 		int distance = switch_color_distance(c1, &clist[x]);
 
-		if (distance < thresholds[x]) {
+		if (distance <= thresholds[x]) {
 			hits++;
 		}
 	}
