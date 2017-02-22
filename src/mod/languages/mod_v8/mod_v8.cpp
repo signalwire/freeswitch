@@ -276,7 +276,35 @@ static switch_status_t load_modules(void)
 	switch_core_hash_init(&module_manager.load_hash);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_xml_t mods, ld, settings, param, hook;
+		switch_xml_t mods, ld;
+
+		if ((mods = switch_xml_child(cfg, "modules"))) {
+			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				const char *val = switch_xml_attr_soft(ld, "module");
+				if (!zstr(val) && strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
+					continue;
+				}
+				v8_load_module(SWITCH_GLOBAL_dirs.mod_dir, val);
+				count++;
+			}
+		}
+		switch_xml_free(xml);
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Open of %s failed\n", cf);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void load_configuration(void)
+{
+	const char *cf = "v8.conf";
+	switch_xml_t cfg, xml;
+
+	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_xml_t settings, param, hook;
 
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -290,6 +318,11 @@ static switch_status_t load_modules(void)
 					if (!zstr(globals.xml_handler)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 						switch_xml_bind_search_function(v8_fetch, switch_xml_parse_section_string(val), NULL);
+					}
+				}
+				else if (!strcmp(var, "startup-script")) {
+					if (val) {
+						v8_thread_launch(val);
 					}
 				}
 			}
@@ -326,24 +359,12 @@ static switch_status_t load_modules(void)
 			}
 		}
 
-		if ((mods = switch_xml_child(cfg, "modules"))) {
-			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
-				const char *val = switch_xml_attr_soft(ld, "module");
-				if (!zstr(val) && strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
-					continue;
-				}
-				v8_load_module(SWITCH_GLOBAL_dirs.mod_dir, val);
-				count++;
-			}
-		}
 		switch_xml_free(xml);
 
-	} else {
+	}
+	else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Open of %s failed\n", cf);
 	}
-
-	return SWITCH_STATUS_SUCCESS;
 }
 
 static int env_init(JSMain *js)
@@ -1006,6 +1027,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "javascript", "execute a js script", "execute a js script", v8_chat_function, "<script>", SCAF_NONE);
 
 	SWITCH_ADD_JSON_API(json_api_interface, "jsjson", "JSON JS Gateway", json_function, "");
+
+	load_configuration();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
