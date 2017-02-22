@@ -1059,6 +1059,8 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	const char *caller_id_number = NULL;
 	const char *callee_id_name = NULL;
 	const char *callee_id_number = NULL;
+	const char *prefix = "verto_h_";
+	switch_event_header_t *var = NULL;
 
 	caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
 	caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");	
@@ -1074,7 +1076,14 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	cJSON_AddItemToObject(params, "display_direction", 
 						  cJSON_CreateString(switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound"));
 
-
+	for (var = switch_channel_variable_first(tech_pvt->channel); var; var = var->next) {
+		const char *name = (char *) var->name;
+		char *value = (char *) var->value;
+		if (!strncasecmp(name, prefix, strlen(prefix))) {
+			cJSON_AddItemToObject(params, name, cJSON_CreateString(value));
+		}
+	}
+	switch_channel_variable_last(tech_pvt->channel);
 
 }
 
