@@ -1457,10 +1457,8 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 			switch_buffer_zero(context->audio_buffer);
 			switch_mutex_unlock(context->mutex);
 
-			if (context->eh.video_queue) {
-				flush_video_queue(context->eh.video_queue, 0);
-			}
 
+			
 			// if (context->has_audio) stream_id = context->audio_st.st->index;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seeking to %" SWITCH_INT64_T_FMT "\n", context->seek_ts);
 			avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
@@ -1474,12 +1472,18 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 		if (context->has_video) {
 			vid_frames = switch_queue_size(context->eh.video_queue);
 		}
+		
+		if (vid_frames > context->read_fps) {
+			switch_yield(250000);
+		}
 
 		if (switch_buffer_inuse(context->audio_buffer) > AUDIO_BUF_SEC * context->audio_st.sample_rate * context->audio_st.channels * 2 &&
 			(!context->has_video || vid_frames > 5)) {
 			switch_yield(context->has_video ? 1000 : 10000);
 			continue;
 		}
+
+
 
 		av_init_packet(&pkt);
 		pkt.data = NULL;
@@ -2161,7 +2165,6 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 
 	if (!context->has_video || context->closed) return SWITCH_STATUS_FALSE;
-
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
 	}
@@ -2185,12 +2188,15 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 		frame->img = (switch_image_t *) pop;
 
-		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
-			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
-				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SIZE);
+		if (frame->img) {
+			if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
+				if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
+					switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SIZE);
+				}
 			}
-		}
-		
+			context->vid_ready = 1;
+		}		
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2386,6 +2392,11 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	}
 
 	if (frame->img) {
+		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
+			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
+				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SIZE);
+			}
+		}
 		context->vid_ready = 1;
 	}
 

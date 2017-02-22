@@ -43,6 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_video_filter, mod_video_filter_load, mod_video_filt
 typedef struct chromakey_context_s {
 	int threshold;
 	switch_image_t *bgimg;
+	switch_image_t *backup_img;
 	switch_image_t *bgimg_scaled;
 	switch_file_handle_t vfh;
 	switch_rgb_color_t bgcolor;
@@ -192,7 +193,10 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_lock(context->command_mutex);
+	if (switch_mutex_trylock(context->command_mutex) != SWITCH_STATUS_SUCCESS) {
+		switch_img_patch(frame->img, context->backup_img, 0, 0);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	data = malloc(frame->img->d_w * frame->img->d_h * 4);
 	switch_assert(data);
@@ -257,6 +261,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	}
 
 	switch_img_patch(frame->img, img, 0, 0);
+	switch_img_free(&context->backup_img);
+	switch_img_copy(frame->img, &context->backup_img);
 	switch_img_free(&img);
 	free(data);
 
