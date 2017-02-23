@@ -113,7 +113,7 @@ struct blade_module_callbacks_s {
 };
 
 
-typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target);
+typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target, const char *session_id);
 typedef blade_connection_rank_t (*blade_transport_rank_callback_t)(blade_connection_t *bc, blade_identity_t *target);
 typedef ks_status_t (*blade_transport_send_callback_t)(blade_connection_t *bc, cJSON *json);
 typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc, cJSON **json);

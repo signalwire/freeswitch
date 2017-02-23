@@ -244,8 +244,17 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 		blade_request_destroy(&value);
 	}
 	
-	// @todo terminate all sessions, which will disconnect all attached connections
-	
+	for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		blade_session_t *value = NULL;
+		
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+		ks_hash_remove(bh->requests, key);
+		
+		blade_session_hangup(value);
+	}
+	while (ks_hash_count(bh->sessions) > 0) ks_sleep_ms(100);
+
 	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and disconnect remaining unattached connections
 
 	// @todo unload DSOs
@@ -312,7 +321,7 @@ KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, co
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target)
+KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_handle_transport_registration_t *bhtr = NULL;
@@ -358,7 +367,7 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 
 	// @todo need to be able to get to the blade_module_t from the callbacks, may require envelope around registration of callbacks to include module
 	// this is required because onconnect transport callback needs to be able to get back to the module data to create the connection being returned
-	if (bhtr) ret = bhtr->callbacks->onconnect(bcP, bhtr->module, target);
+	if (bhtr) ret = bhtr->callbacks->onconnect(bcP, bhtr->module, target, session_id);
 	else ret = KS_STATUS_FAIL;
 
 	return ret;
@@ -423,7 +432,7 @@ KS_DECLARE(blade_session_t *) blade_handle_sessions_get(blade_handle_t *bh, cons
 {
 	blade_session_t *bs = NULL;
 
-	ks_assert(bs);
+	ks_assert(bh);
 	ks_assert(sid);
 
 	ks_hash_read_lock(bh->sessions);

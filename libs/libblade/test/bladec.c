@@ -253,7 +253,7 @@ void command_connect(blade_handle_t *bh, char *args)
 
 	blade_identity_create(&target, blade_handle_pool_get(bh));
 	
-	if (blade_identity_parse(target, args) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target);
+	if (blade_identity_parse(target, args) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
 
 	blade_identity_destroy(&target);
 }

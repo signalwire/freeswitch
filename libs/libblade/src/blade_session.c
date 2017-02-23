@@ -81,6 +81,8 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 
 	*bsP = bs;
 
+	ks_log(KS_LOG_DEBUG, "Created\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -105,6 +107,8 @@ KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP)
 
 	ks_pool_free(bs->pool, bsP);
 
+	ks_log(KS_LOG_DEBUG, "Destroyed\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -125,6 +129,8 @@ KS_DECLARE(ks_status_t) blade_session_startup(blade_session_t *bs)
 		return KS_STATUS_FAIL;
 	}
 	
+	ks_log(KS_LOG_DEBUG, "Started\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -152,6 +158,8 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 	list_iterator_stop(&bs->connections);
 	list_clear(&bs->connections);
 	
+	ks_log(KS_LOG_DEBUG, "Stopped\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -226,8 +234,17 @@ KS_DECLARE(void) blade_session_hangup(blade_session_t *bs)
 {
 	ks_assert(bs);
 
-	if (bs->state != BLADE_SESSION_STATE_HANGUP && bs->state != BLADE_SESSION_STATE_DESTROY)
+	if (bs->state != BLADE_SESSION_STATE_HANGUP && bs->state != BLADE_SESSION_STATE_DESTROY) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) hanging up\n", bs->id);
 		blade_session_state_set(bs, BLADE_SESSION_STATE_HANGUP);
+	}
+}
+
+KS_DECLARE(ks_bool_t) blade_session_terminating(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->state == BLADE_SESSION_STATE_HANGUP || bs->state == BLADE_SESSION_STATE_DESTROY;
 }
 
 KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const char *id)
@@ -241,6 +258,8 @@ KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const
 	ks_assert(cid);
 	
 	list_append(&bs->connections, cid);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) connection added (%s)\n", bs->id, id);
 
 	return ret;
 }
@@ -256,6 +275,7 @@ KS_DECLARE(ks_status_t) blade_session_connections_remove(blade_session_t *bs, co
 	for (uint32_t i = 0; i < size; ++i) {
 		const char *cid = (const char *)list_get_at(&bs->connections, i);
 		if (!strcasecmp(cid, id)) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) connection removed (%s)\n", bs->id, id);
 			list_delete_at(&bs->connections, i);
 			ks_pool_free(bs->pool, &cid);
 			break;
@@ -278,7 +298,7 @@ ks_status_t blade_session_connections_choose(blade_session_t *bs, cJSON *json, b
 	// later there will need to be a way to pick which connection to use
 	cid = list_get_at(&bs->connections, 0);
 	if (!cid) {
-		// @todo error logging... this shouldn't happen
+		// no connections available
 		return KS_STATUS_FAIL;
 	}
 		
@@ -310,6 +330,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json)
 		if (blade_session_connections_choose(bs, json, &bc) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 		// @todo cache the blade_request_t here if it exists to gaurentee it's cached before a response could be received
 		blade_connection_sending_push(bc, json);
+		blade_connection_read_unlock(bc);
 	}
 	
 	return KS_STATUS_SUCCESS;
@@ -334,7 +355,25 @@ KS_DECLARE(ks_status_t) blade_session_sending_pop(blade_session_t *bs, cJSON **j
 	return ks_q_trypop(bs->sending, (void **)json);
 }
 
-// @todo receive queue push and pop
+KS_DECLARE(ks_status_t) blade_session_receiving_push(blade_session_t *bs, cJSON *json)
+{
+    cJSON *json_copy = NULL;
+
+    ks_assert(bs);
+    ks_assert(json);
+
+    json_copy = cJSON_Duplicate(json, 1);
+    return ks_q_push(bs->receiving, json_copy);
+}
+
+KS_DECLARE(ks_status_t) blade_session_receiving_pop(blade_session_t *bs, cJSON **json)
+{
+	ks_assert(bs);
+	ks_assert(json);
+
+	return ks_q_trypop(bs->receiving, (void **)json);
+}
+
 
 void *blade_session_state_thread(ks_thread_t *thread, void *data)
 {
@@ -354,26 +393,56 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 		if (!list_empty(&bs->connections)) {
 			while (blade_session_sending_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
 				blade_connection_t *bc = NULL;
-				if (blade_session_connections_choose(bs, json, &bc) == KS_STATUS_SUCCESS) blade_connection_sending_push(bc, json);
+				if (blade_session_connections_choose(bs, json, &bc) == KS_STATUS_SUCCESS) {
+					blade_connection_sending_push(bc, json);
+					blade_connection_read_unlock(bc);
+				}
 				cJSON_Delete(json);
 			}
 		}
 
 		switch (state) {
 		case BLADE_SESSION_STATE_DESTROY:
+			ks_log(KS_LOG_DEBUG, "Session (%s) state destroy\n", bs->id);
+			blade_handle_sessions_remove(bs);
+			blade_session_destroy(&bs);
 			return NULL;
 		case BLADE_SESSION_STATE_HANGUP:
-			// @todo detach from session if this connection is attached
-			blade_session_state_set(bs, BLADE_SESSION_STATE_DESTROY);
-			break;
+			{
+				ks_log(KS_LOG_DEBUG, "Session (%s) state hangup\n", bs->id);
+				
+				list_iterator_start(&bs->connections);
+				while (list_iterator_hasnext(&bs->connections)) {
+					const char *cid = (const char *)list_iterator_next(&bs->connections);
+					blade_connection_t *bc = blade_handle_connections_get(bs->handle, cid);
+					ks_assert(bc);
+
+					blade_connection_disconnect(bc);
+					blade_connection_read_unlock(bc);
+				}
+				list_iterator_stop(&bs->connections);
+
+				while (!list_empty(&bs->connections)) ks_sleep(100);
+
+				blade_session_state_set(bs, BLADE_SESSION_STATE_DESTROY);
+				break;
+			}
 		case BLADE_SESSION_STATE_CONNECT:
+			ks_log(KS_LOG_DEBUG, "Session (%s) state connect\n", bs->id);
+			ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_ATTACH:
+			ks_log(KS_LOG_DEBUG, "Session (%s) state attach\n", bs->id);
+			ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_DETACH:
+			ks_log(KS_LOG_DEBUG, "Session (%s) state detach\n", bs->id);
+			ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_READY:
-			// @todo pop from session receiving queue and pass to blade_protocol_process()
+			ks_log(KS_LOG_DEBUG, "Session (%s) state ready\n", bs->id);
+			// @todo pop from session receiving queue and pass into protocol layer through something like blade_protocol_process()
+			ks_sleep_ms(1000);
 			break;
 		default: break;
 		}

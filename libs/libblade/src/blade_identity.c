@@ -127,19 +127,6 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 		}
 	}
 
-	// @todo remove this, temporary for testing
-	ks_log(KS_LOG_DEBUG, "       name: %s\n", bi->name);
-	ks_log(KS_LOG_DEBUG, "     domain: %s\n", bi->domain);
-	ks_log(KS_LOG_DEBUG, "   resource: %s\n", bi->resource);
-	for (ks_hash_iterator_t *it = ks_hash_first(bi->parameters, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-		const char *key = NULL;
-		const char *val = NULL;
-
-		ks_hash_this(it, (const void **)&key, NULL, (void **)&val);
-		
-		ks_log(KS_LOG_DEBUG, "        key: %s = %s\n", key, val);
-	}
-		
 	return KS_STATUS_SUCCESS;
 }
 

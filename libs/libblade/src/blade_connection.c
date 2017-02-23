@@ -90,6 +90,8 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 
 	*bcP = bc;
 
+	ks_log(KS_LOG_DEBUG, "Created\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -112,6 +114,8 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 
 	ks_pool_free(bc->pool, bcP);
 
+	ks_log(KS_LOG_DEBUG, "Destroyed\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -133,6 +137,8 @@ KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_c
 		return KS_STATUS_FAIL;
 	}
 	
+	ks_log(KS_LOG_DEBUG, "Started\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -153,6 +159,8 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 
 	while (ks_q_trypop(bc->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 
+	ks_log(KS_LOG_DEBUG, "Stopped\n");
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -161,6 +169,13 @@ KS_DECLARE(blade_handle_t *) blade_connection_handle_get(blade_connection_t *bc)
 	ks_assert(bc);
 
 	return bc->handle;
+}
+
+KS_DECLARE(ks_pool_t *) blade_connection_pool_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+
+	return bc->pool;
 }
 
 KS_DECLARE(const char *) blade_connection_id_get(blade_connection_t *bc)
@@ -285,8 +300,10 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 {
 	ks_assert(bc);
 
-	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT)
+	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT) {
+		ks_log(KS_LOG_DEBUG, "Connection (%s) disconnecting\n", bc->id);
 		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DETACH);
+	}
 }
 
 KS_DECLARE(ks_status_t) blade_connection_sending_push(blade_connection_t *bc, cJSON *json)
@@ -342,6 +359,9 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 		hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 		callback = blade_connection_state_callback_lookup(bc, state);
 
+		if (state == BLADE_CONNECTION_STATE_DISCONNECT) {
+			blade_handle_connections_remove(bc);
+		}
 		// @todo only READY state?
 		if (state != BLADE_CONNECTION_STATE_DETACH && state != BLADE_CONNECTION_STATE_DISCONNECT) {
 			while (blade_connection_sending_pop(bc, &json) == KS_STATUS_SUCCESS && json) {
@@ -363,7 +383,9 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 					break;
 				}
 				if (!(done = (json == NULL))) {
-					// @todo push json to session receiving queue
+					blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
+					ks_assert(bs);
+					blade_session_receiving_push(bs, json);
 					cJSON_Delete(json);
 					json = NULL;
 				}
@@ -379,7 +401,8 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 		else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
 			switch (state) {
 			case BLADE_CONNECTION_STATE_DISCONNECT:
-				return NULL;
+				blade_connection_destroy(&bc);
+				break;
 			case BLADE_CONNECTION_STATE_NEW:
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CONNECT);
 				break;
@@ -388,24 +411,38 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 				break;
 			case BLADE_CONNECTION_STATE_ATTACH:
 				{
+					// @todo this is adding a second lock, since we keep it locked in the callback to allow finishing, we don't want get locking here...
+					// or just try unlocking twice to confirm...
 					blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
 					ks_assert(bs); // should not happen because bs should still be locked
 					
 					blade_session_connections_add(bs, bc->id);
 					
 					blade_connection_state_set(bc, BLADE_CONNECTION_STATE_READY);
-					blade_session_state_set(bs, BLADE_SESSION_STATE_READY);
+					blade_session_state_set(bs, BLADE_SESSION_STATE_READY); // @todo only set this if it's not already in the READY state from prior connection
 					
+					blade_session_read_unlock(bs); // unlock the session we locked obtaining it above
 					blade_session_read_unlock(bs); // unlock the session we expect to be locked during the callback to ensure we can finish attaching
 					break;
 				}
 			case BLADE_CONNECTION_STATE_DETACH:
-				// @todo detach from session if this connection is attached
-				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
-				break;
+				{
+					if (bc->session) {
+						blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
+						ks_assert(bs);
+
+						blade_session_connections_remove(bs, bc->id);
+						blade_session_read_unlock(bs);
+						// keep bc->session for later in case something triggers a reconnect later and needs the old session id for a hint
+					}
+					blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
+					break;
+				}
 			default: break;
 			}
 		}
+
+		if (state == BLADE_CONNECTION_STATE_DISCONNECT) break;
 	}
 
 	return NULL;

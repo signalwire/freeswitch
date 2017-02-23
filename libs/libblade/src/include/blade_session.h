@@ -49,11 +49,14 @@ KS_DECLARE(ks_status_t) blade_session_write_lock(blade_session_t *bs, ks_bool_t 
 KS_DECLARE(ks_status_t) blade_session_write_unlock(blade_session_t *bs);
 KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_state_t state);
 KS_DECLARE(void) blade_session_hangup(blade_session_t *bs);
+KS_DECLARE(ks_bool_t) blade_session_terminating(blade_session_t *bs);
 KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const char *id);
 KS_DECLARE(ks_status_t) blade_session_connections_remove(blade_session_t *bs, const char *id);
 KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json);
 KS_DECLARE(ks_status_t) blade_session_sending_push(blade_session_t *bs, cJSON *json);
 KS_DECLARE(ks_status_t) blade_session_sending_pop(blade_session_t *bs, cJSON **json);
+KS_DECLARE(ks_status_t) blade_session_receiving_push(blade_session_t *bs, cJSON *json);
+KS_DECLARE(ks_status_t) blade_session_receiving_pop(blade_session_t *bs, cJSON **json);
 KS_END_EXTERN_C
 
 #endif
