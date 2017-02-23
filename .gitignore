@@ -240,3 +240,6 @@ libs/zlib/
 
 libs/libav/
 libs/libx264/
+
+Win32/*.msi
+x64/*.msi
