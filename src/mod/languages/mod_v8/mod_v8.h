@@ -83,10 +83,6 @@ SWITCH_END_EXTERN_C
 
 void v8_add_event_handler(void *event_handler);
 void v8_remove_event_handler(void *event_handler);
-static switch_xml_t v8_fetch(const char *section,
-	const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data);
-static void v8_event_handler(switch_event_t *event);
-void v8_thread_launch(const char *text);
 
 #endif /* MOD_V8_H */
 

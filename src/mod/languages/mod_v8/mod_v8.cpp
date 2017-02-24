@@ -139,6 +139,10 @@ static bool debug_wait_for_connection = true;
 static bool debug_manual_break = true;
 #endif
 
+static void v8_thread_launch(const char *text);
+static void v8_event_handler(switch_event_t *event);
+static switch_xml_t v8_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data);
+
 using namespace v8;
 
 static switch_status_t v8_mod_init_built_in(const v8_mod_interface_t *mod_interface)
