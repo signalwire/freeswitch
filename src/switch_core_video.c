@@ -318,24 +318,21 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 
 		for (i = 0; i < max_h; i++) {
 			for (j = 0; j < max_w; j++) {
-				alpha = img->planes[SWITCH_PLANE_PACKED][i * img->stride[SWITCH_PLANE_PACKED] + j * 4];
+				rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
+				alpha = rgb->a;
 
-				if (alpha > 0) {
+				if (alpha == 255) {
+					switch_img_draw_pixel(IMG, x + j, y + i, rgb);
+				} else if (alpha != 0) {
 					switch_rgb_color_t RGB = { 0 };
-
+					
 					switch_img_get_rgb_pixel(IMG, &RGB, x + j, y + i);
-					rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
-
-					if (alpha < 255) {
-						RGB.a = 255;
-						RGB.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
-						RGB.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
-						RGB.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
-
-						switch_img_draw_pixel(IMG, x + j, y + i, &RGB);
-					} else {
-						switch_img_draw_pixel(IMG, x + j, y + i, rgb);
-					}
+					RGB.a = 255;
+					RGB.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
+					RGB.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
+					RGB.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
+					
+					switch_img_draw_pixel(IMG, x + j, y + i, &RGB);
 				}
 			}
 		}
@@ -543,33 +540,360 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_rgb_color_t *mask, int *thresholds, int count)
+
+static inline void switch_core_rgb2xyz(switch_rgb_color_t *rgb, switch_xyz_color_t *xyz)
 {
-	uint8_t *pixel, *last_pixel = NULL;
+	double r, g, b;
+
+	r = (double)rgb->r / 255;
+	g = (double)rgb->g / 255;
+	b = (double)rgb->b / 255;
+
+	if ( r > 0.04045 ) {
+		r = ( ( r + 0.055 ) / 1.055 );
+		r = pow(r, 2.4);
+	} else {
+		r = r / 12.92;
+	}
+
+	if ( g > 0.04045 ) {
+		g = ( ( g + 0.055 ) / 1.055 );
+		g = pow(g, 2.4);
+	} else {
+		g = g / 12.92;
+	}
+
+	if ( b > 0.04045 ) {
+		b = ( ( b + 0.055 ) / 1.055 );
+		b = pow(b, 2.4);
+	} else {
+		b = b / 12.92;
+	}
+
+	r = r * 100;
+	g = g * 100;
+	b = b * 100;
+		
+	//Observer. = 2degrees, Illuminant = D65
+	xyz->x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+	xyz->y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+	xyz->z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+
+}
+
+#define SVMAX(a,b) ((a) > (b) ? (a) : (b))
+#define SVMAX3(a,b,c) (SVMAX((a), SVMAX((b),(c))))
+#define SVMIN(a,b) ((a) < (b) ? (a) : (b))
+#define SVMIN3(a,b,c) (SVMIN((a), SVMIN((b),(c))))
+
+
+static inline void switch_core_rgb2hsl(switch_rgb_color_t *rgb, switch_hsl_color_t *hsl)
+{
+	double r, g, b, max, min;
+
+	r = (double)rgb->r / 255;
+	g = (double)rgb->g / 255;
+	b = (double)rgb->b / 255;
+	
+	max = SVMAX3(r, g, b);
+	min = SVMIN3(r, g, b);
+
+	hsl->l = (max + min) / 2;
+
+	if (max != min) {
+		double d = max - min;
+
+		hsl->s = hsl->l > 0.5f ? d / (2 - max - min) : d / (max + min);
+
+		if (max == r) {
+			hsl->h = (g - b) / (max - min);
+		} else if(max == g) {
+			hsl->h = 2.0 + ((b - r) / (max - min));
+		} else {
+			hsl->h = 4.0 + ((r - g) / (max - min));
+		}
+	} else {
+		hsl->h = hsl->s = 0;
+	}
+
+	hsl->h = round(hsl->h * 60);
+	if (hsl->h < 0) hsl->h += 360;
+
+	hsl->s *= 100;
+	hsl->l *= 100;
+
+}
+
+static inline void switch_core_rgb2lab(switch_rgb_color_t *rgb, switch_lab_color_t *lab)
+{
+    double x,y,z;
+	double r = rgb->r;
+	double g = rgb->g;
+	double b = rgb->b;
+
+	r=r>10.31475 ? 1.474000611989649e-6 * pow(r+14.025 , 2.4) : r * 0.0003035269835488375;
+	g=g>10.31475 ? 1.474000611989649e-6 * pow(g+14.025 , 2.4) : g * 0.0003035269835488375;
+	b=b>10.31475 ? 1.474000611989649e-6 * pow(b+14.025 , 2.4) : b * 0.0003035269835488375;
+	x=r * 0.43394994055572506 + g * 0.3762097699033109 + b * 0.18984028954096394;
+	y=r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+	z=r * 0.017756582753965265 + g * 0.10946796102238182 + b * 0.8727754562236529;
+
+
+	x = x > 0.008856452 ? pow(x , 0.3333333333333333) : 7.787037037037037 * x + 0.13793103448275862; 
+	y = y > 0.008856452 ?  pow(y , 0.3333333333333333) : 7.787037037037037 * y + 0.13793103448275862;
+	z = z > 0.008856452 ? pow(z , 0.3333333333333333) : 7.787037037037037 * z + 0.13793103448275862;
+
+	lab->l = 116 * y - 16;
+	lab->a = 500 * (x - y);
+	lab->b = 200 * (y - z);
+}
+
+
+
+/// Computes the CIEDE2000 color-difference between two Lab colors
+/// Based on the article:
+/// The CIEDE2000 Color-Difference Formula: Implementation Notes,
+/// Supplementary Test Data, and Mathematical Observations,", G. Sharma,
+/// W. Wu, E. N. Dalal, submitted to Color Research and Application,
+/// January 2004.
+/// Available at http://www.ece.rochester.edu/~/gsharma/ciede2000/
+/// Based on the C++ implementation by Ofir Pele, The Hebrew University of Jerusalem 2010.
+//
+static inline double switch_CIEDE2000(switch_lab_color_t *lab1, switch_lab_color_t *lab2)
+{
+	double Lstd = lab1->l;
+	double astd = lab1->a;
+	double bstd = lab1->b;
+	double pi = M_PI;
+
+	double Lsample = lab2->l;
+	double asample = lab2->a;
+	double bsample = lab2->b;
+
+	//double _kL = 1.0;
+	//double _kC = 1.0;
+	//double _kH = 1.0;
+
+	double Cabstd= sqrt(astd*astd+bstd*bstd);
+	double Cabsample= sqrt(asample*asample+bsample*bsample);
+
+	double Cabarithmean= (Cabstd + Cabsample)/2.0;
+
+	double G= 0.5*( 1.0 - sqrt( pow(Cabarithmean,7.0)/(pow(Cabarithmean,7.0) + pow(25.0,7.0))));
+
+	double apstd= (1.0+G)*astd; // aprime in paper
+	double apsample= (1.0+G)*asample; // aprime in paper
+	double Cpsample= sqrt(apsample*apsample+bsample*bsample);
+
+	double Cpstd= sqrt(apstd*apstd+bstd*bstd);
+	// Compute product of chromas
+	double Cpprod= (Cpsample*Cpstd);
+
+
+	double hpsample, dL, dC, dhp, dH, Lp, Cp;
+	double hp, Lpm502, Sl, Sc, T, Sh, delthetarad, Rc, RT;
+
+	// Ensure hue is between 0 and 2pi
+	double hpstd= atan2(bstd,apstd);
+	if (hpstd<0) hpstd+= 2.0*pi;  // rollover ones that come -ve
+
+	hpsample= atan2(bsample,apsample);
+	if (hpsample<0) hpsample+= 2.0*pi;
+	if ( (fabs(apsample)+fabs(bsample))==0.0)  hpsample= 0.0;
+
+	dL= (Lsample-Lstd);
+	dC= (Cpsample-Cpstd);
+
+	// Computation of hue difference
+	dhp= (hpsample-hpstd);
+	if (dhp>pi)  dhp-= 2.0*pi;
+	if (dhp<-pi) dhp+= 2.0*pi;
+	// set chroma difference to zero if the product of chromas is zero
+	if (Cpprod == 0.0) dhp= 0.0;
+
+	// Note that the defining equations actually need
+	// signed Hue and chroma differences which is different
+	// from prior color difference formulae
+
+	dH= 2.0*sqrt(Cpprod)*sin(dhp/2.0);
+	//%dH2 = 4*Cpprod.*(sin(dhp/2)).^2;
+
+	// weighting functions
+	Lp= (Lsample+Lstd)/2.0;
+	Cp= (Cpstd+Cpsample)/2.0;
+
+	// Average Hue Computation
+	// This is equivalent to that in the paper but simpler programmatically.
+	// Note average hue is computed in radians and converted to degrees only
+	// where needed
+	hp= (hpstd+hpsample)/2.0;
+	// Identify positions for which abs hue diff exceeds 180 degrees
+	if ( fabs(hpstd-hpsample)  > pi ) hp-= pi;
+	// rollover ones that come -ve
+	if (hp<0) hp+= 2.0*pi;
+
+	// Check if one of the chroma values is zero, in which case set
+	// mean hue to the sum which is equivalent to other value
+	if (Cpprod==0.0) hp= hpsample+hpstd;
+
+	Lpm502= (Lp-50.0)*(Lp-50.0);;
+	Sl= 1.0+0.015*Lpm502/sqrt(20.0+Lpm502);
+	Sc= 1.0+0.045*Cp;
+	T= 1.0 - 0.17*cos(hp - pi/6.0) + 0.24*cos(2.0*hp) + 0.32*cos(3.0*hp+pi/30.0) - 0.20*cos(4.0*hp-63.0*pi/180.0);
+	Sh= 1.0 + 0.015*Cp*T;
+	delthetarad= (30.0*pi/180.0)*exp(- pow(( (180.0/pi*hp-275.0)/25.0),2.0));
+	Rc=  2.0*sqrt(pow(Cp,7.0)/(pow(Cp,7.0) + pow(25.0,7.0)));
+	RT= -sin(2.0*delthetarad)*Rc;
+
+	// The CIE 00 color difference
+	return sqrt( pow((dL/Sl),2.0) + pow((dC/Sc),2.0) + pow((dH/Sh),2.0) + RT*(dC/Sc)*(dH/Sh) );
+}
+
+
+static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
+{
+	int cr, cg, cb;
+	int cr2, cg2, cb2;
+	double a, b;
+	int aa, bb, r;
+
+
+	cr = c1->r - c2->r;
+	cg = c1->g - c2->g;
+	cb = c1->b - c2->b;
+
+	if (!cr && !cg && !cb) return 0;
+
+	cr2 = c1->r/2 - c2->r/2;
+	cg2 = c1->g/2 - c2->g/2;
+	cb2 = c1->b/2 - c2->b/2;
+
+	a = sqrt((2*cr*cr) + (4*cg*cg) + (3*cb*cb));
+	b = sqrt((2*cr2*cr2) + (4*cg2*cg2) + (3*cb2*cb2));
+
+	aa = (int)a;
+	bb = (int)b*5;
+
+	r = (((bb*2)+(aa))/3)/10;
+
+	return r;
+
+}
+
+static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds)
+{
+	int x = 0, hits = 0;
+
+	for (x = 0; x < count; x++) {
+		int distance = switch_color_distance(c1, &clist[x]);
+
+		if (distance <= thresholds[x]) {
+			hits++;
+			break;
+		}
+	}
+
+	return hits;
+}
+
+
+
+
+
+static inline int switch_color_distance_cheap(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
+{
+	int r = c1->r - c2->r;
+	int g = c1->g - c2->g;
+	int b = c1->b - c2->b;
+
+	if (!r && !g && !b) return 0;
+
+	return (3*abs(r)) + (4*abs(g)) + (3*abs(b));
+}
+
+SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_image_t *cache_img, switch_rgb_color_t *mask, int *thresholds, int count)
+{
+	uint8_t *pixel, *last_pixel = NULL, *cache_pixel = NULL, *end_pixel = NULL;
 	int last_hits = 0;
+
+#ifdef DEBUG_CHROMA
+	int other_img_cached = 0, color_cached = 0, checked = 0, hit_total = 0, total_pixel = 0, delta_hits = 0;
+#endif
+
+
 	switch_assert(img);
 
 	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
 	pixel = img->planes[SWITCH_PLANE_PACKED];
 
-	for (; pixel < (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4); pixel += 4) {
+	if (cache_img && (cache_img->d_w != img->d_w || cache_img->d_h != img->d_h)) {
+		cache_img = NULL;
+	}
+
+	if (cache_img) {
+		cache_pixel = cache_img->planes[SWITCH_PLANE_PACKED];
+	}
+
+	end_pixel = (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4);
+
+	for (; pixel < end_pixel; pixel += 4) {
 		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
+		switch_rgb_color_t *last_color = (switch_rgb_color_t *)last_pixel;
 		int hits = 0;
 
-		if (last_pixel && (*(uint32_t *)pixel & 0xFFFFFF) == (*(uint32_t *)last_pixel & 0xFFFFFF)) {
-			hits = last_hits;
-		} else {
-			hits = switch_color_distance_multi(color, mask, count, thresholds);
+#ifdef DEBUG_CHROMA
+		total_pixel++;
+#endif
+
+		if (cache_img && cache_pixel) {
+			switch_rgb_color_t *cache_color = (switch_rgb_color_t *)cache_pixel;
+				
+			if (switch_color_distance_cheap(color, cache_color) < 5) {
+#ifdef DEBUG_CHROMA
+				other_img_cached++;
+#endif
+				*pixel = *cache_pixel;
+				goto end;
+			}				
 		}
 
-		last_hits = hits;
-		last_pixel = pixel;
+
+		if (last_color && switch_color_distance_cheap(color, last_color) < 5) {
+
+			hits = last_hits;
+#ifdef DEBUG_CHROMA
+			color_cached++;
+#endif
+		} 
+
+		if (!hits) {
+			hits = switch_color_distance_multi(color, mask, count, thresholds);
+
+#ifdef DEBUG_CHROMA
+			checked++;
+#endif
+		}
+
+	end:
+
+		if (cache_pixel) {
+			cache_pixel += 4;
+		}
 
 		if (hits) {
+#ifdef DEBUG_CHROMA
+			hit_total++;
+#endif
 			*pixel = 0;
 		}
+	
+		last_pixel = pixel;
+		last_hits = hits;
 	}
+#ifdef DEBUG_CHROMA
+	printf("total %d: other img cache %d color cache %d Checked %d Hit Total %d Delta hits: %d\n", total_pixel, other_img_cached, color_cached, checked, hit_total, delta_hits);
+#endif
 
 	return;
 }
@@ -844,35 +1168,6 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
 }
 #endif
-
-static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
-{
-    //int rmean = ( c1->r + c2->r ) / 2;
-	int r = c1->r - c2->r;
-    int g = c1->g - c2->g;
-    int b = c1->b - c2->b;
-
-	return sqrt((2*r*r) + (4*g*g) + (3*b*b));
-	//return (3*abs(r)) + (4*abs(g)) + (3*abs(b)) / 3;
-    //return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
-}
-
-static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds)
-{
-	int x = 0, hits = 0;
-
-	for (x = 0; x < count; x++) {
-		int distance = switch_color_distance(c1, &clist[x]);
-
-		if (distance <= thresholds[x]) {
-			hits++;
-		}
-	}
-
-	return hits;
-}
-
-
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 

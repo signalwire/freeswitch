@@ -77,6 +77,24 @@ typedef struct switch_rgb_color_s {
 	uint8_t b;
 } switch_rgb_color_t;
 
+typedef struct switch_hsl_color_s {
+	double h;
+	double s;
+	double l;
+} switch_hsl_color_t;
+
+typedef struct {
+	double l;
+	double a;
+	double b;
+} switch_lab_color_t;
+
+typedef struct {
+	double x;
+	double y;
+	double z;
+} switch_xyz_color_t;
+
 /**\brief Representation of a rectangle on a surface */
 typedef struct switch_image_rect {
 	unsigned int x; /**< leftmost column */
@@ -391,7 +409,7 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 /*!\brief chromakey an img, img must be RGBA and return modified img */
 
 SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold);
-SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_rgb_color_t *mask, int *thresholds, int count);
+SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_image_t *cache_img, switch_rgb_color_t *mask, int *thresholds, int count);
 
 
 SWITCH_END_EXTERN_C

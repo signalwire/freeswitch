@@ -412,12 +412,12 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
 	LIBS="$LIBS -m64"
     fi
 elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
-    APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
-    APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
+    APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC -ffast-math)
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC -ffast-math)
     APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
-    APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
-    APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
+    APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC -ffast-math)
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC -ffast-math)
     AC_SUBST([AM_MOD_AVMD_CXXFLAGS], [-std=gnu99])      # FS-8809, needed for MAP_POPULATE
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)

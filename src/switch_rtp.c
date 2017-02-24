@@ -6672,12 +6672,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA]) {
-				pt = 200000;
+				pt = 100000;
 			}
 
 			if (rtp_session->vb) {
 				if (switch_jb_poll(rtp_session->vb)) {
-					pt = 0;
+					pt = 1000;
 				}
 			}
 
@@ -6686,7 +6686,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
-
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();
@@ -6709,8 +6708,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (read_pretriggered) {
 				read_pretriggered = 0;
 			} else {
-
-				status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, poll_status, SWITCH_TRUE);
+				
+				status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, poll_status, SWITCH_TRUE);				
 
 				if (status == SWITCH_STATUS_GENERR) {
 					ret = -1;
@@ -7196,7 +7195,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	do_continue:
 
 		if (!bytes && !rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-			switch_yield(sleep_mss);
+
+			if (sleep_mss) {
+				switch_yield(sleep_mss);
+			}
 		}
 
 	}

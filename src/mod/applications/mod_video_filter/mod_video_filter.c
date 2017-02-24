@@ -43,8 +43,10 @@ SWITCH_MODULE_DEFINITION(mod_video_filter, mod_video_filter_load, mod_video_filt
 typedef struct chromakey_context_s {
 	int threshold;
 	switch_image_t *bgimg;
-	switch_image_t *backup_img;
 	switch_image_t *bgimg_scaled;
+	switch_image_t *last_img;
+	void *data;
+	switch_size_t datalen;
 	switch_file_handle_t vfh;
 	switch_rgb_color_t bgcolor;
 	switch_rgb_color_t mask[MAX_MASK];
@@ -69,12 +71,18 @@ static void uninit_context(chromakey_context_t *context)
 		switch_core_file_close(&context->vfh);
 		memset(&context->vfh, 0, sizeof(context->vfh));
 	}
+
+	switch_img_free(&context->last_img);
+	switch_safe_free(context->data);
 }
 
 static void parse_params(chromakey_context_t *context, int start, int argc, char **argv, const char **function, switch_media_bug_flag_t *flags)
 {
 	int n = argc - start;
 	int i = start;
+
+	switch_core_session_request_video_refresh(context->session);
+	switch_core_media_gen_key_frame(context->session);
 
 	switch_mutex_lock(context->command_mutex);
 
@@ -183,7 +191,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	chromakey_context_t *context = (chromakey_context_t *)user_data;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_image_t *img = NULL;
-	void *data = NULL;
+	switch_size_t bytes;
 
 	if (!switch_channel_ready(channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -194,17 +202,27 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	}
 
 	if (switch_mutex_trylock(context->command_mutex) != SWITCH_STATUS_SUCCESS) {
-		switch_img_patch(frame->img, context->backup_img, 0, 0);
+		switch_img_patch(frame->img, context->last_img, 0, 0);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	data = malloc(frame->img->d_w * frame->img->d_h * 4);
-	switch_assert(data);
+	bytes = frame->img->d_w * frame->img->d_h * 4;
 
-	switch_img_to_raw(frame->img, data, frame->img->d_w * 4, SWITCH_IMG_FMT_ARGB);
-	img = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h, 1, data);
+	if (bytes > context->datalen) {
+		context->data = realloc(context->data, bytes);
+		context->datalen = bytes;
+	}
+	
+	switch_assert(context->data);
+
+	switch_img_to_raw(frame->img, context->data, frame->img->d_w * 4, SWITCH_IMG_FMT_ARGB);
+	img = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h, 1, context->data);
+
 	switch_assert(img);
-	switch_img_chromakey_multi(img, context->mask, context->thresholds, context->mask_len);
+	switch_img_chromakey_multi(img, context->last_img, context->mask, context->thresholds, context->mask_len);
+
+	switch_img_free(&context->last_img);
+	switch_img_copy(img, &context->last_img);
 
 	if (context->bgimg) {
 		if (context->bgimg_scaled && (context->bgimg_scaled->d_w != frame->img->d_w || context->bgimg_scaled->d_h != frame->img->d_h)) {
@@ -261,10 +279,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	}
 
 	switch_img_patch(frame->img, img, 0, 0);
-	switch_img_free(&context->backup_img);
-	switch_img_copy(frame->img, &context->backup_img);
 	switch_img_free(&img);
-	free(data);
 
 	switch_mutex_unlock(context->command_mutex);
 
@@ -313,7 +328,7 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 	char *argv[4] = { 0 };
 	int argc;
 	char *lbuf;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING | SMBF_READ_VIDEO_PATCH;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;// SMBF_READ_VIDEO_PATCH;
 	const char *function = "chromakey";
 	chromakey_context_t *context;
 
