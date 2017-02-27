@@ -768,13 +768,13 @@ static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color
 	cg2 = c1->g/2 - c2->g/2;
 	cb2 = c1->b/2 - c2->b/2;
 
-	a = sqrt((2*cr*cr) + (4*cg*cg) + (3*cb*cb));
-	b = sqrt((2*cr2*cr2) + (4*cg2*cg2) + (3*cb2*cb2));
+	a = ((2*cr*cr) + (4*cg*cg) + (3*cb*cb));
+	b = ((2*cr2*cr2) + (4*cg2*cg2) + (3*cb2*cb2));
 
 	aa = (int)a;
-	bb = (int)b*5;
+	bb = (int)b*25;
 
-	r = (((bb*2)+(aa))/3)/10;
+	r = (((bb*4)+(aa))/9)/100;
 
 	return r;
 

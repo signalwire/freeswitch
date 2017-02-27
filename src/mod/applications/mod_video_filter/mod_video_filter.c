@@ -108,7 +108,7 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 			
 			switch_color_set_rgb(&context->mask[j], list[j]);
 			if (thresh) {
-				context->thresholds[j] = thresh;
+				context->thresholds[j] = thresh*thresh;
 			}
 			context->mask_len++;
 		}
@@ -121,7 +121,7 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		int j;
 
 		if (thresh > 0) {
-			context->threshold = thresh;
+			context->threshold = thresh * thresh;
 
 			for (j = 0; j < context->mask_len; j++) {
 				if (!context->thresholds[j]) context->thresholds[j] = context->threshold;
