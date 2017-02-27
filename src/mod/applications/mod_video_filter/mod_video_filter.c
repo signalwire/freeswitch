@@ -45,6 +45,8 @@ typedef struct chromakey_context_s {
 	switch_image_t *bgimg;
 	switch_image_t *bgimg_scaled;
 	switch_image_t *last_img;
+	switch_image_t *imgfg;
+	switch_image_t *imgbg;
 	void *data;
 	switch_size_t datalen;
 	switch_file_handle_t vfh;
@@ -67,6 +69,8 @@ static void uninit_context(chromakey_context_t *context)
 {
 	switch_img_free(&context->bgimg);
 	switch_img_free(&context->bgimg_scaled);
+	switch_img_free(&context->imgbg);
+	switch_img_free(&context->imgfg);
 	if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->vfh);
 		memset(&context->vfh, 0, sizeof(context->vfh));
@@ -170,14 +174,28 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		}
 	}
 
-	if (n > 3 && argv[i]) {
+
+
+	while (n > 3 && argv[i]) {
+		if (!strncasecmp(argv[i], "fg:", 3)) {
+			switch_img_free(&context->imgfg);
+			context->imgfg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+		}
+
+		if (!strncasecmp(argv[i], "bg:", 3)) {
+			switch_img_free(&context->imgbg);
+			context->imgbg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+		}
+
 		if (!strcasecmp(argv[i], "patch")) {
 			*function = "patch:video";
 			*flags = SMBF_VIDEO_PATCH;
 		}
+
+		i++;
 	}
 
-	i++;
+
 
 	switch_mutex_unlock(context->command_mutex);
 
@@ -278,7 +296,29 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		switch_img_fill(frame->img, 0, 0, img->d_w, img->d_h, &context->bgcolor);
 	}
 
+
+	if (context->imgbg) {
+		int x = 0, y = 0;
+
+		if (context->imgbg->d_w != frame->img->d_w && context->imgbg->d_h != frame->img->d_h) {
+			switch_img_fit(&context->imgbg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
+		}
+		switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgbg->d_w, context->imgbg->d_h, &x, &y);
+		switch_img_patch(frame->img, context->imgbg, x, y);
+	}
+
 	switch_img_patch(frame->img, img, 0, 0);
+
+	if (context->imgfg) {
+		int x = 0, y = 0;
+
+		if (context->imgfg->d_w != frame->img->d_w && context->imgfg->d_h != frame->img->d_h) {
+			switch_img_fit(&context->imgfg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
+		}
+		switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgfg->d_w, context->imgfg->d_h, &x, &y);
+		switch_img_patch(frame->img, context->imgfg, x, y);
+	}
+
 	switch_img_free(&img);
 
 	switch_mutex_unlock(context->command_mutex);
