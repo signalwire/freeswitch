@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -135,7 +135,7 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 	blade_transport_wss_on_rank,
 	blade_transport_wss_on_send,
 	blade_transport_wss_on_receive,
-	
+
 	blade_transport_wss_on_state_disconnect,
 	blade_transport_wss_on_state_disconnect,
 	blade_transport_wss_on_state_new_inbound,
@@ -156,7 +156,7 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 {
 	blade_module_wss_t *bm_wss = NULL;
 	ks_pool_t *pool = NULL;
-	
+
 	ks_assert(bm_wssP);
 	ks_assert(bh);
 
@@ -176,21 +176,21 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 	*bm_wssP = bm_wss;
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
-	
+
 	return KS_STATUS_SUCCESS;
 }
 
 ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 {
 	blade_module_wss_t *bm_wss = NULL;
-	
+
 	ks_assert(bm_wssP);
 	ks_assert(*bm_wssP);
 
 	bm_wss = *bm_wssP;
 
 	blade_module_wss_on_shutdown(bm_wss->module);
-	
+
 	blade_module_destroy(&bm_wss->module);
 
 	list_destroy(&bm_wss->connected);
@@ -213,7 +213,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_han
 	ks_assert(bm_wss);
 
 	*bmP = bm_wss->module;
-	
+
 	ks_log(KS_LOG_DEBUG, "Loaded\n");
 
 	return KS_STATUS_SUCCESS;
@@ -226,9 +226,9 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm)
 	ks_assert(bm);
 
 	bm_wss = blade_module_data_get(bm);
-	
+
 	blade_module_wss_destroy(&bm_wss);
-	
+
 	ks_log(KS_LOG_DEBUG, "Unloaded\n");
 
 	return KS_STATUS_SUCCESS;
@@ -249,7 +249,7 @@ ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssi
 	if (session_id) bt_wssi->session_id = ks_pstrdup(bt_wssi->pool, session_id);
 
 	*bt_wssiP = bt_wssi;
-	
+
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
 	return KS_STATUS_SUCCESS;
@@ -258,7 +258,7 @@ ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssi
 ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP)
 {
 	blade_transport_wss_init_t *bt_wssi = NULL;
-	
+
 	ks_assert(bt_wssiP);
 	ks_assert(*bt_wssiP);
 
@@ -267,7 +267,7 @@ ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wss
 	if (bt_wssi->session_id) ks_pool_free(bt_wssi->pool, &bt_wssi->session_id);
 
 	ks_pool_free(bt_wssi->pool, bt_wssiP);
-	
+
 	ks_log(KS_LOG_DEBUG, "Destroyed\n");
 
 	return KS_STATUS_SUCCESS;
@@ -310,7 +310,7 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 			if (config_setting_type(wss_endpoints_ipv4) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
 			if ((config_wss_endpoints_ipv4_length = config_setting_length(wss_endpoints_ipv4)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
 				return KS_STATUS_FAIL;
-		
+
 			for (int32_t index = 0; index < config_wss_endpoints_ipv4_length; ++index) {
 				element = config_setting_get_elem(wss_endpoints_ipv4, index);
 				tmp1 = config_lookup_from(element, "address");
@@ -385,7 +385,7 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config)
 {
 	blade_module_wss_t *bm_wss = NULL;
-	
+
 	ks_assert(bm);
 	ks_assert(config);
 
@@ -416,9 +416,9 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 							KS_THREAD_DEFAULT_STACK,
 							KS_PRI_NORMAL,
 							bm_wss->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-	
+
 	blade_handle_transport_register(bm_wss->handle, bm, BLADE_MODULE_WSS_TRANSPORT_NAME, bm_wss->transport_callbacks);
-	
+
 	ks_log(KS_LOG_DEBUG, "Started\n");
 
 	return KS_STATUS_SUCCESS;
@@ -428,7 +428,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	blade_connection_t *bc = NULL;
-	
+
 	ks_assert(bm);
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
@@ -460,7 +460,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 		list_iterator_stop(&bm_wss->connected);
 		while (list_size(&bm_wss->connected) > 0) ks_sleep_ms(100);
 	}
-	
+
 	ks_log(KS_LOG_DEBUG, "Stopped\n");
 
 	return KS_STATUS_SUCCESS;
@@ -471,7 +471,7 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 	ks_socket_t listener = KS_SOCK_INVALID;
 	int32_t listener_index = -1;
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	
+
 	ks_assert(bm_wss);
 	ks_assert(addr);
 
@@ -549,7 +549,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 				}
 
 				// @todo getsockname and getpeername (getpeername can be skipped if passing to accept instead)
-				
+
 				ks_log(KS_LOG_DEBUG, "Socket accepted\n", index);
 
 				blade_transport_wss_init_create(&bt_wss_init, bm_wss, sock, NULL);
@@ -557,7 +557,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 
                 blade_connection_create(&bc, bm_wss->handle, bt_wss_init, bm_wss->transport_callbacks);
 				ks_assert(bc);
-				
+
 				blade_connection_read_lock(bc, KS_TRUE);
 
 				if (blade_connection_startup(bc, BLADE_CONNECTION_DIRECTION_INBOUND) != KS_STATUS_SUCCESS) {
@@ -568,7 +568,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 					continue;
 				}
 				ks_log(KS_LOG_DEBUG, "Connection (%s) started\n", blade_connection_id_get(bc));
-				
+
 				blade_handle_connections_add(bc);
 				list_append(&bm_wss->connected, bc);
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
@@ -598,7 +598,7 @@ ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, blade_mo
 	bt_wss->sock = sock;
 
 	*bt_wssP = bt_wss;
-	
+
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
 	return KS_STATUS_SUCCESS;
@@ -607,7 +607,7 @@ ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, blade_mo
 ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP)
 {
 	blade_transport_wss_t *bt_wss = NULL;
-	
+
 	ks_assert(bt_wssP);
 	ks_assert(*bt_wssP);
 
@@ -615,9 +615,9 @@ ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP)
 
 	if (bt_wss->kws) kws_destroy(&bt_wss->kws);
 	else ks_socket_close(&bt_wss->sock);
-	
+
 	ks_pool_free(bt_wss->pool, bt_wssP);
-	
+
 	ks_log(KS_LOG_DEBUG, "Destroyed\n");
 
 	return KS_STATUS_SUCCESS;
@@ -641,7 +641,7 @@ ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_modul
 	ks_assert(target);
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
-	
+
 	*bcP = NULL;
 
 	ks_log(KS_LOG_DEBUG, "Connect Callback: %s\n", blade_identity_uri(target));
@@ -670,7 +670,7 @@ ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_modul
 		if (ip[1] == '.' || ip[2] == '.' || (len > 3 && ip[3] == '.')) family = AF_INET;
 		else family = AF_INET6;
 	}
-	
+
 	if (portstr) {
 		int p = atoi(portstr);
 		if (p > 0 && p <= UINT16_MAX) port = p;
@@ -720,7 +720,7 @@ blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blad
 {
 	ks_assert(bc);
 	ks_assert(target);
-	
+
 	return BLADE_CONNECTION_RANK_POOR;
 }
 
@@ -780,7 +780,7 @@ ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json
 	if (poll_flags & KS_POLL_READ) {
 		kws_opcode_t opcode;
 		uint8_t *frame_data = NULL;
-		ks_size_t frame_data_len = kws_read_frame(bt_wss->kws, &opcode, &frame_data);
+		ks_ssize_t frame_data_len = kws_read_frame(bt_wss->kws, &opcode, &frame_data);
 
 		if (frame_data_len <= 0) {
 			// @todo error logging, strerror(ks_errno())
@@ -1033,7 +1033,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	json_res = cJSON_CreateObject();
 	cJSON_AddStringToObject(json_res, "jsonrpc", "2.0");
 	cJSON_AddStringToObject(json_res, "id", id);
-	
+
 	result = cJSON_CreateObject();
 	cJSON_AddStringToObject(result, "session-id", blade_session_id_get(bs));
 	cJSON_AddItemToObject(json_res, "result", result);
@@ -1046,7 +1046,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	}
 
 	blade_connection_session_set(bc, blade_session_id_get(bs));
-	
+
  done:
 	// @note the state machine expects if we return SUCCESS, that the session assigned to the connection will be read locked to ensure that the state
 	// machine can finish attaching the session, if you BYPASS then you can handle everything here in the callback, but this should be fairly standard
@@ -1103,7 +1103,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	}
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", (bt_wss_init->session_id ? bt_wss_init->session_id : "none"));
-	
+
 	if (blade_transport_wss_write(bt_wss, json_req) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed to write message\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
@@ -1123,7 +1123,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
-	
+
 	// @todo validation wrapper for request and response/error to confirm jsonrpc and provide enum for output as to which it is
 	jsonrpc = cJSON_GetObjectCstr(json_res, "jsonrpc"); // @todo check for definitions of these keys and fixed values
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
@@ -1159,7 +1159,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
-	
+
 	if (sid) {
 		// @todo validate uuid format by parsing, not currently available in uuid functions
 		bs = blade_handle_sessions_get(bh, sid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
@@ -1203,7 +1203,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connecti
 	ks_assert(bc);
 
 	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
-	
+
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 
