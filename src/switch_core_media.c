@@ -8816,7 +8816,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			/******************************************************************************************/
 
 			if (v_engine->rtp_session) {
-				printf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXx BLAH! XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxxx\n");
 				goto video_up;
 			}
 
