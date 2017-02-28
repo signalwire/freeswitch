@@ -3931,6 +3931,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 	if (engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr && engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port) {
 		char tmp[80] = "";
+		const char *media_varname = NULL, *port_varname = NULL;
+
 		engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 						  "setting remote %s ice addr to index %d %s:%d based on candidate\n", type2str(type), engine->ice_in.chosen[0],
@@ -3947,12 +3949,26 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 			smh->mparams->remote_ip = engine->cur_payload_map->remote_sdp_ip;
 		}
 
+		if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+			media_varname = "remote_video_ip";
+			port_varname = "remote_video_port";
+		} else if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			media_varname = "remote_audio_ip";
+			port_varname = "remote_audio_port";
+		} else if (engine->type == SWITCH_MEDIA_TYPE_TEXT) {
+			media_varname = "remote_text_ip";
+			port_varname = "remote_text_port";
+		}
+
 		switch_snprintf(tmp, sizeof(tmp), "%d", engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port);
-		switch_channel_set_variable(smh->session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
-		switch_channel_set_variable(smh->session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+		switch_channel_set_variable(smh->session->channel, media_varname, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
+		switch_channel_set_variable(smh->session->channel, port_varname, tmp);
 	}
 
 	if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port) {
+		const char *media_varname = NULL, *port_varname = NULL;
+		char tmp[35] = "";
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 						  "Setting remote rtcp %s addr to %s:%d based on candidate\n", type2str(type),
 						  engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
@@ -3960,6 +3976,23 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		engine->remote_rtcp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr);
 
 		engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
+
+
+		if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+			media_varname = "remote_video_rtcp_ip";
+			port_varname = "remote_video_rtcp_port";
+		} else if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			media_varname = "remote_audio_rtcp_ip";
+			port_varname = "remote_audio_rtcp_port";
+		} else if (engine->type == SWITCH_MEDIA_TYPE_TEXT) {
+			media_varname = "remote_text_rtcp_ip";
+			port_varname = "remote_text_rtcp_port";
+		}
+
+		switch_snprintf(tmp, sizeof(tmp), "%d", engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
+		switch_channel_set_variable(smh->session->channel, media_varname, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr);
+		switch_channel_set_variable(smh->session->channel, port_varname, tmp);
+
 	}
 
 
@@ -5848,6 +5881,32 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
  done:
+
+	if (v_engine->rtp_session) {
+		if (v_engine->fir) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR);
+		} else {
+			switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR);
+		}
+		
+		if (v_engine->pli) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI);
+		} else {
+			switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI);
+		}
+		
+		if (v_engine->nack) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_NACK);
+		} else {
+			switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_NACK);
+		}
+		
+		if (v_engine->tmmbr) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_TMMBR);
+		} else {
+			switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_TMMBR);
+		}
+	}
 
 	if (match) {
 		switch_channel_set_flag(channel, CF_AUDIO);
@@ -8757,6 +8816,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			/******************************************************************************************/
 
 			if (v_engine->rtp_session) {
+				printf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXx BLAH! XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxxx\n");
 				goto video_up;
 			}
 
@@ -8804,7 +8864,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (v_engine->tmmbr) {
 				flags[SWITCH_RTP_FLAG_TMMBR]++;
 			}
-
+			
 			v_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 														 v_engine->local_sdp_port,
 														 v_engine->cur_payload_map->remote_sdp_ip,

@@ -322,6 +322,7 @@ struct switch_rtp {
 	rtcp_msg_t rtcp_send_msg;
 	switch_rtcp_frame_t rtcp_frame;
 
+	uint8_t send_rr;
 	uint8_t fir_seq;
 	uint16_t fir_count;
 	uint16_t pli_count;
@@ -1030,7 +1031,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	}
 
 	if ((ice->type & ICE_VANILLA)) {
-		char foo1[13] = "", foo2[13] = "";
 		if (!ok) ok = !memcmp(packet->header.id, ice->last_sent_id, 12);
 
 		if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
@@ -1048,9 +1048,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				}
 			}
 		}
-
-		memcpy(foo1, packet->header.id, 12);
-		memcpy(foo2, ice->last_sent_id, 12);
 
 		if (!ok && ice == &rtp_session->ice && rtp_session->rtcp_ice.ice_params && pri &&
 			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen[1]][1].priority) {
@@ -1766,7 +1763,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	switch_time_t now;
 	uint32_t sec, ntp_sec, ntp_usec;
 	switch_time_exp_t now_hr;
-	now = switch_time_now();
+	now = switch_micro_time_now();
 	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
 	sr->ntp_msw = htonl(ntp_sec);   /* store result in "most significant word" */
@@ -1795,7 +1792,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	uint32_t expected_pkt, dlsr;
 	int32_t pkt_lost;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
-	now = switch_time_now();
+	now = switch_micro_time_now();
 	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
 	ntp_usec = (uint32_t)(now - (sec*1000000)); /* remove seconds to keep only the microseconds */
@@ -2007,7 +2004,7 @@ static int using_ice(switch_rtp_t *rtp_session)
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
-	int rtcp_ok = 0, rtcp_fb = 0;
+	int rtcp_ok = 0, rtcp_fb = 0, send_rr = 0;
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
@@ -2057,6 +2054,12 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		}
 	}
 
+	if (rtp_session->send_rr) {
+		rtp_session->send_rr = 0;
+		rtcp_ok = 1;
+		send_rr = 1;
+	}
+
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "TIME CHECK %d > %d\n", (int)((now - rtp_session->rtcp_last_sent) / 1000), rate);
 
 	if (!rtcp_ok && (!rtp_session->rtcp_last_sent || (int)((now - rtp_session->rtcp_last_sent) / 1000) > rate)) {
@@ -2100,7 +2103,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		rtp_session->rtcp_send_msg.header.count = 1;
 
 
-		if (!rtp_session->stats.rtcp.sent_pkt_count) {
+		if (!rtp_session->stats.rtcp.sent_pkt_count || send_rr) {
 			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_RR; /* Receiver report */
 			rr=(struct switch_rtcp_receiver_report*) rtp_session->rtcp_send_msg.body;
 			rr->ssrc = htonl(rtp_session->ssrc);
@@ -3984,7 +3987,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 #endif
 
 	/* Jitter */
-	rtp_session->stats.inbound.last_proc_time = switch_time_now() / 1000;
+	rtp_session->stats.inbound.last_proc_time = switch_micro_time_now() / 1000;
 	rtp_session->stats.inbound.jitter_n = 0;
 	rtp_session->stats.inbound.jitter_add = 0;
 	rtp_session->stats.inbound.jitter_addsq = 0;
@@ -6060,8 +6063,9 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			switch_core_media_gen_key_frame(rtp_session->session);
 		}
-
-	} else
+		
+	} else {
+		struct switch_rtcp_report_block *report;
 
 		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR) {
 			switch_time_t now;
@@ -6072,7 +6076,11 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			double rtt_now = 0;
 			int rtt_increase = 0, packet_loss_increase=0;
 
-			now = switch_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
+			if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
+				rtp_session->send_rr = 1;
+			}
+
+			now = switch_micro_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
 			sec = (uint32_t)(now/1000000);              /* converted to second (NTP most significant bits) */
 			ntp_sec = sec+NTP_TIME_OFFSET;  /* 32bits most significant */
 			ntp_usec = (uint32_t)(now - (sec*1000000)); /* micro seconds */
@@ -6088,7 +6096,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				lsr = (ntohl(sr->sender_info.ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->sender_info.ntp_msw)&0x0000ffff)<<16; /* The middle 32 bits out of 64 in the NTP timestamp */
 				rtp_session->stats.rtcp.last_recv_lsr_peer = htonl(lsr);  /* Save it include it in the next SR */
 				rtp_session->stats.rtcp.last_recv_lsr_local = lsr_now;    /* Save it to calculate DLSR when generating next SR */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10,"Received a SR with %d report blocks, " \
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Received a SR with %d report blocks, " \
 								  "length in words = %d, " \
 								  "SSRC = 0x%X, " \
 								  "NTP MSW = %u, " \
@@ -6114,172 +6122,188 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				rtp_session->rtcp_frame.packet_count =  ntohl(sr->sender_info.pc);
 				rtp_session->rtcp_frame.octect_count = ntohl(sr->sender_info.oc);
 
-				for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
-					struct switch_rtcp_report_block *report = (struct switch_rtcp_report_block *) (msg->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
-					uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
-					uint8_t percent_fraction = (uint8_t)report->fraction * 100 / 256 ;
-					if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
-						rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)percent_fraction;
-					} else {
-						rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
-																				 ((float)(uint8_t)percent_fraction * .3));
-					}
-
-					rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
-					rtp_session->rtcp_frame.reports[i].fraction = (uint8_t)report->fraction;
-					rtp_session->rtcp_frame.reports[i].lost = ntohl(report->lost);
-					rtp_session->rtcp_frame.reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
-					rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
-					rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
-					rtp_session->rtcp_frame.reports[i].dlsr = ntohl(report->dlsr);
-					if (rtp_session->rtcp_frame.reports[i].lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
-						switch_time_exp_gmt(&now_hr,now);
-						/* Calculating RTT = A - DLSR - LSR */
-						rtt_now = (double)(lsr_now - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr)/65536;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
-									"Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
-									"RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
-									1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
-									rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
-									lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
-						if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
-							rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
-						} else {
-							rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
-						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "RTT average %f\n",
-																							rtp_session->rtcp_frame.reports[i].rtt_avg);
-					}
-
-					if (rtp_session->flags[SWITCH_RTP_FLAG_ADJ_BITRATE_CAP] && rtp_session->flags[SWITCH_RTP_FLAG_ESTIMATORS] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-
-						/* SWITCH_RTP_FLAG_ADJ_BITRATE_CAP : Can the codec change its bitrate on the fly per API command ? */
-#ifdef DEBUG_ESTIMATORS_
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Current packet loss: [%d %%] Current RTT: [%f ms]\n", percent_fraction, rtt_now);
-#endif
-
-						switch_kalman_estimate(rtp_session->estimators[EST_RTT], rtt_now, EST_RTT);
-
-						if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_RTT], rtt_now, rtp_session->estimators[EST_RTT]->val_estimate_last)) {
-							/* sudden change in the mean value of RTT */
-#ifdef DEBUG_ESTIMATORS_
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of RTT !\n");
-#endif
-							rtt_increase = 1;
-						}
-
-						switch_kalman_estimate(rtp_session->estimators[EST_LOSS], percent_fraction, EST_LOSS);
-
-						if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_LOSS], percent_fraction, rtp_session->estimators[EST_LOSS]->val_estimate_last)){
-							/* sudden change in the mean value of packet loss */
-#ifdef DEBUG_ESTIMATORS_
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss!\n");
-#endif
-							packet_loss_increase = 1;
-						}
-#ifdef DEBUG_ESTIMATORS_
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "ESTIMATORS: Packet loss will be: [%f] RTT will be: [%f ms]\n",
-																	rtp_session->estimators[EST_LOSS]->val_estimate_last, rtp_session->estimators[EST_RTT]->val_estimate_last);
-#endif
-
-						if (rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
-							/*getting bad*/
-							if (switch_kalman_is_slow_link(rtp_session->estimators[EST_LOSS],
-										rtp_session->estimators[EST_RTT])) {
-								/* going to minimum bitrate */
-#ifdef DEBUG_ESTIMATORS_
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Slow link conditions: Loss average: [%d %%], Previous loss: [%d %%]. \
-																	Going to minimum bitrate!",rtp_session->rtcp_frame.reports[i].loss_avg, old_avg);
-#endif
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-											SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE, SCCT_STRING, "minimum", SCCT_NONE, NULL, NULL, NULL);
-								/* if after going to minimum bitrate we still have packet loss then we increase ptime. TODO */
-
-							} else if (packet_loss_increase && (rtp_session->estimators[EST_LOSS]->val_estimate_last >= 5)) {
-								/* sudden change in the mean value of packet loss percentage */
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-								SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
-								SCCT_STRING, "decrease",
-								SCCT_NONE, NULL, NULL, NULL);
-#ifdef DEBUG_ESTIMATORS_
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss percentage !\n");
-#endif
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-								SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-								(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-								SCCT_NONE, NULL, NULL, NULL);
-
-							} else if (!rtt_increase && rtp_session->estimators[EST_LOSS]->val_estimate_last >= rtp_session->rtcp_frame.reports[i].loss_avg ) {
-								/* lossy because of congestion (queues full somewhere -> some packets are dropped , but RTT is good ), packet loss with many small gaps */
-#ifdef DEBUG_ESTIMATORS_
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "packet loss, but RTT is not bad\n");
-#endif
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-										SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-										(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-										SCCT_NONE, NULL, NULL, NULL);
-
-							} else if ((rtp_session->estimators[EST_LOSS]->val_estimate_last < 1) && packet_loss_increase) {
-#ifdef DEBUG_ESTIMATORS_
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "small packet loss average\n");
-#endif
-								/*small loss_avg*/
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-											SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
-											SCCT_STRING, "default",
-											SCCT_NONE, NULL, NULL, NULL);
-
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-										SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-										(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-										SCCT_NONE, NULL, NULL, NULL);
-
-							} else if ((rtp_session->estimators[EST_LOSS]->val_estimate_last < 5) &&
-									(rtp_session->rtcp_frame.reports[i].rtt_avg < rtp_session->estimators[EST_RTT]->val_estimate_last))  {
-
-								/* estimate that packet loss will decrease, we can increase the bitrate */
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-											SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
-											SCCT_STRING, "increase",
-											SCCT_NONE, NULL, NULL, NULL);
-
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-										SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-										(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-										SCCT_NONE, NULL, NULL, NULL);
-
-							} else {
-								/* *do nothing about bitrate, just pass the packet loss to the codec */
-#ifdef DEBUG_ESTIMATORS_
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"do nothing about bitrate, just pass the packet loss to the codec\n");
-#endif
-								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-										SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-										(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-										SCCT_NONE, NULL, NULL, NULL);
-							}
-						}
-					} else {
-						if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
-							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
-							SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
-							(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
-							SCCT_NONE, NULL, NULL, NULL);
-						}
-					}
-				}
-				rtp_session->rtcp_frame.report_count = (uint16_t)i;
-
+				report = &sr->report_block;
 			} else { /* Receiver report */
 				struct switch_rtcp_receiver_report* rr = (struct switch_rtcp_receiver_report*)msg->body;
 				packet_ssrc = rr->ssrc;
-				memset(&rtp_session->rtcp_frame, 0, sizeof(rtp_session->rtcp_frame));
+				//memset(&rtp_session->rtcp_frame, 0, sizeof(rtp_session->rtcp_frame));
+				report = &rr->report_block;
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Received a RR with %d report blocks, " \
+								  "length in words = %d, " \
+								  "SSRC = 0x%X, ",
+								  msg->header.count,
+								  ntohs((uint16_t)msg->header.length),
+								  ntohl(rr->ssrc));
+
 			}
+			
+
+			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
+				uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
+				uint8_t percent_fraction = (uint8_t)report->fraction * 100 / 256 ;
+				if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
+					rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)percent_fraction;
+				} else {
+					rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
+																			 ((float)(uint8_t)percent_fraction * .3));
+				}
+
+				rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
+				rtp_session->rtcp_frame.reports[i].fraction = (uint8_t)report->fraction;
+				rtp_session->rtcp_frame.reports[i].lost = ntohl(report->lost);
+				rtp_session->rtcp_frame.reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
+				rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
+				rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
+				rtp_session->rtcp_frame.reports[i].dlsr = ntohl(report->dlsr);
+				if (rtp_session->rtcp_frame.reports[i].lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
+					switch_time_exp_gmt(&now_hr,now);
+					/* Calculating RTT = A - DLSR - LSR */
+					rtt_now = (double)(lsr_now - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr)/65536;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
+									  "Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
+									  "RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
+									  1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
+									  rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
+									  lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
+					if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
+						rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
+					} else {
+						rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
+					}
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "RTT average %f\n",
+									  rtp_session->rtcp_frame.reports[i].rtt_avg);
+				}
+
+				if (rtp_session->flags[SWITCH_RTP_FLAG_ADJ_BITRATE_CAP] && rtp_session->flags[SWITCH_RTP_FLAG_ESTIMATORS] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+
+					/* SWITCH_RTP_FLAG_ADJ_BITRATE_CAP : Can the codec change its bitrate on the fly per API command ? */
+#ifdef DEBUG_ESTIMATORS_
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Current packet loss: [%d %%] Current RTT: [%f ms]\n", percent_fraction, rtt_now);
+#endif
+
+					switch_kalman_estimate(rtp_session->estimators[EST_RTT], rtt_now, EST_RTT);
+
+					if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_RTT], rtt_now, rtp_session->estimators[EST_RTT]->val_estimate_last)) {
+						/* sudden change in the mean value of RTT */
+#ifdef DEBUG_ESTIMATORS_
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of RTT !\n");
+#endif
+						rtt_increase = 1;
+					}
+
+					switch_kalman_estimate(rtp_session->estimators[EST_LOSS], percent_fraction, EST_LOSS);
+
+					if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_LOSS], percent_fraction, rtp_session->estimators[EST_LOSS]->val_estimate_last)){
+						/* sudden change in the mean value of packet loss */
+#ifdef DEBUG_ESTIMATORS_
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss!\n");
+#endif
+						packet_loss_increase = 1;
+					}
+#ifdef DEBUG_ESTIMATORS_
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "ESTIMATORS: Packet loss will be: [%f] RTT will be: [%f ms]\n",
+									  rtp_session->estimators[EST_LOSS]->val_estimate_last, rtp_session->estimators[EST_RTT]->val_estimate_last);
+#endif
+
+					if (rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
+						/*getting bad*/
+						if (switch_kalman_is_slow_link(rtp_session->estimators[EST_LOSS],
+													   rtp_session->estimators[EST_RTT])) {
+							/* going to minimum bitrate */
+#ifdef DEBUG_ESTIMATORS_
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Slow link conditions: Loss average: [%d %%], Previous loss: [%d %%]. \
+																	Going to minimum bitrate!",rtp_session->rtcp_frame.reports[i].loss_avg, old_avg);
+#endif
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE, SCCT_STRING, "minimum", SCCT_NONE, NULL, NULL, NULL);
+							/* if after going to minimum bitrate we still have packet loss then we increase ptime. TODO */
+
+						} else if (packet_loss_increase && (rtp_session->estimators[EST_LOSS]->val_estimate_last >= 5)) {
+							/* sudden change in the mean value of packet loss percentage */
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
+															SCCT_STRING, "decrease",
+															SCCT_NONE, NULL, NULL, NULL);
+#ifdef DEBUG_ESTIMATORS_
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss percentage !\n");
+#endif
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+															SCCT_NONE, NULL, NULL, NULL);
+
+						} else if (!rtt_increase && rtp_session->estimators[EST_LOSS]->val_estimate_last >= rtp_session->rtcp_frame.reports[i].loss_avg ) {
+							/* lossy because of congestion (queues full somewhere -> some packets are dropped , but RTT is good ), packet loss with many small gaps */
+#ifdef DEBUG_ESTIMATORS_
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "packet loss, but RTT is not bad\n");
+#endif
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+															SCCT_NONE, NULL, NULL, NULL);
+
+						} else if ((rtp_session->estimators[EST_LOSS]->val_estimate_last < 1) && packet_loss_increase) {
+#ifdef DEBUG_ESTIMATORS_
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "small packet loss average\n");
+#endif
+							/*small loss_avg*/
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
+															SCCT_STRING, "default",
+															SCCT_NONE, NULL, NULL, NULL);
+
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+															SCCT_NONE, NULL, NULL, NULL);
+
+						} else if ((rtp_session->estimators[EST_LOSS]->val_estimate_last < 5) &&
+								   (rtp_session->rtcp_frame.reports[i].rtt_avg < rtp_session->estimators[EST_RTT]->val_estimate_last))  {
+
+							/* estimate that packet loss will decrease, we can increase the bitrate */
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE,
+															SCCT_STRING, "increase",
+															SCCT_NONE, NULL, NULL, NULL);
+
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+															SCCT_NONE, NULL, NULL, NULL);
+
+						} else {
+							/* *do nothing about bitrate, just pass the packet loss to the codec */
+#ifdef DEBUG_ESTIMATORS_
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"do nothing about bitrate, just pass the packet loss to the codec\n");
+#endif
+							switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+															SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+															SCCT_NONE, NULL, NULL, NULL);
+						}
+					}
+				} else {
+					if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
+						switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO,
+														SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT,
+														(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
+														SCCT_NONE, NULL, NULL, NULL);
+					}
+				}
+
+				report++;
+			}
+			rtp_session->rtcp_frame.report_count = (uint16_t)i;
+				
+
+
+
 
 			rtp_session->rtcp_fresh_frame = 1;
 			rtp_session->stats.rtcp.peer_ssrc = ntohl(packet_ssrc);
 		}
-
+	}
 
 	if (msg->header.type > 194 && msg->header.type < 255) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -6820,7 +6844,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 				if (rtcp_status == SWITCH_STATUS_SUCCESS) {
 					switch_rtp_reset_media_timer(rtp_session);
-
+					
 					if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 						const char *uuid = switch_channel_get_partner_uuid(channel);
@@ -7740,7 +7764,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 								switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
 
-								rtp_session->vad_data.start_talking = switch_time_now();
+								rtp_session->vad_data.start_talking = switch_micro_time_now();
 
 								if (!(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 									send_msg->header.m = 1;
@@ -7763,7 +7787,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 							}
 							if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 								if (++rtp_session->vad_data.hangover_hits >= rtp_session->vad_data.hangover) {
-									rtp_session->vad_data.stop_talking = switch_time_now();
+									rtp_session->vad_data.stop_talking = switch_micro_time_now();
 									rtp_session->vad_data.total_talk_time += (rtp_session->vad_data.stop_talking - rtp_session->vad_data.start_talking);
 
 									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
@@ -8070,7 +8094,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	rtp_session->vad_data.next_scan = switch_epoch_time_now(NULL);
 	rtp_session->vad_data.scan_freq = 0;
 	if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
-		rtp_session->vad_data.start_talking = switch_time_now();
+		rtp_session->vad_data.start_talking = switch_micro_time_now();
 	}
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
 	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);
