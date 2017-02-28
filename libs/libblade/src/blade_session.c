@@ -485,11 +485,20 @@ ks_status_t blade_session_state_on_ready(blade_session_t *bs)
 
 KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json)
 {
+	blade_request_t *request = NULL;
+	const char *method = NULL;
+
 	ks_assert(bs);
 	ks_assert(json);
 
-	// @todo check json for "method", if this is an outgoing request then build up the data for a response to lookup the message id and get back to the request
-	// this can reuse blade_request_t so that when the blade_response_t is passed up the blade_request_t within it is familiar from inbound requests
+	method = cJSON_GetObjectCstr(json, "method");
+	if (method) {
+		blade_request_create(&request, bs->handle, bs->id, json);
+		ks_assert(request);
+
+		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
+		blade_handle_requests_add(request);
+	}
 
 	if (list_empty(&bs->connections)) {
 		// @todo cache the blade_request_t here if it exists to gaurentee it's cached before a response could be received
@@ -508,6 +517,11 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json)
 ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_request_t *breq = NULL;
+	blade_response_t *bres = NULL;
+	const char *jsonrpc = NULL;
+	const char *id = NULL;
+	const char *method = NULL;
 
 	ks_assert(bs);
 	ks_assert(json);
@@ -515,6 +529,50 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 	ks_log(KS_LOG_DEBUG, "Session (%s) processing\n", bs->id);
 
 	// @todo teardown the message, convert into a blade_request_t or blade_response_t
+	// @todo validate the jsonrpc fields
+
+	jsonrpc = cJSON_GetObjectCstr(json, "jsonrpc");
+	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
+        ks_log(KS_LOG_DEBUG, "Received message is not the expected protocol\n");
+		// @todo send error response, code = -32600 (invalid request)
+		// @todo hangup session entirely?
+		return KS_STATUS_FAIL;
+	}
+
+	id = cJSON_GetObjectCstr(json, "id");
+	if (!id) {
+        ks_log(KS_LOG_DEBUG, "Received message is missing 'id'\n");
+		// @todo send error response, code = -32600 (invalid request)
+		// @todo hangup session entirely?
+		return KS_STATUS_FAIL;
+	}
+
+	method = cJSON_GetObjectCstr(json, "method");
+	if (method) {
+		// @todo use method to find RPC callbacks
+
+		blade_request_create(&breq, bs->handle, bs->id, json);
+		ks_assert(breq);
+
+		// @todo call request callback handler
+	} else {
+		breq = blade_handle_requests_get(bs->handle, id);
+		if (!breq) {
+			// @todo hangup session entirely?
+			return KS_STATUS_FAIL;
+		}
+		blade_handle_requests_remove(breq);
+
+		method = cJSON_GetObjectCstr(breq->message, "method");
+		ks_assert(method);
+
+		// @todo use method to find RPC callbacks
+
+		blade_response_create(&bres, bs->handle, bs->id, breq, json);
+		ks_assert(bres);
+
+		// @todo call response callback handler
+	}
 
 	return ret;
 }

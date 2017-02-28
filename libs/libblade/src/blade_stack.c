@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,7 +43,7 @@ struct blade_handle_s {
 	bhpvt_flag_t flags;
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
-	
+
 	config_setting_t *config_directory;
 	config_setting_t *config_datastore;
 
@@ -125,7 +125,7 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 		ks_thread_pool_create(&tpool, BLADE_HANDLE_TPOOL_MIN, BLADE_HANDLE_TPOOL_MAX, BLADE_HANDLE_TPOOL_STACK, KS_PRI_NORMAL, BLADE_HANDLE_TPOOL_IDLE);
 		ks_assert(tpool);
 	}
-	
+
 	bh = ks_pool_alloc(pool, sizeof(blade_handle_t));
 	bh->flags = newflags;
 	bh->pool = pool;
@@ -133,7 +133,7 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 
 	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->transports);
-	
+
 	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->connections);
 	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
@@ -141,7 +141,7 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	// @todo decide if this is uint32_t or uuid string, prefer uuid string to avoid needing another lock and variable for next id
 	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->requests);
-	
+
 	*bhP = bh;
 
 	return KS_STATUS_SUCCESS;
@@ -185,21 +185,21 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
 	config_setting_t *directory = NULL;
 	config_setting_t *datastore = NULL;
-	
+
 	ks_assert(bh);
 
 	if (!config) return KS_STATUS_FAIL;
     if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
 
 	directory = config_setting_get_member(config, "directory");
-	
+
     datastore = config_setting_get_member(config, "datastore");
     //if (datastore && !config_setting_is_group(datastore)) return KS_STATUS_FAIL;
 
 
 	bh->config_directory = directory;
 	bh->config_datastore = datastore;
-	
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -222,7 +222,7 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 	}
 
 	// @todo load DSOs
-	
+
 	// @todo call onload and onstartup callbacks for modules from DSOs
 
 	return KS_STATUS_SUCCESS;
@@ -237,20 +237,20 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	for (it = ks_hash_first(bh->requests, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		void *key = NULL;
 		blade_request_t *value = NULL;
-		
+
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 		ks_hash_remove(bh->requests, key);
-		
+
 		blade_request_destroy(&value);
 	}
-	
+
 	for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		void *key = NULL;
 		blade_session_t *value = NULL;
-		
+
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 		ks_hash_remove(bh->requests, key);
-		
+
 		blade_session_hangup(value);
 	}
 	while (ks_hash_count(bh->sessions) > 0) ks_sleep_ms(100);
@@ -280,7 +280,7 @@ KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blad
 {
 	blade_handle_transport_registration_t *bhtr = NULL;
 	blade_handle_transport_registration_t *bhtr_old = NULL;
-	
+
 	ks_assert(bh);
 	ks_assert(bm);
 	ks_assert(name);
@@ -326,7 +326,7 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_handle_transport_registration_t *bhtr = NULL;
 	const char *tname = NULL;
-	
+
 	ks_assert(bh);
 	ks_assert(target);
 
@@ -482,6 +482,55 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 }
 
 
+KS_DECLARE(blade_request_t *) blade_handle_requests_get(blade_handle_t *bh, const char *mid)
+{
+	blade_request_t *br = NULL;
+
+	ks_assert(bh);
+	ks_assert(mid);
+
+	ks_hash_read_lock(bh->requests);
+	br = ks_hash_search(bh->requests, (void *)mid, KS_UNLOCKED);
+	ks_hash_read_unlock(bh->requests);
+
+	return br;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_requests_add(blade_request_t *br)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(br);
+
+	bh = br->handle;
+	ks_assert(bh);
+
+	ks_hash_write_lock(bh->requests);
+	ret = ks_hash_insert(bh->requests, (void *)br->message_id, br);
+	ks_hash_write_unlock(bh->requests);
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_requests_remove(blade_request_t *br)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_t *bh = NULL;
+
+	ks_assert(br);
+
+	bh = br->handle;
+	ks_assert(bh);
+
+	ks_hash_write_lock(bh->requests);
+	if (ks_hash_remove(bh->requests, (void *)br->message_id) == NULL) ret = KS_STATUS_FAIL;
+	ks_hash_write_unlock(bh->requests);
+
+	return ret;
+}
+
+
 
 KS_DECLARE(ks_bool_t) blade_handle_datastore_available(blade_handle_t *bh)
 {
@@ -499,7 +548,7 @@ KS_DECLARE(ks_status_t) blade_handle_datastore_store(blade_handle_t *bh, const v
 	ks_assert(data_length > 0);
 
 	if (!blade_handle_datastore_available(bh)) return KS_STATUS_INACTIVE;
-	
+
 	return blade_datastore_store(bh->datastore, key, key_length, data, data_length);
 }
 
@@ -513,9 +562,9 @@ KS_DECLARE(ks_status_t) blade_handle_datastore_fetch(blade_handle_t *bh,
 	ks_assert(callback);
 	ks_assert(key);
 	ks_assert(key_length > 0);
-	
+
 	if (!blade_handle_datastore_available(bh)) return KS_STATUS_INACTIVE;
-	
+
 	return blade_datastore_fetch(bh->datastore, callback, key, key_length, userdata);
 }
 
