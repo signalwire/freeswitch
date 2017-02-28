@@ -2274,6 +2274,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		return SWITCH_STATUS_BREAK;
 	}
 
+#if 0
 	if (context->last_img) {
 		if (mst->next_pts && (switch_time_now() - mst->next_pts > max_delta)) {
 			switch_img_free(&context->last_img); // too late
@@ -2294,6 +2295,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			return SWITCH_STATUS_BREAK;
 		}
 	}
+#endif
 
 	if (st->codec->time_base.num) {
 		ticks = st->parser ? st->parser->repeat_pict + 1 : st->codec->ticks_per_frame;
@@ -2308,10 +2310,16 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
  again:
 
-	if ((flags & SVR_BLOCK)) {
-		status = switch_queue_pop(context->eh.video_queue, &pop);
+	if (context->last_img) {
+		pop = (void *) context->last_img;
+		context->last_img = NULL;
+		status = SWITCH_STATUS_SUCCESS;
 	} else {
-		status = switch_queue_trypop(context->eh.video_queue, &pop);
+		if ((flags & SVR_BLOCK)) {
+			status = switch_queue_pop(context->eh.video_queue, &pop);
+		} else {
+			status = switch_queue_trypop(context->eh.video_queue, &pop);
+		}
 	}
 
 	if (pop && status == SWITCH_STATUS_SUCCESS) {
@@ -2354,7 +2362,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			} 
 		}
 
-		if ((flags & SVR_BLOCK) || do_fl) {
+		if ((flags & SVR_BLOCK)) {
 			while (switch_micro_time_now() - mst->next_pts < -10000) {
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "yield, delta=%" SWITCH_INT64_T_FMT "\n", switch_micro_time_now() - mst->next_pts);
 				switch_yield(1000);
