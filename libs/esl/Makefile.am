@@ -10,7 +10,7 @@ libesl_la_CFLAGS    = $(SWITCH_AM_CFLAGS) $(PICKY) $(SYSTEM_CFLAGS)
 libesl_la_CXXFLAGS  = $(SWITCH_AM_CXXFLAGS) 
 libesl_la_CPPFLAGS  = -I$(switch_srcdir)/libs/esl/src/include
 libesl_la_LDFLAGS   = -version-info 1:0:0 $(AM_LDFLAGS) -static -no-undefined -L. $(SYSTEM_LDFLAGS)
-libesl_la_SOURCES   = src/esl.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_json.c src/esl_buffer.c
+libesl_la_SOURCES   = src/esl.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_json.c src/esl_buffer.c src/cJSON.c src/cJSON_Utils.c
 if ENABLE_CPP
 libesl_la_SOURCES += src/esl_oop.cpp
 endif

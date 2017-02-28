@@ -299,6 +299,8 @@ library_include_HEADERS = \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
 	src/include/switch_curl.h \
+	src/include/switch_cJSON.h \
+	src/include/switch_cJSON_Utils.h \
 	src/include/switch_json.h \
 	src/include/switch_utf8.h \
 	src/include/switch_msrp.h \
@@ -379,6 +381,8 @@ libfreeswitch_la_SOURCES = \
 	src/switch_pcm.c \
 	src/switch_speex.c \
 	src/switch_profile.c \
+	src/cJSON.c \
+	src/cJSON_Utils.c \
 	src/switch_json.c \
 	src/switch_curl.c \
 	src/switch_hashtable.c\
@@ -422,7 +426,7 @@ bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode
 ## fs_cli ()
 ##
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c \
-	libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c
+	libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c libs/esl/src/cJSON.c libs/esl/src/cJSON_Utils.c
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_CFLAGS)
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm $(LIBEDIT_LIBS)
 
@@ -460,7 +464,7 @@ endif
 ## fs_ivrd ()
 ##
 fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c \
-	libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c
+	libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c libs/esl/src/cJSON.c libs/esl/src/cJSON_Utils.c
 fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 

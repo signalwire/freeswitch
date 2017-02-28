@@ -124,7 +124,7 @@ if test "x${enable_visibility}" != "xno" ; then
 			)],
 
 			[AC_MSG_RESULT([yes])
-			 AM_CFLAGS="${AM_CFLAGS} -DKS_API_VISIBILITY=1 -fvisibility=hidden"
+			 AM_CFLAGS="${AM_CFLAGS} -DKS_API_VISIBILITY=1 -DCJSON_API_VISIBILITY=1 -fvisibility=hidden"
 			 AC_DEFINE([HAVE_VISIBILITY], [1], [GCC visibility support available])
 			 HAVE_VISIBILITY="yes"],
 
@@ -144,7 +144,7 @@ if test "x${enable_visibility}" != "xno" ; then
 			)],
 
 			[AC_MSG_RESULT([yes])
-			 AM_CFLAGS="${AM_CFLAGS} -DKS_API_VISIBILITY=1 -xldscope=hidden"
+			 AM_CFLAGS="${AM_CFLAGS} -DKS_API_VISIBILITY=1 -DCJSON_API_VISIBILITY=1 -xldscope=hidden"
 			 AC_DEFINE([HAVE_VISIBILITY], [1], [SUNCC visibility support available])
 			 HAVE_VISIBILITY="yes"],
 

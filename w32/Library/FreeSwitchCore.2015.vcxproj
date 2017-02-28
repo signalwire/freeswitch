@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -432,6 +432,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </ClCompile>
     <ClCompile Include="..\..\src\switch_ivr_play_say.c" />
     <ClCompile Include="..\..\src\switch_ivr_say.c" />
+    <ClCompile Include="..\..\src\cJSON.c" />
+    <ClCompile Include="..\..\src\cJSON_Utils.c" />
     <ClCompile Include="..\..\src\switch_json.c" />
     <ClCompile Include="..\..\src\switch_limit.c" />
     <ClCompile Include="..\..\src\switch_loadable_module.c" />
@@ -769,6 +771,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClInclude Include="..\..\src\include\switch_frame.h" />
     <ClInclude Include="..\..\src\include\switch_hashtable.h" />
     <ClInclude Include="..\..\src\include\switch_ivr.h" />
+    <ClInclude Include="..\..\src\include\switch_cJSON.h" />
+    <ClInclude Include="..\..\src\include\switch_cJSON_Utils.h" />
     <ClInclude Include="..\..\src\include\switch_json.h" />
     <ClInclude Include="..\..\src\include\switch_limit.h" />
     <ClInclude Include="..\..\src\include\switch_loadable_module.h" />
