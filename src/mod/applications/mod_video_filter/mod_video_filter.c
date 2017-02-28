@@ -179,12 +179,16 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 	while (n > 3 && argv[i]) {
 		if (!strncasecmp(argv[i], "fg:", 3)) {
 			switch_img_free(&context->imgfg);
-			context->imgfg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+			if (argv[i]+3) {
+				context->imgfg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+			}
 		}
 
 		if (!strncasecmp(argv[i], "bg:", 3)) {
 			switch_img_free(&context->imgbg);
-			context->imgbg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+			if (argv[i]+3) {
+				context->imgbg = switch_img_read_png(argv[i]+3, SWITCH_IMG_FMT_ARGB);
+			}
 		}
 
 		if (!strcasecmp(argv[i], "patch")) {
