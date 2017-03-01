@@ -153,7 +153,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_IMA_ADPCM;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
-	} else if (!strcmp(ext, "oga")) {
+	} else if (!strcmp(ext, "oga") || !strcmp(ext, "ogg")) {
 		context->sfinfo.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
 		context->sfinfo.samplerate = handle->samplerate;
 	}
@@ -369,14 +369,22 @@ static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, swi
 
 static char **supported_formats;
 
-static switch_status_t setup_formats(void)
+static switch_status_t setup_formats(switch_memory_pool_t *pool)
 {
 	SF_FORMAT_INFO info;
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
-	int len, x, skip;
-	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "ulaw", "al", "alaw", "adpcm", "vox", NULL };
+	int len, x, skip, i;
+	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "ulaw", "al", "alaw", "adpcm", "vox", "oga", "ogg", NULL };
+	struct {
+		char ext[8];
+		char new_ext[8];
+	} add_ext[] = {
+		{"oga", "ogg"}
+	};
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
+	int add_ext_len = (sizeof(add_ext) / sizeof(add_ext[0]));
+
 	buffer[0] = 0;
 
 	sf_command(NULL, SFC_GET_LIB_VERSION, buffer, sizeof(buffer));
@@ -392,7 +400,7 @@ static switch_status_t setup_formats(void)
 
 	//sfinfo.channels = 1;
 	len = ((major_count + (exlen + 2)) * sizeof(char *));
-	supported_formats = switch_core_permanent_alloc(len);
+	supported_formats = switch_core_alloc(pool, len);
 
 	len = 0;
 	for (m = 0; m < major_count; m++) {
@@ -408,11 +416,11 @@ static switch_status_t setup_formats(void)
 		}
 		if (!skip) {
 			char *p;
-			struct format_map *map = switch_core_permanent_alloc(sizeof(*map));
+			struct format_map *map = switch_core_alloc(pool, sizeof(*map));
 			switch_assert(map);
 
-			map->ext = switch_core_permanent_strdup(info.extension);
-			map->uext = switch_core_permanent_strdup(info.extension);
+			map->ext = switch_core_strdup(pool, info.extension);
+			map->uext = switch_core_strdup(pool, info.extension);
 			map->format = info.format;
 			if (map->ext) {
 				for (p = map->ext; *p; p++) {
@@ -427,6 +435,25 @@ static switch_status_t setup_formats(void)
 				switch_core_hash_insert(globals.format_hash, map->uext, map);
 			}
 			supported_formats[len++] = (char *) info.extension;
+
+			for (i=0; i < add_ext_len; i++) {
+				if (!strcmp(info.extension, add_ext[i].ext)) {
+					/* eg: register ogg too, but only if we have oga */
+					struct format_map *map = switch_core_alloc(pool, sizeof(*map));
+					switch_assert(map);
+
+					map->ext = switch_core_strdup(pool, add_ext[i].new_ext);
+					map->uext = switch_core_strdup(pool, add_ext[i].new_ext); 
+					map->format = info.format;
+					switch_core_hash_insert(globals.format_hash, map->ext, map);
+					for (p = map->uext; *p; p++) {
+						*p = (char) switch_toupper(*p);
+					}
+					switch_core_hash_insert(globals.format_hash, map->uext, map);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name, add_ext[i].new_ext);
+				}
+			}
 		}
 		format = info.format;
 
@@ -457,7 +484,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 
 	switch_core_hash_init(&globals.format_hash);
 
-	if (setup_formats() != SWITCH_STATUS_SUCCESS) {
+	if (setup_formats(pool) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
