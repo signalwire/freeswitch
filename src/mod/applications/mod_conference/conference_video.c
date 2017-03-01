@@ -3000,7 +3000,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_unlock(conference->member_mutex);
 		} else {
-			
+			switch_mutex_lock(conference->file_mutex);
 			if (conference->async_fnode && (conference->async_fnode->canvas_id == canvas->canvas_id || conference->async_fnode->canvas_id == -1)) {
 				if (conference->async_fnode->layer_id > -1) {
 					conference_video_patch_fnode(canvas, conference->async_fnode);
@@ -3016,6 +3016,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					conference_video_fnode_check(conference->fnode, canvas->canvas_id);
 				}
 			}
+			switch_mutex_unlock(conference->file_mutex);
 
 			if (!conference->playing_video_file) {
 				for (i = 0; i < canvas->total_layers; i++) {
