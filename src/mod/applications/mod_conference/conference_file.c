@@ -160,11 +160,11 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		return SWITCH_STATUS_NOTFOUND;
 	}
 
-	switch_mutex_lock(conference->mutex);
+
 	switch_mutex_lock(conference->member_mutex);
 	count = conference->count;
 	switch_mutex_unlock(conference->member_mutex);
-	switch_mutex_unlock(conference->mutex);
+
 
 	if (!count) {
 		return SWITCH_STATUS_FALSE;
@@ -316,7 +316,8 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	fnode->file = switch_core_strdup(fnode->pool, file);
 
 	if (!conference->fnode || (async && !conference->async_fnode)) {
-		conference_video_fnode_check(fnode, -1);
+		fnode->new_fnode = 1;
+		//conference_video_fnode_check(fnode, -1);
 	}
 
 	/* Queue the node */
