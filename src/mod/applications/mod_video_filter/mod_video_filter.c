@@ -56,6 +56,8 @@ typedef struct chromakey_context_s {
 	int mask_len;
 	switch_core_session_t *session;
 	switch_mutex_t *command_mutex;
+	int patch;
+	int mod;
 } chromakey_context_t;
 
 static void init_context(chromakey_context_t *context)
@@ -85,10 +87,9 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 	int n = argc - start;
 	int i = start;
 
-	switch_core_session_request_video_refresh(context->session);
-	switch_core_media_gen_key_frame(context->session);
-
 	switch_mutex_lock(context->command_mutex);
+
+	context->patch = 0;
 
 	if (n > 0 && argv[i]) { // color
 		int j = 0;
@@ -194,17 +195,18 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		if (!strcasecmp(argv[i], "patch")) {
 			*function = "patch:video";
 			*flags = SMBF_VIDEO_PATCH;
+			context->patch++;
 		}
 
 		i++;
 	}
 
-
+	switch_core_session_request_video_refresh(context->session);
+	context->mod++;
 
 	switch_mutex_unlock(context->command_mutex);
 
-	switch_core_session_request_video_refresh(context->session);
-	switch_core_media_gen_key_frame(context->session);
+
 
 }
 
@@ -222,6 +224,13 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	if (!frame->img) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (!context->patch && context->mod && !switch_test_flag(frame, SFF_IS_KEYFRAME)) {
+		switch_core_session_request_video_refresh(context->session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	context->mod = 0;
 
 	if (switch_mutex_trylock(context->command_mutex) != SWITCH_STATUS_SUCCESS) {
 		switch_img_patch(frame->img, context->last_img, 0, 0);

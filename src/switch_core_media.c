@@ -2092,6 +2092,8 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 
 				if (frames > 0) {
 					switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames, max_frames);
+				} else {
+					switch_rtp_deactivate_jitter_buffer(v_engine->rtp_session);
 				}
 				return;
 			} else if (!strncasecmp(input, "vdebug:", 7)) {
@@ -14036,6 +14038,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	uint32_t loops = 0;
 	switch_media_handle_t *smh;
 	int patchers = 0;
+	int is_keyframe = 0;
 
 	switch_assert(session != NULL);
 
@@ -14109,7 +14112,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		(*frame)->img = NULL;
 
 		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
-
+		if (switch_test_flag(*frame, SFF_IS_KEYFRAME)) {
+			is_keyframe++;
+		}
 		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n",
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
@@ -14151,6 +14156,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
   done:
+
+	if (*frame && is_keyframe) {
+		switch_set_flag(*frame, SFF_IS_KEYFRAME);
+	}
 
 	if (session->bugs) {
 		switch_media_bug_t *bp;

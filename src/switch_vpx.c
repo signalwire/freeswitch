@@ -1178,6 +1178,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	}
 
 	if (is_keyframe) {
+		switch_set_flag(frame, SFF_IS_KEYFRAME);
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
 			context->no_key_frame = 0;
