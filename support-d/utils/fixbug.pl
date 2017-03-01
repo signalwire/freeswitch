@@ -10,6 +10,7 @@ GetOptions(
     'bug=s' => \$opts{bug},
     'msg=s' => \$opts{msg},
     'debug' => \$opts{debug},
+    'noresolve' => \$opts{noresolve},
     'append=s' => \$opts{append},
     'comment=s' => \$opts{comment},
     'author=s' => \$opts{author}
@@ -22,6 +23,7 @@ my $url = "https://freeswitch.org/jira/si/jira.issueviews:issue-xml/$opts{bug}/$
 my $cmd;
 my $prog = `which curl` || `which wget`;
 my $auto = 1;
+my $post = " \#resolve";
 
 chomp $prog;
 
@@ -53,11 +55,15 @@ if(ref($component) eq 'ARRAY') {
 
 $component =~ s/\"/\\"/g;
 
+if ($opts{noresolve}) {
+    $post = "";
+}
+
 if ($opts{msg} eq "edit") {
   $auto = 0;
   $opts{msg} = undef;
   open T, ">/tmp/$opts{bug}.tmp";
-  print T "$opts{bug} #resolve [$sum]\n\n---Cut this line to confirm commit.....";
+  print T "$opts{bug}${post} [$sum]\n\n---Cut this line to confirm commit.....";
   close T;
 }
 
@@ -79,7 +85,7 @@ if ($auto) {
 	$opts{msg} =~ s/%c/$component/;
 	$gitcmd = "git commit $args -m \"$opts{msg}$opts{append}\"";
     } else {
-	$gitcmd = "git commit $args -m \"$opts{bug}: [$component] $sum$opts{append} #resolve\"";
+	$gitcmd = "git commit $args -m \"$opts{bug}: [$component] $sum$opts{append}${post}\"";
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
