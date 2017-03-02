@@ -302,10 +302,57 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
 
+SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha)
+{
+	int i;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB && IMG->fmt == SWITCH_IMG_FMT_ARGB) {
+		int max_w = MIN(img->d_w, IMG->d_w - abs(x));
+		int max_h = MIN(img->d_h, IMG->d_h - abs(y));
+		int j;
+		uint8_t alpha;
+		switch_rgb_color_t *rgb, *RGB; 
+
+		for (i = 0; i < max_h; i++) {		
+			for (j = 0; j < max_w; j++) {
+				rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
+				RGB = (switch_rgb_color_t *)(IMG->planes[SWITCH_PLANE_PACKED] + (y + i) * IMG->stride[SWITCH_PLANE_PACKED] + (x + j) * 4);
+				
+				alpha = rgb->a;
+				
+				if (noalpha && RGB->a != 0) {
+					continue;
+				}
+
+				if (alpha == 255) {
+					*RGB = *rgb;
+				} else if (alpha != 0) {
+
+					int tmp_a;
+
+					if (RGB->a != 255) {
+						tmp_a = ((RGB->a * (255 - alpha)) >> 8) + ((rgb->a * alpha) >> 8);
+						RGB->a = RGB->a > tmp_a ? RGB->a : tmp_a;
+					}
+
+					RGB->r = ((RGB->r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
+					RGB->g = ((RGB->g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
+					RGB->b = ((RGB->b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
+				}
+			}
+		}
+	}
+}
+
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
 	int i, len, max_h;
 	int xoff = 0, yoff = 0;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB && IMG->fmt == SWITCH_IMG_FMT_ARGB) {
+		switch_img_patch_rgb(IMG, img, x, y, SWITCH_FALSE);
+		return;
+	}
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
@@ -932,7 +979,7 @@ SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_
 static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
 #ifdef SWITCH_HAVE_YUV
-	switch_yuv_color_t yuv;
+	switch_yuv_color_t yuv = {0};
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
@@ -1163,9 +1210,14 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 #ifdef SWITCH_HAVE_YUV
 static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
 {
-	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
-	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
-	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
+
+	yuv->y = ( (  66 * rgb->r + 129 * rgb->g +  25 * rgb->b + 128) >> 8) +  16;
+	yuv->u = ( ( -38 * rgb->r -  74 * rgb->g + 112 * rgb->b + 128) >> 8) + 128;
+	yuv->v = ( ( 112 * rgb->r -  94 * rgb->g -  18 * rgb->b + 128) >> 8) + 128;
+
+	//yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
+	//yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
+	//yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
 }
 #endif
 

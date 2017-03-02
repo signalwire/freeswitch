@@ -204,6 +204,17 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 */
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y);
 
+/*!\brief patch a small img to a big IMG at position x,y
+*
+* Both IMG and img must be non-NULL
+*
+* \param[in]    IMG       The BIG Image descriptor
+* \param[in]    img       The small Image descriptor
+* \param[in]    x         Leftmost pos to patch to
+* \param[in]    y         Topmost pos to patch to
+* \param[in]    noalpha   skip writing to non-transparent pixels
+*/
+SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha);
 
 /*!\brief patch part of a small img (x,y,w,h) to a big IMG at position X,Y
 *

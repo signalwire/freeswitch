@@ -48,7 +48,9 @@ typedef struct chromakey_context_s {
 	switch_image_t *imgfg;
 	switch_image_t *imgbg;
 	void *data;
+	void *patch_data;
 	switch_size_t datalen;
+	switch_size_t patch_datalen;
 	switch_file_handle_t vfh;
 	switch_rgb_color_t bgcolor;
 	switch_rgb_color_t mask[MAX_MASK];
@@ -80,6 +82,7 @@ static void uninit_context(chromakey_context_t *context)
 
 	switch_img_free(&context->last_img);
 	switch_safe_free(context->data);
+	switch_safe_free(context->patch_data);
 }
 
 static void parse_params(chromakey_context_t *context, int start, int argc, char **argv, const char **function, switch_media_bug_flag_t *flags)
@@ -155,7 +158,7 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		if (argv[i][0] == '#') { // bgcolor
 			switch_color_set_rgb(&context->bgcolor, argv[i]);
 		} else if (switch_stristr(".png", argv[i])) {
-			if (!(context->bgimg = switch_img_read_png(argv[i], SWITCH_IMG_FMT_I420))) {
+			if (!(context->bgimg = switch_img_read_png(argv[i], SWITCH_IMG_FMT_ARGB))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening png\n");
 			}
 		} else {
@@ -216,6 +219,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_image_t *img = NULL;
 	switch_size_t bytes;
+	void *patch_data;
 
 	if (!switch_channel_ready(channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -246,6 +250,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	
 	switch_assert(context->data);
 
+	patch_data = context->data;
+
 	switch_img_to_raw(frame->img, context->data, frame->img->d_w * 4, SWITCH_IMG_FMT_ARGB);
 	img = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h, 1, context->data);
 
@@ -256,6 +262,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	switch_img_copy(img, &context->last_img);
 
 	if (context->bgimg) {
+		switch_image_t *tmp = NULL;
+
 		if (context->bgimg_scaled && (context->bgimg_scaled->d_w != frame->img->d_w || context->bgimg_scaled->d_h != frame->img->d_h)) {
 			switch_img_free(&context->bgimg_scaled);
 		}
@@ -264,7 +272,28 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 			switch_img_scale(context->bgimg, &context->bgimg_scaled, frame->img->d_w, frame->img->d_h);
 		}
 
-		switch_img_patch(frame->img, context->bgimg_scaled, 0, 0);
+		if (context->imgbg) {
+			switch_img_copy(img, &tmp);
+		}
+
+		switch_img_patch_rgb(img, context->bgimg_scaled, 0, 0, SWITCH_TRUE);
+
+		if (context->imgbg) {
+			int x = 0, y = 0;
+			
+			if (context->imgbg->d_w != frame->img->d_w && context->imgbg->d_h != frame->img->d_h) {
+				switch_img_fit(&context->imgbg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
+			}
+			
+			switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgbg->d_w, context->imgbg->d_h, &x, &y);
+			switch_img_patch(img, context->imgbg, x, y);
+
+			if (tmp) {
+				switch_img_patch(img, tmp, 0, 0);
+				switch_img_free(&tmp);
+			}
+		}
+
 	} else if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
 		switch_image_t *use_img = NULL;
 		switch_frame_t file_frame = { 0 };
@@ -284,7 +313,34 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		}
 
 		if (use_img) {
-			switch_img_patch(frame->img, use_img, 0, 0);
+			switch_image_t *i2;
+
+			bytes = use_img->d_w * use_img->d_h * 4;
+
+			if (bytes > context->patch_datalen) {
+				context->patch_data = realloc(context->patch_data, bytes);
+				context->patch_datalen = bytes;
+			}
+
+			switch_img_to_raw(use_img, context->patch_data, use_img->d_w * 4, SWITCH_IMG_FMT_ARGB);
+			i2 = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, use_img->d_w, use_img->d_h, 1, context->patch_data);
+
+
+
+			if (context->imgbg) {
+				int x = 0, y = 0;
+				
+				if (context->imgbg->d_w != frame->img->d_w && context->imgbg->d_h != frame->img->d_h) {
+					switch_img_fit(&context->imgbg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
+				}
+				switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgbg->d_w, context->imgbg->d_h, &x, &y);
+				switch_img_patch(i2, context->imgbg, x, y);
+			}
+
+			switch_img_patch(i2, img, 0, 0);
+			switch_img_free(&img);
+			img = i2;
+			patch_data = context->patch_data;
 		}
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -309,19 +365,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		switch_img_fill(frame->img, 0, 0, img->d_w, img->d_h, &context->bgcolor);
 	}
 
-
-	if (context->imgbg) {
-		int x = 0, y = 0;
-
-		if (context->imgbg->d_w != frame->img->d_w && context->imgbg->d_h != frame->img->d_h) {
-			switch_img_fit(&context->imgbg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
-		}
-		switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgbg->d_w, context->imgbg->d_h, &x, &y);
-		switch_img_patch(frame->img, context->imgbg, x, y);
-	}
-
-	switch_img_patch(frame->img, img, 0, 0);
-
 	if (context->imgfg) {
 		int x = 0, y = 0;
 
@@ -329,8 +372,10 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 			switch_img_fit(&context->imgfg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
 		}
 		switch_img_find_position(POS_CENTER_BOT, frame->img->d_w, frame->img->d_h, context->imgfg->d_w, context->imgfg->d_h, &x, &y);
-		switch_img_patch(frame->img, context->imgfg, x, y);
+		switch_img_patch(img, context->imgfg, x, y);
 	}
+	
+	switch_img_from_raw(frame->img, patch_data, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h);
 
 	switch_img_free(&img);
 
