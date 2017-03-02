@@ -80,12 +80,21 @@ typedef struct switch_yuv_color_s {
 	uint8_t v;
 } switch_yuv_color_t;
 
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 typedef struct switch_rgb_color_s {
 	uint8_t a;
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 } switch_rgb_color_t;
+#else
+typedef struct switch_rgb_color_s {
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a;
+} switch_rgb_color_t;
+#endif
 
 typedef struct switch_hsl_color_s {
 	double h;

@@ -1081,7 +1081,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 #ifdef DEBUG_CHROMA
 				other_img_cached++;
 #endif
-				*pixel = *cache_pixel;
+				color->a = cache_color->a;
 				goto end;
 			}
 		}
@@ -1177,7 +1177,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 #ifdef DEBUG_CHROMA
 			hit_total++;
 #endif
-			*pixel = 0;
+			color->a = 0;
 		}
 	
 		last_pixel = pixel;
@@ -1230,29 +1230,28 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 
 SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold)
 {
-	uint8_t *pixel, *last_pixel = NULL;
+	switch_rgb_color_t *pixel, *last_pixel = NULL;
 	int last_threshold = 0;
 	switch_assert(img);
 
 	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
-	pixel = img->planes[SWITCH_PLANE_PACKED];
+	pixel = (switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED];
 
-	for (; pixel < (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4); pixel += 4) {
-		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
+	for (; pixel < ((switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h); pixel++) {
 		int threshold = 0;
 
 		if (last_pixel && (*(uint32_t *)pixel & 0xFFFFFF) == (*(uint32_t *)last_pixel & 0xFFFFFF)) {
 			threshold = last_threshold;
 		} else {
-			threshold = switch_color_distance(color, mask);
+			threshold = switch_color_distance(pixel, mask);
 		}
 
 		last_threshold = threshold;
 		last_pixel = pixel;
 
 		if (threshold) {
-			*pixel = 0;
+			pixel->a = 0;
 		}
 	}
 
@@ -1276,11 +1275,7 @@ static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, swit
 			img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = yuv.v;
 		}
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
-		uint8_t *alpha = img->planes[SWITCH_PLANE_PACKED] + img->d_w * 4 * y + x * 4;
-		*(alpha    ) = color->a;
-		*(alpha + 1) = color->r;
-		*(alpha + 2) = color->g;
-		*(alpha + 3) = color->b;
+		*((switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED] + img->d_w * y + x) = *color;
 	}
 #endif
 }
@@ -1317,10 +1312,7 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 		}
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
 		for (i = 0; i < img->d_w; i++) {
-			*(img->planes[SWITCH_PLANE_PACKED] + i * 4    ) = color->a;
-			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 1) = color->r;
-			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 2) = color->g;
-			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 3) = color->b;
+			*((switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED] + i) = *color;
 		}
 
 		for (i = 1; i < img->d_h; i++) {
@@ -1354,11 +1346,7 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 		switch_img_get_yuv_pixel(img, &yuv, x, y);
 		switch_color_yuv2rgb(&yuv, rgb);
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
-		uint8_t *a = img->planes[SWITCH_PLANE_PACKED] + img->d_w * 4 * y + 4 * x;
-		rgb->a = *a;
-		rgb->r = *(++a);
-		rgb->g = *(++a);
-		rgb->b = *(++a);
+		*rgb = *((switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED] + img->d_w * y + x);
 	}
 #endif
 }
@@ -2088,19 +2076,15 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_rgb_color_t *rgb_color;
-	uint8_t alpha;
 	int i, j;
 
 	switch_assert(use_png);
 
 	for (i = 0; i < use_png->pvt->png.height; i++) {
 		for (j = 0; j < use_png->pvt->png.width; j++) {
-			//alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4 + 3];
-			alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4];
-			// printf("%d, %d alpha: %d\n", j, i, alpha);
+			rgb_color = (switch_rgb_color_t *)use_png->pvt->buffer + i * use_png->pvt->png.width + j;
 
-			if (alpha) { // todo, mux alpha with the underlying pixel
-				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
+			if (rgb_color->a) { // todo, mux alpha with the underlying pixel
 				switch_img_draw_pixel(img, x + j, y + i, rgb_color);
 			}
 		}
@@ -2149,7 +2133,11 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, swit
 	if (img_fmt == SWITCH_IMG_FMT_I420) {
 		png.format = PNG_FORMAT_RGB;
 	} else if (img_fmt == SWITCH_IMG_FMT_ARGB) {
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 		png.format = PNG_FORMAT_ARGB;
+#else
+		png.format = PNG_FORMAT_BGRA;
+#endif
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unsupported image format: %x\n", img_fmt);
 		goto err;
@@ -2178,7 +2166,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, swit
 			img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
 			png.width, png.height);
 	} else if (img_fmt == SWITCH_IMG_FMT_ARGB){
-		ARGBToARGB(buffer, png.width * 4,
+		ARGBCopy(buffer, png.width * 4,
 			img->planes[SWITCH_PLANE_PACKED], png.width * 4,
 			png.width, png.height);
 	}
@@ -2414,7 +2402,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, swit
 					img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
 					width, height);
 		} else if (img_fmt == SWITCH_IMG_FMT_ARGB) {
-			ARGBToRGBA(buffer, width * 4,
+			BGRAToARGB(buffer, width * 4,
 					img->planes[SWITCH_PLANE_PACKED], width * 4,
 					width, height);
 		}
@@ -2745,7 +2733,7 @@ static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 		case SWITCH_IMG_FMT_YVYU:      fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_BGR24:     fourcc = (uint32_t)FOURCC_RAW ; break;
 		case SWITCH_IMG_FMT_RGB32_LE:  fourcc = (uint32_t)FOURCC_ANY ; break;
-		case SWITCH_IMG_FMT_ARGB:      fourcc = (uint32_t)FOURCC_BGRA; break;
+		case SWITCH_IMG_FMT_ARGB:      fourcc = (uint32_t)FOURCC_ARGB; break;
 		case SWITCH_IMG_FMT_ARGB_LE:   fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_RGB565_LE: fourcc = (uint32_t)FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_RGB555_LE: fourcc = (uint32_t)FOURCC_ANY ; break;
