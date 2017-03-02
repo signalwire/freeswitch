@@ -587,7 +587,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
-
+#if 0
 static inline void switch_core_rgb2xyz(switch_rgb_color_t *rgb, switch_xyz_color_t *xyz)
 {
 	double r, g, b;
@@ -795,7 +795,7 @@ static inline double switch_CIEDE2000(switch_lab_color_t *lab1, switch_lab_color
 	// The CIE 00 color difference
 	return sqrt( pow((dL/Sl),2.0) + pow((dC/Sc),2.0) + pow((dH/Sh),2.0) + RT*(dC/Sc)*(dH/Sh) );
 }
-
+#endif
 
 static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
 {
