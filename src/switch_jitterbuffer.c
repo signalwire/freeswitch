@@ -279,7 +279,7 @@ static inline void hide_node(switch_jb_node_t *node, switch_bool_t pop)
 	}
 
 	if (switch_core_inthash_delete(jb->node_hash, node->packet.header.seq)) {
-		if (jb->type != SJB_VIDEO || node->packet.header.m) {
+		if (node->packet.header.m && jb->type == SJB_VIDEO) {
 			jb->complete_frames--;
 		}
 	}
@@ -583,7 +583,9 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 
 	switch_core_inthash_insert(jb->node_hash, node->packet.header.seq, node);
 
-	jb->complete_frames++;
+	if (packet->header.m && jb->type == SJB_VIDEO) {
+		jb->complete_frames++;
+	}
 
 	if (jb->node_hash_ts) {
 		switch_core_inthash_insert(jb->node_hash_ts, node->packet.header.ts, node);
@@ -630,6 +632,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	} else {
 		if (jb->write_init || jb->type == SJB_TEXT || jb->type == SJB_AUDIO) {
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
+			jb->complete_frames++;
 		} else {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
@@ -1295,6 +1298,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 		if (jb->type == SJB_TEXT || jb->type == SJB_AUDIO ||
 			(jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts)))) {
+
+			if (jb->type == SJB_TEXT || jb->type == SJB_AUDIO) {
+				jb->complete_frames--;
+			}
 			jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_read_ts = node->packet.header.ts;
 		} else if (!jb->read_init) {
