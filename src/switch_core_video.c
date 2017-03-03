@@ -901,6 +901,7 @@ struct switch_chromakey_s {
 	
 	switch_rgb_color_t auto_color;
 	int no_cache;
+	int frames_read;
 };
 
 SWITCH_DECLARE(switch_shade_t) switch_chromakey_str2shade(switch_chromakey_t *ck, const char *shade_name)
@@ -1121,6 +1122,12 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 
 	cache_img = ck->cache_img;
 	ck->cache_img = NULL;
+
+	ck->frames_read++;
+
+	if ((ck->frames_read % 300) == 0) {
+		ck->no_cache = 2;
+	}
 
 	if (cache_img && (cache_img->d_w != img->d_w || cache_img->d_h != img->d_h)) {
 		switch_img_free(&cache_img);
