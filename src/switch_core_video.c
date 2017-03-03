@@ -346,41 +346,43 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		switch_img_patch_rgb_noalpha(IMG, img, x, y);
 		return;
 	}
-	if (IMG->d_w == img->d_w && IMG->d_h == img->d_h) {
-		ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
-					  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
-					  img->d_w, img->d_h);
-		ARGBBlend(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
-				  IMG->planes[SWITCH_PLANE_PACKED], IMG->stride[SWITCH_PLANE_PACKED],
-				  IMG->planes[SWITCH_PLANE_PACKED], IMG->stride[SWITCH_PLANE_PACKED],
-				  IMG->d_w, IMG->d_h);
-		return;
-	}
 
 	if (img->fmt == SWITCH_IMG_FMT_ARGB && IMG->fmt == SWITCH_IMG_FMT_ARGB) {
-		int max_w = MIN(img->d_w, IMG->d_w - abs(x));
-		int max_h = MIN(img->d_h, IMG->d_h - abs(y));
-		int j;
-		uint8_t alpha, alphadiff;
-		switch_rgb_color_t *rgb, *RGB;
+		uint8* src_argb0 = img->planes[SWITCH_PLANE_PACKED];
+		int src_stride_argb0 = img->stride[SWITCH_PLANE_PACKED];
+		uint8* src_argb1 = IMG->planes[SWITCH_PLANE_PACKED];
+		int src_stride_argb1 = IMG->stride[SWITCH_PLANE_PACKED];
+		uint8* dst_argb = IMG->planes[SWITCH_PLANE_PACKED];
+		int dst_stride_argb = IMG->stride[SWITCH_PLANE_PACKED];
+		int width = MIN(img->d_w, IMG->d_w - abs(x));
+		int height = MIN(img->d_h, IMG->d_h - abs(y));
+		void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1, uint8* dst_argb, int width) = GetARGBBlend();
 
-		for (i = 0; i < max_h; i++) {
-			for (j = 0; j < max_w; j++) {
-				rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
-				RGB = (switch_rgb_color_t *)(IMG->planes[SWITCH_PLANE_PACKED] + (y + i) * IMG->stride[SWITCH_PLANE_PACKED] + (x + j) * 4);
+		ARGBAttenuate(src_argb0, src_stride_argb0, src_argb0, src_stride_argb0, img->d_w, img->d_h);
 
-				alpha = rgb->a;
+		// Coalesce rows. we have same size images, treat as a single row
+		if (src_stride_argb0 == width * 4 &&
+			src_stride_argb1 == width * 4 &&
+			x == 0 && y == 0) {
+			width *= height;
+			height = 1;
+			src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
+		}
 
-				if (alpha == 255) {
-					*RGB = *rgb;
-				} else if (alpha != 0) {
-					alphadiff = 255 - alpha;
-					RGB->a = 255;
-					RGB->r = ((RGB->r * alphadiff) + (rgb->r * alpha)) >> 8;
-					RGB->g = ((RGB->g * alphadiff) + (rgb->g * alpha)) >> 8;
-					RGB->b = ((RGB->b * alphadiff) + (rgb->b * alpha)) >> 8;
-				}
-			}
+		if (y) {
+			src_argb1 += (y * IMG->d_w * 4);
+			dst_argb  += (y * IMG->d_w * 4);
+		}
+		if (x) {
+			src_argb1 += (x * 4);
+			dst_argb  += (x * 4);
+		}
+
+		for (i = 0; i < height; ++i) {
+			ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
+			src_argb0 += src_stride_argb0;
+			src_argb1 += src_stride_argb1;
+			dst_argb += dst_stride_argb;
 		}
 	}
 }
