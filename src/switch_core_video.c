@@ -1026,6 +1026,39 @@ static inline int switch_color_distance_cheap(switch_rgb_color_t *c1, switch_rgb
 	return (3*r) + (4*g) + (3*b);
 }
 
+static inline void get_dom(switch_shade_t autocolor, switch_rgb_color_t *color, int *domP, int *aP, int *bP)
+{
+	int dom, a, b;
+				
+	switch(autocolor) {
+	case SWITCH_SHADE_RED:
+		dom = color->r;
+		a = color->g;
+		b = color->b;
+		break;
+	case SWITCH_SHADE_GREEN:
+		dom = color->g;
+		a = color->r;
+		b = color->b;
+		break;
+	case SWITCH_SHADE_BLUE:
+		dom = color->b;
+		a = color->r;
+		b = color->g;
+		break;
+	default:
+		dom = 0;
+		a = 0;
+		b = 0;
+		break;
+	}
+
+	*domP = dom;
+	*aP = a;
+	*bP = b;
+
+}
+
 SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_image_t *img)
 {
 	uint8_t *pixel, *last_pixel = NULL, *cache_pixel = NULL, *end_pixel = NULL;
@@ -1106,28 +1139,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 			if (ck->autocolor) {
 				int dom, a, b;
 
-				switch(ck->autocolor) {
-				case SWITCH_SHADE_RED:
-					dom = color->r;
-					a = color->g;
-					b = color->b;
-					break;
-				case SWITCH_SHADE_GREEN:
-					dom = color->g;
-					a = color->r;
-					b = color->b;
-					break;
-				case SWITCH_SHADE_BLUE:
-					dom = color->b;
-					a = color->r;
-					b = color->g;
-					break;
-				default:
-					dom = 0;
-					a = 0;
-					b = 0;
-					break;
-				}
+				get_dom(ck->autocolor, color, &dom, &a, &b);
 
 				if (ck->autocolor != SWITCH_SHADE_AUTO) {
 					//printf("WTF %d\n", ck->dft_thresh);
@@ -1187,6 +1199,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 	if (ck->color_count > 1000) {
 		switch_rgb_color_t *last_color = NULL;
 		int skip = 0;
+		int dom, a, b;
 
 		ck->auto_color.r = ck->rr / ck->color_count;
 		ck->auto_color.g = ck->gg / ck->color_count;
@@ -1197,7 +1210,10 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 
 			for (i = 0; i < ck->mask_len; i++) {
 				last_color = &ck->mask[i];
-				if (switch_color_distance_literal(&ck->auto_color, last_color, 10) || !switch_color_dom_cmp(&ck->auto_color, last_color)) {
+
+				get_dom(ck->autocolor, &ck->auto_color, &dom, &a, &b);
+
+				if (switch_color_distance_literal(&ck->auto_color, last_color, 10) || !switch_color_dom_cmp(&ck->auto_color, last_color) || (dom - a < 50 || dom - b < 50)) {
 					skip = 1;
 					break;
 				}
