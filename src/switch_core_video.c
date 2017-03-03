@@ -346,6 +346,16 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		switch_img_patch_rgb_noalpha(IMG, img, x, y);
 		return;
 	}
+	if (IMG->d_w == img->d_w && IMG->d_h == img->d_h) {
+		ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+					  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+					  img->d_w, img->d_h);
+		ARGBBlend(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+				  IMG->planes[SWITCH_PLANE_PACKED], IMG->stride[SWITCH_PLANE_PACKED],
+				  IMG->planes[SWITCH_PLANE_PACKED], IMG->stride[SWITCH_PLANE_PACKED],
+				  IMG->d_w, IMG->d_h);
+		return;
+	}
 
 	if (img->fmt == SWITCH_IMG_FMT_ARGB && IMG->fmt == SWITCH_IMG_FMT_ARGB) {
 		int max_w = MIN(img->d_w, IMG->d_w - abs(x));
