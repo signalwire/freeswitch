@@ -5096,6 +5096,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_PRIVACY);
 						}
+					} else if (!strcasecmp(var, "update-refresher")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_UPDATE_REFRESHER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_UPDATE_REFRESHER);
+						}
 					} else if (!strcasecmp(var, "manage-shared-appearance")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);

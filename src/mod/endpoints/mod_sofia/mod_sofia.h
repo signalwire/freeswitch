@@ -296,6 +296,7 @@ typedef enum {
 	PFLAG_PROXY_HOLD,
 	PFLAG_PROXY_INFO,
 	PFLAG_PROXY_MESSAGE,
+	PFLAG_UPDATE_REFRESHER,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -832,6 +833,7 @@ struct private_object {
 	sofia_cid_type_t cid_type;
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
+	int update_refresher;
 	char **watch_headers;
 	char *respond_phrase;
 	int respond_code;
