@@ -1288,10 +1288,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if ((tech_pvt->session_timeout = session_timeout)) {
 		tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_UPDATE_REFRESHER) || switch_channel_var_true(tech_pvt->channel, "sip_update_refresher")) {
+			tech_pvt->update_refresher = 1;
+		}
 	} else {
 		tech_pvt->session_refresher = nua_no_refresher;
 	}
-
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s sending invite version: %s\nLocal SDP:\n%s\n",
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(),
@@ -1316,6 +1318,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+				   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
@@ -1352,6 +1355,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+				   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),

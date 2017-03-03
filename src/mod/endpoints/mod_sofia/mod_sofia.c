@@ -931,9 +931,13 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 		if ((tech_pvt->session_timeout = session_timeout)) {
 			tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_UPDATE_REFRESHER) || switch_channel_var_true(tech_pvt->channel, "sip_update_refresher")) {
+				tech_pvt->update_refresher = 1;
+			}
 		} else {
 			tech_pvt->session_refresher = nua_no_refresher;
 		}
+
 
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -943,6 +947,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 						NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+						NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
@@ -962,6 +967,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 						NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+						NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
@@ -1994,6 +2000,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							nua_update(tech_pvt->nh,
 									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+									   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
@@ -2009,6 +2016,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							nua_update(tech_pvt->nh,
 									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+									   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
@@ -2067,6 +2075,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						nua_update(tech_pvt->nh,
 								   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 								   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+								   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
 								   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 								   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
