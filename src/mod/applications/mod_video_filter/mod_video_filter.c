@@ -38,13 +38,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_video_filter_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_video_filter_shutdown);
 SWITCH_MODULE_DEFINITION(mod_video_filter, mod_video_filter_load, mod_video_filter_shutdown, NULL);
 
-#define MAX_MASK 25
 
 typedef struct chromakey_context_s {
 	int threshold;
 	switch_image_t *bgimg;
 	switch_image_t *bgimg_scaled;
-	switch_image_t *last_img;
 	switch_image_t *imgfg;
 	switch_image_t *imgbg;
 	void *data;
@@ -53,13 +51,11 @@ typedef struct chromakey_context_s {
 	switch_size_t patch_datalen;
 	switch_file_handle_t vfh;
 	switch_rgb_color_t bgcolor;
-	switch_rgb_color_t mask[MAX_MASK];
-	int thresholds[MAX_MASK];
-	int mask_len;
 	switch_core_session_t *session;
 	switch_mutex_t *command_mutex;
 	int patch;
 	int mod;
+	switch_chromakey_t *ck;
 } chromakey_context_t;
 
 static void init_context(chromakey_context_t *context)
@@ -67,6 +63,7 @@ static void init_context(chromakey_context_t *context)
 	switch_color_set_rgb(&context->bgcolor, "#000000");
 	context->threshold = 300;
 	switch_mutex_init(&context->command_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(context->session));
+	switch_chromakey_create(&context->ck);
 }
 
 static void uninit_context(chromakey_context_t *context)
@@ -80,9 +77,9 @@ static void uninit_context(chromakey_context_t *context)
 		memset(&context->vfh, 0, sizeof(context->vfh));
 	}
 
-	switch_img_free(&context->last_img);
 	switch_safe_free(context->data);
 	switch_safe_free(context->patch_data);
+	switch_chromakey_destroy(&context->ck);
 }
 
 static void parse_params(chromakey_context_t *context, int start, int argc, char **argv, const char **function, switch_media_bug_flag_t *flags)
@@ -96,29 +93,30 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 
 	if (n > 0 && argv[i]) { // color
 		int j = 0;
-		char *list[MAX_MASK];
+		char *list[CHROMAKEY_MAX_MASK];
 		int list_argc;
 
 		list_argc = switch_split(argv[i], ':', list);
 
-		context->mask_len = 0;
-		memset(context->thresholds, 0, sizeof(context->thresholds[0]) * MAX_MASK);
+		switch_chromakey_clear_colors(context->ck);
 
 		for (j = 0; j < list_argc; j++) {
 			char *p;
 			int thresh = 0;
-
+			switch_rgb_color_t color = { 0 };
+			
 			if ((p = strchr(list[j], '+'))) {
 				*p++ = '\0';
 				thresh = atoi(p);
 				if (thresh < 0) thresh = 0;
 			}
-			
-			switch_color_set_rgb(&context->mask[j], list[j]);
-			if (thresh) {
-				context->thresholds[j] = thresh*thresh;
+	
+			if (*list[j] == '#') {
+				switch_color_set_rgb(&color, list[j]);
+				switch_chromakey_add_color(context->ck, &color, thresh);
+			} else {
+				switch_chromakey_autocolor(context->ck, switch_chromakey_str2shade(context->ck, list[j]), thresh);
 			}
-			context->mask_len++;
 		}
 	}
 
@@ -126,14 +124,9 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 
 	if (n > 1 && argv[i]) { // thresh
 		int thresh = atoi(argv[i]);
-		int j;
 
 		if (thresh > 0) {
-			context->threshold = thresh * thresh;
-
-			for (j = 0; j < context->mask_len; j++) {
-				if (!context->thresholds[j]) context->thresholds[j] = context->threshold;
-			}
+			switch_chromakey_set_default_threshold(context->ck, thresh);
 		}
 	}
 
@@ -237,7 +230,12 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	context->mod = 0;
 
 	if (switch_mutex_trylock(context->command_mutex) != SWITCH_STATUS_SUCCESS) {
-		switch_img_patch(frame->img, context->last_img, 0, 0);
+		switch_image_t *last_img = switch_chromakey_cache_image(context->ck);
+
+		if (last_img) {
+			switch_img_patch(frame->img, last_img, 0, 0);
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -256,10 +254,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	img = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h, 1, context->data);
 
 	switch_assert(img);
-	switch_img_chromakey_multi(img, context->last_img, context->mask, context->thresholds, context->mask_len);
-
-	switch_img_free(&context->last_img);
-	switch_img_copy(img, &context->last_img);
+	switch_chromakey_process(context->ck, img);
 
 	if (context->bgimg) {
 		switch_image_t *tmp = NULL;

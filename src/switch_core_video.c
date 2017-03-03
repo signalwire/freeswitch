@@ -87,7 +87,7 @@ static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color
 * \param[in]    count     number of colors in list
 * \param[in]    threshold hint of target threshold to stop processing list
 */
-static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds);
+static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, uint32_t *thresholds);
 
 /*!\brief Draw a pixel on an image
 *
@@ -334,7 +334,7 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 						tmp_a = ((RGB->a * (255 - alpha)) >> 8) + ((rgb->a * alpha) >> 8);
 						RGB->a = RGB->a > tmp_a ? RGB->a : tmp_a;
 					}
-
+					
 					RGB->r = ((RGB->r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
 					RGB->g = ((RGB->g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
 					RGB->b = ((RGB->b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
@@ -827,7 +827,7 @@ static inline int switch_color_distance(switch_rgb_color_t *c1, switch_rgb_color
 
 }
 
-static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, int *thresholds)
+static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb_color_t *clist, int count, uint32_t *thresholds)
 {
 	int x = 0, hits = 0;
 
@@ -844,38 +844,212 @@ static inline int switch_color_distance_multi(switch_rgb_color_t *c1, switch_rgb
 }
 
 
+struct switch_chromakey_s {
+	switch_image_t *cache_img;
+	switch_rgb_color_t mask[CHROMAKEY_MAX_MASK];
+	uint32_t thresholds[CHROMAKEY_MAX_MASK];
+	int mask_len;
+	switch_shade_t autocolor;
+	uint32_t dft_thresh;
+	uint32_t dft_thresh_squared;
 
+	uint32_t rr;
+	uint32_t gg;
+	uint32_t bb;
+	uint32_t color_count;
+	
+	switch_rgb_color_t auto_color;
+	int no_cache;
+};
 
+SWITCH_DECLARE(switch_shade_t) switch_chromakey_str2shade(switch_chromakey_t *ck, const char *shade_name)
+{
+	switch_shade_t shade = SWITCH_SHADE_NONE;
+
+	if (!strcasecmp(shade_name, "red")) {
+		shade = SWITCH_SHADE_RED;
+	} else if (!strcasecmp(shade_name, "green")) {
+		shade = SWITCH_SHADE_GREEN;
+	} else if (!strcasecmp(shade_name, "blue")) {
+		shade = SWITCH_SHADE_BLUE;
+	} else if (!strcasecmp(shade_name, "auto")) {
+		shade = SWITCH_SHADE_AUTO;
+	}
+
+	return shade;
+}
+
+SWITCH_DECLARE(void) switch_chromakey_set_default_threshold(switch_chromakey_t *ck, uint32_t threshold)
+{
+	int i;
+
+	ck->dft_thresh = threshold;
+	ck->dft_thresh_squared = threshold * threshold;
+
+	for (i = 0; i < ck->mask_len; i++) {
+		if (!ck->thresholds[i]) ck->thresholds[i] = ck->dft_thresh_squared;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_chromakey_clear_colors(switch_chromakey_t *ck)
+{
+	switch_assert(ck);
+
+	ck->autocolor = SWITCH_SHADE_NONE;
+	ck->mask_len = 0;
+	memset(ck->mask, 0, sizeof(ck->mask[0]) * CHROMAKEY_MAX_MASK);
+	memset(ck->thresholds, 0, sizeof(ck->thresholds[0]) * CHROMAKEY_MAX_MASK);
+	ck->no_cache = 1;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_chromakey_autocolor(switch_chromakey_t *ck, switch_shade_t autocolor, uint32_t threshold)
+{
+	switch_assert(ck);
+
+	switch_chromakey_clear_colors(ck);
+	ck->autocolor = autocolor;
+	ck->dft_thresh = threshold;
+	ck->dft_thresh_squared = threshold * threshold;
+	switch_img_free(&ck->cache_img);
+	ck->no_cache = 90;
+	memset(&ck->auto_color, 0, sizeof(ck->auto_color));
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_chromakey_add_color(switch_chromakey_t *ck, switch_rgb_color_t *color, uint32_t threshold) 
+{
+	switch_assert(ck);
+
+	if (ck->mask_len == CHROMAKEY_MAX_MASK) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ck->mask[ck->mask_len] = *color;
+	ck->thresholds[ck->mask_len] = threshold * threshold;
+	ck->mask_len++;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding color %d:%d:%d #%.2x%.2x%.2x\n",
+					  ck->auto_color.r, ck->auto_color.g, ck->auto_color.b, ck->auto_color.r, ck->auto_color.g, ck->auto_color.b);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_chromakey_destroy(switch_chromakey_t **ckP)
+{
+	switch_chromakey_t *ck;
+
+	switch_assert(ckP);
+
+	ck = *ckP;
+	*ckP = NULL;
+
+	if (ck) {
+		switch_img_free(&ck->cache_img);
+		free(ck);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_chromakey_create(switch_chromakey_t **ckP)
+{
+	switch_chromakey_t *ck;
+
+	switch_assert(ckP);
+
+	switch_zmalloc(ck, sizeof(*ck));
+
+	*ckP = ck;
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_chromakey_cache_image(switch_chromakey_t *ck)
+{
+	switch_assert(ck);
+
+	return ck->cache_img;
+}
+
+static inline int get_max(switch_rgb_color_t *c1)
+{
+	if (c1->r > c1->g && c1->r > c1->b) {
+		return 1;
+	}
+
+	if (c1->g > c1->r && c1->g > c1->b) {
+		return 2;
+	}
+
+	if (c1->b > c1->r && c1->b > c1->g) {
+		return 3;
+	}
+
+	return 0;
+}
+
+static inline int switch_color_dom_cmp(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
+{
+	
+	int c1_max = get_max(c1);
+	int c2_max = get_max(c2);
+	
+	if (c1_max && c1_max == c2_max) return 1;
+
+	return 0;
+
+}
+
+static inline int switch_color_distance_literal(switch_rgb_color_t *c1, switch_rgb_color_t *c2, int distance)
+{
+	int r = abs(c1->r - c2->r);
+	int g = abs(c1->g - c2->g);
+	int b = abs(c1->b - c2->b);
+
+	if (r < distance && g < distance && b < distance) return 1;
+
+	return 0;
+}
 
 static inline int switch_color_distance_cheap(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
 {
-	int r = c1->r - c2->r;
-	int g = c1->g - c2->g;
-	int b = c1->b - c2->b;
+	int r = abs(c1->r - c2->r);
+	int g = abs(c1->g - c2->g);
+	int b = abs(c1->b - c2->b);
 
-	if (!r && !g && !b) return 0;
+	if (r < 5 && g < 5 && b < 5) return 0;
 
-	return (3*abs(r)) + (4*abs(g)) + (3*abs(b));
+	return (3*r) + (4*g) + (3*b);
 }
 
-SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_image_t *cache_img, switch_rgb_color_t *mask, int *thresholds, int count)
+SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_image_t *img)
 {
 	uint8_t *pixel, *last_pixel = NULL, *cache_pixel = NULL, *end_pixel = NULL;
 	int last_hits = 0;
+	switch_image_t *cache_img;
+	int same = 0;
+	int same_same = 0;
 
 #ifdef DEBUG_CHROMA
 	int other_img_cached = 0, color_cached = 0, checked = 0, hit_total = 0, total_pixel = 0, delta_hits = 0;
 #endif
 
-
+	switch_assert(ck);
 	switch_assert(img);
 
 	if (img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
 	pixel = img->planes[SWITCH_PLANE_PACKED];
 
+	cache_img = ck->cache_img;
+	ck->cache_img = NULL;
+
 	if (cache_img && (cache_img->d_w != img->d_w || cache_img->d_h != img->d_h)) {
-		cache_img = NULL;
+		switch_img_free(&cache_img);
 	}
 
 	if (cache_img) {
@@ -884,16 +1058,23 @@ SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_imag
 
 	end_pixel = (img->planes[SWITCH_PLANE_PACKED] + img->d_w * img->d_h * 4);
 
+	if (ck->autocolor) {
+		ck->color_count = 0;
+		ck->rr = ck->gg = ck->bb = 0;
+	}
+
 	for (; pixel < end_pixel; pixel += 4) {
 		switch_rgb_color_t *color = (switch_rgb_color_t *)pixel;
 		switch_rgb_color_t *last_color = (switch_rgb_color_t *)last_pixel;
 		int hits = 0;
 
+
+
 #ifdef DEBUG_CHROMA
 		total_pixel++;
 #endif
-
-		if (cache_img && cache_pixel) {
+		
+		if (!ck->no_cache && cache_img && cache_pixel) {
 			switch_rgb_color_t *cache_color = (switch_rgb_color_t *)cache_pixel;
 				
 			if (switch_color_distance_cheap(color, cache_color) < 5) {
@@ -902,27 +1083,91 @@ SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_imag
 #endif
 				*pixel = *cache_pixel;
 				goto end;
-			}				
+			}
 		}
 
 
-		if (last_color && switch_color_distance_cheap(color, last_color) < 5) {
+		if (last_color) {
+			if (switch_color_distance_cheap(color, last_color) < 5) {
 
-			hits = last_hits;
+				hits = last_hits;
 #ifdef DEBUG_CHROMA
-			color_cached++;
+				color_cached++;
 #endif
+
+				same++;
+			} else {
+				same = 0;
+			}
 		} 
 
 		if (!hits) {
-			hits = switch_color_distance_multi(color, mask, count, thresholds);
+
+			if (ck->autocolor) {
+				int dom, a, b;
+
+				switch(ck->autocolor) {
+				case SWITCH_SHADE_RED:
+					dom = color->r;
+					a = color->g;
+					b = color->b;
+					break;
+				case SWITCH_SHADE_GREEN:
+					dom = color->g;
+					a = color->r;
+					b = color->b;
+					break;
+				case SWITCH_SHADE_BLUE:
+					dom = color->b;
+					a = color->r;
+					b = color->g;
+					break;
+				default:
+					dom = 0;
+					a = 0;
+					b = 0;
+					break;
+				}
+
+				if (ck->autocolor != SWITCH_SHADE_AUTO) {
+					//printf("WTF %d\n", ck->dft_thresh);
+
+					int tol = ck->dft_thresh;
+					int a_tol = tol/6;
+					int b_tol = tol/6;
+
+					if (dom > a && dom > b && dom > tol) {
+						if (dom - a > a_tol && dom - b > b_tol) {
+							hits = 1;
+						} 
+					}
+				}
+			}
+
+			if (!hits && ck->mask_len) {
+				hits = switch_color_distance_multi(color, ck->mask, ck->mask_len, ck->thresholds);
+			}
+
 
 #ifdef DEBUG_CHROMA
 			checked++;
 #endif
 		}
-
+		
 	end:
+
+		if (same > 100 && last_color && switch_color_dom_cmp(color, last_color)) {
+			same_same++;
+		} else {
+			same_same = 0;
+		}
+
+		if (!hits && ck->autocolor == SWITCH_SHADE_AUTO && (same > 300 || same_same > 50) && ck->no_cache) {
+			ck->color_count++;
+			ck->rr += color->r;
+			ck->gg += color->g;
+			ck->bb += color->b;
+		}
 
 		if (cache_pixel) {
 			cache_pixel += 4;
@@ -938,9 +1183,47 @@ SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_imag
 		last_pixel = pixel;
 		last_hits = hits;
 	}
+
+	if (ck->color_count > 1000) {
+		switch_rgb_color_t *last_color = NULL;
+		int skip = 0;
+
+		ck->auto_color.r = ck->rr / ck->color_count;
+		ck->auto_color.g = ck->gg / ck->color_count;
+		ck->auto_color.b = ck->bb / ck->color_count;
+
+		if (ck->mask_len) {
+			int i = 0;
+
+			for (i = 0; i < ck->mask_len; i++) {
+				last_color = &ck->mask[i];
+				if (switch_color_distance_literal(&ck->auto_color, last_color, 10) || !switch_color_dom_cmp(&ck->auto_color, last_color)) {
+					skip = 1;
+					break;
+				}
+			}
+		}
+
+		if (!ck->mask_len || !skip) {
+			switch_chromakey_add_color(ck, &ck->auto_color, ck->dft_thresh);
+		}
+
+	}
+
+	if (ck->no_cache > 0 && ck->mask_len) {
+		ck->no_cache--;
+	}
+
+
 #ifdef DEBUG_CHROMA
 	printf("total %d: other img cache %d color cache %d Checked %d Hit Total %d Delta hits: %d\n", total_pixel, other_img_cached, color_cached, checked, hit_total, delta_hits);
 #endif
+
+	if (!ck->no_cache) {
+		switch_img_copy(img, &ck->cache_img);
+	}
+
+	switch_img_free(&cache_img);
 
 	return;
 }

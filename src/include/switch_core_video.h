@@ -44,6 +44,16 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+#define CHROMAKEY_MAX_MASK 25
+
+typedef enum {
+	SWITCH_SHADE_NONE = 0,
+	SWITCH_SHADE_RED,
+	SWITCH_SHADE_GREEN,
+	SWITCH_SHADE_BLUE,
+	SWITCH_SHADE_AUTO
+} switch_shade_t;
+
 typedef enum {
 	POS_LEFT_TOP = 0,
 	POS_LEFT_MID,
@@ -420,8 +430,16 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 /*!\brief chromakey an img, img must be RGBA and return modified img */
 
 SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold);
-SWITCH_DECLARE(void) switch_img_chromakey_multi(switch_image_t *img, switch_image_t *cache_img, switch_rgb_color_t *mask, int *thresholds, int count);
-
+SWITCH_DECLARE(switch_status_t) switch_chromakey_clear_colors(switch_chromakey_t *ck);
+								
+SWITCH_DECLARE(switch_status_t) switch_chromakey_autocolor(switch_chromakey_t *ck, switch_shade_t autocolor, uint32_t threshold);
+SWITCH_DECLARE(switch_status_t) switch_chromakey_add_color(switch_chromakey_t *ck, switch_rgb_color_t *color, uint32_t threshold);
+SWITCH_DECLARE(switch_status_t) switch_chromakey_destroy(switch_chromakey_t **ckP);
+SWITCH_DECLARE(switch_status_t) switch_chromakey_create(switch_chromakey_t **ckP);
+SWITCH_DECLARE(void) switch_chromakey_set_default_threshold(switch_chromakey_t *ck, uint32_t threshold);
+SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_image_t *img);
+SWITCH_DECLARE(switch_image_t *) switch_chromakey_cache_image(switch_chromakey_t *ck);
+SWITCH_DECLARE(switch_shade_t) switch_chromakey_str2shade(switch_chromakey_t *ck, const char *shade_name);
 
 SWITCH_END_EXTERN_C
 #endif
