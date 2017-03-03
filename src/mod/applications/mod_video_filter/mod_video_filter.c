@@ -421,7 +421,7 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 	char *argv[4] = { 0 };
 	int argc;
 	char *lbuf;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;// SMBF_READ_VIDEO_PATCH;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING|SMBF_READ_VIDEO_PATCH;
 	const char *function = "chromakey";
 	chromakey_context_t *context;
 
