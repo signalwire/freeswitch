@@ -2695,10 +2695,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		goto done;
 	}
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
-		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
-	}
+	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+	//switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
+		//switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
+	//}
 
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		char *em = switch_core_sprintf(rtp_session->pool, "Bind Error! %s:%d", host, port);
@@ -6530,6 +6530,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int hot_socket = 0;
 	int read_loops = 0;
 	int slept = 0;
+	switch_bool_t got_jb = SWITCH_FALSE;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -6724,8 +6725,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		}
 
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			got_jb = (rtp_session->vb && switch_jb_poll(rtp_session->vb));
+		} else {
+			got_jb = SWITCH_TRUE;
+		}
 
-		if (poll_status == SWITCH_STATUS_SUCCESS || (rtp_session->vb && switch_jb_poll(rtp_session->vb))) {
+		if (poll_status == SWITCH_STATUS_SUCCESS || got_jb) {
 
 			got_rtp_poll = 1;
 
@@ -6733,7 +6739,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				read_pretriggered = 0;
 			} else {
 				
-				status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, poll_status, SWITCH_TRUE);				
+				
+				status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, poll_status, got_jb);
 
 				if (status == SWITCH_STATUS_GENERR) {
 					ret = -1;

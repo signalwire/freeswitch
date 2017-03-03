@@ -602,7 +602,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 			ts_diff = abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts)));
 		}
 
-		if (((seq_diff >= jb->max_frame_len) || (ts_diff > (900000 * 5)))) {
+		if (((seq_diff >= 100) || (ts_diff > (900000 * 5)))) {
 			jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
 			switch_jb_reset(jb);
 		}
