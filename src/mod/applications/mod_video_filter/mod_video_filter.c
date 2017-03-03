@@ -440,8 +440,8 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 	context = (chromakey_context_t *) switch_core_session_alloc(session, sizeof(*context));
 	switch_assert(context != NULL);
 	memset(context, 0, sizeof(*context));
-	init_context(context);
 	context->session = session;
+	init_context(context);
 
     if (data && (lbuf = switch_core_session_strdup(session, data))
         && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
