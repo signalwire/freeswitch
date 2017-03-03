@@ -2575,15 +2575,14 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
 			}
 
-			conference_video_pop_next_image(imember, &img);
-			layer = NULL;
-
-
 			if (conference->playing_video_file) {
 				switch_img_free(&img);
 				switch_core_session_rwunlock(imember->session);
 				continue;
 			}
+
+			conference_video_pop_next_image(imember, &img);
+			layer = NULL;
 
 			switch_mutex_lock(canvas->mutex);
 
