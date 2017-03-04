@@ -346,6 +346,10 @@ SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
 		return;
 	}
 
+	if (img->user_priv) return;
+
+	img->user_priv = (void *)(intptr_t)1;
+
 	ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], 
 				  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], img->d_w, img->d_h);
 }
@@ -370,10 +374,7 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		int height = MIN(img->d_h, IMG->d_h - abs(y));
 		void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1, uint8* dst_argb, int width) = GetARGBBlend();
 
-		if (!img->user_priv) {
-			img->user_priv = (void *)(intptr_t)1;
-			ARGBAttenuate(src_argb0, src_stride_argb0, src_argb0, src_stride_argb0, img->d_w, img->d_h);
-		}
+		switch_img_attenuate(img);
 
 		// Coalesce rows. we have same size images, treat as a single row
 		if (src_stride_argb0 == width * 4 &&
