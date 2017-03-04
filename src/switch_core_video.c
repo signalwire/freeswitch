@@ -384,7 +384,7 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 			src_argb1 += src_stride_argb1;
 			dst_argb += dst_stride_argb;
 		}
-		ARGBUnattenuate(src_argb0, src_stride_argb0, src_argb0, src_stride_argb0, img->d_w, img->d_h);
+		ARGBUnattenuate(img->planes[SWITCH_PLANE_PACKED], src_stride_argb0, img->planes[SWITCH_PLANE_PACKED], src_stride_argb0, img->d_w, img->d_h);
 	}
 }
 
