@@ -286,7 +286,9 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 			gdImageDestroy((gdImagePtr)(*img)->user_priv);
 #endif
 		} else {
-			switch_safe_free((*img)->user_priv);
+			if ((int)(intptr_t)(*img)->user_priv != 1) {
+				switch_safe_free((*img)->user_priv);
+			}
 		}
 		vpx_img_free((vpx_image_t *)*img);
 		*img = NULL;
@@ -338,6 +340,16 @@ static void switch_img_patch_rgb_noalpha(switch_image_t *IMG, switch_image_t *im
 	}
 }
 
+SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
+{
+	if (img->fmt != SWITCH_IMG_FMT_ARGB) {
+		return;
+	}
+
+	ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], 
+				  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], img->d_w, img->d_h);
+}
+
 SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha)
 {
 	int i;
@@ -358,7 +370,10 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		int height = MIN(img->d_h, IMG->d_h - abs(y));
 		void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1, uint8* dst_argb, int width) = GetARGBBlend();
 
-		ARGBAttenuate(src_argb0, src_stride_argb0, src_argb0, src_stride_argb0, img->d_w, img->d_h);
+		if (!img->user_priv) {
+			img->user_priv = (void *)(intptr_t)1;
+			ARGBAttenuate(src_argb0, src_stride_argb0, src_argb0, src_stride_argb0, img->d_w, img->d_h);
+		}
 
 		// Coalesce rows. we have same size images, treat as a single row
 		if (src_stride_argb0 == width * 4 &&
@@ -384,7 +399,6 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 			src_argb1 += src_stride_argb1;
 			dst_argb += dst_stride_argb;
 		}
-		ARGBUnattenuate(img->planes[SWITCH_PLANE_PACKED], src_stride_argb0, img->planes[SWITCH_PLANE_PACKED], src_stride_argb0, img->d_w, img->d_h);
 	}
 }
 

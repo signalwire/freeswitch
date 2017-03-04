@@ -223,6 +223,8 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 */
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y);
 
+SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img);
+
 /*!\brief patch a small img to a big IMG at position x,y
 *
 * Both IMG and img must be non-NULL

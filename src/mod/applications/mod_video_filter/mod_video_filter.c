@@ -253,6 +253,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	switch_img_to_raw(frame->img, context->data, frame->img->d_w * 4, SWITCH_IMG_FMT_ARGB);
 	img = switch_img_wrap(NULL, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h, 1, context->data);
 
+
 	switch_assert(img);
 	switch_chromakey_process(context->ck, img);
 
