@@ -1384,20 +1384,31 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Fax TX filename not set");
 			goto done;
 		} else if (pvt->app_mode == FUNCTION_RX) {
-			const char *prefix;
+			const char *spool, *prefix;
 			switch_time_t time;
 
 			time = switch_time_now();
+
+			if (!(spool = switch_channel_get_variable(channel, "fax_spool"))) {
+				spool = spandsp_globals.spool;
+			}
 
 			if (!(prefix = switch_channel_get_variable(channel, "fax_prefix"))) {
 				prefix = spandsp_globals.prepend_string;
 			}
 
-			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%" SWITCH_TIME_T_FMT ".tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
+			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%" SWITCH_TIME_T_FMT ".tif", spool, prefix, spandsp_globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot automatically set fax RX destination file");
 				goto done;
 			}
+
+			if (switch_dir_make_recursive(spool, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+                                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
+                                switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot automatically set fax RX destination file");
+                                goto done;
+			}
+
 		} else {
 			assert(0);			/* UH ?? */
 		}
