@@ -469,6 +469,7 @@ typedef struct video_layout_s {
 	char *name;
 	char *audio_position;
 	char *bgimg;
+	char *fgimg;
 	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
 	int layers;
 } video_layout_t;
@@ -511,6 +512,7 @@ typedef struct mcu_canvas_s {
 	int32_t video_write_bandwidth;
 	int recording;
 	switch_image_t *bgimg;
+	switch_image_t *fgimg;
 	switch_thread_rwlock_t *video_rwlock;
 } mcu_canvas_t;
 
@@ -986,6 +988,7 @@ void conference_video_find_floor(conference_member_t *member, switch_bool_t ente
 void conference_video_destroy_canvas(mcu_canvas_t **canvasP);
 void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id);
 switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path);
+switch_status_t conference_video_set_canvas_fgimg(mcu_canvas_t *canvas, const char *img_path);
 switch_status_t conference_al_parse_position(al_handle_t *al, const char *data);
 switch_status_t conference_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 switch_status_t conference_text_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);

@@ -110,7 +110,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 		if ((x_layouts = switch_xml_child(x_layout_settings, "layouts"))) {
 			for (x_layout = switch_xml_child(x_layouts, "layout"); x_layout; x_layout = x_layout->next) {
 				video_layout_t *vlayout;
-				const char *val = NULL, *name = NULL, *bgimg = NULL;
+				const char *val = NULL, *name = NULL, *bgimg = NULL, *fgimg = NULL;
 				switch_bool_t auto_3d = SWITCH_FALSE;
 				int border = 0;
 
@@ -126,6 +126,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 				auto_3d = switch_true(switch_xml_attr(x_layout, "auto-3d-position"));
 
 				bgimg = switch_xml_attr(x_layout, "bgimg");
+				fgimg = switch_xml_attr(x_layout, "fgimg");
 
 				if ((val = switch_xml_attr(x_layout, "border"))) {
 					border = atoi(val);
@@ -138,6 +139,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 				if (bgimg) {
 					vlayout->bgimg = switch_core_strdup(conference->pool, bgimg);
+				}
+
+				if (fgimg) {
+					vlayout->fgimg = switch_core_strdup(conference->pool, fgimg);
 				}
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
@@ -1174,6 +1179,12 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		switch_img_free(&canvas->bgimg);
 	}
 
+	if (vlayout->fgimg) {
+		conference_video_set_canvas_fgimg(canvas, vlayout->fgimg);
+	} else if (canvas->fgimg) {
+		switch_img_free(&canvas->fgimg);
+	}
+
 	if (conference->video_canvas_bgimg && !vlayout->bgimg) {
 		conference_video_set_canvas_bgimg(canvas, conference->video_canvas_bgimg);
 	}
@@ -1207,6 +1218,33 @@ switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const ch
 	}
 	switch_img_find_position(POS_CENTER_MID, canvas->img->d_w, canvas->img->d_h, canvas->bgimg->d_w, canvas->bgimg->d_h, &x, &y);
 	switch_img_patch(canvas->img, canvas->bgimg, x, y);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_video_set_canvas_fgimg(mcu_canvas_t *canvas, const char *img_path)
+{
+
+	int x = 0, y = 0, scaled = 0;
+
+	if (img_path) {
+		switch_img_free(&canvas->fgimg);
+		canvas->fgimg = switch_img_read_png(img_path, SWITCH_IMG_FMT_ARGB);
+	} else {
+		scaled = 1;
+	}
+
+	if (!canvas->fgimg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open image for fgimg\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!scaled) {
+		switch_img_fit(&canvas->fgimg, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
+	}
+	switch_img_find_position(POS_CENTER_MID, canvas->img->d_w, canvas->img->d_h, canvas->fgimg->d_w, canvas->fgimg->d_h, &x, &y);
+	switch_img_patch(canvas->img, canvas->fgimg, x, y);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1295,6 +1333,7 @@ void conference_video_destroy_canvas(mcu_canvas_t **canvasP) {
 
 	switch_img_free(&canvas->img);
 	switch_img_free(&canvas->bgimg);
+	switch_img_free(&canvas->fgimg);
 	conference_video_flush_queue(canvas->video_queue, 0);
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
@@ -3242,6 +3281,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				conference_video_check_recording(conference, canvas, &write_frame);
 			}
 
+			if (canvas->fgimg) {
+				conference_video_set_canvas_fgimg(canvas, NULL);
+			}
+
 			if (conference->canvas_count > 1) {
 				switch_image_t *img_copy = NULL;
 
@@ -3294,6 +3337,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				if (send_keyframe) {
 					switch_core_media_gen_key_frame(imember->session);
+				}
+
+
+				if (canvas->fgimg) {
+					conference_video_set_canvas_fgimg(canvas, NULL);
 				}
 
 				switch_set_flag(&write_frame, SFF_RAW_RTP);
