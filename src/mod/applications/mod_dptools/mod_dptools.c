@@ -935,6 +935,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
 						switch_ivr_play_file(session, NULL, file, NULL);
 					}
+					buf[0] = '\0';
 					switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
 					continue;
 				}
@@ -954,6 +955,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 								if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
 									switch_ivr_play_file(session, NULL, file, NULL);
 								}
+								buf[0] = '\0';
 								switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
 							}
 						}
@@ -962,6 +964,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_idle"))) {
 						switch_ivr_play_file(session, NULL, file, NULL);
 					}
+					buf[0] = '\0';
 					switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 2000, 0, 0);
 				}
 			}

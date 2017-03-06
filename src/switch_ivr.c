@@ -1333,6 +1333,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	int sval = 0;
 	const char *var;
 
+
+	if (x >= buflen || x >= maxdigits) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 		switch_core_session_get_read_impl(session, &imp);
 
