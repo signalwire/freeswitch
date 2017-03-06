@@ -845,6 +845,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_clear_flag(session, SSF_MEDIA_BUG_TAP_ONLY);
 	}
 
+	if (switch_test_flag(bug, SMBF_READ_VIDEO_PATCH) && session->video_read_codec) {
+		switch_set_flag(session->video_read_codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
+	}
+	
 	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_START) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bug->function);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bug->target);
@@ -1184,6 +1188,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 			}
 
 			switch_thread_join(&st, bp->video_bug_thread);
+		}
+
+		if (switch_test_flag(bp, SMBF_READ_VIDEO_PATCH) && bp->session->video_read_codec) {
+			switch_clear_flag(bp->session->video_read_codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
 		}
 
 		switch_core_media_bug_destroy(bp);
