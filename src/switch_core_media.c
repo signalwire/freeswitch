@@ -14037,7 +14037,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	switch_io_event_hook_video_read_frame_t *ptr;
 	uint32_t loops = 0;
 	switch_media_handle_t *smh;
-	int patchers = 0;
 	int is_keyframe = 0;
 
 	switch_assert(session != NULL);
@@ -14200,10 +14199,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 
 				if (bp->callback && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
-					if (switch_test_flag(bp, SMBF_READ_VIDEO_PATCH)) {
-						patchers++;
-					}
-
 					bp->video_ping_frame = *frame;
 
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
@@ -14233,12 +14228,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	if ((*frame) && (*frame)->codec) {
 		(*frame)->pmap = NULL;
-
-		if (patchers) {
-			switch_set_flag((*frame)->codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
-		} else {
-			switch_clear_flag((*frame)->codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
-		}
 	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
