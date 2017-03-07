@@ -33,7 +33,11 @@
 
 #include "blade.h"
 
-KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP, blade_handle_t *bh, const char *session_id, cJSON *json)
+KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP,
+											 blade_handle_t *bh,
+											 const char *session_id,
+											 cJSON *json,
+											 blade_response_callback_t callback)
 {
 	blade_request_t *breq = NULL;
 	ks_pool_t *pool = NULL;
@@ -50,8 +54,9 @@ KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP, blade_hand
 	breq->handle = bh;
 	breq->pool = pool;
 	breq->session_id = ks_pstrdup(pool, session_id);
-	breq->message = json;
+	breq->message = cJSON_Duplicate(json, 1);
 	breq->message_id = cJSON_GetObjectCstr(json, "id");
+	breq->callback = callback;
 
 	*breqP = breq;
 
@@ -95,7 +100,7 @@ KS_DECLARE(ks_status_t) blade_response_create(blade_response_t **bresP, blade_ha
 	bres->pool = pool;
 	bres->session_id = ks_pstrdup(pool, session_id);
 	bres->request = breq;
-	bres->message = json;
+	bres->message = cJSON_Duplicate(json, 1);
 
 	*bresP = bres;
 
@@ -120,6 +125,88 @@ KS_DECLARE(ks_status_t) blade_response_destroy(blade_response_t **bresP)
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(ks_status_t) blade_rpc_request_create(ks_pool_t *pool, cJSON **json, cJSON **params, const char **id, const char *method)
+{
+	cJSON *root = NULL;
+	cJSON *p = NULL;
+	uuid_t msgid;
+	const char *mid = NULL;
+
+	ks_assert(pool);
+	ks_assert(json);
+	ks_assert(method);
+
+	root = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
+
+	ks_uuid(&msgid);
+	mid = ks_uuid_str(pool, &msgid);
+	cJSON_AddStringToObject(root, "id", mid);
+	ks_pool_free(pool, &mid);
+
+	cJSON_AddStringToObject(root, "method", method);
+
+	p = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", p);
+
+	*json = root;
+	if (params) *params = p;
+	if (id) *id = cJSON_GetObjectCstr(root, "id");
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_rpc_response_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *id)
+{
+	cJSON *root = NULL;
+	cJSON *r = NULL;
+
+	ks_assert(pool);
+	ks_assert(json);
+	ks_assert(id);
+
+	root = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
+
+	cJSON_AddStringToObject(root, "id", id);
+
+	r = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "result", r);
+
+	*json = root;
+	if (result) *result = r;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJSON **error, const char *id, int32_t code, const char *message)
+{
+	cJSON *root = NULL;
+	cJSON *e = NULL;
+
+	ks_assert(pool);
+	ks_assert(json);
+	ks_assert(id);
+	ks_assert(message);
+
+	root = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
+
+	cJSON_AddStringToObject(root, "id", id);
+
+	e = cJSON_CreateObject();
+	cJSON_AddNumberToObject(e, "code", code);
+	cJSON_AddStringToObject(e, "message", message);
+	cJSON_AddItemToObject(root, "error", e);
+
+	*json = root;
+	if (error) *error = e;
+
+	return KS_STATUS_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

@@ -1,13 +1,8 @@
 AM_CFLAGS += -I$(abs_top_srcdir)/src/include -g -ggdb -O0 $(openssl_CFLAGS)
 TEST_LDADD = $(abs_top_builddir)/libks.la $(openssl_LIBS)
-check_PROGRAMS = 
+check_PROGRAMS =
 
 EXTRA_DIST = tap.h
-
-check_PROGRAMS += testmessages
-testmessages_SOURCES = testmessages.c tap.c
-testmessages_CFLAGS = $(AM_CFLAGS)
-testmessages_LDADD = $(TEST_LDADD)
 
 check_PROGRAMS += testbuckets
 testbuckets_SOURCES = testbuckets.c tap.c
@@ -96,7 +91,7 @@ nodeidgen_LDADD = $(TEST_LDADD)
 
 #check_PROGRAMS += libtorrent_example
 #libtorrent_example_SOURCES = libtorrent-example.c
-#libtorrent_example_CFLAGS = $(AM_CFLAGS) 
+#libtorrent_example_CFLAGS = $(AM_CFLAGS)
 #libtorrent_example_LDADD = $(abs_top_builddir)/libks.la $(abs_top_builddir)/test/libtorrent.so /usr/lib/x86_64-linux-gnu/libboost_system.a $(openssl_LIBS) -ledit -lpthread -ltorrent-rasterbar -lstdc++
 
 TESTS=$(check_PROGRAMS)
@@ -108,4 +103,3 @@ $(abs_top_builddir)/test/libtorrent.so: $(abs_top_builddir)/test/libtorrent.o
 
 $(abs_top_builddir)/test/libtorrent.o: $(abs_top_builddir)/test/libtorrent.cpp
 	g++ -c -fPIC -o $(abs_top_builddir)/test/libtorrent.o -I$(abs_top_builddir)/test/ $(abs_top_builddir)/test/libtorrent.cpp
-

@@ -47,6 +47,12 @@ typedef struct blade_connection_s blade_connection_t;
 typedef struct blade_session_s blade_session_t;
 typedef struct blade_request_s blade_request_t;
 typedef struct blade_response_s blade_response_t;
+typedef struct blade_space_s blade_space_t;
+typedef struct blade_method_s blade_method_t;
+
+
+typedef ks_bool_t (*blade_request_callback_t)(blade_request_t *breq);
+typedef ks_bool_t (*blade_response_callback_t)(blade_response_t *bres);
 
 typedef struct blade_datastore_s blade_datastore_t;
 
@@ -147,6 +153,7 @@ struct blade_request_s {
 
 	cJSON *message;
 	const char *message_id; // pulled from message for easier keying
+	blade_response_callback_t callback;
 	// @todo ttl to wait for response before injecting an error response locally
 	// @todo rpc response callback
 };

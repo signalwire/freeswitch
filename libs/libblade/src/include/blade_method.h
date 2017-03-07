@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2017, FreeSWITCH Solutions LLC 
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,56 +31,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#ifndef _KS_RPCMESSAGE_H_
-#define _KS_RPCMESSAGE_H_
-
-#include "ks.h"
+#ifndef _BLADE_METHOD_H_
+#define _BLADE_METHOD_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-#define KS_RPCMESSAGE_NAMESPACE_LENGTH 16
-#define KS_RPCMESSAGE_COMMAND_LENGTH  238
-#define KS_RPCMESSAGE_FQCOMMAND_LENGTH  (KS_RPCMESSAGE_NAMESPACE_LENGTH+KS_RPCMESSAGE_COMMAND_LENGTH+1)
-#define KS_RPCMESSAGE_VERSION_LENGTH 9
-
-
-typedef uint32_t ks_rpcmessageid_t;
-
-
-KS_DECLARE(void) ks_rpcmessage_init(ks_pool_t *pool);
-
-KS_DECLARE(void*) ks_json_pool_alloc(ks_size_t size);
-KS_DECLARE(void) ks_json_pool_free(void *ptr);
-
-
-KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_request(char *namespace, 
-											char *method,
-											cJSON **paramsP,
-											cJSON **requestP);
-
-KS_DECLARE(ks_size_t) ks_rpc_create_buffer(char *namespace,
-                                            char *method,
-                                            cJSON **paramsP,
-                                            ks_buffer_t *buffer);
-
-KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_response( 
-											const cJSON *request, 
-											cJSON **resultP, 
-											cJSON **responseP);
-
-KS_DECLARE(ks_rpcmessageid_t) ks_rpcmessage_create_errorresponse(
-                                            const cJSON *request,
-                                            cJSON **errorP,
-                                            cJSON **responseP);
-
-KS_DECLARE(ks_bool_t) ks_rpcmessage_isrequest(cJSON *msg);
-
-KS_DECLARE(ks_bool_t) ks_rpcmessage_isrpc(cJSON *msg);
-
+KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t *bs, const char *name, blade_request_callback_t callback);
+KS_DECLARE(ks_status_t) blade_method_destroy(blade_method_t **bmP);
+KS_DECLARE(const char *) blade_method_name_get(blade_method_t *bm);
+KS_DECLARE(blade_request_callback_t) blade_method_callback_get(blade_method_t *bm);
 KS_END_EXTERN_C
 
-#endif							/* defined(_KS_RPCMESSAGE_H_) */
+#endif
 
 /* For Emacs:
  * Local Variables:

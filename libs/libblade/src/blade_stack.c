@@ -48,6 +48,7 @@ struct blade_handle_s {
 	config_setting_t *config_datastore;
 
 	ks_hash_t *transports; // registered transports exposed by modules, NOT active connections
+	ks_hash_t *spaces; // registered method spaces exposed by modules
 
 	//blade_identity_t *identity;
 	blade_datastore_t *datastore;
@@ -68,6 +69,7 @@ struct blade_handle_transport_registration_s {
 	blade_module_t *module;
 	blade_transport_callbacks_t *callbacks;
 };
+
 
 KS_DECLARE(ks_status_t) blade_handle_transport_registration_create(blade_handle_transport_registration_t **bhtrP,
 																   ks_pool_t *pool,
@@ -133,6 +135,8 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 
 	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->transports);
+	ks_hash_create(&bh->spaces, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->spaces);
 
 	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->connections);
@@ -143,6 +147,8 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	ks_assert(bh->requests);
 
 	*bhP = bh;
+
+	ks_log(KS_LOG_DEBUG, "Created\n");
 
 	return KS_STATUS_SUCCESS;
 }
@@ -168,9 +174,12 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	ks_hash_destroy(&bh->requests);
 	ks_hash_destroy(&bh->sessions);
 	ks_hash_destroy(&bh->connections);
+	ks_hash_destroy(&bh->spaces);
 	ks_hash_destroy(&bh->transports);
 
     if (bh->tpool && (flags & BH_MYTPOOL)) ks_thread_pool_destroy(&bh->tpool);
+
+	ks_log(KS_LOG_DEBUG, "Destroyed\n");
 
 	ks_pool_free(bh->pool, &bh);
 
@@ -249,13 +258,22 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 		blade_session_t *value = NULL;
 
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
-		ks_hash_remove(bh->requests, key);
+		//ks_hash_remove(bh->sessions, key);
 
 		blade_session_hangup(value);
 	}
 	while (ks_hash_count(bh->sessions) > 0) ks_sleep_ms(100);
 
-	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and disconnect remaining unattached connections
+	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and spaces, and will disconnect remaining
+	// unattached connections
+
+	for (it = ks_hash_first(bh->spaces,  KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		blade_space_t *value = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+		blade_handle_space_unregister(value);
+	}
 
 	// @todo unload DSOs
 
@@ -316,9 +334,79 @@ KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, co
 	if (bhtr) ks_hash_remove(bh->transports, (void *)name);
 	ks_hash_write_unlock(bh->transports);
 
-	if (bhtr) blade_handle_transport_registration_destroy(&bhtr);
+	if (bhtr) {
+		blade_handle_transport_registration_destroy(&bhtr);
+		ks_log(KS_LOG_DEBUG, "Transport Unregistered: %s\n", name);
+	}
 
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_space_register(blade_space_t *bs)
+{
+	blade_handle_t *bh = NULL;
+	const char *path = NULL;
+	blade_space_t *bs_old = NULL;
+
+	ks_assert(bs);
+
+	bh = blade_space_handle_get(bs);
+	ks_assert(bh);
+
+	path = blade_space_path_get(bs);
+	ks_assert(path);
+
+	ks_hash_write_lock(bh->spaces);
+	bs_old = ks_hash_search(bh->spaces, (void *)path, KS_UNLOCKED);
+	if (bs_old) ks_hash_remove(bh->spaces, (void *)path);
+	ks_hash_insert(bh->spaces, (void *)path, bs);
+	ks_hash_write_unlock(bh->spaces);
+
+	if (bs_old) blade_space_destroy(&bs_old);
+
+	ks_log(KS_LOG_DEBUG, "Space Registered: %s\n", path);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_space_unregister(blade_space_t *bs)
+{
+	blade_handle_t *bh = NULL;
+	const char *path = NULL;
+
+	ks_assert(bs);
+
+	bh = blade_space_handle_get(bs);
+	ks_assert(bh);
+
+	path = blade_space_path_get(bs);
+	ks_assert(path);
+
+	ks_hash_write_lock(bh->spaces);
+	bs = ks_hash_search(bh->spaces, (void *)path, KS_UNLOCKED);
+	if (bs) ks_hash_remove(bh->spaces, (void *)path);
+	ks_hash_write_unlock(bh->spaces);
+
+	if (bs) {
+		blade_space_destroy(&bs);
+		ks_log(KS_LOG_DEBUG, "Space Unregistered: %s\n", path);
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(blade_space_t *) blade_handle_space_lookup(blade_handle_t *bh, const char *path)
+{
+	blade_space_t *bs = NULL;
+
+	ks_assert(bh);
+	ks_assert(path);
+
+	ks_hash_read_lock(bh->spaces);
+	bs = ks_hash_search(bh->spaces, (void *)path, KS_UNLOCKED);
+	ks_hash_read_unlock(bh->spaces);
+
+	return bs;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id)

@@ -31,25 +31,80 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_PROTOCOL_H_
-#define _BLADE_PROTOCOL_H_
-#include <blade.h>
+#include "blade.h"
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP,
-											 blade_handle_t *bh,
-											 const char *session_id,
-											 cJSON *json,
-											 blade_response_callback_t callback);
-KS_DECLARE(ks_status_t) blade_request_destroy(blade_request_t **breqP);
-KS_DECLARE(ks_status_t) blade_response_create(blade_response_t **bresP, blade_handle_t *bh, const char *session_id, blade_request_t *breq, cJSON *json);
-KS_DECLARE(ks_status_t) blade_response_destroy(blade_response_t **bresP);
-KS_DECLARE(ks_status_t) blade_rpc_request_create(ks_pool_t *pool, cJSON **json, cJSON **params, const char **id, const char *method);
-KS_DECLARE(ks_status_t) blade_rpc_response_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *id);
-KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJSON **error, const char *id, int32_t code, const char *message);
-KS_END_EXTERN_C
+struct blade_method_s {
+	blade_handle_t *handle;
+	ks_pool_t *pool;
 
-#endif
+	blade_space_t *space;
+	const char *name;
+
+	blade_request_callback_t callback;
+	// @todo more fun descriptive information about the call for remote registrations
+};
+
+
+KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t *bs, const char *name, blade_request_callback_t callback)
+{
+	blade_handle_t *bh = NULL;
+	blade_method_t *bm = NULL;
+	ks_pool_t *pool = NULL;
+
+	ks_assert(bmP);
+	ks_assert(bs);
+	ks_assert(name);
+
+	bh = blade_space_handle_get(bs);
+	ks_assert(bh);
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	bm = ks_pool_alloc(pool, sizeof(blade_method_t));
+	bm->handle = bh;
+	bm->pool = pool;
+	bm->space = bs;
+	bm->name = name; // @todo dup and keep copy? should mostly be literals
+	bm->callback = callback;
+
+	*bmP = bm;
+
+    ks_log(KS_LOG_DEBUG, "Method Created: %s.%s\n", blade_space_path_get(bs), name);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_method_destroy(blade_method_t **bmP)
+{
+	blade_method_t *bm = NULL;
+
+	ks_assert(bmP);
+	ks_assert(*bmP);
+
+	bm = *bmP;
+
+    ks_log(KS_LOG_DEBUG, "Method Destroyed: %s.%s\n", blade_space_path_get(bm->space), bm->name);
+
+	ks_pool_free(bm->pool, bmP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(const char *) blade_method_name_get(blade_method_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->name;
+}
+
+KS_DECLARE(blade_request_callback_t) blade_method_callback_get(blade_method_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->callback;
+}
+
 
 /* For Emacs:
  * Local Variables:

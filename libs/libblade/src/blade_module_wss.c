@@ -111,14 +111,19 @@ blade_connection_state_hook_t blade_transport_wss_on_state_connect_inbound(blade
 blade_connection_state_hook_t blade_transport_wss_on_state_connect_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
 blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
 blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
-blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connection_t *bc, blade_connection_state_condition_t condition);
-blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_detach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_detach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_ready_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
+blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
 
 
 ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssiP, blade_module_wss_t *bm_wss, ks_socket_t sock, const char *session_id);
 ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP);
 
+
+ks_bool_t blade_test_echo_request_handler(blade_request_t *breq);
+ks_bool_t blade_test_echo_response_handler(blade_response_t *bres);
 
 
 static blade_module_callbacks_t g_module_wss_callbacks =
@@ -144,10 +149,10 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 	blade_transport_wss_on_state_connect_outbound,
 	blade_transport_wss_on_state_attach_inbound,
 	blade_transport_wss_on_state_attach_outbound,
-	blade_transport_wss_on_state_detach,
-	blade_transport_wss_on_state_detach,
-	blade_transport_wss_on_state_ready,
-	blade_transport_wss_on_state_ready,
+	blade_transport_wss_on_state_detach_inbound,
+	blade_transport_wss_on_state_detach_outbound,
+	blade_transport_wss_on_state_ready_inbound,
+	blade_transport_wss_on_state_ready_outbound,
 };
 
 
@@ -385,6 +390,8 @@ ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t
 KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config)
 {
 	blade_module_wss_t *bm_wss = NULL;
+	blade_space_t *space = NULL;
+	blade_method_t *method = NULL;
 
 	ks_assert(bm);
 	ks_assert(config);
@@ -419,6 +426,17 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 
 	blade_handle_transport_register(bm_wss->handle, bm, BLADE_MODULE_WSS_TRANSPORT_NAME, bm_wss->transport_callbacks);
 
+
+	blade_space_create(&space, bm_wss->handle, "blade.test");
+	ks_assert(space);
+
+	blade_method_create(&method, space, "echo", blade_test_echo_request_handler);
+	ks_assert(method);
+
+	blade_space_methods_add(space, method);
+
+	blade_handle_space_register(space);
+
 	ks_log(KS_LOG_DEBUG, "Started\n");
 
 	return KS_STATUS_SUCCESS;
@@ -428,6 +446,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	blade_connection_t *bc = NULL;
+	ks_bool_t stopped = KS_FALSE;
 
 	ks_assert(bm);
 
@@ -440,6 +459,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 		ks_thread_join(bm_wss->listeners_thread);
 		ks_pool_free(bm_wss->pool, &bm_wss->listeners_thread);
 		bm_wss->shutdown = KS_FALSE;
+		stopped = KS_TRUE;
 	}
 
 	for (int32_t index = 0; index < bm_wss->listeners_count; ++index) {
@@ -461,7 +481,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 		while (list_size(&bm_wss->connected) > 0) ks_sleep_ms(100);
 	}
 
-	ks_log(KS_LOG_DEBUG, "Stopped\n");
+	if (stopped) ks_log(KS_LOG_DEBUG, "Stopped\n");
 
 	return KS_STATUS_SUCCESS;
 }
@@ -751,7 +771,6 @@ ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json
 
 ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_transport_wss_t *bt_wss = NULL;
 
 	ks_assert(bc);
@@ -759,11 +778,7 @@ ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json)
 
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
-	ret = blade_transport_wss_write(bt_wss, json);
-
-	cJSON_Delete(json);
-
-	return ret;
+	return blade_transport_wss_write(bt_wss, json);
 }
 
 ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json)
@@ -812,6 +827,29 @@ ks_status_t blade_transport_wss_on_receive(blade_connection_t *bc, cJSON **json)
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
 	return blade_transport_wss_read(bt_wss, json);
+}
+
+ks_status_t blade_transport_wss_rpc_error_send(blade_connection_t *bc, const char *id, int32_t code, const char *message)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_transport_wss_t *bt_wss = NULL;
+	cJSON *json = NULL;
+
+	ks_assert(bc);
+	ks_assert(id);
+	ks_assert(message);
+
+	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
+
+	blade_rpc_error_create(blade_connection_pool_get(bc), &json, NULL, id, code, message);
+
+    if (blade_transport_wss_write(bt_wss, json) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_DEBUG, "Failed to write error message\n");
+		ret = KS_STATUS_FAIL;
+	}
+
+	cJSON_Delete(json);
+	return ret;
 }
 
 blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_connection_t *bc, blade_connection_state_condition_t condition)
@@ -924,10 +962,11 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 {
 	blade_connection_state_hook_t ret = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 	blade_transport_wss_t *bt_wss = NULL;
+	ks_pool_t *pool = NULL;
 	cJSON *json_req = NULL;
 	cJSON *json_res = NULL;
-	cJSON *params = NULL;
-	cJSON *result = NULL;
+	cJSON *json_params = NULL;
+	cJSON *json_result = NULL;
 	//cJSON *error = NULL;
 	blade_session_t *bs = NULL;
 	blade_handle_t *bh = NULL;
@@ -948,6 +987,8 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 
+	pool = blade_connection_pool_get(bc);
+
 	// @todo very temporary, really need monotonic clock and get timeout delay and sleep delay from config
 	timeout = ks_time_now() + (5 * KS_USEC_PER_SEC);
 	while (blade_transport_wss_read(bt_wss, &json_req) == KS_STATUS_SUCCESS) {
@@ -958,6 +999,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 
 	if (!json_req) {
 		ks_log(KS_LOG_DEBUG, "Failed to receive message before timeout\n");
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Timeout while expecting request");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -966,7 +1008,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	jsonrpc = cJSON_GetObjectCstr(json_req, "jsonrpc"); // @todo check for definitions of these keys and fixed values
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
 		ks_log(KS_LOG_DEBUG, "Received message is not the expected protocol\n");
-		// @todo send error response before disconnecting, code = -32600 (invalid request)
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Invalid request, missing 'jsonrpc' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -974,7 +1016,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	id = cJSON_GetObjectCstr(json_req, "id"); // @todo switch to number if we are not using a uuid for message id
 	if (!id) {
 		ks_log(KS_LOG_DEBUG, "Received message is missing 'id'\n");
-		// @todo send error response before disconnecting, code = -32600 (invalid request)
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Invalid request, missing 'id' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -982,14 +1024,14 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	method = cJSON_GetObjectCstr(json_req, "method");
 	if (!method || strcasecmp(method, "blade.session.attach")) {
 		ks_log(KS_LOG_DEBUG, "Received message is missing 'method' or is an unexpected method\n");
-		// @todo send error response before disconnecting, code = -32601 (method not found)
+		blade_transport_wss_rpc_error_send(bc, id, -32601, "Missing or unexpected 'method' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	params = cJSON_GetObjectItem(json_req, "params");
-	if (params) {
-		sid = cJSON_GetObjectCstr(params, "session-id");
+	json_params = cJSON_GetObjectItem(json_req, "params");
+	if (json_params) {
+		sid = cJSON_GetObjectCstr(json_params, "session-id");
 		if (sid) {
 			// @todo validate uuid format by parsing, not currently available in uuid functions, send -32602 (invalid params) if invalid
 			ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", sid);
@@ -1019,7 +1061,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 
 		if (blade_session_startup(bs) != KS_STATUS_SUCCESS) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", blade_session_id_get(bs));
-			// @todo send error response before disconnecting, code = -32603 (internal error)
+			blade_transport_wss_rpc_error_send(bc, id, -32603, "Internal error, session could not be started");
 			blade_session_read_unlock(bs);
 			blade_session_destroy(&bs);
 			ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
@@ -1030,17 +1072,14 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	}
 
 	// @todo wrapper to generate request and response
-	json_res = cJSON_CreateObject();
-	cJSON_AddStringToObject(json_res, "jsonrpc", "2.0");
-	cJSON_AddStringToObject(json_res, "id", id);
+	blade_rpc_response_create(pool, &json_res, &json_result, id);
+	ks_assert(json_res);
 
-	result = cJSON_CreateObject();
-	cJSON_AddStringToObject(result, "session-id", blade_session_id_get(bs));
-	cJSON_AddItemToObject(json_res, "result", result);
+	cJSON_AddStringToObject(json_result, "session-id", blade_session_id_get(bs));
 
 	// @todo send response
 	if (blade_transport_wss_write(bt_wss, json_res) != KS_STATUS_SUCCESS) {
-		ks_log(KS_LOG_DEBUG, "Failed to write message\n");
+		ks_log(KS_LOG_DEBUG, "Failed to write response message\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -1064,14 +1103,14 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	blade_transport_wss_init_t *bt_wss_init = NULL;
 	ks_pool_t *pool = NULL;
 	cJSON *json_req = NULL;
+	cJSON *json_params = NULL;
 	cJSON *json_res = NULL;
-	uuid_t msgid;
 	const char *mid = NULL;
 	ks_time_t timeout;
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
-	cJSON *error = NULL;
-	cJSON *result = NULL;
+	cJSON *json_error = NULL;
+	cJSON *json_result = NULL;
 	const char *sid = NULL;
 	blade_session_t *bs = NULL;
 
@@ -1087,25 +1126,15 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	pool = blade_connection_pool_get(bc);
 
 
-	// @todo wrapper to build a request and response/error
-	json_req = cJSON_CreateObject();
-	cJSON_AddStringToObject(json_req, "jsonrpc", "2.0");
-	cJSON_AddStringToObject(json_req, "method", "blade.session.attach");
+	blade_rpc_request_create(pool, &json_req, &json_params, &mid, "blade.session.attach");
+	ks_assert(json_req);
 
-	ks_uuid(&msgid);
-	mid = ks_uuid_str(pool, &msgid);
-	cJSON_AddStringToObject(json_req, "id", mid);
-
-	if (bt_wss_init->session_id) {
-		cJSON *params = cJSON_CreateObject();
-		cJSON_AddStringToObject(params, "session-id", bt_wss_init->session_id);
-		cJSON_AddItemToObject(json_req, "params", params);
-	}
+	if (bt_wss_init->session_id) cJSON_AddStringToObject(json_params, "session-id", bt_wss_init->session_id);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", (bt_wss_init->session_id ? bt_wss_init->session_id : "none"));
 
 	if (blade_transport_wss_write(bt_wss, json_req) != KS_STATUS_SUCCESS) {
-		ks_log(KS_LOG_DEBUG, "Failed to write message\n");
+		ks_log(KS_LOG_DEBUG, "Failed to write request message\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -1134,26 +1163,26 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 
 	id = cJSON_GetObjectCstr(json_res, "id"); // @todo switch to number if we are not using a uuid for message id
 	if (!id || strcasecmp(mid, id)) {
-		ks_log(KS_LOG_DEBUG, "Received message is missing 'id'\n");
+		ks_log(KS_LOG_DEBUG, "Received message has missing or unexpected 'id'\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	error = cJSON_GetObjectItem(json_res, "error");
-	if (error) {
+	json_error = cJSON_GetObjectItem(json_res, "error");
+	if (json_error) {
 		ks_log(KS_LOG_DEBUG, "Error message ... add the details\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	result = cJSON_GetObjectItem(json_res, "result");
-	if (!result) {
+	json_result = cJSON_GetObjectItem(json_res, "result");
+	if (!json_result) {
 		ks_log(KS_LOG_DEBUG, "Received message is missing 'result'\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	sid = cJSON_GetObjectCstr(result, "session-id");
+	sid = cJSON_GetObjectCstr(json_result, "session-id");
 	if (!sid) {
 		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'session-id'\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
@@ -1192,13 +1221,12 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	blade_connection_session_set(bc, blade_session_id_get(bs));
 
  done:
-	if (mid) ks_pool_free(pool, &mid);
 	if (json_req) cJSON_Delete(json_req);
 	if (json_res) cJSON_Delete(json_res);
 	return ret;
 }
 
-blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connection_t *bc, blade_connection_state_condition_t condition)
+blade_connection_state_hook_t blade_transport_wss_on_state_detach_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
 {
 	ks_assert(bc);
 
@@ -1207,7 +1235,16 @@ blade_connection_state_hook_t blade_transport_wss_on_state_detach(blade_connecti
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 
-blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connection_t *bc, blade_connection_state_condition_t condition)
+blade_connection_state_hook_t blade_transport_wss_on_state_detach_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_ready_inbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
 {
 	ks_assert(bc);
 
@@ -1215,6 +1252,60 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready(blade_connectio
 
 	ks_sleep_ms(1000);
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_connection_t *bc, blade_connection_state_condition_t condition)
+{
+	ks_assert(bc);
+
+	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) {
+		blade_session_t *bs = NULL;
+		cJSON *req = NULL;
+
+		bs = blade_handle_sessions_get(blade_connection_handle_get(bc), blade_connection_session_get(bc));
+		ks_assert(bs);
+
+		blade_rpc_request_create(blade_connection_pool_get(bc), &req, NULL, NULL, "blade.test.echo");
+		blade_session_send(bs, req, blade_test_echo_response_handler);
+
+		blade_session_read_unlock(bs);
+	}
+
+	ks_sleep_ms(1000);
+	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
+}
+
+
+
+ks_bool_t blade_test_echo_request_handler(blade_request_t *breq)
+{
+	blade_session_t *bs = NULL;
+	cJSON *res = NULL;
+
+	ks_assert(breq);
+
+	ks_log(KS_LOG_DEBUG, "Request Received!\n");
+
+	bs = blade_handle_sessions_get(breq->handle, breq->session_id);
+	ks_assert(bs);
+
+	blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
+	blade_session_send(bs, res, NULL);
+
+	blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
+
+ks_bool_t blade_test_echo_response_handler(blade_response_t *bres)
+{
+	ks_assert(bres);
+
+	ks_log(KS_LOG_DEBUG, "Response Received!\n");
+
+	return KS_FALSE;
 }
 
 /* For Emacs:

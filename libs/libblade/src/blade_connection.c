@@ -495,6 +495,7 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 	blade_transport_state_callback_t callback = NULL;
 	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 	cJSON *json = NULL;
+	blade_session_t *bs = NULL;
 	ks_bool_t done = KS_FALSE;
 
 	ks_assert(bc);
@@ -514,14 +515,18 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 			blade_connection_disconnect(bc);
 			break;
 		}
+
 		if (!(done = (json == NULL))) {
-			blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
-			ks_assert(bs);
+			if (!bs) {
+				bs = blade_handle_sessions_get(bc->handle, bc->session);
+				ks_assert(bs);
+			}
 			blade_session_receiving_push(bs, json);
 			cJSON_Delete(json);
 			json = NULL;
 		}
 	}
+	if (bs) blade_session_read_unlock(bs);
 
 	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_READY);
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);

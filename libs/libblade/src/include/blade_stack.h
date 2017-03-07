@@ -50,6 +50,11 @@ KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh);
 
 KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blade_module_t *bm, const char *name, blade_transport_callbacks_t *callbacks);
 KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, const char *name);
+
+KS_DECLARE(ks_status_t) blade_handle_space_register(blade_space_t *bs);
+KS_DECLARE(ks_status_t) blade_handle_space_unregister(blade_space_t *bs);
+KS_DECLARE(blade_space_t *) blade_handle_space_lookup(blade_handle_t *bh, const char *path);
+
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id);
 
 KS_DECLARE(blade_connection_t *) blade_handle_connections_get(blade_handle_t *bh, const char *cid);

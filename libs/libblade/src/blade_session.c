@@ -430,6 +430,7 @@ ks_status_t blade_session_state_on_destroy(blade_session_t *bs)
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) state destroy\n", bs->id);
+
 	blade_handle_sessions_remove(bs);
 	blade_session_destroy(&bs);
 
@@ -483,21 +484,31 @@ ks_status_t blade_session_state_on_ready(blade_session_t *bs)
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json)
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_response_callback_t callback)
 {
 	blade_request_t *request = NULL;
 	const char *method = NULL;
+	const char *id = NULL;
 
 	ks_assert(bs);
 	ks_assert(json);
 
 	method = cJSON_GetObjectCstr(json, "method");
+	id = cJSON_GetObjectCstr(json, "id");
 	if (method) {
-		blade_request_create(&request, bs->handle, bs->id, json);
+		// @note This is scenario 1
+		// 1) Sending a request (client: method caller or consumer)
+		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
+
+		blade_request_create(&request, bs->handle, bs->id, json, callback);
 		ks_assert(request);
 
 		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
 		blade_handle_requests_add(request);
+	} else {
+		// @note This is scenario 3
+		// 3) Sending a response or error (server: method callee or provider)
+		ks_log(KS_LOG_DEBUG, "Session (%s) sending response (%s)\n", bs->id, id);
 	}
 
 	if (list_empty(&bs->connections)) {
@@ -516,20 +527,18 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json)
 
 ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_request_t *breq = NULL;
 	blade_response_t *bres = NULL;
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
+	ks_bool_t disconnect = KS_FALSE;
 
 	ks_assert(bs);
 	ks_assert(json);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) processing\n", bs->id);
 
-	// @todo teardown the message, convert into a blade_request_t or blade_response_t
-	// @todo validate the jsonrpc fields
 
 	jsonrpc = cJSON_GetObjectCstr(json, "jsonrpc");
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
@@ -549,13 +558,50 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 
 	method = cJSON_GetObjectCstr(json, "method");
 	if (method) {
-		// @todo use method to find RPC callbacks
+		// @note This is scenario 2
+		// 2) Receiving a request (server: method callee or provider)
+		blade_space_t *tmp_space = NULL;
+		blade_method_t *tmp_method = NULL;
+		blade_request_callback_t callback = NULL;
+		char *space_name = ks_pstrdup(bs->pool, method);
+		char *method_name = strrchr(space_name, '.');
 
-		blade_request_create(&breq, bs->handle, bs->id, json);
+		ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
+
+		if (!method_name || method_name == space_name) {
+			ks_pool_free(bs->pool, (void **)&space_name);
+			// @todo send error response, code = -32601 (method not found)
+			// @todo hangup session entirely?
+			return KS_STATUS_FAIL;
+		}
+		*method_name = '\0';
+		method_name++; // @todo check if can be postfixed safely on previous assignment, can't recall
+
+		tmp_space = blade_handle_space_lookup(bs->handle, space_name);
+		if (tmp_space) tmp_method = blade_space_methods_get(tmp_space, method_name);
+
+		ks_pool_free(bs->pool, (void **)&space_name);
+
+		if (!tmp_method) {
+			// @todo send error response, code = -32601 (method not found)
+			// @todo hangup session entirely?
+			return KS_STATUS_FAIL;
+		}
+		callback = blade_method_callback_get(tmp_method);
+		ks_assert(callback);
+
+		blade_request_create(&breq, bs->handle, bs->id, json, NULL);
 		ks_assert(breq);
 
-		// @todo call request callback handler
+		disconnect = callback(breq);
+
+		blade_request_destroy(&breq);
 	} else {
+		// @note This is scenario 4
+		// 4) Receiving a response or error (client: method caller or consumer)
+
+		ks_log(KS_LOG_DEBUG, "Session (%s) receiving response (%s)\n", bs->id, id);
+
 		breq = blade_handle_requests_get(bs->handle, id);
 		if (!breq) {
 			// @todo hangup session entirely?
@@ -563,18 +609,20 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		}
 		blade_handle_requests_remove(breq);
 
-		method = cJSON_GetObjectCstr(breq->message, "method");
-		ks_assert(method);
-
-		// @todo use method to find RPC callbacks
-
 		blade_response_create(&bres, bs->handle, bs->id, breq, json);
 		ks_assert(bres);
 
-		// @todo call response callback handler
+		disconnect = breq->callback(bres);
+
+		blade_response_destroy(&bres);
 	}
 
-	return ret;
+	if (disconnect) {
+		// @todo hangup session entirely?
+		return KS_STATUS_FAIL;
+	}
+
+	return KS_STATUS_SUCCESS;
 }
 
 /* For Emacs:
