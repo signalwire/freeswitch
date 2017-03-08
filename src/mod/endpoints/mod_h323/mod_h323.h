@@ -171,8 +171,6 @@ struct mod_h323_globals {
 	int ptime_override_value;
 };
 
-extern struct mod_h323_globals mod_h323_globals;
-
 class FSH323Connection;
 class FSH323_ExternalRTPChannel;
 
