@@ -2733,12 +2733,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				continue;
 			}
 
-			//VIDFLOOR
-			if (conference->canvas_count == 1 && canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
-				imember->video_layer_id != canvas->layout_floor_id) {
-				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
-			}
-
 			if (conference->playing_video_file) {
 				switch_img_free(&img);
 				switch_core_session_rwunlock(imember->session);
@@ -2750,6 +2744,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(canvas->mutex);
 
+			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
+				imember->video_layer_id != canvas->layout_floor_id) {
+				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
+			}
+			
 			//printf("MEMBER %d layer_id %d canvas: %d/%d\n", imember->id, imember->video_layer_id,
 			//	   canvas->layers_used, canvas->total_layers);
 
@@ -3874,15 +3873,6 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 
 	//VIDFLOOR
 	if (member) {
-		mcu_canvas_t *canvas = NULL;
-
-		if ((canvas = conference_video_get_canvas_locked(member))) {
-			if (canvas->layout_floor_id > -1) {
-				conference_video_attach_video_layer(member, canvas, canvas->layout_floor_id);
-			}
-			conference_video_release_canvas(&canvas);
-		}
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 
