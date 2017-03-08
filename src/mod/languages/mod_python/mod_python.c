@@ -225,6 +225,27 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	PyEval_AcquireThread(tstate);
 	init_freeswitch();
 
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		const char *add_path = switch_channel_get_variable(channel, "python_script_path");
+
+		if (!zstr(add_path)) {
+			char *buffer = (char*) malloc( 20 * 1024 * sizeof(char));
+			if (buffer == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer\n");
+			}
+
+			PyRun_SimpleString("import sys");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LOADING path %s", add_path);
+
+			sprintf(buffer, "sys.path.append(\"%s\");", add_path );
+
+			PyRun_SimpleString(buffer);
+
+			switch_safe_free(buffer);
+		}
+	}
+
 	// import the module
 	module = PyImport_ImportModule((char *) script);
 	if (!module) {
