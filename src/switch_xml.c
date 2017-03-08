@@ -1879,18 +1879,18 @@ static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, c
 			const char *var = switch_xml_attr(param, "name");
 			const char *val = switch_xml_attr(param, "value");
 
-			int go = 1;
+			switch_bool_t add_child = SWITCH_TRUE;
 
 			for (iparam = switch_xml_child(itag, tag_name); iparam; iparam = iparam->next) {
 				const char *ivar = switch_xml_attr(iparam, "name");
 
 				if (var && ivar && !strcasecmp(var, ivar)) {
-					go = 0;
+					add_child = SWITCH_FALSE;
 					break;
 				}
 			}
 
-			if (go) {
+			if (add_child) {
 				iitag = switch_xml_add_child_d(itag, tag_name, 0);
 				switch_xml_set_attr_d(iitag, "name", var);
 				switch_xml_set_attr_d(iitag, "value", val);
