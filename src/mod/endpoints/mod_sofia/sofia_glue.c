@@ -1133,7 +1133,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 																		 invite_pid_params ? ";" : "",
 																		 invite_pid_params ? invite_pid_params : "");
 				} else {
-					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s%s%s>",
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
 																		 tech_pvt->caller_profile->caller_id_name,
 																		 tech_pvt->caller_profile->caller_id_number, rpid_domain,
 																		 invite_pid_params ? ";" : "",
