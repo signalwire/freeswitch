@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -55,6 +55,7 @@ static const char *LEVEL_NAMES[] = {
 };
 
 static int ks_log_level = 7;
+static ks_log_prefix_t ks_log_prefix = KS_LOG_PREFIX_ALL;
 
 static const char *cut_path(const char *in)
 {
@@ -78,6 +79,9 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	char *data;
 	va_list ap;
 	int ret;
+	char buf[1024];
+	//int remaining = sizeof(buf) - 1;
+	int used = 0;
 
 	if (level < 0 || level > 7) {
 		level = 7;
@@ -93,7 +97,33 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	ret = ks_vasprintf(&data, fmt, ap);
 
 	if (ret != -1) {
-		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
+		buf[0] = '\0';
+		used += 1;
+
+		if (ks_log_prefix & KS_LOG_PREFIX_LEVEL) {
+			used += snprintf(buf + used - 1, sizeof(buf) - used, "[%s] ", LEVEL_NAMES[level]);
+		}
+		if (ks_log_prefix & KS_LOG_PREFIX_TIME) {
+			used += snprintf(buf + used - 1, sizeof(buf) - used, "@%lld ", (long long int)ks_time_now());
+		}
+		if (ks_log_prefix & KS_LOG_PREFIX_THREAD) {
+			used += snprintf(buf + used - 1, sizeof(buf) - used, "#%d ", (int32_t)ks_thread_self_id());
+		}
+		if (ks_log_prefix & KS_LOG_PREFIX_FILE) {
+			used += snprintf(buf + used - 1, sizeof(buf) - used, fp);
+			if (ks_log_prefix & KS_LOG_PREFIX_LINE) {
+				used += snprintf(buf + used - 1, sizeof(buf) - used, ":%d", line);
+			}
+			used += snprintf(buf + used - 1, sizeof(buf) - used, " ");
+		}
+		if (ks_log_prefix & KS_LOG_PREFIX_FUNC) {
+			used += snprintf(buf + used - 1, sizeof(buf) - used, "%s() ", func);
+		}
+
+		used += snprintf(buf + used - 1, sizeof(buf) - used, data);
+
+		//fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
+		fprintf(stderr, buf);
 		free(data);
 	}
 
@@ -120,4 +150,9 @@ KS_DECLARE(void) ks_global_set_default_logger(int level)
 
 	ks_log = default_logger;
 	ks_log_level = level;
+}
+
+KS_DECLARE(void) ks_global_set_default_logger_prefix(ks_log_prefix_t prefix)
+{
+	ks_log_prefix = prefix;
 }

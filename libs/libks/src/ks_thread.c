@@ -39,6 +39,17 @@ KS_DECLARE(ks_thread_os_handle_t) ks_thread_self(void)
 #endif
 }
 
+KS_DECLARE(ks_pid_t) ks_thread_self_id(void)
+{
+#ifdef WIN32
+	return GetCurrentThreadId();
+#elseif gettid
+	return gettid();
+#else
+	return syscall(SYS_gettid);
+#endif
+}
+
 static void ks_thread_init_priority(void)
 {
 #ifdef WIN32

@@ -45,6 +45,14 @@ KS_BEGIN_EXTERN_C
 #endif
 	ks_thread_os_handle_t;
 
+typedef
+#ifdef WIN32
+ DWORD
+#else
+ pid_t
+#endif
+ks_pid_t;
+
 struct ks_thread {
 		ks_pool_t *pool;
 #ifdef WIN32
@@ -76,6 +84,7 @@ struct ks_thread {
 
 	KS_DECLARE(int) ks_thread_set_priority(int nice_val);
     KS_DECLARE(ks_thread_os_handle_t) ks_thread_self(void);
+    KS_DECLARE(ks_pid_t) ks_thread_self_id(void);
     KS_DECLARE(ks_thread_os_handle_t) ks_thread_os_handle(ks_thread_t *thread);
 	KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **thread, ks_thread_function_t func, void *data,
 											 uint32_t flags, size_t stack_size, ks_thread_priority_t priority, ks_pool_t *pool);
