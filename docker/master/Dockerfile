@@ -41,8 +41,36 @@ RUN apt-get update && apt-get install -y freeswitch-all \
 COPY docker-entrypoint.sh /
 # Add anything else here
 
-##
+## Ports
+# Open the container up to the world.
+### 8021 fs_cli, 5060 5061 5080 5081 sip and sips, 64535-65535 rtp
+EXPOSE 8021/tcp
+EXPOSE 5060/tcp 5060/udp 5080/tcp 5080/udp
+EXPOSE 5061/tcp 5061/udp 5081/tcp 5081/udp
+EXPOSE 7443/tcp
+EXPOSE 5070/udp 5070/tcp
+EXPOSE 64535-65535/udp
+EXPOSE 16384-32768/udp
+
+
+# Volumes
+## Freeswitch Configuration
+VOLUME ["/etc/freeswitch"]
+## Tmp so we can get core dumps out
+VOLUME ["/tmp"]
+
+# Limits Configuration
+COPY    build/freeswitch.limits.conf /etc/security/limits.d/
+
+# Healthcheck to make sure the service is running
+SHELL       ["/bin/bash"]
+HEALTHCHECK --interval=15s --timeout=5s \
+    CMD  fs_cli -x status | grep -q ^UP || exit 1
+
+# Clean up
+RUN apt-clean --aggressive
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
+
 
 CMD ["freeswitch"]
