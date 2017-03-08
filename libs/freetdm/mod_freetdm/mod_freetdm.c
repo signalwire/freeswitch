@@ -3460,6 +3460,32 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		ftdm_span_start(span);
 	}
 }
+static switch_status_t load_config_path(void)
+{
+	const char *cf = "freetdm.conf";
+	switch_xml_t cfg, xml, settings, param;
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "mod-dir")) {
+				ftdm_global_set_mod_directory(val);
+			} else if (!strcasecmp(var, "conf-dir")) {
+				ftdm_global_set_config_directory(val);
+			}
+		}
+	}
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t load_config(void)
 {
@@ -5599,6 +5625,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	ftdm_global_set_mod_directory(SWITCH_GLOBAL_dirs.mod_dir);
 
 	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
+
+	if (load_config_path() != SWITCH_STATUS_SUCCESS) {
+		ftdm_global_destroy();
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		ftdm_global_destroy();
