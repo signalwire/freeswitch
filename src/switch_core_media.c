@@ -91,6 +91,7 @@ struct media_helper {
 	switch_mutex_t *file_read_mutex;
 	switch_mutex_t *file_write_mutex;
 	int up;
+	int ready;
 };
 
 typedef enum {
@@ -6720,8 +6721,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_audio_write_thread(swi
 static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
-	switch_core_session_t *session = mh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
@@ -6729,9 +6730,21 @@ static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void
 	unsigned char CR[] = TEXT_UNICODE_LINEFEED;
 	switch_frame_t cr_frame = { 0 };
 
+
+	session = mh->session;
+	
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		mh->ready = -1;
+		return NULL;
+	}
+
+	mh->ready = 1;
+
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	channel = switch_core_session_get_channel(session);
 
 	if (switch_channel_var_true(session->channel, "fire_text_events")) {
 		switch_channel_set_flag(session->channel, CF_FIRE_TEXT_EVENTS);
@@ -6742,8 +6755,6 @@ static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void
 
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 	t_engine->thread_id = switch_thread_self();
-
-	switch_core_session_read_lock(session);
 
 	mh->up = 1;
 
@@ -6845,7 +6856,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_cor
 	//switch_mutex_init(&t_engine->mh.file_write_mutex, SWITCH_MUTEX_NESTED, pool);
 	//switch_mutex_init(&smh->read_mutex[SWITCH_MEDIA_TYPE_TEXT], SWITCH_MUTEX_NESTED, pool);
 	//switch_mutex_init(&smh->write_mutex[SWITCH_MEDIA_TYPE_TEXT], SWITCH_MUTEX_NESTED, pool);
-	switch_thread_create(&t_engine->media_thread, thd_attr, text_helper_thread, &t_engine->mh, switch_core_session_get_pool(session));
+
+	t_engine->mh.ready = 0;
+
+	if (switch_thread_create(&t_engine->media_thread, thd_attr, text_helper_thread, &t_engine->mh, 
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		while(!t_engine->mh.ready) {
+			switch_cond_next();
+		}
+	}
 
 	switch_mutex_unlock(smh->control_mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -6854,8 +6873,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_cor
 static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
-	switch_core_session_t *session = mh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
@@ -6869,9 +6888,20 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int blank_enabled = 1;
 
+	session = mh->session;
+	
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		mh->ready = -1;
+		return NULL;
+	}
+
+	mh->ready = 1;
+
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	channel = switch_core_session_get_channel(session);
 
 	switch_core_autobind_cpu();
 
@@ -6894,8 +6924,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	v_engine->thread_id = switch_thread_self();
-
-	switch_core_session_read_lock(session);
 
 	mh->up = 1;
 	switch_mutex_lock(mh->cond_mutex);
@@ -7052,7 +7080,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_co
 	switch_mutex_init(&v_engine->mh.file_write_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&smh->read_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
-	switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
+	v_engine->mh.ready = 0;
+
+	if (switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, 
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		while(!v_engine->mh.ready) {
+			switch_cond_next();
+		}
+	}
 
 	switch_mutex_unlock(smh->control_mutex);
 	return SWITCH_STATUS_SUCCESS;

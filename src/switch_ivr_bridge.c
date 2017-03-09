@@ -158,8 +158,16 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 	vh->up = 1;
 
-	switch_core_session_read_lock(vh->session_a);
-	switch_core_session_read_lock(vh->session_b);
+	if (switch_core_session_read_lock(vh->session_a) != SWITCH_STATUS_SUCCESS) {
+		vh->up = 0;
+		return;
+	}
+
+	if (switch_core_session_read_lock(vh->session_b) != SWITCH_STATUS_SUCCESS) {
+		vh->up = 0;
+		switch_core_session_rwunlock(vh->session_a);
+		return;
+	}
 
 	switch_core_session_request_video_refresh(vh->session_a);
 	switch_core_session_request_video_refresh(vh->session_b);
