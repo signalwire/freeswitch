@@ -92,18 +92,14 @@ static unsigned char* cJSON_strdup(const unsigned char* str, const internal_hook
 {
     size_t len = 0;
     unsigned char *copy = NULL;
+	const unsigned char *s = str ? str : (unsigned char *)"";
 
-    if (str == NULL)
-    {
-        return NULL;
-    }
-
-    len = strlen((const char*)str) + 1;
+    len = strlen((const char*)s) + 1;
     if (!(copy = (unsigned char*)hooks->allocate(len)))
     {
         return NULL;
     }
-    memcpy(copy, str, len);
+    memcpy(copy, s, len);
 
     return copy;
 }
