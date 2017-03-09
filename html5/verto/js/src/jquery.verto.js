@@ -1247,6 +1247,14 @@
             }
         });
 
+        verto.subscribe(conf.params.laData.infoChannel, {
+            handler: function(v, e) {
+                if (typeof(conf.params.infoCallback) === "function") {
+                    conf.params.infoCallback(v,e);
+                }
+            }
+        });
+
         verto.subscribe(conf.params.laData.chatChannel, {
             handler: function(v, e) {
                 if (typeof(conf.params.chatCallback) === "function") {
@@ -1282,6 +1290,10 @@
 
         if (conf.params.laData.chatChannel) {
             conf.verto.unsubscribe(conf.params.laData.chatChannel);
+        }
+
+        if (conf.params.laData.infoChannel) {
+            conf.verto.unsubscribe(conf.params.laData.infoChannel);
         }
     };
 
@@ -1683,6 +1695,14 @@
         var awidth = 0;
 
         //$(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
+
+        verto.subscribe(confMan.params.laData.infoChannel, {
+            handler: function(v, e) {
+                if (typeof(confMan.params.infoCallback) === "function") {
+                    confMan.params.infoCallback(v,e);
+                }
+            }
+        });
 
 	verto.subscribe(confMan.params.laData.chatChannel, {
 	    handler: function(v, e) {

@@ -134,6 +134,10 @@ typedef struct cv_context_s {
     char *png_prefix;
     int tick_speed;
 	int confidence_level;
+	int max_search_w;
+	int max_search_h;
+	int neighbors;
+	double search_scale;
 } cv_context_t;
 
 
@@ -484,6 +488,12 @@ static void init_context(cv_context_t *context)
         context->cascade_path = switch_core_get_variable_pdup("cv_default_cascade", context->pool);
         context->nested_cascade_path = switch_core_get_variable_pdup("cv_default_nested_cascade", context->pool);
 		context->confidence_level = 20;
+		context->max_search_w = 20;
+		context->max_search_h = 20;
+		context->neighbors = 2;
+		context->search_scale = 1.1;
+
+
 
         for (int i = 0; i < MAX_OVERLAY; i++) {
             context->overlay[i] = (struct overlay *) switch_core_alloc(context->pool, sizeof(struct overlay));
@@ -588,12 +598,12 @@ void detectAndDraw(cv_context_t *context)
     equalizeHist( smallImg, smallImg );
 
     context->cascade->detectMultiScale( smallImg, detectedObjs,
-                                        1.1, 2, 0
+                                        context->search_scale, context->neighbors, 0
                                         |CV_HAAR_FIND_BIGGEST_OBJECT
                                         |CV_HAAR_DO_ROUGH_SEARCH
                                         |CV_HAAR_SCALE_IMAGE
                                         ,
-                                        Size(20, 20) );
+                                        Size(context->max_search_w, context->max_search_h) );
 
 
     parse_stats(&context->detected, detectedObjs.size(), context->skip);
@@ -616,7 +626,7 @@ void detectAndDraw(cv_context_t *context)
 
         double aspect_ratio = (double)r->width/r->height;
 
-        if (context->shape_idx >= MAX_SHAPES) {
+        if (context->shape_idx >= 1) {//MAX_SHAPES) {
             break;
         }
 
@@ -625,6 +635,7 @@ void detectAndDraw(cv_context_t *context)
             center.x = switch_round_to_step(cvRound((r->x + r->width*0.5)*scale), 20);
             center.y = switch_round_to_step(cvRound((r->y + r->height*0.5)*scale), 20);
             radius = switch_round_to_step(cvRound((r->width + r->height)*0.25*scale), 20);
+			
 
             if (context->debug) {
                 circle( img, center, radius, color, 3, 8, 0 );
@@ -679,6 +690,7 @@ void detectAndDraw(cv_context_t *context)
 
         // Draw rectangle reflecting confidence
         const int object_neighbors = nestedObjects.size();
+		//printf("WTF %d\n", object_neighbors);
         //cout << "Detected " << object_neighbors << " object neighbors" << endl;
         const int rect_height = cvRound((float)img.rows * object_neighbors / max_neighbors);
         CvScalar col = CV_RGB((float)255 * object_neighbors / max_neighbors, 0, 0);
@@ -861,9 +873,11 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		frame->geometry.y = context->shape[0].cy;
 		frame->geometry.w = context->shape[0].w;
 		frame->geometry.h = context->shape[0].h;
-		frame->geometry.m = 1;
+		frame->geometry.M++;
+		frame->geometry.X = 0;
 	} else {
-		frame->geometry.m = 0;
+		frame->geometry.M = 0;
+		frame->geometry.X++;
 	}
 
     if (context->overlay_count && (abs || (context->detect_event && context->shape[0].cx))) {
@@ -991,7 +1005,7 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
             *val++ = '\0';
         }
 
-        if (name && val) {
+        if (name && !zstr(val)) {
             if (!strcasecmp(name, "xo")) {
                 context->overlay[png_idx]->xo = atof(val);
             } else if (!strcasecmp(name, "nick")) {
@@ -1029,6 +1043,17 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
                 context->debug = atoi(val);
+            } else if (!strcasecmp(name, "neighbors")) {
+				context->neighbors = atoi(val);
+            } else if (!strcasecmp(name, "max_search_w")) {
+				context->max_search_w = atoi(val);
+            } else if (!strcasecmp(name, "max_search_h")) {
+				context->max_search_h = atoi(val);
+			} else if (!strcasecmp(name, "search_scale")) {
+				double tmp = atof(val);
+				if (tmp > 1) {
+					context->search_scale = tmp;
+				}
             } else if (!strcasecmp(name, "confidence")) {
                 context->confidence_level = atoi(val);
             } else if (!strcasecmp(name, "cascade")) {
