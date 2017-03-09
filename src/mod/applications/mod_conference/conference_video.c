@@ -110,7 +110,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 		if ((x_layouts = switch_xml_child(x_layout_settings, "layouts"))) {
 			for (x_layout = switch_xml_child(x_layouts, "layout"); x_layout; x_layout = x_layout->next) {
 				video_layout_t *vlayout;
-				const char *val = NULL, *name = NULL, *bgimg = NULL, *fgimg = NULL;
+				const char *val = NULL, *name = NULL, *bgimg = NULL, *fgimg = NULL, *transition_in = NULL, *transition_out = NULL;
 				switch_bool_t auto_3d = SWITCH_FALSE;
 				int border = 0;
 
@@ -128,6 +128,9 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 				bgimg = switch_xml_attr(x_layout, "bgimg");
 				fgimg = switch_xml_attr(x_layout, "fgimg");
 
+				transition_in = switch_xml_attr(x_layout, "transition-in");
+				transition_out = switch_xml_attr(x_layout, "transition-out");
+				
 				if ((val = switch_xml_attr(x_layout, "border"))) {
 					border = atoi(val);
 					if (border < 0) border = 0;
@@ -145,8 +148,16 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					vlayout->fgimg = switch_core_strdup(conference->pool, fgimg);
 				}
 
+				if (transition_in) {
+					vlayout->transition_in = switch_core_sprintf(conference->pool, "{full-screen=true}%s", transition_in);
+				}
+				
+				if (transition_out) {
+					vlayout->transition_out = switch_core_sprintf(conference->pool, "{full-screen=true}%s", transition_out);
+				}
+
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
-					const char *res_id = NULL, *audio_position = NULL;
+					const char *res_id = NULL, *audio_position = NULL, *role_id = NULL;
 					int x = -1, y = -1, scale = -1, hscale = -1, floor = 0, flooronly = 0, fileonly = 0, overlap = 0, zoom = 0;
 
 					if ((val = switch_xml_attr(x_image, "x"))) {
@@ -189,6 +200,14 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 						res_id = val;
 					}
 
+					if ((val = switch_xml_attr(x_image, "reservation-id"))) {
+						res_id = val;
+					}
+
+					if ((val = switch_xml_attr(x_image, "role-id"))) {
+						role_id = val;
+					}
+					
 					if ((val = switch_xml_attr(x_image, "audio-position"))) {
 						audio_position = val;
 					}
@@ -229,6 +248,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 					if (res_id) {
 						vlayout->images[vlayout->layers].res_id = switch_core_strdup(conference->pool, res_id);
+					}
+
+					if (role_id) {
+						vlayout->images[vlayout->layers].role_id = switch_core_strdup(conference->pool, role_id);
 					}
 
 					if (auto_3d || audio_position) {
@@ -1368,6 +1391,11 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 	switch_mutex_lock(canvas->mutex);
 	canvas->layout_floor_id = -1;
 
+	if (canvas->vlayout && canvas->vlayout->transition_out) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play transition out [%s]\n", canvas->vlayout->transition_out);
+		conference_file_play(conference, canvas->vlayout->transition_out, 0, NULL, 0);
+	}
+
 	if (!vlayout) {
 		vlayout = canvas->new_vlayout;
 		canvas->new_vlayout = NULL;
@@ -1417,10 +1445,11 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		if (layer->geometry.floor) {
 			canvas->layout_floor_id = i;
 		}
-
+		
 		/* if we ever decided to reload layers config on demand the pointer assignment below  will lead to segs but we
 		   only load them once forever per conference so these pointers are valid for the life of the conference */
 		layer->geometry.res_id = vlayout->images[i].res_id;
+		layer->geometry.role_id = vlayout->images[i].role_id;
 		layer->geometry.audio_position = vlayout->images[i].audio_position;
 	}
 
@@ -1469,6 +1498,10 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Canvas position %d applied layout %s\n", canvas->canvas_id + 1, vlayout->name);
 
+	if (vlayout->transition_in) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play transition in [%s]\n", vlayout->transition_in);
+		conference_file_play(conference, vlayout->transition_in, 0, NULL, 0);
+	}
 }
 
 switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path)
@@ -3014,7 +3047,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			layer = NULL;
 
 			switch_mutex_lock(canvas->mutex);
-
+			
 			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
@@ -3023,8 +3056,27 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			//printf("MEMBER %d layer_id %d canvas: %d/%d\n", imember->id, imember->video_layer_id,
 			//	   canvas->layers_used, canvas->total_layers);
 
-			if (imember->video_layer_id > -1) {
+			if (imember->video_role_id) {
+				if (imember->video_layer_id > -1) {
+					layer = &canvas->layers[imember->video_layer_id];
+				}
+
+				if (!layer || (!layer->geometry.role_id || strcmp(layer->geometry.role_id, imember->video_role_id))) {
+					for (i = 0; i < canvas->total_layers; i++) {
+						mcu_layer_t *xlayer = &canvas->layers[i];
+						
+						if (imember->video_role_id && xlayer->geometry.role_id && !strcmp(xlayer->geometry.role_id, imember->video_role_id)) {
+							conference_video_attach_video_layer(imember, canvas, i);
+							layer = xlayer;
+						}
+					}
+				}
+			}
+
+
+			if (!layer && imember->video_layer_id > -1) {
 				layer = &canvas->layers[imember->video_layer_id];
+				
 				if (layer->member_id != (int)imember->id) {
 					imember->video_layer_id = -1;
 					layer = NULL;
@@ -3530,7 +3582,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						canvas->send_keyframe = 1;
 						canvas->play_file = 0;
 					}
-
+					
 					switch_img_free(&file_img);
 					file_img = write_img = write_frame.img;
 

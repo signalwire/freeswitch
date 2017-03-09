@@ -422,6 +422,7 @@ typedef struct mcu_layer_geometry_s {
 	int zoom;
 	int border;
 	char *res_id;
+	char *role_id;
 	char *audio_position;
 } mcu_layer_geometry_t;
 
@@ -500,6 +501,8 @@ typedef struct video_layout_s {
 	char *audio_position;
 	char *bgimg;
 	char *fgimg;
+	char *transition_in;
+	char *transition_out;
 	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
 	int layers;
 } video_layout_t;
@@ -834,6 +837,7 @@ struct conference_member {
 	switch_img_fit_t logo_fit;
 	char *video_mute_png;
 	char *video_reservation_id;
+	char *video_role_id;
 	switch_vid_params_t vid_params;
 	uint32_t auto_kps_debounce_ticks;
 	uint32_t layer_loops;
@@ -1181,6 +1185,7 @@ switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switc
 switch_status_t conference_api_sub_enter_sound(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_set(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_get_uuid(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_get(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);

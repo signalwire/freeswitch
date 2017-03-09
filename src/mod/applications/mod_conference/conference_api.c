@@ -103,6 +103,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-mute-img", (void_fn_t) & conference_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
 	{"vid-logo-img", (void_fn_t) & conference_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
 	{"vid-res-id", (void_fn_t) & conference_api_sub_vid_res_id, CONF_API_SUB_MEMBER_TARGET, "vid-res-id", "<member_id|last> <val>|clear"},
+	{"vid-role-id", (void_fn_t) & conference_api_sub_vid_role_id, CONF_API_SUB_MEMBER_TARGET, "vid-role-id", "<member_id|last> <val>|clear"},
 	{"get-uuid", (void_fn_t) & conference_api_sub_get_uuid, CONF_API_SUB_MEMBER_TARGET, "get-uuid", "<member_id|last>"},
 	{"clear-vid-floor", (void_fn_t) & conference_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conference_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>|group <group name> [<canvas id>]"},
@@ -1875,6 +1876,24 @@ static void clear_res_id(conference_obj_t *conference, conference_member_t *memb
 	switch_mutex_unlock(conference->member_mutex);
 }
 
+static void clear_role_id(conference_obj_t *conference, conference_member_t *member, const char *id)
+{
+	conference_member_t *imember;
+
+	switch_mutex_lock(conference->member_mutex);
+	for (imember = conference->members; imember; imember = imember->next) {
+		if (imember == member) {
+			continue;
+		}
+
+		if (imember->video_role_id && !strcasecmp(imember->video_role_id, id)) {
+			imember->video_role_id = NULL;
+			conference_video_detach_video_layer(imember);
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);
+}
+
 switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	char *text = (char *) data;
@@ -1902,6 +1921,41 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		}
 		stream->write_function(stream, "+OK reservation_id %s\n", text);
 		conference_video_detach_video_layer(member);
+		conference_video_find_floor(member, SWITCH_FALSE);
+	}
+
+
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	char *text = (char *) data;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!member->conference->canvases[0]) {
+		stream->write_function(stream, "-ERR conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (zstr(text) || !strcasecmp(text, "clear") || (member->video_role_id && !strcasecmp(text, member->video_role_id))) {
+		member->video_role_id = NULL;
+		stream->write_function(stream, "+OK role_id cleared\n");
+	} else {
+		clear_role_id(member->conference, member, text);
+		if (!member->video_role_id || strcmp(member->video_role_id, text)) {
+			member->video_role_id = switch_core_strdup(member->pool, text);
+		}
+		stream->write_function(stream, "+OK role_id %s\n", text);
 		conference_video_find_floor(member, SWITCH_FALSE);
 	}
 
