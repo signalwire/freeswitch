@@ -2727,7 +2727,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 
 				/* check for timing issues */
-				if (smh->media_flags[SCMF_AUTOFIX_TIMING]) {
+				if (smh->media_flags[SCMF_AUTOFIX_TIMING] && type == SWITCH_MEDIA_TYPE_AUDIO && engine->read_impl.samples_per_second) {
 					char is_vbr;
 					is_vbr = engine->read_impl.encoded_bytes_per_packet?0:1;
 
@@ -2802,6 +2802,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						engine->last_seq = engine->read_frame.seq;
 
 					} else if (smh->media_flags[SCMF_AUTOFIX_TIMING] && is_vbr && switch_rtp_get_jitter_buffer(engine->rtp_session)
+							   && type == SWITCH_MEDIA_TYPE_AUDIO
 							   && engine->read_frame.timestamp && engine->read_frame.seq && engine->read_impl.samples_per_second) {
 						uint32_t codec_ms = (int) (engine->read_frame.timestamp -
 								   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
