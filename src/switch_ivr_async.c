@@ -3909,9 +3909,10 @@ static void *SWITCH_THREAD_FUNC bcast_thread(switch_thread_t *thread, void *obj)
 		return NULL;
 	}
 
-	switch_core_session_read_lock(bch->session);
-	switch_ivr_broadcast(switch_core_session_get_uuid(bch->session), bch->app, bch->flags);
-	switch_core_session_rwunlock(bch->session);
+	if (switch_core_session_read_lock(bch->session) == SWITCH_STATUS_SUCCESS) {
+		switch_ivr_broadcast(switch_core_session_get_uuid(bch->session), bch->app, bch->flags);
+		switch_core_session_rwunlock(bch->session);
+	}
 
 	return NULL;
 

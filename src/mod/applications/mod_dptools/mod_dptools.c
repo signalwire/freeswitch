@@ -3199,13 +3199,21 @@ struct camping_stake {
 static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void *obj)
 {
 	struct camping_stake *stake = (struct camping_stake *) obj;
-	switch_core_session_t *session = stake->session;
-	switch_channel_t *channel = switch_core_session_get_channel(stake->session);
+	switch_core_session_t *session;
+	switch_channel_t *channel;
 	const char *moh = stake->moh, *greet = NULL;
 	switch_input_args_t args = { 0 };
 	char dbuf[2] = "";
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *stop;
+
+	session = stake->session;
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
+	channel = switch_core_session_get_channel(stake->session);
 
 	if ((stop = switch_channel_get_variable(channel, "campon_stop_key"))) {
 		*dbuf = *stop;
@@ -3214,8 +3222,6 @@ static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void 
 	args.input_callback = camp_fire;
 	args.buf = dbuf;
 	args.buflen = sizeof(dbuf);
-
-	switch_core_session_read_lock(session);
 
 	/* don't set this to a local_stream:// or you will not be happy */
 	if ((greet = switch_channel_get_variable(channel, "campon_announce_sound"))) {

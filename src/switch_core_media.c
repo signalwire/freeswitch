@@ -84,6 +84,7 @@ struct media_helper {
 	switch_mutex_t *file_read_mutex;
 	switch_mutex_t *file_write_mutex;
 	int up;
+	int ready;
 };
 
 typedef enum {
@@ -5733,8 +5734,8 @@ SWITCH_DECLARE(void) switch_core_autobind_cpu(void)
 static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
-	switch_core_session_t *session = mh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
@@ -5748,9 +5749,20 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int blank_enabled = 1;
 
+	session = mh->session;
+	
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		mh->ready = -1;
+		return NULL;
+	}
+
+	mh->ready = 1;
+
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	channel = switch_core_session_get_channel(session);
 
 	switch_core_autobind_cpu();
 
@@ -5773,8 +5785,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	v_engine->thread_id = switch_thread_self();
-
-	switch_core_session_read_lock(session);
 
 	mh->up = 1;
 	switch_mutex_lock(mh->cond_mutex);
@@ -5931,7 +5941,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_co
 	switch_mutex_init(&v_engine->mh.file_write_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&smh->read_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
-	switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
+	v_engine->mh.ready = 0;
+
+	if (switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, 
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		while(!v_engine->mh.ready) {
+			switch_cond_next();
+		}
+	}
 
 	switch_mutex_unlock(smh->control_mutex);
 	return SWITCH_STATUS_SUCCESS;

@@ -635,11 +635,10 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(switch_core_session_t *new_s
 {
 	init_vars();
 
-	if (new_session) {
+	if (new_session && switch_core_session_read_lock_hangup(new_session) == SWITCH_STATUS_SUCCESS) {
 		session = new_session;
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
-		switch_core_session_read_lock_hangup(session);
 		uuid = strdup(switch_core_session_get_uuid(session));
 	}
 }

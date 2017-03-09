@@ -1423,10 +1423,14 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_ringback_thread(switch_thre
 {
 	struct ent_originate_ringback *rb_data = (struct ent_originate_ringback *) obj;
 	switch_core_session_t *session = rb_data->session;
-	switch_channel_t *channel = switch_core_session_get_channel(rb_data->session);
+	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_core_session_read_lock(session);
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
+	channel = switch_core_session_get_channel(session);
 
 	while (rb_data->running && switch_channel_ready(channel)) {
 		switch_ivr_parse_all_messages(session);
