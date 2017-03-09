@@ -2853,11 +2853,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		canvas->video_count = last_video_count = video_count;
 		switch_mutex_unlock(conference->member_mutex);
 
-		if (conference->playing_video_file) {
-			switch_core_timer_sync(&canvas->timer);
-		} else {
-			switch_core_timer_next(&canvas->timer);
-		}
+		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
 
@@ -3581,7 +3577,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			timestamp = canvas->timer.samplecount;
 
 			if (conference->playing_video_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_BLOCK) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					switch_img_free(&file_img);
 
 					if (canvas->play_file) {
@@ -3590,9 +3586,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					}
 					
 					switch_img_free(&file_img);
+					switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
 					file_img = write_img = write_frame.img;
 
-					switch_core_timer_sync(&canvas->timer);
+					//switch_core_timer_sync(&canvas->timer);
 					timestamp = canvas->timer.samplecount;
 				} else if (file_img) {
 					write_img = file_img;
