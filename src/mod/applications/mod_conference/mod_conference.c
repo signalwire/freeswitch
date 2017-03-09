@@ -532,7 +532,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 			}
 		}
-		switch_mutex_lock(conference->file_mutex);
+		switch_mutex_unlock(conference->file_mutex);
 
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
