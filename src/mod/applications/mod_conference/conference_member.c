@@ -43,32 +43,9 @@
 
 int conference_member_noise_gate_check(conference_member_t *member)
 {
-	int r = 0;
-
-
-	if (member->conference->agc_level && member->agc_volume_in_level != 0) {
-		int target_score = 0;
-
-		target_score = (member->energy_level + (25 * member->agc_volume_in_level));
-
-		if (target_score < 0) target_score = 0;
-
-		r = (int)member->score > target_score;
-
-	} else {
-		r = (int32_t)member->score > member->energy_level;
-	}
+	int r = (int32_t)member->score > member->energy_level;
 
 	return r;
-}
-
-void conference_member_clear_avg(conference_member_t *member)
-{
-
-	member->avg_score = 0;
-	member->avg_itt = 0;
-	member->avg_tally = 0;
-	member->agc_concur = 0;
 }
 
 void conference_member_do_binding(conference_member_t *member, conference_key_callback_t handler, const char *digits, const char *data)
@@ -455,33 +432,6 @@ conference_member_t *conference_member_get_by_var(conference_obj_t *conference, 
 	return member;
 }
 
-void conference_member_check_agc_levels(conference_member_t *member)
-{
-	int x = 0;
-
-	if (!member->avg_score) return;
-
-	if ((int)member->avg_score < member->conference->agc_level - 100) {
-		member->agc_volume_in_level++;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-		x = 1;
-	} else if ((int)member->avg_score > member->conference->agc_level + 100) {
-		member->agc_volume_in_level--;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-		x = -1;
-	}
-
-	if (x) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
-						  "AGC %s:%d diff:%d level:%d cur:%d avg:%d vol:%d %s\n",
-						  member->conference->name,
-						  member->id, member->conference->agc_level - member->avg_score, member->conference->agc_level,
-						  member->score, member->avg_score, member->agc_volume_in_level, x > 0 ? "+++" : "---");
-
-		conference_member_clear_avg(member);
-	}
-}
-
 void conference_member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in)
 {
 	if (member->conference->channels != member->read_impl.number_of_channels || conference_utils_member_test_flag(member, MFLAG_POSITIONAL)) {
@@ -701,6 +651,10 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	member->conference = conference;
 	member->next = conference->members;
 	member->energy_level = conference->energy_level;
+	member->auto_energy_level = conference->auto_energy_level;
+	member->max_energy_level = conference->max_energy_level;
+	member->max_energy_hit_trigger = conference->max_energy_hit_trigger;
+	member->burst_mute_count = conference->burst_mute_count;;
 	member->score_iir = 0;
 	member->verbose_events = conference->verbose_events;
 	member->video_layer_id = -1;
@@ -713,6 +667,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	switch_mutex_unlock(conference->member_mutex);
 	conference_cdr_add(member);
 
+	conference_api_set_agc(member, NULL);
 
 	if (!conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
 
@@ -1125,6 +1080,10 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 	conference_member_del_relationship(member, 0);
 
 	conference_cdr_del(member);
+	
+	if (member->agc) {
+		switch_agc_destroy(&member->agc);
+	}
 
 #ifdef OPENAL_POSITIONING
 	if (member->al && member->al->device) {
