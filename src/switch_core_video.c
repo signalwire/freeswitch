@@ -1861,8 +1861,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 		return 0;
 	}
 
-	/* use 50pt at 100dpi */
-	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
+	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 0); /* set character size */
 	if (error) return 0;
 
 	slot = face->glyph;
@@ -1956,6 +1955,9 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 		if (argc > 1 && !zstr(argv[1])) {
 			bg = argv[1];
+			if (!strcasecmp(bg, "transparent")) {
+				bg = NULL;
+			}
 		}
 
 		if (argc > 2 && !zstr(argv[2])) {
@@ -1988,7 +1990,10 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
-	switch_color_set_rgb(&bgcolor, bg);
+
+	if (bg) {
+		switch_color_set_rgb(&bgcolor, bg);
+	}
 
 	pre_width = switch_img_txt_handle_render(txthandle,
 											 NULL,
@@ -2003,15 +2008,18 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		width = pre_width;
 	}
 
-	if (bg) {
-		txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
-		switch_assert(txtimg);
-		switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
-	} else {
+	//if (bg) {
+	//	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	//	switch_assert(txtimg);
+	//	switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
+	//} else {
 		txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, width, height, 1);
 		switch_assert(txtimg);
 		memset(txtimg->planes[SWITCH_PLANE_PACKED], 0, width * height * 4);
-	}
+		if (bg) {
+			switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
+		}
+		//}
 
 	x = font_size / 2;
 	y = font_size / 2;

@@ -763,7 +763,27 @@ void conference_video_detach_video_layer(conference_member_t *member)
 }
 
 
-void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path)
+void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer)
+{
+	switch_mutex_lock(layer->canvas->mutex);
+
+
+	switch_img_free(&layer->logo_img);
+	switch_img_free(&layer->logo_text_img);
+
+	if (member->video_logo) {
+		switch_img_copy(member->video_logo, &layer->logo_img);
+
+		if (layer->logo_img) {
+			layer->logo_pos = member->logo_pos;
+			layer->logo_fit = member->logo_fit;
+		}
+	}
+
+	switch_mutex_unlock(layer->canvas->mutex);
+}
+
+void conference_member_set_logo(conference_member_t *member, const char *path)
 {
 	const char *var = NULL;
 	char *dup = NULL;
@@ -773,19 +793,10 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 	switch_img_position_t pos = POS_LEFT_TOP;
 	switch_img_fit_t fit = SWITCH_FIT_SIZE;
 
-	switch_mutex_lock(layer->canvas->mutex);
+	switch_img_free(&member->video_logo);
 
-	if (!path) {
-		path = member->video_logo;
-	}
-
-	if (!path) {
-		goto end;
-	}
-
-	if (path) {
-		switch_img_free(&layer->logo_img);
-		switch_img_free(&layer->logo_text_img);
+	if (!path || !strcasecmp(path, "clear")) {
+		return;
 	}
 
 	if (*path == '{') {
@@ -797,21 +808,6 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 		} else {
 			path = parsed;
 		}
-	}
-
-
-	if (zstr(path) || !strcasecmp(path, "reset")) {
-		path = switch_channel_get_variable_dup(member->channel, "video_logo_path", SWITCH_FALSE, -1);
-	}
-
-	if (zstr(path) || !strcasecmp(path, "clear")) {
-		switch_img_free(&layer->banner_img);
-		layer->banner_patched = 0;
-		member->video_logo = NULL;
-		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h,
-						&layer->canvas->letterbox_bgcolor);
-
-		goto end;
 	}
 
 	if ((tmp = strchr(path, '}'))) {
@@ -828,18 +824,35 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 		}
 	}
 
-	if (path && strcasecmp(path, "clear")) {
-		layer->logo_img = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
-	}
 
-	if (layer->logo_img) {
-		layer->logo_pos = pos;
-		layer->logo_fit = fit;
 
-		if (params) {
-			if ((var = switch_event_get_header(params, "text"))) {
-				layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_FALSE, var);
+	if (path) {
+		member->video_logo = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
+
+		if (member->video_logo) {
+			member->logo_pos = pos;
+			member->logo_fit = fit;
+
+			if (params && (var = switch_event_get_header(params, "text"))) {
+				switch_image_t *img = NULL;
+				const char *tmp;
+				int x = 0, y = 0;
+
+				if ((tmp = switch_event_get_header(params, "text_x"))) {
+					x = atoi(tmp);
+				}
+
+				if ((tmp = switch_event_get_header(params, "text_y"))) {
+					y = atoi(tmp);
+				}
+
+				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
+				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_SIZE);
+				switch_img_attenuate(member->video_logo);
+				switch_img_patch(member->video_logo, img, x, y);
+				switch_img_free(&img);
 			}
+			
 		}
 	}
 
@@ -847,10 +860,7 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 
 	switch_safe_free(dup);
 
- end:
-
-	switch_mutex_unlock(layer->canvas->mutex);
-
+	return;
 }
 
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
@@ -1055,10 +1065,7 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		conference_video_layer_set_banner(member, layer, var);
 	}
 
-	var = NULL;
-	if (member->video_logo || (var = switch_channel_get_variable_dup(channel, "video_logo_path", SWITCH_FALSE, -1))) {
-		conference_video_layer_set_logo(member, layer, var);
-	}
+	conference_video_layer_set_logo(member, layer);
 
 	layer->member_id = member->id;
 	layer->member = member;
@@ -2431,11 +2438,7 @@ static void personal_attach(mcu_layer_t *layer, conference_member_t *member)
 				conference_video_layer_set_banner(member, layer, var);
 			}
 
-			var = NULL;
-			if (member->video_logo ||
-				(var = switch_channel_get_variable_dup(member->channel, "video_logo_path", SWITCH_FALSE, -1))) {
-				conference_video_layer_set_logo(member, layer, var);
-			}
+			conference_video_layer_set_logo(member, layer);
 		}
 	}
 

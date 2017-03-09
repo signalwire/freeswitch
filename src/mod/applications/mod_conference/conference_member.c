@@ -742,6 +742,11 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		conference_video_check_avatar(member, SWITCH_FALSE);
 
+
+		if ((var = switch_channel_get_variable_dup(member->channel, "video_logo_path", SWITCH_FALSE, -1))) {
+			conference_member_set_logo(member, var);
+		}
+
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var);
 
@@ -1113,7 +1118,8 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 							 switch_core_session_get_channel(member->session), 0);
 	}
 
-
+	conference_member_set_logo(member, NULL);
+	
 	lock_member(member);
 
 	conference_member_del_relationship(member, 0);
