@@ -1634,28 +1634,19 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 		return SWITCH_STATUS_FALSE;
 	}
 
+	conference_member_set_logo(member, text);
+
 	layer = conference_video_get_layer_locked(member);
 		
 	if (!layer) {
 		goto end;
 	}
 
-	if (!zstr(text)) {
-		if (!strcasecmp(text, "allclear")) {
-			switch_channel_set_variable(member->channel, "video_logo_path", NULL);
-			member->video_logo = NULL;
-		} else if (!strcasecmp(text, "clear")) {
-			member->video_logo = NULL;
-		} else {
-			member->video_logo = switch_core_strdup(member->pool, text);
-		}
-
-		conference_video_layer_set_logo(member, layer, text);
-	}
+	conference_video_layer_set_logo(member, layer);
 
  end:
 
-	stream->write_function(stream, "%s\n", member->video_logo ? member->video_logo : "_undef_");
+	stream->write_function(stream, "Video logo %s\n", member->video_logo ? "set" : "cleared");
 
 	conference_video_release_layer(&layer);
 

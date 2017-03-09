@@ -448,7 +448,6 @@ typedef struct mcu_layer_s {
 	int clear;
 	int is_avatar;
 	switch_size_t last_img_addr;
-	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 	switch_image_t *banner_img;
@@ -457,6 +456,7 @@ typedef struct mcu_layer_s {
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
 	conference_file_node_t *fnode;
+	switch_img_position_t logo_pos;
 	switch_img_fit_t logo_fit;
 	struct mcu_canvas_s *canvas;
 	int need_patch;
@@ -768,7 +768,9 @@ struct conference_member {
 	int video_codec_index;
 	int video_codec_id;
 	char *video_banner_text;
-	char *video_logo;
+	switch_image_t *video_logo;
+	switch_img_position_t logo_pos;
+	switch_img_fit_t logo_fit;
 	char *video_mute_png;
 	char *video_reservation_id;
 	switch_vid_params_t vid_params;
@@ -935,7 +937,8 @@ void conference_utils_member_clear_flag(conference_member_t *member, member_flag
 void conference_utils_member_clear_flag_locked(conference_member_t *member, member_flag_t flag);
 switch_status_t conference_video_attach_video_layer(conference_member_t *member, mcu_canvas_t *canvas, int idx);
 int conference_video_set_fps(conference_obj_t *conference, float fps);
-void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path);
+void conference_member_set_logo(conference_member_t *member, const char *path);
+void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer);
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text);
 void conference_fnode_seek(conference_file_node_t *fnode, switch_stream_handle_t *stream, char *arg);
 uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
@@ -955,7 +958,6 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 switch_status_t conference_video_attach_video_layer(conference_member_t *member, mcu_canvas_t *canvas, int idx);
 void conference_video_reset_video_bitrate_counters(conference_member_t *member);
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text);
-void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path);
 void conference_video_detach_video_layer(conference_member_t *member);
 void conference_video_check_used_layers(mcu_canvas_t *canvas);
 void conference_video_check_flush(conference_member_t *member, switch_bool_t force);
