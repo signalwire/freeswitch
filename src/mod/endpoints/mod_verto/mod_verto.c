@@ -166,18 +166,11 @@ static void close_socket(ws_socket_t *sock)
 }
 
 void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
-static int ssl_init = 0;
 
 static int verto_init_ssl(verto_profile_t *profile)
 {
 	const char *err = "";
 	int i = 0;
-
-	if (!ssl_init) {
-		SSL_library_init();
-		ssl_init = 1;
-	}
-
 
 	profile->ssl_method = SSLv23_server_method();   /* create server instance */
 	profile->ssl_ctx = SSL_CTX_new(profile->ssl_method);         /* create context */
@@ -2449,6 +2442,10 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 		switch_core_media_add_ice_acl(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, profile->cand_acl[i]);
 		switch_core_media_add_ice_acl(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO, profile->cand_acl[i]);
 	}
+
+	if (profile->enable_text) {
+		set_text_funcs(tech_pvt->session);
+	}
 }
 
 static switch_status_t verto_media(switch_core_session_t *session)
@@ -3527,7 +3524,6 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
 	switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_REQUEST);
 	switch_core_session_set_private_class(session, tech_pvt, SWITCH_PVT_SECONDARY);
-	set_text_funcs(session);
 
 	tech_pvt->call_id = switch_core_session_strdup(session, call_id);
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
@@ -4657,6 +4653,8 @@ static switch_status_t parse_config(const char *cf)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max Bindings Reached!\n");
 					}
+				} else if (!strcasecmp(var, "enable-text")) {
+					profile->enable_text = 1;
 				} else if (!strcasecmp(var, "secure-combined")) {
 					set_string(profile->cert, val);
 					set_string(profile->key, val);
@@ -5398,7 +5396,6 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		tech_pvt->jsock_uuid = switch_core_session_strdup(*new_session, jsock_uuid_str);
 
 		switch_core_session_set_private_class(*new_session, tech_pvt, SWITCH_PVT_SECONDARY);
-		set_text_funcs(*new_session);
 
 		if (session) {
 			switch_channel_t *ochannel = switch_core_session_get_channel(session);

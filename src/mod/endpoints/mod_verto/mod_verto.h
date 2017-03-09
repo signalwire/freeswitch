@@ -277,6 +277,8 @@ struct verto_profile_s {
 
 	char *register_domain;
 
+	int enable_text;
+
 	struct verto_profile_s *next;
 };
 
