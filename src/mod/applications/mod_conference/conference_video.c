@@ -1007,6 +1007,12 @@ void conference_video_detach_video_layer(conference_member_t *member)
 		goto end;
 	}
 
+	if (member->id == member->conference->last_video_floor_holder) {
+		if (conference_utils_member_test_flag(member, MFLAG_VIDEO_BRIDGE)) {
+			conference_utils_set_flag(member->conference, CFLAG_VID_FLOOR_LOCK);
+		}
+	}
+
 	layer = &canvas->layers[member->video_layer_id];
 
 	if (layer->geometry.audio_position) {
@@ -4165,16 +4171,6 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		} else {
 			if (member) {
 				conference->last_video_floor_holder = conference->video_floor_holder;
-			}
-
-			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
-				switch_core_session_request_video_refresh(imember->session);
-				conference_video_clear_managed_kps(imember);
-				if (conference_utils_member_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
-					conference_utils_set_flag(conference, CFLAG_VID_FLOOR_LOCK);
-				}
-				switch_thread_rwlock_unlock(imember->rwlock);
-				imember = NULL;
 			}
 
 			old_member = conference->video_floor_holder;
