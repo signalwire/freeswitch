@@ -1362,6 +1362,33 @@ static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, swit
 #endif
 }
 
+SWITCH_DECLARE(void) switch_img_fill_noalpha(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
+{
+#ifdef SWITCH_HAVE_YUV
+	int i;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		int max_w = img->d_w;
+		int max_h = img->d_h;
+		int j;
+		switch_rgb_color_t *rgb; 
+
+		for (i = 0; i < max_h; i++) {		
+			for (j = 0; j < max_w; j++) {
+				rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
+
+				if (rgb->a != 0) {
+					continue;
+				}
+				
+				*rgb = *color;
+			}
+		}
+	}
+
+#endif
+}
+
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
 #ifdef SWITCH_HAVE_YUV

@@ -358,7 +358,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 
 	} else {
-		switch_img_fill(frame->img, 0, 0, img->d_w, img->d_h, &context->bgcolor);
+		switch_img_fill_noalpha(img, 0, 0, img->d_w, img->d_h, &context->bgcolor);
 	}
 
 	if (context->imgfg) {
