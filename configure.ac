@@ -1824,6 +1824,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_codec2/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_dahdi_codec/Makefile
+		src/mod/codecs/mod_clearmode/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_h26x/Makefile
