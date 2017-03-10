@@ -63,6 +63,7 @@ codecs/mod_amr
 #codecs/mod_amrwb
 codecs/mod_b64
 #codecs/mod_bv
+#codecs/mod_clearmode
 #codecs/mod_codec2
 #codecs/mod_com_g729
 #codecs/mod_dahdi_codec
