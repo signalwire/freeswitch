@@ -602,10 +602,10 @@ void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *can
 			cJSON_AddItemToObject(layout, "border", cJSON_CreateNumber(vlayout->images[i].border));
 			cJSON_AddItemToObject(layout, "floor", cJSON_CreateNumber(vlayout->images[i].floor));
 			cJSON_AddItemToObject(layout, "overlap", cJSON_CreateNumber(vlayout->images[i].overlap));
-			cJSON_AddItemToObject(layout, "screenWidth", cJSON_CreateNumber((uint32_t)(canvas->img->d_w * scale / VIDEO_LAYOUT_SCALE)));
-			cJSON_AddItemToObject(layout, "screenHeight", cJSON_CreateNumber((uint32_t)(canvas->img->d_h * hscale / VIDEO_LAYOUT_SCALE)));
-			cJSON_AddItemToObject(layout, "xPOS", cJSON_CreateNumber((int)(canvas->img->d_w * vlayout->images[i].x / VIDEO_LAYOUT_SCALE)));
-			cJSON_AddItemToObject(layout, "yPOS", cJSON_CreateNumber((int)(canvas->img->d_h * vlayout->images[i].y / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "screenWidth", cJSON_CreateNumber((uint32_t)(canvas->width * scale / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "screenHeight", cJSON_CreateNumber((uint32_t)(canvas->height * hscale / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "xPOS", cJSON_CreateNumber((int)(canvas->width * vlayout->images[i].x / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "yPOS", cJSON_CreateNumber((int)(canvas->height * vlayout->images[i].y / VIDEO_LAYOUT_SCALE)));
 			cJSON_AddItemToObject(layout, "resID", cJSON_CreateString(vlayout->images[i].res_id));
 			cJSON_AddItemToObject(layout, "audioPOS", cJSON_CreateString(vlayout->images[i].audio_position));
 			cJSON_AddItemToArray(array, layout);
