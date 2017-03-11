@@ -3040,7 +3040,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 
 			//VIDFLOOR
-			if (conference->video_mode == CONF_VIDEO_MODE_MUX &&
+			if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX &&
 				conference->canvas_count == 1 && canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
@@ -4177,7 +4177,7 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 				conference->last_video_floor_holder = conference->video_floor_holder;
 			}
 
-			if (conference->video_mode == CONF_VIDEO_MODE_MUX &&
+			if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX &&
 				conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
 				switch_core_session_request_video_refresh(imember->session);
 				conference_video_clear_managed_kps(imember);
