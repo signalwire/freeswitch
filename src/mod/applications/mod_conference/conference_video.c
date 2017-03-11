@@ -2577,6 +2577,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				continue;
 			}
 
+			//VIDFLOOR
+			if (conference->video_mode == CONF_VIDEO_MODE_MUX &&
+				conference->canvas_count == 1 && canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
+				imember->video_layer_id != canvas->layout_floor_id) {
+				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
+			}
+
 			if (conference->playing_video_file) {
 				switch_img_free(&img);
 				switch_core_session_rwunlock(imember->session);
@@ -3675,6 +3682,17 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		} else {
 			if (member) {
 				conference->last_video_floor_holder = conference->video_floor_holder;
+			}
+
+			if (conference->video_mode == CONF_VIDEO_MODE_MUX &&
+				conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
+				switch_core_session_request_video_refresh(imember->session);
+				conference_video_clear_managed_kps(imember);
+				if (conference_utils_member_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
+					conference_utils_set_flag(conference, CFLAG_VID_FLOOR_LOCK);
+				}
+				switch_thread_rwlock_unlock(imember->rwlock);
+				imember = NULL;
 			}
 
 			old_member = conference->video_floor_holder;
