@@ -770,8 +770,6 @@ typedef enum {
 	SWITCH_RTP_FLAG_MUTE,
 	SWITCH_RTP_FLAG_NACK,
 	SWITCH_RTP_FLAG_TMMBR,
-	SWITCH_RTP_FLAG_GEN_TS_DELTA,
-	SWITCH_RTP_FLAG_GEN_TS_MANUAL,
 	SWITCH_RTP_FLAG_DETECT_SSRC,
 	SWITCH_RTP_FLAG_OLD_FIR,
 	SWITCH_RTP_FLAG_PASSTHRU,
@@ -904,7 +902,6 @@ typedef enum {
 	  Leave the auto-adjust behavior enableed permenantly rather than only at appropriate times.  (IMPLICITLY sets RTP_BUG_ACCEPT_ANY_PACKETS)
 
 	 */
-
 
 } switch_rtp_bug_flag_t;
 
@@ -1530,6 +1527,8 @@ typedef struct switch_vid_params_s {
 	uint32_t width;
 	uint32_t height;
 	uint32_t fps;
+	uint32_t d_width;
+	uint32_t d_height;
 } switch_vid_params_t;
 
 

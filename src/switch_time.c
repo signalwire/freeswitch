@@ -386,6 +386,14 @@ static switch_status_t timer_generic_sync(switch_timer_t *timer)
 	timer->tick = (elapsed / timer->interval) / 1000;
 	timer->samplecount = (uint32_t)(timer->tick * timer->samples);
 
+	if (timer->interval == 1 && timer->samplecount == timer->last_samplecount) {
+		timer->samplecount++;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Timer sync too often\n");
+	}
+	timer->last_samplecount = timer->samplecount;
+
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

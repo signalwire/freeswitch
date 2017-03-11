@@ -55,6 +55,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_frame_t *read_frame = 0;
 	int set_decoded_read = 0, refresh_timer = 0;
 	int refresh_cnt = 300;
+	int pass_val = 0, last_pass_val = 0;
 
 	vh->up = 1;
 
@@ -78,8 +79,18 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 		if (switch_channel_media_up(channel)) {
 			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
+			
+			if (switch_core_session_transcoding(vh->session_a, vh->session_b, SWITCH_MEDIA_TYPE_VIDEO)) {
+				pass_val = 1;
+			} else {
+				pass_val = 2;
+			}
 
-
+			if (pass_val != last_pass_val) {
+				switch_core_session_passthru(session, SWITCH_MEDIA_TYPE_VIDEO, pass_val == 2 ? SWITCH_TRUE : SWITCH_FALSE);
+				last_pass_val = pass_val;
+			}
+			
 			if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
 				switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
 				refresh_timer = refresh_cnt;
@@ -145,6 +156,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 	switch_core_session_request_video_refresh(vh->session_a);
 	switch_core_session_request_video_refresh(vh->session_b);
+
+	switch_core_session_passthru(vh->session_a, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_FALSE);
 
 	switch_core_session_rwunlock(vh->session_a);
 	switch_core_session_rwunlock(vh->session_b);
@@ -268,6 +281,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_codec_implementation_t read_impl = { 0 };
 	const char *banner_file = NULL;
 	int played_banner = 0, banner_counter = 0;
+	int pass_val = 0, last_pass_val = 0;
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
@@ -398,6 +412,17 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_status_t status;
 		switch_event_t *event;
 
+		if (switch_core_session_transcoding(session_a, session_b, SWITCH_MEDIA_TYPE_AUDIO)) {
+			pass_val = 1;
+		} else {
+			pass_val = 2;
+		}
+		
+		if (pass_val != last_pass_val) {
+			switch_core_session_passthru(session_a, SWITCH_MEDIA_TYPE_AUDIO, pass_val == 2 ? SWITCH_TRUE : SWITCH_FALSE);
+			last_pass_val = pass_val;
+		}
+		
 		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
 			data->clean_exit = 1;
 		}
@@ -701,6 +726,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending video thread.\n");
 	}
 #endif
+
+	switch_core_session_passthru(session_a, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_FALSE);
 
 
 	if (silence_val) {
