@@ -5754,6 +5754,50 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_fps_get(void * j
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_d_width_set(void * jarg1, unsigned long jarg2) {
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->d_width = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_d_width_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  result = (uint32_t) ((arg1)->d_width);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_d_height_set(void * jarg1, unsigned long jarg2) {
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->d_height = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_d_height_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  result = (uint32_t) ((arg1)->d_height);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_vid_params_t() {
   void * jresult ;
   switch_vid_params_s *result = 0 ;
@@ -12949,6 +12993,34 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_read_frame(void * jarg1, v
   result = (switch_status_t)switch_core_session_read_frame(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_transcoding(void * jarg1, void * jarg2, int jarg3) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;
+  switch_media_type_t arg3 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_core_session_t *)jarg2; 
+  arg3 = (switch_media_type_t)jarg3; 
+  result = (switch_bool_t)switch_core_session_transcoding(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_passthru(void * jarg1, int jarg2, int jarg3) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_media_type_t arg2 ;
+  switch_bool_t arg3 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_media_type_t)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  switch_core_session_passthru(arg1,arg2,arg3);
 }
 
 
@@ -24669,6 +24741,28 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_timer_samplecount_get(void * 
   
   arg1 = (switch_timer *)jarg1; 
   result = (uint32_t) ((arg1)->samplecount);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_timer_last_samplecount_set(void * jarg1, unsigned long jarg2) {
+  switch_timer *arg1 = (switch_timer *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_timer *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->last_samplecount = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_timer_last_samplecount_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_timer *arg1 = (switch_timer *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_timer *)jarg1; 
+  result = (uint32_t) ((arg1)->last_samplecount);
   jresult = (unsigned long)result; 
   return jresult;
 }
