@@ -3915,11 +3915,14 @@ static void select_from_profile(sofia_profile_t *profile,
 								const char *domain,
 								const char *concat,
 								const char *exclude_contact,
+								const char *match_user_agent,
 								switch_stream_handle_t *stream,
 								switch_bool_t dedup)
 {
 	struct cb_helper cb;
 	char *sql;
+	char *sql_match_user_agent = NULL;
+	char *sql_exclude_contact = NULL;
 
 	cb.row_process = 0;
 
@@ -3927,23 +3930,25 @@ static void select_from_profile(sofia_profile_t *profile,
 	cb.stream = stream;
 	cb.dedup = dedup;
 
-	if (exclude_contact) {
-		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where profile_name='%q' "
-							 "and upper(sip_user)=upper('%q') "
-							 "and (sip_host='%q' or presence_hosts like '%%%q%%') "
-							 "and contact not like '%%%q%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
-	} else {
-		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where profile_name='%q' "
-							 "and upper(sip_user)=upper('%q') "
-							 "and (sip_host='%q' or presence_hosts like '%%%q%%')",
-							 (concat != NULL) ? concat : "", profile->name, user, domain, domain);
+	if (match_user_agent) {
+		sql_match_user_agent = switch_mprintf(" and user_agent like '%%%q%%'",  match_user_agent);
 	}
 
+	if (exclude_contact) {
+		sql_exclude_contact = switch_mprintf(" and contact not like '%%%q%%'",  exclude_contact);
+	}
+
+	sql = switch_mprintf("select contact, profile_name, '%q' "
+			"from sip_registrations where profile_name='%q' "
+			"and upper(sip_user)=upper('%q') "
+			"and (sip_host='%q' or presence_hosts like '%%%q%%')%s%s",
+			(concat != NULL) ? concat : "", profile->name, user, domain, domain, (sql_match_user_agent!=NULL) ? sql_match_user_agent : "", (sql_exclude_contact!=NULL) ? sql_exclude_contact : "");
 	switch_assert(sql);
 	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, contact_callback, &cb);
 	switch_safe_free(sql);
+	switch_safe_free(sql_exclude_contact);
+	switch_safe_free(sql_match_user_agent);
+
 }
 
 SWITCH_STANDARD_API(sofia_contact_function)
@@ -3954,8 +3959,10 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *concat = NULL;
 	char *profile_name = NULL;
 	char *p;
+
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
+	const char *match_user_agent = NULL;
 	char *reply = "error/facility_not_subscribed";
 	switch_stream_handle_t mystream = { 0 };
 
@@ -3967,11 +3974,18 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
+		match_user_agent = switch_channel_get_variable(channel, "sip_match_user_agent");
 	}
 
 
 	data = strdup(cmd);
 	switch_assert(data);
+
+	if ((p = strchr(data, '~'))) {
+		profile_name = data;
+		*p++ = '\0';
+		match_user_agent = p;
+	}
 
 	if ((p = strchr(data, '/'))) {
 		profile_name = data;
@@ -4023,7 +4037,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			domain = profile->domain_name;
 		}
 
-		select_from_profile(profile, user, domain, concat, exclude_contact, &mystream, SWITCH_FALSE);
+		select_from_profile(profile, user, domain, concat, exclude_contact, match_user_agent, &mystream, SWITCH_FALSE);
 		sofia_glue_release_profile(profile);
 
 	} else if (!zstr(domain)) {
@@ -4047,7 +4061,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 		if (i) {
 			for (j = 0; j < i; j++) {
-				select_from_profile(profiles[j], user, domain, concat, exclude_contact, &mystream, SWITCH_TRUE);
+				select_from_profile(profiles[j], user, domain, concat, exclude_contact, match_user_agent, &mystream, SWITCH_TRUE);
 				sofia_glue_release_profile(profiles[j]);
 			}
 		}
