@@ -1513,7 +1513,7 @@ SWITCH_STANDARD_APP(play_video_function)
 	libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
 	libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_callback, vlc_video_display_callback, context);
 
-	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 
  top:
 
@@ -1612,6 +1612,7 @@ end:
 	}
 
 	switch_core_session_video_reset(session);
+	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 
 	if (vlc_handle) libvlc_release(vlc_handle);
 }

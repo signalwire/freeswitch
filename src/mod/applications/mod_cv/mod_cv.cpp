@@ -1182,6 +1182,9 @@ SWITCH_STANDARD_APP(cv_start_function)
 
     switch_core_session_set_video_read_callback(session, NULL, NULL);
 
+    switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+    switch_channel_clear_flag_recursive(channel, CF_VIDEO_ECHO);
+
     uninit_context(&context);
 
     switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1200,13 +1203,11 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
     switch (type) {
     case SWITCH_ABC_TYPE_INIT:
         {
-            switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
         }
         break;
     case SWITCH_ABC_TYPE_CLOSE:
         {
             switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
-            switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
             uninit_context(context);
         }
         break;

@@ -844,7 +844,7 @@ SWITCH_STANDARD_APP(record_av_function)
 		goto done;
 	}
 
-	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 	switch_core_media_get_vid_params(session, &vid_params);
 	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "video size: %dx%d\n", vid_params.width, vid_params.height);
@@ -1119,6 +1119,8 @@ SWITCH_STANDARD_APP(record_av_function)
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
   end:
+
+	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 
 	if (fc) {
 		if (has_video) close_stream(fc, &video_st);

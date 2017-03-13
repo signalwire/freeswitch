@@ -389,13 +389,11 @@ static switch_bool_t chromakey_bug_callback(switch_media_bug_t *bug, void *user_
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		{
-			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
 			switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
-			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			uninit_context(context);
 		}
 		break;

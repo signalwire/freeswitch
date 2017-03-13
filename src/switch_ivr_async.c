@@ -654,12 +654,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	}
 
 	arg_recursion_check_start(args);
-
-	if (switch_true(switch_channel_get_variable(channel, "echo_decode_video"))) {
-		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	
+	if (switch_channel_var_true(channel, "echo_decode_video")) {
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 	}
 
-	if (switch_true(switch_channel_get_variable(channel, "echo_decode_audio"))) {
+	if (switch_channel_var_true(channel, "echo_decode_audio")) {
 		switch_core_session_raw_read(session);
 	}
 
@@ -715,6 +715,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			switch_channel_clear_flag(channel, CF_BREAK);
 			break;
 		}
+	}
+
+	if (switch_channel_var_true(channel, "echo_decode_video")) {
+		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 	}
 
 	switch_core_session_video_reset(session);

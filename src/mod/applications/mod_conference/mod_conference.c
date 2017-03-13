@@ -2357,7 +2357,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_receive_message(session, &msg);
 
 	if (conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
-		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		switch_core_media_gen_key_frame(session);
 	}
 
@@ -2376,6 +2376,9 @@ SWITCH_STANDARD_APP(conference_function)
 			conference_loop_output(&member);
 		} while (member.loop_loop);
 	}
+
+	switch_core_session_video_reset(session);
+	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 
 	switch_core_session_set_video_read_callback(session, NULL, NULL);
 	switch_core_session_set_text_read_callback(session, NULL, NULL);
