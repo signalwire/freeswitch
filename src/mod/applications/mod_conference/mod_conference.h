@@ -663,8 +663,8 @@ typedef struct conference_obj {
 	uint32_t agc_margin;
 	uint32_t agc_change_factor;
 	uint32_t agc_period_len;
-	uint32_t max_energy_hit_trigger;
-	uint32_t auto_energy_sec;
+	int32_t max_energy_hit_trigger;
+	int32_t auto_energy_sec;
 	uint32_t burst_mute_count;
 	uint8_t min;
 	switch_speech_handle_t lsh;
@@ -747,8 +747,8 @@ struct conference_member {
 	switch_buffer_t *mux_buffer;
 	switch_buffer_t *resample_buffer;
 	member_flag_t flags[MFLAG_MAX];
-	uint32_t score;
-	uint32_t last_score;
+	int32_t score;
+	int32_t last_score;
 	uint32_t score_iir;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *write_mutex;
@@ -773,7 +773,7 @@ struct conference_member {
 	int32_t energy_level;
 	int32_t auto_energy_level;
 	int32_t max_energy_level;
-	uint32_t agc_level;
+	int32_t agc_level;
 	uint32_t agc_low_energy_level;
 	uint32_t agc_margin;
 	uint32_t agc_change_factor;

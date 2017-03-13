@@ -41,13 +41,13 @@
 SWITCH_BEGIN_EXTERN_C
 
 typedef struct switch_frame_geometry {
-	uint32_t w;
-	uint32_t h;
-	uint32_t x;
-	uint32_t y;
-	uint32_t z;
-	uint32_t M;
-	uint32_t X;
+	int32_t w;
+	int32_t h;
+	int32_t x;
+	int32_t y;
+	int32_t z;
+	int32_t M;
+	int32_t X;
 } switch_frame_geometry_t;
 
 /*! \brief An abstraction of a data frame */
