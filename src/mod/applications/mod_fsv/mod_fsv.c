@@ -749,7 +749,7 @@ SWITCH_STANDARD_APP(decode_video_function)
 	switch_channel_answer(channel);
 	switch_core_session_request_video_refresh(session);
 
-	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 
 	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
 
@@ -764,6 +764,9 @@ SWITCH_STANDARD_APP(decode_video_function)
 
 	switch_core_media_end_video_function(session);
 	switch_core_session_video_reset(session);
+	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+
+
 }
 
 
