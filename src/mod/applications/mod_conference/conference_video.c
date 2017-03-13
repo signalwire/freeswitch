@@ -1415,6 +1415,9 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	canvas->vlayout = vlayout;
 
+	canvas->res_count = 0;
+	canvas->role_count = 0;
+
 	for (i = 0; i < vlayout->layers; i++) {
 		mcu_layer_t *layer = &canvas->layers[i];
 
@@ -1454,8 +1457,15 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		
 		/* if we ever decided to reload layers config on demand the pointer assignment below  will lead to segs but we
 		   only load them once forever per conference so these pointers are valid for the life of the conference */
-		layer->geometry.res_id = vlayout->images[i].res_id;
-		layer->geometry.role_id = vlayout->images[i].role_id;
+
+		if ((layer->geometry.res_id = vlayout->images[i].res_id)) {
+			canvas->res_count++;
+		}
+
+		if ((layer->geometry.role_id = vlayout->images[i].role_id)) {
+			canvas->role_count++;
+		}
+
 		layer->geometry.audio_position = vlayout->images[i].audio_position;
 	}
 
@@ -3056,25 +3066,29 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			layer = NULL;
 
 			switch_mutex_lock(canvas->mutex);
+
 			
-			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
-				imember->video_layer_id != canvas->layout_floor_id) {
-				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
+			if (zstr(imember->video_role_id) || !canvas->role_count) {
+				if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
+					imember->video_layer_id != canvas->layout_floor_id) {
+					conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
+					layer = &canvas->layers[imember->video_layer_id];
+				}
 			}
 			
 			//printf("MEMBER %d layer_id %d canvas: %d/%d\n", imember->id, imember->video_layer_id,
 			//	   canvas->layers_used, canvas->total_layers);
 
-			if (imember->video_role_id) {
+			if (!zstr(imember->video_role_id) && canvas->role_count) {
 				if (imember->video_layer_id > -1) {
 					layer = &canvas->layers[imember->video_layer_id];
 				}
 
-				if (!layer || (!layer->geometry.role_id || strcmp(layer->geometry.role_id, imember->video_role_id))) {
+				if (!layer || (zstr(layer->geometry.role_id) || strcmp(layer->geometry.role_id, imember->video_role_id))) {
 					for (i = 0; i < canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &canvas->layers[i];
 						
-						if (imember->video_role_id && xlayer->geometry.role_id && !strcmp(xlayer->geometry.role_id, imember->video_role_id)) {
+						if (!zstr(imember->video_role_id) && !zstr(xlayer->geometry.role_id) && !strcmp(xlayer->geometry.role_id, imember->video_role_id)) {
 							conference_video_attach_video_layer(imember, canvas, i);
 							layer = xlayer;
 						}
@@ -3082,8 +3096,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 
-
-			if (!layer && imember->video_layer_id > -1) {
+			if (imember->video_layer_id > -1) {
 				layer = &canvas->layers[imember->video_layer_id];
 				
 				if (layer->member_id != (int)imember->id) {

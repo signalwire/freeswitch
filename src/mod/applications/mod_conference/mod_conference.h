@@ -521,6 +521,8 @@ typedef struct mcu_canvas_s {
 	int height;
 	switch_image_t *img;
 	mcu_layer_t layers[MCU_MAX_LAYERS];
+	int res_count;
+	int role_count;
 	int total_layers;
 	int layers_used;
 	int layout_floor_id;
