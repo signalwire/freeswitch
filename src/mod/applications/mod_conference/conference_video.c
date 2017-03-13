@@ -2959,6 +2959,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						layer = &imember->canvas->layers[i++];
 						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					}
+
+					switch_img_free(&img);
 				}
 				
 				if (imember->session) {
