@@ -2443,7 +2443,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 		switch_core_media_add_ice_acl(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO, profile->cand_acl[i]);
 	}
 
-	if (profile->enable_text) {
+	if (profile->enable_text && !tech_pvt->text_read_buffer) {
 		set_text_funcs(tech_pvt->session);
 	}
 }
@@ -2619,13 +2619,14 @@ static int verto_recover_callback(switch_core_session_t *session)
 
 
 	tech_pvt->call_id = switch_core_session_strdup(session, switch_core_session_get_uuid(session));
+
+	switch_snprintf(name, sizeof(name), "verto.rtc/%s", tech_pvt->jsock_uuid);
+	switch_channel_set_name(channel, name);
+
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
 		tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
 		verto_set_media_options(tech_pvt, profile);
 	}
-
-	switch_snprintf(name, sizeof(name), "verto.rtc/%s", tech_pvt->jsock_uuid);
-	switch_channel_set_name(channel, name);
 
 	switch_channel_add_state_handler(channel, &verto_state_handlers);
 	switch_core_event_hook_add_receive_message(session, messagehook);
@@ -3355,32 +3356,35 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			char *chardata = NULL;
 			cJSON *data;
 
-			if ((data = cJSON_GetObjectItem(txt, "code"))) {
-				charbuf[0] = data->valueint;
-				chardata = charbuf;
-			} else if ((data = cJSON_GetObjectItem(txt, "chars"))) {
-				if (data->valuestring) {
-					chardata = data->valuestring;
-				} else if (data->valueint) {
+			if (tech_pvt->text_read_buffer) {
+				if ((data = cJSON_GetObjectItem(txt, "code"))) {
 					charbuf[0] = data->valueint;
 					chardata = charbuf;
+				} else if ((data = cJSON_GetObjectItem(txt, "chars"))) {
+					if (data->valuestring) {
+						chardata = data->valuestring;
+					} else if (data->valueint) {
+						charbuf[0] = data->valueint;
+						chardata = charbuf;
+					}
 				}
+
+
+				if (chardata) {
+					switch_mutex_lock(tech_pvt->text_read_mutex);
+					switch_buffer_write(tech_pvt->text_read_buffer, chardata, strlen(chardata));
+					switch_mutex_unlock(tech_pvt->text_read_mutex);
+
+					if ((switch_mutex_trylock(tech_pvt->text_cond_mutex) == SWITCH_STATUS_SUCCESS)) {
+						switch_thread_cond_signal(tech_pvt->text_cond);
+						switch_mutex_unlock(tech_pvt->text_cond_mutex);
+					}
+				}
+
 			}
 
-
-			if (chardata) {
-				switch_mutex_lock(tech_pvt->text_read_mutex);
-				switch_buffer_write(tech_pvt->text_read_buffer, chardata, strlen(chardata));
-				switch_mutex_unlock(tech_pvt->text_read_mutex);
-
-				if ((switch_mutex_trylock(tech_pvt->text_cond_mutex) == SWITCH_STATUS_SUCCESS)) {
-					switch_thread_cond_signal(tech_pvt->text_cond);
-					switch_mutex_unlock(tech_pvt->text_cond_mutex);
-				}
-			}
 			switch_core_session_rwunlock(session);
 		}
-
 	}
 
 	if ((msg = cJSON_GetObjectItem(params, "msg"))) {
@@ -3526,16 +3530,20 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	switch_core_session_set_private_class(session, tech_pvt, SWITCH_PVT_SECONDARY);
 
 	tech_pvt->call_id = switch_core_session_strdup(session, call_id);
+
+	if (!(destination_number = cJSON_GetObjectCstr(dialog, "destination_number"))) {
+		destination_number = "service";
+	}
+
+	switch_snprintf(name, sizeof(name), "verto.rtc/%s", destination_number);
+	switch_channel_set_name(channel, name);
+
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
 		tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
 		verto_set_media_options(tech_pvt, jsock->profile);
 	} else {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot create media handle"));
 		err = 1; goto cleanup;
-	}
-
-	if (!(destination_number = cJSON_GetObjectCstr(dialog, "destination_number"))) {
-		destination_number = "service";
 	}
 
 	if ((screenShare = cJSON_GetObjectItem(dialog, "screenShare")) && screenShare->type == cJSON_True) {
@@ -3611,8 +3619,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	parse_user_vars(dialog, session);
 
-	switch_snprintf(name, sizeof(name), "verto.rtc/%s", destination_number);
-	switch_channel_set_name(channel, name);
+
 	switch_channel_set_variable(channel, "jsock_uuid_str", jsock->uuid_str);
 	switch_channel_set_variable(channel, "verto_user", jsock->uid);
 	switch_channel_set_variable(channel, "presence_id", jsock->uid);
@@ -5160,6 +5167,10 @@ static switch_status_t verto_read_text_frame(switch_core_session_t *session, swi
 	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 	switch_status_t status;
 
+	if (!tech_pvt->text_read_buffer) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(tech_pvt->text_cond_mutex);
 
 	status = switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
@@ -5226,9 +5237,13 @@ static switch_status_t verto_write_text_frame(switch_core_session_t *session, sw
 
 static void set_text_funcs(switch_core_session_t *session)
 {
-	if ((switch_core_session_override_io_routines(session, &verto_io_override) == SWITCH_STATUS_SUCCESS)) {
-		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 
+	if (!tech_pvt || tech_pvt->text_read_buffer) {
+		return;
+	}
+
+	if ((switch_core_session_override_io_routines(session, &verto_io_override) == SWITCH_STATUS_SUCCESS)) {
 		tech_pvt->text_read_frame.data = tech_pvt->text_read_frame_data;
 
 		switch_mutex_init(&tech_pvt->text_read_mutex, SWITCH_MUTEX_NESTED, tech_pvt->pool);
