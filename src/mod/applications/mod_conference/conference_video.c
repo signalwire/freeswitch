@@ -3072,7 +3072,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 					imember->video_layer_id != canvas->layout_floor_id) {
 					conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
-					layer = &canvas->layers[imember->video_layer_id];
 				}
 			}
 			
@@ -3080,17 +3079,18 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			//	   canvas->layers_used, canvas->total_layers);
 
 			if (!zstr(imember->video_role_id) && canvas->role_count) {
+				mcu_layer_t *tlayer;
+
 				if (imember->video_layer_id > -1) {
-					layer = &canvas->layers[imember->video_layer_id];
+					tlayer = &canvas->layers[imember->video_layer_id];
 				}
 
-				if (!layer || (zstr(layer->geometry.role_id) || strcmp(layer->geometry.role_id, imember->video_role_id))) {
+				if (!tlayer || (zstr(layer->geometry.role_id) || strcmp(tlayer->geometry.role_id, imember->video_role_id))) {
 					for (i = 0; i < canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &canvas->layers[i];
 						
 						if (!zstr(imember->video_role_id) && !zstr(xlayer->geometry.role_id) && !strcmp(xlayer->geometry.role_id, imember->video_role_id)) {
 							conference_video_attach_video_layer(imember, canvas, i);
-							layer = xlayer;
 						}
 					}
 				}
@@ -3117,6 +3117,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					}
 				}
 				switch_img_free(&img);
+			}
+
+			if (imember->video_layer_id < 0) {
+				layer = NULL;
 			}
 
 			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || ((switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE)))) {
