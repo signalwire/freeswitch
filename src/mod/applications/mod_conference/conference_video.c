@@ -3079,7 +3079,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			//	   canvas->layers_used, canvas->total_layers);
 
 			if (!zstr(imember->video_role_id) && canvas->role_count) {
-				mcu_layer_t *tlayer;
+				mcu_layer_t *tlayer = NULL;
 
 				if (imember->video_layer_id > -1) {
 					tlayer = &canvas->layers[imember->video_layer_id];
