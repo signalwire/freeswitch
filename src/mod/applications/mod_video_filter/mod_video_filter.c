@@ -384,8 +384,6 @@ static switch_bool_t chromakey_bug_callback(switch_media_bug_t *bug, void *user_
 {
 	chromakey_context_t *context = (chromakey_context_t *)user_data;
 
-	switch_channel_t *channel = switch_core_session_get_channel(context->session);
-
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		{
