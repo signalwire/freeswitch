@@ -3085,7 +3085,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					tlayer = &canvas->layers[imember->video_layer_id];
 				}
 
-				if (!tlayer || (zstr(layer->geometry.role_id) || strcmp(tlayer->geometry.role_id, imember->video_role_id))) {
+				if (!tlayer || (zstr(tlayer->geometry.role_id) || strcmp(tlayer->geometry.role_id, imember->video_role_id))) {
 					for (i = 0; i < canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &canvas->layers[i];
 						
