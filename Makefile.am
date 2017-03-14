@@ -125,7 +125,6 @@ CORE_CFLAGS += -DSWITCH_HAVE_YUV
 endif
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
-CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 if ENABLE_LIBVPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX
 endif
@@ -741,11 +740,6 @@ sndfile-reconf:
 	cd libs/libsndfile && ./config.status --recheck
 	cd libs/libsndfile && ./config.status
 
-tiff-reconf:
-	cd libs/tiff-4.0.2 && autoreconf -fi
-	cd libs/tiff-4.0.2 && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	cd libs/tiff-4.0.2 && make
-
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
 	./config.status
@@ -767,7 +761,7 @@ iks-reconf:
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	$(MAKE) mod_dingaling-clean
 
-spandsp-reconf: tiff-reconf
+spandsp-reconf:
 	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu $(MY_DEFAULT_ARGS)
