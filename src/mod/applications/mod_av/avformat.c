@@ -2404,7 +2404,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	if (frame->img) {
 		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
 			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
-				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SIZE);
+				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SCALE);
 			}
 		}
 		context->vid_ready = 1;
