@@ -33,7 +33,7 @@
 #include <switch.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_clearmode_load);
-SWITCH_MODULE_DEFINITION(mod_clear, mod_clearmode_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_clearmode, mod_clearmode_load, NULL, NULL);
 
 static switch_status_t switch_clearmode_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
