@@ -350,7 +350,7 @@ SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
 
 	img->user_priv = (void *)(intptr_t)1;
 
-	ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], 
+	ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
 				  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], img->d_w, img->d_h);
 }
 
@@ -538,36 +538,56 @@ SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, sw
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
 {
+#ifdef SWITCH_HAVE_YUV
+	switch_img_fmt_t new_fmt = img->fmt;
+
 	switch_assert(img);
 	switch_assert(new_img);
 
-#ifdef SWITCH_HAVE_YUV
 	if (img->fmt != SWITCH_IMG_FMT_I420 && img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
-	if (*new_img != NULL) {
-		if (img->fmt != (*new_img)->fmt || img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w) {
+	if (*new_img) {
+		if ((*new_img)->fmt != SWITCH_IMG_FMT_I420 && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB) return;
+		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w ) {
+			new_fmt = (*new_img)->fmt;
 			switch_img_free(new_img);
 		}
 	}
 
 	if (*new_img == NULL) {
-		*new_img = switch_img_alloc(NULL, img->fmt, img->d_w, img->d_h, 1);
+		*new_img = switch_img_alloc(NULL, new_fmt, img->d_w, img->d_h, 1);
 	}
 
 	switch_assert(*new_img);
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
-		I420Copy(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
-				 img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
-				 img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
-				 (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
-				 (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
-				 (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
-				 img->d_w, img->d_h);
+		if (new_fmt == SWITCH_IMG_FMT_I420) {
+			I420Copy(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+					 img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+					 img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+					 (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
+					 (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
+					 (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
+					 img->d_w, img->d_h);
+		} else if (new_fmt == SWITCH_IMG_FMT_ARGB) {
+			I420ToARGB(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				(*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
+				img->d_w, img->d_h);
+		}
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
-		ARGBCopy(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+		if (new_fmt == SWITCH_IMG_FMT_ARGB) {
+			ARGBCopy(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
 				 (*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
 				 img->d_w, img->d_h);
+		} else if (new_fmt == SWITCH_IMG_FMT_I420) {
+			ARGBToI420(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+					  (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
+					  (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
+					  (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
+					  img->d_w, img->d_h);
+		}
 	}
 #else
 	return;
@@ -732,7 +752,7 @@ static inline void switch_core_rgb2hsl(switch_rgb_color_t *rgb, switch_hsl_color
 
 static inline void switch_core_rgb2lab(switch_rgb_color_t *rgb, switch_lab_color_t *lab)
 {
-    double x,y,z;
+	double x,y,z;
 	double r = rgb->r;
 	double g = rgb->g;
 	double b = rgb->b;
@@ -916,7 +936,7 @@ struct switch_chromakey_s {
 	uint32_t gg;
 	uint32_t bb;
 	uint32_t color_count;
-	
+
 	switch_rgb_color_t auto_color;
 	int no_cache;
 	int frames_read;
@@ -979,7 +999,7 @@ SWITCH_DECLARE(switch_status_t) switch_chromakey_autocolor(switch_chromakey_t *c
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_chromakey_add_color(switch_chromakey_t *ck, switch_rgb_color_t *color, uint32_t threshold) 
+SWITCH_DECLARE(switch_status_t) switch_chromakey_add_color(switch_chromakey_t *ck, switch_rgb_color_t *color, uint32_t threshold)
 {
 	switch_assert(ck);
 
@@ -1054,10 +1074,10 @@ static inline int get_max(switch_rgb_color_t *c1)
 
 static inline int switch_color_dom_cmp(switch_rgb_color_t *c1, switch_rgb_color_t *c2)
 {
-	
+
 	int c1_max = get_max(c1);
 	int c2_max = get_max(c2);
-	
+
 	if (c1_max && c1_max == c2_max) return 1;
 
 	return 0;
@@ -1089,7 +1109,7 @@ static inline int switch_color_distance_cheap(switch_rgb_color_t *c1, switch_rgb
 static inline void get_dom(switch_shade_t autocolor, switch_rgb_color_t *color, int *domP, int *aP, int *bP)
 {
 	int dom, a, b;
-				
+
 	switch(autocolor) {
 	case SWITCH_SHADE_RED:
 		dom = color->r;
@@ -1172,7 +1192,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 #ifdef DEBUG_CHROMA
 		total_pixel++;
 #endif
-		
+
 		if (!ck->no_cache && cache_img && cache_pixel) {
 			switch_rgb_color_t *cache_color = (switch_rgb_color_t *)cache_pixel;
 				
@@ -1217,7 +1237,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 					if (dom > a && dom > b && dom > tol) {
 						if (dom - a > a_tol && dom - b > b_tol) {
 							hits = 1;
-						} 
+						}
 					}
 				}
 			}
@@ -1231,7 +1251,7 @@ SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_ima
 			checked++;
 #endif
 		}
-		
+
 	end:
 
 		if (same > 100 && last_color && switch_color_dom_cmp(color, last_color)) {
@@ -2567,17 +2587,26 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 	png_bytep buffer = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	buffer = malloc(img->d_w * img->d_h * 3);
-	switch_assert(buffer);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		png.format = PNG_FORMAT_RGB;
+		buffer = malloc(img->d_w * img->d_h * 3);
+		switch_assert(buffer);
 
-	I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+		I420ToRAW(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
 				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
 				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
 				buffer, img->d_w * 3,
 				img->d_w, img->d_h);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+		png.format = PNG_FORMAT_ARGB;
+#else
+		png.format = PNG_FORMAT_BGRA;
+#endif
+		buffer = img->planes[SWITCH_PLANE_PACKED];
+	}
 
 	png.version = PNG_IMAGE_VERSION;
-	png.format = PNG_FORMAT_RGB;
 	png.width = img->d_w;
 	png.height = img->d_h;
 
@@ -2586,7 +2615,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 		status = SWITCH_STATUS_FALSE;
 	}
 
-	switch_safe_free(buffer);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		free(buffer);
+	}
+
 	return status;
 }
 
@@ -2879,7 +2911,6 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 	uint32_t fourcc;
 	int ret;
 
-	switch_assert(src->fmt == SWITCH_IMG_FMT_I420); // todo: support other formats
 	switch_assert(dest);
 
 	fourcc = switch_img_fmt2fourcc(fmt);
@@ -2889,12 +2920,21 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 		return SWITCH_STATUS_FALSE;
 	}
 
-	ret = ConvertFromI420(src->planes[0], src->stride[0],
-					src->planes[1], src->stride[1],
-					src->planes[2], src->stride[2],
-					dest, stride,
-					src->d_w, src->d_h,
-					fourcc);
+	if (src->fmt == SWITCH_IMG_FMT_I420) {
+		ret = ConvertFromI420(src->planes[0], src->stride[0],
+						src->planes[1], src->stride[1],
+						src->planes[2], src->stride[2],
+						dest, stride,
+						src->d_w, src->d_h,
+						fourcc);
+	} else if (src->fmt == SWITCH_IMG_FMT_ARGB && fmt == src->fmt) {
+		ret = ARGBCopy(src->planes[SWITCH_PLANE_PACKED], src->stride[SWITCH_PLANE_PACKED],
+						dest, stride,
+						src->d_w, src->d_h);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Convertion not supported %d -> %d\n", src->fmt, fmt);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
@@ -2906,7 +2946,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 {
 #ifdef SWITCH_HAVE_YUV
 	uint32_t fourcc;
-	int ret;
+	int ret = -1;
 
 	fourcc = switch_img_fmt2fourcc(fmt);
 
@@ -2937,7 +2977,8 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 	src_size is only used when FOURCC_MJPG which we don't support so always 0
 */
 
-	ret = ConvertToI420(src, 0,
+	if (dest->fmt == SWITCH_IMG_FMT_I420) {
+		ret = ConvertToI420(src, 0,
 					dest->planes[0], dest->stride[0],
 					dest->planes[1], dest->stride[1],
 					dest->planes[2], dest->stride[2],
@@ -2945,6 +2986,14 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 					width, height,
 					width, height,
 					0, fourcc);
+	} else if (dest->fmt == SWITCH_IMG_FMT_ARGB) {
+		ConvertToARGB(src, 0,
+					dest->planes[0], width * 4,
+					0, 0,
+					width, height,
+					width, height,
+					0, fourcc);
+	}
 
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
@@ -2962,9 +3011,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 		dest = *destP;
 	}
 
-	if (!dest) dest = switch_img_alloc(NULL, src->fmt, width, height, 1);
+	if (dest && src->fmt != dest->fmt) switch_img_free(&dest);
 
-	switch_assert(src->fmt == dest->fmt);
+	if (!dest) dest = switch_img_alloc(NULL, src->fmt, width, height, 1);
 
 	if (src->fmt == SWITCH_IMG_FMT_I420) {
 		ret = I420Scale(src->planes[0], src->stride[0],
@@ -3126,6 +3175,66 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 	return SWITCH_STATUS_FALSE;
 #endif
 }
+
+SWITCH_DECLARE(switch_status_t) switch_I420ToARGB(const uint8_t *src_y, int src_stride_y,
+													const uint8_t *src_u, int src_stride_u,
+													const uint8_t *src_v, int src_stride_v,
+													uint8_t *dst_argb, int dst_stride_argb,
+													int width, int height)
+{
+
+#ifdef SWITCH_HAVE_YUV
+	int ret = I420ToARGB(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+						 dst_argb, dst_stride_argb, width, height);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_RGBAToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height)
+{
+#ifdef SWITCH_HAVE_YUV
+	int ret = RGBAToARGB(src_frame, src_stride_frame, dst_argb, dst_stride_argb, width, height);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ABGRToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height)
+{
+#ifdef SWITCH_HAVE_YUV
+	int ret = ABGRToARGB(src_frame, src_stride_frame, dst_argb, dst_stride_argb, width, height);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ARGBToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height)
+{
+#ifdef SWITCH_HAVE_YUV
+	int ret = ARGBToARGB(src_frame, src_stride_frame, dst_argb, dst_stride_argb, width, height);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

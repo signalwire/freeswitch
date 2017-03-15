@@ -126,20 +126,61 @@ static void av_unused fill_avframe(AVFrame *pict, switch_image_t *img)
 
 static void av_unused avframe2img(AVFrame *pict, switch_image_t *img)
 {
-	int i;
-	uint8_t *y = pict->data[0];
-	uint8_t *u = pict->data[1];
-	uint8_t *v = pict->data[2];
+	int i, j;
 
-	/* Y */
-	for (i = 0; i < img->d_h; i++) {
-		memcpy(&img->planes[0][i * img->stride[0]], y + i * pict->linesize[0], img->d_w);
-	}
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		if (pict->format == AV_PIX_FMT_YUV420P) {
+			switch_I420_copy2(pict->data, pict->linesize, img->planes, img->stride, img->d_w, img->d_h);
+		} else if (pict->format == AV_PIX_FMT_YUVA420P) {
+			int linesize[3];
+			linesize[0] = pict->linesize[0];
+			linesize[1] = pict->linesize[1];
+			linesize[2] = pict->linesize[2] + pict->linesize[0];
 
-	/* U/V */
-	for(i = 0; i < pict->height / 2; i++) {
-		memcpy(&img->planes[1][i * img->stride[1]], u + i * pict->linesize[1], img->d_w / 2);
-		memcpy(&img->planes[2][i * img->stride[2]], v + i * pict->linesize[2], img->d_w / 2);
+			switch_I420_copy2(pict->data, linesize, img->planes, img->stride, img->d_w, img->d_h);
+		}
+
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		if (pict->format == AV_PIX_FMT_YUV420P) {
+			switch_rgb_color_t *color = (switch_rgb_color_t *)img->planes[SWITCH_PLANE_PACKED];
+			uint8_t *alpha = pict->data[3];
+
+			/*!\brief I420 to ARGB Convertion*/
+			switch_I420ToARGB(pict->data[0], pict->linesize[0],
+				pict->data[1], pict->linesize[1],
+				pict->data[2], pict->linesize[2],
+				img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+				img->d_w, img->d_h);
+
+
+			for (j = 0; j < img->d_h; j++) {
+				for (i = 0; i < img->d_w; i++) {
+					color->a = *alpha++;
+					color++;
+				}
+				color = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + img->stride[SWITCH_PLANE_PACKED] * j);
+			}
+		} else if (pict->format == AV_PIX_FMT_RGBA) {
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+			switch_RGBAToARGB(pict->data[0], pict->linesize[0],
+				mg->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+				img->d_w, img->d_h);
+#else
+			switch_ABGRToARGB(pict->data[0], pict->linesize[0],
+				img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+				img->d_w, img->d_h);
+#endif
+		} else if (pict->format == AV_PIX_FMT_BGRA) {
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+			switch_BGRAToARGB(pict->data[0], pict->linesize[0],
+			, img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+			, img->d_w, img->d_h);
+#else
+			switch_ARGBToARGB(pict->data[0], pict->linesize[0],
+			img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+			img->d_w, img->d_h);
+#endif
+		}
 	}
 }
 
@@ -1289,6 +1330,7 @@ struct av_file_context {
 	switch_bool_t read_paused;
 	int errs;
 	switch_file_handle_t *handle;
+	switch_bool_t alpha_mode;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1310,13 +1352,15 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 {
 	AVCodec *audio_codec = NULL;
 	AVCodec *video_codec = NULL;
+	AVDictionary *opts = NULL;
 	int error;
 	int i;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	// av_dict_set(&opts, "c:v", "libvpx", 0);
+
 	/** Open the input file to read from it. */
-	if ((error = avformat_open_input(&context->fc, filename, NULL,
-									 NULL)) < 0) {
+	if ((error = avformat_open_input(&context->fc, filename, NULL, NULL)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open input file '%s' (error '%s')\n", filename, get_error_text(error));
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
@@ -1325,10 +1369,13 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "file %s is %sseekable\n", filename, handle->seekable ? "" : "not ");
 
 	/** Get information on the input file (number of streams etc.). */
-	if ((error = avformat_find_stream_info(context->fc, NULL)) < 0) {
+	if ((error = avformat_find_stream_info(context->fc, opts ? &opts : NULL)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open find stream info (error '%s')\n", get_error_text(error));
+		if (opts) av_dict_free(&opts);
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
+
+	if (opts) av_dict_free(&opts);
 
 	av_dump_format(context->fc, 0, filename, 0);
 
@@ -1534,11 +1581,17 @@ again:
 			//	av_frame_free(&vframe);
 			//	continue;
 			//}
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got_data=%d, error=%d\n", got_data, error);
 
 			if (got_data && error >= 0) {
-				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got picture %dx%d fmt: %d pktpts:%lld pktdts:%lld\n", vframe->width, vframe->height, vframe->format, vframe->pkt_pts, vframe->pkt_dts);
-
-				if (vframe->format != AV_PIX_FMT_YUV420P) {
+				switch_img_fmt_t fmt = SWITCH_IMG_FMT_I420;
+				if (context->alpha_mode && (
+						vframe->format == AV_PIX_FMT_YUVA420P ||
+						vframe->format == AV_PIX_FMT_RGBA ||
+						vframe->format == AV_PIX_FMT_ARGB ||
+						vframe->format == AV_PIX_FMT_BGRA )) {
+					fmt = SWITCH_IMG_FMT_ARGB;
+				} else if (vframe->format != AV_PIX_FMT_YUV420P) {
 					AVFrame *frm = vframe;
 					int ret;
 
@@ -1580,7 +1633,7 @@ again:
 					}
 				}
 
-				img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, vframe->width, vframe->height, 1);
+				img = switch_img_alloc(NULL, fmt, vframe->width, vframe->height, 1);
 
 				if (img) {
 					int64_t *pts = malloc(sizeof(int64_t));
@@ -1610,6 +1663,7 @@ again:
 					}
 				}
 			}
+
 			av_frame_free(&vframe);
 
 			if (eof) {
@@ -1716,8 +1770,12 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	context->offset = DFT_RECORD_OFFSET;
 	context->handle = handle;
 
-	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
-		context->offset = atoi(tmp);
+	if (handle->params) {
+		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
+			context->offset = atoi(tmp);
+		} else if ((tmp = switch_event_get_header(handle->params, "alpha_mode"))) {
+			context->alpha_mode = switch_true(tmp);
+		}
 	}
 
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);

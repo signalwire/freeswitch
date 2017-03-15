@@ -440,11 +440,29 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 												  uint8_t *dst_planes[], int dst_stride[],
 												  int width, int height);
 
+/*!\brief I420 to ARGB Convertion*/
+
+SWITCH_DECLARE(switch_status_t) switch_I420ToARGB(const uint8_t *src_y, int src_stride_y,
+													const uint8_t *src_u, int src_stride_u,
+													const uint8_t *src_v, int src_stride_v,
+													uint8_t *dst_argb, int dst_stride_argb,
+													int width, int height);
+
+SWITCH_DECLARE(switch_status_t) switch_RGBAToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_ABGRToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_ARGBToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
+
 /*!\brief chromakey an img, img must be RGBA and return modified img */
 
 SWITCH_DECLARE(void) switch_img_chromakey(switch_image_t *img, switch_rgb_color_t *mask, int threshold);
 SWITCH_DECLARE(switch_status_t) switch_chromakey_clear_colors(switch_chromakey_t *ck);
-								
+
 SWITCH_DECLARE(switch_status_t) switch_chromakey_autocolor(switch_chromakey_t *ck, switch_shade_t autocolor, uint32_t threshold);
 SWITCH_DECLARE(switch_status_t) switch_chromakey_add_color(switch_chromakey_t *ck, switch_rgb_color_t *color, uint32_t threshold);
 SWITCH_DECLARE(switch_status_t) switch_chromakey_destroy(switch_chromakey_t **ckP);
