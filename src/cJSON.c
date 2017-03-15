@@ -847,7 +847,9 @@ CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value)
     return cJSON_ParseWithOpts(value, 0, 0);
 }
 
+#ifndef min
 #define min(a, b) ((a < b) ? a : b)
+#endif
 
 static unsigned char *print(const cJSON * const item, cjbool format, const internal_hooks * const hooks)
 {
@@ -1558,10 +1560,14 @@ CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJ
     {
         global_hooks.deallocate(item->string);
     }
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
     item->string = (char*)string;
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
     item->type |= cJSON_StringIsConst;
     cJSON_AddItemToArray(object, item);
 }
