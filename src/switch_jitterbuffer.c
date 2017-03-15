@@ -58,9 +58,10 @@ struct switch_jb_s {
 	struct switch_jb_node_s *node_list;
 	uint32_t last_target_seq;
 	uint32_t highest_read_ts;
+	uint32_t highest_dropped_ts;
 	uint32_t highest_read_seq;
 	uint32_t highest_wrote_ts;
-	uint32_t highest_wrote_seq;
+	uint16_t highest_wrote_seq;
 	uint16_t target_seq;
 	uint32_t target_ts;
 	uint32_t last_target_ts;
@@ -104,6 +105,8 @@ struct switch_jb_s {
 	switch_channel_t *channel;
 	uint32_t buffer_lag;
 	uint32_t flush;
+	uint32_t packet_count;
+	uint32_t max_packet_len;
 };
 
 
@@ -211,6 +214,22 @@ static inline switch_jb_node_t *new_node(switch_jb_t *jb)
 	}
 
 	if (!np) {
+		int mult = 25;
+
+		if (jb->type != SJB_VIDEO) {
+			mult = 2;
+		} else {
+			if (jb->max_packet_len > mult) {
+				mult = jb->max_packet_len;
+			}
+		}
+		
+		if (jb->allocated_nodes > jb->max_frame_len * mult) {
+			jb_debug(jb, 2, "ALLOCATED FRAMES TOO HIGH! %d\n", jb->allocated_nodes);
+			switch_jb_reset(jb);
+			switch_mutex_unlock(jb->list_mutex);
+			return NULL;
+		}
 
 		np = switch_core_alloc(jb->pool, sizeof(*np));
 		jb->allocated_nodes++;
@@ -279,7 +298,7 @@ static inline void hide_node(switch_jb_node_t *node, switch_bool_t pop)
 	}
 
 	if (switch_core_inthash_delete(jb->node_hash, node->packet.header.seq)) {
-		if (node->packet.header.m && jb->type == SJB_VIDEO) {
+		if (node->packet.header.version == 1 && jb->type == SJB_VIDEO) {
 			jb->complete_frames--;
 		}
 	}
@@ -573,19 +592,44 @@ static inline void drop_second_newest_frame(switch_jb_t *jb)
 }
 #endif
 
+static inline int check_seq(uint16_t a, uint16_t b)
+{
+	a = ntohs(a);
+	b = ntohs(b);
+
+	if (a >= b || (b > a && b > USHRT_MAX / 2 && a < USHRT_MAX / 2)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+static inline int check_ts(uint32_t a, uint32_t b)
+{
+	a = ntohl(a);
+	b = ntohl(b);
+
+	if (a > b || (b > a && b > UINT_MAX / 2 && a < UINT_MAX / 2)) {
+		return 1;
+	}
+
+	return 0;
+}
+
 static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t len)
 {
 	switch_jb_node_t *node = new_node(jb);
+
+	if (!node) {
+		return;
+	}
+
 
 	node->packet = *packet;
 	node->len = len;
 	memcpy(node->packet.body, packet->body, len);
 
 	switch_core_inthash_insert(jb->node_hash, node->packet.header.seq, node);
-
-	if (packet->header.m && jb->type == SJB_VIDEO) {
-		jb->complete_frames++;
-	}
 
 	if (jb->node_hash_ts) {
 		switch_core_inthash_insert(jb->node_hash_ts, node->packet.header.ts, node);
@@ -621,11 +665,23 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	}
 
 	if (jb->type == SJB_VIDEO) {
-		if (jb->write_init && ((htons(packet->header.seq) >= htons(jb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_wrote_ts))) ||
-							   (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000))) {
+		if (!switch_test_flag(jb, SJB_QUEUE_ONLY)) {
+			jb->packet_count++;
+		}
+		
+		if (jb->write_init && check_seq(packet->header.seq, jb->highest_wrote_seq) && check_ts(node->packet.header.ts, jb->highest_wrote_ts)) {
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_wrote_ts = packet->header.ts;
-			//verify_oldest_frame(jb);
+			jb->complete_frames++;
+
+			if (!switch_test_flag(jb, SJB_QUEUE_ONLY)) {
+				if (jb->packet_count > jb->max_packet_len) {
+					jb->max_packet_len = jb->packet_count;
+				}
+					
+				jb->packet_count = 0;
+			}
+			node->packet.header.version = 1;
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
@@ -716,9 +772,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 				jb_frame_inc(jb, 1);
 			}
 
-			//if (jb->session) {
-			//	switch_core_session_request_video_refresh(jb->session);
-			//}
+			if (jb->session) {
+				switch_core_session_request_video_refresh(jb->session);
+			}
 
 			for (x = 0; x < 10; x++) {
 				increment_seq(jb);
@@ -729,6 +785,7 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 						jb_debug(jb, 2, "%s", "SAME FRAME DROPPING\n");
 						jb->dropped++;
 						drop_ts(jb, node->packet.header.ts);
+						jb->highest_dropped_ts = ntohl(node->packet.header.ts);
 						node = NULL;
 						goto top;
 					}
@@ -737,6 +794,7 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 					jb_debug(jb, 2, "MISSING incremental seq: %u\n", ntohs(jb->target_seq));
 				}
 			}
+			
 		} else {
 			increment_seq(jb);
 		}
@@ -816,10 +874,11 @@ SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_
 	jb->session = session;
 	jb->channel = switch_core_session_get_channel(session);
 
-	if (jb->type == SJB_VIDEO && (var = switch_channel_get_variable_dup(jb->channel, "jb_video_low_bitrate", SWITCH_FALSE, -1))) {
+	if (jb->type == SJB_VIDEO && !switch_test_flag(jb, SJB_QUEUE_ONLY) && 
+		(var = switch_channel_get_variable_dup(jb->channel, "jb_video_low_bitrate", SWITCH_FALSE, -1))) {
 		int tmp = atoi(var);
 
-		if (tmp > 128 && tmp < 10240) {
+		if (tmp >= 128 && tmp <= 10240) {
 			jb->video_low_bitrate = (uint32_t)tmp;
 		}
 	}
@@ -1122,6 +1181,16 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 
 	switch_mutex_lock(jb->mutex);
 
+	if (jb->highest_dropped_ts) {
+		if (ntohl(packet->header.ts) < jb->highest_dropped_ts) {
+			jb_debug(jb, 2, "%s", "TS ALREADY DROPPED, DROPPING PACKET\n");
+			switch_mutex_unlock(jb->mutex);
+			return SWITCH_STATUS_SUCCESS;
+		}
+		jb->highest_dropped_ts = 0;
+	}
+
+
 	if (!want) want = got;
 
 	if (switch_test_flag(jb, SJB_QUEUE_ONLY) || jb->type == SJB_AUDIO) {
@@ -1186,6 +1255,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet_by_seq(switch_jb_t *jb, uin
 		*packet = node->packet;
 		*len = node->len;
 		memcpy(packet->body, node->packet.body, node->len);
+		packet->header.version = 2;
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		jb_debug(jb, 2, "Missing buffered seq: %u\n", ntohs(seq));
@@ -1199,7 +1269,6 @@ SWITCH_DECLARE(switch_size_t) switch_jb_get_last_read_len(switch_jb_t *jb)
 {
 	return jb->last_len;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t *len)
 {
@@ -1250,16 +1319,17 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				if (jb->session) {
 					switch_core_session_request_video_refresh(jb->session);
 				}
-			} else if (!switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len > jb->min_frame_len * 2) {
+			} else if (!switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len > jb->max_frame_len / 2) {
 				switch_core_session_message_t msg = { 0 };
 
 				jb->bitrate_control = jb->video_low_bitrate;
-
+				
 				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 				msg.numeric_arg = jb->bitrate_control * 1024;
 				msg.from = __FILE__;
 
 				jb_debug(jb, 2, "Force BITRATE to %d\n", jb->bitrate_control);
+
 				switch_core_session_receive_message(jb->session, &msg);
 				switch_channel_set_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 				if (jb->session) {
@@ -1280,15 +1350,14 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	if ((status = jb_next_packet(jb, &node)) == SWITCH_STATUS_SUCCESS) {
 		jb_debug(jb, 2, "Found next frame cur ts: %u seq: %u\n", htonl(node->packet.header.ts), htons(node->packet.header.seq));
 
-		if (!jb->read_init || ntohs(node->packet.header.seq) > ntohs(jb->highest_read_seq) ||
-			(ntohs(jb->highest_read_seq) > USHRT_MAX - 10 && ntohs(node->packet.header.seq) <= 10) ) {
+		if (!jb->read_init || check_seq(node->packet.header.seq, jb->highest_read_seq)) {
 			jb->highest_read_seq = node->packet.header.seq;
 		}
 
-		if (jb->type == SJB_AUDIO ||
-			(jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts)))) {
+		if (jb->type != SJB_VIDEO ||
+			(jb->read_init && check_seq(node->packet.header.seq, jb->highest_read_seq) && check_ts(node->packet.header.ts, jb->highest_read_ts))) {
 
-			if (jb->type == SJB_AUDIO) {
+			if (jb->type != SJB_VIDEO) {
 				jb->complete_frames--;
 			}
 			jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
@@ -1340,6 +1409,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		*len = node->len;
 		jb->last_len = *len;
 		memcpy(packet->body, node->packet.body, node->len);
+		packet->header.version = 2;
 		hide_node(node, SWITCH_TRUE);
 
 		jb_debug(jb, 1, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");

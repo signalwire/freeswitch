@@ -774,6 +774,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_GEN_TS_MANUAL,
 	SWITCH_RTP_FLAG_DETECT_SSRC,
 	SWITCH_RTP_FLAG_OLD_FIR,
+	SWITCH_RTP_FLAG_PASSTHRU,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -1577,7 +1578,8 @@ typedef enum {
 	SFF_PICTURE_RESET = (1 << 14),
 	SFF_SAME_IMAGE = (1 << 15),
 	SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
-	SFF_ENCODED = (1 << 17)
+	SFF_ENCODED = (1 << 17),
+	SFF_EXTERNAL = (1 << 20)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
