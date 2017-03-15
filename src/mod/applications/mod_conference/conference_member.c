@@ -1120,6 +1120,10 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 
 	switch_thread_rwlock_wrlock(member->rwlock);
 
+	if (member->video_queue) {
+		conference_video_flush_queue(member->video_queue, 0);
+	}
+
 	if (member->session && (exit_sound = switch_channel_get_variable(switch_core_session_get_channel(member->session), "conference_exit_sound"))) {
 		conference_file_play(conference, (char *)exit_sound, CONF_DEFAULT_LEADIN,
 							 switch_core_session_get_channel(member->session), 0);

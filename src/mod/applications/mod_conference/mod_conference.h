@@ -1149,6 +1149,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 void conference_event_chat_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 
 void conference_member_itterator(conference_obj_t *conference, switch_stream_handle_t *stream, uint8_t non_mod, conference_api_member_cmd_t pfncallback, void *data);
+int conference_video_flush_queue(switch_queue_t *q, int min);
 
 switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_tmute(conference_member_t *member, switch_stream_handle_t *stream, void *data);

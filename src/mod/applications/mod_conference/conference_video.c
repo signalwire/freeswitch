@@ -3658,11 +3658,15 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						switch_img_free(&file_img);
 						switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
 						file_img = write_frame.img;
-					
+						
 						if (file_img->fmt == SWITCH_IMG_FMT_ARGB) {
+							switch_image_t *overlay_img = NULL;
+							switch_img_copy(canvas->img, &overlay_img);
+
+							write_img = overlay_img;
 							switch_img_patch(write_img, file_img, 0, 0);
 							switch_img_free(&file_img);
-							switch_img_copy(write_img, &file_img);
+							file_img = overlay_img;
 						} else {
 							write_img = file_img;
 						}
