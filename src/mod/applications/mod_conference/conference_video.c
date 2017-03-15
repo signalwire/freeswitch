@@ -415,7 +415,6 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 {
 	switch_img_free(&layer->banner_img);
 	switch_img_free(&layer->logo_img);
-	switch_img_free(&layer->logo_text_img);
 
 	layer->bugged = 0;
 	layer->mute_patched = 0;
@@ -435,6 +434,9 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 
 	conference_video_clear_layer(layer);
 	switch_img_free(&layer->cur_img);
+	switch_mutex_lock(layer->overlay_mutex);
+	switch_img_free(&layer->overlay_img);
+	switch_mutex_unlock(layer->overlay_mutex);
 }
 
 static void set_pan(int crop_point, int *target_point, int accel_speed, int accel_min, int speed)
@@ -848,13 +850,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		//printf("SCALE %d,%d %dx%d\n", x_pos, y_pos, img_w, img_h);
 
 		switch_img_scale(img, &layer->img, img_w, img_h);
-
-		if (layer->img) {
-			//switch_img_copy(img, &layer->img);
-			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
-		}
-
-
+		
+		
 		if (layer->logo_img) {
 			int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
 			int ex = 0, ey = 0;
@@ -863,17 +860,25 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
 
-			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
-			if (layer->logo_text_img) {
-				int tx = 0, ty = 0;
+			switch_img_patch(layer->img, layer->logo_img, ex, ey);
+			//switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
+		}
 
-				switch_img_fit(&layer->logo_text_img, (ew / 2) + 1, (eh / 2) + 1, SWITCH_FIT_SIZE);
-				switch_img_find_position(POS_LEFT_BOT,
-										 layer->logo_img->d_w, layer->logo_img->d_h, layer->logo_text_img->d_w, layer->logo_text_img->d_h, &tx, &ty);
-				switch_img_patch(IMG, layer->logo_text_img, layer->x_pos + ex + tx + layer->geometry.border, layer->y_pos + ey + ty + layer->geometry.border);
+		if (layer->img) {
+			//switch_img_copy(img, &layer->img);
+
+			switch_mutex_lock(layer->overlay_mutex);
+			if (layer->overlay_img) {
+				switch_img_fit(&layer->overlay_img, layer->img->d_w, layer->img->d_h, SWITCH_FIT_SCALE);
+				switch_img_patch(layer->img, layer->overlay_img, 0, 0);
 			}
+			switch_mutex_unlock(layer->overlay_mutex);
+
+			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
 
 		}
+
+
 
 		layer->last_img_addr = img_addr;
 
@@ -883,6 +888,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 	}
 
 	switch_mutex_unlock(layer->canvas->mutex);
+
 }
 
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
@@ -1060,7 +1066,6 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 
 
 	switch_img_free(&layer->logo_img);
-	switch_img_free(&layer->logo_text_img);
 
 	if (member->video_logo) {
 		switch_img_copy(member->video_logo, &layer->logo_img);
@@ -1260,7 +1265,6 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 
 	switch_img_free(&layer->banner_img);
 	//switch_img_free(&layer->logo_img);
-	//switch_img_free(&layer->logo_text_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
 	conference_video_reset_image(layer->banner_img, &bgcolor);
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
@@ -1397,6 +1401,13 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 	switch_mutex_lock(canvas->mutex);
 	canvas->layout_floor_id = -1;
 
+	for (i = 0; i < MCU_MAX_LAYERS; i++) {
+		mcu_layer_t *layer = &canvas->layers[i];
+		if (!layer->overlay_mutex) {
+			switch_mutex_init(&layer->overlay_mutex, SWITCH_MUTEX_NESTED, canvas->pool);
+		}
+	}
+
 	if (canvas->vlayout && canvas->vlayout->transition_out) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play transition out [%s]\n", canvas->vlayout->transition_out);
 		conference_file_play(conference, canvas->vlayout->transition_out, 0, NULL, 0);
@@ -1473,6 +1484,7 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		mcu_layer_t *layer = &canvas->layers[i];
+
 		if (layer->member) {
 			//conference_video_detach_video_layer(layer->member);
 			conference_video_clear_managed_kps(layer->member);
@@ -1871,7 +1883,9 @@ void conference_video_canvas_del_fnode_layer(conference_obj_t *conference, confe
 		fnode->layer_id = -1;
 		fnode->canvas_id = -1;
 		xlayer->fnode = NULL;
-		conference_video_reset_layer(xlayer);
+		if (fnode->layer_lock < 0) {
+			conference_video_reset_layer(xlayer);
+		}
 	}
 	switch_mutex_unlock(canvas->mutex);
 }
@@ -1882,6 +1896,14 @@ void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_fi
 	mcu_layer_t *xlayer = NULL;
 
 	switch_mutex_lock(canvas->mutex);
+
+	if (fnode->layer_lock > -1) {
+		layer = &canvas->layers[fnode->layer_lock];
+		layer->fnode = fnode;
+		fnode->layer_id = fnode->layer_lock;
+		fnode->canvas_id = canvas->canvas_id;
+		goto end;
+	}
 
 	if (idx == -1) {
 		int i;
@@ -2312,8 +2334,22 @@ void conference_video_patch_fnode(mcu_canvas_t *canvas, conference_file_node_t *
 		switch_status_t status = switch_core_file_read_video(&fnode->fh, &file_frame, SVR_FLUSH);
 
 		if (status == SWITCH_STATUS_SUCCESS) {
-			switch_img_free(&layer->cur_img);
-			layer->cur_img = file_frame.img;
+			if (fnode->layer_lock > -1 && layer->member_id > 0) {
+				switch_mutex_lock(layer->overlay_mutex);
+				switch_img_free(&layer->overlay_img);
+				layer->overlay_img = file_frame.img;
+				switch_mutex_unlock(layer->overlay_mutex);
+			} else {
+				switch_img_free(&layer->cur_img);
+				if (file_frame.img && file_frame.img->fmt != SWITCH_IMG_FMT_I420) {
+					switch_image_t *tmp = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, file_frame.img->d_w, file_frame.img->d_h, 1);
+					switch_img_copy(file_frame.img, &tmp);
+					switch_img_free(&file_frame.img);
+					file_frame.img = tmp;
+				}
+				layer->cur_img = file_frame.img;
+			}
+
 			layer->tagged = 1;
 		} else if (status == SWITCH_STATUS_IGNORE) {
 			if (canvas && fnode->layer_id > -1 ) {
@@ -2351,7 +2387,11 @@ void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id) 
 
 		if (full_screen) {
 			canvas->play_file = 1;
-			canvas->conference->playing_video_file = 1;
+			if (fnode->fh.mm.fmt == SWITCH_IMG_FMT_ARGB) {
+				canvas->conference->overlay_video_file = 1;
+			} else {
+				canvas->conference->playing_video_file = 1;
+			}
 		} else {
 			conference_video_canvas_set_fnode_layer(canvas, fnode, -1);
 
@@ -3605,27 +3645,55 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			write_img = canvas->img;
 			timestamp = canvas->timer.samplecount;
 
-			if (conference->playing_video_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
-					switch_img_free(&file_img);
-
-					if (canvas->play_file) {
-						canvas->send_keyframe = 1;
-						canvas->play_file = 0;
-					}
+			switch_mutex_lock(conference->file_mutex);
+			if (conference->fnode && switch_test_flag(&conference->fnode->fh, SWITCH_FILE_OPEN)) {
+				if (conference->overlay_video_file) {
+					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					
-					switch_img_free(&file_img);
-					switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
-					file_img = write_img = write_frame.img;
+						if (canvas->play_file) {
+							canvas->send_keyframe = 1;
+							canvas->play_file = 0;
+						}
+					
+						switch_img_free(&file_img);
+						switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
+						file_img = write_frame.img;
+					
+						if (file_img->fmt == SWITCH_IMG_FMT_ARGB) {
+							switch_img_patch(write_img, file_img, 0, 0);
+							switch_img_free(&file_img);
+							switch_img_copy(write_img, &file_img);
+						} else {
+							write_img = file_img;
+						}
+					
+						//switch_core_timer_sync(&canvas->timer);
+						timestamp = canvas->timer.samplecount;
+					} else if (file_img) {
+						write_img = file_img;
+					}
+				} else if (conference->playing_video_file) {
+					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+					
+						if (canvas->play_file) {
+							canvas->send_keyframe = 1;
+							canvas->play_file = 0;
+						}
+					
+						switch_img_free(&file_img);
+						switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
+						file_img = write_img = write_frame.img;
 
-					//switch_core_timer_sync(&canvas->timer);
-					timestamp = canvas->timer.samplecount;
+						//switch_core_timer_sync(&canvas->timer);
+						timestamp = canvas->timer.samplecount;
+					} else if (file_img) {
+						write_img = file_img;
+					}
 				} else if (file_img) {
-					write_img = file_img;
+					switch_img_free(&file_img);
 				}
-			} else if (file_img) {
-				switch_img_free(&file_img);
 			}
+			switch_mutex_unlock(conference->file_mutex);
 
 			write_frame.img = write_img;
 
@@ -3734,11 +3802,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 		switch_mutex_lock(canvas->mutex);
 		switch_img_free(&layer->cur_img);
+		switch_img_free(&layer->overlay_img);
 		switch_img_free(&layer->img);
 		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
 		switch_img_free(&layer->logo_img);
-		switch_img_free(&layer->logo_text_img);
 		switch_img_free(&layer->mute_img);
 		switch_mutex_unlock(canvas->mutex);
 
@@ -4081,11 +4149,11 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 
 		switch_mutex_lock(canvas->mutex);
 		switch_img_free(&layer->cur_img);
+		switch_img_free(&layer->overlay_img);
 		switch_img_free(&layer->img);
 		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
 		switch_img_free(&layer->logo_img);
-		switch_img_free(&layer->logo_text_img);
 		switch_img_free(&layer->mute_img);
 		switch_mutex_unlock(canvas->mutex);
 

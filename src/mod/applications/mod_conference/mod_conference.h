@@ -389,6 +389,7 @@ typedef struct conference_file_node {
 	char *res_id;
 	int loops;
 	int new_fnode;
+	int layer_lock;
 } conference_file_node_t;
 
 typedef enum {
@@ -476,9 +477,9 @@ typedef struct mcu_layer_s {
 	switch_size_t last_img_addr;
 	switch_image_t *img;
 	switch_image_t *cur_img;
+	switch_image_t *overlay_img;
 	switch_image_t *banner_img;
 	switch_image_t *logo_img;
-	switch_image_t *logo_text_img;
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
 	conference_file_node_t *fnode;
@@ -494,6 +495,7 @@ typedef struct mcu_layer_s {
 	switch_frame_geometry_t pan_geometry;
 	switch_frame_geometry_t manual_geometry;
 	mcu_layer_cam_opts_t cam_opts;
+	switch_mutex_t *overlay_mutex;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -717,6 +719,7 @@ typedef struct conference_obj {
 	switch_hash_t *layout_group_hash;
 	struct conference_fps video_fps;
 	int playing_video_file;
+	int overlay_video_file;
 	int recording_members;
 	uint32_t video_floor_packets;
 	video_layout_t *new_personal_vlayout;
@@ -1073,7 +1076,7 @@ void conference_fnode_check_status(conference_file_node_t *fnode, switch_stream_
 conference_relationship_t *conference_member_add_relationship(conference_member_t *member, uint32_t id);
 conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id);
 conference_member_t *conference_member_get_by_var(conference_obj_t *conference, const char *var, const char *val);
-
+conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id);
 switch_status_t conference_member_del_relationship(conference_member_t *member, uint32_t id);
 switch_status_t conference_member_add(conference_obj_t *conference, conference_member_t *member);
 switch_status_t conference_member_del(conference_obj_t *conference, conference_member_t *member);

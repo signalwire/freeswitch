@@ -339,6 +339,7 @@ typedef struct switch_mm_s {
 	uint8_t try_hardware_encoder;
 	int scale_w;
 	int scale_h;
+	switch_img_fmt_t fmt;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */

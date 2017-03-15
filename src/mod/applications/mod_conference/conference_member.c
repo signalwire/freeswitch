@@ -435,6 +435,51 @@ conference_member_t *conference_member_get_by_var(conference_obj_t *conference, 
 	return member;
 }
 
+
+/* traverse the conference member list for the specified member with role  and return it's pointer */
+conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id)
+{
+	conference_member_t *member = NULL;
+
+	switch_assert(conference != NULL);
+	if (zstr(role_id)) {
+		return NULL;
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+
+		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+			continue;
+		}
+		
+		if (!zstr(member->video_role_id) && !strcmp(role_id, member->video_role_id)) {
+			break;
+		}
+	}
+
+	if (member) {
+		if (!conference_utils_member_test_flag(member, MFLAG_INTREE) ||
+			conference_utils_member_test_flag(member, MFLAG_KICKED) ||
+			(member->session && !switch_channel_up(switch_core_session_get_channel(member->session)))) {
+
+			/* member is kicked or hanging up so forget it */
+			member = NULL;
+		}
+	}
+
+	if (member) {
+		if (switch_thread_rwlock_tryrdlock(member->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* if you cant readlock it's way to late to do anything */
+			member = NULL;
+		}
+	}
+
+	switch_mutex_unlock(conference->member_mutex);
+
+	return member;
+}
+
 void conference_member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in)
 {
 	if (member->conference->channels != member->read_impl.number_of_channels || conference_utils_member_test_flag(member, MFLAG_POSITIONAL)) {

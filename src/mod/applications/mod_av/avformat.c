@@ -1330,7 +1330,6 @@ struct av_file_context {
 	switch_bool_t read_paused;
 	int errs;
 	switch_file_handle_t *handle;
-	switch_bool_t alpha_mode;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1389,7 +1388,12 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 				context->has_video = 1;
 				handle->duration = av_rescale_q(context->video_st.st->duration, context->video_st.st->time_base, AV_TIME_BASE_Q);
 			}
-			handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
+			if (context->video_st.st->avg_frame_rate.num) {
+				handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
+			} else {
+				handle->mm.source_fps = 25;
+			}
+
 			context->read_fps = (int)handle->mm.source_fps;
 		}
 	}
@@ -1585,7 +1589,7 @@ again:
 
 			if (got_data && error >= 0) {
 				switch_img_fmt_t fmt = SWITCH_IMG_FMT_I420;
-				if (context->alpha_mode && (
+				if ((
 						vframe->format == AV_PIX_FMT_YUVA420P ||
 						vframe->format == AV_PIX_FMT_RGBA ||
 						vframe->format == AV_PIX_FMT_ARGB ||
@@ -1632,6 +1636,8 @@ again:
 						continue;
 					}
 				}
+				
+				context->handle->mm.fmt = fmt;
 
 				img = switch_img_alloc(NULL, fmt, vframe->width, vframe->height, 1);
 
@@ -1773,8 +1779,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	if (handle->params) {
 		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 			context->offset = atoi(tmp);
-		} else if ((tmp = switch_event_get_header(handle->params, "alpha_mode"))) {
-			context->alpha_mode = switch_true(tmp);
 		}
 	}
 
