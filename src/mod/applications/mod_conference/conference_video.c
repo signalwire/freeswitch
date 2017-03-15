@@ -851,7 +851,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		switch_img_scale(img, &layer->img, img_w, img_h);
 		
-		
+
 		if (layer->logo_img) {
 			int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
 			int ex = 0, ey = 0;
@@ -1143,7 +1143,7 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 				}
 
 				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
-				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_SIZE);
+				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
 				switch_img_attenuate(member->video_logo);
 				switch_img_patch(member->video_logo, img, x, y);
 				switch_img_free(&img);

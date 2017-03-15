@@ -148,6 +148,7 @@ static struct fit_el IMG_FIT_TABLE[] = {
 	{SWITCH_FIT_SIZE, "fit-size"},
 	{SWITCH_FIT_SCALE, "fit-scale"},
 	{SWITCH_FIT_SIZE_AND_SCALE, "fit-size-and-scale"},
+	{SWITCH_FIT_NECESSARY, "fit-necessary"},
 	{SWITCH_FIT_NONE, NULL}
 };
 
@@ -1605,6 +1606,8 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 			color->b = 255;
 		}
 	}
+
+	color->a = 255;
 }
 
 #ifdef SWITCH_HAVE_YUV
@@ -1691,6 +1694,7 @@ static void init_gradient_table(switch_img_txt_handle_t *handle)
 		color->r = c1->r + (c2->r - c1->r) * i / MAX_GRADIENT;
 		color->g = c1->g + (c2->g - c1->g) * i / MAX_GRADIENT;
 		color->b = c1->b + (c2->b - c1->b) * i / MAX_GRADIENT;
+		color->a = 255;
 	}
 }
 
@@ -2038,10 +2042,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 
-	if (bg) {
-		switch_color_set_rgb(&bgcolor, bg);
-	}
-
 	pre_width = switch_img_txt_handle_render(txthandle,
 											 NULL,
 											 font_size / 2, font_size / 2,
@@ -2054,18 +2054,21 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	} else {
 		width = pre_width;
 	}
-
+	
 	//if (bg) {
 	//	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
 	//	switch_assert(txtimg);
 	//	switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
 	//} else {
-		txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, width, height, 1);
-		switch_assert(txtimg);
+	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, width, height, 1);
+	switch_assert(txtimg);
+	//memset(txtimg->planes[SWITCH_PLANE_PACKED], 0, width * height * 4);
+	if (bg) {
+		switch_color_set_rgb(&bgcolor, bg);
+		switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
+	} else {
 		memset(txtimg->planes[SWITCH_PLANE_PACKED], 0, width * height * 4);
-		if (bg) {
-			switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
-		}
+	}
 		//}
 
 	x = font_size / 2;
@@ -2809,6 +2812,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	src = *srcP;
 
 	if (!src || (src->d_w == width && src->d_h == height)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (fit == SWITCH_FIT_NECESSARY && src->d_w <= width && src->d_h < height) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
