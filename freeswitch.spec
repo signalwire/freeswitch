@@ -150,6 +150,7 @@ BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
+BuildRequires: libtiff-devel
 BuildRequires: ldns-devel
 BuildRequires: libedit-devel
 BuildRequires: perl
@@ -207,6 +208,7 @@ Requires: ncurses
 Requires: pcre
 Requires: speex
 Requires: sqlite
+Requires: libtiff
 Requires: libedit
 Requires: openssl >= 1.0.1e
 Requires: unixODBC

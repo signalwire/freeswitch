@@ -313,6 +313,7 @@ Build-Depends:
  libpcre3-dev,
  libedit-dev (>= 2.11),
  libsqlite3-dev,
+ libtiff5-dev,
  wget, pkg-config,
  yasm,
 # core codecs
