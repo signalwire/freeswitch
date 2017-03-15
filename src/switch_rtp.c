@@ -6012,7 +6012,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 		if (msg->header.type == _RTCP_PT_FIR ||
 			(msg->header.type == _RTCP_PT_PSFB && (extp->header.fmt == _RTCP_PSFB_FIR || extp->header.fmt == _RTCP_PSFB_PLI))) {
-
+#if 0
 			if (msg->header.type == _RTCP_PT_FIR) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Ancient FIR Received. Hello from 1996!\n");
 
@@ -6021,6 +6021,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					switch_core_session_request_video_refresh(rtp_session->session);
 				}
 			}
+#endif
 			switch_core_media_gen_key_frame(rtp_session->session);
 			if (rtp_session->vbw) {
 				switch_jb_reset(rtp_session->vbw);
