@@ -2122,6 +2122,15 @@ else
     return ret;
   }
 
+  public static switch_bool_t switch_core_session_transcoding(SWIGTYPE_p_switch_core_session session_a, SWIGTYPE_p_switch_core_session session_b, switch_media_type_t type) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_session_transcoding(SWIGTYPE_p_switch_core_session.getCPtr(session_a), SWIGTYPE_p_switch_core_session.getCPtr(session_b), (int)type);
+    return ret;
+  }
+
+  public static void switch_core_session_passthru(SWIGTYPE_p_switch_core_session session, switch_media_type_t type, switch_bool_t on) {
+    freeswitchPINVOKE.switch_core_session_passthru(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)type, (int)on);
+  }
+
   public static switch_status_t switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_frame frame, uint flags, int stream_id) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_frame.getCPtr(frame), flags, stream_id);
     return ret;
@@ -9559,6 +9568,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_vid_params_t_fps_get")]
   public static extern uint switch_vid_params_t_fps_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_vid_params_t_d_width_set")]
+  public static extern void switch_vid_params_t_d_width_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_vid_params_t_d_width_get")]
+  public static extern uint switch_vid_params_t_d_width_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_vid_params_t_d_height_set")]
+  public static extern void switch_vid_params_t_d_height_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_vid_params_t_d_height_get")]
+  public static extern uint switch_vid_params_t_d_height_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_vid_params_t")]
   public static extern IntPtr new_switch_vid_params_t();
 
@@ -11337,6 +11358,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_read_frame")]
   public static extern int switch_core_session_read_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_transcoding")]
+  public static extern int switch_core_session_transcoding(HandleRef jarg1, HandleRef jarg2, int jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_passthru")]
+  public static extern void switch_core_session_passthru(HandleRef jarg1, int jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_read_video_frame")]
   public static extern int switch_core_session_read_video_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
@@ -14064,6 +14091,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_timer_samplecount_get")]
   public static extern uint switch_timer_samplecount_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_timer_last_samplecount_set")]
+  public static extern void switch_timer_last_samplecount_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_timer_last_samplecount_get")]
+  public static extern uint switch_timer_last_samplecount_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_timer_timer_interface_set")]
   public static extern void switch_timer_timer_interface_set(HandleRef jarg1, HandleRef jarg2);
@@ -35952,7 +35985,8 @@ namespace FreeSWITCH.Native {
   SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
   SFF_ENCODED = (1 << 17),
   SFF_TEXT_LINE_BREAK = (1 << 18),
-  SFF_IS_KEYFRAME = (1 << 19)
+  SFF_IS_KEYFRAME = (1 << 19),
+  SFF_EXTERNAL = (1 << 20)
 }
 
 }
@@ -40382,11 +40416,10 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_MUTE,
   SWITCH_RTP_FLAG_NACK,
   SWITCH_RTP_FLAG_TMMBR,
-  SWITCH_RTP_FLAG_GEN_TS_DELTA,
-  SWITCH_RTP_FLAG_GEN_TS_MANUAL,
   SWITCH_RTP_FLAG_DETECT_SSRC,
   SWITCH_RTP_FLAG_TEXT,
   SWITCH_RTP_FLAG_OLD_FIR,
+  SWITCH_RTP_FLAG_PASSTHRU,
   SWITCH_RTP_FLAG_INVALID
 }
 
@@ -43410,6 +43443,16 @@ public class switch_timer : IDisposable {
     } 
   }
 
+  public uint last_samplecount {
+    set {
+      freeswitchPINVOKE.switch_timer_last_samplecount_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_timer_last_samplecount_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public switch_timer_interface timer_interface {
     set {
       freeswitchPINVOKE.switch_timer_timer_interface_set(swigCPtr, switch_timer_interface.getCPtr(value));
@@ -44188,6 +44231,26 @@ public class switch_vid_params_t : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_vid_params_t_fps_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint d_width {
+    set {
+      freeswitchPINVOKE.switch_vid_params_t_d_width_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_vid_params_t_d_width_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint d_height {
+    set {
+      freeswitchPINVOKE.switch_vid_params_t_d_height_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_vid_params_t_d_height_get(swigCPtr);
       return ret;
     } 
   }
