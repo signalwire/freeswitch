@@ -45,6 +45,14 @@
 SWITCH_BEGIN_EXTERN_C
 
 typedef enum {
+	SWITCH_SHADE_NONE = 0,
+	SWITCH_SHADE_RED,
+	SWITCH_SHADE_GREEN,
+	SWITCH_SHADE_BLUE,
+	SWITCH_SHADE_AUTO
+} switch_shade_t;
+
+typedef enum {
 	POS_LEFT_TOP = 0,
 	POS_LEFT_MID,
 	POS_LEFT_BOT,
@@ -70,12 +78,39 @@ typedef struct switch_yuv_color_s {
 	uint8_t v;
 } switch_yuv_color_t;
 
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 typedef struct switch_rgb_color_s {
 	uint8_t a;
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 } switch_rgb_color_t;
+#else
+typedef struct switch_rgb_color_s {
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a;
+} switch_rgb_color_t;
+#endif
+
+typedef struct switch_hsl_color_s {
+	double h;
+	double s;
+	double l;
+} switch_hsl_color_t;
+
+typedef struct {
+	double l;
+	double a;
+	double b;
+} switch_lab_color_t;
+
+typedef struct {
+	double x;
+	double y;
+	double z;
+} switch_xyz_color_t;
 
 /**\brief Representation of a rectangle on a surface */
 typedef struct switch_image_rect {
@@ -103,7 +138,7 @@ typedef enum {
 	SRM_180 = 180,  // Rotate 180 degrees.
 	SRM_270 = 270,  // Rotate 270 degrees clockwise.
 } switch_image_rotation_mode_t;
-	
+
 
 /*!\brief Open a descriptor, allocating storage for the underlying image
 *
@@ -186,6 +221,19 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 */
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y);
 
+SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img);
+
+/*!\brief patch a small img to a big IMG at position x,y
+*
+* Both IMG and img must be non-NULL
+*
+* \param[in]    IMG       The BIG Image descriptor
+* \param[in]    img       The small Image descriptor
+* \param[in]    x         Leftmost pos to patch to
+* \param[in]    y         Topmost pos to patch to
+* \param[in]    noalpha   skip writing to non-transparent pixels
+*/
+SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha);
 
 /*!\brief patch part of a small img (x,y,w,h) to a big IMG at position X,Y
 *
@@ -264,6 +312,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 */
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 
+SWITCH_DECLARE(void) switch_img_fill_noalpha(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
+
 /*!\brief Set RGB color with a string
 *
 * Color string should be in #RRGGBB format
@@ -318,7 +368,7 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 													  int x, int y, const char *text,
 													  const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle);
-						 
+
 
 SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect);
 
@@ -387,7 +437,24 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8_t* src_y, int src_s
 SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src_stride[],
 												  uint8_t *dst_planes[], int dst_stride[],
 												  int width, int height);
-/** @} */
+
+/*!\brief I420 to ARGB Convertion*/
+
+SWITCH_DECLARE(switch_status_t) switch_I420ToARGB(const uint8_t *src_y, int src_stride_y,
+													const uint8_t *src_u, int src_stride_u,
+													const uint8_t *src_v, int src_stride_v,
+													uint8_t *dst_argb, int dst_stride_argb,
+													int width, int height);
+
+SWITCH_DECLARE(switch_status_t) switch_RGBAToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_ABGRToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_ARGBToARGB(const uint8_t* src_frame, int src_stride_frame,
+													uint8_t* dst_argb, int dst_stride_argb,
+													int width, int height);
 
 SWITCH_END_EXTERN_C
 #endif
