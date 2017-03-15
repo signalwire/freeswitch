@@ -2052,9 +2052,13 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 		av_file_write(handle, NULL, NULL);
 	}
 
-	if (context->file_read_thread_running && context->file_read_thread) {
+	if (context->file_read_thread_running) {
 		context->file_read_thread_running = 0;
+	}
+	
+	if (context->file_read_thread) {
 		switch_thread_join(&status, context->file_read_thread);
+		context->file_read_thread = NULL;
 	}
 
 	if (context->eh.video_queue) {
@@ -2092,6 +2096,12 @@ static switch_status_t av_file_seek(switch_file_handle_t *handle, unsigned int *
 
 	if (!context->file_read_thread_running) {
 		switch_threadattr_t *thd_attr = NULL;
+
+		if (context->file_read_thread) {
+			switch_status_t status;
+			switch_thread_join(&status, context->file_read_thread);
+			context->file_read_thread = NULL;
+		}
 
 		switch_threadattr_create(&thd_attr, handle->memory_pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
