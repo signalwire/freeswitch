@@ -1700,27 +1700,6 @@ Copyright: 2007 <robs@users.sourceforge.net>
  2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 License: LGPL-2+
 
-Files: libs/tiff-4.0.2/*
-Copyright: 1988-1997 Sam Leffler
- 1991-1997 Silicon Graphics, Inc.
- 2006-2010 Richard Nolde
- 1999-2000 Frank Warmerdam
- 1990 by Digital Equipment Corporation, Maynard, Massachusetts.
- 1990 by Sun Microsystems, Inc.
- Joris Van Damme <info@awaresystems.be>
- AWare Systems <http://www.awaresystems.be/>
-License: MIT/X11 (BSD like)
-
-Files: libs/tiff-4.0.2/port/getopt.c
- libs/tiff-4.0.2/port/strcasecmp.c
- libs/tiff-4.0.2/port/lfind.c
-Copyright: 1987, 1993, 1994, The Regents of the University of California.
-License: BSD-3-clause
-
-Files: libs/tiff-4.0.2/port/strtoull.c
-Copyright: 1992, 1993, The Regents of the University of California.
-License: BSD-4-clause
-
 Files: src/switch_dso.c
 Copyright: 2008 Michael Jerris
 License: BSD-like

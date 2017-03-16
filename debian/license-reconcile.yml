@@ -186,21 +186,6 @@ Rules:
    Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
    Justification: prevent false-psitive copyright detection
   -
-   Glob: libs/tiff-4.0.2/libtiff/tif_tile.c
-   Matches: Copyright\s(c)\s1991-1997\sSam\sLeffler
-   Matches: copyright\snotices\sand\sthis\spermission\snotice\sappear\sin
-   Copyright: 1991-1997 Sam Leffler
-  -
-   Glob: libs/tiff-4.0.2/*
-   Matches: Additions\s\(c\)\sRichard\sNolde\s2006-2010
-   Matches: copyright\snotices\sand\sthis\spermission\snotice\sappear\sin
-   Copyright: 2006-2010 Richard Nolde
-  -
-   Glob: libs/tiff-4.0.2/libtiff/tiffvers.h
-   Matches: 1988-1996\sSam\sLeffler..Copyright\s\(c\)\s1991-1996\sSilicon\sGraphics,\sInc.
-   Copyright: 1991-1996 Sam Leffler
-   Copyright: 1991-1996 Silicon Graphics, Inc
-  -
    Glob: src/mod/endpoints/mod_khomp/*
    Matches: The\scontents\sof\sthis\sfile\sare\ssubject\sto\sthe\sMozilla\sPublic\sLicense\sVersion\s1.1
    Matches: Alternatively,\sthe\scontents\sof\sthis\sfile\smay\sbe\sused\sunder\sthe\sterms\sof\sthe

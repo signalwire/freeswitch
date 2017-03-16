@@ -8,7 +8,7 @@ BGJOB=false
 VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="apr libzrtp iksemel libdingaling sofia-sip srtp freetdm spandsp unimrcp tiff-4.0.2 fs";
+SUBDIRS="apr libzrtp iksemel libdingaling sofia-sip srtp freetdm spandsp unimrcp fs";
 
 while getopts 'jhd:v' o; do 
   case "$o" in
