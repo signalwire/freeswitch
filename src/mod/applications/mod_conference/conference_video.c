@@ -910,6 +910,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				}
 
 				switch_img_patch(layer->img, layer->overlay_img, 0, 0);
+						 
 			}
 			switch_mutex_unlock(layer->overlay_mutex);
 
