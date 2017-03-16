@@ -369,7 +369,7 @@ void conference_video_clear_layer(mcu_layer_t *layer)
 
 	layer->banner_patched = 0;
 	layer->refresh = 1;
-
+	layer->mute_patched = 0;
 }
 
 static void set_default_cam_opts(mcu_layer_t *layer)
@@ -1574,7 +1574,7 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path)
 {
 
-	int x = 0, y = 0, scaled = 0;
+	int x = 0, y = 0, scaled = 0, i = 0;
 
 	if (img_path) {
 		switch_img_free(&canvas->bgimg);
@@ -1593,6 +1593,11 @@ switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const ch
 	}
 	switch_img_find_position(POS_CENTER_MID, canvas->img->d_w, canvas->img->d_h, canvas->bgimg->d_w, canvas->bgimg->d_h, &x, &y);
 	switch_img_patch(canvas->img, canvas->bgimg, x, y);
+
+	for (i = 0; i < canvas->total_layers; i++) {
+		canvas->layers[i].banner_patched = 0;
+		canvas->layers[i].mute_patched = 0;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2182,7 +2187,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	return NULL;
 }
 
-void conference_video_member_video_mute_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, conference_member_t *member)
+void conference_video_member_video_mute_banner(switch_image_t *img, conference_member_t *member)
 {
 	const char *text = "VIDEO MUTED";
 	char *dup = NULL;
@@ -2238,8 +2243,8 @@ void conference_video_member_video_mute_banner(mcu_canvas_t *canvas, mcu_layer_t
 	}
 
 	switch_snprintf(text_str, sizeof(text_str), "%s:%s:%s:%s%s:%s", fg, bg, font_face, font_scale, font_scale_percentage, text);
-	text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, text_str);
-	switch_img_patch(canvas->img, text_img, layer->x_pos, layer->y_pos);
+	text_img = switch_img_write_text_img(img->d_w, img->d_h, SWITCH_TRUE, text_str);
+	switch_img_patch(img, text_img, 0, 0);
 	switch_img_free(&text_img);
 
 	if (params) switch_event_destroy(&params);
@@ -3266,12 +3271,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							}
 
 							if (layer->mute_img) {
+								conference_video_member_video_mute_banner(layer->mute_img, imember);
 								conference_video_scale_and_patch(layer, layer->mute_img, SWITCH_FALSE);
 							}
 						}
 
-
-						conference_video_member_video_mute_banner(canvas, layer, imember);
 						layer->mute_patched = 1;
 					}
 				}
@@ -3524,10 +3528,20 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						if (layer) {
 							if (conference_utils_member_test_flag(omember, MFLAG_CAN_BE_SEEN)) {
 								layer->mute_patched = 0;
-							} else if (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
+							} else if (!conference_utils_test_flag(omember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
 								if (!layer->mute_patched) {
-									conference_video_scale_and_patch(layer, omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img, SWITCH_FALSE);
-									conference_video_member_video_mute_banner(imember->canvas, layer, imember);
+									switch_image_t *mute_img = omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img;
+
+									if (mute_img) {
+										switch_image_t *tmp;
+
+										switch_img_copy(mute_img, &tmp);
+										switch_img_fit(&tmp, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
+										//conference_video_member_video_mute_banner(imember->canvas, layer, imember);
+										conference_video_member_video_mute_banner(tmp, omember);
+										conference_video_scale_and_patch(layer, tmp, SWITCH_FALSE);
+									}
+									
 									layer->mute_patched = 1;
 								}
 
@@ -3657,8 +3671,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				for (i = 0; i < canvas->total_layers; i++) {
 					mcu_layer_t *layer = &canvas->layers[i];
+					
+					if ((layer->member_id > -1 || layer->fnode) && layer->cur_img && layer->geometry.overlap) {
 
-					if (!layer->mute_patched && (layer->member_id > -1 || layer->fnode) && layer->cur_img && layer->geometry.overlap) {
+						layer->mute_patched = 0;
+						layer->banner_patched = 0;
+
 						if (canvas->refresh) {
 							layer->refresh = 1;
 							canvas->refresh++;
