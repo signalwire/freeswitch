@@ -1468,6 +1468,17 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 
 	if (!context->has_video) {
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video pix_fmt: %d\n", context->video_st.st->codec->pix_fmt);
+		switch (context->video_st.st->codec->pix_fmt) {
+			case AV_PIX_FMT_YUVA420P:
+			case AV_PIX_FMT_RGBA:
+			case AV_PIX_FMT_ARGB:
+			case AV_PIX_FMT_BGRA:
+				context->handle->mm.fmt = SWITCH_IMG_FMT_ARGB;
+		default:
+			context->handle->mm.fmt = SWITCH_IMG_FMT_I420;
+		}
 	}
 
 	return status;
@@ -1636,7 +1647,7 @@ again:
 						continue;
 					}
 				}
-				
+
 				context->handle->mm.fmt = fmt;
 
 				img = switch_img_alloc(NULL, fmt, vframe->width, vframe->height, 1);
@@ -2125,7 +2136,7 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	if (context->file_read_thread_running) {
 		context->file_read_thread_running = 0;
 	}
-	
+
 	if (context->file_read_thread) {
 		switch_thread_join(&status, context->file_read_thread);
 		context->file_read_thread = NULL;
