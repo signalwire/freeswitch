@@ -13,6 +13,11 @@ bladec_SOURCES = bladec.c tap.c
 bladec_CFLAGS = $(AM_CFLAGS)
 bladec_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += blades
+blades_SOURCES = blades.c tap.c
+blades_CFLAGS = $(AM_CFLAGS)
+blades_LDADD = $(TEST_LDADD)
+
 
 TESTS=$(check_PROGRAMS)
 

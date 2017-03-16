@@ -36,13 +36,14 @@
 struct blade_space_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
+	blade_module_t *module;
 
 	const char *path;
 	ks_hash_t *methods;
 };
 
 
-KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, const char *path)
+KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, blade_module_t *bm, const char *path)
 {
 	blade_space_t *bs = NULL;
 	ks_pool_t *pool = NULL;
@@ -56,6 +57,7 @@ KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *
 	bs = ks_pool_alloc(pool, sizeof(blade_space_t));
 	bs->handle = bh;
 	bs->pool = pool;
+	bs->module = bm;
 	bs->path = path; // @todo dup and keep copy? should mostly be literals
 	ks_hash_create(&bs->methods, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bs->pool);
 	ks_assert(bs);
@@ -99,6 +101,13 @@ KS_DECLARE(blade_handle_t *) blade_space_handle_get(blade_space_t *bs)
 	ks_assert(bs);
 
 	return bs->handle;
+}
+
+KS_DECLARE(blade_module_t *) blade_space_module_get(blade_space_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->module;
 }
 
 KS_DECLARE(const char *) blade_space_path_get(blade_space_t *bs)

@@ -55,7 +55,7 @@ KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP,
 	breq->pool = pool;
 	breq->session_id = ks_pstrdup(pool, session_id);
 	breq->message = cJSON_Duplicate(json, 1);
-	breq->message_id = cJSON_GetObjectCstr(json, "id");
+	breq->message_id = cJSON_GetObjectCstr(breq->message, "id");
 	breq->callback = callback;
 
 	*breqP = breq;
@@ -81,7 +81,11 @@ KS_DECLARE(ks_status_t) blade_request_destroy(blade_request_t **breqP)
 }
 
 
-KS_DECLARE(ks_status_t) blade_response_create(blade_response_t **bresP, blade_handle_t *bh, const char *session_id, blade_request_t *breq, cJSON *json)
+KS_DECLARE(ks_status_t) blade_response_create(blade_response_t **bresP,
+											  blade_handle_t *bh,
+											  const char *session_id,
+											  blade_request_t *breq,
+											  cJSON *json)
 {
 	blade_response_t *bres = NULL;
 	ks_pool_t *pool = NULL;
@@ -121,6 +125,50 @@ KS_DECLARE(ks_status_t) blade_response_destroy(blade_response_t **bresP)
 	cJSON_Delete(bres->message);
 
 	ks_pool_free(bres->pool, bresP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_event_create(blade_event_t **bevP,
+										   blade_handle_t *bh,
+										   const char *session_id,
+										   cJSON *json)
+{
+	blade_event_t *bev = NULL;
+	ks_pool_t *pool = NULL;
+
+	ks_assert(bevP);
+	ks_assert(bh);
+	ks_assert(session_id);
+	ks_assert(json);
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	bev = ks_pool_alloc(pool, sizeof(blade_event_t));
+	bev->handle = bh;
+	bev->pool = pool;
+	bev->session_id = ks_pstrdup(pool, session_id);
+	bev->message = cJSON_Duplicate(json, 1);
+
+	*bevP = bev;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_event_destroy(blade_event_t **bevP)
+{
+	blade_event_t *bev = NULL;
+
+	ks_assert(bevP);
+	ks_assert(*bevP);
+
+	bev = *bevP;
+
+	ks_pool_free(bev->pool, (void **)&bev->session_id);
+	cJSON_Delete(bev->message);
+
+	ks_pool_free(bev->pool, bevP);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -204,6 +252,35 @@ KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJ
 
 	*json = root;
 	if (error) *error = e;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_rpc_event_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *event)
+{
+	cJSON *root = NULL;
+	cJSON *b = NULL;
+	cJSON *r = NULL;
+
+	ks_assert(pool);
+	ks_assert(json);
+	ks_assert(event);
+
+	root = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
+
+	b = cJSON_CreateObject();
+	cJSON_AddStringToObject(b, "event", event);
+	cJSON_AddItemToObject(root, "blade", b);
+
+	if (result) {
+		r = cJSON_CreateObject();
+		cJSON_AddItemToObject(root, "result", r);
+		*result = r;
+	}
+
+	*json = root;
 
 	return KS_STATUS_SUCCESS;
 }

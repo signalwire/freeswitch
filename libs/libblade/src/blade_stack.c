@@ -49,14 +49,21 @@ struct blade_handle_s {
 
 	ks_hash_t *transports; // registered transports exposed by modules, NOT active connections
 	ks_hash_t *spaces; // registered method spaces exposed by modules
+	// registered event callback registry
+	// @todo should probably use a blade_handle_event_registration_t and contain optional userdata to pass from registration back into the callback, like
+	// a blade_module_t to get at inner module data for events that service modules may need to subscribe to between each other
+	ks_hash_t *events;
 
 	//blade_identity_t *identity;
 	blade_datastore_t *datastore;
 
 	// @todo insert on connection creations, remove on connection destructions, key based on a UUID for the connection
 	ks_hash_t *connections; // active connections keyed by connection id
+
 	// @todo insert on session creations, remove on session destructions, key based on a UUID for the session
 	ks_hash_t *sessions; // active sessions keyed by session id
+	ks_hash_t *session_state_callbacks;
+
 	// @todo another hash with sessions keyed by the remote identity without parameters for quick lookup by target identity on sending?
 	ks_hash_t *requests; // outgoing requests waiting for a response keyed by the message id
 };
@@ -69,7 +76,6 @@ struct blade_handle_transport_registration_s {
 	blade_module_t *module;
 	blade_transport_callbacks_t *callbacks;
 };
-
 
 KS_DECLARE(ks_status_t) blade_handle_transport_registration_create(blade_handle_transport_registration_t **bhtrP,
 																   ks_pool_t *pool,
@@ -110,6 +116,59 @@ KS_DECLARE(ks_status_t) blade_handle_transport_registration_destroy(blade_handle
 }
 
 
+typedef struct blade_handle_session_state_callback_registration_s blade_handle_session_state_callback_registration_t;
+struct blade_handle_session_state_callback_registration_s {
+	ks_pool_t *pool;
+
+	const char *id;
+	void *data;
+	blade_session_state_callback_t callback;
+};
+
+ks_status_t blade_handle_session_state_callback_registration_create(blade_handle_session_state_callback_registration_t **bhsscrP,
+																	ks_pool_t *pool,
+																	void *data,
+																	blade_session_state_callback_t callback)
+{
+	blade_handle_session_state_callback_registration_t *bhsscr = NULL;
+	uuid_t uuid;
+
+	ks_assert(bhsscrP);
+	ks_assert(pool);
+	ks_assert(callback);
+
+	ks_uuid(&uuid);
+
+	bhsscr = ks_pool_alloc(pool, sizeof(blade_handle_session_state_callback_registration_t));
+	bhsscr->pool = pool;
+	bhsscr->id = ks_uuid_str(pool, &uuid);
+	bhsscr->data = data;
+	bhsscr->callback = callback;
+
+	*bhsscrP = bhsscr;
+
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_handle_session_state_callback_registration_destroy(blade_handle_session_state_callback_registration_t **bhsscrP)
+{
+	blade_handle_session_state_callback_registration_t *bhsscr = NULL;
+
+	ks_assert(bhsscrP);
+
+	bhsscr = *bhsscrP;
+	*bhsscrP = NULL;
+
+	ks_assert(bhsscr);
+
+	ks_pool_free(bhsscr->pool, &bhsscr->id);
+
+	ks_pool_free(bhsscr->pool, &bhsscr);
+
+	return KS_STATUS_SUCCESS;
+}
+
+
 
 KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool)
 {
@@ -137,12 +196,17 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	ks_assert(bh->transports);
 	ks_hash_create(&bh->spaces, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->spaces);
+	ks_hash_create(&bh->events, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->events);
 
 	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->connections);
+
 	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->sessions);
-	// @todo decide if this is uint32_t or uuid string, prefer uuid string to avoid needing another lock and variable for next id
+	ks_hash_create(&bh->session_state_callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_assert(bh->session_state_callbacks);
+
 	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->requests);
 
@@ -172,8 +236,10 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	blade_handle_shutdown(bh);
 
 	ks_hash_destroy(&bh->requests);
+	ks_hash_destroy(&bh->session_state_callbacks);
 	ks_hash_destroy(&bh->sessions);
 	ks_hash_destroy(&bh->connections);
+	ks_hash_destroy(&bh->events);
 	ks_hash_destroy(&bh->spaces);
 	ks_hash_destroy(&bh->transports);
 
@@ -266,6 +332,14 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 
 	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and spaces, and will disconnect remaining
 	// unattached connections
+
+	for (it = ks_hash_first(bh->events,  KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		blade_event_callback_t *value = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+		blade_handle_event_unregister(bh, (const char *)key);
+	}
 
 	for (it = ks_hash_first(bh->spaces,  KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		void *key = NULL;
@@ -409,6 +483,53 @@ KS_DECLARE(blade_space_t *) blade_handle_space_lookup(blade_handle_t *bh, const 
 	return bs;
 }
 
+KS_DECLARE(ks_status_t) blade_handle_event_register(blade_handle_t *bh, const char *event, blade_event_callback_t callback)
+{
+	ks_assert(bh);
+	ks_assert(event);
+	ks_assert(callback);
+
+	ks_hash_write_lock(bh->events);
+	ks_hash_insert(bh->events, (void *)event, (void *)(intptr_t)callback);
+	ks_hash_write_unlock(bh->events);
+
+	ks_log(KS_LOG_DEBUG, "Event Registered: %s\n", event);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_event_unregister(blade_handle_t *bh, const char *event)
+{
+	ks_bool_t removed = KS_FALSE;
+
+	ks_assert(bh);
+	ks_assert(event);
+
+	ks_hash_write_lock(bh->events);
+	if (ks_hash_remove(bh->events, (void *)event)) removed = KS_TRUE;
+	ks_hash_write_unlock(bh->events);
+
+	if (removed) {
+		ks_log(KS_LOG_DEBUG, "Event Unregistered: %s\n", event);
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(blade_event_callback_t) blade_handle_event_lookup(blade_handle_t *bh, const char *event)
+{
+	blade_event_callback_t callback = NULL;
+
+	ks_assert(bh);
+	ks_assert(event);
+
+	ks_hash_read_lock(bh->events);
+	callback = (blade_event_callback_t)(intptr_t)ks_hash_search(bh->events, (void *)event, KS_UNLOCKED);
+	ks_hash_read_unlock(bh->events);
+
+	return callback;
+}
+
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
@@ -512,9 +633,10 @@ KS_DECLARE(ks_status_t) blade_handle_connections_remove(blade_connection_t *bc)
 
 	blade_connection_write_unlock(bc);
 
+	// @todo call bh->connection_callbacks
+
 	return ret;
 }
-
 
 KS_DECLARE(blade_session_t *) blade_handle_sessions_get(blade_handle_t *bh, const char *sid)
 {
@@ -567,6 +689,92 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 	blade_session_write_unlock(bs);
 
 	return ret;
+}
+
+KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, list_t *sessions, const char *exclude, cJSON *json)
+{
+	blade_session_t *bs = NULL;
+
+	ks_assert(bh);
+	ks_assert(sessions);
+	ks_assert(json);
+
+	list_iterator_start(sessions);
+	while (list_iterator_hasnext(sessions)) {
+		const char *sessionid = list_iterator_next(sessions);
+		if (exclude && !strcmp(exclude, sessionid)) continue;
+		bs = blade_handle_sessions_get(bh, sessionid);
+		if (!bs) {
+			ks_log(KS_LOG_DEBUG, "This should not happen\n");
+			continue;
+		}
+		blade_session_send(bs, json, NULL);
+		blade_session_read_unlock(bs);
+	}
+	list_iterator_stop(sessions);
+}
+
+KS_DECLARE(ks_status_t) blade_handle_session_state_callback_register(blade_handle_t *bh, void *data, blade_session_state_callback_t callback, const char **id)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_session_state_callback_registration_t *bhsscr = NULL;
+
+	ks_assert(bh);
+	ks_assert(callback);
+	ks_assert(id);
+
+	blade_handle_session_state_callback_registration_create(&bhsscr, blade_handle_pool_get(bh), data, callback);
+	ks_assert(bhsscr);
+
+	ks_hash_write_lock(bh->session_state_callbacks);
+	ret = ks_hash_insert(bh->session_state_callbacks, (void *)bhsscr->id, bhsscr);
+	ks_hash_write_unlock(bh->session_state_callbacks);
+
+	*id = bhsscr->id;
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_session_state_callback_unregister(blade_handle_t *bh, const char *id)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_handle_session_state_callback_registration_t *bhsscr = NULL;
+
+	ks_assert(bh);
+	ks_assert(id);
+
+	ks_hash_write_lock(bh->session_state_callbacks);
+	bhsscr = (blade_handle_session_state_callback_registration_t *)ks_hash_remove(bh->session_state_callbacks, (void *)id);
+	if (!bhsscr) ret = KS_STATUS_FAIL;
+	ks_hash_write_lock(bh->session_state_callbacks);
+
+	if (bhsscr)	blade_handle_session_state_callback_registration_destroy(&bhsscr);
+
+	return ret;
+}
+
+KS_DECLARE(void) blade_handle_session_state_callbacks_execute(blade_session_t *bs, blade_session_state_condition_t condition)
+{
+	blade_handle_t *bh = NULL;
+	ks_hash_iterator_t *it = NULL;
+
+	ks_assert(bs);
+
+	if (blade_session_state_get(bs) == BLADE_SESSION_STATE_NONE) return;
+
+	bh = blade_session_handle_get(bs);
+	ks_assert(bh);
+
+	ks_hash_read_lock(bh->session_state_callbacks);
+	for (it = ks_hash_first(bh->session_state_callbacks, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		blade_handle_session_state_callback_registration_t *value = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+
+		value->callback(bs, condition, value->data);
+	}
+	ks_hash_read_unlock(bh->session_state_callbacks);
 }
 
 

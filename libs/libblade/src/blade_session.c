@@ -48,6 +48,9 @@ struct blade_session_s {
 
 	ks_q_t *sending;
 	ks_q_t *receiving;
+
+	cJSON *properties;
+	ks_rwl_t *properties_lock;
 };
 
 void *blade_session_state_thread(ks_thread_t *thread, void *data);
@@ -83,6 +86,11 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 	ks_q_create(&bs->receiving, pool, 0);
 	ks_assert(bs->receiving);
 
+	bs->properties = cJSON_CreateObject();
+	ks_assert(bs->properties);
+    ks_rwl_create(&bs->properties_lock, pool);
+	ks_assert(bs->properties_lock);
+
 	*bsP = bs;
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
@@ -100,6 +108,10 @@ KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP)
 	bs = *bsP;
 
 	blade_session_shutdown(bs);
+
+	cJSON_Delete(bs->properties);
+	bs->properties = NULL;
+	ks_rwl_destroy(&bs->properties_lock);
 
 	list_destroy(&bs->connections);
 	ks_q_destroy(&bs->receiving);
@@ -174,6 +186,13 @@ KS_DECLARE(blade_handle_t *) blade_session_handle_get(blade_session_t *bs)
 	return bs->handle;
 }
 
+KS_DECLARE(ks_pool_t *) blade_session_pool_get(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->pool;
+}
+
 KS_DECLARE(const char *) blade_session_id_get(blade_session_t *bs)
 {
 	ks_assert(bs);
@@ -188,6 +207,20 @@ KS_DECLARE(void) blade_session_id_set(blade_session_t *bs, const char *id)
 
 	if (bs->id) ks_pool_free(bs->pool, &bs->id);
 	bs->id = ks_pstrdup(bs->pool, id);
+}
+
+KS_DECLARE(blade_session_state_t) blade_session_state_get(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->state;
+}
+
+KS_DECLARE(cJSON *) blade_session_properties_get(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->properties;
 }
 
 KS_DECLARE(ks_status_t) blade_session_read_lock(blade_session_t *bs, ks_bool_t block)
@@ -227,11 +260,50 @@ KS_DECLARE(ks_status_t) blade_session_write_unlock(blade_session_t *bs)
 }
 
 
+KS_DECLARE(ks_status_t) blade_session_properties_read_lock(blade_session_t *bs, ks_bool_t block)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(bs);
+
+	if (block) ret = ks_rwl_read_lock(bs->properties_lock);
+	else ret = ks_rwl_try_read_lock(bs->properties_lock);
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_session_properties_read_unlock(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return ks_rwl_read_unlock(bs->properties_lock);
+}
+
+KS_DECLARE(ks_status_t) blade_session_properties_write_lock(blade_session_t *bs, ks_bool_t block)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(bs);
+
+	if (block) ret = ks_rwl_write_lock(bs->properties_lock);
+	else ret = ks_rwl_try_write_lock(bs->properties_lock);
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_session_properties_write_unlock(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	return ks_rwl_write_unlock(bs->properties_lock);
+}
+
+
 KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_state_t state)
 {
 	ks_assert(bs);
 
 	bs->state = state;
+
+	blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_PRE);
 }
 
 KS_DECLARE(void) blade_session_hangup(blade_session_t *bs)
@@ -387,6 +459,8 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 			}
 		}
 
+		blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_POST);
+
 		switch (state) {
 		case BLADE_SESSION_STATE_DESTROY:
 			blade_session_state_on_destroy(bs);
@@ -468,7 +542,7 @@ ks_status_t blade_session_state_on_ready(blade_session_t *bs)
 
 	ks_assert(bs);
 
-	ks_log(KS_LOG_DEBUG, "Session (%s) state ready\n", bs->id);
+	//ks_log(KS_LOG_DEBUG, "Session (%s) state ready\n", bs->id);
 
 	// @todo for now only process messages if there is a connection available
 	if (list_size(&bs->connections) > 0) {
@@ -479,7 +553,7 @@ ks_status_t blade_session_state_on_ready(blade_session_t *bs)
 		}
 	}
 
-	ks_sleep_ms(1000);
+	ks_sleep_ms(1);
 	return KS_STATUS_SUCCESS;
 }
 
@@ -495,7 +569,15 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 
 	method = cJSON_GetObjectCstr(json, "method");
 	id = cJSON_GetObjectCstr(json, "id");
-	if (method) {
+	if (!id) {
+		cJSON *blade = NULL;
+		const char *event = NULL;
+
+		blade = cJSON_GetObjectItem(json, "blade");
+		event = cJSON_GetObjectCstr(blade, "event");
+
+		ks_log(KS_LOG_DEBUG, "Session (%s) sending event (%s)\n", bs->id, event);
+	} else if (method) {
 		// @note This is scenario 1
 		// 1) Sending a request (client: method caller or consumer)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
@@ -529,7 +611,10 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 {
 	blade_request_t *breq = NULL;
 	blade_response_t *bres = NULL;
+	blade_event_t *bev = NULL;
 	const char *jsonrpc = NULL;
+	cJSON *blade = NULL;
+	const char *blade_event = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
 	ks_bool_t disconnect = KS_FALSE;
@@ -548,73 +633,99 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		return KS_STATUS_FAIL;
 	}
 
-	id = cJSON_GetObjectCstr(json, "id");
-	if (!id) {
-        ks_log(KS_LOG_DEBUG, "Received message is missing 'id'\n");
-		// @todo send error response, code = -32600 (invalid request)
-		// @todo hangup session entirely?
-		return KS_STATUS_FAIL;
+	blade = cJSON_GetObjectItem(json, "blade");
+	if (blade) {
+		blade_event = cJSON_GetObjectCstr(blade, "event");
 	}
 
-	method = cJSON_GetObjectCstr(json, "method");
-	if (method) {
-		// @note This is scenario 2
-		// 2) Receiving a request (server: method callee or provider)
-		blade_space_t *tmp_space = NULL;
-		blade_method_t *tmp_method = NULL;
-		blade_request_callback_t callback = NULL;
-		char *space_name = ks_pstrdup(bs->pool, method);
-		char *method_name = strrchr(space_name, '.');
+	if (blade_event) {
+		blade_event_callback_t callback = blade_handle_event_lookup(blade_session_handle_get(bs), blade_event);
+		if (!callback) {
+			ks_log(KS_LOG_DEBUG, "Received event message with no event callback '%s'\n", blade_event);
+		} else {
+			ks_log(KS_LOG_DEBUG, "Session (%s) processing event %s\n", bs->id, blade_event);
 
-		ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
+			blade_event_create(&bev, bs->handle, bs->id, json);
+			ks_assert(bev);
 
-		if (!method_name || method_name == space_name) {
-			ks_pool_free(bs->pool, (void **)&space_name);
-			// @todo send error response, code = -32601 (method not found)
-			// @todo hangup session entirely?
-			return KS_STATUS_FAIL;
+			disconnect = callback(bev);
+
+			blade_event_destroy(&bev);
 		}
-		*method_name = '\0';
-		method_name++; // @todo check if can be postfixed safely on previous assignment, can't recall
-
-		tmp_space = blade_handle_space_lookup(bs->handle, space_name);
-		if (tmp_space) tmp_method = blade_space_methods_get(tmp_space, method_name);
-
-		ks_pool_free(bs->pool, (void **)&space_name);
-
-		if (!tmp_method) {
-			// @todo send error response, code = -32601 (method not found)
-			// @todo hangup session entirely?
-			return KS_STATUS_FAIL;
-		}
-		callback = blade_method_callback_get(tmp_method);
-		ks_assert(callback);
-
-		blade_request_create(&breq, bs->handle, bs->id, json, NULL);
-		ks_assert(breq);
-
-		disconnect = callback(breq);
-
-		blade_request_destroy(&breq);
 	} else {
-		// @note This is scenario 4
-		// 4) Receiving a response or error (client: method caller or consumer)
-
-		ks_log(KS_LOG_DEBUG, "Session (%s) receiving response (%s)\n", bs->id, id);
-
-		breq = blade_handle_requests_get(bs->handle, id);
-		if (!breq) {
+		id = cJSON_GetObjectCstr(json, "id");
+		if (!id) {
+			ks_log(KS_LOG_DEBUG, "Received non-event message is missing 'id'\n");
+			// @todo send error response, code = -32600 (invalid request)
 			// @todo hangup session entirely?
 			return KS_STATUS_FAIL;
 		}
-		blade_handle_requests_remove(breq);
 
-		blade_response_create(&bres, bs->handle, bs->id, breq, json);
-		ks_assert(bres);
+		method = cJSON_GetObjectCstr(json, "method");
+		if (method) {
+			// @note This is scenario 2
+			// 2) Receiving a request (server: method callee or provider)
+			blade_space_t *tmp_space = NULL;
+			blade_method_t *tmp_method = NULL;
+			blade_request_callback_t callback = NULL;
+			char *space_name = ks_pstrdup(bs->pool, method);
+			char *method_name = strrchr(space_name, '.');
 
-		disconnect = breq->callback(bres);
+			ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
 
-		blade_response_destroy(&bres);
+			if (!method_name || method_name == space_name) {
+				ks_log(KS_LOG_DEBUG, "Received unparsable method\n");
+				ks_pool_free(bs->pool, (void **)&space_name);
+				// @todo send error response, code = -32601 (method not found)
+				return KS_STATUS_FAIL;
+			}
+			*method_name = '\0';
+			method_name++; // @todo check if can be postfixed safely on previous assignment, can't recall
+
+			ks_log(KS_LOG_DEBUG, "Looking for space %s\n", space_name);
+
+			tmp_space = blade_handle_space_lookup(bs->handle, space_name);
+			if (tmp_space) {
+				ks_log(KS_LOG_DEBUG, "Looking for method %s\n", method_name);
+				tmp_method = blade_space_methods_get(tmp_space, method_name);
+			}
+
+			ks_pool_free(bs->pool, (void **)&space_name);
+
+			if (!tmp_method) {
+				ks_log(KS_LOG_DEBUG, "Received unknown method\n");
+				// @todo send error response, code = -32601 (method not found)
+				return KS_STATUS_FAIL;
+			}
+			callback = blade_method_callback_get(tmp_method);
+			ks_assert(callback);
+
+			blade_request_create(&breq, bs->handle, bs->id, json, NULL);
+			ks_assert(breq);
+
+			disconnect = callback(blade_space_module_get(tmp_space), breq);
+
+			blade_request_destroy(&breq);
+		} else {
+			// @note This is scenario 4
+			// 4) Receiving a response or error (client: method caller or consumer)
+
+			ks_log(KS_LOG_DEBUG, "Session (%s) receiving response (%s)\n", bs->id, id);
+
+			breq = blade_handle_requests_get(bs->handle, id);
+			if (!breq) {
+				// @todo hangup session entirely?
+				return KS_STATUS_FAIL;
+			}
+			blade_handle_requests_remove(breq);
+
+			blade_response_create(&bres, bs->handle, bs->id, breq, json);
+			ks_assert(bres);
+
+			disconnect = breq->callback(bres);
+
+			blade_response_destroy(&bres);
+		}
 	}
 
 	if (disconnect) {

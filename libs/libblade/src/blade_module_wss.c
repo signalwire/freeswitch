@@ -122,7 +122,7 @@ ks_status_t blade_transport_wss_init_create(blade_transport_wss_init_t **bt_wssi
 ks_status_t blade_transport_wss_init_destroy(blade_transport_wss_init_t **bt_wssiP);
 
 
-ks_bool_t blade_test_echo_request_handler(blade_request_t *breq);
+ks_bool_t blade_test_echo_request_handler(blade_module_t *bm, blade_request_t *breq);
 ks_bool_t blade_test_echo_response_handler(blade_response_t *bres);
 
 
@@ -427,7 +427,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 	blade_handle_transport_register(bm_wss->handle, bm, BLADE_MODULE_WSS_TRANSPORT_NAME, bm_wss->transport_callbacks);
 
 
-	blade_space_create(&space, bm_wss->handle, "blade.test");
+	blade_space_create(&space, bm_wss->handle, bm, "blade.test");
 	ks_assert(space);
 
 	blade_method_create(&method, space, "echo", blade_test_echo_request_handler);
@@ -1248,9 +1248,10 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready_inbound(blade_c
 {
 	ks_assert(bc);
 
-	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) {
+		ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
+	}
 
-	ks_sleep_ms(1000);
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 
@@ -1258,11 +1259,11 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_
 {
 	ks_assert(bc);
 
-	ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
-
 	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) {
 		blade_session_t *bs = NULL;
 		cJSON *req = NULL;
+
+		ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
 		bs = blade_handle_sessions_get(blade_connection_handle_get(bc), blade_connection_session_get(bc));
 		ks_assert(bs);
@@ -1273,17 +1274,17 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_
 		blade_session_read_unlock(bs);
 	}
 
-	ks_sleep_ms(1000);
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
 
 
 
-ks_bool_t blade_test_echo_request_handler(blade_request_t *breq)
+ks_bool_t blade_test_echo_request_handler(blade_module_t *bm, blade_request_t *breq)
 {
 	blade_session_t *bs = NULL;
 	cJSON *res = NULL;
 
+	ks_assert(bm);
 	ks_assert(breq);
 
 	ks_log(KS_LOG_DEBUG, "Request Received!\n");

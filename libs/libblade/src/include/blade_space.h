@@ -36,9 +36,10 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, const char *path);
+KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, blade_module_t *bm, const char *path);
 KS_DECLARE(ks_status_t) blade_space_destroy(blade_space_t **bsP);
 KS_DECLARE(blade_handle_t *) blade_space_handle_get(blade_space_t *bs);
+KS_DECLARE(blade_module_t *) blade_space_module_get(blade_space_t *bs);
 KS_DECLARE(const char *) blade_space_path_get(blade_space_t *bs);
 KS_DECLARE(ks_status_t) blade_space_methods_add(blade_space_t *bs, blade_method_t *bm);
 KS_DECLARE(ks_status_t) blade_space_methods_remove(blade_space_t *bs, blade_method_t *bm);

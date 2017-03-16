@@ -532,6 +532,7 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
+	else ks_sleep_ms(1);
 
 	return KS_STATUS_SUCCESS;
 }
