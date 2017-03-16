@@ -88,7 +88,7 @@ return[w,h];}
 var resList=[[160,120],[320,180],[320,240],[640,360],[640,480],[1280,720],[1920,1080]];var resI=0;var ttl=0;var checkRes=function(cam,func){if(resI>=resList.length){var res={'validRes':$.FSRTC.validRes,'bestResSupported':$.FSRTC.bestResSupported()};localStorage.setItem("res_"+cam,$.toJSON(res));if(func)return func(res);return;}
 var video={}
 if(cam){video.deviceId={exact:cam};}
-w=resList[resI][0];h=resList[resI][1];resI++;video={width:w,height:h};getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.warn(w+"x"+h+" not supported.");checkRes(cam,func);}});}
+w=resList[resI][0];h=resList[resI][1];resI++;video={width:{exact:w},height:{exact:h}};getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.warn(w+"x"+h+" not supported.");checkRes(cam,func);}});}
 $.FSRTC.getValidRes=function(cam,func){var used=[];var cached=localStorage.getItem("res_"+cam);if(cached){var cache=$.parseJSON(cached);if(cache){$.FSRTC.validRes=cache.validRes;console.log("CACHED RES FOR CAM "+cam,cache);}else{console.error("INVALID CACHE");}
 return func?func(cache):null;}
 $.FSRTC.validRes=[];resI=0;checkRes(cam,func);}

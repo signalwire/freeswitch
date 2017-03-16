@@ -1013,8 +1013,8 @@
 	resI++;
 
 	video = {
-	    width: w,
-	    height: h
+	    width: {exact: w},
+	    height: {exact: h}
 	    //"minWidth": w,
 	    //"minHeight": h,
 	    //"maxWidth": w,
