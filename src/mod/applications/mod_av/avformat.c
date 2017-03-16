@@ -1469,16 +1469,20 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	if (!context->has_video) {
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video pix_fmt: %d\n", context->video_st.st->codec->pix_fmt);
 		switch (context->video_st.st->codec->pix_fmt) {
-			case AV_PIX_FMT_YUVA420P:
-			case AV_PIX_FMT_RGBA:
-			case AV_PIX_FMT_ARGB:
-			case AV_PIX_FMT_BGRA:
-				context->handle->mm.fmt = SWITCH_IMG_FMT_ARGB;
+		case AV_PIX_FMT_YUVA420P:
+		case AV_PIX_FMT_RGBA:
+		case AV_PIX_FMT_ARGB:
+		case AV_PIX_FMT_BGRA:
+			context->handle->mm.fmt = SWITCH_IMG_FMT_ARGB;
+			break;
 		default:
 			context->handle->mm.fmt = SWITCH_IMG_FMT_I420;
+			break;
 		}
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						  "Opening file in mode: %s\n", context->handle->mm.fmt == SWITCH_IMG_FMT_ARGB ? "ARGB" : "I420");
 	}
 
 	return status;
@@ -2198,7 +2202,7 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	int size;
 	size_t need = *len * 2 * context->audio_st.channels;
 
-	if (!context->has_audio && context->has_video && switch_queue_size(context->eh.video_queue) > 0) {
+	if (!context->has_audio && context->has_video && context->file_read_thread_running) {
 		memset(data, 0, *len * handle->channels * 2);
 		return SWITCH_STATUS_SUCCESS;
 	}
