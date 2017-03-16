@@ -500,7 +500,29 @@ static void set_bounds(int *x, int *y, int img_w, int img_h, int crop_w, int cro
 
 
 }
- 
+
+void conference_video_parse_filter_string(conference_file_filter_t *filters, const char *filter_str)
+{
+	*filters = 0;
+
+	if (!filter_str) return;
+
+	if (switch_stristr("fg-gray", filter_str)) {
+		*filters |= FILTER_GRAY_FG;
+	}
+
+	if (switch_stristr("bg-gray", filter_str)) {
+		*filters |= FILTER_GRAY_BG;
+	}
+
+	if (switch_stristr("fg-sepia", filter_str)) {
+		*filters |= FILTER_SEPIA_FG;
+	}
+
+	if (switch_stristr("bg-sepia", filter_str)) {
+		*filters |= FILTER_SEPIA_BG;
+	}
+} 
 
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
@@ -870,6 +892,23 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			switch_mutex_lock(layer->overlay_mutex);
 			if (layer->overlay_img) {
 				switch_img_fit(&layer->overlay_img, layer->img->d_w, layer->img->d_h, SWITCH_FIT_SCALE);
+
+				if (layer->overlay_filters & FILTER_GRAY_FG) {
+					switch_img_gray(layer->img, 0, 0, layer->img->d_w, layer->img->d_h);
+				}
+
+				if (layer->overlay_filters & FILTER_SEPIA_FG) {
+					switch_img_sepia(layer->img, 0, 0, layer->img->d_w, layer->img->d_h);
+				}
+
+				if (layer->overlay_filters & FILTER_GRAY_BG) {
+					switch_img_gray(layer->overlay_img, 0, 0, layer->overlay_img->d_w, layer->overlay_img->d_h);
+				}
+
+				if (layer->overlay_filters & FILTER_SEPIA_BG) {
+					switch_img_sepia(layer->overlay_img, 0, 0, layer->overlay_img->d_w, layer->overlay_img->d_h);
+				}
+
 				switch_img_patch(layer->img, layer->overlay_img, 0, 0);
 			}
 			switch_mutex_unlock(layer->overlay_mutex);
@@ -1883,9 +1922,13 @@ void conference_video_canvas_del_fnode_layer(conference_obj_t *conference, confe
 		fnode->layer_id = -1;
 		fnode->canvas_id = -1;
 		xlayer->fnode = NULL;
+
+		switch_mutex_lock(xlayer->overlay_mutex);
+		switch_img_free(&xlayer->overlay_img);
 		if (fnode->layer_lock < 0) {
 			conference_video_reset_layer(xlayer);
 		}
+		switch_mutex_unlock(xlayer->overlay_mutex);
 	}
 	switch_mutex_unlock(canvas->mutex);
 }
@@ -2338,6 +2381,7 @@ void conference_video_patch_fnode(mcu_canvas_t *canvas, conference_file_node_t *
 				switch_mutex_lock(layer->overlay_mutex);
 				switch_img_free(&layer->overlay_img);
 				layer->overlay_img = file_frame.img;
+				layer->overlay_filters = fnode->filters;
 				switch_mutex_unlock(layer->overlay_mutex);
 			} else {
 				switch_img_free(&layer->cur_img);
@@ -2388,9 +2432,9 @@ void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id) 
 		if (full_screen) {
 			canvas->play_file = 1;
 			if (fnode->fh.mm.fmt == SWITCH_IMG_FMT_ARGB) {
-				canvas->conference->overlay_video_file = 1;
+				canvas->overlay_video_file = 1;
 			} else {
-				canvas->conference->playing_video_file = 1;
+				canvas->playing_video_file = 1;
 			}
 		} else {
 			conference_video_canvas_set_fnode_layer(canvas, fnode, -1);
@@ -2566,6 +2610,16 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 		}
 	} else {
 		conference_video_check_flush(member, SWITCH_FALSE);
+	}
+
+	if (img) {
+		if (member->video_filters & FILTER_GRAY_FG) {
+			switch_img_gray(img, 0, 0, img->d_w, img->d_h);
+		}
+
+		if (member->video_filters & FILTER_SEPIA_FG) {
+			switch_img_sepia(img, 0, 0, img->d_w, img->d_h);
+		}
 	}
 
 	*imgP = img;
@@ -3098,7 +3152,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
 			}
 
-			if (conference->playing_video_file) {
+			if (canvas->playing_video_file) {
 				switch_img_free(&img);
 				switch_core_session_rwunlock(imember->session);
 				continue;
@@ -3576,7 +3630,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 			switch_mutex_unlock(conference->file_mutex);
 
-			if (!conference->playing_video_file) {
+			if (!canvas->playing_video_file) {
 				for (i = 0; i < canvas->total_layers; i++) {
 					mcu_layer_t *layer = &canvas->layers[i];
 
@@ -3647,7 +3701,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(conference->file_mutex);
 			if (conference->fnode && switch_test_flag(&conference->fnode->fh, SWITCH_FILE_OPEN)) {
-				if (conference->overlay_video_file) {
+				if (canvas->overlay_video_file) {
 					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					
 						if (canvas->play_file) {
@@ -3663,6 +3717,22 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							switch_image_t *overlay_img = NULL;
 							switch_img_copy(canvas->img, &overlay_img);
 
+							if (conference->fnode->filters & FILTER_GRAY_BG) {
+								switch_img_gray(overlay_img, 0, 0, overlay_img->d_w, overlay_img->d_h);
+							}
+
+							if (conference->fnode->filters & FILTER_SEPIA_BG) {
+								switch_img_sepia(overlay_img, 0, 0, overlay_img->d_w, overlay_img->d_h);
+							}
+
+							if (conference->fnode->filters & FILTER_GRAY_FG) {
+								switch_img_gray(file_img, 0, 0, file_img->d_w, file_img->d_h);
+							}
+
+							if (conference->fnode->filters & FILTER_SEPIA_FG) {
+								switch_img_sepia(file_img, 0, 0, file_img->d_w, file_img->d_h);
+							}
+
 							write_img = overlay_img;
 							switch_img_patch(write_img, file_img, 0, 0);
 							switch_img_free(&file_img);
@@ -3676,7 +3746,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					} else if (file_img) {
 						write_img = file_img;
 					}
-				} else if (conference->playing_video_file) {
+				} else if (canvas->playing_video_file) {
 					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					
 						if (canvas->play_file) {
@@ -4503,10 +4573,12 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
 
-		if (frame->img && (member->video_layer_id > -1 || member->canvas) &&
+		int canvas_id = member->canvas_id;
+
+		if (frame->img && (member->video_layer_id > -1) && canvas_id > -1 &&
 			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			switch_queue_size(member->video_queue) < member->conference->video_fps.fps * 2 &&
-			!member->conference->playing_video_file) {
+			!member->conference->canvases[canvas_id]->playing_video_file) {
 
 			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) || conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
 				if (conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {

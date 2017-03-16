@@ -1410,14 +1410,16 @@ SWITCH_DECLARE(void) switch_img_fill_noalpha(switch_image_t *img, int x, int y, 
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_grey(switch_image_t *img, int x, int y, int w, int h)
+SWITCH_DECLARE(void) switch_img_sepia(switch_image_t *img, int x, int y, int w, int h)
 {
 #ifdef SWITCH_HAVE_YUV
-	int len, i, max_h;
-
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	if (img->fmt == SWITCH_IMG_FMT_I420) {
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		ARGBSepia(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], x, y, w, h);
+	} else if (img->fmt == SWITCH_IMG_FMT_I420) {
+		int len, i, max_h;
+
 		max_h = MIN(y + h, img->d_h);
 		len = MIN(w, img->d_w - x);
 
@@ -1430,8 +1432,38 @@ SWITCH_DECLARE(void) switch_img_grey(switch_image_t *img, int x, int y, int w, i
 		len /= 2;
 
 		for (i = y; i < max_h; i += 2) {
-			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, 0, len);
-			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, 0, len);
+			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, 108, len);
+			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, 137, len);
+		}
+	}
+#endif
+}
+
+SWITCH_DECLARE(void) switch_img_gray(switch_image_t *img, int x, int y, int w, int h)
+{
+#ifdef SWITCH_HAVE_YUV
+
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		ARGBGray(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], x, y, w, h);
+	} else if (img->fmt == SWITCH_IMG_FMT_I420) {
+		int len, i, max_h;
+
+		max_h = MIN(y + h, img->d_h);
+		len = MIN(w, img->d_w - x);
+
+		if (x & 1) { x++; len--; }
+		if (y & 1) y++;
+		if (len <= 0) return;
+
+		if ((len & 1) && (x + len) < img->d_w - 1) len++;
+
+		len /= 2;
+
+		for (i = y; i < max_h; i += 2) {
+			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, 128, len);
+			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, 128, len);
 		}
 	}
 #endif

@@ -315,7 +315,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 */
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 
-SWITCH_DECLARE(void) switch_img_grey(switch_image_t *img, int x, int y, int w, int h);
+SWITCH_DECLARE(void) switch_img_gray(switch_image_t *img, int x, int y, int w, int h);
+SWITCH_DECLARE(void) switch_img_sepia(switch_image_t *img, int x, int y, int w, int h);
 
 SWITCH_DECLARE(void) switch_img_fill_noalpha(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 

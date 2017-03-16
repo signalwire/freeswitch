@@ -46,6 +46,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 {
 	switch_event_t *event;
 	conference_member_t *member = NULL;
+	mcu_canvas_t *canvas = NULL;
 
 	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -91,14 +92,17 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		conference_al_close(node->al);
 	}
 #endif
-	if (conference->playing_video_file) {
-		conference->canvases[node->canvas_id]->send_keyframe = 1;
-		conference->playing_video_file = 0;
+
+	canvas = conference->canvases[node->canvas_id];
+
+	if (canvas->playing_video_file) {
+		canvas->send_keyframe = 1;
+		canvas->playing_video_file = 0;
 	}
 
-	if (conference->overlay_video_file) {
-		conference->canvases[node->canvas_id]->send_keyframe = 1;
-		conference->overlay_video_file = 0;
+	if (canvas->overlay_video_file) {
+		canvas->send_keyframe = 1;
+		canvas->overlay_video_file = 0;
 	}
 
 	return switch_core_file_close(&node->fh);
@@ -282,8 +286,14 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		const char *overlay_layer = switch_event_get_header(fnode->fh.params, "overlay_layer");
 		const char *overlay_member = switch_event_get_header(fnode->fh.params, "overlay_member");
 		const char *overlay_role = switch_event_get_header(fnode->fh.params, "overlay_role");
+		const char *file_filters = switch_event_get_header(fnode->fh.params, "file_filters");
 		int canvas_id = -1;
 		int layer_id = -1;
+
+
+		if (!zstr(file_filters)) {
+			conference_video_parse_filter_string(&fnode->filters, file_filters);
+		}
 
 		if (loopsstr) {
 			fnode->loops = atoi(loopsstr);
