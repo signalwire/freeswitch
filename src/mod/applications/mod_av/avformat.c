@@ -2093,6 +2093,7 @@ static switch_status_t av_file_seek(switch_file_handle_t *handle, unsigned int *
 	context->seek_ts = samples / handle->native_rate * AV_TIME_BASE;
 	*cur_sample = context->seek_ts;
 
+	context->closed = 0;
 
 	if (!context->file_read_thread_running) {
 		switch_threadattr_t *thd_attr = NULL;
@@ -2128,7 +2129,7 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	}
 	switch_mutex_unlock(context->mutex);
 
-	if (!context->file_read_thread_running && switch_buffer_inuse(context->audio_buffer) == 0) {
+	if (context->closed || (!context->file_read_thread_running && switch_buffer_inuse(context->audio_buffer) == 0)) {
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2397,7 +2398,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	if (frame->img) {
 		context->vid_ready = 1;
 	}
-
+	if (!frame->img) context->closed = 1;
 	return frame->img ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 #endif
