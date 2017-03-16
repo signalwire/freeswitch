@@ -140,7 +140,7 @@ JS_SOCKET_FUNCTION_IMPL(Send)
 		switch_status_t ret;
 		String::Utf8Value str(info[0]);
 		const char *buffer = js_safe_str(*str);
-		switch_size_t len = strlen(buffer);
+		switch_size_t len = str.length(); // binary safe version of strlen()
 		ret = switch_socket_send(this->_socket, buffer, &len);
 
 		if (ret != SWITCH_STATUS_SUCCESS) {
