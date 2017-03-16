@@ -64,6 +64,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)\w32\tiff.props" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -86,7 +89,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -104,7 +107,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -120,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -138,7 +141,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>

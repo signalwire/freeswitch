@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="tiff-version.props" Condition=" '$(TiffVersionImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <TiffLibDir>$(SolutionDir)libs\tiff-$(TiffVersion)</TiffLibDir>
+    <TiffDir>$(TiffLibDir)\libtiff</TiffDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(TiffDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>
