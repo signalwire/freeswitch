@@ -93,16 +93,18 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 	}
 #endif
 
-	canvas = conference->canvases[node->canvas_id];
+	if (node->canvas_id > -1) {
+		canvas = conference->canvases[node->canvas_id];
 
-	if (canvas->playing_video_file) {
-		canvas->send_keyframe = 1;
-		canvas->playing_video_file = 0;
-	}
+		if (canvas->playing_video_file) {
+			canvas->send_keyframe = 1;
+			canvas->playing_video_file = 0;
+		}
 
-	if (canvas->overlay_video_file) {
-		canvas->send_keyframe = 1;
-		canvas->overlay_video_file = 0;
+		if (canvas->overlay_video_file) {
+			canvas->send_keyframe = 1;
+			canvas->overlay_video_file = 0;
+		}
 	}
 
 	return switch_core_file_close(&node->fh);
