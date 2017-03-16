@@ -64,6 +64,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)\w32\tiff.props" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
@@ -91,7 +94,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NO_ALSA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -109,7 +112,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4554;4324;4389;4244;4267;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -126,7 +129,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NO_ALSA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -147,7 +150,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu;libctb-0.16\include;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4554;4324;4389;4244;4267;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
