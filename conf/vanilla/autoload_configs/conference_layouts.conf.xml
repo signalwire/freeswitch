@@ -344,8 +344,8 @@
 	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="180" y="180" scale="180" overlap="true" reservation_id="presenter"/>
       </layout>
-      <layout name="overlaps" auto-3d-position="true" floor-only="true">
-	<image x="0" y="0" scale="360"/>
+      <layout name="overlaps" auto-3d-position="true">
+	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="300" y="300" scale="60" overlap="true"/>
 	<image x="240" y="300" scale="60" overlap="true"/>
 	<image x="180" y="300" scale="60" overlap="true"/>
