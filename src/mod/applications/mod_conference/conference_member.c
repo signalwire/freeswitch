@@ -687,20 +687,14 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
-
 	switch_mutex_lock(conference->mutex);
-	switch_mutex_lock(member->audio_in_mutex);
-	switch_mutex_lock(member->audio_out_mutex);
-	lock_member(member);
-	switch_mutex_lock(conference->member_mutex);
-	
+
 	if (member->rec) {
 		conference->recording_members++;
 	}
 
 	member->join_time = switch_epoch_time_now(NULL);
 	member->conference = conference;
-	member->next = conference->members;
 	member->energy_level = conference->energy_level;
 	member->score_iir = 0;
 	member->verbose_events = conference->verbose_events;
@@ -709,9 +703,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	switch_queue_create(&member->dtmf_queue, 100, member->pool);
 
-	conference->members = member;
 	conference_utils_member_set_flag_locked(member, MFLAG_INTREE);
-	switch_mutex_unlock(conference->member_mutex);
 	conference_cdr_add(member);
 
 
@@ -732,8 +724,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				conference->endconference_time = 0;
 			}
 		}
-
-		conference_send_presence(conference);
 
 		channel = switch_core_session_get_channel(member->session);
 
@@ -955,10 +945,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	}
 
-	unlock_member(member);
-	switch_mutex_unlock(member->audio_out_mutex);
-	switch_mutex_unlock(member->audio_in_mutex);
-
 	if (conference->la && member->channel) {
 		if (!conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 			cJSON *dvars;
@@ -1011,6 +997,16 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	}
 
+	switch_mutex_lock(conference->member_mutex);
+	member->next = conference->members;
+	conference->members = member;
+	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_unlock(conference->mutex);
+	status = SWITCH_STATUS_SUCCESS;
+
+
+	conference_send_presence(conference);
+
 
 	if (conference_utils_test_flag(conference, CFLAG_POSITIONAL)) {
 		conference_al_gen_arc(conference, NULL);
@@ -1020,8 +1016,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	conference_event_send_rfc(conference);
 	conference_event_send_json(conference);
 
-	switch_mutex_unlock(conference->mutex);
-	status = SWITCH_STATUS_SUCCESS;
 
 	conference_video_find_floor(member, SWITCH_TRUE);
 
