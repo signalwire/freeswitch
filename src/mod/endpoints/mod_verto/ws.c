@@ -269,7 +269,7 @@ int ws_handshake(wsh_t *wsh)
 		}
 	}
 
-	if (bytes > wsh->buflen -1) {
+	if (bytes < 0 || bytes > wsh->buflen -1) {
 		goto err;
 	}
 
@@ -328,11 +328,13 @@ int ws_handshake(wsh_t *wsh)
 
 	if (!wsh->stay_open) {
 
-		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
-				 "Sec-WebSocket-Version: 13\r\n\r\n");
-		respond[511] = 0;
+		if (bytes > 0) {
+			snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+					 "Sec-WebSocket-Version: 13\r\n\r\n");
+			respond[511] = 0;
 
-		ws_raw_write(wsh, respond, strlen(respond));
+			ws_raw_write(wsh, respond, strlen(respond));
+		}
 
 		ws_close(wsh, WS_NONE);
 	}
@@ -748,20 +750,22 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if (!wsh->handshake) {
-		return ws_close(wsh, WS_PROTO_ERR);
+		return ws_close(wsh, WS_NONE);
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9, wsh->block)) < 0) {
 		if (wsh->datalen == -2) {
 			return -2;
 		}
-		return ws_close(wsh, WS_PROTO_ERR);
+		return ws_close(wsh, WS_NONE);
 	}
 	
 	if (wsh->datalen < need) {
-		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen, WS_BLOCK)) < need) {
+		ssize_t bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen, WS_BLOCK);
+		
+		if (bytes < 0 || (wsh->datalen += bytes) < need) {
 			/* too small - protocol err */
-			return ws_close(wsh, WS_PROTO_ERR);
+			return ws_close(wsh, WS_NONE);
 		}
 	}
 
@@ -797,7 +801,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				if (need > wsh->datalen) {
 					/* too small - protocol err */
 					*oc = WSOC_CLOSE;
-					return ws_close(wsh, WS_PROTO_ERR);
+					return ws_close(wsh, WS_NONE);
 				}
 			}
 
@@ -817,9 +821,9 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 					more = ws_raw_read(wsh, wsh->buffer + wsh->datalen, need - wsh->datalen, WS_BLOCK);
 
-					if (more < need - wsh->datalen) {
+					if (more < 0 || more < need - wsh->datalen) {
 						*oc = WSOC_CLOSE;
-						return ws_close(wsh, WS_PROTO_ERR);
+						return ws_close(wsh, WS_NONE);
 					} else {
 						wsh->datalen += more;
 					}
@@ -838,7 +842,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				if (need > wsh->datalen) {
 					/* too small - protocol err */
 					*oc = WSOC_CLOSE;
-					return ws_close(wsh, WS_PROTO_ERR);
+					return ws_close(wsh, WS_NONE);
 				}
 
 				u16 = (uint16_t *) wsh->payload;
@@ -856,7 +860,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if (need < 0) {
 				/* invalid read - protocol err .. */
 				*oc = WSOC_CLOSE;
-				return ws_close(wsh, WS_PROTO_ERR);
+				return ws_close(wsh, WS_NONE);
 			}
 
 			blen = wsh->body - wsh->bbuffer;
@@ -887,7 +891,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				if (r < 1) {
 					/* invalid read - protocol err .. */
 					*oc = WSOC_CLOSE;
-					return ws_close(wsh, WS_PROTO_ERR);
+					return ws_close(wsh, WS_NONE);
 				}
 
 				wsh->datalen += r;
