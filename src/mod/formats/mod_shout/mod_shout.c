@@ -935,10 +935,14 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 			samples -= switch_buffer_inuse(context->audio_buffer) / sizeof(int16_t);
 		}
 
+		switch_mutex_lock(context->audio_mutex);
 		switch_buffer_zero(context->audio_buffer);
+		switch_mutex_unlock(context->audio_mutex);
+		
 		seek_samples = mpg123_seek(context->mh, (off_t) samples, whence);
 
 		if (seek_samples >= 0) {
+			context->eof = 0;
 			handle->pos = *cur_sample = seek_samples;
 			return SWITCH_STATUS_SUCCESS;
 		}
