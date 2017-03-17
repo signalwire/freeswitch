@@ -3301,6 +3301,32 @@ SWITCH_DECLARE(switch_status_t) switch_ARGBToARGB(const uint8_t* src_frame, int 
 }
 
 
+SWITCH_DECLARE(void) switch_core_video_parse_filter_string(switch_core_video_filter_t *filters, const char *filter_str)
+{
+	*filters = 0;
+
+	if (!filter_str) return;
+
+	if (switch_stristr("fg-gray", filter_str)) {
+		*filters |= SCV_FILTER_GRAY_FG;
+	}
+
+	if (switch_stristr("bg-gray", filter_str)) {
+		*filters |= SCV_FILTER_GRAY_BG;
+	}
+
+	if (switch_stristr("fg-sepia", filter_str)) {
+		*filters |= SCV_FILTER_SEPIA_FG;
+	}
+
+	if (switch_stristr("bg-sepia", filter_str)) {
+		*filters |= SCV_FILTER_SEPIA_BG;
+	}
+} 
+
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

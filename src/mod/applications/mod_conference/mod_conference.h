@@ -369,13 +369,6 @@ typedef struct al_handle_s {
 #endif
 struct conference_obj;
 
-typedef enum {
-	FILTER_GRAY_FG = (1 << 0),
-	FILTER_GRAY_BG = (1 << 1),
-	FILTER_SEPIA_FG = (1 << 2),
-	FILTER_SEPIA_BG = (1 << 3)
-} conference_file_filter_t;
-
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
 	switch_speech_handle_t *sh;
@@ -397,7 +390,7 @@ typedef struct conference_file_node {
 	int loops;
 	int new_fnode;
 	int layer_lock;
-	conference_file_filter_t filters;
+	switch_core_video_filter_t filters;
 } conference_file_node_t;
 
 typedef enum {
@@ -504,7 +497,7 @@ typedef struct mcu_layer_s {
 	switch_frame_geometry_t manual_geometry;
 	mcu_layer_cam_opts_t cam_opts;
 	switch_mutex_t *overlay_mutex;
-	conference_file_filter_t overlay_filters;
+	switch_core_video_filter_t overlay_filters;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -882,7 +875,7 @@ struct conference_member {
 	uint32_t text_framesize;
 
 	mcu_layer_cam_opts_t cam_opts;
-	conference_file_filter_t video_filters;
+	switch_core_video_filter_t video_filters;
 };
 
 typedef enum {
@@ -1052,7 +1045,6 @@ void conference_video_check_used_layers(mcu_canvas_t *canvas);
 void conference_video_check_flush(conference_member_t *member, switch_bool_t force);
 void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color);
-void conference_video_parse_filter_string(conference_file_filter_t *filters, const char *filter_str);
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze);
 void conference_video_reset_layer(mcu_layer_t *layer);
 void conference_video_reset_layer_cam(mcu_layer_t *layer);

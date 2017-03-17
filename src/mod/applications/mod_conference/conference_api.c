@@ -551,7 +551,7 @@ switch_status_t conference_api_sub_video_filter(conference_member_t *member, swi
 {
 	char *filter_str = (char *) data;
 
-	conference_video_parse_filter_string(&member->video_filters, filter_str);
+	switch_core_video_parse_filter_string(&member->video_filters, filter_str);
 
 	stream->write_function(stream, "+OK\n");
 

@@ -42,7 +42,9 @@ SWITCH_MODULE_DEFINITION(mod_video_filter, mod_video_filter_load, mod_video_filt
 typedef struct chromakey_context_s {
 	int threshold;
 	switch_image_t *bgimg;
+	switch_image_t *bgimg_orig;
 	switch_image_t *bgimg_scaled;
+	switch_image_t *fgimg_scaled;
 	switch_image_t *imgfg;
 	switch_image_t *imgbg;
 	void *data;
@@ -50,12 +52,14 @@ typedef struct chromakey_context_s {
 	switch_size_t datalen;
 	switch_size_t patch_datalen;
 	switch_file_handle_t vfh;
+	switch_file_handle_t fg_vfh;
 	switch_rgb_color_t bgcolor;
 	switch_core_session_t *session;
 	switch_mutex_t *command_mutex;
 	int patch;
 	int mod;
 	switch_chromakey_t *ck;
+	switch_core_video_filter_t video_filters;
 } chromakey_context_t;
 
 static void init_context(chromakey_context_t *context)
@@ -69,12 +73,20 @@ static void init_context(chromakey_context_t *context)
 static void uninit_context(chromakey_context_t *context)
 {
 	switch_img_free(&context->bgimg);
+	switch_img_free(&context->bgimg_orig);
 	switch_img_free(&context->bgimg_scaled);
+	switch_img_free(&context->fgimg_scaled);
 	switch_img_free(&context->imgbg);
 	switch_img_free(&context->imgfg);
+
 	if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->vfh);
 		memset(&context->vfh, 0, sizeof(context->vfh));
+	}
+
+	if (switch_test_flag(&context->fg_vfh, SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&context->fg_vfh);
+		memset(&context->vfh, 0, sizeof(context->fg_vfh));
 	}
 
 	switch_safe_free(context->data);
@@ -139,6 +151,10 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 			memset(&context->vfh, 0, sizeof(context->vfh));
 		}
 
+		if (context->bgimg_orig) {
+			switch_img_free(&context->bgimg_orig);
+		}
+
 		if (context->bgimg) {
 			switch_img_free(&context->bgimg);
 		}
@@ -147,11 +163,15 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 			switch_img_free(&context->bgimg_scaled);
 		}
 
+		if (context->fgimg_scaled) {
+			switch_img_free(&context->fgimg_scaled);
+		}
+
 		
 		if (argv[i][0] == '#') { // bgcolor
 			switch_color_set_rgb(&context->bgcolor, argv[i]);
 		} else if (switch_stristr(".png", argv[i])) {
-			if (!(context->bgimg = switch_img_read_png(argv[i], SWITCH_IMG_FMT_ARGB))) {
+			if (!(context->bgimg_orig = switch_img_read_png(argv[i], SWITCH_IMG_FMT_ARGB))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening png\n");
 			}
 		} else {
@@ -174,6 +194,50 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 
 
 	while (n > 3 && argv[i]) {
+
+		if (!strncasecmp(argv[i], "filter:", 7)) {
+			char *filter = argv[i] + 7;
+			switch_core_video_parse_filter_string(&context->video_filters, filter);
+
+			if (context->bgimg_orig && context->video_filters) {
+				switch_img_free(&context->bgimg);
+				switch_img_copy(context->bgimg_orig, &context->bgimg);
+				
+				if (context->video_filters & SCV_FILTER_SEPIA_BG) {
+					switch_img_sepia(context->bgimg, 0, 0, context->bgimg->d_w, context->bgimg->d_h);
+				}
+			
+				if (context->video_filters & SCV_FILTER_GRAY_BG) {
+					switch_img_sepia(context->bgimg, 0, 0, context->bgimg->d_w, context->bgimg->d_h);
+				}
+			}
+		}
+
+
+		if (!strncasecmp(argv[i], "fgvid:", 6)) {
+			char *file = argv[i] + 6;
+
+			if (switch_test_flag(&context->fg_vfh, SWITCH_FILE_OPEN)) {
+				switch_core_file_close(&context->fg_vfh);
+				memset(&context->fg_vfh, 0, sizeof(context->fg_vfh));
+			}
+
+			if (!zstr(file)) {
+				if (switch_core_file_open(&context->fg_vfh, file, 1, 8000,
+										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO, 
+										  switch_core_session_get_pool(context->session)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening video file\n");
+				} else {
+					switch_vid_params_t vp = { 0 };
+
+					switch_core_media_get_vid_params(context->session, &vp);
+					context->fg_vfh.mm.scale_w = vp.width;
+					context->fg_vfh.mm.scale_h = vp.height;
+					context->fg_vfh.mm.fps = vp.fps;
+				}
+			}
+		}
+
 		if (!strncasecmp(argv[i], "fg:", 3)) {
 			switch_img_free(&context->imgfg);
 			if (!zstr(argv[i]+3)) {
@@ -195,6 +259,10 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		}
 
 		i++;
+	}
+
+	if (context->bgimg_orig && !context->bgimg) {
+		switch_img_copy(context->bgimg_orig, &context->bgimg);
 	}
 
 	switch_core_session_request_video_refresh(context->session);
@@ -257,6 +325,14 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	switch_assert(img);
 	switch_chromakey_process(context->ck, img);
 
+	if (context->video_filters & SCV_FILTER_GRAY_FG) {
+		switch_img_gray(img, 0, 0, img->d_w, img->d_h);
+	}
+
+	if (context->video_filters & SCV_FILTER_SEPIA_FG) {
+		switch_img_sepia(img, 0, 0, img->d_w, img->d_h);
+	}
+
 	if (context->bgimg) {
 		switch_image_t *tmp = NULL;
 
@@ -304,6 +380,15 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		if (file_frame.img) {
 			switch_img_free(&context->bgimg_scaled);
 			use_img = context->bgimg_scaled = file_frame.img;
+
+			if (context->video_filters & SCV_FILTER_SEPIA_BG) {
+				switch_img_sepia(use_img, 0, 0, use_img->d_w, use_img->d_h);
+			}
+			
+			if (context->video_filters & SCV_FILTER_GRAY_BG) {
+				switch_img_sepia(use_img, 0, 0, use_img->d_w, use_img->d_h);
+			}
+
 		} else {
 			use_img = context->bgimg_scaled;
 		}
@@ -371,6 +456,49 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		switch_img_patch(img, context->imgfg, x, y);
 	}
 	
+	if (switch_test_flag(&context->fg_vfh, SWITCH_FILE_OPEN)) {
+		switch_frame_t file_frame = { 0 };
+		switch_status_t status;
+		switch_image_t *use_img = NULL;
+
+		context->fg_vfh.mm.scale_w = frame->img->d_w;
+		context->fg_vfh.mm.scale_h = frame->img->d_h;
+
+		status = switch_core_file_read_video(&context->fg_vfh, &file_frame, SVR_FLUSH);
+		switch_core_file_command(&context->fg_vfh, SCFC_FLUSH_AUDIO);
+		
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			int close = 1;
+
+			if (context->fg_vfh.params) {
+				const char *loopstr = switch_event_get_header(context->fg_vfh.params, "loop");
+				if (switch_true(loopstr)) {
+					uint32_t pos = 0;
+					switch_core_file_seek(&context->fg_vfh, &pos, 0, SEEK_SET);
+					close = 0;
+				}
+			}
+
+			if (close) {
+				switch_core_file_close(&context->fg_vfh);
+			}
+		}
+
+		if (file_frame.img) {
+			switch_img_free(&context->fgimg_scaled);
+			use_img = context->fgimg_scaled = file_frame.img;
+		} else {
+			use_img = context->fgimg_scaled;
+		}
+		
+		if (use_img) {
+			switch_img_patch(img, use_img, 0, 0);
+		}
+
+	}
+
+
 	switch_img_from_raw(frame->img, patch_data, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h);
 
 	switch_img_free(&img);

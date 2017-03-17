@@ -501,29 +501,6 @@ static void set_bounds(int *x, int *y, int img_w, int img_h, int crop_w, int cro
 
 }
 
-void conference_video_parse_filter_string(conference_file_filter_t *filters, const char *filter_str)
-{
-	*filters = 0;
-
-	if (!filter_str) return;
-
-	if (switch_stristr("fg-gray", filter_str)) {
-		*filters |= FILTER_GRAY_FG;
-	}
-
-	if (switch_stristr("bg-gray", filter_str)) {
-		*filters |= FILTER_GRAY_BG;
-	}
-
-	if (switch_stristr("fg-sepia", filter_str)) {
-		*filters |= FILTER_SEPIA_FG;
-	}
-
-	if (switch_stristr("bg-sepia", filter_str)) {
-		*filters |= FILTER_SEPIA_BG;
-	}
-} 
-
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
@@ -893,19 +870,19 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			if (layer->overlay_img) {
 				switch_img_fit(&layer->overlay_img, layer->img->d_w, layer->img->d_h, SWITCH_FIT_SCALE);
 
-				if (layer->overlay_filters & FILTER_GRAY_FG) {
+				if (layer->overlay_filters & SCV_FILTER_GRAY_FG) {
 					switch_img_gray(layer->img, 0, 0, layer->img->d_w, layer->img->d_h);
 				}
 
-				if (layer->overlay_filters & FILTER_SEPIA_FG) {
+				if (layer->overlay_filters & SCV_FILTER_SEPIA_FG) {
 					switch_img_sepia(layer->img, 0, 0, layer->img->d_w, layer->img->d_h);
 				}
 
-				if (layer->overlay_filters & FILTER_GRAY_BG) {
+				if (layer->overlay_filters & SCV_FILTER_GRAY_BG) {
 					switch_img_gray(layer->overlay_img, 0, 0, layer->overlay_img->d_w, layer->overlay_img->d_h);
 				}
 
-				if (layer->overlay_filters & FILTER_SEPIA_BG) {
+				if (layer->overlay_filters & SCV_FILTER_SEPIA_BG) {
 					switch_img_sepia(layer->overlay_img, 0, 0, layer->overlay_img->d_w, layer->overlay_img->d_h);
 				}
 
@@ -2619,11 +2596,11 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	}
 
 	if (img) {
-		if (member->video_filters & FILTER_GRAY_FG) {
+		if (member->video_filters & SCV_FILTER_GRAY_FG) {
 			switch_img_gray(img, 0, 0, img->d_w, img->d_h);
 		}
 
-		if (member->video_filters & FILTER_SEPIA_FG) {
+		if (member->video_filters & SCV_FILTER_SEPIA_FG) {
 			switch_img_sepia(img, 0, 0, img->d_w, img->d_h);
 		}
 	}
@@ -3736,19 +3713,19 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							switch_image_t *overlay_img = NULL;
 							switch_img_copy(canvas->img, &overlay_img);
 
-							if (conference->fnode->filters & FILTER_GRAY_BG) {
+							if (conference->fnode->filters & SCV_FILTER_GRAY_BG) {
 								switch_img_gray(overlay_img, 0, 0, overlay_img->d_w, overlay_img->d_h);
 							}
 
-							if (conference->fnode->filters & FILTER_SEPIA_BG) {
+							if (conference->fnode->filters & SCV_FILTER_SEPIA_BG) {
 								switch_img_sepia(overlay_img, 0, 0, overlay_img->d_w, overlay_img->d_h);
 							}
 
-							if (conference->fnode->filters & FILTER_GRAY_FG) {
+							if (conference->fnode->filters & SCV_FILTER_GRAY_FG) {
 								switch_img_gray(file_img, 0, 0, file_img->d_w, file_img->d_h);
 							}
 
-							if (conference->fnode->filters & FILTER_SEPIA_FG) {
+							if (conference->fnode->filters & SCV_FILTER_SEPIA_FG) {
 								switch_img_sepia(file_img, 0, 0, file_img->d_w, file_img->d_h);
 							}
 

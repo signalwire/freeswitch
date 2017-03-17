@@ -47,6 +47,14 @@ SWITCH_BEGIN_EXTERN_C
 #define CHROMAKEY_MAX_MASK 25
 
 typedef enum {
+	SCV_FILTER_GRAY_FG = (1 << 0),
+	SCV_FILTER_GRAY_BG = (1 << 1),
+	SCV_FILTER_SEPIA_FG = (1 << 2),
+	SCV_FILTER_SEPIA_BG = (1 << 3)
+} switch_core_video_filter_t;
+
+
+typedef enum {
 	SWITCH_SHADE_NONE = 0,
 	SWITCH_SHADE_RED,
 	SWITCH_SHADE_GREEN,
@@ -475,6 +483,8 @@ SWITCH_DECLARE(void) switch_chromakey_set_default_threshold(switch_chromakey_t *
 SWITCH_DECLARE(void) switch_chromakey_process(switch_chromakey_t *ck, switch_image_t *img);
 SWITCH_DECLARE(switch_image_t *) switch_chromakey_cache_image(switch_chromakey_t *ck);
 SWITCH_DECLARE(switch_shade_t) switch_chromakey_str2shade(switch_chromakey_t *ck, const char *shade_name);
+
+SWITCH_DECLARE(void) switch_core_video_parse_filter_string(switch_core_video_filter_t *filters, const char *filter_str);
 
 SWITCH_END_EXTERN_C
 #endif

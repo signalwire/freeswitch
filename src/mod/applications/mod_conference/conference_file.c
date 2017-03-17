@@ -294,7 +294,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 
 		if (!zstr(file_filters)) {
-			conference_video_parse_filter_string(&fnode->filters, file_filters);
+			switch_core_video_parse_filter_string(&fnode->filters, file_filters);
 		}
 
 		if (loopsstr) {
