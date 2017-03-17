@@ -235,12 +235,16 @@ static int ws_client_handshake(kws_t *kws)
 	do {
 		bytes = kws_raw_read(kws, kws->buffer + kws->datalen, kws->buflen - kws->datalen, WS_BLOCK);
 	} while (bytes > 0 && !strstr((char *)kws->buffer, "\r\n\r\n"));
-	
-	char accept[128] = "";
 
-	cheezy_get_var(kws->buffer, "Sec-WebSocket-Accept", accept, sizeof(accept));
+	if (bytes > 0) {
+		char accept[128] = "";
 
-	if (zstr_buf(accept) || !verify_accept(kws, enonce, (char *)accept)) {
+		cheezy_get_var(kws->buffer, "Sec-WebSocket-Accept", accept, sizeof(accept));
+
+		if (zstr_buf(accept) || !verify_accept(kws, enonce, (char *)accept)) {
+			return -1;
+		}
+	} else {
 		return -1;
 	}
 
@@ -273,7 +277,7 @@ static int ws_server_handshake(kws_t *kws)
 		}
 	}
 
-	if (bytes > kws->buflen -1) {
+	if (bytes < 0 || bytes > kws->buflen -1) {
 		goto err;
 	}
 
@@ -332,11 +336,13 @@ static int ws_server_handshake(kws_t *kws)
 
 	if (!kws->stay_open) {
 
-		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
-				 "Sec-WebSocket-Version: 13\r\n\r\n");
-		respond[511] = 0;
+		if (bytes > 0) {
+			snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+					 "Sec-WebSocket-Version: 13\r\n\r\n");
+			respond[511] = 0;
 
-		kws_raw_write(kws, respond, strlen(respond));
+			kws_raw_write(kws, respond, strlen(respond));
+		}
 
 		kws_close(kws, WS_NONE);
 	}
@@ -880,20 +886,22 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 	}
 
 	if (!kws->handshake) {
-		return kws_close(kws, WS_PROTO_ERR);
+		return kws_close(kws, WS_NONE);
 	}
 
 	if ((kws->datalen = kws_raw_read(kws, kws->buffer, 9, kws->block)) < 0) {
 		if (kws->datalen == -2) {
 			return -2;
 		}
-		return kws_close(kws, WS_PROTO_ERR);
+		return kws_close(kws, WS_NONE);
 	}
 	
 	if (kws->datalen < need) {
-		if ((kws->datalen += kws_raw_read(kws, kws->buffer + kws->datalen, 9 - kws->datalen, WS_BLOCK)) < need) {
+		ssize_t bytes = kws_raw_read(kws, kws->buffer + kws->datalen, 9 - kws->datalen, WS_BLOCK);
+
+		if (bytes < 0 || (kws->datalen += bytes) < need) {
 			/* too small - protocol err */
-			return kws_close(kws, WS_PROTO_ERR);
+			return kws_close(kws, WS_NONE);
 		}
 	}
 
@@ -929,7 +937,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				if (need > kws->datalen) {
 					/* too small - protocol err */
 					*oc = WSOC_CLOSE;
-					return kws_close(kws, WS_PROTO_ERR);
+					return kws_close(kws, WS_NONE);
 				}
 			}
 
@@ -949,9 +957,9 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 
 					more = kws_raw_read(kws, kws->buffer + kws->datalen, need - kws->datalen, WS_BLOCK);
 
-					if (more < need - kws->datalen) {
+					if (more < 0 || more < need - kws->datalen) {
 						*oc = WSOC_CLOSE;
-						return kws_close(kws, WS_PROTO_ERR);
+						return kws_close(kws, WS_NONE);
 					} else {
 						kws->datalen += more;
 					}
@@ -970,7 +978,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				if (need > kws->datalen) {
 					/* too small - protocol err */
 					*oc = WSOC_CLOSE;
-					return kws_close(kws, WS_PROTO_ERR);
+					return kws_close(kws, WS_NONE);
 				}
 
 				u16 = (uint16_t *) kws->payload;
@@ -988,7 +996,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 			if (need < 0) {
 				/* invalid read - protocol err .. */
 				*oc = WSOC_CLOSE;
-				return kws_close(kws, WS_PROTO_ERR);
+				return kws_close(kws, WS_NONE);
 			}
 
 			blen = kws->body - kws->bbuffer;
@@ -1019,7 +1027,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				if (r < 1) {
 					/* invalid read - protocol err .. */
 					*oc = WSOC_CLOSE;
-					return kws_close(kws, WS_PROTO_ERR);
+					return kws_close(kws, WS_NONE);
 				}
 
 				kws->datalen += r;
