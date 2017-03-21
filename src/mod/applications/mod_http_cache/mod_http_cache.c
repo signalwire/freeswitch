@@ -127,7 +127,7 @@ static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *ur
 static void process_cache_control_header(cached_url_t *url, char *data);
 static void process_content_type_header(cached_url_t *url, char *data);
 
-static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file);
+static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file, long *httpRes);
 
 /**
  * Queue used for clock cache replacement algorithm.  This
@@ -268,7 +268,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
  * @param cache_local_file true if local file should be mapped to url in cache
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file)
+static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file, long *httpRes)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -278,13 +278,13 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	char *buf;
 
 	CURL *curl_handle = NULL;
-	long httpRes = 0;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
 
 	switch_size_t sent_bytes = 0;
 	switch_size_t bytes_per_block;
 	unsigned int block_num = 1;
+	*httpRes = 0;
 
 	/* guess what type of mime content this is going to be */
 	if ((ext = strrchr(filename, '.'))) {
@@ -383,13 +383,13 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			}
 		}
 		switch_curl_easy_perform(curl_handle);
-		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 
-		if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
+		if (*httpRes == 200 || *httpRes == 201 || *httpRes == 202 || *httpRes == 204) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, full_url);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", httpRes, filename, url);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", *httpRes, filename, url);
 			status = SWITCH_STATUS_GENERR;
 		}
 
@@ -1327,6 +1327,7 @@ SWITCH_STANDARD_API(http_cache_put)
 	int argc = 0;
 	switch_event_t *params = NULL;
 	char *url;
+	long httpRes = 0;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -1358,11 +1359,11 @@ SWITCH_STANDARD_API(http_cache_put)
 		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
 	}
 
-	status = http_put(&gcache, profile, session, url, argv[1], 0);
+	status = http_put(&gcache, profile, session, url, argv[1], 0, &httpRes);
 	if (status == SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "+OK\n");
+		stream->write_function(stream, "+OK %ld\n", httpRes);
 	} else {
-		stream->write_function(stream, "-ERR\n");
+		stream->write_function(stream, "-ERR %ld\n", httpRes);
 	}
 
 done:
@@ -1807,9 +1808,10 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 {
 	struct http_context *context = (struct http_context *)handle->private_info;
 	switch_status_t status = switch_core_file_close(&context->fh);
+	long httpRes = 0;
 
 	if (status == SWITCH_STATUS_SUCCESS && !zstr(context->write_url)) {
-		status = http_put(&gcache, context->profile, NULL, context->write_url, context->local_path, 1);
+		status = http_put(&gcache, context->profile, NULL, context->write_url, context->local_path, 1, &httpRes);
 	}
 	if (!zstr(context->write_url)) {
 		switch_safe_free(context->local_path);
