@@ -576,6 +576,10 @@ void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *can
 	cJSON *msg, *data, *obj;
 	int i = 0;
 
+	if (!conference->info_event_channel) {
+		return;
+	}
+
 	msg = cJSON_CreateObject();
 	data = json_add_child_obj(msg, "eventData", NULL);
 
