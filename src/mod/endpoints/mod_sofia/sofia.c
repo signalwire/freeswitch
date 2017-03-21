@@ -9914,7 +9914,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 			}
 		}
 
-		if (switch_core_media_check_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO)) {
+		if (switch_core_media_check_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO) && !switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
 			/* Refuse all re-invites once we are doing T.38 */
 			nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
