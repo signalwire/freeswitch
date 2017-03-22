@@ -45,7 +45,7 @@
 #include <EXTERN.h>
 #include <perl.h>
 #include <switch.h>
-static char *embedding[] = { "", "-e", "" };
+static char *embedding[] = { "", "-e", "0" };
 EXTERN_C void xs_init(pTHX);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load);
