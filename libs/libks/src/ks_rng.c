@@ -18,7 +18,6 @@
  */
 
 #include "ks.h"
-#include "sodium.h"
 #include <aes.h>
 #include <sha2.h>
 
@@ -40,7 +39,7 @@ int fd = -1;
  * memset(buf, val, len), but the use of a volatile pointer
  * guarantees that the compiler will not optimise the call away.
  */
-//static void * (*volatile memset_volatile)(void *, int, size_t) = memset;
+static void * (*volatile memset_volatile)(void *, int, size_t) = memset;
 
 KS_DECLARE(uuid_t *) ks_uuid(uuid_t *uuid)
 {
@@ -71,16 +70,12 @@ KS_DECLARE(char *) ks_uuid_str(ks_pool_t *pool, uuid_t *uuid)
 KS_DECLARE(ks_status_t) ks_rng_init(void)
 {
 	if (!initialized) {
-		if (sodium_init() == -1) {
-			abort();
-		}
-		
 
-		randombytes_random();
+
 		ks_aes_init();
 		ks_mutex_create(&rng_mutex, KS_MUTEX_FLAG_DEFAULT, ks_global_pool());
 #ifdef __WINDOWS__
-		if (!crypt_provider) {		
+		if (!crypt_provider) {
 			if (CryptAcquireContext(&crypt_provider, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == TRUE) {
 				initialized = KS_TRUE;
 			} else {
@@ -175,14 +170,6 @@ KS_DECLARE(size_t) ks_rng_add_entropy(const uint8_t *buffer, size_t length)
 }
 
 KS_DECLARE(size_t) ks_rng_get_data(uint8_t* buffer, size_t length) {
-	randombytes_buf(buffer, length);
-	return length;
-}
-
-
-#if 0
-
-KS_DECLARE(size_t) ks_rng_get_data(uint8_t* buffer, size_t length) {
 
 	aes_encrypt_ctx cx[1];
     sha512_ctx random_context;
@@ -236,8 +223,6 @@ KS_DECLARE(size_t) ks_rng_get_data(uint8_t* buffer, size_t length) {
 
     return generated;
 }
-
-#endif
 
 /* For Emacs:
  * Local Variables:

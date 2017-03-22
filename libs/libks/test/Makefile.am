@@ -4,11 +4,6 @@ check_PROGRAMS =
 
 EXTRA_DIST = tap.h
 
-check_PROGRAMS += testbuckets
-testbuckets_SOURCES = testbuckets.c tap.c
-testbuckets_CFLAGS = $(AM_CFLAGS)
-testbuckets_LDADD = $(TEST_LDADD)
-
 check_PROGRAMS += testpools
 testpools_SOURCES = testpools.c tap.c
 testpools_CFLAGS = $(AM_CFLAGS)
@@ -63,16 +58,6 @@ testwebsock_LDADD = $(TEST_LDADD)
 #testdht_SOURCES = testdht.c tap.c
 #testdht_CFLAGS = $(AM_CFLAGS)
 #testdht_LDADD = $(TEST_LDADD)
-
-check_PROGRAMS += testdht2
-testdht2_SOURCES = testdht2.c tap.c
-testdht2_CFLAGS = $(AM_CFLAGS)
-testdht2_LDADD = $(TEST_LDADD)
-
-check_PROGRAMS += nodeidgen
-nodeidgen_SOURCES = nodeidgen.c tap.c
-nodeidgen_CFLAGS = $(AM_CFLAGS)
-nodeidgen_LDADD = $(TEST_LDADD)
 
 #check_PROGRAMS += testdht_net
 #testdht_net_SOURCES = testdht-net.c tap.c

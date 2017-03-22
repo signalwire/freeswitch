@@ -242,7 +242,6 @@ if test "${enable_address_sanitizer}" = "yes"; then
   AM_LDFLAGS="${AM_LDFLAGS} -fsanitize=address"
 fi
 
-PKG_CHECK_MODULES([SODIUM], [libsodium >= 1.0.0],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([libsodium is required])])
 PKG_CHECK_MODULES([UUID], [uuid >= 1.0.0],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([libuuid is required])])
 
 AM_CFLAGS="${AM_CFLAGS} -Werror ${SODIUM_CFLAGS} ${UUID_CFLAGS}"

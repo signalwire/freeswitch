@@ -48,6 +48,8 @@
 #include "blade_datastore.h"
 #include "blade_space.h"
 #include "blade_method.h"
+#include "ks_dht.h"
+#include "ks_bencode.h"
 
 KS_BEGIN_EXTERN_C
 

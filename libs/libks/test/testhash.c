@@ -18,7 +18,7 @@ int test1(void)
 	}
 
 
-	
+
 	ks_hash_iterator_t *itt;
 
 	ks_hash_write_lock(hash);
@@ -53,9 +53,9 @@ static void *test2_thread(ks_thread_t *thread, void *data)
 		for (itt = ks_hash_first(hash, KS_READLOCKED); itt; itt = ks_hash_next(&itt)) {
 			const void *key;
 			void *val;
-			
+
 			ks_hash_this(itt, &key, NULL, &val);
-			
+
 			printf("%p ITT %s=%s\n", (void *)(intptr_t)ks_thread_self(), (char *)key, (char *)val);
 		}
 		ks_sleep(100000);
@@ -81,7 +81,7 @@ int test2(void)
 	for (i = 0; i < ttl; i++) {
 		ks_thread_create(&threads[i], test2_thread, hash, pool);
 	}
-	
+
 	for(i = 0; i < runs; i++) {
 		int x = rand() % 5;
 		int j;
@@ -93,21 +93,21 @@ int test2(void)
 		}
 
 		ks_sleep(x * 1000000);
-		
+
 		ks_hash_write_lock(hash);
 		for (itt = ks_hash_first(hash, KS_UNLOCKED); itt; itt = ks_hash_next(&itt)) {
 			const void *key;
 			void *val;
-			
+
 			ks_hash_this(itt, &key, NULL, &val);
-			
+
 			printf("DEL %s=%s\n", (char *)key, (char *)val);
 			ks_hash_remove(hash, (char *)key);
 		}
 		ks_hash_write_unlock(hash);
 
 	}
-	
+
 	for (i = 0; i < ttl; i++) {
 		threads[i]->running = 0;
 		ks_thread_join(threads[i]);
@@ -135,8 +135,10 @@ int test3(void)
 	ks_hash_create(&hash, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NOLOCK, pool);
 	ks_hash_set_keysize(hash, TEST3_SIZE);
 
-	randombytes_buf(data, sizeof(data));
-	randombytes_buf(data2, sizeof(data2));
+	ks_rng_get_data(data, sizeof(data));
+	ks_rng_get_data(data2, sizeof(data));
+	//randombytes_buf(data, sizeof(data));
+	//randombytes_buf(data2, sizeof(data2));
 
 	ks_hash_insert(hash, data, "FOO");
 	ks_hash_insert(hash, data2, "BAR");
@@ -155,7 +157,7 @@ int test3(void)
 	ks_pool_close(&pool);
 
 	return !strcmp(A, "FOO") && !strcmp(B, "BAR") && !strcmp(C, "BAZ");
-	
+
 }
 
 

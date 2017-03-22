@@ -18,6 +18,21 @@ blades_SOURCES = blades.c tap.c
 blades_CFLAGS = $(AM_CFLAGS)
 blades_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += testdht2
+testdht2_SOURCES = testdht2.c tap.c
+testdht2_CFLAGS = $(AM_CFLAGS)
+testdht2_LDADD = $(TEST_LDADD)
+
+check_PROGRAMS += testbuckets
+testbuckets_SOURCES = testbuckets.c tap.c
+testbuckets_CFLAGS = $(AM_CFLAGS)
+testbuckets_LDADD = $(TEST_LDADD)
+
+check_PROGRAMS += nodeidgen
+nodeidgen_SOURCES = nodeidgen.c tap.c
+nodeidgen_CFLAGS = $(AM_CFLAGS)
+nodeidgen_LDADD = $(TEST_LDADD)
+
 
 TESTS=$(check_PROGRAMS)
 

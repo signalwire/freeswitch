@@ -19,7 +19,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
  */
 
-#include <ks.h>
+#include <blade.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -350,7 +350,7 @@ struct bencode *ben_clone(const struct bencode *b)
 		return clone_str(ben_str_const_cast(b));
 	default:
 		die("Invalid type %c\n", b->type);
-	}	
+	}
 }
 
 struct bencode *ben_shared_clone(const struct bencode *b)
@@ -549,7 +549,7 @@ static int resize_dict(struct bencode_dict *d, size_t newalloc)
 		assert(x >= newalloc);
 		newalloc = x;
 		if (newalloc > DICT_MAX_ALLOC)
-			return -1;		
+			return -1;
 	}
 
 	/* size must be a power of two */
@@ -619,7 +619,7 @@ long long ben_hash(const struct bencode *b)
 		return ben_str_hash(b);
 	default:
 		die("hash: Invalid type: %d\n", b->type);
-	}		
+	}
 }
 
 static struct bencode *decode_dict(struct ben_decode_ctx *ctx)
@@ -938,7 +938,7 @@ static struct bencode *decode_printed_bool(struct ben_decode_ctx *ctx)
 	struct bencode *b;
 	int bval = -1;
 
-	if (try_match(ctx, "True")) {	
+	if (try_match(ctx, "True")) {
 		if (ben_need_bytes(ctx, 4))
 			return ben_insufficient_ptr(ctx);
 	} else {
@@ -1868,7 +1868,7 @@ static void dict_unlink(struct bencode_dict *d, size_t bucket, size_t unlinkpos)
 }
 
 /* Remove node from the linked list, if found */
-static struct bencode *dict_pop(struct bencode_dict *d, 
+static struct bencode *dict_pop(struct bencode_dict *d,
 				const struct bencode *key, long long hash)
 {
 	struct bencode *value;
