@@ -11,8 +11,6 @@ libks_la_SOURCES  = src/ks.c src/ks_string.c src/ks_json.c src/cJSON.c src/cJSON
 libks_la_SOURCES += src/ks_log.c src/ks_socket.c src/ks_buffer.c src/ks_pool.c src/simclist.c
 libks_la_SOURCES += src/ks_time.c src/ks_printf.c src/ks_hash.c src/ks_q.c src/ks_dso.c
 libks_la_SOURCES += src/ks_ssl.c src/kws.c src/ks_rng.c src/ks_base64.c
-libks_la_SOURCES += src/utp/utp_api.cpp src/utp/utp_callbacks.cpp src/utp/utp_hash.cpp src/utp/utp_internal.cpp
-libks_la_SOURCES += src/utp/utp_packedsockaddr.cpp src/utp/utp_utils.cpp
 libks_la_SOURCES += crypt/aeskey.c crypt/aestab.c crypt/sha2.c crypt/twofish.c crypt/aes_modes.c crypt/aescrypt.c crypt/twofish_cfb.c
 #aes.h aescpp.h brg_endian.h aesopt.h aestab.h brg_types.h sha2.h twofish.h
 libks_la_SOURCES += src/ks_acl.c
@@ -28,8 +26,7 @@ library_include_HEADERS += src/include/ks_pool.h src/include/simclist.h src/incl
 library_include_HEADERS += src/include/ks_dso.h src/include/ks_platform.h src/include/ks_types.h src/include/ks_rng.h
 library_include_HEADERS += src/include/ks_printf.h src/include/ks_hash.h src/include/ks_ssl.h src/include/kws.h
 library_include_HEADERS += src/include/ks_base64.h
-library_include_HEADERS += src/utp/utp_internal.h src/utp/utp.h src/utp/utp_types.h src/utp/utp_callbacks.h src/utp/utp_templates.h
-library_include_HEADERS += src/utp/utp_hash.h src/utp/utp_packedsockaddr.h src/utp/utp_utils.h src/include/ks_utp.h src/include/ks_acl.h
+library_include_HEADERS += src/include/ks_acl.h
 
 tests: libks.la
 	$(MAKE) -C test tests

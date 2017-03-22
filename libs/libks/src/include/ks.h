@@ -131,7 +131,6 @@ KS_DECLARE(void) ks_random_string(char *buf, uint16_t len, char *set);
 #include "ks_time.h"
 #include "ks_socket.h"
 #include "ks_dso.h"
-#include "ks_utp.h"
 #include "simclist.h"
 #include "ks_ssl.h"
 #include "kws.h"
