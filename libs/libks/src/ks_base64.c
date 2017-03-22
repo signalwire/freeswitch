@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017 FreeSWITCH Solutions LLC
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,26 +31,92 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_DATASTORE_H_
-#define _BLADE_DATASTORE_H_
-#include <blade.h>
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
-KS_DECLARE(ks_status_t) blade_datastore_startup(blade_datastore_t *bds, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_datastore_shutdown(blade_datastore_t *bds);
+#include <ks_base64.h>
 
-KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length);
-KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
-											  blade_datastore_fetch_callback_t callback,
-											  const void *key,
-											  int32_t key_length,
-											  void *userdata);
-KS_END_EXTERN_C
 
-#endif
+static const char ks_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+
+KS_DECLARE(ks_status_t) ks_b64_encode(unsigned char *in, ks_size_t ilen, unsigned char *out, ks_size_t olen)
+{
+	int y = 0, bytes = 0;
+	size_t x = 0;
+	unsigned int b = 0, l = 0;
+
+	for (x = 0; x < ilen; x++) {
+		b = (b << 8) + in[x];
+		l += 8;
+
+		while (l >= 6) {
+			out[bytes++] = ks_b64_table[(b >> (l -= 6)) % 64];
+			if (bytes >= (int)olen - 1) {
+				goto end;
+			}
+			if (++y != 72) {
+				continue;
+			}
+			/* out[bytes++] = '\n'; */
+			y = 0;
+		}
+	}
+
+	if (l > 0) {
+		out[bytes++] = ks_b64_table[((b % 16) << (6 - l)) % 64];
+	}
+	if (l != 0) {
+		while (l < 6 && bytes < (int)olen - 1) {
+			out[bytes++] = '=', l += 2;
+		}
+	}
+
+  end:
+
+	out[bytes] = '\0';
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_size_t) ks_b64_decode(char *in, char *out, ks_size_t olen)
+{
+
+	char l64[256];
+	int b = 0, c, l = 0, i;
+	char *ip, *op = out;
+	size_t ol = 0;
+
+	for (i = 0; i < 256; i++) {
+		l64[i] = -1;
+	}
+
+	for (i = 0; i < 64; i++) {
+		l64[(int) ks_b64_table[i]] = (char) i;
+	}
+
+	for (ip = in; ip && *ip; ip++) {
+		c = l64[(int) *ip];
+		if (c == -1) {
+			continue;
+		}
+
+		b = (b << 6) + c;
+		l += 6;
+
+		while (l >= 8) {
+			op[ol++] = (char) ((b >> (l -= 8)) % 256);
+			if (ol >= olen - 2) {
+				goto end;
+			}
+		}
+	}
+
+  end:
+
+	op[ol++] = '\0';
+
+	return ol;
+}
+
 
 /* For Emacs:
  * Local Variables:

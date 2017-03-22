@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_DATASTORE_H_
-#define _BLADE_DATASTORE_H_
+#ifndef _BLADE_IDENTITY_H_
+#define _BLADE_IDENTITY_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
-KS_DECLARE(ks_status_t) blade_datastore_startup(blade_datastore_t *bds, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_datastore_shutdown(blade_datastore_t *bds);
-
-KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length);
-KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
-											  blade_datastore_fetch_callback_t callback,
-											  const void *key,
-											  int32_t key_length,
-											  void *userdata);
+KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP);
+KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *uri);
+KS_DECLARE(const char *) blade_identity_uri(blade_identity_t *bi);
+KS_DECLARE(const char *) blade_identity_parameter_get(blade_identity_t *bi, const char *key);
 KS_END_EXTERN_C
 
 #endif

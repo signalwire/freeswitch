@@ -121,6 +121,15 @@ KS_DECLARE(ks_status_t) ks_socket_option(ks_socket_t socket, int option_name, ks
 #endif
 		}
 		break;
+	case IPV6_V6ONLY:
+#ifdef WIN32
+#warning make sure windows works like linux for IPV6 to IPV4 automapping stuff
+		result = setsockopt(socket, SOL_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt));
+#else
+		result = setsockopt(socket, SOL_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+#endif
+		if (!result) status = KS_STATUS_SUCCESS;
+		break;
 	default:
 		break;
 	}

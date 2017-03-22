@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,23 +31,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_DATASTORE_H_
-#define _BLADE_DATASTORE_H_
+#ifndef _BLADE_MODULE_H_
+#define _BLADE_MODULE_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
-KS_DECLARE(ks_status_t) blade_datastore_startup(blade_datastore_t *bds, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_datastore_shutdown(blade_datastore_t *bds);
+KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, void *module_data, blade_module_callbacks_t *module_callbacks);
+KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP);
+KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm);
+KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm);
 
-KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length);
-KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
-											  blade_datastore_fetch_callback_t callback,
-											  const void *key,
-											  int32_t key_length,
-											  void *userdata);
+// @todo very temporary, this is just here to get the wss module loaded until DSO is in place
+KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm);
+KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm);
+
+KS_DECLARE(ks_status_t) blade_module_chat_on_load(blade_module_t **bmP, blade_handle_t *bh);
+KS_DECLARE(ks_status_t) blade_module_chat_on_unload(blade_module_t *bm);
+KS_DECLARE(ks_status_t) blade_module_chat_on_startup(blade_module_t *bm, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_module_chat_on_shutdown(blade_module_t *bm);
 KS_END_EXTERN_C
 
 #endif

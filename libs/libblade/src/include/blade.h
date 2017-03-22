@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,12 +36,18 @@
 #include <ks.h>
 #include <ks_dht.h>
 #include <sodium.h>
+#include <libconfig.h>
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
-#include "blade_peer.h"
+#include "blade_identity.h"
+#include "blade_module.h"
+#include "blade_connection.h"
+#include "blade_session.h"
+#include "blade_protocol.h"
 #include "blade_datastore.h"
-#include "bpcp.h"
+#include "blade_space.h"
+#include "blade_method.h"
 
 KS_BEGIN_EXTERN_C
 

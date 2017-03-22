@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2015, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -38,7 +38,7 @@
 
 KS_BEGIN_EXTERN_C
 
-#define KS_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) KS_DECLARE(_TYPE) _FUNC1 (const char *name); KS_DECLARE(const char *) _FUNC2 (_TYPE type);                       
+#define KS_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) KS_DECLARE(_TYPE) _FUNC1 (const char *name); KS_DECLARE(const char *) _FUNC2 (_TYPE type);
 
 #define KS_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)  \
     KS_DECLARE(_TYPE) _FUNC1 (const char *name)             \
@@ -63,7 +63,7 @@ KS_BEGIN_EXTERN_C
         return _STRINGS[(int)type];                         \
     }                                                       \
 
-#define KS_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };  
+#define KS_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
 
 #define KS_VA_NONE "%s", ""
 
@@ -142,7 +142,7 @@ KS_BEGIN_EXTERN_C
 	/* insert new entries before this */\
 	"COUNT"
 
-	KS_STR2ENUM_P(ks_str2ks_status, ks_status2str, ks_status_t)  
+	KS_STR2ENUM_P(ks_str2ks_status, ks_status2str, ks_status_t)
 
 /*! \brief Used internally for truth test */
 	typedef enum {
@@ -172,6 +172,19 @@ KS_BEGIN_EXTERN_C
 #define KS_LOG_CRIT KS_PRE, KS_LOG_LEVEL_CRIT
 #define KS_LOG_ALERT KS_PRE, KS_LOG_LEVEL_ALERT
 #define KS_LOG_EMERG KS_PRE, KS_LOG_LEVEL_EMERG
+
+typedef enum {
+	KS_LOG_PREFIX_NONE = 0,
+
+	KS_LOG_PREFIX_LEVEL = 1 << 0,
+	KS_LOG_PREFIX_FILE = 1 << 1,
+	KS_LOG_PREFIX_LINE = 1 << 2,
+	KS_LOG_PREFIX_FUNC = 1 << 3,
+	KS_LOG_PREFIX_THREAD = 1 << 4,
+	KS_LOG_PREFIX_TIME = 1 << 5,
+
+	KS_LOG_PREFIX_ALL = KS_LOG_PREFIX_LEVEL | KS_LOG_PREFIX_FILE | KS_LOG_PREFIX_LINE | KS_LOG_PREFIX_FUNC | KS_LOG_PREFIX_THREAD | KS_LOG_PREFIX_TIME,
+} ks_log_prefix_t;
 
 struct ks_pool_s;
 

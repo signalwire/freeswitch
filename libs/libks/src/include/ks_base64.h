@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017 FreeSWITCH Solutions LLC
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,23 +31,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BPCP_H_
-#define _BPCP_H_
-#include <blade.h>
 
-#define BLADE_PEER_TPOOL_MIN 2
-#define BLADE_PEER_TPOOL_MAX 8
-#define BLADE_PEER_TPOOL_STACK (1024 * 256)
-#define BLADE_PEER_TPOOL_IDLE 10
+#ifndef _KS_BASE64_H__
+#define _KS_BASE64_H__
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_peer_create(blade_peer_t **bpP, ks_pool_t *pool, ks_thread_pool_t *tpool, ks_dht_nodeid_t *nodeid);
-KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP);
-KS_DECLARE(ks_dht_nodeid_t *) blade_peer_myid(blade_peer_t *bp);
-KS_DECLARE(void) blade_peer_autoroute(blade_peer_t *bp, ks_bool_t autoroute, ks_port_t port);
-KS_DECLARE(ks_status_t) blade_peer_bind(blade_peer_t *bp, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint);
-KS_DECLARE(void) blade_peer_pulse(blade_peer_t *bp, int32_t timeout);
-KS_END_EXTERN_C
+#include <ks.h>
+
+KS_DECLARE(ks_status_t) ks_b64_encode(unsigned char *in, ks_size_t ilen, unsigned char *out, ks_size_t olen);
+KS_DECLARE(ks_size_t) ks_b64_decode(char *in, char *out, ks_size_t olen);
 
 #endif
 

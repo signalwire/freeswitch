@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,26 +31,80 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_DATASTORE_H_
-#define _BLADE_DATASTORE_H_
-#include <blade.h>
+#include "blade.h"
 
-KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool);
-KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP);
-KS_DECLARE(ks_status_t) blade_datastore_startup(blade_datastore_t *bds, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_datastore_shutdown(blade_datastore_t *bds);
+struct blade_method_s {
+	blade_handle_t *handle;
+	ks_pool_t *pool;
 
-KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length);
-KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void *key, int32_t key_length, const void *data, int64_t data_length);
-KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
-											  blade_datastore_fetch_callback_t callback,
-											  const void *key,
-											  int32_t key_length,
-											  void *userdata);
-KS_END_EXTERN_C
+	blade_space_t *space;
+	const char *name;
 
-#endif
+	blade_request_callback_t callback;
+	// @todo more fun descriptive information about the call for remote registrations
+};
+
+
+KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t *bs, const char *name, blade_request_callback_t callback)
+{
+	blade_handle_t *bh = NULL;
+	blade_method_t *bm = NULL;
+	ks_pool_t *pool = NULL;
+
+	ks_assert(bmP);
+	ks_assert(bs);
+	ks_assert(name);
+
+	bh = blade_space_handle_get(bs);
+	ks_assert(bh);
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	bm = ks_pool_alloc(pool, sizeof(blade_method_t));
+	bm->handle = bh;
+	bm->pool = pool;
+	bm->space = bs;
+	bm->name = name; // @todo dup and keep copy? should mostly be literals
+	bm->callback = callback;
+
+	*bmP = bm;
+
+    ks_log(KS_LOG_DEBUG, "Method Created: %s.%s\n", blade_space_path_get(bs), name);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_method_destroy(blade_method_t **bmP)
+{
+	blade_method_t *bm = NULL;
+
+	ks_assert(bmP);
+	ks_assert(*bmP);
+
+	bm = *bmP;
+
+    ks_log(KS_LOG_DEBUG, "Method Destroyed: %s.%s\n", blade_space_path_get(bm->space), bm->name);
+
+	ks_pool_free(bm->pool, bmP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(const char *) blade_method_name_get(blade_method_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->name;
+}
+
+KS_DECLARE(blade_request_callback_t) blade_method_callback_get(blade_method_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->callback;
+}
+
 
 /* For Emacs:
  * Local Variables:

@@ -34,14 +34,12 @@
 #include "blade.h"
 
 
-typedef enum {
-	BDS_NONE = 0,
-	BDS_MYPOOL = (1 << 0),
-} bdspvt_flag_t;
-
 struct blade_datastore_s {
-	bdspvt_flag_t flags;
 	ks_pool_t *pool;
+	ks_thread_pool_t *tpool;
+	
+	const char *config_database_path;
+	
 	unqlite *db;
 };
 
@@ -58,8 +56,6 @@ typedef struct blade_datastore_fetch_userdata_s blade_datastore_fetch_userdata_t
 KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP)
 {
 	blade_datastore_t *bds = NULL;
-	bdspvt_flag_t flags;
-	ks_pool_t *pool;
 
 	ks_assert(bdsP);
 
@@ -68,41 +64,65 @@ KS_DECLARE(ks_status_t) blade_datastore_destroy(blade_datastore_t **bdsP)
 
 	ks_assert(bds);
 
-	flags = bds->flags;
-	pool = bds->pool;
-
-	if (bds->db) {
-		unqlite_close(bds->db);
-		bds->db = NULL;
-	}
+	blade_datastore_shutdown(bds);
 
 	ks_pool_free(bds->pool, &bds);
-
-	if (pool && (flags & BDS_MYPOOL)) ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool_t *pool, ks_thread_pool_t *tpool)
 {
-	bdspvt_flag_t newflags = BDS_NONE;
 	blade_datastore_t *bds = NULL;
 
-	if (!pool) {
-		newflags |= BDS_MYPOOL;
-		ks_pool_open(&pool);
-		ks_assert(pool);
-	}
-
+	ks_assert(bdsP);
+	ks_assert(pool);
+	ks_assert(tpool);
+	
 	bds = ks_pool_alloc(pool, sizeof(*bds));
-	bds->flags = newflags;
 	bds->pool = pool;
+	bds->tpool = tpool;
 	*bdsP = bds;
 
-	if (unqlite_open(&bds->db, NULL, UNQLITE_OPEN_IN_MEMORY) != UNQLITE_OK) {
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t blade_datastore_config(blade_datastore_t *bds, config_setting_t *config)
+{
+	config_setting_t *tmp;
+	config_setting_t *database = NULL;
+	const char *config_database_path = NULL;
+
+	ks_assert(bds);
+
+	if (!config) return KS_STATUS_FAIL;
+	if (!config_setting_is_group(config)) return KS_STATUS_FAIL;
+
+	database = config_setting_get_member(config, "database");
+	if (!database) return KS_STATUS_FAIL;
+	tmp = config_lookup_from(database, "path");
+	if (!tmp) return KS_STATUS_FAIL;
+	if (config_setting_type(tmp) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+	config_database_path = config_setting_get_string(tmp);
+
+	if (bds->config_database_path) ks_pool_free(bds->pool, &bds->config_database_path);
+	bds->config_database_path = ks_pstrdup(bds->pool, config_database_path);
+	
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_datastore_startup(blade_datastore_t *bds, config_setting_t *config)
+{
+	ks_assert(bds);
+
+	// @todo check if already started
+	
+	if (blade_datastore_config(bds, config) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+	
+	if (unqlite_open(&bds->db, bds->config_database_path, UNQLITE_OPEN_CREATE) != UNQLITE_OK) {
 		const char *errbuf = NULL;
 		blade_datastore_error(bds, &errbuf, NULL);
-		ks_log(KS_LOG_ERROR, "BDS Error: %s\n", errbuf);
+		ks_log(KS_LOG_ERROR, "BDS Open Error: %s\n", errbuf);
 		return KS_STATUS_FAIL;
 	}
 
@@ -113,11 +133,20 @@ KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) blade_datastore_pulse(blade_datastore_t *bds, int32_t timeout)
+KS_DECLARE(ks_status_t) blade_datastore_shutdown(blade_datastore_t *bds)
 {
 	ks_assert(bds);
-	ks_assert(timeout >= 0);
+
+	if (bds->db) {
+		unqlite_close(bds->db);
+		bds->db = NULL;
+	}
+
+	if (bds->config_database_path) ks_pool_free(bds->pool, &bds->config_database_path);
+	
+	return KS_STATUS_SUCCESS;
 }
+
 
 KS_DECLARE(void) blade_datastore_error(blade_datastore_t *bds, const char **buffer, int32_t *buffer_length)
 {
@@ -147,7 +176,7 @@ KS_DECLARE(ks_status_t) blade_datastore_store(blade_datastore_t *bds, const void
 		else {
 			const char *errbuf;
 			blade_datastore_error(bds, &errbuf, NULL);
-			ks_log(KS_LOG_ERROR, "BDS Error: %s\n", errbuf);
+			ks_log(KS_LOG_ERROR, "BDS Store Error: %s\n", errbuf);
 			
 			ret = KS_STATUS_FAIL;
 		}
@@ -196,10 +225,11 @@ KS_DECLARE(ks_status_t) blade_datastore_fetch(blade_datastore_t *bds,
 	
 	if (rc != UNQLITE_OK) {
 		if (rc == UNQLITE_BUSY) ret = KS_STATUS_TIMEOUT;
+		else if(rc == UNQLITE_NOTFOUND) ret = KS_STATUS_NOT_FOUND;
 		else {
 			const char *errbuf;
 			blade_datastore_error(bds, &errbuf, NULL);
-			ks_log(KS_LOG_ERROR, "BDS Error: %s\n", errbuf);
+			ks_log(KS_LOG_ERROR, "BDS Fetch Error: %s\n", errbuf);
 			
 			ret = KS_STATUS_FAIL;
 		}
