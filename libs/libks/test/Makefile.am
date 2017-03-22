@@ -54,37 +54,7 @@ testwebsock_SOURCES = testwebsock.c tap.c
 testwebsock_CFLAGS = $(AM_CFLAGS)
 testwebsock_LDADD = $(TEST_LDADD)
 
-#check_PROGRAMS += testdht
-#testdht_SOURCES = testdht.c tap.c
-#testdht_CFLAGS = $(AM_CFLAGS)
-#testdht_LDADD = $(TEST_LDADD)
-
-#check_PROGRAMS += testdht_net
-#testdht_net_SOURCES = testdht-net.c tap.c
-#testdht_net_CFLAGS = $(AM_CFLAGS)
-#testdht_net_LDADD = $(TEST_LDADD)
-
-#check_PROGRAMS += testdht_msg
-#testdht_msg_SOURCES = testdht-msg.c tap.c
-#testdht_msg_CFLAGS = $(AM_CFLAGS)
-#testdht_msg_LDADD = $(TEST_LDADD)
-
-#check_PROGRAMS += dht_example
-#dht_example_SOURCES = dht-example.c
-#dht_example_CFLAGS = $(AM_CFLAGS)
-#dht_example_LDADD = $(abs_top_builddir)/libks.la $(openssl_LIBS) -ledit -lpthread
-
-#check_PROGRAMS += libtorrent_example
-#libtorrent_example_SOURCES = libtorrent-example.c
-#libtorrent_example_CFLAGS = $(AM_CFLAGS)
-#libtorrent_example_LDADD = $(abs_top_builddir)/libks.la $(abs_top_builddir)/test/libtorrent.so /usr/lib/x86_64-linux-gnu/libboost_system.a $(openssl_LIBS) -ledit -lpthread -ltorrent-rasterbar -lstdc++
 
 TESTS=$(check_PROGRAMS)
 
 tests: $(check_PROGRAMS)
-
-$(abs_top_builddir)/test/libtorrent.so: $(abs_top_builddir)/test/libtorrent.o
-	g++ -shared -o $(abs_top_builddir)/test/libtorrent.so $(abs_top_builddir)/test/libtorrent.o
-
-$(abs_top_builddir)/test/libtorrent.o: $(abs_top_builddir)/test/libtorrent.cpp
-	g++ -c -fPIC -o $(abs_top_builddir)/test/libtorrent.o -I$(abs_top_builddir)/test/ $(abs_top_builddir)/test/libtorrent.cpp
