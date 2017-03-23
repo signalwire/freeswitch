@@ -950,7 +950,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	prefix->m1 = PRE_MAGIC1;
 	prefix->m2 = PRE_MAGIC2;
 	prefix->size = size;
-	prefix->refs++;
+	prefix->refs = 1;
 
 	if (mp_p->mp_log_func != NULL) {
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
