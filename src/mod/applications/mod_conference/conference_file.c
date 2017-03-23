@@ -93,7 +93,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 	}
 #endif
 
-	if (node->canvas_id > -1) {
+	if (node->canvas_id > -1 && conference->canvases[node->canvas_id]) {
 		canvas = conference->canvases[node->canvas_id];
 
 		if (canvas->playing_video_file) {
