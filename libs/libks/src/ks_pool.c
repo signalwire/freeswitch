@@ -953,7 +953,6 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	prefix->refs++;
 
 	if (mp_p->mp_log_func != NULL) {
-		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
 	}
 
@@ -1728,7 +1727,6 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
 	prefix->refs++;
 
 	if (mp_p->mp_log_func != NULL) {
-		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
 	}
 

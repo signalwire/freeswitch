@@ -63,8 +63,13 @@ KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_fn_t fn, void *arg
 	
 KS_DECLARE(ks_status_t) ks_init(void)
 {
-
-	srand(getpid() * (intptr_t)&pool + time(NULL));
+	unsigned int pid = 0;
+#ifdef __WINDOWS__
+	pid = _getpid();
+#else
+	pid = getpid();
+#endif
+	srand(pid * (unsigned int)(intptr_t)&pool + (unsigned int)time(NULL));
 	ks_ssl_init_ssl_locks();
 	ks_global_pool();
 	ks_rng_init();

@@ -110,7 +110,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 			used += snprintf(buf + used - 1, sizeof(buf) - used, "#%d ", (int32_t)ks_thread_self_id());
 		}
 		if (ks_log_prefix & KS_LOG_PREFIX_FILE) {
-			used += snprintf(buf + used - 1, sizeof(buf) - used, fp);
+			used += snprintf(buf + used - 1, sizeof(buf) - used, "%s", fp);
 			if (ks_log_prefix & KS_LOG_PREFIX_LINE) {
 				used += snprintf(buf + used - 1, sizeof(buf) - used, ":%d", line);
 			}
@@ -120,10 +120,10 @@ static void default_logger(const char *file, const char *func, int line, int lev
 			used += snprintf(buf + used - 1, sizeof(buf) - used, "%s() ", func);
 		}
 
-		used += snprintf(buf + used - 1, sizeof(buf) - used, data);
+		used += snprintf(buf + used - 1, sizeof(buf) - used, "%s", data);
 
 		//fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
-		fprintf(stderr, buf);
+		fprintf(stderr, "%s", buf);
 		free(data);
 	}
 

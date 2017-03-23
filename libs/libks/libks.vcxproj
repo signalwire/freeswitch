@@ -97,7 +97,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -132,7 +132,7 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -158,8 +158,6 @@
     <ClCompile Include="crypt\aestab.c" />
     <ClCompile Include="crypt\aes_modes.c" />
     <ClCompile Include="crypt\sha2.c" />
-    <ClCompile Include="crypt\twofish.c" />
-    <ClCompile Include="crypt\twofish_cfb.c" />
     <ClCompile Include="src\cJSON.c" />
     <ClCompile Include="src\cJSON_Utils.c" />
     <ClCompile Include="src\ks.c" />
@@ -194,7 +192,6 @@
     <ClInclude Include="crypt\brg_endian.h" />
     <ClInclude Include="crypt\brg_types.h" />
     <ClInclude Include="crypt\sha2.h" />
-    <ClInclude Include="crypt\twofish.h" />
     <ClInclude Include="src\include\ks.h" />
     <ClInclude Include="src\include\ks_acl.h" />
     <ClInclude Include="src\include\ks_base64.h" />

@@ -97,6 +97,7 @@ static int cheezy_get_var(char *data, char *name, char *buf, ks_size_t buflen)
   /* the old way didnt make sure that variable values were used for the name hunt
    * and didnt ensure that only a full match of the variable name was used
    */
+  ks_assert(buflen > 0);
 
   do {
     if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
@@ -120,11 +121,11 @@ static int cheezy_get_var(char *data, char *name, char *buf, ks_size_t buflen)
       }
 			
       if (v && e) {
-	int cplen;
+	size_t cplen;
 	ks_size_t len = e - v;
 	
 	if (len > buflen - 1) {
-	  cplen = buflen -1;
+	  cplen = buflen - 1;
 	} else {
 	  cplen = len;
 	}
@@ -277,7 +278,7 @@ static int ws_server_handshake(kws_t *kws)
 		}
 	}
 
-	if (bytes < 0 || bytes > kws->buflen -1) {
+	if (bytes < 0 || ((ks_size_t)bytes) > kws->buflen - 1) {
 		goto err;
 	}
 
@@ -294,7 +295,7 @@ static int ws_server_handshake(kws_t *kws)
 		goto err;
 	}
 
-	kws->uri = ks_pool_alloc(kws->pool, (e-p) + 1);
+	kws->uri = ks_pool_alloc(kws->pool, (unsigned long)(e-p) + 1);
 	strncpy(kws->uri, p, e-p);
 	*(kws->uri + (e-p)) = '\0';
 
@@ -353,7 +354,7 @@ static int ws_server_handshake(kws_t *kws)
 
 KS_DECLARE(ks_ssize_t) kws_raw_read(kws_t *kws, void *data, ks_size_t bytes, int block)
 {
-	ks_ssize_t r;
+	int r;
 	int err = 0;
 
 	kws->x++;
@@ -361,7 +362,7 @@ KS_DECLARE(ks_ssize_t) kws_raw_read(kws_t *kws, void *data, ks_size_t bytes, int
 
 	if (kws->ssl) {
 		do {
-			r = SSL_read(kws->ssl, data, bytes);
+			r = SSL_read(kws->ssl, data, (int)bytes);
 
 			if (r == -1) {
 				err = SSL_get_error(kws->ssl, r);
@@ -386,7 +387,7 @@ KS_DECLARE(ks_ssize_t) kws_raw_read(kws_t *kws, void *data, ks_size_t bytes, int
 
 	do {
 
-		r = recv(kws->sock, data, bytes, 0);
+		r = recv(kws->sock, data, (int)bytes, 0);
 
 		if (r == -1) {
 			if (!block && ks_errno_is_blocking(ks_errno())) {
@@ -420,14 +421,14 @@ KS_DECLARE(ks_ssize_t) kws_raw_read(kws_t *kws, void *data, ks_size_t bytes, int
 
 KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 {
-	ks_ssize_t r;
+	int r;
 	int sanity = WS_WRITE_SANITY;
 	int ssl_err = 0;
 	ks_size_t wrote = 0;
 
 	if (kws->ssl) {
 		do {
-			r = SSL_write(kws->ssl, (void *)((unsigned char *)data + wrote), bytes - wrote);
+			r = SSL_write(kws->ssl, (void *)((unsigned char *)data + wrote), (int)(bytes - wrote));
 
 			if (r > 0) {
 				wrote += r;
@@ -460,7 +461,7 @@ KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 	}
 
 	do {
-		r = send(kws->sock, (void *)((unsigned char *)data + wrote), bytes - wrote, 0);
+		r = send(kws->sock, (void *)((unsigned char *)data + wrote), (int)(bytes - wrote), 0);
 		
 		if (r > 0) {
 			wrote += r;
@@ -516,7 +517,7 @@ static int establish_client_logical_layer(kws_t *kws)
 			kws->ssl = SSL_new(kws->ssl_ctx);
 			assert(kws->ssl);
 
-			SSL_set_fd(kws->ssl, kws->sock);
+			SSL_set_fd(kws->ssl, (int)kws->sock);
 		}
 
 		do {
@@ -593,7 +594,7 @@ static int establish_server_logical_layer(kws_t *kws)
 			kws->ssl = SSL_new(kws->ssl_ctx);
 			assert(kws->ssl);
 
-			SSL_set_fd(kws->ssl, kws->sock);
+			SSL_set_fd(kws->ssl, (int)kws->sock);
 		}
 
 		do {
@@ -707,8 +708,8 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 	kws->buflen = 1024 * 64;
 	kws->bbuflen = kws->buflen;
 
-	kws->buffer = ks_pool_alloc(kws->pool, kws->buflen);
-	kws->bbuffer = ks_pool_alloc(kws->pool, kws->bbuflen);
+	kws->buffer = ks_pool_alloc(kws->pool, (unsigned long)kws->buflen);
+	kws->bbuffer = ks_pool_alloc(kws->pool, (unsigned long)kws->bbuflen);
 	//printf("init %p %ld\n", (void *) kws->bbuffer, kws->bbuflen);
 	//memset(kws->buffer, 0, kws->buflen);
 	//memset(kws->bbuffer, 0, kws->bbuflen);
@@ -946,7 +947,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 			
 			if (kws->plen == 127) {
 				uint64_t *u64;
-				int more = 0;
+				ks_ssize_t more = 0;
 
 				need += 8;
 
@@ -955,7 +956,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 					//*oc = WSOC_CLOSE;
 					//return kws_close(kws, WS_PROTO_ERR);
 
-					more = kws_raw_read(kws, kws->buffer + kws->datalen, need - kws->datalen, WS_BLOCK);
+					more = kws_raw_read(kws, kws->buffer + kws->datalen, (int)(need - kws->datalen), WS_BLOCK);
 
 					if (more < 0 || more < need - kws->datalen) {
 						*oc = WSOC_CLOSE;
@@ -999,14 +1000,14 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				return kws_close(kws, WS_NONE);
 			}
 
-			blen = kws->body - kws->bbuffer;
+			blen = (int)(kws->body - kws->bbuffer);
 
 			if (need + blen > (ks_ssize_t)kws->bbuflen) {
 				void *tmp;
 				
 				kws->bbuflen = need + blen + kws->rplen;
 
-				if ((tmp = ks_pool_resize(kws->pool, kws->bbuffer, kws->bbuflen))) {
+				if ((tmp = ks_pool_resize(kws->pool, kws->bbuffer, (unsigned long)kws->bbuflen))) {
 					kws->bbuffer = tmp;
 				} else {
 					abort();
@@ -1146,7 +1147,7 @@ KS_DECLARE(ks_ssize_t) kws_write_frame(kws_t *kws, kws_opcode_t oc, void *data, 
 		void *tmp;
 
 		kws->write_buffer_len = hlen + bytes + 1;
-		if ((tmp = ks_pool_resize(kws->pool, kws->write_buffer, kws->write_buffer_len))) {
+		if ((tmp = ks_pool_resize(kws->pool, kws->write_buffer, (unsigned long)kws->write_buffer_len))) {
 			kws->write_buffer = tmp;
 		} else {
 			abort();

@@ -84,12 +84,6 @@
     <ClCompile Include="crypt\sha2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="crypt\twofish.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypt\twofish_cfb.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ks_ssl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -165,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="crypt\sha2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypt\twofish.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\win\sys\mman.h">
