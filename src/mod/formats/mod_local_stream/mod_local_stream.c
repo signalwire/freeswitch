@@ -1431,6 +1431,7 @@ SWITCH_STANDARD_API(local_stream_function)
 			source->full_reload = 1;
 			source->part_reload = 1;
 			stream->write_function(stream, "+OK");
+			switch_thread_rwlock_unlock(source->rwlock);
 		} else {
 			stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
 		}
@@ -1438,6 +1439,7 @@ SWITCH_STANDARD_API(local_stream_function)
 		if ((source = get_source(local_stream_name))) {
 			source->stopped = 0;
 			stream->write_function(stream, "+OK stream: %s", source->name);
+			switch_thread_rwlock_unlock(source->rwlock);
 		} else {
 			if ((ok = launch_streams(local_stream_name))) {
 				stream->write_function(stream, "+OK stream: %s", local_stream_name);
