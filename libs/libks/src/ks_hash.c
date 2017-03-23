@@ -76,10 +76,19 @@ hash(ks_hash_t *h, void *k)
 {
     unsigned int i;
 
-	if (h->mode == KS_HASH_MODE_ARBITRARY) {
+	switch (h->mode)
+	{
+	case KS_HASH_MODE_ARBITRARY:
 		i = ks_hash_default_arbitrary(k, h->keysize, 13);
-	} else {
+		break;
+	case KS_HASH_MODE_INT:
+	case KS_HASH_MODE_INT64:
+	case KS_HASH_MODE_PTR:
+		i = h->hashfn((void *)&k);
+		break;
+	default:
 		i = h->hashfn(k);
+		break;
 	}
 
 		/* Aim to protect against poor hash functions by adding logic here
@@ -332,11 +341,17 @@ ks_hash_count(ks_hash_t *h)
 
 static int key_equals(ks_hash_t *h, void *k1, void *k2) 
 {
-	if (h->mode == KS_HASH_MODE_ARBITRARY) {
+	switch (h->mode)
+	{
+	case KS_HASH_MODE_ARBITRARY:
 		return !memcmp(k1, k2, h->keysize);
-	} else {
-		return h->eqfn(k1, k2);
+	case KS_HASH_MODE_INT:
+	case KS_HASH_MODE_INT64:
+	case KS_HASH_MODE_PTR:
+		return h->eqfn(&k1, &k2);
+	default: break;
 	}
+	return h->eqfn(k1, k2);
 }
 
 static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, unsigned int index) {
@@ -384,7 +399,7 @@ ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_
 {
     struct entry *e;
 	unsigned int hashvalue = hash(h, k);
-    unsigned index = indexFor(h->tablelength, hashvalue);
+    unsigned int index = indexFor(h->tablelength, hashvalue);
 
 	ks_hash_write_lock(h);
 

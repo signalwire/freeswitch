@@ -52,6 +52,8 @@ KS_BEGIN_EXTERN_C
 #define _GNU_SOURCE
 #endif
 
+#include <stdint.h>
+
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define KS_64BIT 1
 #endif
