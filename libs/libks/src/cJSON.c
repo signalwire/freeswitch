@@ -79,6 +79,21 @@ static int cJSON_strcasecmp(const unsigned char *s1, const unsigned char *s2)
     return tolower(*s1) - tolower(*s2);
 }
 
+static void *glue_malloc(size_t theSize)
+{
+	return malloc(theSize);
+}
+
+static void glue_free(void *thePtr)
+{
+	free(thePtr);
+}
+
+static void *glue_realloc(void *pointer, size_t theSize)
+{
+	return realloc(pointer, theSize);
+}
+
 typedef struct internal_hooks
 {
     void *(*allocate)(size_t size);
@@ -86,7 +101,7 @@ typedef struct internal_hooks
     void *(*reallocate)(void *pointer, size_t size);
 } internal_hooks;
 
-static internal_hooks global_hooks = { malloc, free, realloc };
+static internal_hooks global_hooks = { glue_malloc, glue_free, glue_realloc };
 
 static unsigned char* cJSON_strdup(const unsigned char* str, const internal_hooks * const hooks)
 {
@@ -847,7 +862,9 @@ CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value)
     return cJSON_ParseWithOpts(value, 0, 0);
 }
 
+#ifndef min
 #define min(a, b) ((a < b) ? a : b)
+#endif
 
 static unsigned char *print(const cJSON * const item, cjbool format, const internal_hooks * const hooks)
 {
@@ -1558,11 +1575,15 @@ CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJ
     {
         global_hooks.deallocate(item->string);
     }
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-    item->string = (char*)string;
+#endif
+	item->string = (char*)string;
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
-    item->type |= cJSON_StringIsConst;
+#endif
+	item->type |= cJSON_StringIsConst;
     cJSON_AddItemToArray(object, item);
 }
 
