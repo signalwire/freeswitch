@@ -435,7 +435,7 @@ struct ks_rwl {
 	pthread_rwlock_t rwlock;
 #endif
 	ks_pool_t *pool;
-	ks_thread_os_handle_t write_locker;
+	ks_pid_t write_locker;
 	uint32_t wlc;
 };
 
@@ -504,10 +504,10 @@ KS_DECLARE(ks_status_t) ks_rwl_read_lock(ks_rwl_t *rwlock)
 
 	ks_mutex_lock(rwlock->read_lock_mutex);
 
-	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self());
+	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id());
 
 	if (count) {
-		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self(), (void *)(intptr_t)++count);
+		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id(), (void *)(intptr_t)++count);
 		ks_mutex_unlock(rwlock->read_lock_mutex);
 		return KS_STATUS_SUCCESS;
 	}
@@ -520,7 +520,7 @@ KS_DECLARE(ks_status_t) ks_rwl_read_lock(ks_rwl_t *rwlock)
 #endif
 
 #ifdef WIN32
-	ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self(), (void *)(intptr_t)(int)1);
+	ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id(), (void *)(intptr_t)(int)1);
 	ks_mutex_unlock(rwlock->read_lock_mutex);
 #endif
 
@@ -530,7 +530,7 @@ KS_DECLARE(ks_status_t) ks_rwl_read_lock(ks_rwl_t *rwlock)
 KS_DECLARE(ks_status_t) ks_rwl_write_lock(ks_rwl_t *rwlock)
 {
 
-	int me = (rwlock->write_locker == ks_thread_self());
+	int me = (rwlock->write_locker == ks_thread_self_id());
 
 	if (me) {
 		rwlock->wlc++;
@@ -542,7 +542,7 @@ KS_DECLARE(ks_status_t) ks_rwl_write_lock(ks_rwl_t *rwlock)
 #else
 	pthread_rwlock_wrlock(&rwlock->rwlock);
 #endif
-	rwlock->write_locker = ks_thread_self();
+	rwlock->write_locker = ks_thread_self_id();
 
 	return KS_STATUS_SUCCESS;
 }
@@ -552,10 +552,10 @@ KS_DECLARE(ks_status_t) ks_rwl_try_read_lock(ks_rwl_t *rwlock)
 #ifdef WIN32
 	ks_mutex_lock(rwlock->read_lock_mutex);
 
-	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self());
+	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id());
 
 	if (count) {
-		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self(), (void *)(intptr_t)++count);
+		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id(), (void *)(intptr_t)++count);
 		ks_mutex_unlock(rwlock->read_lock_mutex);
 		return KS_STATUS_SUCCESS;
 	}
@@ -571,7 +571,7 @@ KS_DECLARE(ks_status_t) ks_rwl_try_read_lock(ks_rwl_t *rwlock)
 #endif
 
 #ifdef WIN32
-	ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self(), (void *)(intptr_t)(int)1);
+	ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id(), (void *)(intptr_t)(int)1);
 	ks_mutex_unlock(rwlock->read_lock_mutex);
 #endif
 
@@ -580,7 +580,7 @@ KS_DECLARE(ks_status_t) ks_rwl_try_read_lock(ks_rwl_t *rwlock)
 
 KS_DECLARE(ks_status_t) ks_rwl_try_write_lock(ks_rwl_t *rwlock)
 {
-	int me = (rwlock->write_locker == ks_thread_self());
+	int me = (rwlock->write_locker == ks_thread_self_id());
 
 	if (me) {
 		rwlock->wlc++;
@@ -597,7 +597,7 @@ KS_DECLARE(ks_status_t) ks_rwl_try_write_lock(ks_rwl_t *rwlock)
 	}
 #endif
 
-	rwlock->write_locker = ks_thread_self();
+	rwlock->write_locker = ks_thread_self_id();
 
 	return KS_STATUS_SUCCESS;
 }
@@ -607,10 +607,10 @@ KS_DECLARE(ks_status_t) ks_rwl_read_unlock(ks_rwl_t *rwlock)
 #ifdef WIN32
 	ks_mutex_lock(rwlock->read_lock_mutex);
 
-	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self());
+	int count = (int)(intptr_t)ks_hash_remove(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id());
 
 	if (count > 1) {
-		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self(), (void *)(intptr_t)--count);
+		ks_hash_insert(rwlock->read_lock_list, (void *)(intptr_t)ks_thread_self_id(), (void *)(intptr_t)--count);
 		ks_mutex_unlock(rwlock->read_lock_mutex);
 		return KS_STATUS_SUCCESS;
 	}
@@ -626,7 +626,7 @@ KS_DECLARE(ks_status_t) ks_rwl_read_unlock(ks_rwl_t *rwlock)
 
 KS_DECLARE(ks_status_t) ks_rwl_write_unlock(ks_rwl_t *rwlock)
 {
-	int me = (rwlock->write_locker == ks_thread_self());
+	int me = (rwlock->write_locker == ks_thread_self_id());
 
 	if (me && rwlock->wlc > 0) {
 		rwlock->wlc--;
