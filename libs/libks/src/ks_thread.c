@@ -43,7 +43,7 @@ KS_DECLARE(ks_pid_t) ks_thread_self_id(void)
 {
 #ifdef WIN32
 	return GetCurrentThreadId();
-#elseif gettid
+#elif gettid
 	return gettid();
 #else
 	return syscall(SYS_gettid);

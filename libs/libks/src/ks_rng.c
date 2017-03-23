@@ -57,7 +57,7 @@ KS_DECLARE(char *) ks_uuid_str(ks_pool_t *pool, uuid_t *uuid)
 #ifdef __WINDOWS__
     unsigned char * str;
     UuidToStringA ( uuid, &str );
-	uuidstr = ks_pstrdup(pool, str);
+	uuidstr = ks_pstrdup(pool, (const char *)str);
     RpcStringFreeA ( &str );
 #else
     char str[37] = { 0 };
@@ -129,7 +129,7 @@ KS_DECLARE(size_t) ks_rng_seed_data(uint8_t *seed, size_t length)
 	}
 #ifdef __WINDOWS__
 	if (crypt_provider) {
-		if(!CryptGenRandom(crypt_provider, length, seed)) {
+		if(!CryptGenRandom(crypt_provider, (DWORD)length, seed)) {
 			return 0;
 		}
 		bytes = length;
@@ -156,11 +156,11 @@ KS_DECLARE(size_t) ks_rng_add_entropy(const uint8_t *buffer, size_t length)
 	}
 
     if (buffer && length) {
-        sha512_hash(buffer, length, &global_sha512);
+        sha512_hash(buffer, (unsigned long)length, &global_sha512);
     }
 
     if (len > 0) {
-        sha512_hash(seed, len, &global_sha512);
+        sha512_hash(seed, (unsigned long)len, &global_sha512);
         length += len;
     }
 

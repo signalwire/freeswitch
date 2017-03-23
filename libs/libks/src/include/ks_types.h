@@ -73,6 +73,11 @@ KS_BEGIN_EXTERN_C
 		KS_POLL_ERROR = (1 << 2)
 	} ks_poll_t;
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+	typedef SSIZE_T ssize_t;
+#endif
+
 	typedef uint16_t ks_port_t;
 	typedef size_t ks_size_t;
 	typedef unsigned char ks_byte_t;

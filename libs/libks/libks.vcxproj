@@ -74,6 +74,8 @@
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\openssl\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>
@@ -81,21 +83,27 @@
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include64;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\openssl\lib64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBKS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBKS_EXPORTS;CJSON_EXPORT_SYMBOLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>Rpcrt4.lib;Crypt32.lib;libsslMT.lib;libcryptoMT.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -119,15 +127,17 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBKS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBKS_EXPORTS;CJSON_EXPORT_SYMBOLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
+      <AdditionalDependencies>Rpcrt4.lib;Crypt32.lib;libsslMT.lib;libcryptoMT.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,7 +153,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="crypt\aescrypt.c" />
+    <ClCompile Include="crypt\aeskey.c" />
+    <ClCompile Include="crypt\aestab.c" />
+    <ClCompile Include="crypt\aes_modes.c" />
+    <ClCompile Include="crypt\sha2.c" />
+    <ClCompile Include="crypt\twofish.c" />
+    <ClCompile Include="crypt\twofish_cfb.c" />
+    <ClCompile Include="src\cJSON.c" />
+    <ClCompile Include="src\cJSON_Utils.c" />
     <ClCompile Include="src\ks.c" />
+    <ClCompile Include="src\ks_acl.c" />
+    <ClCompile Include="src\ks_base64.c" />
     <ClCompile Include="src\ks_buffer.c" />
     <ClCompile Include="src\ks_config.c" />
     <ClCompile Include="src\ks_dso.c" />
@@ -155,25 +176,50 @@
     <ClCompile Include="src\ks_q.c" />
     <ClCompile Include="src\ks_rng.c" />
     <ClCompile Include="src\ks_socket.c" />
+    <ClCompile Include="src\ks_ssl.c" />
     <ClCompile Include="src\ks_string.c" />
     <ClCompile Include="src\ks_thread.c" />
     <ClCompile Include="src\ks_mutex.c" />
+    <ClCompile Include="src\ks_thread_pool.c" />
     <ClCompile Include="src\ks_time.c" />
+    <ClCompile Include="src\kws.c" />
     <ClCompile Include="src\simclist.c" />
     <ClCompile Include="src\win\mman.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="crypt\aes.h" />
+    <ClInclude Include="crypt\aescpp.h" />
+    <ClInclude Include="crypt\aesopt.h" />
+    <ClInclude Include="crypt\aestab.h" />
+    <ClInclude Include="crypt\brg_endian.h" />
+    <ClInclude Include="crypt\brg_types.h" />
+    <ClInclude Include="crypt\sha2.h" />
+    <ClInclude Include="crypt\twofish.h" />
     <ClInclude Include="src\include\ks.h" />
+    <ClInclude Include="src\include\ks_acl.h" />
+    <ClInclude Include="src\include\ks_base64.h" />
     <ClInclude Include="src\include\ks_buffer.h" />
+    <ClInclude Include="src\include\ks_cJSON.h" />
+    <ClInclude Include="src\include\ks_cJSON_Utils.h" />
     <ClInclude Include="src\include\ks_config.h" />
+    <ClInclude Include="src\include\ks_dso.h" />
+    <ClInclude Include="src\include\ks_hash.h" />
     <ClInclude Include="src\include\ks_json.h" />
     <ClInclude Include="src\include\ks_platform.h" />
+    <ClInclude Include="src\include\ks_printf.h" />
+    <ClInclude Include="src\include\ks_q.h" />
+    <ClInclude Include="src\include\ks_socket.h" />
+    <ClInclude Include="src\include\ks_ssl.h" />
     <ClInclude Include="src\include\ks_threadmutex.h" />
+    <ClInclude Include="src\include\ks_thread_pool.h" />
+    <ClInclude Include="src\include\ks_time.h" />
     <ClInclude Include="src\include\ks_types.h" />
     <ClInclude Include="src\include\ks_pool.h" />
     <ClInclude Include="src\include\ks_rng.h" />
+    <ClInclude Include="src\include\kws.h" />
     <ClInclude Include="src\include\simclist.h" />
     <ClInclude Include="src\win\mman.h" />
+    <ClInclude Include="src\win\sys\mman.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

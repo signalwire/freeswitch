@@ -20,6 +20,7 @@
  */
 
 /* SimCList implementation, version 1.6 */
+#include <ks.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +31,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #else
-#include <Windows.h>
+//#include <Windows.h>
 #endif
 #ifndef SIMCLIST_NO_DUMPRESTORE
 /* includes for dump/restore */

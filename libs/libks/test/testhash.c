@@ -68,7 +68,7 @@ static void *test2_thread(ks_thread_t *thread, void *data)
 int test2(void)
 {
 	ks_thread_t *threads[MAX];
-	int ttl = 5;
+	int ttl = 1;
 	int runs = 5;
 	ks_pool_t *pool;
 	ks_hash_t *hash;
@@ -120,7 +120,7 @@ int test2(void)
 	return 1;
 }
 
-#include "sodium.h"
+//#include "sodium.h"
 #define TEST3_SIZE 20
 int test3(void)
 {
