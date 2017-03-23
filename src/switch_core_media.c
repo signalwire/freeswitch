@@ -6264,6 +6264,7 @@ static struct core_fps_s FPS_VALS[] = {
 	{15.0f, 66, 1364},
 	{16.60f, 60, 1500},
 	{20.0f, 50, 4500},
+	{24.0f, 41, 2160},
 	{25.0f, 40, 2250},
 	{30.0f, 33, 2700},
 	{33.0f, 30, 2790},
@@ -6284,6 +6285,7 @@ static int video_get_fps(core_fps_t *fpsP, float fps)
 		}
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown framerate %f\n", fps);
 	return 0;
 }
 
