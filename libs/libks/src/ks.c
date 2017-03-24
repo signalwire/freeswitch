@@ -73,13 +73,24 @@ KS_DECLARE(ks_status_t) ks_init(void)
 	ks_ssl_init_ssl_locks();
 	ks_global_pool();
 	ks_rng_init();
-	
+
+#ifdef __WINDOWS__
+	WSADATA wsaData;
+	WORD wVersionRequested = MAKEWORD(2, 2);
+
+	WSAStartup(wVersionRequested, &wsaData);
+#endif
+
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) ks_shutdown(void)
 {
 	ks_status_t status = KS_STATUS_SUCCESS;
+
+#ifdef __WINDOWS__
+	WSACleanup();
+#endif
 
 	ks_ssl_destroy_ssl_locks();
 	//ks_rng_shutdown();

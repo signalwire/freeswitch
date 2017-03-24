@@ -180,15 +180,21 @@ static int test_tcp(char *ip)
 	ks_addr_set(&addr, ip, tcp_port, family);
 	cl_sock = ks_socket_connect(SOCK_STREAM, IPPROTO_TCP, &addr);
 	
-	int x;
+	//int x;
 
 	printf("TCP CLIENT SOCKET %d %s %d\n", (int)cl_sock, addr.host, addr.port);
 
-	x = write((int)cl_sock, __MSG, (unsigned)strlen(__MSG));
-	printf("TCP CLIENT WRITE %d bytes\n", x);
-	
-	x = read((int)cl_sock, buf, sizeof(buf));
-	printf("TCP CLIENT READ %d bytes [%s]\n", x, buf);
+	ks_size_t msglen = strlen(__MSG);
+	ks_socket_send(cl_sock, __MSG, &msglen);
+	printf("TCP CLIENT WRITE %d bytes\n", (int)msglen);
+	//x = write((int)cl_sock, __MSG, (unsigned)strlen(__MSG));
+	//printf("TCP CLIENT WRITE %d bytes\n", x);
+
+	msglen = sizeof(buf);
+	ks_socket_recv(cl_sock, buf, &msglen);
+	printf("TCP CLIENT READ %d bytes [%s]\n", (int)msglen, buf);
+	//x = read((int)cl_sock, buf, sizeof(buf));
+	//printf("TCP CLIENT READ %d bytes [%s]\n", x, buf);
 	
  end:
 
