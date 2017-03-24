@@ -628,6 +628,10 @@ static int free_pointer(ks_pool_t *mp_p, void *addr, const unsigned long size)
 		real_size = size;
 	}
 
+	while ((real_size & (sizeof(void *) - 1)) > 0) {
+		real_size++;
+	}
+
 	/*
 	 * We use a specific free bits calculation here because if we are
 	 * freeing 10 bytes then we will be putting it into the 8-byte free
@@ -1044,7 +1048,7 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 	fence = FENCE_SIZE;
 
 	/* now we free the pointer */
-	ret = free_pointer(mp_p, addr, old_size + fence);
+	ret = free_pointer(mp_p, addr, old_size + fence + PREFIX_SIZE);
 	if (ret != KS_STATUS_SUCCESS) {
 		return ret;
 	}

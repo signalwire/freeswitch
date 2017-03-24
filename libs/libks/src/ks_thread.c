@@ -93,9 +93,9 @@ static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, 
 		break;
 	case KS_MPCL_DESTROY:
 #ifdef WIN32
-		if (!(thread->flags & KS_THREAD_FLAG_DETATCHED)) {
+		//if (!(thread->flags & KS_THREAD_FLAG_DETATCHED)) {
 			CloseHandle(thread->handle);
-		}
+		//}
 #endif
 		break;
 	}
@@ -170,7 +170,7 @@ KS_DECLARE(int) ks_thread_set_priority(int nice_val)
 KS_DECLARE(uint8_t) ks_thread_priority(ks_thread_t *thread) {
 	uint8_t priority = 0;
 #ifdef WIN32
-	DWORD pri = GetThreadPriority(thread->handle);
+	int pri = GetThreadPriority(thread->handle);
 
 	if (pri >= THREAD_PRIORITY_TIME_CRITICAL) {
 		priority = 99;
@@ -241,7 +241,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	}
 
 	if (flags & KS_THREAD_FLAG_DETATCHED) {
-		CloseHandle(thread->handle);
+		//CloseHandle(thread->handle);
 	}
 
 	status = KS_STATUS_SUCCESS;

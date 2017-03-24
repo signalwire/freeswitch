@@ -321,12 +321,14 @@ static void test_non_recursive_mutex(void)
 int main(int argc, char **argv)
 {
 	ks_init();
-	cpu_count = ks_cpu_count() * 4;
+	//cpu_count = ks_cpu_count() * 4;
+	//cpu_count = ks_cpu_count();
+	cpu_count = 1;
 
 	plan(21 + cpu_count * 6);
 
 	
-	diag("Starting testing for %d tests\n", 44);
+	diag("Starting testing for %d tests\n", 21 + cpu_count * 6);
 
 	create_pool();
 	create_mutex();
