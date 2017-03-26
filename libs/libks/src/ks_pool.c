@@ -56,7 +56,7 @@ typedef struct alloc_prefix_s {
 } alloc_prefix_t;
 
 #define PREFIX_SIZE sizeof(struct alloc_prefix_s)
-
+//#define DEBUG 1
 /*
  * bitflag tools for Variable and a Flag
  */
@@ -628,10 +628,6 @@ static int free_pointer(ks_pool_t *mp_p, void *addr, const unsigned long size)
 		real_size = size;
 	}
 
-	while ((real_size & (sizeof(void *) - 1)) > 0) {
-		real_size++;
-	}
-
 	/*
 	 * We use a specific free bits calculation here because if we are
 	 * freeing 10 bytes then we will be putting it into the 8-byte free
@@ -710,6 +706,10 @@ static int split_block(ks_pool_t *mp_p, void *free_addr, const unsigned long siz
 	 */
 	block_p = (ks_pool_block_t *) ((char *) free_addr - sizeof(ks_pool_block_t));
 	if (block_p->mb_magic != BLOCK_MAGIC || block_p->mb_magic2 != BLOCK_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
+
 		return KS_STATUS_POOL_OVER;
 	}
 
@@ -953,7 +953,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	prefix = (alloc_prefix_t *) addr;
 	prefix->m1 = PRE_MAGIC1;
 	prefix->m2 = PRE_MAGIC2;
-	prefix->size = size;
+	prefix->size = size + fence + PREFIX_SIZE;
 	prefix->refs = 1;
 
 	if (mp_p->mp_log_func != NULL) {
@@ -962,7 +962,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 
 	/* maintain our stats */
 	mp_p->mp_alloc_c++;
-	mp_p->mp_user_alloc += size;
+	mp_p->mp_user_alloc += prefix->size;
 	if (mp_p->mp_user_alloc > mp_p->mp_max_alloc) {
 		mp_p->mp_max_alloc = mp_p->mp_user_alloc;
 	}
@@ -994,7 +994,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
  */
 static int free_mem(ks_pool_t *mp_p, void *addr)
 {
-	unsigned long size, old_size, fence;
+	unsigned long size;
 	int ret;
 	ks_pool_block_t *block_p;
 	alloc_prefix_t *prefix;
@@ -1002,6 +1002,9 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 
 	prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
 	if (!(prefix->m1 == PRE_MAGIC1 && prefix->m2 == PRE_MAGIC2)) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_INVALID_POINTER;
 	}
 
@@ -1022,19 +1025,15 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 	if (size > MAX_BLOCK_USER_MEMORY(mp_p)) {
 		block_p = (ks_pool_block_t *) ((char *) addr - PREFIX_SIZE - sizeof(ks_pool_block_t));
 		if (block_p->mb_magic != BLOCK_MAGIC || block_p->mb_magic2 != BLOCK_MAGIC) {
-			return KS_STATUS_POOL_OVER;
+			if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+				abort();
+			}
+			return KS_STATUS_INVALID_POINTER;
 		}
 	}
 
-	/* make sure we have enough bytes */
-	if (size < MIN_ALLOCATION) {
-		old_size = MIN_ALLOCATION;
-	} else {
-		old_size = size;
-	}
-
 	/* find the user's magic numbers */
-	ret = check_magic(addr, old_size);
+	ret = check_magic(addr, size - FENCE_SIZE - PREFIX_SIZE);
 
 	perform_pool_cleanup_on_free(mp_p, addr);
 
@@ -1042,17 +1041,20 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 	addr = prefix;
 
 	if (ret != KS_STATUS_SUCCESS) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return ret;
 	}
 
-	fence = FENCE_SIZE;
 
-	/* now we free the pointer */
-	ret = free_pointer(mp_p, addr, old_size + fence + PREFIX_SIZE);
+	ret = free_pointer(mp_p, addr, size);
+
 	if (ret != KS_STATUS_SUCCESS) {
 		return ret;
 	}
-	mp_p->mp_user_alloc -= old_size;
+
+	mp_p->mp_user_alloc -= size;
 
 	/* adjust our stats */
 	mp_p->mp_alloc_c--;
@@ -1273,9 +1275,15 @@ static ks_status_t ks_pool_raw_close(ks_pool_t *mp_p)
 		return KS_STATUS_ARG_NULL;
 	}
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_PNT;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_POOL_OVER;
 	}
 
@@ -1394,9 +1402,15 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *mp_p)
 		return KS_STATUS_ARG_NULL;
 	}
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_PNT;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_POOL_OVER;
 	}
 
@@ -1415,6 +1429,9 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *mp_p)
 	/* free the blocks */
 	for (block_p = mp_p->mp_first_p; block_p != NULL; block_p = block_p->mb_next_p) {
 		if (block_p->mb_magic != BLOCK_MAGIC || block_p->mb_magic2 != BLOCK_MAGIC) {
+			if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+				abort();
+			}
 			final = KS_STATUS_POOL_OVER;
 			break;
 		}
@@ -1462,10 +1479,16 @@ KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *mp_p, const unsigned long byte_si
 	ks_assert(mp_p);
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_PNT);
 		return NULL;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_POOL_OVER);
 		return NULL;
 	}
@@ -1553,10 +1576,16 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
 	ks_assert(mp_p);
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_PNT);
 		return NULL;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_POOL_OVER);
 		return NULL;
 	}
@@ -1652,11 +1681,17 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 	ks_mutex_lock(mp_p->mutex);
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		r = KS_STATUS_PNT;
 		goto end;
 	}
 
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		r = KS_STATUS_POOL_OVER;
 		goto end;
 	}
@@ -1711,11 +1746,17 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
 	alloc_prefix_t *prefix;
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_PNT);
 		return NULL;
 	}
 
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_POOL_OVER);
 		return NULL;
 	}
@@ -1724,6 +1765,9 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
 	prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
 
 	if (!(prefix->m1 == PRE_MAGIC1 && prefix->m2 == PRE_MAGIC2)) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_INVALID_POINTER);
 		return NULL;
 	}
@@ -1766,7 +1810,7 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
  */
 KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsigned long new_byte_size, ks_status_t *error_p)
 {
-	unsigned long copy_size, new_size, old_size, old_byte_size;
+	unsigned long copy_size, new_size, old_byte_size;
 	void *new_addr;
 	ks_pool_block_t *block_p;
 	int ret;
@@ -1781,10 +1825,16 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 	}
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_PNT);
 		return NULL;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_POOL_OVER);
 		return NULL;
 	}
@@ -1792,6 +1842,9 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 	prefix = (alloc_prefix_t *) ((char *) old_addr - PREFIX_SIZE);
 
 	if (!(prefix->m1 == PRE_MAGIC1 && prefix->m2 == PRE_MAGIC2)) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		SET_POINTER(error_p, KS_STATUS_INVALID_POINTER);
 		return NULL;
 	}
@@ -1813,24 +1866,21 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 	if (old_byte_size > MAX_BLOCK_USER_MEMORY(mp_p)) {
 		block_p = (ks_pool_block_t *) ((char *) old_addr - PREFIX_SIZE - sizeof(ks_pool_block_t));
 		if (block_p->mb_magic != BLOCK_MAGIC || block_p->mb_magic2 != BLOCK_MAGIC) {
+			if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+				abort();
+			}
 			SET_POINTER(error_p, KS_STATUS_POOL_OVER);
 			new_addr = NULL;
 			goto end;
 		}
 	}
 
-	/* make sure we have enough bytes */
-	if (old_byte_size < MIN_ALLOCATION) {
-		old_size = MIN_ALLOCATION;
-	} else {
-		old_size = old_byte_size;
-	}
-
-	/* verify that the size matches exactly */
-
-	if (old_size > 0) {
-		ret = check_magic(old_addr, old_size);
+	if (old_byte_size > 0) {
+		ret = check_magic(old_addr, old_byte_size - FENCE_SIZE - PREFIX_SIZE);
 		if (ret != KS_STATUS_SUCCESS) {
+			if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+				abort();
+			}
 			SET_POINTER(error_p, ret);
 			new_addr = NULL;
 			goto end;
@@ -1965,9 +2015,15 @@ KS_DECLARE(ks_status_t) ks_pool_stats(const ks_pool_t *mp_p, unsigned int *page_
 		return KS_STATUS_ARG_NULL;
 	}
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_PNT;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_POOL_OVER;
 	}
 
@@ -2007,9 +2063,15 @@ KS_DECLARE(ks_status_t) ks_pool_set_log_func(ks_pool_t *mp_p, ks_pool_log_func_t
 		return KS_STATUS_ARG_NULL;
 	}
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_PNT;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_POOL_OVER;
 	}
 
@@ -2049,9 +2111,15 @@ KS_DECLARE(ks_status_t) ks_pool_set_max_pages(ks_pool_t *mp_p, const unsigned in
 		return KS_STATUS_ARG_NULL;
 	}
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_PNT;
 	}
 	if (mp_p->mp_magic2 != KS_POOL_MAGIC) {
+		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
+			abort();
+		}
 		return KS_STATUS_POOL_OVER;
 	}
 
