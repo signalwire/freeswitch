@@ -73,6 +73,10 @@
 
 #endif /* WIN32 */
 
+#ifndef SOL_IPV6
+#define SOL_IPV6 41
+#endif
+
 #ifdef KS_USE_POLL
 #include <poll.h>
 #endif

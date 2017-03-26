@@ -46,7 +46,8 @@ KS_DECLARE(ks_pid_t) ks_thread_self_id(void)
 #elif gettid
 	return gettid();
 #else
-	return syscall(SYS_gettid);
+	return (ks_pid_t) pthread_self();
+	//return syscall(SYS_gettid);
 #endif
 }
 
