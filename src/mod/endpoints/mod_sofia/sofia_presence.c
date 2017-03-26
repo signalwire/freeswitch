@@ -2906,7 +2906,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (!strcmp(direction, "inbound") && strcmp(sub_to_user,  caller)) {
 				// If inbound and the entity is not the caller (i.e. internal to FS), then the direction is reversed
 				// because it is not going through the B2BUA
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_presence_sub_callback: endpt is internal\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "sofia_presence_sub_callback: endpt is internal\n");
 				direction = !strcasecmp(direction, "outbound") ? "inbound" : "outbound";
 			}
 
