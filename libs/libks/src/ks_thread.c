@@ -198,6 +198,10 @@ KS_DECLARE(uint8_t) ks_thread_priority(ks_thread_t *thread) {
 
 KS_DECLARE(ks_status_t) ks_thread_join(ks_thread_t *thread) {
 
+	if (thread->state == KS_THREAD_RUNNING) {
+		thread->state = KS_THREAD_SHUTDOWN;
+	}
+
 	if (thread->joined) {
 		return KS_STATUS_DUPLICATE_OPERATION;
 	}
