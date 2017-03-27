@@ -89,6 +89,7 @@ KS_BEGIN_EXTERN_C
 		KS_STATUS_GENERR,
 		KS_STATUS_INACTIVE,
 		KS_STATUS_TIMEOUT,
+		KS_STATUS_DUPLICATE_OPERATION,
 		/* Memory pool errors */
 		KS_STATUS_REFS_EXIST,      /* references exist */
 		KS_STATUS_ARG_NULL,        /* function argument is null */

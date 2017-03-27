@@ -78,6 +78,7 @@ struct ks_thread {
 	    ks_thread_state_t state;
 		uint8_t priority;
 		void *return_data;
+    	uint8_t joined;
 	};
 
 	typedef enum {
