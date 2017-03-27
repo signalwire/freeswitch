@@ -512,8 +512,6 @@ KS_DECLARE(ks_status_t) ks_rwl_read_lock(ks_rwl_t *rwlock)
 		return KS_STATUS_SUCCESS;
 	}
 
-	ks_mutex_unlock(rwlock->read_lock_mutex);
-
 	AcquireSRWLockShared(&rwlock->rwlock);
 #else
 	pthread_rwlock_rdlock(&rwlock->rwlock);
