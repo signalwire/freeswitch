@@ -237,9 +237,10 @@ AC_ARG_ENABLE(address_sanitizer,
   [enable_address_sanitizer="no"])
 
 if test "${enable_address_sanitizer}" = "yes"; then
-  AM_CFLAGS="${AM_CFLAGS} -fsanitize=address -fno-omit-frame-pointer"
-  AM_CXXFLAGS="${AM_CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer"
-  AM_LDFLAGS="${AM_LDFLAGS} -fsanitize=address"
+  AM_CFLAGS="${AM_CFLAGS} -fsanitize=address -fno-omit-frame-pointer -O0"
+  AM_CXXFLAGS="${AM_CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer -O0"
+  AM_LDFLAGS="${AM_LDFLAGS} -fsanitize=address -O0"
+  CFLAGS="${CFLAGS} -O0"
 fi
 
 PKG_CHECK_MODULES([UUID], [uuid >= 1.0.0],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([libuuid is required])])
