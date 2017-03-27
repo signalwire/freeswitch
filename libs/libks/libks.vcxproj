@@ -192,7 +192,6 @@
     <ClCompile Include="src\ks_time.c" />
     <ClCompile Include="src\kws.c" />
     <ClCompile Include="src\simclist.c" />
-    <ClCompile Include="src\win\mman.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="crypt\aes.h" />
@@ -226,7 +225,6 @@
     <ClInclude Include="src\include\kws.h" />
     <ClInclude Include="src\include\simclist.h" />
     <ClInclude Include="src\win\mman.h" />
-    <ClInclude Include="src\win\sys\mman.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

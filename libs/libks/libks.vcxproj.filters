@@ -42,9 +42,6 @@
     <ClCompile Include="src\simclist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\win\mman.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ks_pool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -159,9 +156,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="crypt\sha2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win\sys\mman.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\ks_acl.h">
