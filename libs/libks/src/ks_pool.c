@@ -26,14 +26,9 @@
  * library which was close to what we needed but did not exactly do
  * what I wanted.
  *
- * The following uses mmap from /dev/zero.  It allows a number of
- * allocations to be made inside of a memory pool then with a clear or
- * close the pool can be reset without any memory fragmentation and
- * growth problems.
  */
 
 #include "ks.h"
-#include <sys/mman.h>
 
 #define KS_POOL_MAGIC		 0xABACABA	/* magic for struct */
 #define BLOCK_MAGIC			 0xB1B1007	/* magic for blocks */
@@ -113,7 +108,6 @@ struct ks_pool_s {
 	unsigned int mp_page_size;	/* page-size of our system */
 	off_t mp_top;				/* top of our allocations in fd */
 	ks_pool_log_func_t mp_log_func;	/* log callback function */
-	void *mp_addr;				/* current address for mmaping */
 	void *mp_min_p;				/* min address in pool for checks */
 	void *mp_bounds_p;			/* max address in pool for checks */
 	struct ks_pool_block_st *mp_first_p;	/* first memory block we are using */
@@ -453,7 +447,6 @@ static void *alloc_pages(ks_pool_t *mp_p, const unsigned int page_n, ks_status_t
 {
 	void *mem;
 	unsigned long size;
-	int state;
 
 	/* are we over our max-pages? */
 	if (mp_p->mp_max_pages > 0 && mp_p->mp_page_c >= mp_p->mp_max_pages) {
@@ -468,34 +461,10 @@ static void *alloc_pages(ks_pool_t *mp_p, const unsigned int page_n, ks_status_t
 #endif
 
 
-	state = MAP_PRIVATE | MAP_ANON;
-
-#if defined(MAP_FILE)
-	state |= MAP_FILE;
-#endif
-
-#if defined(MAP_VARIABLE)
-	state |= MAP_VARIABLE;
-#endif
-
-	/* mmap from /dev/zero */
-	mem = mmap(mp_p->mp_addr, size, PROT_READ | PROT_WRITE, state, -1, mp_p->mp_top);
-
-	if (mem == (void *) MAP_FAILED) {
-		if (errno == ENOMEM) {
-			SET_POINTER(error_p, KS_STATUS_NO_MEM);
-		} else {
-			SET_POINTER(error_p, KS_STATUS_MMAP);
-		}
-		return NULL;
-	}
+	mem = malloc(size);
+	ks_assert(mem);
 
 	mp_p->mp_top += size;
-
-	if (mp_p->mp_addr != NULL) {
-		mp_p->mp_addr = (char *) mp_p->mp_addr + size;
-	}
-
 	mp_p->mp_page_c += page_n;
 
 	SET_POINTER(error_p, KS_STATUS_SUCCESS);
@@ -521,11 +490,10 @@ static void *alloc_pages(ks_pool_t *mp_p, const unsigned int page_n, ks_status_t
  *
  * size -> Size of the block that we are freeing.
  *
- * sbrk_b -> Set to one if the pages were allocated with sbrk else mmap.
  */
 static int free_pages(void *pages, const unsigned long size)
 {
-	(void) munmap(pages, size);
+	free(pages);
 	return KS_STATUS_SUCCESS;
 }
 
@@ -1123,7 +1091,6 @@ static ks_pool_t *ks_pool_raw_open(const unsigned int flags, const unsigned int 
 	/* mp.mp_page_size set below */
 	/* mp.mp_blocks_bit_n set below */
 	/* mp.mp_top set below */
-	/* mp.mp_addr set below */
 	mp.mp_log_func = NULL;
 	mp.mp_min_p = NULL;
 	mp.mp_bounds_p = NULL;
@@ -1146,7 +1113,6 @@ static ks_pool_t *ks_pool_raw_open(const unsigned int flags, const unsigned int 
 		}
 	}
 
-	mp.mp_addr = start_addr;
 	/* we start at the front of the file */
 	mp.mp_top = 0;
 
@@ -1276,7 +1242,7 @@ static ks_status_t ks_pool_raw_close(ks_pool_t *mp_p)
 {
 	ks_pool_block_t *block_p, *next_p;
 	void *addr;
-	unsigned long size;
+	//unsigned long size;
 	int ret, final = KS_STATUS_SUCCESS;
 
 	/* special case, just return no-error */
@@ -1336,9 +1302,10 @@ static ks_status_t ks_pool_raw_close(ks_pool_t *mp_p)
 	} else {
 		addr = mp_p;
 	}
-	size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(ks_pool_t)));
+
+	//size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(ks_pool_t)));
 	
-	(void) munmap(addr, size);
+	free(addr);
 
 	ks_mutex_unlock(mutex);
 	ks_mutex_destroy(&mutex);
@@ -2189,9 +2156,6 @@ KS_DECLARE(const char *) ks_pool_strerror(const ks_status_t error)
 		break;
 	case KS_STATUS_NO_MEM:
 		return "no memory available";
-		break;
-	case KS_STATUS_MMAP:
-		return "problems with mmap";
 		break;
 	case KS_STATUS_SIZE:
 		return "error processing requested size";

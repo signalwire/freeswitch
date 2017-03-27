@@ -99,7 +99,6 @@ KS_BEGIN_EXTERN_C
 		KS_STATUS_PAGE_SIZE,	   /* could not get system page-size */
 		KS_STATUS_OPEN_ZERO,	   /* could not open /dev/zero */
 		KS_STATUS_NO_MEM,	       /* no memory available */
-		KS_STATUS_MMAP,	           /* problems with mmap */
 		KS_STATUS_SIZE,	           /* error processing requested size */
 		KS_STATUS_TOO_BIG,	       /* allocation exceeded max size */
 		KS_STATUS_MEM,	           /* invalid memory address */
@@ -125,6 +124,7 @@ KS_BEGIN_EXTERN_C
 	"GENERR",\
 	"INACTIVE",\
 	"TIMEOUT",\
+	"DUPLICATE_OPERATION",\
 	"ARG_NULL",\
 	"ARG_INVALID",\
 	"PNT",\
@@ -132,7 +132,6 @@ KS_BEGIN_EXTERN_C
 	"PAGE_SIZE",\
 	"OPEN_ZERO",\
 	"NO_MEM",\
-	"MMAP",\
 	"SIZE",\
 	"TOO_BIG",\
 	"MEM",\

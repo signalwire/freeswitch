@@ -186,7 +186,7 @@ KS_DECLARE(int) ks_cpu_count(void)
 		cpu_count = sysinfo.dwNumberOfProcessors;
 	}
 #endif
-	
+
 	return cpu_count;
 }
 
