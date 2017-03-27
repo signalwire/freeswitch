@@ -770,7 +770,7 @@ static int split_block(ks_pool_t *mp_p, void *free_addr, const unsigned long siz
  * error_p <- Pointer to ks_status_t which, if not NULL, will be set with
  * a ks_pool error code.
  */
-static void *get_space(ks_pool_t *mp_p, const unsigned long byte_size, ks_status_t *error_p)
+static void *get_space(ks_pool_t *mp_p, const unsigned long byte_size, unsigned long *padding, ks_status_t *error_p)
 {
 	ks_pool_block_t *block_p;
 	ks_pool_free_t free_pnt;
@@ -780,8 +780,14 @@ static void *get_space(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	void *free_addr = NULL, *free_end;
 
 	size = byte_size;
+	*padding = 0;
+
 	while ((size & (sizeof(void *) - 1)) > 0) {
 		size++;
+	}
+
+	if (size > byte_size) {
+		*padding = size - byte_size;
 	}
 
 	/*
@@ -929,7 +935,7 @@ static void *get_space(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
  */
 static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status_t *error_p)
 {
-	unsigned long size, fence;
+	unsigned long size, fence, padding = 0;
 	void *addr;
 	alloc_prefix_t *prefix;
 
@@ -943,7 +949,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	fence = FENCE_SIZE;
 
 	/* get our free space + the space for the fence post */
-	addr = get_space(mp_p, size + fence + PREFIX_SIZE, error_p);
+	addr = get_space(mp_p, size + fence + PREFIX_SIZE, &padding, error_p);
 	if (addr == NULL) {
 		/* error_p set in get_space */
 		return NULL;
@@ -953,7 +959,7 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 	prefix = (alloc_prefix_t *) addr;
 	prefix->m1 = PRE_MAGIC1;
 	prefix->m2 = PRE_MAGIC2;
-	prefix->size = size + fence + PREFIX_SIZE;
+	prefix->size = size + fence + PREFIX_SIZE + padding;
 	prefix->refs = 1;
 
 	if (mp_p->mp_log_func != NULL) {
