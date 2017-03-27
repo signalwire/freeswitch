@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 
 	status = ks_pool_open(&pool);
 
-	printf("OPEN:\n");
+	printf("OPEN: %p\n", (void *)pool);
 	ok(status == KS_STATUS_SUCCESS);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "OPEN ERR: %d [%s]\n", err, ks_pool_strerror(status));
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 	ks_pool_set_cleanup(pool, foo, NULL, 0, cleanup);
 
 
-	printf("ALLOC OBJ3:\n");
+	printf("ALLOC OBJ3: %p\n", (void *)pool);
 
 	foo = ks_pool_alloc(pool, sizeof(struct foo));
 
@@ -188,13 +188,14 @@ int main(int argc, char **argv)
 		printf("ALLOC OBJ3 [%p]:\n", (void *) foo);
 	}
 
+	printf("CLEANUP: %p\n", (void *)pool);
 	foo->x = 12;
 	foo->str = strdup("This is a third test 1234 abcd; This will be called on pool clear/destroy\n");
 	ks_pool_set_cleanup(pool, foo, NULL, 0, cleanup);
 
 
 
-	printf("RESIZE:\n");
+	printf("RESIZE: %p\n", (void *)pool);
 
 
 	ks_snprintf(str, bytes, "%s", STR);

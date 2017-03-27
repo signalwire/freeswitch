@@ -53,6 +53,7 @@ typedef struct alloc_prefix_s {
 	unsigned long size;
 	unsigned char m2;
 	unsigned int refs;
+	unsigned int padding;
 } alloc_prefix_t;
 
 #define PREFIX_SIZE sizeof(struct alloc_prefix_s)
@@ -780,8 +781,6 @@ static void *get_space(ks_pool_t *mp_p, const unsigned long byte_size, unsigned 
 	void *free_addr = NULL, *free_end;
 
 	size = byte_size;
-	*padding = 0;
-
 	while ((size & (sizeof(void *) - 1)) > 0) {
 		size++;
 	}
@@ -950,18 +949,22 @@ static void *alloc_mem(ks_pool_t *mp_p, const unsigned long byte_size, ks_status
 
 	/* get our free space + the space for the fence post */
 	addr = get_space(mp_p, size + fence + PREFIX_SIZE, &padding, error_p);
+
 	if (addr == NULL) {
 		/* error_p set in get_space */
 		return NULL;
 	}
 
-	write_magic((char *) addr + size + PREFIX_SIZE);
+
 	prefix = (alloc_prefix_t *) addr;
 	prefix->m1 = PRE_MAGIC1;
 	prefix->m2 = PRE_MAGIC2;
 	prefix->size = size + fence + PREFIX_SIZE + padding;
 	prefix->refs = 1;
+	prefix->padding = padding;
 
+	write_magic((char *) prefix + prefix->size - padding - fence);
+	
 	if (mp_p->mp_log_func != NULL) {
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
 	}
@@ -1039,7 +1042,7 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 	}
 
 	/* find the user's magic numbers */
-	ret = check_magic(addr, size - FENCE_SIZE - PREFIX_SIZE);
+	ret = check_magic(prefix, prefix->size - FENCE_SIZE - prefix->padding);
 
 	perform_pool_cleanup_on_free(mp_p, addr);
 
@@ -1882,7 +1885,8 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 	}
 
 	if (old_byte_size > 0) {
-		ret = check_magic(old_addr, old_byte_size - FENCE_SIZE - PREFIX_SIZE);
+		ret = check_magic(prefix, prefix->size - FENCE_SIZE - prefix->padding);
+
 		if (ret != KS_STATUS_SUCCESS) {
 			if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
 				abort();
