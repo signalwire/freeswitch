@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libks", "libks.vcxproj", "{70D178D8-1100-4152-86C0-809A91CFF832}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testsock", "test\testsock.vcxproj", "{5DC38E2B-0512-4140-8A1B-59952A5DC9CB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testtime", "test\testtime.vcxproj", "{B74812A1-C67D-4568-AF84-26CE2004D8BF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testmmap", "test\testmmap.vcxproj", "{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +83,14 @@ Global
 		{B74812A1-C67D-4568-AF84-26CE2004D8BF}.Release|x64.Build.0 = Release|x64
 		{B74812A1-C67D-4568-AF84-26CE2004D8BF}.Release|x86.ActiveCfg = Release|Win32
 		{B74812A1-C67D-4568-AF84-26CE2004D8BF}.Release|x86.Build.0 = Release|Win32
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Debug|x64.ActiveCfg = Debug|x64
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Debug|x64.Build.0 = Debug|x64
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Debug|x86.ActiveCfg = Debug|Win32
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Debug|x86.Build.0 = Debug|Win32
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Release|x64.ActiveCfg = Release|x64
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Release|x64.Build.0 = Release|x64
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Release|x86.ActiveCfg = Release|Win32
+		{7BA42C3F-B5F6-4C48-AFED-B50EB35C4F03}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

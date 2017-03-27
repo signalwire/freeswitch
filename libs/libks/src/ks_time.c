@@ -178,6 +178,7 @@ KS_DECLARE(void) ks_sleep(ks_time_t microsec)
 	
 	do {
 		QueryPerformanceCounter((LARGE_INTEGER*) &now);
+		SwitchToThread();
 	} while ((now.QuadPart - start.QuadPart) / (float)(perfCnt.QuadPart) * 1000 * 1000 < (DWORD)microsec);
 	
 }

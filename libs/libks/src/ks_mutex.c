@@ -558,7 +558,7 @@ KS_DECLARE(ks_status_t) ks_rwl_try_read_lock(ks_rwl_t *rwlock)
 {
 #ifdef WIN32
 	if (ks_mutex_trylock(rwlock->write_lock_mutex) != KS_STATUS_SUCCESS) {
-		return KS_STATUS_FALSE;
+		return KS_STATUS_FAIL;
 	}
 
 	ks_mutex_lock(rwlock->read_lock_mutex);

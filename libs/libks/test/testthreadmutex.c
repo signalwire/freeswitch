@@ -131,7 +131,6 @@ static void check_rwl(void)
 		ok( (ks_thread_create(&threads[i], thread_test_rwlock_func, NULL, pool) == KS_STATUS_SUCCESS) );
 	}
 
-
 	for(i = 0; i < cpu_count; i++) {
 		ks_thread_join(threads[i]);
 	}
@@ -321,15 +320,12 @@ static void test_non_recursive_mutex(void)
 int main(int argc, char **argv)
 {
 	ks_init();
-	//cpu_count = ks_cpu_count() * 4;
-	//cpu_count = ks_cpu_count();
-	cpu_count = 1;
+	cpu_count = ks_cpu_count() * 4;
 
 	plan(21 + cpu_count * 6);
 
-	
 	diag("Starting testing for %d tests\n", 21 + cpu_count * 6);
-
+	
 	create_pool();
 	create_mutex();
 	create_mutex_non_recursive();
@@ -347,7 +343,7 @@ int main(int argc, char **argv)
 	check_cleanup();
 	check_rwl();
 	check_cond();
-	
+
 	ks_shutdown();
 	done_testing();
 }
