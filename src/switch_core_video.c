@@ -305,6 +305,7 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
 
+#ifdef SWITCH_HAVE_YUV
 static void switch_img_patch_rgb_noalpha(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
 	int i;
@@ -340,9 +341,11 @@ static void switch_img_patch_rgb_noalpha(switch_image_t *IMG, switch_image_t *im
 		}
 	}
 }
+#endif
 
 SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
 {
+#ifdef SWITCH_HAVE_YUV
 	if (img->fmt != SWITCH_IMG_FMT_ARGB) {
 		return;
 	}
@@ -353,10 +356,15 @@ SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
 
 	ARGBAttenuate(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
 				  img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], img->d_w, img->d_h);
+#else
+	return;
+#endif
+
 }
 
 SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha)
 {
+#ifdef SWITCH_HAVE_YUV
 	int i;
 
 	if (noalpha) {
@@ -402,6 +410,7 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 			dst_argb += dst_stride_argb;
 		}
 	}
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
