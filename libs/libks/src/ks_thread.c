@@ -85,18 +85,23 @@ static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, 
 
 	switch(action) {
 	case KS_MPCL_ANNOUNCE:
-		thread->running = 0;
+		if (thread->state == KS_THREAD_RUNNING) {
+			thread->state = KS_THREAD_SHUTDOWN;
+		}
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (!(thread->flags & KS_THREAD_FLAG_DETATCHED)) {
+		while(thread->state == KS_THREAD_SHUTDOWN) {
+			ks_sleep(10000);
+		}
+
+		if (!(thread->flags & KS_THREAD_FLAG_DETACHED)) {
 			ks_thread_join(thread);
 		}
 		break;
 	case KS_MPCL_DESTROY:
+
 #ifdef WIN32
-		//if (!(thread->flags & KS_THREAD_FLAG_DETATCHED)) {
-			CloseHandle(thread->handle);
-		//}
+		CloseHandle(thread->handle);
 #endif
 		break;
 	}
@@ -118,8 +123,9 @@ static void *KS_THREAD_CALLING_CONVENTION thread_launch(void *args)
 		pthread_setschedparam(tt, policy, &param);
 	}
 #endif
-
+	thread->state = KS_THREAD_RUNNING;
 	thread->return_data = thread->function(thread, thread->private_data);
+	thread->state = KS_THREAD_STOPPED;
 #ifndef WIN32
 	pthread_attr_destroy(&thread->attribute);
 #endif
@@ -205,6 +211,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 {
 	ks_thread_t *thread = NULL;
 	ks_status_t status = KS_STATUS_FAIL;
+	int sanity = 1000;
 
 	if (!rthread) goto done;
 
@@ -219,7 +226,6 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	thread->private_data = data;
 	thread->function = func;
 	thread->stack_size = stack_size;
-	thread->running = 1;
 	thread->flags = flags;
 	thread->priority = priority;
 	thread->pool = pool;
@@ -241,7 +247,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 		SetThreadPriority(thread->handle, THREAD_PRIORITY_LOWEST);
 	}
 
-	if (flags & KS_THREAD_FLAG_DETATCHED) {
+	if (flags & KS_THREAD_FLAG_DETACHED) {
 		//CloseHandle(thread->handle);
 	}
 
@@ -252,7 +258,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	if (pthread_attr_init(&thread->attribute) != 0)
 		goto fail;
 
-	if ((flags & KS_THREAD_FLAG_DETATCHED) && pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0)
+	if ((flags & KS_THREAD_FLAG_DETACHED) && pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0)
 		goto failpthread;
 
 	if (thread->stack_size && pthread_attr_setstacksize(&thread->attribute, thread->stack_size) != 0)
@@ -265,19 +271,28 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	goto done;
 
   failpthread:
-
+	thread->state = KS_THREAD_FAIL;
 	pthread_attr_destroy(&thread->attribute);
 #endif
 
   fail:
 	if (thread) {
-		thread->running = 0;
+		thread->state = KS_THREAD_FAIL;
 		if (pool) {
 			ks_pool_free(pool, &thread);
 		}
 	}
   done:
 	if (status == KS_STATUS_SUCCESS) {
+		while(thread->state < KS_THREAD_RUNNING && --sanity > 0) {
+			ks_sleep(1000);
+		}
+		
+		if (!sanity) {
+			status = KS_STATUS_FAIL;
+			goto fail;
+		}
+
 		*rthread = thread;
 		ks_pool_set_cleanup(pool, thread, NULL, 0, ks_thread_cleanup);
 	}

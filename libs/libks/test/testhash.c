@@ -49,14 +49,14 @@ static void *test2_thread(ks_thread_t *thread, void *data)
 	ks_hash_iterator_t *itt;
 	ks_hash_t *hash = (ks_hash_t *) data;
 
-	while(thread->running) {
+	while(KS_THREAD_IS_RUNNING(thread)) {
 		for (itt = ks_hash_first(hash, KS_READLOCKED); itt; itt = ks_hash_next(&itt)) {
 			const void *key;
 			void *val;
 
 			ks_hash_this(itt, &key, NULL, &val);
 
-			printf("%d ITT %s=%s\n", (int)ks_thread_self_id(), (char *)key, (char *)val);
+			printf("%u ITT %s=%s\n", (int)ks_thread_self_id(), (char *)key, (char *)val);
 		}
 		ks_sleep(100000);
 	}
@@ -109,7 +109,7 @@ int test2(void)
 	}
 
 	for (i = 0; i < ttl; i++) {
-		threads[i]->running = 0;
+		threads[i]->state = KS_THREAD_SHUTDOWN;
 		ks_thread_join(threads[i]);
 	}
 

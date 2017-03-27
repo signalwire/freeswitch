@@ -94,7 +94,7 @@ static int check_queue(ks_thread_pool_t *tp, ks_bool_t adding)
 	ks_mutex_unlock(tp->mutex);
 
 	while(need > 0) {
-		if (ks_thread_create_ex(&thread, worker_thread, tp, KS_THREAD_FLAG_DETATCHED, tp->stack_size, tp->priority, tp->pool) != KS_STATUS_SUCCESS) {
+		if (ks_thread_create_ex(&thread, worker_thread, tp, KS_THREAD_FLAG_DETACHED, tp->stack_size, tp->priority, tp->pool) != KS_STATUS_SUCCESS) {
 			ks_mutex_lock(tp->mutex);
 			tp->thread_count--;
 			ks_mutex_unlock(tp->mutex);

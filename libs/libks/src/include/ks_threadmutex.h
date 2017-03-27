@@ -53,6 +53,16 @@ typedef
 #endif
 ks_pid_t;
 
+typedef enum {
+	KS_THREAD_INIT,
+	KS_THREAD_RUNNING,
+	KS_THREAD_FAIL,
+	KS_THREAD_SHUTDOWN,
+	KS_THREAD_STOPPED
+} ks_thread_state_t;
+
+#define KS_THREAD_IS_RUNNING(_thread) _thread->state == KS_THREAD_RUNNING
+
 struct ks_thread {
 		ks_pool_t *pool;
 #ifdef WIN32
@@ -65,7 +75,7 @@ struct ks_thread {
 		ks_thread_function_t function;
 		size_t stack_size;
 		uint32_t flags;
-		uint8_t running;
+	    ks_thread_state_t state;
 		uint8_t priority;
 		void *return_data;
 	};
@@ -79,7 +89,7 @@ struct ks_thread {
 
 	typedef enum {
 		KS_THREAD_FLAG_DEFAULT   = 0,
-		KS_THREAD_FLAG_DETATCHED = (1 << 0)
+		KS_THREAD_FLAG_DETACHED = (1 << 0)
 	} ks_thread_flags_t;
 
 	KS_DECLARE(int) ks_thread_set_priority(int nice_val);

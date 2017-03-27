@@ -23,8 +23,8 @@ static int cpu_count = 0;
 
 static void *thread_priority(ks_thread_t *thread, void *data)
 {
-	while (thread->running) {
-		ks_sleep(1000000);
+	while (KS_THREAD_IS_RUNNING(thread)) {
+		ks_sleep(100000);
 	}
 
 	return NULL;
@@ -145,8 +145,8 @@ static void *thread_test_function_cleanup(ks_thread_t *thread, void *data)
 {
 	int d = (int)(intptr_t)data;
 
-	while (thread->running) {
-		ks_sleep(1000000);
+	while (KS_THREAD_IS_RUNNING(thread)) {
+		ks_sleep(100000);
 	}
 
 	if ( d == 1 ) {
@@ -229,7 +229,7 @@ static void create_threads_detatched(void)
 	
 	int i;
 	for(i = 0; i < cpu_count; i++) {
-		status = ks_thread_create_ex(&threads[i], thread_test_function_detatched, d, KS_THREAD_FLAG_DETATCHED, KS_THREAD_DEFAULT_STACK, KS_PRI_NORMAL, pool);
+		status = ks_thread_create_ex(&threads[i], thread_test_function_detatched, d, KS_THREAD_FLAG_DETACHED, KS_THREAD_DEFAULT_STACK, KS_PRI_NORMAL, pool);
 		ok( status == KS_STATUS_SUCCESS );
 	}
 }
@@ -239,9 +239,9 @@ static void check_thread_priority(void)
 	ks_status_t status;
 	void *d = (void *)(intptr_t)1;
 
-	status = ks_thread_create_ex(&thread_p, thread_priority, d, KS_THREAD_FLAG_DETATCHED, KS_THREAD_DEFAULT_STACK, KS_PRI_IMPORTANT, pool);
+	status = ks_thread_create_ex(&thread_p, thread_priority, d, KS_THREAD_FLAG_DETACHED, KS_THREAD_DEFAULT_STACK, KS_PRI_IMPORTANT, pool);
 	ok( status == KS_STATUS_SUCCESS );
-	ks_sleep(1000000);
+	ks_sleep(100000);
 	todo("Add check to see if has permission to set thread priority\n");
 	ok( ks_thread_priority(thread_p) == KS_PRI_IMPORTANT );
 	end_todo;
