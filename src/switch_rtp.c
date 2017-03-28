@@ -264,12 +264,15 @@ typedef struct {
 
 struct switch_rtp;
 
+#define MAX_DTLS_MTU 4096
+
 typedef struct switch_dtls_s {
 	/* DTLS */
 	SSL_CTX *ssl_ctx;
 	SSL *ssl;
 	BIO *read_bio;
 	BIO *write_bio;
+	BIO *filter_bio;
 	dtls_fingerprint_t *local_fp;
 	dtls_fingerprint_t *remote_fp;
 	dtls_state_t state;
@@ -285,6 +288,7 @@ typedef struct switch_dtls_s {
 	char *ca;
 	char *pem;
 	struct switch_rtp *rtp_session;
+	int mtu;
 } switch_dtls_t;
 
 typedef int (*dtls_state_handler_t)(switch_rtp_t *, switch_dtls_t *);
@@ -3207,9 +3211,9 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	int r = 0, ret = 0, len;
 	switch_size_t bytes;
-	unsigned char buf[4096] = "";
+	unsigned char buf[MAX_DTLS_MTU] = "";
 	int ready = rtp_session->ice.ice_user ? (rtp_session->ice.rready && rtp_session->ice.ready) : 1;
-
+	int pending;
 
 	if (!dtls->bytes && !ready) {
 		return 0;
@@ -3217,18 +3221,22 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 
 	if ((ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes)) != (int)dtls->bytes && dtls->bytes > 0) {
 		ret = SSL_get_error(dtls->ssl, ret);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 	}
 
 	if (dtls_states[dtls->state]) {
 		r = dtls_states[dtls->state](rtp_session, dtls);
 	}
 
-	if ((len = BIO_read(dtls->write_bio, buf, sizeof(buf))) > 0) {
-		bytes = len;
+	while ((pending = BIO_ctrl_pending(dtls->filter_bio)) > 0) {
+		switch_assert(pending <= sizeof(buf));
 
-		if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, (void *)buf, &bytes ) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet not written\n", rtp_type(rtp_session));
+		if ((len = BIO_read(dtls->write_bio, buf, pending)) > 0) {
+			bytes = len;
+
+			if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, (void *)buf, &bytes ) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s DTLS packet not written\n", rtp_type(rtp_session));
+			}
 		}
 	}
 
@@ -3265,6 +3273,181 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 	return r;
 }
 #endif
+
+
+////////////
+
+static BIO_METHOD dtls_bio_filter_methods;
+
+BIO_METHOD *BIO_dtls_filter(void) {
+	return(&dtls_bio_filter_methods);
+}
+
+typedef struct packet_list_s {
+	//void *packet;
+	int size;
+	struct packet_list_s *next;
+} packet_list_t;
+ 
+/* Helper struct to keep the filter state */
+typedef struct dtls_bio_filter {
+	packet_list_t *packets;
+	packet_list_t *unused;
+	packet_list_t *tail;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+	long mtu;
+} dtls_bio_filter;
+ 
+ 
+static int dtls_bio_filter_new(BIO *bio) {
+	/* Create a filter state struct */
+	dtls_bio_filter *filter;
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+	filter = switch_core_alloc(pool, sizeof(*filter));
+	filter->pool = pool;
+
+	filter->packets = NULL;
+	switch_mutex_init(&filter->mutex, SWITCH_MUTEX_NESTED, filter->pool);
+ 
+	/* Set the BIO as initialized */
+	bio->init = 1;
+	bio->ptr = filter;
+	bio->flags = 0;
+ 
+	return 1;
+}
+ 
+static int dtls_bio_filter_free(BIO *bio) {
+	dtls_bio_filter *filter;
+
+	if (bio == NULL) {
+		return 0;
+	}
+ 
+	/* Get rid of the filter state */
+	filter = (dtls_bio_filter *)bio->ptr;
+
+	if (filter != NULL) {
+		switch_memory_pool_t *pool = filter->pool;
+		switch_core_destroy_memory_pool(&pool);
+		pool = NULL;
+		filter = NULL;
+	}
+
+	bio->ptr = NULL;
+	bio->init = 0;
+	bio->flags = 0;
+	return 1;
+}
+ 
+static int dtls_bio_filter_write(BIO *bio, const char *in, int inl) {
+	long ret;
+	dtls_bio_filter *filter;
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "dtls_bio_filter_write: %p, %d\n", in, inl);
+	/* Forward data to the write BIO */
+	ret = BIO_write(bio->next_bio, in, inl);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "  -- %ld\n", ret);
+ 
+	/* Keep track of the packet, as we'll advertize them one by one after a pending check */
+	filter = (dtls_bio_filter *)bio->ptr;
+
+	if (filter != NULL) {
+		packet_list_t *node;
+
+		switch_mutex_lock(filter->mutex);
+		if (filter->unused) {
+			node = filter->unused;
+			node->next = NULL;
+			filter->unused = filter->unused->next;
+		} else {
+			node = switch_core_alloc(filter->pool, sizeof(*node));
+		}
+
+		node->size = ret;
+
+		if (filter->tail) {
+			filter->tail->next = node;
+		} else {
+			filter->packets = node;
+		}
+
+		filter->tail = node;
+
+		switch_mutex_unlock(filter->mutex);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "New list length: %d\n", g_list_length(filter->packets));
+	}
+	return ret;
+}
+ 
+static long dtls_bio_filter_ctrl(BIO *bio, int cmd, long num, void *ptr) {
+	dtls_bio_filter *filter = (dtls_bio_filter *)bio->ptr;
+
+	switch(cmd) {
+	case BIO_CTRL_DGRAM_GET_FALLBACK_MTU:
+		return 1200;
+	case BIO_CTRL_DGRAM_SET_MTU:
+		filter->mtu = num;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Setting MTU: %ld\n", filter->mtu);
+		return num;
+	case BIO_CTRL_FLUSH:
+		return 1;
+	case BIO_CTRL_DGRAM_QUERY_MTU:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Advertizing MTU: %ld\n", filter->mtu);
+		return filter->mtu;
+	case BIO_CTRL_WPENDING:
+		return 0L;
+	case BIO_CTRL_PENDING: {
+		int pending = 0;
+		packet_list_t *top;
+
+		if (filter == NULL) {
+			return 0;
+		}
+
+		switch_mutex_lock(filter->mutex);
+		if ((top = filter->packets)) {
+			filter->packets = filter->packets->next;
+			
+			if (top == filter->tail || !filter->packets) {
+				filter->tail = NULL;
+			}
+			
+			pending = top->size;
+			top->next = filter->unused;
+			filter->unused = top;
+		}
+		switch_mutex_unlock(filter->mutex);
+
+		return pending;
+	}
+	default:
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "dtls_bio_filter_ctrl: %d\n", cmd);
+		break;
+	}
+	return 0;
+}
+
+static BIO_METHOD dtls_bio_filter_methods = {
+	BIO_TYPE_FILTER,
+	"DTLS filter",
+	dtls_bio_filter_write,
+	NULL,
+	NULL,
+	NULL,
+	dtls_bio_filter_ctrl,
+	dtls_bio_filter_new,
+	dtls_bio_filter_free,
+	NULL
+};
+
+
+///////////
+
+
 
 SWITCH_DECLARE(int) switch_rtp_has_dtls(void) {
 #ifdef HAVE_OPENSSL_DTLS_SRTP
@@ -3356,6 +3539,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type)
 {
 	switch_dtls_t *dtls;
+	const char *var;
 	int ret;
 	const char *kind = "";
 	BIO *bio;
@@ -3423,9 +3607,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDH:!RC4:!SSLv3:RSA_WITH_AES_128_CBC_SHA");
+	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDH:!RC4:!SSLv3:RSA_WITH_AES_128_CBC_SHA");
 	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDHE-RSA-AES256-GCM-SHA384");
-	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "SUITEB128");
 	SSL_CTX_set_read_ahead(dtls->ssl_ctx, 1);
 #ifdef HAVE_OPENSSL_DTLS_SRTP
@@ -3468,9 +3652,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	dtls->ssl = SSL_new(dtls->ssl_ctx);
 
-	SSL_set_bio(dtls->ssl, dtls->read_bio, dtls->write_bio);
+	dtls->filter_bio = BIO_new(BIO_dtls_filter());
+	switch_assert(dtls->filter_bio);
+
+	BIO_push(dtls->filter_bio, dtls->write_bio);
+
+	SSL_set_bio(dtls->ssl, dtls->read_bio, dtls->filter_bio);
+
 	SSL_set_mode(dtls->ssl, SSL_MODE_AUTO_RETRY);
 	SSL_set_read_ahead(dtls->ssl, 1);
+
+
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 
 #ifndef OPENSSL_NO_EC
@@ -3486,18 +3678,25 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 	SSL_set_app_data(dtls->ssl, dtls);
 
-	//BIO_ctrl(dtls->read_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
-	//BIO_ctrl(dtls->write_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
-	//SSL_set_mtu(dtls->ssl, 1400);
-	//BIO_ctrl(dtls->write_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
-	//BIO_ctrl(dtls->read_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
-
-
-
 	dtls->local_fp = local_fp;
 	dtls->remote_fp = remote_fp;
 	dtls->rtp_session = rtp_session;
+	dtls->mtu = 1200;
 
+	if (rtp_session->session) {
+		switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+		if ((var = switch_channel_get_variable(channel, "rtp_dtls_mtu"))) {
+			int mtu = atoi(var);
+
+			if (mtu > 0 && mtu < MAX_DTLS_MTU) {
+				dtls->mtu = mtu;
+			}
+
+		}
+	}
+	
+	BIO_ctrl(dtls->filter_bio, BIO_CTRL_DGRAM_SET_MTU, dtls->mtu, NULL);
+	
 	switch_core_cert_expand_fingerprint(remote_fp, remote_fp->str);
 
 	if ((type & DTLS_TYPE_RTP)) {
@@ -5589,7 +5788,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->last_read_time = now;
 	}
 
-	if(*bytes && rtp_session->has_rtp && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]){
+	if (*bytes && rtp_session->has_rtp && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]){
 		rtcp_stats(rtp_session);
 	}
 
