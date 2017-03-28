@@ -1,6 +1,10 @@
 #include <ks.h>
 #include <tap.h>
 
+#ifdef _WINDOWS_
+#undef unlink
+#define unlink _unlink
+#endif
 
 static char v4[48] = "";
 static char v6[48] = "";
@@ -19,7 +23,7 @@ typedef struct ssl_profile_s {
 	char chain[512];
 } ssl_profile_t;
 
-static int init_ssl(ssl_profile_t *profile) 
+static int init_ssl(ssl_profile_t *profile)
 {
 	const char *err = "";
 
@@ -101,12 +105,12 @@ void server_callback(ks_socket_t server_sock, ks_socket_t client_sock, ks_sockad
 	}
 
 	printf("WS %s SERVER SOCK %d connection from %s:%u\n", tcp_data->ssl ? "SSL" : "PLAIN", (int)server_sock, addr->host, addr->port);
-	
+
 	if (kws_init(&kws, client_sock, tcp_data->server_profile.ssl_ctx, NULL, KWS_BLOCK, tcp_data->pool) != KS_STATUS_SUCCESS) {
 		printf("WS SERVER CREATE FAIL\n");
 		goto end;
 	}
-	
+
 	do {
 
 		bytes = kws_read_frame(kws, &oc, &data);
@@ -119,7 +123,7 @@ void server_callback(ks_socket_t server_sock, ks_socket_t client_sock, ks_sockad
 	} while(zstr_buf((char *)data) || strcmp((char *)data, __MSG));
 
 	bytes = kws_write_frame(kws, WSOC_TEXT, (char *)data, strlen((char *)data));
-	
+
 	printf("WS SERVER WRITE %ld bytes\n", (long)bytes);
 
  end:
@@ -183,7 +187,7 @@ static int test_ws(char *ip, int ssl)
 		printf("WS CLIENT Can't set ADDR\n");
 		goto end;
 	}
-	
+
 	if ((tcp_data.sock = socket(family, SOCK_STREAM, IPPROTO_TCP)) == KS_SOCK_INVALID) {
 		r = 0;
 		printf("WS CLIENT Can't create sock family %d\n", family);
@@ -203,7 +207,7 @@ static int test_ws(char *ip, int ssl)
 
 	ks_addr_set(&addr, ip, tcp_port, family);
 	cl_sock = ks_socket_connect(SOCK_STREAM, IPPROTO_TCP, &addr);
-	
+
 	printf("WS %s CLIENT SOCKET %d %s %d\n", ssl ? "SSL" : "PLAIN", (int)cl_sock, addr.host, addr.port);
 
 	if (kws_init(&kws, cl_sock, tcp_data.client_profile.ssl_ctx, "/verto:tatooine.freeswitch.org:verto", KWS_BLOCK, pool) != KS_STATUS_SUCCESS) {
@@ -219,7 +223,7 @@ static int test_ws(char *ip, int ssl)
 
 	bytes = kws_read_frame(kws, &oc, &data);
 	printf("WS CLIENT READ %ld bytes [%s]\n", (long)bytes, (char *)data);
-	
+
  end:
 
 	kws_destroy(&kws);
@@ -276,7 +280,7 @@ int main(void)
 		ok(test_ws(v6, 1));
 	}
 
-	_unlink("./testwebsock.pem");
+	unlink("./testwebsock.pem");
 	ks_shutdown();
 
 	done_testing();
