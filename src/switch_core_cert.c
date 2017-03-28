@@ -274,8 +274,8 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
 		
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
-		
-	mkcert(&x509, &pkey, 1024, 0, 36500);
+
+	mkcert(&x509, &pkey, 4096, 0, 36500);
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
