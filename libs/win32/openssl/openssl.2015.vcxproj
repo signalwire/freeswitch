@@ -86,7 +86,7 @@
       <AdditionalIncludeDirectories>include_x86;include;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -96,6 +96,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4133;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -114,7 +115,7 @@
       <AdditionalIncludeDirectories>include_x86;include;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -124,6 +125,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4133;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -146,7 +148,7 @@
       <AdditionalIncludeDirectories>include_x64;include;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -155,6 +157,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4133;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -176,7 +179,7 @@
       <AdditionalIncludeDirectories>include_x64;include;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -185,6 +188,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4133;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>

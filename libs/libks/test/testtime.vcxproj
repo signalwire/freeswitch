@@ -74,26 +74,26 @@
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\openssl\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include64;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\openssl\lib64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\openssl\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)\crypt;$(SolutionDir)\openssl\include64;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\openssl\lib64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -103,8 +103,10 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../src/include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;../src/include;.</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4090</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,8 +121,10 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../src/include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x64;../src/include;.</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4090</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,8 +141,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../src/include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;../src/include;.</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4090</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,8 +162,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../src/include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x64;../src/include;.</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4090</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

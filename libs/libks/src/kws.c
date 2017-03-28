@@ -533,7 +533,8 @@ static int establish_client_logical_layer(kws_t *kws)
 			}
 			
 			if (code < 0) {
-				if (code == -1 && SSL_get_error(kws->ssl, code) != SSL_ERROR_WANT_READ) {
+				int serr = SSL_get_error(kws->ssl, code);
+				if (code == -1 && serr != SSL_ERROR_WANT_READ) {
 					return -1;
 				}
 			}
@@ -663,7 +664,6 @@ static int establish_logical_layer(kws_t *kws)
 	}
 }
 
-
 KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ctx, const char *client_data, kws_flag_t flags, ks_pool_t *pool)
 {
 	kws_t *kws;
@@ -731,7 +731,6 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 	return KS_STATUS_SUCCESS;
 
  err:
-	
 	kws_destroy(&kws);
 	
 	return KS_STATUS_FAIL;

@@ -94,9 +94,9 @@ void server_callback(ks_socket_t server_sock, ks_socket_t client_sock, ks_sockad
 
 	if (tcp_data->ssl) {
 		tcp_data->server_profile.ssl_method = SSLv23_server_method();
-		ks_set_string(tcp_data->server_profile.cert, "/tmp/testwebsock.pem");
-		ks_set_string(tcp_data->server_profile.key, "/tmp/testwebsock.pem");
-		ks_set_string(tcp_data->server_profile.chain, "/tmp/testwebsock.pem");
+		ks_set_string(tcp_data->server_profile.cert, "./testwebsock.pem");
+		ks_set_string(tcp_data->server_profile.key, "./testwebsock.pem");
+		ks_set_string(tcp_data->server_profile.chain, "./testwebsock.pem");
 		init_ssl(&tcp_data->server_profile);
 	}
 
@@ -149,7 +149,6 @@ static void *tcp_sock_server(ks_thread_t *thread, void *thread_data)
 	return NULL;
 }
 
-
 static int test_ws(char *ip, int ssl)
 {
 	ks_thread_t *thread_p = NULL;
@@ -168,9 +167,9 @@ static int test_ws(char *ip, int ssl)
 	if (ssl) {
 		tcp_data.ssl = 1;
 		tcp_data.client_profile.ssl_method = SSLv23_client_method();
-		ks_set_string(tcp_data.client_profile.cert, "/tmp/testwebsock.pem");
-		ks_set_string(tcp_data.client_profile.key, "/tmp/testwebsock.pem");
-		ks_set_string(tcp_data.client_profile.chain, "/tmp/testwebsock.pem");
+		ks_set_string(tcp_data.client_profile.cert, "./testwebsock.pem");
+		ks_set_string(tcp_data.client_profile.key, "./testwebsock.pem");
+		ks_set_string(tcp_data.client_profile.chain, "./testwebsock.pem");
 		init_ssl(&tcp_data.client_profile);
 	}
 
@@ -219,7 +218,7 @@ static int test_ws(char *ip, int ssl)
 	ks_ssize_t bytes;
 
 	bytes = kws_read_frame(kws, &oc, &data);
-	printf("WS CLIENT READ %ld bytes [%s]\n", bytes, (char *)data);
+	printf("WS CLIENT READ %ld bytes [%s]\n", (long)bytes, (char *)data);
 	
  end:
 
@@ -264,7 +263,7 @@ int main(void)
 	ok(have_v4 || have_v6);
 
 	if (have_v4 || have_v6) {
-		ks_gen_cert("/tmp", "testwebsock.pem");
+		ks_gen_cert(".", "testwebsock.pem");
 	}
 
 	if (have_v4) {
@@ -277,7 +276,7 @@ int main(void)
 		ok(test_ws(v6, 1));
 	}
 
-	unlink("/tmp/testwebsock.pem");
+	_unlink("./testwebsock.pem");
 	ks_shutdown();
 
 	done_testing();
