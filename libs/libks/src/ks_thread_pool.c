@@ -135,7 +135,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		*/		
 		check_queue(tp, KS_FALSE);
 		
-		if (status == KS_STATUS_TIMEOUT) {
+		if (status == KS_STATUS_TIMEOUT || status == KS_STATUS_BREAK) {
 			idle_sec++;
 
 			if (idle_sec >= tp->idle_sec) {
@@ -195,7 +195,7 @@ KS_DECLARE(ks_status_t) ks_thread_pool_create(ks_thread_pool_t **tp, uint32_t mi
 
 	ks_pool_open(&pool);
 
-	*tp = (ks_thread_pool_t *) ks_pool_alloc(pool, sizeof(ks_thread_t));
+	*tp = (ks_thread_pool_t *) ks_pool_alloc(pool, sizeof(ks_thread_pool_t));
 
 	(*tp)->min = min;
 	(*tp)->max = max;
