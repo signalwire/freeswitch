@@ -129,13 +129,20 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		ks_status_t status;
 		
 		status = ks_q_pop_timeout(tp->q, &pop, 1000);
+		if (status == KS_STATUS_BREAK) {
+			if (tp->state != TP_STATE_RUNNING) {
+				break;
+			}
+			continue;
+		}
+		
 		/*
 		ks_log(KS_LOG_DEBUG, "WORKER %d idle_sec %d running %d dying %d total %d max %d\n", 
 			   my_id, idle_sec, tp->running_thread_count, tp->dying_thread_count, tp->thread_count, tp->max);		
 		*/		
 		check_queue(tp, KS_FALSE);
-		
-		if (status == KS_STATUS_TIMEOUT || status == KS_STATUS_BREAK) {
+
+		if (status == KS_STATUS_TIMEOUT) { // || status == KS_STATUS_BREAK) {
 			idle_sec++;
 
 			if (idle_sec >= tp->idle_sec) {
@@ -148,7 +155,6 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 				ks_mutex_unlock(tp->mutex);
 
 				if (die) {
-					ks_log(KS_LOG_DEBUG, "WORKER %d IDLE TIMEOUT\n", my_id);
 					break;
 				}
 			}
@@ -156,8 +162,8 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 			continue;
 		}
 
-		if ((status != KS_STATUS_SUCCESS && status != KS_STATUS_BREAK) || !pop) {
-			ks_log(KS_LOG_DEBUG, "WORKER %d POP FAIL %d %p\n", my_id, status, (void *)pop);
+		if ((status != KS_STATUS_SUCCESS && status != KS_STATUS_BREAK)) {
+			ks_log(KS_LOG_ERROR, "WORKER %d POP FAIL %d %p\n", my_id, status, (void *)pop);
 			break;
 		}
 

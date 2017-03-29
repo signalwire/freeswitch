@@ -16,7 +16,7 @@ static void *test1_thread(ks_thread_t *thread, void *data)
 {
 	struct x *mydata = (struct x *) data;
 
-	ks_log(KS_LOG_DEBUG, "Thread %d\n", mydata->i);
+	//ks_log(KS_LOG_DEBUG, "Thread %d\n", mydata->i);
 	ks_sleep(100000);
 	ks_pool_free(mydata->pool, &mydata);
 	return NULL;
@@ -37,6 +37,7 @@ static int test1()
 		struct x *data = ks_pool_alloc(pool, sizeof(*data));
 		data->i = i;
 		data->pool = pool;
+		ks_sleep(1);
 		ks_thread_pool_add_job(tp, test1_thread, data);
 	}
 

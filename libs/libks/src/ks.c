@@ -64,6 +64,9 @@ KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_fn_t fn, void *arg
 KS_DECLARE(ks_status_t) ks_init(void)
 {
 	unsigned int pid = 0;
+
+	ks_time_init();
+
 #ifdef __WINDOWS__
 	pid = _getpid();
 #else

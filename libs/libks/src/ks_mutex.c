@@ -383,7 +383,8 @@ KS_DECLARE(ks_status_t) ks_cond_wait(ks_cond_t *cond)
 KS_DECLARE(ks_status_t) ks_cond_timedwait(ks_cond_t *cond, ks_time_t ms)
 {
 #ifdef WIN32
-	if(!SleepConditionVariableCS(&cond->cond, &cond->mutex->mutex, (DWORD)ms)) {
+	BOOL res = SleepConditionVariableCS(&cond->cond, &cond->mutex->mutex, (DWORD)ms);
+	if (!res) {
 		if (GetLastError() == ERROR_TIMEOUT) {
 			return KS_STATUS_TIMEOUT;
 		} else {

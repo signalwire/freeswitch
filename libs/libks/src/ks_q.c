@@ -67,6 +67,10 @@ static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_po
 
 	switch(action) {
 	case KS_MPCL_ANNOUNCE:
+		if (q->active) {
+			ks_q_flush(q);
+			ks_q_term(q);
+		}
 		break;
 	case KS_MPCL_TEARDOWN:
 		np = q->head;
@@ -133,7 +137,7 @@ KS_DECLARE(ks_size_t) ks_q_term(ks_q_t *q)
 	active = q->active;
 	q->active = 0;
 	ks_mutex_unlock(q->list_mutex);
-
+	
 	if (active) {
 		ks_q_wake(q);
 	}
@@ -227,6 +231,7 @@ static ks_status_t do_push(ks_q_t *q, void *ptr)
 	ks_qnode_t *node;
 
 	ks_mutex_lock(q->list_mutex);
+
 	if (!q->active) {
 		ks_mutex_unlock(q->list_mutex);
 		return KS_STATUS_INACTIVE;

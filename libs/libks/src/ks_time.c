@@ -40,7 +40,7 @@ static DWORD win32_last_get_time_tick = 0;
 
 static uint8_t win32_use_qpc = 0;
 static uint64_t win32_qpc_freq = 0;
-static int timer_init;
+
 static inline void win32_init_timers(void)
 {
 	OSVERSIONINFOEX version_info; /* Used to fetch current OS version from Windows */
@@ -86,18 +86,17 @@ static inline void win32_init_timers(void)
 	}
 
 	LeaveCriticalSection(&timer_section);
+}
 
-	timer_init = 1;
+KS_DECLARE(void) ks_time_init(void)
+{
+	win32_init_timers();
 }
 
 KS_DECLARE(ks_time_t) ks_time_now(void)
 {
 	ks_time_t now;
 	
-	if (!timer_init) {
-		win32_init_timers();
-	}
-
 	if (win32_use_qpc) {
 		/* Use QueryPerformanceCounter */
 		uint64_t count = 0;
@@ -133,10 +132,6 @@ KS_DECLARE(ks_time_t) ks_time_now_sec(void)
 {
 	ks_time_t now;
 	
-	if (!timer_init) {
-		win32_init_timers();
-	}
-
 	if (win32_use_qpc) {
 		/* Use QueryPerformanceCounter */
 		uint64_t count = 0;
