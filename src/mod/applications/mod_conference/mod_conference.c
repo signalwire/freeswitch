@@ -137,6 +137,16 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 			count++;
 		}
 
+		if (member->video_reservation_id) {
+			stream->write_function(stream, "%s%s%s", count ? "|" : "", "res-id:", member->video_reservation_id);
+			count++;
+		}
+
+		if (member->video_role_id) {
+			stream->write_function(stream, "%s%s%s", count ? "|" : "", "role-id:", member->video_role_id);
+			count++;
+		}
+
 		stream->write_function(stream, "%s%d%s%d%s%d\n", delim,
 							   member->volume_in_level,
 							   delim, member->volume_out_level, delim, member->energy_level);
