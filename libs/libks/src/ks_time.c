@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -88,15 +88,10 @@ static inline void win32_init_timers(void)
 	LeaveCriticalSection(&timer_section);
 }
 
-KS_DECLARE(void) ks_time_init(void)
-{
-	win32_init_timers();
-}
-
 KS_DECLARE(ks_time_t) ks_time_now(void)
 {
 	ks_time_t now;
-	
+
 	if (win32_use_qpc) {
 		/* Use QueryPerformanceCounter */
 		uint64_t count = 0;
@@ -106,14 +101,14 @@ KS_DECLARE(ks_time_t) ks_time_now(void)
 		/* Use good old timeGetTime() */
 		DWORD tick_now;
 		DWORD tick_diff;
-		
+
 		tick_now = timeGetTime();
 		if (win32_tick_time_since_start != -1) {
 			EnterCriticalSection(&timer_section);
 			/* just add diff (to make it work more than 50 days). */
 			tick_diff = tick_now - win32_last_get_time_tick;
 			win32_tick_time_since_start += tick_diff;
-			
+
 			win32_last_get_time_tick = tick_now;
 			now = (win32_tick_time_since_start * 1000);
 				LeaveCriticalSection(&timer_section);
@@ -131,7 +126,7 @@ KS_DECLARE(ks_time_t) ks_time_now(void)
 KS_DECLARE(ks_time_t) ks_time_now_sec(void)
 {
 	ks_time_t now;
-	
+
 	if (win32_use_qpc) {
 		/* Use QueryPerformanceCounter */
 		uint64_t count = 0;
@@ -141,14 +136,14 @@ KS_DECLARE(ks_time_t) ks_time_now_sec(void)
 		/* Use good old timeGetTime() */
 		DWORD tick_now;
 		DWORD tick_diff;
-		
+
 		tick_now = timeGetTime();
 		if (win32_tick_time_since_start != -1) {
 			EnterCriticalSection(&timer_section);
 			/* just add diff (to make it work more than 50 days). */
 			tick_diff = tick_now - win32_last_get_time_tick;
 			win32_tick_time_since_start += tick_diff;
-			
+
 			win32_last_get_time_tick = tick_now;
 			now = (win32_tick_time_since_start / 1000);
 				LeaveCriticalSection(&timer_section);
@@ -167,15 +162,15 @@ KS_DECLARE(void) ks_sleep(ks_time_t microsec)
 {
 
 	LARGE_INTEGER perfCnt, start, now;
-	
+
 	QueryPerformanceFrequency(&perfCnt);
 	QueryPerformanceCounter(&start);
-	
+
 	do {
 		QueryPerformanceCounter((LARGE_INTEGER*) &now);
 		SwitchToThread();
 	} while ((now.QuadPart - start.QuadPart) / (float)(perfCnt.QuadPart) * 1000 * 1000 < (DWORD)microsec);
-	
+
 }
 
 #else //!WINDOWS, UNIX ETC
@@ -187,7 +182,7 @@ KS_DECLARE(ks_time_t) ks_time_now(void)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	now = (int64_t)ts.tv_sec * 1000000 + ((int64_t)ts.tv_nsec / 1000);
-#else 
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	now = tv.tv_sec * 1000000 + tv.tv_usec;
@@ -204,7 +199,7 @@ KS_DECLARE(ks_time_t) ks_time_now_sec(void)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	now = (int64_t)ts.tv_sec;
-#else 
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	now = tv.tv_sec;
@@ -232,7 +227,7 @@ KS_DECLARE(void) ks_sleep(ks_time_t microsec)
 #if defined(HAVE_CLOCK_NANOSLEEP) || defined(__APPLE__)
 	struct timespec ts;
 #endif
-	
+
 #if defined(HAVE_CLOCK_NANOSLEEP)
 	ts.tv_sec = ks_time_sec(microsec);
 	ts.tv_nsec = ks_time_nsec(microsec);
@@ -244,15 +239,21 @@ KS_DECLARE(void) ks_sleep(ks_time_t microsec)
 #else
 	generic_sleep(microsec);
 #endif
-	
+
 #if defined(__APPLE__)
 	sched_yield();
 #endif
-	
+
 }
 
 #endif
 
+KS_DECLARE(void) ks_time_init(void)
+{
+#ifdef _WINDOWS_
+	win32_init_timers();
+#endif
+}
 
 /* For Emacs:
  * Local Variables:
