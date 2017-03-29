@@ -2494,7 +2494,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 				
 
 				if ((!xlayer->member_id || (!member->avatar_png_img &&
-											xlayer->is_avatar &&
+											xlayer->is_avatar && !xlayer->geometry.role_id &&
 											(conference->canvas_count > 1 || xlayer->member_id != (int)conference->video_floor_holder))) &&
 					!xlayer->fnode && !xlayer->geometry.fileonly && !xlayer->geometry.res_id && !xlayer->geometry.flooronly) {
 					switch_status_t lstatus = conference_video_attach_video_layer(member, canvas, i);
