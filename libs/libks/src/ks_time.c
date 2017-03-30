@@ -34,6 +34,8 @@
 #include <ks.h>
 
 #ifdef WIN32
+#include <VersionHelpers.h>
+
 static CRITICAL_SECTION timer_section;
 static ks_time_t win32_tick_time_since_start = -1;
 static DWORD win32_last_get_time_tick = 0;
@@ -51,9 +53,10 @@ static inline void win32_init_timers(void)
 	version_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
 	/* Check if we should use timeGetTime() (pre-Vista) or QueryPerformanceCounter() (Vista and later) */
-
-	if (GetVersionEx((OSVERSIONINFO*) &version_info)) {
-		if (version_info.dwPlatformId == VER_PLATFORM_WIN32_NT && version_info.dwMajorVersion >= 6) {
+	
+	//if (GetVersionEx((OSVERSIONINFO*) &version_info)) {
+	if (IsWindowsVistaOrGreater()) {
+		//if (version_info.dwPlatformId == VER_PLATFORM_WIN32_NT && version_info.dwMajorVersion >= 6) {
 			if (QueryPerformanceFrequency((LARGE_INTEGER*)&win32_qpc_freq) && win32_qpc_freq > 0) {
 				/* At least Vista, and QueryPerformanceFrequency() suceeded, enable qpc */
 				win32_use_qpc = 1;
@@ -61,10 +64,10 @@ static inline void win32_init_timers(void)
 				/* At least Vista, but QueryPerformanceFrequency() failed, disable qpc */
 				win32_use_qpc = 0;
 			}
-		} else {
+		//} else {
 			/* Older then Vista, disable qpc */
-			win32_use_qpc = 0;
-		}
+			//win32_use_qpc = 0;
+		//}
 	} else {
 		/* Unknown version - we want at least Vista, disable qpc */
 		win32_use_qpc = 0;

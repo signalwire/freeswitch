@@ -81,7 +81,7 @@ KS_DECLARE(ks_status_t) ks_init(void)
 	WSADATA wsaData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
 
-	WSAStartup(wVersionRequested, &wsaData);
+	ks_assert(!WSAStartup(wVersionRequested, &wsaData));
 #endif
 
 	return KS_STATUS_SUCCESS;

@@ -17,11 +17,6 @@
  *
  */
 
-#ifdef WIN32
-/* required for TryEnterCriticalSection definition.  Must be defined before windows.h include */
-#define _WIN32_WINNT 0x0400
-#endif
-
 #include "ks.h"
 
 #ifdef WIN32

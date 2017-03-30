@@ -46,6 +46,9 @@ KS_BEGIN_EXTERN_C
 
 #if !defined(__WINDOWS__) && (defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32))
 #define __WINDOWS__
+#ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#endif
 #endif
 
 #ifndef _GNU_SOURCE
