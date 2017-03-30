@@ -14109,7 +14109,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(
 	}
 
 	if (!switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ)) {
-		return SWITCH_STATUS_GENERR;;
+		return SWITCH_STATUS_GENERR;
 	}
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
@@ -14146,10 +14146,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(
 SWITCH_DECLARE(switch_bool_t) switch_core_session_transcoding(switch_core_session_t *session_a, switch_core_session_t *session_b, switch_media_type_t type)
 {
 	switch_bool_t transcoding = SWITCH_FALSE;
-	
+
 	switch(type) {
 	case SWITCH_MEDIA_TYPE_AUDIO:
-		transcoding = (session_a->read_codec->implementation->impl_id != session_b->read_codec->implementation->impl_id || session_a->read_impl.decoded_bytes_per_packet != session_b->read_impl.decoded_bytes_per_packet);
+		{
+			switch_codec_implementation_t read_impl_a = { 0 }, read_impl_b = { 0 };
+
+			switch_core_session_get_read_impl(session_a, &read_impl_a);
+			switch_core_session_get_read_impl(session_b, &read_impl_b);
+			
+			if (read_impl_a.impl_id && read_impl_b.impl_id) {
+				transcoding = (read_impl_a.impl_id != read_impl_b.impl_id || read_impl_a.decoded_bytes_per_packet != read_impl_b.decoded_bytes_per_packet);
+			}
+		}
 		break;
 	case SWITCH_MEDIA_TYPE_VIDEO:
 		transcoding = (switch_channel_test_flag(session_a->channel, CF_VIDEO_DECODED_READ) || 
