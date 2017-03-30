@@ -6257,35 +6257,12 @@ typedef struct core_fps_s {
 	int samples;
 } core_fps_t;
 
-static struct core_fps_s FPS_VALS[] = {
-	{1.0f, 1000, 90},
-	{5.0f, 200, 450},
-	{10.0f, 100, 900},
-	{15.0f, 66, 1364},
-	{16.60f, 60, 1500},
-	{20.0f, 50, 4500},
-	{24.0f, 41, 2160},
-	{25.0f, 40, 2250},
-	{30.0f, 33, 2700},
-	{33.0f, 30, 2790},
-	{66.60f, 15, 6000},
-	{100.0f, 10, 9000},
-	{0,0,0}
-};
-
-
 static int video_get_fps(core_fps_t *fpsP, float fps)
 {
-	uint32_t i = 0;
+	fpsP->fps = fps;
+	fpsP->ms = (int) 1000 / fps;
+	fpsP->samples = (int) 90000 / fpsP->ms;
 
-	for (i = 0; FPS_VALS[i].ms; i++) {
-		if (FPS_VALS[i].fps == fps) {
-			*fpsP = FPS_VALS[i];
-			return 1;
-		}
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown framerate %f\n", fps);
 	return 0;
 }
 

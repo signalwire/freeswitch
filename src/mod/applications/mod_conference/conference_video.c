@@ -41,42 +41,25 @@
  */
 #include <mod_conference.h>
 
-static struct conference_fps FPS_VALS[] = {
-	{1.0f, 1000, 90},
-	{5.0f, 200, 450},
-	{10.0f, 100, 900},
-	{15.0f, 66, 1364},
-	{16.60f, 60, 1500},
-	{20.0f, 50, 4500},
-	{25.0f, 40, 2250},
-	{30.0f, 33, 2700},
-	{33.0f, 30, 2790},
-	{66.60f, 15, 6000},
-	{100.0f, 10, 9000},
-	{0,0,0}
-};
-
-
 int conference_video_set_fps(conference_obj_t *conference, float fps)
 {
-	uint32_t i = 0, j = 0;
+	uint32_t j = 0;
 
-	for (i = 0; FPS_VALS[i].ms; i++) {
-		if (FPS_VALS[i].fps == fps) {
+	if (fps > 100) {
+		return 0;
+	}
 
-			conference->video_fps = FPS_VALS[i];
+	conference->video_fps.fps = fps;
+	conference->video_fps.ms = (int) 1000 / fps;
+	conference->video_fps.samples = (int) 90000 / conference->video_fps.ms;
 
-			for (j = 0; j <= conference->canvas_count; j++) {
-				if (conference->canvases[j]) {
-					conference->canvases[j]->video_timer_reset = 1;
-				}
-			}
-
-			return 1;
+	for (j = 0; j <= conference->canvas_count; j++) {
+		if (conference->canvases[j]) {
+			conference->canvases[j]->video_timer_reset = 1;
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 
