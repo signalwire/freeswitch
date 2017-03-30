@@ -683,6 +683,7 @@ typedef struct conference_obj {
 	int broadcast_chat_messages;
 	int comfort_noise_level;
 	int auto_recording;
+	char *recording_metadata;
 	int record_count;
 	uint32_t min_recording_participants;
 	int ivr_dtmf_timeout;
