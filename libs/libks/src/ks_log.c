@@ -131,14 +131,14 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
-ks_logger_t ks_log = null_logger;
+ks_logger_t ks_logger = null_logger;
 
 KS_DECLARE(void) ks_global_set_logger(ks_logger_t logger)
 {
 	if (logger) {
-		ks_log = logger;
+		ks_logger = logger;
 	} else {
-		ks_log = null_logger;
+		ks_logger = null_logger;
 	}
 }
 
@@ -148,11 +148,30 @@ KS_DECLARE(void) ks_global_set_default_logger(int level)
 		level = 7;
 	}
 
-	ks_log = default_logger;
+	ks_logger = default_logger;
 	ks_log_level = level;
 }
 
 KS_DECLARE(void) ks_global_set_default_logger_prefix(ks_log_prefix_t prefix)
 {
 	ks_log_prefix = prefix;
+}
+
+KS_DECLARE(void) ks_log(const char *file, const char *func, int line, int level, const char *fmt, ...)
+{
+	char *data;
+	va_list ap;
+
+	if (!ks_logger) return;
+
+	va_start(ap, fmt);
+
+	if (ks_vasprintf(&data, fmt, ap) != -1) {
+		ks_logger(file, func, line, level, "%s", data);
+		//fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
+		//fprintf(stderr, "%s", buf);
+		free(data);
+	}
+
+	va_end(ap);
 }

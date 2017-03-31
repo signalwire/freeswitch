@@ -53,6 +53,10 @@
 
 KS_BEGIN_EXTERN_C
 
+#ifndef config_lookup_from
+#define config_lookup_from config_setting_lookup
+#endif
+
 KS_DECLARE(ks_status_t) blade_init(void);
 KS_DECLARE(ks_status_t) blade_shutdown(void);
 

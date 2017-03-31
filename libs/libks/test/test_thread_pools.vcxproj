@@ -181,9 +181,6 @@
     <ProjectReference Include="..\..\win32\openssl\libeay32.2015.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\win32\openssl\openssl.2015.vcxproj">
-      <Project>{25bd39b1-c8bf-4676-a738-9cabd9c6bc79}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\win32\openssl\ssleay32.2015.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>

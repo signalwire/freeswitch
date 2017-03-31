@@ -45,6 +45,7 @@ KS_BEGIN_EXTERN_C
 #define KS_SO_NONBLOCK 2999
 
 #ifdef WIN32
+#define SHUT_RDWR SD_BOTH
 
 static __inline int ks_errno(void)
 {

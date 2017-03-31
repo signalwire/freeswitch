@@ -756,7 +756,7 @@ ks_status_t blade_transport_wss_write(blade_transport_wss_t *bt_wss, cJSON *json
 	}
 	// @todo determine if WSOC_TEXT null terminates when read_frame is called, or if it's safe to include like this
 	json_str_len = strlen(json_str) + 1;
-	if (kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len) != json_str_len) {
+	if ((ks_size_t)kws_write_frame(bt_wss->kws, WSOC_TEXT, json_str, json_str_len) != json_str_len) {
 		ks_log(KS_LOG_DEBUG, "Failed to write frame\n");
 		ret = KS_STATUS_FAIL;
 		goto done;

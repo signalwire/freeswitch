@@ -1,5 +1,7 @@
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
 /*
  * Symisc unQLite: An Embeddable NoSQL (Post Modern) Database Engine.
@@ -60233,4 +60235,6 @@ UNQLITE_PRIVATE int unqliteRegisterJx9Functions(unqlite_vm *pVm)
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif

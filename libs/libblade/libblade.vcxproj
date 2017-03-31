@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{70D178D8-1100-4152-86C0-809A91CFF832}</ProjectGuid>
+    <ProjectGuid>{A89D6D18-6203-4149-9051-F8E798E7A3E7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -55,30 +55,38 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libks.props" />
+    <Import Project="libblade.props" />
     <Import Project="..\..\w32\openssl-version.props" />
+    <Import Project="..\..\w32\sodium.props" />
+    <Import Project="..\..\w32\config.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libks.props" />
+    <Import Project="libblade.props" />
     <Import Project="..\..\w32\openssl-version.props" />
+    <Import Project="..\..\w32\sodium.props" />
+    <Import Project="..\..\w32\config.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libks.props" />
+    <Import Project="libblade.props" />
     <Import Project="..\..\w32\openssl-version.props" />
+    <Import Project="..\..\w32\sodium.props" />
+    <Import Project="..\..\w32\config.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libks.props" />
+    <Import Project="libblade.props" />
     <Import Project="..\..\w32\openssl-version.props" />
+    <Import Project="..\..\w32\sodium.props" />
+    <Import Project="..\..\w32\config.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\crypt;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..\libks\src\include;$(SolutionDir)..\libsodium-$(SodiumVersion)\src\libsodium\include;$(SolutionDir)..\libconfig-$(ConfigVersion)\lib;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
@@ -88,17 +96,17 @@
     </LinkIncremental>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\crypt;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..\libks\src\include;$(SolutionDir)..\libsodium-$(SodiumVersion)\src\libsodium\include;$(SolutionDir)..\libconfig-$(ConfigVersion)\lib;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)\crypt;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..\libks\src\include;$(SolutionDir)..\libsodium-$(SodiumVersion)\src\libsodium\include;$(SolutionDir)..\libconfig-$(ConfigVersion)\lib;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)\crypt;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..\libks\src\include;$(SolutionDir)..\libsodium-$(SodiumVersion)\src\libsodium\include;$(SolutionDir)..\libconfig-$(ConfigVersion)\lib;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -111,7 +119,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <EnablePREfast>true</EnablePREfast>
@@ -132,7 +140,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -152,7 +160,7 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <EnablePREfast>true</EnablePREfast>
@@ -170,7 +178,7 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -179,70 +187,59 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="crypt\aescrypt.c" />
-    <ClCompile Include="crypt\aeskey.c" />
-    <ClCompile Include="crypt\aestab.c" />
-    <ClCompile Include="crypt\aes_modes.c" />
-    <ClCompile Include="crypt\sha2.c" />
-    <ClCompile Include="src\cJSON.c" />
-    <ClCompile Include="src\cJSON_Utils.c" />
-    <ClCompile Include="src\ks.c" />
-    <ClCompile Include="src\ks_acl.c" />
-    <ClCompile Include="src\ks_base64.c" />
-    <ClCompile Include="src\ks_buffer.c" />
-    <ClCompile Include="src\ks_config.c" />
-    <ClCompile Include="src\ks_dso.c" />
-    <ClCompile Include="src\ks_hash.c" />
-    <ClCompile Include="src\ks_json.c" />
-    <ClCompile Include="src\ks_log.c" />
-    <ClCompile Include="src\ks_pool.c" />
-    <ClCompile Include="src\ks_printf.c" />
-    <ClCompile Include="src\ks_q.c" />
-    <ClCompile Include="src\ks_rng.c" />
-    <ClCompile Include="src\ks_socket.c" />
-    <ClCompile Include="src\ks_ssl.c" />
-    <ClCompile Include="src\ks_string.c" />
-    <ClCompile Include="src\ks_thread.c" />
-    <ClCompile Include="src\ks_mutex.c" />
-    <ClCompile Include="src\ks_thread_pool.c" />
-    <ClCompile Include="src\ks_time.c" />
-    <ClCompile Include="src\kws.c" />
-    <ClCompile Include="src\simclist.c" />
+    <ClCompile Include="src\blade.c" />
+    <ClCompile Include="src\blade_connection.c" />
+    <ClCompile Include="src\blade_datastore.c" />
+    <ClCompile Include="src\blade_identity.c" />
+    <ClCompile Include="src\blade_method.c" />
+    <ClCompile Include="src\blade_module.c" />
+    <ClCompile Include="src\blade_module_chat.c" />
+    <ClCompile Include="src\blade_module_wss.c" />
+    <ClCompile Include="src\blade_protocol.c" />
+    <ClCompile Include="src\blade_session.c" />
+    <ClCompile Include="src\blade_space.c" />
+    <ClCompile Include="src\blade_stack.c" />
+    <ClCompile Include="src\dht\ks_dht.c" />
+    <ClCompile Include="src\dht\ks_dht_bucket.c" />
+    <ClCompile Include="src\dht\ks_dht_datagram.c" />
+    <ClCompile Include="src\dht\ks_dht_distribute.c" />
+    <ClCompile Include="src\dht\ks_dht_endpoint.c" />
+    <ClCompile Include="src\dht\ks_dht_job.c" />
+    <ClCompile Include="src\dht\ks_dht_message.c" />
+    <ClCompile Include="src\dht\ks_dht_publish.c" />
+    <ClCompile Include="src\dht\ks_dht_search.c" />
+    <ClCompile Include="src\dht\ks_dht_storageitem.c" />
+    <ClCompile Include="src\dht\ks_dht_transaction.c" />
+    <ClCompile Include="src\ks_bencode.c" />
+    <ClCompile Include="src\unqlite.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="crypt\aes.h" />
-    <ClInclude Include="crypt\aescpp.h" />
-    <ClInclude Include="crypt\aesopt.h" />
-    <ClInclude Include="crypt\aestab.h" />
-    <ClInclude Include="crypt\brg_endian.h" />
-    <ClInclude Include="crypt\brg_types.h" />
-    <ClInclude Include="crypt\sha2.h" />
-    <ClInclude Include="src\include\ks.h" />
-    <ClInclude Include="src\include\ks_acl.h" />
-    <ClInclude Include="src\include\ks_base64.h" />
-    <ClInclude Include="src\include\ks_buffer.h" />
-    <ClInclude Include="src\include\ks_cJSON.h" />
-    <ClInclude Include="src\include\ks_cJSON_Utils.h" />
-    <ClInclude Include="src\include\ks_config.h" />
-    <ClInclude Include="src\include\ks_dso.h" />
-    <ClInclude Include="src\include\ks_hash.h" />
-    <ClInclude Include="src\include\ks_json.h" />
-    <ClInclude Include="src\include\ks_platform.h" />
-    <ClInclude Include="src\include\ks_printf.h" />
-    <ClInclude Include="src\include\ks_q.h" />
-    <ClInclude Include="src\include\ks_socket.h" />
-    <ClInclude Include="src\include\ks_ssl.h" />
-    <ClInclude Include="src\include\ks_threadmutex.h" />
-    <ClInclude Include="src\include\ks_thread_pool.h" />
-    <ClInclude Include="src\include\ks_time.h" />
-    <ClInclude Include="src\include\ks_types.h" />
-    <ClInclude Include="src\include\ks_pool.h" />
-    <ClInclude Include="src\include\ks_rng.h" />
-    <ClInclude Include="src\include\kws.h" />
-    <ClInclude Include="src\include\simclist.h" />
-    <ClInclude Include="src\win\mman.h" />
+    <ClInclude Include="src\include\blade.h" />
+    <ClInclude Include="src\include\blade_connection.h" />
+    <ClInclude Include="src\include\blade_datastore.h" />
+    <ClInclude Include="src\include\blade_identity.h" />
+    <ClInclude Include="src\include\blade_method.h" />
+    <ClInclude Include="src\include\blade_module.h" />
+    <ClInclude Include="src\include\blade_protocol.h" />
+    <ClInclude Include="src\include\blade_session.h" />
+    <ClInclude Include="src\include\blade_space.h" />
+    <ClInclude Include="src\include\blade_stack.h" />
+    <ClInclude Include="src\include\blade_types.h" />
+    <ClInclude Include="src\include\ks_bencode.h" />
+    <ClInclude Include="src\include\ks_dht-int.h" />
+    <ClInclude Include="src\include\ks_dht.h" />
+    <ClInclude Include="src\include\unqlite.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\libks\libks.vcxproj">
+      <Project>{70d178d8-1100-4152-86c0-809a91cff832}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\win32\libconfig\libconfig.2015.vcxproj">
+      <Project>{1a234565-926d-49b2-83e4-d56e0c38c9f2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\win32\libsodium\libsodium.2015.vcxproj">
+      <Project>{a185b162-6cb6-4502-b03f-b56f7699a8d9}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\win32\openssl\libeay32.2015.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>

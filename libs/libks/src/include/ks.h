@@ -84,7 +84,8 @@ KS_DECLARE(ks_pool_t *) ks_global_pool(void);
 KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_fn_t fn, void *arg);
 KS_DECLARE(int) ks_vasprintf(char **ret, const char *fmt, va_list ap);
 
-KS_DECLARE_DATA extern ks_logger_t ks_log;
+//KS_DECLARE_DATA extern ks_logger_t ks_logger;
+KS_DECLARE(void) ks_log(const char *file, const char *func, int line, int level, const char *fmt, ...);
 
 /*! Sets the logger for libks. Default is the null_logger */
 KS_DECLARE(void) ks_global_set_logger(ks_logger_t logger);

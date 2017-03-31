@@ -1613,7 +1613,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 {
 	struct bencode *r;
 	ks_dht_nodeid_t *id;
-	ks_dht_node_t *node;
+	ks_dht_node_t *node = NULL;
 	ks_dht_transaction_t *transaction;
 	uint32_t *tid;
 	uint32_t transactionid;

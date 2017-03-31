@@ -19,7 +19,7 @@ extern "C" {
 #ifdef __GNUC__
 #define BEN_CHECK_FORMAT(...)  __attribute__ ((format( __VA_ARGS__ )))
 #else
-#define BEN_CHECK_FORMAT(args)
+#define BEN_CHECK_FORMAT(...)
 #endif
 
 enum {

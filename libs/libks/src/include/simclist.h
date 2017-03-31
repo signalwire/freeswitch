@@ -45,8 +45,12 @@ extern "C" {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 	/* "inline" and "restrict" are keywords */
 #else
+#ifndef inline
 #   define inline           /* inline */
+#endif
+#ifndef restrict
 #   define restrict         /* restrict */
+#endif
 #endif
 
 
@@ -210,7 +214,7 @@ extern "C" {
 	* @param l     must point to a user-provided memory location
 	* @return      0 for success. -1 for failure
 	*/
-	int list_init(list_t *restrict l);
+	KS_DECLARE(int) list_init(list_t *restrict l);
 
 	/**
 	* completely remove the list from memory.
@@ -221,7 +225,7 @@ extern "C" {
 	*
 	* @param l     list to destroy
 	*/
-	void list_destroy(list_t *restrict l);
+	KS_DECLARE(void) list_destroy(list_t *restrict l);
 
 	/**
 	* set the comparator function for list elements.
@@ -356,7 +360,7 @@ extern "C" {
 	*
 	* @return      1 for success. < 0 for failure
 	*/
-	int list_append(list_t *restrict l, const void *data);
+	KS_DECLARE(int) list_append(list_t *restrict l, const void *data);
 
 	/**
 	* insert data in the head of the list.
@@ -368,7 +372,7 @@ extern "C" {
 	*
 	* @return      1 for success. < 0 for failure
 	*/
-	int list_prepend(list_t *restrict l, const void *restrict data);
+	KS_DECLARE(int) list_prepend(list_t *restrict l, const void *restrict data);
 
 	/**
 	* extract the element in the top of the list.
@@ -378,7 +382,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      reference to user datum, or NULL on errors
 	*/
-	void *list_fetch(list_t *restrict l);
+	KS_DECLARE(void *) list_fetch(list_t *restrict l);
 
 	/**
 	* retrieve an element at a given position.
@@ -387,7 +391,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element wanted
 	* @return      reference to user datum, or NULL on errors
 	*/
-	void *list_get_at(const list_t *restrict l, unsigned int pos);
+	KS_DECLARE(void *) list_get_at(const list_t *restrict l, unsigned int pos);
 
 	/**
 	* return the maximum element of the list.
@@ -401,7 +405,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      the reference to the element, or NULL
 	*/
-	void *list_get_max(const list_t *restrict l);
+	KS_DECLARE(void *) list_get_max(const list_t *restrict l);
 
 	/**
 	* return the minimum element of the list.
@@ -415,7 +419,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      the reference to the element, or NULL
 	*/
-	void *list_get_min(const list_t *restrict l);
+	KS_DECLARE(void *) list_get_min(const list_t *restrict l);
 
 	/**
 	* retrieve and remove from list an element at a given position.
@@ -424,7 +428,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element wanted
 	* @return      reference to user datum, or NULL on errors
 	*/
-	void *list_extract_at(list_t *restrict l, unsigned int pos);
+	KS_DECLARE(void *) list_extract_at(list_t *restrict l, unsigned int pos);
 
 	/**
 	* insert an element at a given position.
@@ -434,7 +438,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index to insert the element at
 	* @return      positive value on success. Negative on failure
 	*/
-	int list_insert_at(list_t *restrict l, const void *data, unsigned int pos);
+	KS_DECLARE(int) list_insert_at(list_t *restrict l, const void *data, unsigned int pos);
 
 	/**
 	* expunge the first found given element from the list.
@@ -451,7 +455,7 @@ extern "C" {
 	* @see list_attributes_comparator()
 	* @see list_delete_at()
 	*/
-	int list_delete(list_t *restrict l, const void *data);
+	KS_DECLARE(int) list_delete(list_t *restrict l, const void *data);
 
 	/**
 	* expunge an element at a given position from the list.
@@ -460,7 +464,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element to be deleted
 	* @return      0 on success. Negative value on failure
 	*/
-	int list_delete_at(list_t *restrict l, unsigned int pos);
+	KS_DECLARE(int) list_delete_at(list_t *restrict l, unsigned int pos);
 
 	/**
 	* expunge an array of elements from the list, given their position range.
@@ -470,7 +474,7 @@ extern "C" {
 	* @param posend    [posstart,size-1] position of the last element to be deleted
 	* @return      the number of elements successfully removed on success, <0 on error
 	*/
-	int list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend);
+	KS_DECLARE(int) list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend);
 
 	/**
 	* clear all the elements off of the list.
@@ -483,7 +487,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      the number of elements removed on success, <0 on error
 	*/
-	int list_clear(list_t *restrict l);
+	KS_DECLARE(int) list_clear(list_t *restrict l);
 
 	/**
 	* inspect the number of elements in the list.
@@ -491,7 +495,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      number of elements currently held by the list
 	*/
-	unsigned int list_size(const list_t *restrict l);
+	KS_DECLARE(unsigned int) list_size(const list_t *restrict l);
 
 	/**
 	* inspect whether the list is empty.
@@ -501,7 +505,7 @@ extern "C" {
 	*
 	* @see list_size()
 	*/
-	int list_empty(const list_t *restrict l);
+	KS_DECLARE(int) list_empty(const list_t *restrict l);
 
 	/**
 	* find the position of an element in a list.
@@ -520,7 +524,7 @@ extern "C" {
 	* @see list_attributes_comparator()
 	* @see list_get_at()
 	*/
-	int list_locate(const list_t *restrict l, const void *data);
+	KS_DECLARE(int) list_locate(const list_t *restrict l, const void *data);
 
 	/**
 	* returns an element given an indicator.
@@ -535,7 +539,7 @@ extern "C" {
 	* @param indicator indicator data to pass to the seeker along with elements
 	* @return      reference to the element accepted by the seeker, or NULL if none found
 	*/
-	void *list_seek(list_t *restrict l, const void *indicator);
+	KS_DECLARE(void *) list_seek(list_t *restrict l, const void *indicator);
 
 	/**
 	* inspect whether some data is member of the list.
@@ -556,7 +560,7 @@ extern "C" {
 	*
 	* @see list_attributes_comparator()
 	*/
-	int list_contains(const list_t *restrict l, const void *data);
+	KS_DECLARE(int) list_contains(const list_t *restrict l, const void *data);
 
 	/**
 	* concatenate two lists
@@ -575,7 +579,7 @@ extern "C" {
 	* @param dest  reference to the destination list
 	* @return      0 for success, -1 for errors
 	*/
-	int list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest);
+	KS_DECLARE(int) list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest);
 
 	/**
 	* sort list elements.
@@ -592,7 +596,7 @@ extern "C" {
 	*
 	* @see list_attributes_comparator()
 	*/
-	int list_sort(list_t *restrict l, int versus);
+	KS_DECLARE(int) list_sort(list_t *restrict l, int versus);
 
 	/**
 	* start an iteration session.
@@ -604,7 +608,7 @@ extern "C" {
 	*
 	* @see list_iterator_stop()
 	*/
-	int list_iterator_start(list_t *restrict l);
+	KS_DECLARE(int) list_iterator_start(list_t *restrict l);
 
 	/**
 	* return the next element in the iteration session.
@@ -612,7 +616,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return		element datum, or NULL on errors
 	*/
-	void *list_iterator_next(list_t *restrict l);
+	KS_DECLARE(void *) list_iterator_next(list_t *restrict l);
 
 	/**
 	* inspect whether more elements are available in the iteration session.
@@ -620,7 +624,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      0 iff no more elements are available.
 	*/
-	int list_iterator_hasnext(const list_t *restrict l);
+	KS_DECLARE(int) list_iterator_hasnext(const list_t *restrict l);
 
 	/**
 	* end an iteration session.
@@ -628,7 +632,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      0 iff the iteration session cannot be stopped
 	*/
-	int list_iterator_stop(list_t *restrict l);
+	KS_DECLARE(int) list_iterator_stop(list_t *restrict l);
 
 	/**
 	* return the hash of the current status of the list.
@@ -638,7 +642,7 @@ extern "C" {
 	*
 	* @return      0 for success; <0 for failure
 	*/
-	int list_hash(const list_t *restrict l, list_hash_t *restrict hash);
+	KS_DECLARE(int) list_hash(const list_t *restrict l, list_hash_t *restrict hash);
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
 	/**

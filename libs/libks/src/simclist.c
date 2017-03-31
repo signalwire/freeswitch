@@ -267,7 +267,7 @@ static inline long get_random(void) {
 
 
 /* list initialization */
-int list_init(list_t *restrict l) {
+KS_DECLARE(int) list_init(list_t *restrict l) {
 	if (l == NULL) return -1;
 
 	seed_random();
@@ -303,7 +303,7 @@ int list_init(list_t *restrict l) {
 	return 0;
 }
 
-void list_destroy(list_t *restrict l) {
+KS_DECLARE(void) list_destroy(list_t *restrict l) {
 	unsigned int i;
 
 	list_clear(l);
@@ -389,19 +389,19 @@ int list_attributes_unserializer(list_t *restrict l, element_unserializer unseri
 	return 0;
 }
 
-int list_append(list_t *restrict l, const void *data) {
+KS_DECLARE(int) list_append(list_t *restrict l, const void *data) {
 	return list_insert_at(l, data, l->numels);
 }
 
-int list_prepend(list_t *restrict l, const void *data) {
+KS_DECLARE(int) list_prepend(list_t *restrict l, const void *data) {
 	return list_insert_at(l, data, 0);
 }
 
-void *list_fetch(list_t *restrict l) {
+KS_DECLARE(void *) list_fetch(list_t *restrict l) {
 	return list_extract_at(l, 0);
 }
 
-void *list_get_at(const list_t *restrict l, unsigned int pos) {
+KS_DECLARE(void *) list_get_at(const list_t *restrict l, unsigned int pos) {
 	struct list_entry_s *tmp;
 
 	tmp = list_findpos(l, pos);
@@ -409,11 +409,11 @@ void *list_get_at(const list_t *restrict l, unsigned int pos) {
 	return (tmp != NULL ? tmp->data : NULL);
 }
 
-void *list_get_max(const list_t *restrict l) {
+KS_DECLARE(void *) list_get_max(const list_t *restrict l) {
 	return list_get_minmax(l, +1);
 }
 
-void *list_get_min(const list_t *restrict l) {
+KS_DECLARE(void *) list_get_min(const list_t *restrict l) {
 	return list_get_minmax(l, -1);
 }
 
@@ -465,7 +465,7 @@ static inline struct list_entry_s *list_findpos(const list_t *restrict l, int po
 	return ptr;
 }
 
-void *list_extract_at(list_t *restrict l, unsigned int pos) {
+KS_DECLARE(void *) list_extract_at(list_t *restrict l, unsigned int pos) {
 	struct list_entry_s *tmp;
 	void *data;
 
@@ -483,7 +483,7 @@ void *list_extract_at(list_t *restrict l, unsigned int pos) {
 	return data;
 }
 
-int list_insert_at(list_t *restrict l, const void *data, unsigned int pos) {
+KS_DECLARE(int) list_insert_at(list_t *restrict l, const void *data, unsigned int pos) {
 	struct list_entry_s *lent, *succ, *prec;
 
 	if (l->iter_active || pos > l->numels) return -1;
@@ -536,7 +536,7 @@ int list_insert_at(list_t *restrict l, const void *data, unsigned int pos) {
 	return 1;
 }
 
-int list_delete(list_t *restrict l, const void *data) {
+KS_DECLARE(int) list_delete(list_t *restrict l, const void *data) {
 	int pos, r;
 
 	pos = list_locate(l, data);
@@ -552,7 +552,7 @@ int list_delete(list_t *restrict l, const void *data) {
 	return 0;
 }
 
-int list_delete_at(list_t *restrict l, unsigned int pos) {
+KS_DECLARE(int) list_delete_at(list_t *restrict l, unsigned int pos) {
 	struct list_entry_s *delendo;
 
 
@@ -570,7 +570,7 @@ int list_delete_at(list_t *restrict l, unsigned int pos) {
 	return  0;
 }
 
-int list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend) {
+KS_DECLARE(int) list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend) {
 	struct list_entry_s *lastvalid, *tmp, *tmp2;
 	unsigned int numdel, midposafter, i;
 	int movedx;
@@ -637,7 +637,7 @@ int list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int po
 	return numdel;
 }
 
-int list_clear(list_t *restrict l) {
+KS_DECLARE(int) list_clear(list_t *restrict l) {
 	struct list_entry_s *s;
 	unsigned int numels;
 
@@ -684,15 +684,15 @@ int list_clear(list_t *restrict l) {
 	return numels;
 }
 
-unsigned int list_size(const list_t *restrict l) {
+KS_DECLARE(unsigned int) list_size(const list_t *restrict l) {
 	return l->numels;
 }
 
-int list_empty(const list_t *restrict l) {
+KS_DECLARE(int) list_empty(const list_t *restrict l) {
 	return (l->numels == 0);
 }
 
-int list_locate(const list_t *restrict l, const void *data) {
+KS_DECLARE(int) list_locate(const list_t *restrict l, const void *data) {
 	struct list_entry_s *el;
 	int pos = 0;
 
@@ -713,7 +713,7 @@ int list_locate(const list_t *restrict l, const void *data) {
 	return pos;
 }
 
-void *list_seek(list_t *restrict l, const void *indicator) {
+KS_DECLARE(void *) list_seek(list_t *restrict l, const void *indicator) {
 	const struct list_entry_s *iter;
 
 	if (l->attrs.seeker == NULL) return NULL;
@@ -725,11 +725,11 @@ void *list_seek(list_t *restrict l, const void *indicator) {
 	return NULL;
 }
 
-int list_contains(const list_t *restrict l, const void *data) {
+KS_DECLARE(int) list_contains(const list_t *restrict l, const void *data) {
 	return (list_locate(l, data) >= 0);
 }
 
-int list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest) {
+KS_DECLARE(int) list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest) {
 	struct list_entry_s *el, *srcel;
 	unsigned int cnt;
 	int err;
@@ -783,7 +783,7 @@ int list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest) {
 	return 0;
 }
 
-int list_sort(list_t *restrict l, int versus) {
+KS_DECLARE(int) list_sort(list_t *restrict l, int versus) {
 	if (l->iter_active || l->attrs.comparator == NULL) /* cannot modify list in the middle of an iteration */
 		return -1;
 
@@ -960,7 +960,7 @@ static void list_sort_quicksort(list_t *restrict l, int versus,
 #endif
 }
 
-int list_iterator_start(list_t *restrict l) {
+KS_DECLARE(int) list_iterator_start(list_t *restrict l) {
 	if (l->iter_active) return 0;
 	l->iter_pos = 0;
 	l->iter_active = 1;
@@ -968,7 +968,7 @@ int list_iterator_start(list_t *restrict l) {
 	return 1;
 }
 
-void *list_iterator_next(list_t *restrict l) {
+KS_DECLARE(void *) list_iterator_next(list_t *restrict l) {
 	void *toret;
 
 	if (!l->iter_active) return NULL;
@@ -980,19 +980,19 @@ void *list_iterator_next(list_t *restrict l) {
 	return toret;
 }
 
-int list_iterator_hasnext(const list_t *restrict l) {
+KS_DECLARE(int) list_iterator_hasnext(const list_t *restrict l) {
 	if (!l->iter_active) return 0;
 	return (l->iter_pos < l->numels);
 }
 
-int list_iterator_stop(list_t *restrict l) {
+KS_DECLARE(int) list_iterator_stop(list_t *restrict l) {
 	if (!l->iter_active) return 0;
 	l->iter_pos = 0;
 	l->iter_active = 0;
 	return 1;
 }
 
-int list_hash(const list_t *restrict l, list_hash_t *restrict hash) {
+KS_DECLARE(int) list_hash(const list_t *restrict l, list_hash_t *restrict hash) {
 	struct list_entry_s *x;
 	list_hash_t tmphash;
 
