@@ -3347,7 +3347,7 @@ static int dtls_bio_filter_write(BIO *bio, const char *in, int inl) {
 	long ret;
 	dtls_bio_filter *filter;
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "dtls_bio_filter_write: %p, %d\n", in, inl);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "dtls_bio_filter_write: %p, %d\n", (void *)in, inl);
 	/* Forward data to the write BIO */
 	ret = BIO_write(bio->next_bio, in, inl);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "  -- %ld\n", ret);
