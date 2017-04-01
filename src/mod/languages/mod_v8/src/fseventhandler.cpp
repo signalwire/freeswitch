@@ -338,7 +338,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(GetEvent)
 		}
 	} else if (timeout < 0) {
 		if (switch_queue_pop(_event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-			prevent = (switch_event_t *) pop;
+			pevent = (switch_event_t *) pop;
 		}
 	} else {
 		if (switch_queue_trypop(_event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
