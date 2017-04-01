@@ -50,7 +50,8 @@ typedef enum {
 	SCV_FILTER_GRAY_FG = (1 << 0),
 	SCV_FILTER_GRAY_BG = (1 << 1),
 	SCV_FILTER_SEPIA_FG = (1 << 2),
-	SCV_FILTER_SEPIA_BG = (1 << 3)
+	SCV_FILTER_SEPIA_BG = (1 << 3),
+	SCV_FILTER_8BIT_FG = (1 << 4)
 } switch_core_video_filter_t;
 
 
@@ -322,6 +323,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 * \param[in]    color     RGB color
 */
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
+SWITCH_DECLARE(void) switch_img_8bit(switch_image_t *img);
 
 SWITCH_DECLARE(void) switch_img_gray(switch_image_t *img, int x, int y, int w, int h);
 SWITCH_DECLARE(void) switch_img_sepia(switch_image_t *img, int x, int y, int w, int h);

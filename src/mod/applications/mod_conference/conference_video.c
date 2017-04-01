@@ -2586,6 +2586,15 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 		if (member->video_filters & SCV_FILTER_SEPIA_FG) {
 			switch_img_sepia(img, 0, 0, img->d_w, img->d_h);
 		}
+
+		if (member->video_filters & SCV_FILTER_8BIT_FG) {
+			switch_image_t *tmp = NULL;
+			int w = img->d_w, h = img->d_h;
+
+			switch_img_scale(img, &tmp, w/8 ,h/8);
+			switch_img_scale(tmp, &img, w,h);
+			switch_img_8bit(img);
+		}
 	}
 
 	*imgP = img;

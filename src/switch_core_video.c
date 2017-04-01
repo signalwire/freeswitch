@@ -1419,6 +1419,59 @@ SWITCH_DECLARE(void) switch_img_fill_noalpha(switch_image_t *img, int x, int y, 
 #endif
 }
 
+SWITCH_DECLARE(void) switch_img_8bit(switch_image_t *img)
+{
+#ifdef SWITCH_HAVE_YUV
+	int i;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		int max_w = img->d_w;
+		int max_h = img->d_h;
+		int j;
+		switch_rgb_color_t *rgb; 
+		uint32_t *bytes;
+
+		for (i = 0; i < max_h; i++) {		
+			for (j = 0; j < max_w; j++) {
+				rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
+				//if (rgb);
+
+				
+				if (!rgb->a) continue;;
+
+				//rgb->r = rgb->r & 0xE0, rgb->g = rgb->g & 0xE0, rgb->b = rgb->b & 0xC0;
+				bytes = (uint32_t *) rgb;
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+				*bytes = *bytes & 0xE0E0C0FF;
+#else
+				*bytes = *bytes & 0xFFC0E0E0;
+#endif
+
+			}
+		}
+	} else if (img->fmt == SWITCH_IMG_FMT_I420) {
+		switch_image_t *tmp_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, img->d_w, img->d_h, 1);
+
+		I420ToARGB(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				   img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				   img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				   tmp_img->planes[SWITCH_PLANE_PACKED], tmp_img->stride[SWITCH_PLANE_PACKED],
+				   img->d_w, img->d_h);
+		
+		switch_img_8bit(tmp_img);
+
+		ARGBToI420(tmp_img->planes[SWITCH_PLANE_PACKED], tmp_img->stride[SWITCH_PLANE_PACKED],
+				   img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				   img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				   img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				   tmp_img->d_w, tmp_img->d_h);
+		
+		switch_img_free(&tmp_img);
+	}
+#endif	
+}
+
 SWITCH_DECLARE(void) switch_img_sepia(switch_image_t *img, int x, int y, int w, int h)
 {
 #ifdef SWITCH_HAVE_YUV
@@ -3330,6 +3383,10 @@ SWITCH_DECLARE(void) switch_core_video_parse_filter_string(switch_core_video_fil
 
 	if (switch_stristr("bg-sepia", filter_str)) {
 		*filters |= SCV_FILTER_SEPIA_BG;
+	}
+
+	if (switch_stristr("fg-8bit", filter_str)) {
+		*filters |= SCV_FILTER_8BIT_FG;
 	}
 } 
 
