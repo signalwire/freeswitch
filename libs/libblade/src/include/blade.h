@@ -53,7 +53,7 @@
 
 KS_BEGIN_EXTERN_C
 
-#ifndef config_lookup_from
+#ifdef _WIN32
 #define config_lookup_from config_setting_lookup
 #endif
 

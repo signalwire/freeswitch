@@ -1833,7 +1833,34 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 		return NULL;
 	}
 
-	old_byte_size = prefix->size;
+	old_byte_size = prefix->size - PREFIX_SIZE - FENCE_SIZE - prefix->padding;
+
+	if (old_byte_size == new_byte_size) {
+		SET_POINTER(error_p, KS_STATUS_SUCCESS);
+		new_addr = old_addr;
+		goto end;
+	}
+
+	if (old_byte_size >= new_byte_size) {
+		unsigned long diff = old_byte_size - new_byte_size;
+		//prefix->size -= diff;
+		prefix->padding += diff;
+		write_magic((char *)prefix + prefix->size - prefix->padding - FENCE_SIZE);
+		SET_POINTER(error_p, KS_STATUS_SUCCESS);
+		new_addr = old_addr;
+		goto end;
+	}
+
+	{
+		unsigned long diff = new_byte_size - old_byte_size;
+		if (prefix->padding >= diff) {
+			prefix->padding -= diff;
+			write_magic((char *)prefix + prefix->size - prefix->padding - FENCE_SIZE);
+			SET_POINTER(error_p, KS_STATUS_SUCCESS);
+			new_addr = old_addr;
+			goto end;
+		}
+	}
 
 	/*
 	 * If the size is larger than a block then the allocation must be at
