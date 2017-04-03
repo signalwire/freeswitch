@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
 	ks_init();
 
-	plan(3);
+	plan(7);
 
 	ks_pool_open(&pool);
 
