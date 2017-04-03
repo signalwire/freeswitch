@@ -9,6 +9,11 @@ testpools_SOURCES = testpools.c tap.c
 testpools_CFLAGS = $(AM_CFLAGS)
 testpools_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += testrealloc
+testrealloc_SOURCES = testrealloc.c tap.c
+testrealloc_CFLAGS = $(AM_CFLAGS)
+testrealloc_LDADD = $(TEST_LDADD)
+
 check_PROGRAMS += testacl
 testacl_SOURCES = testacl.c tap.c
 testacl_CFLAGS = $(AM_CFLAGS)
