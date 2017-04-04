@@ -889,6 +889,7 @@ void *blade_handle_worker_thread(ks_thread_t *thread, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_connection_t *bc = NULL;
+	blade_session_t *bs = NULL;
 	ks_hash_iterator_t *it = NULL;
 	ks_q_t *cleanup = NULL;
 
@@ -915,6 +916,22 @@ void *blade_handle_worker_thread(ks_thread_t *thread, void *data)
 		while (ks_q_trypop(cleanup, (void **)&bc) == KS_STATUS_SUCCESS) {
 			blade_handle_connections_remove(bc);
 			blade_connection_destroy(&bc);
+		}
+
+		ks_hash_write_lock(bh->sessions);
+		for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			void *key = NULL;
+			blade_session_t *value = NULL;
+
+			ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+
+			if (blade_session_state_get(value) == BLADE_SESSION_STATE_CLEANUP) ks_q_push(cleanup, value);
+		}
+		ks_hash_write_unlock(bh->sessions);
+
+		while (ks_q_trypop(cleanup, (void **)&bs) == KS_STATUS_SUCCESS) {
+			blade_handle_sessions_remove(bs);
+			blade_session_destroy(&bs);
 		}
 
 		ks_sleep_ms(500);

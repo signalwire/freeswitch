@@ -505,8 +505,7 @@ ks_status_t blade_session_state_on_destroy(blade_session_t *bs)
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) state destroy\n", bs->id);
 
-	blade_handle_sessions_remove(bs);
-	blade_session_destroy(&bs);
+	blade_session_state_set(bs, BLADE_SESSION_STATE_CLEANUP);
 
 	// @todo ignoring returns for now, see what makes sense later
 	return KS_STATUS_SUCCESS;
