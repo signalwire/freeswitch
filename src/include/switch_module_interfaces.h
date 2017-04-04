@@ -329,6 +329,11 @@ typedef struct switch_mm_s {
 	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;
 	uint8_t try_hardware_encoder;
+	int scale_w;
+	int scale_h;
+	switch_img_fmt_t fmt;
+	char *auth_username;
+	char *auth_password;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */

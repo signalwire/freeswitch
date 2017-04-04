@@ -177,6 +177,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			fh->mm.try_hardware_encoder = switch_true(val);
 		}
 
+		if ((val = switch_event_get_header(fh->params, "auth_username"))) {
+			fh->mm.auth_username = switch_core_strdup(fh->memory_pool, val);
+		}
+
+		if ((val = switch_event_get_header(fh->params, "auth_password"))) {
+			fh->mm.auth_password = switch_core_strdup(fh->memory_pool, val);
+		}
+
 		if ((val = switch_event_get_header(fh->params, "fps"))) {
 			float ftmp = atof(val);
 			if (ftmp > 0.0f) {

@@ -906,7 +906,7 @@ SWITCH_STANDARD_APP(record_av_function)
 		char codec_str[256];
 		const AVCodecDescriptor *desc;
 
-		if (!strncmp(data, "rtmp://", 7)) {
+		if (!strncmp(data, "rtmp://", 7) || !strncmp(data, "rtsp://", 7)) {
 			fmt->video_codec = AV_CODEC_ID_H264;
 			fmt->audio_codec = AV_CODEC_ID_AAC;
 		}
@@ -1694,8 +1694,19 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		return SWITCH_STATUS_GENERR;
 	} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 		format = "flv";
-		switch_snprintf(file, sizeof(file), "rtmp://%s", path);
+
+		// meh really silly format for the user / pass libav.....
+		if (handle->mm.auth_username && handle->mm.auth_password) { 
+			switch_snprintf(file, sizeof(file), "rtmp://%s pubUser=%s pubPasswd=%s flashver=FMLE/3.0", path, handle->mm.auth_username, handle->mm.auth_password);
+		} else {
+			switch_snprintf(file, sizeof(file), "rtmp://%s", path);
+		}
+
+	} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtsp")) {
+		format = "rtsp";
+		switch_snprintf(file, sizeof(file), "rtsp://%s", path);
 	}
+
 
 	ext++;
 
@@ -1783,7 +1794,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	if (fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
-		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube")))) {
+		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "rtsp") || !strcasecmp(handle->stream_name, "youtube")))) {
 
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
@@ -2525,6 +2536,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 
 	supported_formats[i++] = "av";
 	supported_formats[i++] = "rtmp";
+	supported_formats[i++] = "rtsp";
 	supported_formats[i++] = "mp4";
 	supported_formats[i++] = "m4a";
 	supported_formats[i++] = "mov";
