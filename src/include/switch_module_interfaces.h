@@ -340,6 +340,8 @@ typedef struct switch_mm_s {
 	int scale_w;
 	int scale_h;
 	switch_img_fmt_t fmt;
+	char *auth_username;
+	char *auth_password;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */

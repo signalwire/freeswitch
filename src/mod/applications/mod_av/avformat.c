@@ -391,6 +391,17 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 
 		c->codec_id = codec_id;
 
+		if (mm->auth_username) {
+			char tmp[256] = "";
+			switch_snprintf(tmp, sizeof(tmp), "pubUser=%s", mm->auth_username);
+			av_set_options_string(c, tmp, "=", ":");
+
+			if (mm->auth_password) {
+				switch_snprintf(tmp, sizeof(tmp), "pubPasswd=%s", mm->auth_password);
+				av_set_options_string(c, tmp, "=", ":");
+			}
+		}
+
 		/* Resolution must be a multiple of two. */
 		c->width    = mst->width;
 		c->height   = mst->height;
