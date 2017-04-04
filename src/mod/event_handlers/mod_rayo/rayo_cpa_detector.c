@@ -361,11 +361,22 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 						status = SWITCH_STATUS_TERM;
 						goto done;
 					} else {
-						/* add signal-type to detector mapping */
+						/* add signal-type to detector mapping if not already done for this detector */
 						const char *signal_type_ns = switch_core_sprintf(pool, "%s%s:%s", RAYO_CPA_BASE, signal_type, RAYO_VERSION);
-						event_ok = 1;
-						switch_core_hash_insert_destructor(globals.detectors, signal_type_ns, detector, destroy_detector);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding CPA %s => %s\n", signal_type_ns, detector->name);
+						struct rayo_cpa_detector *bound_detector = switch_core_hash_find(globals.detectors, signal_type_ns);
+						if (!bound_detector) {
+							switch_core_hash_insert_destructor(globals.detectors, signal_type_ns, detector, destroy_detector);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding CPA %s => %s\n", signal_type_ns, detector->name);
+							event_ok = 1;
+						} else if (bound_detector == detector) {
+							/* detector has multiple signal-type configs w/ same value */
+							event_ok = 1;
+						} else {
+							/* multiple detectors with same signal-type value */
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Detector %s configured to handle signal-type %s that is already handled by %s\n", detector->name, signal_type, bound_detector->name);
+							status = SWITCH_STATUS_TERM;
+							goto done;
+						}
 					}
 
 					/* map event value to signal-type */
