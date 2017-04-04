@@ -65,6 +65,7 @@ typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, co
 
 typedef enum {
 	BLADE_CONNECTION_STATE_NONE,
+	BLADE_CONNECTION_STATE_CLEANUP,
 	BLADE_CONNECTION_STATE_DISCONNECT,
 	BLADE_CONNECTION_STATE_NEW,
 	BLADE_CONNECTION_STATE_CONNECT,

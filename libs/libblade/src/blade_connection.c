@@ -302,6 +302,12 @@ KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connec
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT) blade_connection_disconnect(bc);
 }
 
+KS_DECLARE(blade_connection_state_t) blade_connection_state_get(blade_connection_t *bc)
+{
+	ks_assert(bc);
+	return bc->state;
+}
+
 KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 {
 	ks_assert(bc);
@@ -393,12 +399,10 @@ ks_status_t blade_connection_state_on_disconnect(blade_connection_t *bc)
 
 	ks_assert(bc);
 
-	blade_handle_connections_remove(bc);
-
 	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_DISCONNECT);
 	if (callback) callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
-	blade_connection_destroy(&bc);
+	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CLEANUP);
 
 	return KS_STATUS_SUCCESS;
 }
