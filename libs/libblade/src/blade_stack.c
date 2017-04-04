@@ -309,7 +309,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 
 	ks_assert(bh);
 
-	for (it = ks_hash_first(bh->requests, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+	while ((it = ks_hash_first(bh->requests, KS_UNLOCKED))) {
 		void *key = NULL;
 		blade_request_t *value = NULL;
 
@@ -333,7 +333,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and spaces, and will disconnect remaining
 	// unattached connections
 
-	for (it = ks_hash_first(bh->events,  KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+	while ((it = ks_hash_first(bh->events, KS_UNLOCKED))) {
 		void *key = NULL;
 		blade_event_callback_t *value = NULL;
 
@@ -341,7 +341,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 		blade_handle_event_unregister(bh, (const char *)key);
 	}
 
-	for (it = ks_hash_first(bh->spaces,  KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+	while ((it = ks_hash_first(bh->spaces, KS_UNLOCKED))) {
 		void *key = NULL;
 		blade_space_t *value = NULL;
 
@@ -457,13 +457,12 @@ KS_DECLARE(ks_status_t) blade_handle_space_unregister(blade_space_t *bs)
 	ks_assert(path);
 
 	ks_hash_write_lock(bh->spaces);
-	bs = ks_hash_search(bh->spaces, (void *)path, KS_UNLOCKED);
-	if (bs) ks_hash_remove(bh->spaces, (void *)path);
+	ks_hash_remove(bh->spaces, (void *)path);
 	ks_hash_write_unlock(bh->spaces);
 
 	if (bs) {
-		blade_space_destroy(&bs);
 		ks_log(KS_LOG_DEBUG, "Space Unregistered: %s\n", path);
+		blade_space_destroy(&bs);
 	}
 
 	return KS_STATUS_SUCCESS;

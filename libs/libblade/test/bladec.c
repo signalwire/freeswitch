@@ -1,20 +1,9 @@
 #include "blade.h"
 #include "tap.h"
 
-#ifdef _WIN32
-#define STDIO_FD(_fs) _fileno(_fs)
-#define READ(_fd, _buffer, _count) _read(_fd, _buffer, _count)
-#else
-#define STDIO_FD(_fs) fileno(_fs)
-#define READ(_fd, _buffer, _count) read(_fd, _buffer, _count)
-#endif
-
 #define CONSOLE_INPUT_MAX 512
 
 ks_bool_t g_shutdown = KS_FALSE;
-char g_console_input[CONSOLE_INPUT_MAX];
-size_t g_console_input_length = 0;
-size_t g_console_input_eol = 0;
 
 void loop(blade_handle_t *bh);
 void process_console_input(blade_handle_t *bh, char *line);
@@ -141,56 +130,19 @@ void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_co
 	}
 }
 
-void buffer_console_input(void)
-{
-	ssize_t bytes = 0;
-	struct pollfd poll[1];
-	poll[0].fd = STDIO_FD(stdin);
-	poll[0].events = POLLIN | POLLERR;
-
-	if (ks_poll(poll, 1, 1) > 0) {
-		if (poll[0].revents & POLLIN) {
-			if ((bytes = READ(poll[0].fd, g_console_input + g_console_input_length, CONSOLE_INPUT_MAX - g_console_input_length)) <= 0) {
-				// @todo error
-				return;
-			}
-			g_console_input_length += bytes;
-		}
-	}
-}
-
 void loop(blade_handle_t *bh)
 {
+	char buf[CONSOLE_INPUT_MAX];
 	while (!g_shutdown) {
-		ks_bool_t eol = KS_FALSE;
-		buffer_console_input();
+		if (!fgets(buf, CONSOLE_INPUT_MAX, stdin)) break;
 
-		for (; g_console_input_eol < g_console_input_length; ++g_console_input_eol) {
-			char c = g_console_input[g_console_input_eol];
-			if (c == '\r' || c == '\n') {
-				eol = KS_TRUE;
+		for (int index = 0; buf[index]; ++index) {
+			if (buf[index] == '\r' || buf[index] == '\n') {
+				buf[index] = '\0';
 				break;
 			}
 		}
-		if (eol) {
-			g_console_input[g_console_input_eol] = '\0';
-			process_console_input(bh, g_console_input);
-			g_console_input_eol++;
-			for (; g_console_input_eol < g_console_input_length; ++g_console_input_eol) {
-				char c = g_console_input[g_console_input_eol];
-				if (c != '\r' && c != '\n') break;
-			}
-			if (g_console_input_eol == g_console_input_length) g_console_input_eol = g_console_input_length = 0;
-			else {
-				memcpy(g_console_input, g_console_input + g_console_input_eol, g_console_input_length - g_console_input_eol);
-				g_console_input_length -= g_console_input_eol;
-				g_console_input_eol = 0;
-			}
-		}
-		if (g_console_input_length == CONSOLE_INPUT_MAX) {
-			// @todo lines must not exceed 512 bytes, treat as error and ignore buffer until next new line?
-			ks_assert(0);
-		}
+		process_console_input(bh, buf);
 	}
 }
 
