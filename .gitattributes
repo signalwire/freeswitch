@@ -17,6 +17,8 @@
 *.min.js -diff binary minified
 *-min.js -diff binary minified
 *.min.css -diff binary minified
+.git* debian-ignore
+gbp.conf debian-ignore
 /clients/flex* dfsg-nonfree
 /debian* debian-ignore
 /freeswitch.xcodeproj debian-ignore
