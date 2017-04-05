@@ -1350,7 +1350,7 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 				//switch_core_session_write_encoded_video_frame(imember->session, frame, 0, 0);
 				switch_set_flag(frame, SFF_ENCODED);
 
-				if (switch_frame_buffer_dup(imember->fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+				if (imember->mux_out_queue && switch_frame_buffer_dup(imember->fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 					if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
 						switch_frame_buffer_free(imember->fb, &dupframe);
 					}
@@ -1564,6 +1564,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
 
+		if (!member->mux_out_queue) break;
+
 		if (patched) {
 			pop_status = switch_queue_trypop(member->mux_out_queue, &pop);
 		} else {
@@ -1635,7 +1637,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 		}
 	}
 
-	while (switch_queue_trypop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+	while (member->mux_out_queue && switch_queue_trypop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		if (pop) {
 			if ((switch_size_t)pop != 1) {
 				frame = (switch_frame_t *) pop;
@@ -2250,7 +2252,7 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 			mcu_layer_t *layer = &canvas->layers[i];
 					
 			if (layer->need_patch) {
-				if (layer->member_id && layer->member && conference_utils_member_test_flag(layer->member, MFLAG_RUNNING)) {
+				if (layer->member_id && layer->member && layer->member->mux_out_queue && conference_utils_member_test_flag(layer->member, MFLAG_RUNNING)) {
 					switch_queue_trypush(layer->member->mux_out_queue, (void *) 1);
 					x++;
 				} else {
@@ -3018,7 +3020,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					write_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
 					write_frame.packetlen = 0;
 
-					if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+					if (imember->mux_out_queue && switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 						switch_queue_push(imember->mux_out_queue, dupframe);
 						dupframe = NULL;
 					}
@@ -3214,7 +3216,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				//switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
-				if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+				if (imember->mux_out_queue && switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 					if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
 						switch_frame_buffer_free(imember->fb, &dupframe);
 					}
@@ -3562,7 +3564,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 
 			//switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
-			if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+			if (imember->mux_out_queue && switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 				if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
 					switch_frame_buffer_free(imember->fb, &dupframe);
 				}
