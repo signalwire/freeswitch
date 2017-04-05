@@ -8114,7 +8114,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 
 					if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_NEGOTIATED)) {
-						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+						if (sofia_use_soa(tech_pvt)) {
+							nua_respond(tech_pvt->nh, SIP_200_OK,
+										SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+										SOATAG_REUSE_REJECTED(1),
+										SOATAG_AUDIO_AUX("cn telephone-event"),
+										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+						} else {
+							nua_respond(tech_pvt->nh, SIP_200_OK,
+										NUTAG_MEDIA_ENABLE(0),
+										SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+										SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+						}
 						goto done;
 					}
 
@@ -9914,13 +9926,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 			}
 		}
 
-		if (switch_core_media_check_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO) && !switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
-			/* Refuse all re-invites once we are doing T.38 */
-			nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
-		} else {
-			switch_channel_execute_on(channel, "execute_on_sip_reinvite");
-		}
+		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
 	}
 
 }
