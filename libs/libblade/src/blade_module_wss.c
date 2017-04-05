@@ -523,7 +523,7 @@ ks_status_t blade_module_wss_listen(blade_module_wss_t *bm_wss, ks_sockaddr_t *a
 															 sizeof(struct pollfd) * bm_wss->listeners_count);
 	ks_assert(bm_wss->listeners_poll);
 	bm_wss->listeners_poll[listener_index].fd = listener;
-	bm_wss->listeners_poll[listener_index].events = POLLIN | POLLERR;
+	bm_wss->listeners_poll[listener_index].events = POLLIN; // | POLLERR;
 
 	ks_log(KS_LOG_DEBUG, "Bound %s on port %d at index %d\n", ks_addr_get_host(addr), ks_addr_get_port(addr), listener_index);
 
@@ -784,7 +784,7 @@ ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json)
 ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json)
 {
 	// @todo get exact timeout from service config?
-	int32_t poll_flags = ks_wait_sock(bt_wss->sock, 100, KS_POLL_READ | KS_POLL_ERROR);
+	int32_t poll_flags = ks_wait_sock(bt_wss->sock, 100, KS_POLL_READ); // | KS_POLL_ERROR);
 
 	*json = NULL;
 
@@ -836,7 +836,7 @@ ks_status_t blade_transport_wss_rpc_error_send(blade_connection_t *bc, const cha
 	cJSON *json = NULL;
 
 	ks_assert(bc);
-	ks_assert(id);
+	//ks_assert(id);
 	ks_assert(message);
 
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);

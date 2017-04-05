@@ -236,14 +236,14 @@ KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJ
 
 	ks_assert(pool);
 	ks_assert(json);
-	ks_assert(id);
+	//ks_assert(id);
 	ks_assert(message);
 
 	root = cJSON_CreateObject();
 
 	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
 
-	cJSON_AddStringToObject(root, "id", id);
+	if (id) cJSON_AddStringToObject(root, "id", id);
 
 	e = cJSON_CreateObject();
 	cJSON_AddNumberToObject(e, "code", code);

@@ -1285,6 +1285,7 @@ static ks_status_t ks_pool_raw_close(ks_pool_t *mp_p)
 		block_p->mb_magic2 = 0;
 		/* record the next pointer because it might be invalidated below */
 		next_p = block_p->mb_next_p;
+
 		ret = free_pages(block_p, (unsigned long)((char *) block_p->mb_bounds_p - (char *) block_p));
 
 		if (ret != KS_STATUS_SUCCESS) {

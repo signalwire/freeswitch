@@ -324,13 +324,6 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 
 	ks_assert(bh);
 
-	if (bh->worker_thread) {
-		bh->shutdown = KS_TRUE;
-		ks_thread_join(bh->worker_thread);
-		ks_pool_free(bh->pool, &bh->worker_thread);
-		bh->shutdown = KS_FALSE;
-	}
-
 	while ((it = ks_hash_first(bh->requests, KS_UNLOCKED))) {
 		void *key = NULL;
 		blade_request_t *value = NULL;
@@ -346,7 +339,6 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 		blade_session_t *value = NULL;
 
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
-		//ks_hash_remove(bh->sessions, key);
 
 		blade_session_hangup(value);
 	}
@@ -374,6 +366,13 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	// @todo unload DSOs
 
 	if (blade_handle_datastore_available(bh)) blade_datastore_destroy(&bh->datastore);
+
+	if (bh->worker_thread) {
+		bh->shutdown = KS_TRUE;
+		ks_thread_join(bh->worker_thread);
+		ks_pool_free(bh->pool, &bh->worker_thread);
+		bh->shutdown = KS_FALSE;
+	}
 
 	return KS_STATUS_SUCCESS;
 }

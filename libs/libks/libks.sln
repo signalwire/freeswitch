@@ -31,6 +31,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssleay32", "..\win32\openss
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testrealloc", "test\testrealloc.vcxproj", "{22BCE97F-2477-427D-83FE-74851DDBC57E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testpolling", "test\testpolling.vcxproj", "{699A44BF-D03D-469F-83B2-C52C0B4B95BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -151,6 +153,14 @@ Global
 		{22BCE97F-2477-427D-83FE-74851DDBC57E}.Release|x64.Build.0 = Release|x64
 		{22BCE97F-2477-427D-83FE-74851DDBC57E}.Release|x86.ActiveCfg = Release|Win32
 		{22BCE97F-2477-427D-83FE-74851DDBC57E}.Release|x86.Build.0 = Release|Win32
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Debug|x64.ActiveCfg = Debug|x64
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Debug|x64.Build.0 = Debug|x64
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Debug|x86.ActiveCfg = Debug|Win32
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Debug|x86.Build.0 = Debug|Win32
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Release|x64.ActiveCfg = Release|x64
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Release|x64.Build.0 = Release|x64
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Release|x86.ActiveCfg = Release|Win32
+		{699A44BF-D03D-469F-83B2-C52C0B4B95BD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
