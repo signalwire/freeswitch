@@ -146,6 +146,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_NO_POSITIONAL] = 1;
 			} else if (!strcasecmp(argv[i], "join-vid-floor")) {
 				f[MFLAG_JOIN_VID_FLOOR] = 1;
+			} else if (!strcasecmp(argv[i], "no-video-blanks")) {
+				f[MFLAG_NO_VIDEO_BLANKS] = 1;
 			} else if (!strcasecmp(argv[i], "no-minimize-encoding")) {
 				f[MFLAG_NO_MINIMIZE_ENCODING] = 1;
 			} else if (!strcasecmp(argv[i], "second-screen")) {

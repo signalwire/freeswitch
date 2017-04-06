@@ -2554,11 +2554,11 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 					conference_video_reset_video_bitrate_counters(member);
 				}
 
-				if (member->auto_avatar && member->good_img > vid_params.fps * 3) {
+				if (member->auto_avatar && member->good_img > 1) {
 					conference_video_check_flush(member, SWITCH_TRUE);
 				}
 
-			} else {
+			} else if (!conference_utils_member_test_flag(member, MFLAG_NO_VIDEO_BLANKS)) {
 				member->blanks++;
 
 
