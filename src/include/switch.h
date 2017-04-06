@@ -56,7 +56,7 @@
 #ifndef MACOSX
 #if !defined(_XOPEN_SOURCE) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 #ifndef __cplusplus
-#define _XOPEN_SOURCE 600
+#define _XOPEN_SOURCE 700
 #endif
 #endif
 #ifdef __linux__
