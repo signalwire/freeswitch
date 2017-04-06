@@ -110,6 +110,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-layout", (void_fn_t) & conference_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>|group <group name> [<canvas id>]"},
 	{"vid-write-png", (void_fn_t) & conference_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
 	{"vid-fps", (void_fn_t) & conference_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
+	{"vid-fgimg", (void_fn_t) & conference_api_sub_canvas_fgimg, CONF_API_SUB_ARGS_SPLIT, "vid-fgimg", "<file> | clear [<canvas-id>]"},
 	{"vid-bgimg", (void_fn_t) & conference_api_sub_canvas_bgimg, CONF_API_SUB_ARGS_SPLIT, "vid-bgimg", "<file> | clear [<canvas-id>]"},
 	{"vid-bandwidth", (void_fn_t) & conference_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"},
 	{"vid-personal", (void_fn_t) & conference_api_sub_vid_personal, CONF_API_SUB_ARGS_SPLIT, "vid-personal", "[on|off]"}
@@ -1379,6 +1380,49 @@ switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, sw
 		stream->write_function(stream, "Set Bgimg %s\n", file);
 	} else {
 		stream->write_function(stream, "Error Setting Bgimg %s\n", file);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_canvas_fgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	mcu_canvas_t *canvas = NULL;
+	int idx = 0;
+	char *file = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!argv[2]) {
+		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	file = argv[2];
+
+	if (argv[3]) {
+		idx = atoi(argv[3]) - 1;
+	}
+
+	if (idx < 0 || idx > SUPER_CANVAS_ID || !conference->canvases[idx]) {
+		stream->write_function(stream, "Invalid canvas\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((canvas = conference->canvases[idx])) {
+		switch_mutex_lock(canvas->mutex);
+		if (!strcasecmp(file, "clear")) {
+			conference_video_reset_image(canvas->img, &canvas->bgcolor);
+		} else {
+			status = conference_video_set_canvas_fgimg(canvas, file);
+		}
+		switch_mutex_unlock(canvas->mutex);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Set FGimg %s\n", file);
+	} else {
+		stream->write_function(stream, "Error Setting FGimg %s\n", file);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

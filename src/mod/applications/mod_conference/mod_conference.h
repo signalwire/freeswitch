@@ -1200,6 +1200,7 @@ switch_status_t conference_api_sub_get(conference_obj_t *conference, switch_stre
 switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_canvas_fgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_file_vol(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
