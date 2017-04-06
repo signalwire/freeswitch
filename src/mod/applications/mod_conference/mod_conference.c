@@ -2631,6 +2631,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
+	char *recording_metadata = NULL;
 	int auto_record_canvas = 0;
 	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
@@ -2939,6 +2940,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				verbose_events = val;
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
+			} else if (!strcasecmp(var, "recording-metadata") && !zstr(val)) {
+				recording_metadata = val;
 			} else if (!strcasecmp(var, "auto-record-canvas-id") && !zstr(val)) {
 				auto_record_canvas = atoi(val);
 				if (auto_record_canvas) {
@@ -3479,6 +3482,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
+	}
+
+	if (!zstr(recording_metadata)) {
+		conference->recording_metadata = switch_core_strdup(conference->pool, recording_metadata);
 	}
 
 	conference->min_recording_participants = min_recording_participants;
