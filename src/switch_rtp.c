@@ -8044,7 +8044,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (send) {
 		int delta = 1;
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (*flags & SFF_EXTERNAL) && rtp_session->stats.outbound.packet_count && rtp_session->flags[SWITCH_RTP_FLAG_PASSTHRU]) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (*flags & SFF_EXTERNAL) && rtp_session->stats.outbound.packet_count && rtp_session->flags[SWITCH_RTP_FLAG_PASSTHRU] && rtp_session->last_write_seq) {
 			int32_t x;
 			int32_t y;
 
@@ -8056,12 +8056,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 			
 			delta = y-x;
+
+			rtp_session->last_write_seq = rtp_session->seq;
 		}
 
 		rtp_session->seq += delta;
 
 		send_msg->header.seq = htons(rtp_session->seq);
-		rtp_session->last_write_seq = rtp_session->seq;
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && send_msg->header.pt == rtp_session->payload) {
 			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
