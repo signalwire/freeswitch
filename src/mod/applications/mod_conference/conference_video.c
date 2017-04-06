@@ -769,7 +769,10 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 			//printf("B4 %dx%d %dx%d\n", crop_w, crop_h, layer->crop_w, layer->crop_h);
 			set_pan(crop_w, &layer->crop_w, layer->cam_opts.zoom_accel_speed, layer->cam_opts.zoom_accel_min, layer->cam_opts.zoom_speed);
+			if (layer->crop_w > img->d_w) layer->crop_w = img->d_w;
+
 			layer->crop_h = layer->crop_w / screen_aspect;
+			if (layer->crop_h > img->d_h) layer->crop_h = img->d_h;
 
 			set_bounds(&layer->crop_x, &layer->crop_y, img->d_w, img->d_h, layer->crop_w, layer->crop_h);
 
