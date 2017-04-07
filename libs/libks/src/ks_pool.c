@@ -52,7 +52,7 @@ typedef struct alloc_prefix_s {
 } alloc_prefix_t;
 
 #define PREFIX_SIZE sizeof(struct alloc_prefix_s)
-//#define DEBUG 1
+#define DEBUG 1
 /*
  * bitflag tools for Variable and a Flag
  */

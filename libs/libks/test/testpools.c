@@ -62,6 +62,17 @@ int main(int argc, char **argv)
 		}
 	}
 
+
+	status = ks_pool_open(&pool);
+
+	void *blah = ks_pool_alloc(pool, 64 * 1024);
+
+	ks_pool_free(pool, &blah);
+
+	blah = ks_pool_alloc(pool, 2 * 1024);
+
+	ks_pool_close(&pool);
+
 	status = ks_pool_open(&pool);
 
 	printf("OPEN: %p\n", (void *)pool);
