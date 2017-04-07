@@ -458,6 +458,7 @@ struct switch_rtp {
 	uint8_t pause_jb;
 	uint16_t last_seq;
 	uint16_t last_write_seq;
+	uint8_t video_delta_mode;
 	switch_time_t last_read_time;
 	switch_size_t last_flush_packet_count;
 	uint32_t interdigit_delay;
@@ -8017,20 +8018,26 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (send) {
 		int delta = 1;
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (*flags & SFF_EXTERNAL) && rtp_session->stats.outbound.packet_count && rtp_session->flags[SWITCH_RTP_FLAG_PASSTHRU] && rtp_session->last_write_seq) {
-			int32_t x;
-			int32_t y;
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (*flags & SFF_EXTERNAL) && 
+			rtp_session->stats.outbound.packet_count && rtp_session->flags[SWITCH_RTP_FLAG_PASSTHRU]) {
+			int32_t x = rtp_session->last_write_seq;
+			int32_t y = ntohs(send_msg->header.seq);
 
-			x = rtp_session->last_write_seq;
-			y = ntohs(send_msg->header.seq);
+			if (!rtp_session->video_delta_mode) {
+				rtp_session->video_delta_mode = 1;
+			} else {
+				if (x > UINT16_MAX / 2 && y < UINT16_MAX / 2) {
+					x -= (int32_t)UINT16_MAX+1;
+				}
 			
-			if (x > UINT16_MAX / 2 && y < UINT16_MAX / 2) {
-				x -= (int32_t)UINT16_MAX+1;
+				delta = y-x;
 			}
 			
-			delta = y-x;
+			rtp_session->last_write_seq = y;
+		}
 
-			rtp_session->last_write_seq = rtp_session->seq;
+		if (!rtp_session->flags[SWITCH_RTP_FLAG_PASSTHRU]) {
+			rtp_session->video_delta_mode = 0;
 		}
 
 		rtp_session->seq += delta;
