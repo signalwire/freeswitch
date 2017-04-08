@@ -101,7 +101,9 @@ static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, 
 	case KS_MPCL_DESTROY:
 
 #ifdef WIN32
-		CloseHandle(thread->handle);
+		if (!(thread->flags & KS_THREAD_FLAG_DETACHED)) {
+			CloseHandle(thread->handle);
+		}
 #endif
 		break;
 	}
@@ -177,15 +179,16 @@ KS_DECLARE(int) ks_thread_set_priority(int nice_val)
 KS_DECLARE(uint8_t) ks_thread_priority(ks_thread_t *thread) {
 	uint8_t priority = 0;
 #ifdef WIN32
-	int pri = GetThreadPriority(thread->handle);
+	//int pri = GetThreadPriority(thread->handle);
 
-	if (pri >= THREAD_PRIORITY_TIME_CRITICAL) {
-		priority = 99;
-	} else if (pri >= THREAD_PRIORITY_ABOVE_NORMAL) {
-		priority = 50;
-	} else {
-		priority = 10;
-	}
+	//if (pri >= THREAD_PRIORITY_TIME_CRITICAL) {
+	//	priority = 99;
+	//} else if (pri >= THREAD_PRIORITY_ABOVE_NORMAL) {
+	//	priority = 50;
+	//} else {
+	//	priority = 10;
+	//}
+	priority = thread->priority;
 #else
 	int policy;
 	struct sched_param param = { 0 };
@@ -260,7 +263,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	}
 
 	if (flags & KS_THREAD_FLAG_DETACHED) {
-		//CloseHandle(thread->handle);
+		CloseHandle(thread->handle);
 	}
 
 	status = KS_STATUS_SUCCESS;

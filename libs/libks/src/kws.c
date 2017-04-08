@@ -1007,7 +1007,6 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				void *tmp;
 				
 				kws->bbuflen = need + blen + kws->rplen;
-
 				if ((tmp = ks_pool_resize(kws->pool, kws->bbuffer, (unsigned long)kws->bbuflen))) {
 					kws->bbuffer = tmp;
 				} else {
@@ -1020,10 +1019,12 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 			kws->rplen = kws->plen - need;
 			
 			if (kws->rplen) {
+				ks_assert((kws->body + kws->rplen) <= (kws->bbuffer + kws->bbuflen));
 				memcpy(kws->body, kws->payload, kws->rplen);
 			}
-			
+
 			while(need) {
+				ks_assert((kws->body + need + kws->rplen) <= (kws->bbuffer + kws->bbuflen));
 				ks_ssize_t r = kws_raw_read(kws, kws->body + kws->rplen, need, WS_BLOCK);
 
 				if (r < 1) {

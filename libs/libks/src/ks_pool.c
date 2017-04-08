@@ -463,6 +463,7 @@ static void *alloc_pages(ks_pool_t *mp_p, const unsigned int page_n, ks_status_t
 
 	mem = malloc(size);
 	ks_assert(mem);
+	memset(mem, 0, size);
 
 	mp_p->mp_top += size;
 	mp_p->mp_page_c += page_n;
@@ -1024,7 +1025,6 @@ static int free_mem(ks_pool_t *mp_p, void *addr)
 		return ret;
 	}
 
-
 	ret = free_pointer(mp_p, addr, size);
 
 	if (ret != KS_STATUS_SUCCESS) {
@@ -1286,7 +1286,15 @@ static ks_status_t ks_pool_raw_close(ks_pool_t *mp_p)
 		/* record the next pointer because it might be invalidated below */
 		next_p = block_p->mb_next_p;
 
+		if (next_p && (next_p->mb_magic != BLOCK_MAGIC || next_p->mb_magic2 != BLOCK_MAGIC)) {
+			final = KS_STATUS_POOL_OVER;
+			break;
+		}
 		ret = free_pages(block_p, (unsigned long)((char *) block_p->mb_bounds_p - (char *) block_p));
+		if (next_p && (next_p->mb_magic != BLOCK_MAGIC || next_p->mb_magic2 != BLOCK_MAGIC)) {
+			final = KS_STATUS_POOL_OVER;
+			break;
+		}
 
 		if (ret != KS_STATUS_SUCCESS) {
 			final = ret;
@@ -1455,6 +1463,8 @@ KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *mp_p, const unsigned long byte_si
 
 	ks_assert(mp_p);
 
+	//if (1) return calloc(1, byte_size);
+
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
 		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
 			abort();
@@ -1551,6 +1561,8 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
 	unsigned long byte_size;
 
 	ks_assert(mp_p);
+
+	//if (1) return calloc(ele_n, ele_size);
 
 	if (mp_p->mp_magic != KS_POOL_MAGIC) {
 		if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT)) {
@@ -1651,9 +1663,15 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 	ks_assert(addrP);
 
 	addr = *addrP;
-	
+
 	ks_assert(mp_p);
 	ks_assert(addr);
+
+	//if (1) {
+	//	*addrP = NULL;
+	//	free(addr);
+	//	return KS_STATUS_SUCCESS;
+	//}
 
 	ks_mutex_lock(mp_p->mutex);
 
@@ -1674,7 +1692,7 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 	}
 
 	if (mp_p->mp_log_func != NULL) {
-		alloc_prefix_t *prefix = (alloc_prefix_t *) ((char *) addr - PREFIX_SIZE);
+		alloc_prefix_t *prefix = (alloc_prefix_t *)((char *)addr - PREFIX_SIZE);
 		if (prefix->refs == 1) {
 			mp_p->mp_log_func(mp_p, KS_POOL_FUNC_FREE, prefix->size, prefix->refs - 1, NULL, addr, 0);
 		} else {
@@ -1796,6 +1814,8 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
 
 	ks_assert(mp_p);
 	//ks_assert(old_addr);
+	
+	//if (1) return realloc(old_addr, new_byte_size);
 
 	if (!old_addr) {
 		return ks_pool_alloc_ex(mp_p, new_byte_size, error_p);
