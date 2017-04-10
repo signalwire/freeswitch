@@ -14182,10 +14182,15 @@ SWITCH_DECLARE(void) switch_core_session_passthru(switch_core_session_t *session
 
 
 	if (switch_rtp_ready(engine->rtp_session)) {
-		if (on) {
-			switch_rtp_set_flag(engine->rtp_session, SWITCH_RTP_FLAG_PASSTHRU);
-		} else {
-			switch_rtp_clear_flag(engine->rtp_session, SWITCH_RTP_FLAG_PASSTHRU);
+		char var[50] = "";
+		switch_snprintf(var, sizeof(var), "disable_%s_jb_during_passthru", type2str(type));
+
+		if (switch_channel_var_true(session->channel, var)) {
+			if (on) {
+				switch_rtp_set_flag(engine->rtp_session, SWITCH_RTP_FLAG_PASSTHRU);
+			} else {
+				switch_rtp_clear_flag(engine->rtp_session, SWITCH_RTP_FLAG_PASSTHRU);
+			}
 		}
 
 		if (type == SWITCH_MEDIA_TYPE_VIDEO) {
