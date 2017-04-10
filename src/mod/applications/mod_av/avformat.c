@@ -1857,7 +1857,11 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
  end:
 
-	if (context && context->fc) {
+	if (!context) {
+		return status;
+	}
+
+	if (context->fc) {
 		mod_avformat_destroy_output_context(context);
 	}
 
