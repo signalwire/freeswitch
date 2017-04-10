@@ -2668,7 +2668,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if ((force_rate = switch_channel_get_variable(channel, "conference_force_rate"))) {
 			if (!strcasecmp(force_rate, "auto")) {
-				force_rate_i = read_impl.actual_samples_per_second;
+				force_rate_i = rate = read_impl.actual_samples_per_second;
 			} else {
 				tmp = atoi(force_rate);
 
@@ -2680,7 +2680,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if ((force_channels = switch_channel_get_variable(channel, "conference_force_channels"))) {
 			if (!strcasecmp(force_channels, "auto")) {
-				force_rate_i = read_impl.number_of_channels;
+				force_rate_i = channels = read_impl.number_of_channels;
 			} else {
 				tmp = atoi(force_channels);
 
@@ -2692,7 +2692,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if ((force_interval = switch_channel_get_variable(channel, "conference_force_interval"))) {
 			if (!strcasecmp(force_interval, "auto")) {
-				force_interval_i = read_impl.microseconds_per_packet / 1000;
+				force_interval_i = interval = read_impl.microseconds_per_packet / 1000;
 			} else {
 				tmp = atoi(force_interval);
 
