@@ -280,6 +280,7 @@ SWITCH_STANDARD_API(console_api_function)
 		"--------------------------------------------------------------------------------\n"
 		"console help\n"
 		"console loglevel [[0-7] | <loglevel_string>]\n"
+		"console uuid [on|off|toggle]\n"
 		"console colorize [on|off|toggle]\n" "--------------------------------------------------------------------------------\n";
 	const char *loglevel_usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
@@ -348,6 +349,20 @@ SWITCH_STANDARD_API(console_api_function)
 			}
 		}
 		stream->write_function(stream, "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
+
+	} else if (!strcasecmp(argv[0], "uuid")) {
+		if (argc > 1) {
+			if (!strcasecmp(argv[1], "toggle")) {
+				if (log_uuid) {
+					log_uuid = SWITCH_FALSE;
+				} else {
+					log_uuid = SWITCH_TRUE;
+				}
+			} else {
+				log_uuid = switch_true(argv[1]);
+			}
+		}
+		stream->write_function(stream, "+OK console uuid %s\n", log_uuid ? "enabled" : "disabled");
 
 	} else {					/* if (!strcasecmp(argv[0], "help")) { */
 		stream->write_function(stream, "%s", usage_string);
