@@ -2680,7 +2680,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if ((force_channels = switch_channel_get_variable(channel, "conference_force_channels"))) {
 			if (!strcasecmp(force_channels, "auto")) {
-				force_rate_i = channels = read_impl.number_of_channels;
+				force_channels_i = channels = read_impl.number_of_channels;
 			} else {
 				tmp = atoi(force_channels);
 
