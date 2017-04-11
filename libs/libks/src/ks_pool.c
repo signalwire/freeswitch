@@ -305,7 +305,7 @@ static void *alloc_mem(ks_pool_t *pool, const ks_size_t size, ks_status_t *error
 	prefix->magic4 = KS_POOL_PREFIX_MAGIC;
 
 	write_fence(fence);
-	
+
 	if (pool->log_func != NULL) {
 		pool->log_func(pool, KS_POOL_FUNC_INCREF, prefix->size, prefix->refs, NULL, addr, 0);
 	}
@@ -456,7 +456,7 @@ KS_DECLARE(ks_status_t) ks_pool_open(ks_pool_t **poolP)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_pool_t *pool = NULL;
-	
+
 	ks_assert(poolP);
 
 	pool = ks_pool_raw_open(KS_POOL_FLAG_DEFAULT, &ret);
@@ -576,6 +576,7 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool)
 		// @todo check_prefix()? still want to clear out properly if some has been cleared though, not leak memory if there has been corruption
 		free(prefix);
 	}
+	pool->first = pool->last = NULL;
 
 	ks_mutex_unlock(pool->mutex);
 
@@ -944,7 +945,7 @@ done:
  * DESCRIPTION:
  *
  * Reallocate an address in a mmeory pool to a new size.  This is
- * different from realloc in that it needs the old address' size.  
+ * different from realloc in that it needs the old address' size.
  *
  * RETURNS:
  *
