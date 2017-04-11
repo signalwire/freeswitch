@@ -1802,7 +1802,7 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 
 video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count, uint32_t file_count)
 {
-	video_layout_node_t *vlnode = NULL, *last = NULL;
+	video_layout_node_t *vlnode = NULL, *last = NULL, *least = NULL;
 
 	if (count == 1 && file_count == 1) file_count = 0;
 
@@ -1822,17 +1822,28 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
 		int x, file_layers = 0, member_count = (int)count - file_count, total = vlnode->vlayout->layers;
 
+
 		for (x = total; x >= 0; x--) {
 			if (vlnode->vlayout->images[x].fileonly) {
 				file_layers++;
 			}
 		}
 		
-		if ((vlnode->vlayout->layers - file_layers >= member_count && file_layers >= file_count) || vlnode->vlayout->layers - file_layers > (int)count) {
+		if ((vlnode->vlayout->layers - file_layers >= member_count && file_layers >= file_count)) {
 			break;
 		}
 
+		if (vlnode->vlayout->layers - file_layers >= (int)count) {
+			if (!least || least->vlayout->layers > vlnode->vlayout->layers) {
+				least = vlnode;
+			}
+		}
+
 		last = vlnode;
+	}
+
+	if (least) {
+		vlnode = least;
 	}
 
 	return vlnode? vlnode->vlayout : last ? last->vlayout : NULL;
