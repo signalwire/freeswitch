@@ -159,6 +159,7 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 	if (bs->state_thread) {
 		bs->shutdown = KS_TRUE;
 		ks_thread_join(bs->state_thread);
+		printf("FREEING SESSION THREAD %p\n", (void *)bs->state_thread);
 		ks_pool_free(bs->pool, &bs->state_thread);
 		bs->shutdown = KS_FALSE;
 	}

@@ -122,10 +122,10 @@ void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_co
 	if (condition == BLADE_SESSION_STATE_CONDITION_PRE) {
 		ks_log(KS_LOG_DEBUG, "Blade Session State Changed: %s, %d\n", blade_session_id_get(bs), state);
 		if (state == BLADE_SESSION_STATE_READY) {
-			cJSON *req = NULL;
-			blade_rpc_request_create(blade_session_pool_get(bs), &req, NULL, NULL, "blade.chat.join");
-			blade_session_send(bs, req, on_blade_chat_join_response);
-			cJSON_Delete(req);
+			//cJSON *req = NULL;
+			//blade_rpc_request_create(blade_session_pool_get(bs), &req, NULL, NULL, "blade.chat.join");
+			//blade_session_send(bs, req, on_blade_chat_join_response);
+			//cJSON_Delete(req);
 		}
 	}
 }

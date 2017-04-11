@@ -77,7 +77,7 @@ KS_DECLARE(ks_status_t) blade_datastore_create(blade_datastore_t **bdsP, ks_pool
 
 	ks_assert(bdsP);
 	ks_assert(pool);
-	ks_assert(tpool);
+	//ks_assert(tpool);
 	
 	bds = ks_pool_alloc(pool, sizeof(*bds));
 	bds->pool = pool;

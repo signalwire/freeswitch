@@ -56,12 +56,12 @@ struct ks_q_s {
 	uint8_t active;
 };
 
-static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_q_t *q = (ks_q_t *) ptr;
 	ks_qnode_t *np, *fp;
 
-	if (ctype == KS_MPCL_GLOBAL_FREE) {
+	if (type == KS_MPCL_GLOBAL_FREE) {
 		return;
 	}
 
@@ -202,7 +202,7 @@ KS_DECLARE(ks_status_t) ks_q_create(ks_q_t **qP, ks_pool_t *pool, ks_size_t maxl
 	q->maxlen = maxlen;
 	q->active = 1;
 
-	ks_pool_set_cleanup(pool, q, NULL, 0, ks_q_cleanup);	
+	ks_pool_set_cleanup(pool, q, NULL, ks_q_cleanup);	
 
 	*qP = q;
 

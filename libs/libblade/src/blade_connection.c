@@ -312,7 +312,7 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 {
 	ks_assert(bc);
 
-	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT) {
+	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT && bc->state != BLADE_CONNECTION_STATE_CLEANUP) {
 		ks_log(KS_LOG_DEBUG, "Connection (%s) disconnecting\n", bc->id);
 		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DETACH);
 	}
@@ -453,7 +453,7 @@ ks_status_t blade_connection_state_on_attach(blade_connection_t *bc)
 	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_ATTACH);
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
-	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
+	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT) blade_connection_disconnect(bc);
 	else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
 		// @todo this is adding a second lock, since we keep it locked in the callback to allow finishing, we don't want get locking here...
 		// or just try unlocking twice to confirm...

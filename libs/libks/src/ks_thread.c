@@ -79,7 +79,7 @@ void ks_thread_override_default_stacksize(size_t size)
 	thread_default_stacksize = size;
 }
 
-static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_thread_t *thread = (ks_thread_t *) ptr;
 
@@ -309,7 +309,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 		}
 
 		*rthread = thread;
-		ks_pool_set_cleanup(pool, thread, NULL, 0, ks_thread_cleanup);
+		ks_pool_set_cleanup(pool, thread, NULL, ks_thread_cleanup);
 	}
 
 	return status;

@@ -72,16 +72,22 @@ _Check_return_ static __inline int _zstr(_In_opt_z_ const char *s)
 #define ks_set_string(_x, _y) ks_copy_string(_x, _y, sizeof(_x))
 #define ks_safe_free(_x) if (_x) free(_x); _x = NULL
 #define end_of(_s) *(*_s == '\0' ? _s : _s + strlen(_s) - 1)
-#define ks_test_flag(obj, flag) ((obj)->flags & flag)
-#define ks_set_flag(obj, flag) (obj)->flags |= (flag)
-#define ks_clear_flag(obj, flag) (obj)->flags &= ~(flag)
 #define ks_recv(_h) ks_recv_event(_h, 0, NULL)
 #define ks_recv_timed(_h, _ms) ks_recv_event_timed(_h, _ms, 0, NULL)
+
+/*
+* bitflag tools
+*/
+#define BIT_FLAG(x)			(1 << (x))
+#define BIT_SET(v,f)		((v) |= (f))
+#define BIT_CLEAR(v,f)		((v) &= ~(f))
+#define BIT_IS_SET(v,f)		((v) & (f))
+#define BIT_TOGGLE(v,f)		((v) ^= (f))
 
 KS_DECLARE(ks_status_t) ks_init(void);
 KS_DECLARE(ks_status_t) ks_shutdown(void);
 KS_DECLARE(ks_pool_t *) ks_global_pool(void);
-KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_fn_t fn, void *arg);
+KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_callback_t callback, void *arg);
 KS_DECLARE(int) ks_vasprintf(char **ret, const char *fmt, va_list ap);
 
 //KS_DECLARE_DATA extern ks_logger_t ks_logger;

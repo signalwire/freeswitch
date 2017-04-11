@@ -18,7 +18,7 @@ struct foo {
 };
 
 
-void cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+void cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	struct foo *foo = (struct foo *) ptr;
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 
 	foo->x = 12;
 	foo->str = strdup("This is a test 1234 abcd; This will be called on explicit free\n");
-	ks_pool_set_cleanup(pool, foo, NULL, 0, cleanup);
+	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
 
 	printf("FREE OBJ:\n");
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 
 	foo->x = 12;
 	foo->str = strdup("This is a second test 1234 abcd; This will be called on pool clear/destroy\n");
-	ks_pool_set_cleanup(pool, foo, NULL, 0, cleanup);
+	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
 
 
 	printf("ALLOC OBJ3: %p\n", (void *)pool);
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 	printf("CLEANUP: %p\n", (void *)pool);
 	foo->x = 12;
 	foo->str = strdup("This is a third test 1234 abcd; This will be called on pool clear/destroy\n");
-	ks_pool_set_cleanup(pool, foo, NULL, 0, cleanup);
+	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
 
 
 

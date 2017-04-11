@@ -33,29 +33,7 @@ KS_BEGIN_EXTERN_C
  */
 
 typedef enum {
-	KS_POOL_FLAG_DEFAULT = 0,
-	KS_POOL_FLAG_BEST_FIT = (1 << 0),
-	KS_POOL_FLAG_NO_ASSERT = (1 << 1),
-	KS_POOL_FLAG_NO_ZERO = (1 << 2),
-/*
- * Choose a best fit algorithm not first fit.  This takes more CPU
- * time but will result in a tighter heap.
- */
-
-	KS_POOL_FLAG_HEAVY_PACKING = (1 << 1)
-/*
- * This enables very heavy packing at the possible expense of CPU.
- * This affects a number of parts of the library.
- *
- * By default the 1st page of memory is reserved for the main ks_pool
- * structure.  This flag will cause the rest of the 1st block to be
- * available for use as user memory.
- *
- * By default the library looks through the memory when freed looking
- * for a magic value.  There is an internal max size that it will look
- * and then it will give up.  This flag forces it to look until it
- * finds it.
- */
+	KS_POOL_FLAG_DEFAULT = 0
 } ks_pool_flag_t;
 
 /*
@@ -83,7 +61,7 @@ typedef enum {
  *
  * ARGUMENT:
  *
- * mp_p -> Associated ks_pool address.
+ * pool -> Associated ks_pool address.
  *
  * func_id -> Integer function ID which identifies which ks_pool
  * function is being called.
@@ -102,10 +80,10 @@ typedef enum {
  * old_byte_size -> Optionally specified old byte size.  For
  * ks_pool_resize only.
  */
-typedef void (*ks_pool_log_func_t) (const void *mp_p,
+typedef void (*ks_pool_log_func_t) (const void *pool,
 									 const int func_id,
-									 const unsigned long byte_size,
-									 const unsigned long ele_n, const void *old_addr, const void *new_addr, const unsigned long old_byte_size);
+									 const ks_size_t byte_size,
+									 const ks_size_t ele_n, const void *old_addr, const void *new_addr, const ks_size_t old_byte_size);
 
 /*
  * ks_pool_t *ks_pool_open
@@ -144,10 +122,10 @@ KS_DECLARE(ks_status_t) ks_pool_open(ks_pool_t **poolP);
  *
  * ARGUMENTS:
  *
- * mp_pp <-> Pointer to pointer of our memory pool.
+ * poolP <-> Pointer to pointer of our memory pool.
  */
 
-KS_DECLARE(ks_status_t) ks_pool_close(ks_pool_t **mp_pP);
+KS_DECLARE(ks_status_t) ks_pool_close(ks_pool_t **poolP);
 
 /*
  * int ks_pool_clear
@@ -164,10 +142,10 @@ KS_DECLARE(ks_status_t) ks_pool_close(ks_pool_t **mp_pP);
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to our memory pool.
+ * pool <-> Pointer to our memory pool.
  */
 
-KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *mp_p);
+KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool);
 
 /*
  * void *ks_pool_alloc
@@ -184,13 +162,12 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *mp_p);
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
- * normal malloc.
+ * pool -> Pointer to the memory pool.
  *
- * byte_size -> Number of bytes to allocate in the pool.  Must be >0.
+ * size -> Number of bytes to allocate in the pool.  Must be >0.
  *
  */
-KS_DECLARE(void *) ks_pool_alloc(ks_pool_t *mp_p, const unsigned long byte_size);
+KS_DECLARE(void *) ks_pool_alloc(ks_pool_t *pool, const ks_size_t size);
 
 /*
  * void *ks_pool_alloc_ex
@@ -207,15 +184,14 @@ KS_DECLARE(void *) ks_pool_alloc(ks_pool_t *mp_p, const unsigned long byte_size)
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
- * normal malloc.
+ * pool -> Pointer to the memory pool.
  *
- * byte_size -> Number of bytes to allocate in the pool.  Must be >0.
+ * size -> Number of bytes to allocate in the pool.  Must be >0.
  *
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *mp_p, const unsigned long byte_size, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *pool, const ks_size_t size, ks_status_t *error_p);
 
 /*
  * void *ks_pool_calloc
@@ -233,15 +209,14 @@ KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *mp_p, const unsigned long byte_si
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
- * normal calloc.
+ * pool -> Pointer to the memory pool.
  *
  * ele_n -> Number of elements to allocate.
  *
  * ele_size -> Number of bytes per element being allocated.
  *
  */
-KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *mp_p, const unsigned long ele_n, const unsigned long ele_size);
+KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *pool, const ks_size_t ele_n, const ks_size_t ele_size);
 
 /*
  * void *ks_pool_calloc_ex
@@ -259,8 +234,7 @@ KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *mp_p, const unsigned long ele_n, co
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
- * normal calloc.
+ * pool -> Pointer to the memory pool.
  *
  * ele_n -> Number of elements to allocate.
  *
@@ -269,7 +243,7 @@ KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *mp_p, const unsigned long ele_n, co
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n, const unsigned long ele_size, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *pool, const ks_size_t ele_n, const ks_size_t ele_size, ks_status_t *error_p);
 
 /*
  * int ks_pool_free
@@ -286,14 +260,14 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
+ * pool -> Pointer to the memory pool.  If NULL then it will do a
  * normal free.
  *
  * addr <-> Address to free.
  *
  */
 
-KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
+KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *pool, void **addrP);
 
 
 /*
@@ -301,7 +275,7 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
  *
  * DESCRIPTION:
  *
- * Ref count increment an address in a memoory pool.
+ * Ref count increment an address in a memory pool.
  *
  * RETURNS:
  *
@@ -311,7 +285,7 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.
+ * pool -> Pointer to the memory pool.
  *
  * addr -> The addr to ref
  *
@@ -319,7 +293,7 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
  * a ks_pool error code.
  */
 
-KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *pool, void *addr, ks_status_t *error_p);
 
 #define ks_pool_ref(_p, _x) ks_pool_ref_ex(_p, _x, NULL)
 
@@ -328,7 +302,7 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
  *
  * DESCRIPTION:
  *
- * Reallocate an address in a mmeory pool to a new size.  
+ * Reallocate an address in a memory pool to a new size.  
  *
  * RETURNS:
  *
@@ -338,22 +312,22 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *mp_p, void *addr, ks_status_t *erro
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
+ * pool -> Pointer to the memory pool.  If NULL then it will do a
  * normal realloc.
  *
  * old_addr -> Previously allocated address.
  *
- * new_byte_size -> New size of the allocation.
+ * new_size -> New size of the allocation.
  *
  */
-KS_DECLARE(void *) ks_pool_resize(ks_pool_t *mp_p, void *old_addr, const unsigned long new_byte_size);
+KS_DECLARE(void *) ks_pool_resize(ks_pool_t *pool, void *old_addr, const ks_size_t new_size);
 
 /*
  * void *ks_pool_resize_ex
  *
  * DESCRIPTION:
  *
- * Reallocate an address in a mmeory pool to a new size.  
+ * Reallocate an address in a memory pool to a new size.  
  *
  * RETURNS:
  *
@@ -363,17 +337,16 @@ KS_DECLARE(void *) ks_pool_resize(ks_pool_t *mp_p, void *old_addr, const unsigne
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.  If NULL then it will do a
- * normal realloc.
+ * pool -> Pointer to the memory pool.
  *
  * old_addr -> Previously allocated address.
  *
- * new_byte_size -> New size of the allocation.
+ * new_size -> New size of the allocation.
  *
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsigned long new_byte_size, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *pool, void *old_addr, const ks_size_t new_size, ks_status_t *error_p);
 
 /*
  * int ks_pool_stats
@@ -390,10 +363,7 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
  *
  * ARGUMENTS:
  *
- * mp_p -> Pointer to the memory pool.
- *
- * page_size_p <- Pointer to an unsigned integer which, if not NULL,
- * will be set to the page-size of the pool.
+ * pool -> Pointer to the memory pool.
  *
  * num_alloced_p <- Pointer to an unsigned long which, if not NULL,
  * will be set to the number of pointers currently allocated in pool.
@@ -409,8 +379,7 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
  * will be set to the total amount of space (including administrative
  * overhead) used by the pool.
  */
-KS_DECLARE(ks_status_t) ks_pool_stats(const ks_pool_t *mp_p, unsigned int *page_size_p,
-							   unsigned long *num_alloced_p, unsigned long *user_alloced_p, unsigned long *max_alloced_p, unsigned long *tot_alloced_p);
+KS_DECLARE(ks_status_t) ks_pool_stats(const ks_pool_t *pool, ks_size_t *num_alloced_p, ks_size_t *user_alloced_p, ks_size_t *max_alloced_p, ks_size_t *tot_alloced_p);
 
 /*
  * int ks_pool_set_log_func
@@ -428,39 +397,12 @@ KS_DECLARE(ks_status_t) ks_pool_stats(const ks_pool_t *mp_p, unsigned int *page_
  *
  * ARGUMENTS:
  *
- * mp_p <-> Pointer to the memory pool.
+ * pool -> Pointer to the memory pool.
  *
  * log_func -> Log function (defined in ks_pool.h) which will be called
  * with each ks_pool transaction.
  */
-KS_DECLARE(ks_status_t) ks_pool_set_log_func(ks_pool_t *mp_p, ks_pool_log_func_t log_func);
-
-/*
- * int ks_pool_set_max_pages
- *
- * DESCRIPTION:
- *
- * Set the maximum number of pages that the library will use.  Once it
- * hits the limit it will return KS_STATUS_NO_PAGES.
- *
- * NOTE: if the KS_POOL_FLAG_HEAVY_PACKING is set then this max-pages
- * value will include the page with the ks_pool header structure in it.
- * If the flag is _not_ set then the max-pages will not include this
- * first page.
- *
- * RETURNS:
- *
- * Success - KS_STATUS_SUCCESS
- *
- * Failure - ks_status_t error code
- *
- * ARGUMENTS:
- *
- * mp_p <-> Pointer to the memory pool.
- *
- * max_pages -> Maximum number of pages used by the library.
- */
-KS_DECLARE(ks_status_t) ks_pool_set_max_pages(ks_pool_t *mp_p, const unsigned int max_pages);
+KS_DECLARE(ks_status_t) ks_pool_set_log_func(ks_pool_t *pool, ks_pool_log_func_t log_func);
 
 /*
  * const char *ks_pool_strerror
@@ -481,16 +423,16 @@ KS_DECLARE(ks_status_t) ks_pool_set_max_pages(ks_pool_t *mp_p, const unsigned in
  */
 KS_DECLARE(const char *) ks_pool_strerror(const ks_status_t error);
 
-KS_DECLARE(ks_status_t) ks_pool_set_cleanup(ks_pool_t *mp_p, void *ptr, void *arg, int type, ks_pool_cleanup_fn_t fn);
+KS_DECLARE(ks_status_t) ks_pool_set_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_callback_t callback);
 
 #define ks_pool_free(_p, _x) ks_pool_free_ex(_p, (void **)_x)
 
 /*<<<<<<<<<<   This is end of the auto-generated output from fillproto. */
 
 KS_DECLARE(char *) ks_pstrdup(ks_pool_t *pool, const char *str);
-KS_DECLARE(char *) ks_pstrndup(ks_pool_t *pool, const char *str, size_t len);
-KS_DECLARE(char *) ks_pstrmemdup(ks_pool_t *pool, const char *str, size_t len);
-KS_DECLARE(void *) ks_pmemdup(ks_pool_t *pool, const void *buf, size_t len);
+KS_DECLARE(char *) ks_pstrndup(ks_pool_t *pool, const char *str, ks_size_t len);
+KS_DECLARE(char *) ks_pstrmemdup(ks_pool_t *pool, const char *str, ks_size_t len);
+KS_DECLARE(void *) ks_pmemdup(ks_pool_t *pool, const void *buf, ks_size_t len);
 KS_DECLARE(char *) ks_pstrcat(ks_pool_t *pool, ...);
 KS_DECLARE(char *) ks_psprintf(ks_pool_t *pool, const char *fmt, ...);
 

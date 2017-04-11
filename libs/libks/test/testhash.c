@@ -22,7 +22,7 @@ int test1(void)
 	ks_hash_iterator_t *itt;
 
 	ks_hash_write_lock(hash);
-	for (itt = ks_hash_first(hash, KS_UNLOCKED); itt; itt = ks_hash_next(&itt)) {
+	for (itt = ks_hash_first(hash, KS_UNLOCKED); itt; ) {
 		const void *key;
 		void *val;
 
@@ -31,6 +31,7 @@ int test1(void)
 		printf("%s=%s\n", (char *)key, (char *)val);
 		sum2 += atoi(val);
 
+		itt = ks_hash_next(&itt);
 		ks_hash_remove(hash, (char *)key);
 	}
 	ks_hash_write_unlock(hash);
@@ -95,13 +96,15 @@ int test2(void)
 		ks_sleep(x * 1000000);
 
 		ks_hash_write_lock(hash);
-		for (itt = ks_hash_first(hash, KS_UNLOCKED); itt; itt = ks_hash_next(&itt)) {
+		for (itt = ks_hash_first(hash, KS_UNLOCKED); itt; ) {
 			const void *key;
 			void *val;
 
 			ks_hash_this(itt, &key, NULL, &val);
 
 			printf("DEL %s=%s\n", (char *)key, (char *)val);
+
+			itt = ks_hash_next(&itt);
 			ks_hash_remove(hash, (char *)key);
 		}
 		ks_hash_write_unlock(hash);

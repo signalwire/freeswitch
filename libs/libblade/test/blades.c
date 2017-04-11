@@ -72,13 +72,13 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	blade_module_chat_on_load(&mod_chat, bh);
-	blade_module_chat_on_startup(mod_chat, config_blade);
+	//blade_module_chat_on_load(&mod_chat, bh);
+	//blade_module_chat_on_startup(mod_chat, config_blade);
 
 	loop(bh);
 
-	blade_module_chat_on_shutdown(mod_chat);
-	blade_module_chat_on_unload(mod_chat);
+	//blade_module_chat_on_shutdown(mod_chat);
+	//blade_module_chat_on_unload(mod_chat);
 
 	blade_module_wss_on_shutdown(mod_wss);
 

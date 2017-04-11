@@ -869,7 +869,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_conn
 	list_delete(&bt_wss->module->connected, bc);
 
 	if (bt_wss_init) blade_transport_wss_init_destroy(&bt_wss_init);
-	if (bt_wss) blade_transport_wss_destroy(&bt_wss);
+	if (bt_wss) blade_transport_wss_destroy(&bt_wss); // @TODO: Scream at this very loudly until I feel better for it wasting 2 days to track down, and then fix the issue it's causing
 
 	return BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 }
@@ -1092,6 +1092,8 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	// behaviour to simply go as far as assigning a session to the connection and let the system handle the rest
 	if (json_req) cJSON_Delete(json_req);
 	if (json_res) cJSON_Delete(json_res);
+
+	
 	return ret;
 }
 
@@ -1223,6 +1225,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
  done:
 	if (json_req) cJSON_Delete(json_req);
 	if (json_res) cJSON_Delete(json_res);
+
 	return ret;
 }
 
@@ -1261,15 +1264,15 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_
 
 	if (condition == BLADE_CONNECTION_STATE_CONDITION_PRE) {
 		blade_session_t *bs = NULL;
-		cJSON *req = NULL;
+		//cJSON *req = NULL;
 
 		ks_log(KS_LOG_DEBUG, "State Callback: %d\n", (int32_t)condition);
 
 		bs = blade_handle_sessions_get(blade_connection_handle_get(bc), blade_connection_session_get(bc));
 		ks_assert(bs);
 
-		blade_rpc_request_create(blade_connection_pool_get(bc), &req, NULL, NULL, "blade.test.echo");
-		blade_session_send(bs, req, blade_test_echo_response_handler);
+		//blade_rpc_request_create(blade_connection_pool_get(bc), &req, NULL, NULL, "blade.test.echo");
+		//blade_session_send(bs, req, blade_test_echo_response_handler);
 
 		blade_session_read_unlock(bs);
 	}

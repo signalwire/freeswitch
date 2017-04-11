@@ -42,7 +42,7 @@ struct ks_mutex {
 	uint8_t malloc;
 };
 
-static void ks_mutex_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+static void ks_mutex_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_mutex_t *mutex = (ks_mutex_t *) ptr;
 
@@ -150,7 +150,7 @@ KS_DECLARE(ks_status_t) ks_mutex_create(ks_mutex_t **mutex, unsigned int flags, 
 	status = KS_STATUS_SUCCESS;
 
 	if (pool) {
-		ks_pool_set_cleanup(pool, check, NULL, 0, ks_mutex_cleanup);
+		ks_pool_set_cleanup(pool, check, NULL, ks_mutex_cleanup);
 	}
 
   done:
@@ -224,7 +224,7 @@ struct ks_cond {
 	uint8_t static_mutex;
 };
 
-static void ks_cond_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+static void ks_cond_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_cond_t *cond = (ks_cond_t *) ptr;
 
@@ -281,7 +281,7 @@ KS_DECLARE(ks_status_t) ks_cond_create_ex(ks_cond_t **cond, ks_pool_t *pool, ks_
 
 	*cond = check;
 	status = KS_STATUS_SUCCESS;
-	ks_pool_set_cleanup(pool, check, NULL, 0, ks_cond_cleanup);
+	ks_pool_set_cleanup(pool, check, NULL, ks_cond_cleanup);
 
   done:
 	return status;
@@ -436,7 +436,7 @@ struct ks_rwl {
 	uint32_t wlc;
 };
 
-static void ks_rwl_cleanup(ks_pool_t *mpool, void *ptr, void *arg, int type, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t ctype)
+static void ks_rwl_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 #ifndef WIN32
 	ks_rwl_t *rwlock = (ks_rwl_t *) ptr;
@@ -494,7 +494,7 @@ KS_DECLARE(ks_status_t) ks_rwl_create(ks_rwl_t **rwlock, ks_pool_t *pool)
 
 	*rwlock = check;
 	status = KS_STATUS_SUCCESS;
-	ks_pool_set_cleanup(pool, check, NULL, 0, ks_rwl_cleanup);
+	ks_pool_set_cleanup(pool, check, NULL, ks_rwl_cleanup);
  done:
 	return status;
 }
