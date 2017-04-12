@@ -2983,6 +2983,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			do_refresh = 100;
 		}
 
+		if (canvas->playing_video_file) {
+			file_count = 0;
+		}
 
 		if (file_count != last_file_count) {
 			count_changed = 1;
