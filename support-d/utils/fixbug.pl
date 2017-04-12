@@ -71,7 +71,7 @@ my $args = join(" ", @ARGV);
 my $gitcmd;
 
 if ($opts{append}) {
-    $opts{append} = " " . $opts{append};
+    $opts{append} = " -- " . $opts{append};
 }
 
 if ($opts{comment}) {
