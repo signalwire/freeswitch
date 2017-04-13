@@ -2377,16 +2377,14 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			int no_muted = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS);
 			int no_av = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS);
 			int seen = conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN);
-			
-			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && 
-				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) &&
+
+			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) &&
+				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && imember->video_layer_id > -1 && 
 				conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || (no_av && !imember->avatar_png_img))
 				&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && imember->video_media_flow != SWITCH_MEDIA_FLOW_INACTIVE) {
 				video_count++;
 			}
-			
 		}
-
 
 		if (video_count != canvas->video_count || video_count != last_video_count) {
 			count_changed = 1;
@@ -2440,7 +2438,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			video_layout_t *vlayout = NULL;
 			
 			if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
-				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count, file_count)) && vlayout != canvas->vlayout) {
+				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count - file_count, file_count)) && vlayout != canvas->vlayout) {
 					switch_mutex_lock(conference->member_mutex);
 					canvas->new_vlayout = vlayout;
 					switch_mutex_unlock(conference->member_mutex);
