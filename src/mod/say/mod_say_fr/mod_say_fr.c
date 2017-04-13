@@ -111,16 +111,24 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				say_file("digits/%d%d.wav", b, c);
 			}
 		} else {
-			say_file("digits/%d0.wav", b);
+            if (b == 7 || b == 9) {
+                say_file("digits/%d0.wav", b-1);
+            } else {
+				say_file("digits/%d0.wav", b);
+            }
 		}
 	}
 
-	if (c || (ftdNumber == 1 && (a || b || c))) {
+	if (c || ((ftdNumber == 1 && (a || b || c)) && (a && (b || c)))) {
 		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=%d  b=[%d]  c=%d\n",a, b,c);*/
 		int fVal = c;
 		if (ftdNumber == 1)
 			fVal = itd;
-			
+
+		if (b == 7 || b == 9) {
+            fVal += 10;
+        }
+
 		if (method == SSM_COUNTED) {
 			say_file("digits/h-%d.wav", fVal);
 		} else {
