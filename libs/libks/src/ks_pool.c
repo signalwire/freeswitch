@@ -54,7 +54,7 @@ struct ks_pool_prefix_s {
 	ks_pool_cleanup_callback_t cleanup_callback;
 	void *cleanup_arg;
 	ks_size_t magic4;
-	ks_size_t reserved[2];
+	ks_size_t reserved[2]; // @todo use one of these to store the original pool address to validate that free_mem is not attempted against the wrong pool, which can corrupt the allocation linked list
 };
 
 #define KS_POOL_PREFIX_SIZE sizeof(ks_pool_prefix_t)
@@ -287,7 +287,7 @@ static void *alloc_mem(ks_pool_t *pool, const ks_size_t size, ks_status_t *error
 	required = KS_POOL_PREFIX_SIZE + size + KS_POOL_FENCE_SIZE;
 	start = malloc(required);
 	ks_assert(start);
-	memset(start, 0, required);
+	memset(start, 0, required); // @todo consider readding the NO_ZERO flag option, which would reduce this to only zero out PREFIX_SIZE instead of the entire allocation.
 
 	prefix = (ks_pool_prefix_t *)start;
 	addr = (void *)((ks_byte_t *)start + KS_POOL_PREFIX_SIZE);
@@ -701,6 +701,7 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *pool, const ks_size_t ele_n, con
 
 	ks_mutex_lock(pool->mutex);
 	addr = alloc_mem(pool, size, &ret);
+	// @todo consider readding the NO_ZERO flag option, in which case must zero the user-space here based on expected calloc behaviour... memset(addr, 0, size);
 	ks_mutex_unlock(pool->mutex);
 
 	if (pool->log_func != NULL) {

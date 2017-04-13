@@ -300,9 +300,7 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 		}
 	}
 
-	// @todo load DSOs
-
-	// @todo call onload and onstartup callbacks for modules from DSOs
+	// @todo load internal modules, call onload and onstartup
 
 	if (ks_thread_create_ex(&bh->worker_thread,
 		blade_handle_worker_thread,
@@ -332,6 +330,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 		ks_hash_remove(bh->requests, key);
 
 		blade_request_destroy(&value);
+		// @todo note to self, fix this when switching to auto cleanup, as hash invalidates iterator when removing
 	}
 
 	for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
@@ -344,8 +343,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	}
 	while (ks_hash_count(bh->sessions) > 0) ks_sleep_ms(100);
 
-	// @todo call onshutdown and onunload callbacks for modules from DSOs, which will unregister transports and spaces, and will disconnect remaining
-	// unattached connections
+	// @todo unload internal modules, call onshutdown and onunload
 
 	while ((it = ks_hash_first(bh->events, KS_UNLOCKED))) {
 		void *key = NULL;
@@ -353,6 +351,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 		blade_handle_event_unregister(bh, (const char *)key);
+		// @todo note to self, fix this when switching to auto cleanup, as hash invalidates iterator when removing
 	}
 
 	while ((it = ks_hash_first(bh->spaces, KS_UNLOCKED))) {
@@ -361,6 +360,7 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 		blade_handle_space_unregister(value);
+		// @todo note to self, fix this when switching to auto cleanup, as hash invalidates iterator when removing
 	}
 
 	// @todo unload DSOs
@@ -888,7 +888,7 @@ void *blade_handle_worker_thread(ks_thread_t *thread, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_connection_t *bc = NULL;
-	blade_session_t *bs = NULL;
+	//blade_session_t *bs = NULL;
 	ks_hash_iterator_t *it = NULL;
 	ks_q_t *cleanup = NULL;
 
@@ -917,21 +917,21 @@ void *blade_handle_worker_thread(ks_thread_t *thread, void *data)
 			blade_connection_destroy(&bc);
 		}
 
-		ks_hash_write_lock(bh->sessions);
-		for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-			void *key = NULL;
-			blade_session_t *value = NULL;
+		//ks_hash_write_lock(bh->sessions);
+		//for (it = ks_hash_first(bh->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		//	void *key = NULL;
+		//	blade_session_t *value = NULL;
 
-			ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+		//	ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 
-			if (blade_session_state_get(value) == BLADE_SESSION_STATE_CLEANUP) ks_q_push(cleanup, value);
-		}
-		ks_hash_write_unlock(bh->sessions);
+		//	if (blade_session_state_get(value) == BLADE_SESSION_STATE_CLEANUP) ks_q_push(cleanup, value);
+		//}
+		//ks_hash_write_unlock(bh->sessions);
 
-		while (ks_q_trypop(cleanup, (void **)&bs) == KS_STATUS_SUCCESS) {
-			blade_handle_sessions_remove(bs);
-			blade_session_destroy(&bs);
-		}
+		//while (ks_q_trypop(cleanup, (void **)&bs) == KS_STATUS_SUCCESS) {
+		//	blade_handle_sessions_remove(bs);
+		//	blade_session_destroy(&bs);
+		//}
 
 		ks_sleep_ms(500);
 	}

@@ -1052,7 +1052,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	}
 
 	if (!bs) {
-		blade_session_create(&bs, bh);
+		blade_session_create(&bs, bh, NULL);
 		ks_assert(bs);
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", blade_session_id_get(bs));
@@ -1200,10 +1200,8 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_outbound(blade
 	}
 
 	if (!bs) {
-		blade_session_create(&bs, bh); // @todo let sid be passed to constructor, NULL to generate
+		blade_session_create(&bs, bh, sid);
 		ks_assert(bs);
-
-		blade_session_id_set(bs, sid);
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", blade_session_id_get(bs));
 
