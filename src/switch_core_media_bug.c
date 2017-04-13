@@ -1130,17 +1130,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 				continue;
 			}
 
-			if (bp->callback) {
-				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
-			}
-			switch_core_media_bug_destroy(bp);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
-
 			if (last) {
 				last->next = bp->next;
 			} else {
 				session->bugs = bp->next;
 			}
+
+			switch_core_media_bug_close(&bp);
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = SWITCH_STATUS_SUCCESS;
