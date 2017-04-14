@@ -718,12 +718,12 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 
 KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l) {
 	struct ks_list_entry_s *s;
-	unsigned int numels;
+	int numels;
 
 	ks_rwl_write_lock(l->lock);
 
 	/* will be returned */
-	numels = l->numels;
+	numels = (int)l->numels;
 
 	if (l->iter_active) {
 		numels = -1;
