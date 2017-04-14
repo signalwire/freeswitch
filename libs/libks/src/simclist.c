@@ -43,13 +43,6 @@
 #   endif
 #endif
 
-/* disable asserts */
-#ifndef SIMCLIST_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif
-#endif
-
 #include <assert.h>
 
 
@@ -332,7 +325,7 @@ KS_DECLARE(ks_status_t) ks_list_create(ks_list_t **list, ks_pool_t *pool) {
 	ks_assert(ks_list_repOk(l));
 	ks_assert(ks_list_attrOk(l));
 
-	ks_assert(ks_pool_set_cleanup(pool, l, NULL, ks_list_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, l, NULL, ks_list_cleanup);
 
 	*list = l;
 	return KS_STATUS_SUCCESS;
@@ -342,7 +335,7 @@ KS_DECLARE(ks_status_t) ks_list_destroy(ks_list_t **list) {
 	ks_list_t *l = NULL;
 
 	ks_assert(list);
-	
+
 	l = *list;
 	*list = NULL;
 	if (!l) return KS_STATUS_FAIL;
@@ -726,7 +719,6 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l) {
 	struct ks_list_entry_s *s;
 	unsigned int numels;
-	int ret = -1;
 
 	ks_rwl_write_lock(l->lock);
 
@@ -734,7 +726,7 @@ KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l) {
 	numels = l->numels;
 
 	if (l->iter_active) {
-		ret = -1;
+		numels = -1;
 		goto done;
 	}
 
