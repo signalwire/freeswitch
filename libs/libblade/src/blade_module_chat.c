@@ -43,7 +43,7 @@ struct blade_module_chat_s {
 	blade_module_callbacks_t *module_callbacks;
 
 	const char *session_state_callback_id;
-	list_t participants;
+	ks_list_t *participants;
 };
 
 
@@ -87,7 +87,9 @@ ks_status_t blade_module_chat_create(blade_module_chat_t **bm_chatP, blade_handl
 	bm_chat->pool = pool;
 	bm_chat->tpool = blade_handle_tpool_get(bh);
 	bm_chat->session_state_callback_id = NULL;
-	list_init(&bm_chat->participants);
+
+	ks_list_create(&bm_chat->participants, pool);
+	ks_assert(bm_chat->participants);
 
 	blade_module_create(&bm_chat->module, bh, bm_chat, &g_module_chat_callbacks);
 	bm_chat->module_callbacks = &g_module_chat_callbacks;
@@ -110,7 +112,7 @@ ks_status_t blade_module_chat_destroy(blade_module_chat_t **bm_chatP)
 
 	blade_module_chat_on_shutdown(bm_chat->module);
 
-	list_destroy(&bm_chat->participants);
+	ks_list_destroy(&bm_chat->participants);
 
 	blade_module_destroy(&bm_chat->module);
 
@@ -257,7 +259,7 @@ void blade_module_chat_on_session_state(blade_session_t *bs, blade_session_state
 
 		cJSON_DeleteItemFromObject(props, "blade.chat.participant");
 
-		list_delete(&bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and search manually, also free the id
+		ks_list_delete(bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and search manually, also free the id
 	}
 }
 
@@ -296,7 +298,7 @@ ks_bool_t blade_chat_join_request_handler(blade_module_t *bm, blade_request_t *b
 		if (props_participant) props_participant->type = cJSON_True;
 		else cJSON_AddTrueToObject(props, "blade.chat.participant");
 
-		list_append(&bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and cleanup when removed
+		ks_list_append(bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and cleanup when removed
 
 		blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
 
@@ -347,7 +349,7 @@ ks_bool_t blade_chat_leave_request_handler(blade_module_t *bm, blade_request_t *
 
 		cJSON_DeleteItemFromObject(props, "blade.chat.participant");
 
-		list_delete(&bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and search manually, also free the id
+		ks_list_delete(bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and search manually, also free the id
 
 		blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
 
@@ -411,7 +413,7 @@ ks_bool_t blade_chat_send_request_handler(blade_module_t *bm, blade_request_t *b
 		cJSON_AddStringToObject(res, "from", breq->session_id); // @todo should really be the identity, but we don't have that in place yet
 		cJSON_AddStringToObject(res, "message", message);
 
-		blade_handle_sessions_send(breq->handle, &bm_chat->participants, NULL, event);
+		blade_handle_sessions_send(breq->handle, bm_chat->participants, NULL, event);
 
 		cJSON_Delete(event);
 	}

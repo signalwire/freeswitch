@@ -16,7 +16,7 @@
 
 
 /*
-* SimCList library. See http://mij.oltrelinux.com/devel/simclist
+* Original SimCList library. See http://mij.oltrelinux.com/devel/simclist
 */
 
 
@@ -59,7 +59,7 @@ extern "C" {
 	*
 	* This is a signed integer value.
 	*/
-	typedef int32_t list_hash_t;
+	typedef int32_t ks_list_hash_t;
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
 	typedef struct {
@@ -67,10 +67,10 @@ extern "C" {
 		struct timeval timestamp;   /* when the list has been dumped, seconds since UNIX epoch */
 		uint32_t list_size;
 		uint32_t list_numels;
-		list_hash_t list_hash;      /* hash of the list when dumped, or 0 if invalid */
+		ks_list_hash_t list_hash;      /* hash of the list when dumped, or 0 if invalid */
 		uint32_t dumpsize;
 		int consistent;             /* 1 if the dump is verified complete/consistent; 0 otherwise */
-	} list_dump_info_t;
+	} ks_list_dump_info_t;
 #endif
 
 	/**
@@ -106,7 +106,7 @@ extern "C" {
 	*
 	* It is responsability of the function to handle possible NULL values.
 	*/
-	typedef size_t(*element_meter)(const void *el);
+	typedef ks_size_t(*element_meter)(const void *el);
 
 	/**
 	* a function computing the hash of elements.
@@ -117,7 +117,7 @@ extern "C" {
 	*
 	* It is responsability of the function to handle possible NULL values.
 	*/
-	typedef list_hash_t(*element_hash_computer)(const void *el);
+	typedef ks_list_hash_t(*element_hash_computer)(const void *el);
 
 	/**
 	* a function for serializing an element.
@@ -157,16 +157,16 @@ extern "C" {
 	typedef void *(*element_unserializer)(const void *restrict data, uint32_t *restrict data_len);
 
 	/* [private-use] list entry -- olds actual user datum */
-	struct list_entry_s {
+	struct ks_list_entry_s {
 		void *data;
 
 		/* doubly-linked list service references */
-		struct list_entry_s *next;
-		struct list_entry_s *prev;
+		struct ks_list_entry_s *next;
+		struct ks_list_entry_s *prev;
 	};
 
 	/* [private-use] list attributes */
-	struct list_attributes_s {
+	struct ks_list_attributes_s {
 		/* user-set routine for comparing list elements */
 		element_comparator comparator;
 		/* user-set routing for seeking elements */
@@ -184,14 +184,15 @@ extern "C" {
 
 	/** list object */
 	typedef struct {
-		struct list_entry_s *head_sentinel;
-		struct list_entry_s *tail_sentinel;
-		struct list_entry_s *mid;
+		ks_pool_t *pool;
+		struct ks_list_entry_s *head_sentinel;
+		struct ks_list_entry_s *tail_sentinel;
+		struct ks_list_entry_s *mid;
 
 		unsigned int numels;
 
 		/* array of spare elements */
-		struct list_entry_s **spareels;
+		struct ks_list_entry_s **spareels;
 		unsigned int spareelsnum;
 
 #ifdef SIMCLIST_WITH_THREADS
@@ -202,30 +203,32 @@ extern "C" {
 		/* service variables for list iteration */
 		int iter_active;
 		unsigned int iter_pos;
-		struct list_entry_s *iter_curentry;
+		struct ks_list_entry_s *iter_curentry;
 
 		/* list attributes */
-		struct list_attributes_s attrs;
-	} list_t;
+		struct ks_list_attributes_s attrs;
+	} ks_list_t;
 
 	/**
 	* initialize a list object for use.
 	*
-	* @param l     must point to a user-provided memory location
-	* @return      0 for success. -1 for failure
+	* @param list  must point to a user-provided memory location for a pointer to allocate
+	* @param pool  pool for lifecycle and auto cleanup
+	* @return      KS_STATUS_SUCCESS for success.
 	*/
-	KS_DECLARE(int) list_init(list_t *restrict l);
+	KS_DECLARE(ks_status_t) ks_list_create(ks_list_t **list, ks_pool_t *pool);
 
 	/**
 	* completely remove the list from memory.
 	*
-	* This function is the inverse of list_init(). It is meant to be called when
+	* This function is the inverse of ks_list_create(). It is meant to be called when
 	* the list is no longer going to be used. Elements and possible memory taken
 	* for internal use are freed.
 	*
-	* @param l     list to destroy
+	* @param list  pointer to pointer of list to destroy
+	* @return      KS_STATUS_SUCCESS for success.
 	*/
-	KS_DECLARE(void) list_destroy(list_t *restrict l);
+	KS_DECLARE(ks_status_t) ks_list_destroy(ks_list_t **list);
 
 	/**
 	* set the comparator function for list elements.
@@ -239,7 +242,7 @@ extern "C" {
 	*
 	* @see element_comparator()
 	*/
-	int list_attributes_comparator(list_t *restrict l, element_comparator comparator_fun);
+	int ks_list_attributes_comparator(ks_list_t *restrict l, element_comparator comparator_fun);
 
 	/**
 	* set a seeker function for list elements.
@@ -253,7 +256,7 @@ extern "C" {
 	*
 	* @see element_seeker()
 	*/
-	int list_attributes_seeker(list_t *restrict l, element_seeker seeker_fun);
+	int ks_list_attributes_seeker(ks_list_t *restrict l, element_seeker seeker_fun);
 
 	/**
 	* require to free element data when list entry is removed (default: don't free).
@@ -273,19 +276,19 @@ extern "C" {
 	* @return          0 if the attribute was successfully set; -1 otherwise
 	*
 	* @see element_meter()
-	* @see list_meter_int8_t()
-	* @see list_meter_int16_t()
-	* @see list_meter_int32_t()
-	* @see list_meter_int64_t()
-	* @see list_meter_uint8_t()
-	* @see list_meter_uint16_t()
-	* @see list_meter_uint32_t()
-	* @see list_meter_uint64_t()
-	* @see list_meter_float()
-	* @see list_meter_double()
-	* @see list_meter_string()
+	* @see ks_list_meter_int8_t()
+	* @see ks_list_meter_int16_t()
+	* @see ks_list_meter_int32_t()
+	* @see ks_list_meter_int64_t()
+	* @see ks_list_meter_uint8_t()
+	* @see ks_list_meter_uint16_t()
+	* @see ks_list_meter_uint32_t()
+	* @see ks_list_meter_uint64_t()
+	* @see ks_list_meter_float()
+	* @see ks_list_meter_double()
+	* @see ks_list_meter_string()
 	*/
-	int list_attributes_copy(list_t *restrict l, element_meter metric_fun, int copy_data);
+	int ks_list_attributes_copy(ks_list_t *restrict l, element_meter metric_fun, int copy_data);
 
 	/**
 	* set the element hash computing function for the list elements.
@@ -305,7 +308,7 @@ extern "C" {
 	*
 	* @see element_hash_computer()
 	*/
-	int list_attributes_hash_computer(list_t *restrict l, element_hash_computer hash_computer_fun);
+	int ks_list_attributes_hash_computer(ks_list_t *restrict l, element_hash_computer hash_computer_fun);
 
 	/**
 	* set the element serializer function for the list elements.
@@ -314,19 +317,19 @@ extern "C" {
 	*
 	* Serialize functions are used for dumping the list to some persistent
 	* storage.  The serializer function is called for each element; it is passed
-	* a reference to the element and a reference to a size_t object. It will
+	* a reference to the element and a reference to a ks_size_t object. It will
 	* provide (and return) the buffer with the serialization of the element and
-	* fill the size_t object with the length of this serialization data.
+	* fill the ks_size_t object with the length of this serialization data.
 	*
 	* @param   l   list to operate
 	* @param   serializer_fun  pointer to the actual serializer function
 	* @return      0 if the attribute was successfully set; -1 otherwise
 	*
 	* @see     element_serializer()
-	* @see     list_dump_filedescriptor()
-	* @see     list_restore_filedescriptor()
+	* @see     ks_list_dump_filedescriptor()
+	* @see     ks_list_restore_filedescriptor()
 	*/
-	int list_attributes_serializer(list_t *restrict l, element_serializer serializer_fun);
+	int ks_list_attributes_serializer(ks_list_t *restrict l, element_serializer serializer_fun);
 
 	/**
 	* set the element unserializer function for the list elements.
@@ -345,10 +348,10 @@ extern "C" {
 	* @return      0 if the attribute was successfully set; -1 otherwise
 	*
 	* @see     element_unserializer()
-	* @see     list_dump_filedescriptor()
-	* @see     list_restore_filedescriptor()
+	* @see     ks_list_dump_filedescriptor()
+	* @see     ks_list_restore_filedescriptor()
 	*/
-	int list_attributes_unserializer(list_t *restrict l, element_unserializer unserializer_fun);
+	int ks_list_attributes_unserializer(ks_list_t *restrict l, element_unserializer unserializer_fun);
 
 	/**
 	* append data at the end of the list.
@@ -360,7 +363,7 @@ extern "C" {
 	*
 	* @return      1 for success. < 0 for failure
 	*/
-	KS_DECLARE(int) list_append(list_t *restrict l, const void *data);
+	KS_DECLARE(int) ks_list_append(ks_list_t *restrict l, const void *data);
 
 	/**
 	* insert data in the head of the list.
@@ -372,7 +375,7 @@ extern "C" {
 	*
 	* @return      1 for success. < 0 for failure
 	*/
-	KS_DECLARE(int) list_prepend(list_t *restrict l, const void *restrict data);
+	KS_DECLARE(int) ks_list_prepend(ks_list_t *restrict l, const void * data);
 
 	/**
 	* extract the element in the top of the list.
@@ -382,7 +385,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      reference to user datum, or NULL on errors
 	*/
-	KS_DECLARE(void *) list_fetch(list_t *restrict l);
+	KS_DECLARE(void *) ks_list_fetch(ks_list_t *restrict l);
 
 	/**
 	* retrieve an element at a given position.
@@ -391,7 +394,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element wanted
 	* @return      reference to user datum, or NULL on errors
 	*/
-	KS_DECLARE(void *) list_get_at(const list_t *restrict l, unsigned int pos);
+	KS_DECLARE(void *) ks_list_get_at(const ks_list_t *restrict l, unsigned int pos);
 
 	/**
 	* return the maximum element of the list.
@@ -400,12 +403,12 @@ extern "C" {
 	*
 	* Returns the maximum element with respect to the comparator function output.
 	*
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*
 	* @param l     list to operate
 	* @return      the reference to the element, or NULL
 	*/
-	KS_DECLARE(void *) list_get_max(const list_t *restrict l);
+	KS_DECLARE(void *) ks_list_get_max(const ks_list_t *restrict l);
 
 	/**
 	* return the minimum element of the list.
@@ -414,12 +417,12 @@ extern "C" {
 	*
 	* Returns the minimum element with respect to the comparator function output.
 	*
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*
 	* @param l     list to operate
 	* @return      the reference to the element, or NULL
 	*/
-	KS_DECLARE(void *) list_get_min(const list_t *restrict l);
+	KS_DECLARE(void *) ks_list_get_min(const ks_list_t *restrict l);
 
 	/**
 	* retrieve and remove from list an element at a given position.
@@ -428,7 +431,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element wanted
 	* @return      reference to user datum, or NULL on errors
 	*/
-	KS_DECLARE(void *) list_extract_at(list_t *restrict l, unsigned int pos);
+	KS_DECLARE(void *) ks_list_extract_at(ks_list_t *restrict l, unsigned int pos);
 
 	/**
 	* insert an element at a given position.
@@ -438,7 +441,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index to insert the element at
 	* @return      positive value on success. Negative on failure
 	*/
-	KS_DECLARE(int) list_insert_at(list_t *restrict l, const void *data, unsigned int pos);
+	KS_DECLARE(int) ks_list_insert_at(ks_list_t *restrict l, const void *data, unsigned int pos);
 
 	/**
 	* expunge the first found given element from the list.
@@ -452,10 +455,10 @@ extern "C" {
 	* @param data  reference of the element to search for
 	* @return      0 on success. Negative value on failure
 	*
-	* @see list_attributes_comparator()
-	* @see list_delete_at()
+	* @see ks_list_attributes_comparator()
+	* @see ks_list_delete_at()
 	*/
-	KS_DECLARE(int) list_delete(list_t *restrict l, const void *data);
+	KS_DECLARE(int) ks_list_delete(ks_list_t *restrict l, const void *data);
 
 	/**
 	* expunge an element at a given position from the list.
@@ -464,7 +467,7 @@ extern "C" {
 	* @param pos   [0,size-1] position index of the element to be deleted
 	* @return      0 on success. Negative value on failure
 	*/
-	KS_DECLARE(int) list_delete_at(list_t *restrict l, unsigned int pos);
+	KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos);
 
 	/**
 	* expunge an array of elements from the list, given their position range.
@@ -474,20 +477,20 @@ extern "C" {
 	* @param posend    [posstart,size-1] position of the last element to be deleted
 	* @return      the number of elements successfully removed on success, <0 on error
 	*/
-	KS_DECLARE(int) list_delete_range(list_t *restrict l, unsigned int posstart, unsigned int posend);
+	KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstart, unsigned int posend);
 
 	/**
 	* clear all the elements off of the list.
 	*
 	* The element datums will not be freed.
 	*
-	* @see list_delete_range()
-	* @see list_size()
+	* @see ks_list_delete_range()
+	* @see ks_list_size()
 	*
 	* @param l     list to operate
 	* @return      the number of elements removed on success, <0 on error
 	*/
-	KS_DECLARE(int) list_clear(list_t *restrict l);
+	KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l);
 
 	/**
 	* inspect the number of elements in the list.
@@ -495,7 +498,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      number of elements currently held by the list
 	*/
-	KS_DECLARE(unsigned int) list_size(const list_t *restrict l);
+	KS_DECLARE(unsigned int) ks_list_size(const ks_list_t *restrict l);
 
 	/**
 	* inspect whether the list is empty.
@@ -503,9 +506,9 @@ extern "C" {
 	* @param l     list to operate
 	* @return      0 iff the list is not empty
 	*
-	* @see list_size()
+	* @see ks_list_size()
 	*/
-	KS_DECLARE(int) list_empty(const list_t *restrict l);
+	KS_DECLARE(int) ks_list_empty(const ks_list_t *restrict l);
 
 	/**
 	* find the position of an element in a list.
@@ -521,10 +524,10 @@ extern "C" {
 	* @param data  reference of the element to search for
 	* @return      position of element in the list, or <0 if not found
 	*
-	* @see list_attributes_comparator()
-	* @see list_get_at()
+	* @see ks_list_attributes_comparator()
+	* @see ks_list_get_at()
 	*/
-	KS_DECLARE(int) list_locate(const list_t *restrict l, const void *data);
+	KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data);
 
 	/**
 	* returns an element given an indicator.
@@ -539,7 +542,7 @@ extern "C" {
 	* @param indicator indicator data to pass to the seeker along with elements
 	* @return      reference to the element accepted by the seeker, or NULL if none found
 	*/
-	KS_DECLARE(void *) list_seek(list_t *restrict l, const void *indicator);
+	KS_DECLARE(void *) ks_list_seek(ks_list_t *restrict l, const void *indicator);
 
 	/**
 	* inspect whether some data is member of the list.
@@ -550,7 +553,7 @@ extern "C" {
 	* the data is in list if any element of the list points to the same
 	* location of data.
 	* A "semantic" comparison is accomplished, otherwise, if a comparator
-	* function has been set previously, with list_attributes_comparator();
+	* function has been set previously, with ks_list_attributes_comparator();
 	* in which case, the given data reference is believed to be in list iff
 	* comparator_fun(elementdata, userdata) == 0 for any element in the list.
 	*
@@ -558,9 +561,9 @@ extern "C" {
 	* @param data  reference to the data to search
 	* @return      0 iff the list does not contain data as an element
 	*
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	KS_DECLARE(int) list_contains(const list_t *restrict l, const void *data);
+	KS_DECLARE(int) ks_list_contains(const ks_list_t *restrict l, const void *data);
 
 	/**
 	* concatenate two lists
@@ -579,7 +582,7 @@ extern "C" {
 	* @param dest  reference to the destination list
 	* @return      0 for success, -1 for errors
 	*/
-	KS_DECLARE(int) list_concat(const list_t *l1, const list_t *l2, list_t *restrict dest);
+	KS_DECLARE(int) ks_list_concat(const ks_list_t *l1, const ks_list_t *l2, ks_list_t *restrict dest);
 
 	/**
 	* sort list elements.
@@ -594,9 +597,9 @@ extern "C" {
 	* @param versus positive: order small to big; negative: order big to small
 	* @return      0 iff sorting was successful
 	*
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	KS_DECLARE(int) list_sort(list_t *restrict l, int versus);
+	KS_DECLARE(int) ks_list_sort(ks_list_t *restrict l, int versus);
 
 	/**
 	* start an iteration session.
@@ -606,9 +609,9 @@ extern "C" {
 	* @param l     list to operate
 	* @return 		0 if the list cannot be currently iterated. >0 otherwise
 	*
-	* @see list_iterator_stop()
+	* @see ks_list_iterator_stop()
 	*/
-	KS_DECLARE(int) list_iterator_start(list_t *restrict l);
+	KS_DECLARE(int) ks_list_iterator_start(ks_list_t *restrict l);
 
 	/**
 	* return the next element in the iteration session.
@@ -616,7 +619,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return		element datum, or NULL on errors
 	*/
-	KS_DECLARE(void *) list_iterator_next(list_t *restrict l);
+	KS_DECLARE(void *) ks_list_iterator_next(ks_list_t *restrict l);
 
 	/**
 	* inspect whether more elements are available in the iteration session.
@@ -624,7 +627,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      0 iff no more elements are available.
 	*/
-	KS_DECLARE(int) list_iterator_hasnext(const list_t *restrict l);
+	KS_DECLARE(int) ks_list_iterator_hasnext(const ks_list_t *restrict l);
 
 	/**
 	* end an iteration session.
@@ -632,7 +635,7 @@ extern "C" {
 	* @param l     list to operate
 	* @return      0 iff the iteration session cannot be stopped
 	*/
-	KS_DECLARE(int) list_iterator_stop(list_t *restrict l);
+	KS_DECLARE(int) ks_list_iterator_stop(ks_list_t *restrict l);
 
 	/**
 	* return the hash of the current status of the list.
@@ -642,7 +645,7 @@ extern "C" {
 	*
 	* @return      0 for success; <0 for failure
 	*/
-	KS_DECLARE(int) list_hash(const list_t *restrict l, list_hash_t *restrict hash);
+	KS_DECLARE(int) ks_list_hash(const ks_list_t *restrict l, ks_list_hash_t *restrict hash);
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
 	/**
@@ -658,9 +661,9 @@ extern "C" {
 	* @param info      reference to a dump metainformation structure to fill
 	* @return          0 for success; <0 for failure
 	*
-	* @see list_dump_filedescriptor()
+	* @see ks_list_dump_filedescriptor()
 	*/
-	int list_dump_getinfo_filedescriptor(int fd, list_dump_info_t *restrict info);
+	int ks_list_dump_getinfo_filedescriptor(int fd, ks_list_dump_info_t *restrict info);
 
 	/**
 	* get meta informations on a list dump on file.
@@ -673,9 +676,9 @@ extern "C" {
 	* @param info      reference to a dump metainformation structure to fill
 	* @return          0 for success; <0 for failure
 	*
-	* @see list_dump_filedescriptor()
+	* @see ks_list_dump_filedescriptor()
 	*/
-	int list_dump_getinfo_file(const char *restrict filename, list_dump_info_t *restrict info);
+	int ks_list_dump_getinfo_file(const char *restrict filename, ks_list_dump_info_t *restrict info);
 
 	/**
 	* dump the list into an open, writable file descriptor.
@@ -689,8 +692,8 @@ extern "C" {
 	* descriptor is not closed at the end of the operations.
 	*
 	* To use dump functions, either of these conditions must be satisfied:
-	*      -# a metric function has been specified with list_attributes_copy()
-	*      -# a serializer function has been specified with list_attributes_serializer()
+	*      -# a metric function has been specified with ks_list_attributes_copy()
+	*      -# a serializer function has been specified with ks_list_attributes_serializer()
 	*
 	* If a metric function has been specified, each element of the list is dumped
 	* as-is from memory, copying it from its pointer for its length down to the
@@ -708,10 +711,10 @@ extern "C" {
 	* @return      0 if successful; -1 otherwise
 	*
 	* @see element_serializer()
-	* @see list_attributes_copy()
-	* @see list_attributes_serializer()
+	* @see ks_list_attributes_copy()
+	* @see ks_list_attributes_serializer()
 	*/
-	int list_dump_filedescriptor(const list_t *restrict l, int fd, size_t *restrict len);
+	int ks_list_dump_filedescriptor(const ks_list_t *restrict l, int fd, ks_size_t *restrict len);
 
 	/**
 	* dump the list to a file name.
@@ -726,256 +729,256 @@ extern "C" {
 	*
 	* @return      0 if successful; -1 otherwise
 	*
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	* @see element_serializer()
-	* @see list_attributes_serializer()
-	* @see list_dump_filedescriptor()
-	* @see list_restore_file()
+	* @see ks_list_attributes_serializer()
+	* @see ks_list_dump_filedescriptor()
+	* @see ks_list_restore_file()
 	*
 	* This function stores a representation of the list
 	*/
-	int list_dump_file(const list_t *restrict l, const char *restrict filename, size_t *restrict len);
+	int ks_list_dump_file(const ks_list_t *restrict l, const char *restrict filename, ks_size_t *restrict len);
 
 	/**
 	* restore the list from an open, readable file descriptor to memory.
 	*
-	* This function is the "inverse" of list_dump_filedescriptor(). It restores
+	* This function is the "inverse" of ks_list_dump_filedescriptor(). It restores
 	* the list content from a (open, read-ready) file descriptor to memory. An
 	* unserializer might be needed to restore elements from the persistent
 	* representation back into memory-consistent format. List attributes can not
 	* be restored and must be set manually.
 	*
-	* @see list_dump_filedescriptor()
-	* @see list_attributes_serializer()
-	* @see list_attributes_unserializer()
+	* @see ks_list_dump_filedescriptor()
+	* @see ks_list_attributes_serializer()
+	* @see ks_list_attributes_unserializer()
 	*
 	* @param l     list to restore to
 	* @param fd    file descriptor to read from.
 	* @param len   location to store the length of the dump read (bytes), or NULL
 	* @return      0 if successful; -1 otherwise
 	*/
-	int list_restore_filedescriptor(list_t *restrict l, int fd, size_t *restrict len);
+	int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *restrict len);
 
 	/**
 	* restore the list from a file name.
 	*
 	* This function restores the content of a list from a file into memory. It is
-	* the inverse of list_dump_file().
+	* the inverse of ks_list_dump_file().
 	*
 	* @see element_unserializer()
-	* @see list_attributes_unserializer()
-	* @see list_dump_file()
-	* @see list_restore_filedescriptor()
+	* @see ks_list_attributes_unserializer()
+	* @see ks_list_dump_file()
+	* @see ks_list_restore_filedescriptor()
 	*
 	* @param l         list to restore to
 	* @param filename  filename to read data from
 	* @param len       location to store the length of the dump read (bytes), or NULL
 	* @return          0 if successful; -1 otherwise
 	*/
-	int list_restore_file(list_t *restrict l, const char *restrict filename, size_t *len);
+	int ks_list_restore_file(ks_list_t *restrict l, const char *restrict filename, ks_size_t *len);
 #endif
 
 	/* ready-made comparators, meters and hash computers */
 	/* comparator functions */
 	/**
 	* ready-made comparator for int8_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_int8_t(const void *a, const void *b);
+	int ks_list_comparator_int8_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for int16_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_int16_t(const void *a, const void *b);
+	int ks_list_comparator_int16_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for int32_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_int32_t(const void *a, const void *b);
+	int ks_list_comparator_int32_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for int64_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_int64_t(const void *a, const void *b);
+	int ks_list_comparator_int64_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for uint8_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_uint8_t(const void *a, const void *b);
+	int ks_list_comparator_uint8_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for uint16_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_uint16_t(const void *a, const void *b);
+	int ks_list_comparator_uint16_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for uint32_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_uint32_t(const void *a, const void *b);
+	int ks_list_comparator_uint32_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for uint64_t elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_uint64_t(const void *a, const void *b);
+	int ks_list_comparator_uint64_t(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for float elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_float(const void *a, const void *b);
+	int ks_list_comparator_float(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for double elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_double(const void *a, const void *b);
+	int ks_list_comparator_double(const void *a, const void *b);
 
 	/**
 	* ready-made comparator for string elements.
-	* @see list_attributes_comparator()
+	* @see ks_list_attributes_comparator()
 	*/
-	int list_comparator_string(const void *a, const void *b);
+	int ks_list_comparator_string(const void *a, const void *b);
 
 	/*          metric functions        */
 	/**
 	* ready-made metric function for int8_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_int8_t(const void *el);
+	ks_size_t ks_list_meter_int8_t(const void *el);
 
 	/**
 	* ready-made metric function for int16_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_int16_t(const void *el);
+	ks_size_t ks_list_meter_int16_t(const void *el);
 
 	/**
 	* ready-made metric function for int32_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_int32_t(const void *el);
+	ks_size_t ks_list_meter_int32_t(const void *el);
 
 	/**
 	* ready-made metric function for int64_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_int64_t(const void *el);
+	ks_size_t ks_list_meter_int64_t(const void *el);
 
 	/**
 	* ready-made metric function for uint8_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_uint8_t(const void *el);
+	ks_size_t ks_list_meter_uint8_t(const void *el);
 
 	/**
 	* ready-made metric function for uint16_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_uint16_t(const void *el);
+	ks_size_t ks_list_meter_uint16_t(const void *el);
 
 	/**
 	* ready-made metric function for uint32_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_uint32_t(const void *el);
+	ks_size_t ks_list_meter_uint32_t(const void *el);
 
 	/**
 	* ready-made metric function for uint64_t elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_uint64_t(const void *el);
+	ks_size_t ks_list_meter_uint64_t(const void *el);
 
 	/**
 	* ready-made metric function for float elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_float(const void *el);
+	ks_size_t ks_list_meter_float(const void *el);
 
 	/**
 	* ready-made metric function for double elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_double(const void *el);
+	ks_size_t ks_list_meter_double(const void *el);
 
 	/**
 	* ready-made metric function for string elements.
-	* @see list_attributes_copy()
+	* @see ks_list_attributes_copy()
 	*/
-	size_t list_meter_string(const void *el);
+	ks_size_t ks_list_meter_string(const void *el);
 
 	/*          hash functions          */
 	/**
 	* ready-made hash function for int8_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_int8_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_int8_t(const void *el);
 
 	/**
 	* ready-made hash function for int16_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_int16_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_int16_t(const void *el);
 
 	/**
 	* ready-made hash function for int32_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_int32_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_int32_t(const void *el);
 
 	/**
 	* ready-made hash function for int64_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_int64_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_int64_t(const void *el);
 
 	/**
 	* ready-made hash function for uint8_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_uint8_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_uint8_t(const void *el);
 
 	/**
 	* ready-made hash function for uint16_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_uint16_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_uint16_t(const void *el);
 
 	/**
 	* ready-made hash function for uint32_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_uint32_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_uint32_t(const void *el);
 
 	/**
 	* ready-made hash function for uint64_t elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_uint64_t(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_uint64_t(const void *el);
 
 	/**
 	* ready-made hash function for float elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_float(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_float(const void *el);
 
 	/**
 	* ready-made hash function for double elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_double(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_double(const void *el);
 
 	/**
 	* ready-made hash function for string elements.
-	* @see list_attributes_hash_computer()
+	* @see ks_list_attributes_hash_computer()
 	*/
-	list_hash_t list_hashcomputer_string(const void *el);
+	ks_list_hash_t ks_list_hashcomputer_string(const void *el);
 
 #ifdef __cplusplus
 }

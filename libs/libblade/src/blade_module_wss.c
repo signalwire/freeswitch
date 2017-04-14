@@ -60,7 +60,7 @@ struct blade_module_wss_s {
 	struct pollfd *listeners_poll;
 	int32_t listeners_count;
 
-	list_t connected; // @todo consider keeping this only as the list of connection id's, since the handle retains the pointer lookup
+	ks_list_t *connected; // @todo consider keeping this only as the list of connection id's, since the handle retains the pointer lookup
 };
 
 struct blade_transport_wss_s {
@@ -176,7 +176,8 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 	bm_wss->module_callbacks = &g_module_wss_callbacks;
 	bm_wss->transport_callbacks = &g_transport_wss_callbacks;
 
-	list_init(&bm_wss->connected);
+	ks_list_create(&bm_wss->connected, pool);
+	ks_assert(bm_wss->connected);
 
 	*bm_wssP = bm_wss;
 
@@ -198,7 +199,7 @@ ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 
 	blade_module_destroy(&bm_wss->module);
 
-	list_destroy(&bm_wss->connected);
+	ks_list_destroy(&bm_wss->connected);
 
 	ks_pool_free(bm_wss->pool, bm_wssP);
 
@@ -470,15 +471,15 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 	bm_wss->listeners_count = 0;
 	if (bm_wss->listeners_poll) ks_pool_free(bm_wss->pool, &bm_wss->listeners_poll);
 
-	if (list_size(&bm_wss->connected) > 0) {
+	if (ks_list_size(bm_wss->connected) > 0) {
 		// this approach to shutdown is cleaner, ensures connections will detach from sessions and be destroyed all in the same places
-		list_iterator_start(&bm_wss->connected);
-		while (list_iterator_hasnext(&bm_wss->connected)) {
-			bc = (blade_connection_t *)list_iterator_next(&bm_wss->connected);
+		ks_list_iterator_start(bm_wss->connected);
+		while (ks_list_iterator_hasnext(bm_wss->connected)) {
+			bc = (blade_connection_t *)ks_list_iterator_next(bm_wss->connected);
 			blade_connection_disconnect(bc);
 		}
-		list_iterator_stop(&bm_wss->connected);
-		while (list_size(&bm_wss->connected) > 0) ks_sleep_ms(100);
+		ks_list_iterator_stop(bm_wss->connected);
+		while (ks_list_size(bm_wss->connected) > 0) ks_sleep_ms(100);
 	}
 
 	if (stopped) ks_log(KS_LOG_DEBUG, "Stopped\n");
@@ -590,7 +591,7 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 				ks_log(KS_LOG_DEBUG, "Connection (%s) started\n", blade_connection_id_get(bc));
 
 				blade_handle_connections_add(bc);
-				list_append(&bm_wss->connected, bc);
+				ks_list_append(bm_wss->connected, bc);
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
 
 				blade_connection_read_unlock(bc);
@@ -726,7 +727,7 @@ ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_modul
 	// @todo make sure it's sensible to be mixing outbound and inbound connections in the same list, but this allows entering the destruction pipeline
 	// for module shutdown, disconnects and errors without special considerations
 	blade_handle_connections_add(bc);
-	list_append(&bm_wss->connected, bc);
+	ks_list_append(bm_wss->connected, bc);
 
 	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NEW);
 
@@ -866,7 +867,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_disconnect(blade_conn
 	bt_wss = (blade_transport_wss_t *)blade_connection_transport_get(bc);
 	bt_wss_init = (blade_transport_wss_init_t *)blade_connection_transport_init_get(bc);
 
-	list_delete(&bt_wss->module->connected, bc);
+	ks_list_delete(bt_wss->module->connected, bc);
 
 	if (bt_wss_init) blade_transport_wss_init_destroy(&bt_wss_init);
 	if (bt_wss) blade_transport_wss_destroy(&bt_wss); // @TODO: Scream at this very loudly until I feel better for it wasting 2 days to track down, and then fix the issue it's causing

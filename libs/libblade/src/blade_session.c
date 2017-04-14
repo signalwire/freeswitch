@@ -45,7 +45,7 @@ struct blade_session_s {
 	ks_mutex_t *mutex;
 	ks_cond_t *cond;
 
-	list_t connections;
+	ks_list_t *connections;
 	ks_time_t ttl;
 
 	ks_q_t *sending;
@@ -94,11 +94,11 @@ static void blade_session_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool
 		//}
 		//list_iterator_stop(&bs->connections);
 
-		// called by list_destroy()
-		//list_clear(&bs->connections);
+		// called by ks_list_destroy()
+		//ks_list_clear(&bs->connections);
 
-		// @todo change bs->connections to a pointer, allocate the memory in the pool, and set a cleanup callback for it to call list_destroy() automatically
-		list_destroy(&bs->connections);
+		// @todo change bs->connections to a pointer, allocate the memory in the pool, and set a cleanup callback for it to call ks_list_destroy() automatically
+		ks_list_destroy(&bs->connections);
 		// q has auto cleanup
 		//ks_q_destroy(&bs->receiving);
 		//ks_q_destroy(&bs->sending);
@@ -151,7 +151,9 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 	ks_cond_create_ex(&bs->cond, pool, bs->mutex);
 	ks_assert(bs->cond);
 
-	list_init(&bs->connections);
+	ks_list_create(&bs->connections, pool);
+	ks_assert(bs->connections);
+
 	ks_q_create(&bs->sending, pool, 0);
 	ks_assert(bs->sending);
 	ks_q_create(&bs->receiving, pool, 0);
@@ -375,7 +377,7 @@ KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const
 
 	ks_mutex_lock(bs->mutex);
 
-	list_append(&bs->connections, cid);
+	ks_list_append(bs->connections, cid);
 
 	bs->ttl = 0;
 
@@ -396,18 +398,18 @@ KS_DECLARE(ks_status_t) blade_session_connections_remove(blade_session_t *bs, co
 
 	ks_mutex_lock(bs->mutex);
 
-	size = list_size(&bs->connections);
+	size = ks_list_size(bs->connections);
 	for (uint32_t i = 0; i < size; ++i) {
-		const char *cid = (const char *)list_get_at(&bs->connections, i);
+		const char *cid = (const char *)ks_list_get_at(bs->connections, i);
 		if (!strcasecmp(cid, id)) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) connection removed (%s)\n", bs->id, id);
-			list_delete_at(&bs->connections, i);
+			ks_list_delete_at(bs->connections, i);
 			ks_pool_free(bs->pool, &cid);
 			break;
 		}
 	}
 
-	if (list_size(&bs->connections) == 0) bs->ttl = ks_time_now() + (5 * KS_USEC_PER_SEC);
+	if (ks_list_size(bs->connections) == 0) bs->ttl = ks_time_now() + (5 * KS_USEC_PER_SEC);
 
 	ks_mutex_unlock(bs->mutex);
 
@@ -428,7 +430,7 @@ ks_status_t blade_session_connections_choose(blade_session_t *bs, cJSON *json, b
 
 	// @todo may be multiple connections, for now let's just assume there will be only one
 	// later there will need to be a way to pick which connection to use
-	cid = list_get_at(&bs->connections, 0);
+	cid = ks_list_get_at(bs->connections, 0);
 	if (!cid) {
 		// no connections available
 		ret = KS_STATUS_FAIL;
@@ -515,7 +517,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 
 		state = bs->state;
 
-		if (!list_empty(&bs->connections)) {
+		if (!ks_list_empty(bs->connections)) {
 			while (blade_session_sending_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
 				blade_connection_t *bc = NULL;
 				if (blade_session_connections_choose(bs, json, &bc) == KS_STATUS_SUCCESS) {
@@ -554,7 +556,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 		default: break;
 		}
 
-		if (list_empty(&bs->connections) &&
+		if (ks_list_empty(bs->connections) &&
 			bs->ttl > 0 &&
 			!blade_session_terminating(bs) &&
 			ks_time_now() >= bs->ttl) {
@@ -587,20 +589,20 @@ ks_status_t blade_session_state_on_hangup(blade_session_t *bs)
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) state hangup\n", bs->id);
 
-	list_iterator_start(&bs->connections);
-	while (list_iterator_hasnext(&bs->connections)) {
-		const char *cid = (const char *)list_iterator_next(&bs->connections);
+	ks_list_iterator_start(bs->connections);
+	while (ks_list_iterator_hasnext(bs->connections)) {
+		const char *cid = (const char *)ks_list_iterator_next(bs->connections);
 		blade_connection_t *bc = blade_handle_connections_get(bs->handle, cid);
 		ks_assert(bc);
 
 		blade_connection_disconnect(bc);
 		blade_connection_read_unlock(bc);
 	}
-	list_iterator_stop(&bs->connections);
+	ks_list_iterator_stop(bs->connections);
 
 	// @todo review this code, it may end up blocking forever as the mutex for the session is locked and the connection thread will not be able to lock to remove the connection...
 	// isolate another mutex for the connection list, simclist is not intrinsicly thread safe like other containers
-	while (!list_empty(&bs->connections)) ks_sleep(100);
+	while (!ks_list_empty(bs->connections)) ks_sleep(100);
 
 	blade_session_state_set(bs, BLADE_SESSION_STATE_DESTROY);
 
@@ -616,7 +618,7 @@ ks_status_t blade_session_state_on_ready(blade_session_t *bs)
 	//ks_log(KS_LOG_DEBUG, "Session (%s) state ready\n", bs->id);
 
 	// @todo for now only process messages if there is a connection available
-	if (list_size(&bs->connections) > 0) {
+	if (ks_list_size(bs->connections) > 0) {
 		// @todo may only want to pop once per call to give sending a chance to keep up
 		while (blade_session_receiving_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
 			blade_session_process(bs, json);
@@ -664,7 +666,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending response (%s)\n", bs->id, id);
 	}
 
-	if (list_empty(&bs->connections)) {
+	if (ks_list_empty(bs->connections)) {
 		blade_session_sending_push(bs, json);
 	} else {
 		blade_connection_t *bc = NULL;

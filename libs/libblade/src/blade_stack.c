@@ -711,7 +711,7 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 	return ret;
 }
 
-KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, list_t *sessions, const char *exclude, cJSON *json)
+KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, ks_list_t *sessions, const char *exclude, cJSON *json)
 {
 	blade_session_t *bs = NULL;
 
@@ -719,9 +719,9 @@ KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, list_t *sessions
 	ks_assert(sessions);
 	ks_assert(json);
 
-	list_iterator_start(sessions);
-	while (list_iterator_hasnext(sessions)) {
-		const char *sessionid = list_iterator_next(sessions);
+	ks_list_iterator_start(sessions);
+	while (ks_list_iterator_hasnext(sessions)) {
+		const char *sessionid = ks_list_iterator_next(sessions);
 		if (exclude && !strcmp(exclude, sessionid)) continue;
 		bs = blade_handle_sessions_get(bh, sessionid);
 		if (!bs) {
@@ -731,7 +731,7 @@ KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, list_t *sessions
 		blade_session_send(bs, json, NULL);
 		blade_session_read_unlock(bs);
 	}
-	list_iterator_stop(sessions);
+	ks_list_iterator_stop(sessions);
 }
 
 KS_DECLARE(ks_status_t) blade_handle_session_state_callback_register(blade_handle_t *bh, void *data, blade_session_state_callback_t callback, const char **id)
