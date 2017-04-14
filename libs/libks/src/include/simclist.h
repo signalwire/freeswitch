@@ -185,6 +185,8 @@ extern "C" {
 	/** list object */
 	typedef struct {
 		ks_pool_t *pool;
+		ks_rwl_t *lock;
+
 		struct ks_list_entry_s *head_sentinel;
 		struct ks_list_entry_s *tail_sentinel;
 		struct ks_list_entry_s *mid;
@@ -527,7 +529,7 @@ extern "C" {
 	* @see ks_list_attributes_comparator()
 	* @see ks_list_get_at()
 	*/
-	KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data);
+	KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data, ks_bool_t prelocked);
 
 	/**
 	* returns an element given an indicator.

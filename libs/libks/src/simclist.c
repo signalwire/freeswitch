@@ -65,7 +65,7 @@ int gettimeofday(struct timeval *tp, void *tzp) {
 	DWORD t;
 
 	/* XSI says: "If tzp is not a null pointer, the behavior is unspecified" */
-	assert(tzp == NULL);
+	ks_assert(tzp == NULL);
 
 	t = timeGetTime();
 	tp->tv_sec = t / 1000;
@@ -203,13 +203,11 @@ static int ks_list_drop_elem(ks_list_t *restrict l, struct ks_list_entry_s *tmp,
 /* set default values for initialized lists */
 static int ks_list_attributes_setdefaults(ks_list_t *restrict l);
 
-#ifndef NDEBUG
 /* check whether the list internal REPresentation is valid -- Costs O(n) */
 static int ks_list_repOk(const ks_list_t *restrict l);
 
 /* check whether the list attribute set is valid -- Costs O(1) */
 static int ks_list_attrOk(const ks_list_t *restrict l);
-#endif
 
 /* do not inline, this is recursive */
 static void ks_list_sort_quicksort(ks_list_t *restrict l, int versus,
@@ -278,19 +276,23 @@ static void ks_list_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_clean
 		ks_list_clear(l);
 		break;
 	case KS_MPCL_DESTROY:
+		ks_rwl_write_lock(l->lock);
 		for (unsigned int i = 0; i < l->spareelsnum; i++) ks_pool_free(l->pool, &l->spareels[i]);
+		l->spareelsnum = 0;
 		ks_pool_free(l->pool, &l->spareels);
 		ks_pool_free(l->pool, &l->head_sentinel);
 		ks_pool_free(l->pool, &l->tail_sentinel);
+		ks_rwl_write_unlock(l->lock);
+		ks_rwl_destroy(&l->lock);
 		break;
 	}
 }
 
 /* list initialization */
-KS_DECLARE(ks_status_t) ks_list_create(ks_list_t ** list, ks_pool_t *pool) {
+KS_DECLARE(ks_status_t) ks_list_create(ks_list_t **list, ks_pool_t *pool) {
 	ks_list_t *l = NULL;
 
-	ks_assert(l);
+	ks_assert(list);
 	ks_assert(pool);
 
 	seed_random();
@@ -300,6 +302,9 @@ KS_DECLARE(ks_status_t) ks_list_create(ks_list_t ** list, ks_pool_t *pool) {
 
 	l->pool = pool;
 	l->numels = 0;
+
+	ks_rwl_create(&l->lock, pool);
+	ks_assert(l->lock);
 
 	/* head/tail sentinels and mid pointer */
 	l->head_sentinel = (struct ks_list_entry_s *)ks_pool_alloc(pool, sizeof(struct ks_list_entry_s));
@@ -324,8 +329,8 @@ KS_DECLARE(ks_status_t) ks_list_create(ks_list_t ** list, ks_pool_t *pool) {
 
 	ks_list_attributes_setdefaults(l);
 
-	assert(ks_list_repOk(l));
-	assert(ks_list_attrOk(l));
+	ks_assert(ks_list_repOk(l));
+	ks_assert(ks_list_attrOk(l));
 
 	ks_assert(ks_pool_set_cleanup(pool, l, NULL, ks_list_cleanup) == KS_STATUS_SUCCESS);
 
@@ -333,7 +338,7 @@ KS_DECLARE(ks_status_t) ks_list_create(ks_list_t ** list, ks_pool_t *pool) {
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) ks_list_destroy(ks_list_t ** list) {
+KS_DECLARE(ks_status_t) ks_list_destroy(ks_list_t **list) {
 	ks_list_t *l = NULL;
 
 	ks_assert(list);
@@ -361,7 +366,7 @@ int ks_list_attributes_setdefaults(ks_list_t *restrict l) {
 	l->attrs.serializer = NULL;
 	l->attrs.unserializer = NULL;
 
-	assert(ks_list_attrOk(l));
+	ks_assert(ks_list_attrOk(l));
 
 	return 0;
 }
@@ -370,9 +375,12 @@ int ks_list_attributes_setdefaults(ks_list_t *restrict l) {
 int ks_list_attributes_comparator(ks_list_t *restrict l, element_comparator comparator_fun) {
 	if (l == NULL) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.comparator = comparator_fun;
 
-	assert(ks_list_attrOk(l));
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return 0;
 }
@@ -380,8 +388,12 @@ int ks_list_attributes_comparator(ks_list_t *restrict l, element_comparator comp
 int ks_list_attributes_seeker(ks_list_t *restrict l, element_seeker seeker_fun) {
 	if (l == NULL) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.seeker = seeker_fun;
-	assert(ks_list_attrOk(l));
+
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return 0;
 }
@@ -389,10 +401,13 @@ int ks_list_attributes_seeker(ks_list_t *restrict l, element_seeker seeker_fun) 
 int ks_list_attributes_copy(ks_list_t *restrict l, element_meter metric_fun, int copy_data) {
 	if (l == NULL || (metric_fun == NULL && copy_data != 0)) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.meter = metric_fun;
 	l->attrs.copy_data = copy_data;
 
-	assert(ks_list_attrOk(l));
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return 0;
 }
@@ -400,24 +415,39 @@ int ks_list_attributes_copy(ks_list_t *restrict l, element_meter metric_fun, int
 int ks_list_attributes_hash_computer(ks_list_t *restrict l, element_hash_computer hash_computer_fun) {
 	if (l == NULL) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.hasher = hash_computer_fun;
-	assert(ks_list_attrOk(l));
+
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
+
 	return 0;
 }
 
 int ks_list_attributes_serializer(ks_list_t *restrict l, element_serializer serializer_fun) {
 	if (l == NULL) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.serializer = serializer_fun;
-	assert(ks_list_attrOk(l));
+
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
+
 	return 0;
 }
 
 int ks_list_attributes_unserializer(ks_list_t *restrict l, element_unserializer unserializer_fun) {
 	if (l == NULL) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	l->attrs.unserializer = unserializer_fun;
-	assert(ks_list_attrOk(l));
+
+	ks_assert(ks_list_attrOk(l));
+
+	ks_rwl_write_unlock(l->lock);
+
 	return 0;
 }
 
@@ -435,10 +465,14 @@ KS_DECLARE(void *) ks_list_fetch(ks_list_t *restrict l) {
 
 KS_DECLARE(void *) ks_list_get_at(const ks_list_t *restrict l, unsigned int pos) {
 	struct ks_list_entry_s *tmp;
+	void *data = NULL;
 
+	ks_rwl_read_lock(l->lock);
 	tmp = ks_list_findpos(l, pos);
+	data = tmp != NULL ? tmp->data : NULL;
+	ks_rwl_read_unlock(l->lock);
 
-	return (tmp != NULL ? tmp->data : NULL);
+	return data;
 }
 
 KS_DECLARE(void *) ks_list_get_max(const ks_list_t *restrict l) {
@@ -458,11 +492,13 @@ static void *ks_list_get_minmax(const ks_list_t *restrict l, int versus) {
 	if (l->attrs.comparator == NULL || l->numels == 0)
 		return NULL;
 
+	ks_rwl_read_lock(l->lock);
 	curminmax = l->head_sentinel->next->data;
 	for (s = l->head_sentinel->next->next; s != l->tail_sentinel; s = s->next) {
 		if (l->attrs.comparator(curminmax, s->data) * versus > 0)
 			curminmax = s->data;
 	}
+	ks_rwl_read_unlock(l->lock);
 
 	return curminmax;
 }
@@ -503,6 +539,7 @@ KS_DECLARE(void *) ks_list_extract_at(ks_list_t *restrict l, unsigned int pos) {
 
 	if (l->iter_active || pos >= l->numels) return NULL;
 
+	ks_rwl_write_lock(l->lock);
 	tmp = ks_list_findpos(l, pos);
 	data = tmp->data;
 
@@ -510,7 +547,9 @@ KS_DECLARE(void *) ks_list_extract_at(ks_list_t *restrict l, unsigned int pos) {
 	ks_list_drop_elem(l, tmp, pos);
 	l->numels--;
 
-	assert(ks_list_repOk(l));
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return data;
 }
@@ -520,6 +559,7 @@ KS_DECLARE(int) ks_list_insert_at(ks_list_t *restrict l, const void *data, unsig
 
 	if (l->iter_active || pos > l->numels) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	/* this code optimizes malloc() with a free-list */
 	if (l->spareelsnum > 0) {
 		lent = l->spareels[l->spareelsnum - 1];
@@ -527,8 +567,7 @@ KS_DECLARE(int) ks_list_insert_at(ks_list_t *restrict l, const void *data, unsig
 	}
 	else {
 		lent = (struct ks_list_entry_s *)ks_pool_alloc(l->pool, sizeof(struct ks_list_entry_s));
-		if (lent == NULL)
-			return -1;
+		ks_assert(lent);
 	}
 
 	if (l->attrs.copy_data) {
@@ -563,32 +602,42 @@ KS_DECLARE(int) ks_list_insert_at(ks_list_t *restrict l, const void *data, unsig
 		if (pos <= (l->numels - 1) / 2) l->mid = l->mid->prev;
 	}
 
-	assert(ks_list_repOk(l));
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return 1;
 }
 
 KS_DECLARE(int) ks_list_delete(ks_list_t *restrict l, const void *data) {
 	int pos, r;
+	int ret = 0;
 
-	pos = ks_list_locate(l, data);
-	if (pos < 0)
-		return -1;
+	ks_rwl_write_lock(l->lock);
+
+	pos = ks_list_locate(l, data, KS_TRUE);
+	if (pos < 0) {
+		ret = -1;
+		goto done;
+	}
 
 	r = ks_list_delete_at(l, pos);
-	if (r < 0)
-		return -1;
+	if (r < 0) ret = -1;
 
-	assert(ks_list_repOk(l));
+done:
+	ks_assert(ks_list_repOk(l));
 
-	return 0;
+	ks_rwl_write_unlock(l->lock);
+
+	return ret;
 }
 
 KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos) {
 	struct ks_list_entry_s *delendo;
 
-
 	if (l->iter_active || pos >= l->numels) return -1;
+
+	ks_rwl_write_lock(l->lock);
 
 	delendo = ks_list_findpos(l, pos);
 
@@ -596,8 +645,9 @@ KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos) {
 
 	l->numels--;
 
+	ks_assert(ks_list_repOk(l));
 
-	assert(ks_list_repOk(l));
+	ks_rwl_write_unlock(l->lock);
 
 	return  0;
 }
@@ -611,6 +661,8 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 
 	numdel = posend - posstart + 1;
 	if (numdel == l->numels) return ks_list_clear(l);
+
+	ks_rwl_write_lock(l->lock);
 
 	tmp = ks_list_findpos(l, posstart);    /* first el to be deleted */
 	lastvalid = tmp->prev;              /* last valid element */
@@ -628,7 +680,7 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 		for (i = 0; i < (unsigned int)movedx; l->mid = l->mid->prev, i++);
 	}
 
-	assert(posstart == 0 || lastvalid != l->head_sentinel);
+	ks_assert(posstart == 0 || lastvalid != l->head_sentinel);
 	i = posstart;
 	if (l->attrs.copy_data) {
 		/* also free element data */
@@ -657,14 +709,16 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 			}
 		}
 	}
-	assert(i == posend + 1 && (posend != l->numels || tmp == l->tail_sentinel));
+	ks_assert(i == posend + 1 && (posend != l->numels || tmp == l->tail_sentinel));
 
 	lastvalid->next = tmp;
 	tmp->prev = lastvalid;
 
 	l->numels -= posend - posstart + 1;
 
-	assert(ks_list_repOk(l));
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return numdel;
 }
@@ -672,11 +726,17 @@ KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstar
 KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l) {
 	struct ks_list_entry_s *s;
 	unsigned int numels;
+	int ret = -1;
+
+	ks_rwl_write_lock(l->lock);
 
 	/* will be returned */
 	numels = l->numels;
 
-	if (l->iter_active) return -1;
+	if (l->iter_active) {
+		ret = -1;
+		goto done;
+	}
 
 	if (l->attrs.copy_data) {        /* also free user data */
 									 /* spare a loop conditional with two loops: spareing elems and freeing elems */
@@ -711,7 +771,10 @@ KS_DECLARE(int) ks_list_clear(ks_list_t *restrict l) {
 	l->numels = 0;
 	l->mid = NULL;
 
-	assert(ks_list_repOk(l));
+done:
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
 
 	return numels;
 }
@@ -724,9 +787,11 @@ KS_DECLARE(int) ks_list_empty(const ks_list_t *restrict l) {
 	return (l->numels == 0);
 }
 
-KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data) {
+KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data, ks_bool_t prelocked) {
 	struct ks_list_entry_s *el;
 	int pos = 0;
+
+	if (!prelocked)	ks_rwl_read_lock(l->lock);
 
 	if (l->attrs.comparator != NULL) {
 		/* use comparator */
@@ -740,6 +805,7 @@ KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data) {
 			if (el->data == data) break;
 		}
 	}
+	if (!prelocked) ks_rwl_read_unlock(l->lock);
 	if (el == l->tail_sentinel) return -1;
 
 	return pos;
@@ -747,18 +813,26 @@ KS_DECLARE(int) ks_list_locate(const ks_list_t *restrict l, const void *data) {
 
 KS_DECLARE(void *) ks_list_seek(ks_list_t *restrict l, const void *indicator) {
 	const struct ks_list_entry_s *iter;
+	void *ret = NULL;
 
 	if (l->attrs.seeker == NULL) return NULL;
 
+	ks_rwl_read_lock(l->lock);
+
 	for (iter = l->head_sentinel->next; iter != l->tail_sentinel; iter = iter->next) {
-		if (l->attrs.seeker(iter->data, indicator) != 0) return iter->data;
+		if (l->attrs.seeker(iter->data, indicator) != 0) {
+			ret = iter->data;
+			break;
+		}
 	}
 
-	return NULL;
+	ks_rwl_read_unlock(l->lock);
+
+	return ret;
 }
 
 KS_DECLARE(int) ks_list_contains(const ks_list_t *restrict l, const void *data) {
-	return (ks_list_locate(l, data) >= 0);
+	return (ks_list_locate(l, data, KS_FALSE) >= 0);
 }
 
 KS_DECLARE(int) ks_list_concat(const ks_list_t *l1, const ks_list_t *l2, ks_list_t *restrict dest) {
@@ -771,10 +845,12 @@ KS_DECLARE(int) ks_list_concat(const ks_list_t *l1, const ks_list_t *l2, ks_list
 		return -1;
 
 	//ks_list_init(dest);
+	ks_rwl_read_lock(l1->lock);
+	ks_rwl_read_lock(l2->lock);
+	ks_rwl_write_lock(dest->lock);
 
 	dest->numels = l1->numels + l2->numels;
-	if (dest->numels == 0)
-		return 0;
+	if (dest->numels == 0) goto done;
 
 	/* copy list1 */
 	srcel = l1->head_sentinel->next;
@@ -810,7 +886,13 @@ KS_DECLARE(int) ks_list_concat(const ks_list_t *l1, const ks_list_t *l2, ks_list
 		for (cnt = 0; cnt < (unsigned int)err; cnt++) dest->mid = dest->mid->prev;
 	}
 
-	assert(!(ks_list_repOk(l1) && ks_list_repOk(l2)) || ks_list_repOk(dest));
+done:
+
+	ks_assert(!(ks_list_repOk(l1) && ks_list_repOk(l2)) || ks_list_repOk(dest));
+
+	ks_rwl_write_unlock(dest->lock);
+	ks_rwl_read_unlock(l2->lock);
+	ks_rwl_read_unlock(l1->lock);
 
 	return 0;
 }
@@ -821,8 +903,14 @@ KS_DECLARE(int) ks_list_sort(ks_list_t *restrict l, int versus) {
 
 	if (l->numels <= 1)
 		return 0;
+
+	ks_rwl_write_lock(l->lock);
 	ks_list_sort_quicksort(l, versus, 0, l->head_sentinel->next, l->numels - 1, l->tail_sentinel->prev);
-	assert(ks_list_repOk(l));
+
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
+
 	return 0;
 }
 
@@ -994,9 +1082,11 @@ static void ks_list_sort_quicksort(ks_list_t *restrict l, int versus,
 
 KS_DECLARE(int) ks_list_iterator_start(ks_list_t *restrict l) {
 	if (l->iter_active) return 0;
+	ks_rwl_write_lock(l->lock);
 	l->iter_pos = 0;
 	l->iter_active = 1;
 	l->iter_curentry = l->head_sentinel->next;
+	ks_rwl_write_unlock(l->lock);
 	return 1;
 }
 
@@ -1005,30 +1095,41 @@ KS_DECLARE(void *) ks_list_iterator_next(ks_list_t *restrict l) {
 
 	if (!l->iter_active) return NULL;
 
+	ks_rwl_write_lock(l->lock);
 	toret = l->iter_curentry->data;
 	l->iter_curentry = l->iter_curentry->next;
 	l->iter_pos++;
+	ks_rwl_write_unlock(l->lock);
 
 	return toret;
 }
 
 KS_DECLARE(int) ks_list_iterator_hasnext(const ks_list_t *restrict l) {
+	int ret = 0;
 	if (!l->iter_active) return 0;
-	return (l->iter_pos < l->numels);
+	ks_rwl_read_lock(l->lock);
+	ret = (l->iter_pos < l->numels);
+	ks_rwl_read_unlock(l->lock);
+	return ret;
 }
 
 KS_DECLARE(int) ks_list_iterator_stop(ks_list_t *restrict l) {
 	if (!l->iter_active) return 0;
+	ks_rwl_write_lock(l->lock);
 	l->iter_pos = 0;
 	l->iter_active = 0;
+	ks_rwl_write_unlock(l->lock);
 	return 1;
 }
 
 KS_DECLARE(int) ks_list_hash(const ks_list_t *restrict l, ks_list_hash_t *restrict hash) {
 	struct ks_list_entry_s *x;
 	ks_list_hash_t tmphash;
+	int ret = 0;
 
-	assert(hash != NULL);
+	ks_assert(hash != NULL);
+
+	ks_rwl_read_lock(l->lock);
 
 	tmphash = l->numels * 2 + 100;
 	if (l->attrs.hasher == NULL) {
@@ -1045,7 +1146,7 @@ KS_DECLARE(int) ks_list_hash(const ks_list_t *restrict l, ks_list_hash_t *restri
 			tmphash += tmphash % l->numels;
 		}
 #else
-		return -1;
+		ret = -1;
 #endif
 	}
 	else {
@@ -1056,9 +1157,11 @@ KS_DECLARE(int) ks_list_hash(const ks_list_t *restrict l, ks_list_hash_t *restri
 		}
 	}
 
+	ks_rwl_read_unlock(l->lock);
+
 	*hash = tmphash;
 
-	return 0;
+	return ret;
 }
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
@@ -1183,7 +1286,7 @@ int ks_list_dump_filedescriptor(const ks_list_t *restrict l, int fd, ks_size_t *
 
 	/* include an hash, if possible */
 	if (l->attrs.hasher != NULL) {
-		if (htonl(list_hash(l, &header.listhash)) != 0) {
+		if (htonl(ks_list_hash(l, &header.listhash)) != 0) {
 			/* could not compute list hash! */
 			return -1;
 		}
@@ -1346,7 +1449,7 @@ int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *res
 			buf = ks_pool_alloc(l->pool, header.elemlen);
 			for (cnt = 0; cnt < header.numels; cnt++) {
 				READ_ERRCHECK(fd, buf, header.elemlen);
-				list_append(l, l->attrs.unserializer(buf, &elsize));
+				ks_list_append(l, l->attrs.unserializer(buf, &elsize));
 				totmemorylen += elsize;
 			}
 		}
@@ -1355,7 +1458,7 @@ int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *res
 			for (cnt = 0; cnt < header.numels; cnt++) {
 				buf = ks_pool_alloc(l->pool, header.elemlen);
 				READ_ERRCHECK(fd, buf, header.elemlen);
-				list_append(l, buf);
+				ks_list_append(l, buf);
 			}
 			totmemorylen = header.numels * header.elemlen;
 		}
@@ -1370,7 +1473,7 @@ int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *res
 				buf = ks_pool_alloc(l->pool, (ks_size_t)elsize);
 				READ_ERRCHECK(fd, buf, elsize);
 				totreadlen += elsize;
-				list_append(l, l->attrs.unserializer(buf, &elsize));
+				ks_list_append(l, l->attrs.unserializer(buf, &elsize));
 				totmemorylen += elsize;
 			}
 		}
@@ -1381,7 +1484,7 @@ int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *res
 				buf = ks_pool_alloc(l->pool, elsize);
 				READ_ERRCHECK(fd, buf, elsize);
 				totreadlen += elsize;
-				list_append(l, buf);
+				ks_list_append(l, buf);
 			}
 			totmemorylen = totreadlen;
 		}
@@ -1393,7 +1496,7 @@ int ks_list_restore_filedescriptor(ks_list_t *restrict l, int fd, ks_size_t *res
 	/* possibly verify the list consistency */
 	/* wrt hash */
 	/* don't do that
-	if (header.listhash != 0 && header.listhash != list_hash(l)) {
+	if (header.listhash != 0 && header.listhash != ks_list_hash(l)) {
 	errno = ECANCELED;
 	return -1;
 	}
@@ -1431,7 +1534,9 @@ int ks_list_dump_file(const ks_list_t *restrict l, const char *restrict filename
 	fd = open(filename, oflag, mode);
 	if (fd < 0) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	ks_list_dump_filedescriptor(l, fd, len);
+	ks_rwl_write_unlock(l->lock);
 	close(fd);
 
 	return 0;
@@ -1443,7 +1548,9 @@ int ks_list_restore_file(ks_list_t *restrict l, const char *restrict filename, k
 	fd = open(filename, O_RDONLY, 0);
 	if (fd < 0) return -1;
 
+	ks_rwl_write_lock(l->lock);
 	ks_list_restore_filedescriptor(l, fd, len);
+	ks_rwl_write_unlock(l->lock);
 	close(fd);
 
 	return 0;
@@ -1549,7 +1656,6 @@ ks_list_hash_t ks_list_hashcomputer_string(const void *el) {
 }
 
 
-#ifndef NDEBUG
 static int ks_list_repOk(const ks_list_t *restrict l) {
 	int ok, i;
 	struct ks_list_entry_s *s;
@@ -1588,8 +1694,6 @@ static int ks_list_attrOk(const ks_list_t *restrict l) {
 	ok = (l->attrs.copy_data == 0 || l->attrs.meter != NULL);
 	return ok;
 }
-
-#endif
 
 
 /* For Emacs:
