@@ -472,6 +472,14 @@ extern "C" {
 	KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos);
 
 	/**
+	* expunge an element at the current iterator position from the list.
+	*
+	* @param l     list to operate
+	* @return      0 on success. Negative value on failure
+	*/
+	KS_DECLARE(int) ks_list_delete_iterator(ks_list_t *restrict l);
+
+	/**
 	* expunge an array of elements from the list, given their position range.
 	*
 	* @param l     list to operate

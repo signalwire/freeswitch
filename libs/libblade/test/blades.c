@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	config_t config;
 	config_setting_t *config_blade = NULL;
 	blade_module_t *mod_wss = NULL;
-	blade_module_t *mod_chat = NULL;
+	//blade_module_t *mod_chat = NULL;
 	//blade_identity_t *id = NULL;
 	const char *cfgpath = "blades.cfg";
 

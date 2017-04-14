@@ -645,6 +645,26 @@ KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos) {
 	return  0;
 }
 
+KS_DECLARE(int) ks_list_delete_iterator(ks_list_t *restrict l) {
+	struct ks_list_entry_s *delendo;
+
+	if (!l->iter_active || l->iter_pos >= l->numels) return -1;
+
+	ks_rwl_write_lock(l->lock);
+
+	delendo = ks_list_findpos(l, l->iter_pos);
+
+	ks_list_drop_elem(l, delendo, l->iter_pos);
+
+	l->numels--;
+
+	ks_assert(ks_list_repOk(l));
+
+	ks_rwl_write_unlock(l->lock);
+
+	return  0;
+}
+
 KS_DECLARE(int) ks_list_delete_range(ks_list_t *restrict l, unsigned int posstart, unsigned int posend) {
 	struct ks_list_entry_s *lastvalid, *tmp, *tmp2;
 	unsigned int numdel, midposafter, i;

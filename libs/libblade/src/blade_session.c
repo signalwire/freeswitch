@@ -74,43 +74,18 @@ static void blade_session_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool
 		blade_session_shutdown(bs);
 		break;
 	case KS_MPCL_DESTROY:
-		// thread has auto cleanup
-		//if (bs->state_thread) {
-		//	ks_pool_free(bs->pool, &bs->state_thread);
-		//}
 
 		// @todo consider looking at supporting externally allocated memory entries that can have cleanup callbacks associated, but the memory is not freed from the pool, only linked as an external allocation for auto cleanup
 		// which would allow calling something like ks_pool_set_cleanup(bs->properties, ...) and when the pool is destroyed, it can call a callback which handles calling cJSON_Delete, which is allocated externally
 		cJSON_Delete(bs->properties);
 		bs->properties = NULL;
-		// rwl has auto cleanup
-		//ks_rwl_destroy(&bs->properties_lock);
-
-		// connection id's are created as copies within the session's pool, and will be cleaned up with the pool automatically
-		//list_iterator_start(&bs->connections);
-		//while (list_iterator_hasnext(&bs->connections)) {
-		//	const char *id = (const char *)list_iterator_next(&bs->connections);
-		//	ks_pool_free(bs->pool, &id);
-		//}
-		//list_iterator_stop(&bs->connections);
-
-		// called by ks_list_destroy()
-		//ks_list_clear(&bs->connections);
-
-		// @todo change bs->connections to a pointer, allocate the memory in the pool, and set a cleanup callback for it to call ks_list_destroy() automatically
-		ks_list_destroy(&bs->connections);
-		// q has auto cleanup
-		//ks_q_destroy(&bs->receiving);
-		//ks_q_destroy(&bs->sending);
-
-		// rwl has auto cleanup
-		//ks_rwl_destroy(&bs->lock);
 
 		// @todo remove this, it's just for posterity in debugging
 		//bs->state_thread = NULL;
 		bs->properties_lock = NULL;
 		bs->receiving = NULL;
 		bs->sending = NULL;
+		bs->connections = NULL;
 		bs->cond = NULL;
 		bs->mutex = NULL;
 		bs->lock = NULL;
@@ -375,13 +350,8 @@ KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const
 	cid = ks_pstrdup(bs->pool, id);
 	ks_assert(cid);
 
-	ks_mutex_lock(bs->mutex);
-
 	ks_list_append(bs->connections, cid);
-
 	bs->ttl = 0;
-
-	ks_mutex_unlock(bs->mutex);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) connection added (%s)\n", bs->id, id);
 
@@ -392,26 +362,22 @@ KS_DECLARE(ks_status_t) blade_session_connections_add(blade_session_t *bs, const
 KS_DECLARE(ks_status_t) blade_session_connections_remove(blade_session_t *bs, const char *id)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	uint32_t size = 0;
 
 	ks_assert(bs);
 
-	ks_mutex_lock(bs->mutex);
-
-	size = ks_list_size(bs->connections);
-	for (uint32_t i = 0; i < size; ++i) {
-		const char *cid = (const char *)ks_list_get_at(bs->connections, i);
+	ks_list_iterator_start(bs->connections);
+	while (ks_list_iterator_hasnext(bs->connections)) {
+		const char *cid = (const char *)ks_list_iterator_next(bs->connections);
 		if (!strcasecmp(cid, id)) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) connection removed (%s)\n", bs->id, id);
-			ks_list_delete_at(bs->connections, i);
+			ks_list_delete_iterator(bs->connections);
 			ks_pool_free(bs->pool, &cid);
 			break;
 		}
 	}
+	ks_list_iterator_stop(bs->connections);
 
 	if (ks_list_size(bs->connections) == 0) bs->ttl = ks_time_now() + (5 * KS_USEC_PER_SEC);
-
-	ks_mutex_unlock(bs->mutex);
 
 	return ret;
 }
@@ -425,8 +391,6 @@ ks_status_t blade_session_connections_choose(blade_session_t *bs, cJSON *json, b
 	ks_assert(bs);
 	ks_assert(json);
 	ks_assert(bcP);
-
-	ks_mutex_lock(bs->mutex);
 
 	// @todo may be multiple connections, for now let's just assume there will be only one
 	// later there will need to be a way to pick which connection to use
@@ -448,7 +412,6 @@ ks_status_t blade_session_connections_choose(blade_session_t *bs, cJSON *json, b
 	*bcP = bc;
 
 done:
-	ks_mutex_unlock(bs->mutex);
 
 	return ret;
 }
@@ -670,7 +633,10 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		blade_session_sending_push(bs, json);
 	} else {
 		blade_connection_t *bc = NULL;
-		if (blade_session_connections_choose(bs, json, &bc) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		if (blade_session_connections_choose(bs, json, &bc) != KS_STATUS_SUCCESS) {
+			blade_session_sending_push(bs, json);
+			return KS_STATUS_FAIL;
+		}
 		blade_connection_sending_push(bc, json);
 		blade_connection_read_unlock(bc);
 	}
