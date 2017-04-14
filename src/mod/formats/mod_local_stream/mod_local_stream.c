@@ -512,7 +512,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					if (switch_core_has_video() && switch_core_file_has_video(use_fh, SWITCH_TRUE)) {
 						switch_frame_t vid_frame = { 0 };
 
-						if (use_fh == &source->chime_fh && switch_core_file_has_video(&fh, SWITCH_TRUE)) {
+						if (use_fh == &source->chime_fh && switch_test_flag(&fh, SWITCH_FILE_OPEN) && switch_core_file_has_video(&fh, SWITCH_TRUE)) {
 							if (switch_core_file_read_video(&fh, &vid_frame, svr) == SWITCH_STATUS_SUCCESS) {
 								switch_img_free(&vid_frame.img);
 							}
@@ -539,9 +539,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						source->has_video = 0;
 					}
 
-					if (use_fh == &source->chime_fh) {
+					if (switch_test_flag(&fh, SWITCH_FILE_OPEN) && use_fh == &source->chime_fh) {
 						olen = source->samples;
-						switch_core_file_read(&fh, source->abuf, &olen);
+						if (switch_core_file_read(&fh, source->abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+							switch_core_file_close(&fh);
+						}
 						olen = source->samples;
 					}
 					
