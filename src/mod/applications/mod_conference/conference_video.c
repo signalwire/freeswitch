@@ -2379,7 +2379,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			int seen = conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN);
 
 			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) &&
-				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && imember->video_layer_id > -1 && 
+				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && 
 				conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || (no_av && !imember->avatar_png_img))
 				&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && imember->video_media_flow != SWITCH_MEDIA_FLOW_INACTIVE) {
 				video_count++;
