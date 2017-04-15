@@ -5386,8 +5386,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				best_te_rate = 8000;
 			}
 
-			if (!best_te && (switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) ||
-							 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
+			if (!best_te && (switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "No 2833 in SDP. Liberal DTMF mode adding %d as telephone-event.\n", smh->mparams->te);
 				best_te = smh->mparams->te;
@@ -5397,7 +5396,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				smh->mparams->te_rate = best_te_rate;
 
 				if (smh->mparams->dtmf_type == DTMF_AUTO || smh->mparams->dtmf_type == DTMF_2833 ||
-					switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF)) {
+					switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) {
 					if (sdp_type == SDP_TYPE_REQUEST) {
 						smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
 						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
@@ -9350,8 +9349,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 
-	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) ||
-		 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
+	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 
 		for (i = 0; i < smh->num_rates; i++) {
 			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
@@ -10015,8 +10013,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_mutex_unlock(smh->sdp_mutex);
 		}
 
-		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) ||
-			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
+		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->mparams->te);
 		}
 
@@ -10063,8 +10060,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 
-		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) ||
-			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
+		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
 			&& smh->mparams->te > 95) {
 
 			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
