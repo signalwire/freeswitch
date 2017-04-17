@@ -1372,7 +1372,7 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 	}
 
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
-		int x, file_layers = 0, member_count = (int)count - file_count, total = vlnode->vlayout->layers;
+		int x, file_layers = 0, member_count = (int)count, total = vlnode->vlayout->layers;
 
 
 		for (x = total; x >= 0; x--) {
