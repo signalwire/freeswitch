@@ -105,7 +105,7 @@
 
 #define CONFFUNCAPISIZE (sizeof(conference_api_sub_commands)/sizeof(conference_api_sub_commands[0]))
 
-#define MAX_MUX_CODECS 10
+#define MAX_MUX_CODECS 50
 
 #define ALC_HRTF_SOFT  0x1992
 
@@ -521,6 +521,17 @@ typedef struct layout_group_s {
 	video_layout_node_t *layouts;
 } layout_group_t;
 
+typedef struct codec_set_s {
+	switch_codec_t codec;
+	switch_frame_t frame;
+	uint8_t *packet;
+	switch_image_t *scaled_img;
+	uint8_t fps_divisor;
+	uint32_t frame_count;
+	char *video_codec_group;
+} codec_set_t;
+
+
 typedef struct mcu_canvas_s {
 	int width;
 	int height;
@@ -549,13 +560,14 @@ typedef struct mcu_canvas_s {
 	switch_thread_t *video_muxing_thread;
 	int video_timer_reset;
 	switch_queue_t *video_queue;
-	int32_t video_write_bandwidth;
 	int recording;
 	switch_image_t *bgimg;
 	switch_image_t *fgimg;
 	switch_thread_rwlock_t *video_rwlock;
 	int playing_video_file;
 	int overlay_video_file;
+	codec_set_t *write_codecs[MAX_MUX_CODECS];
+	int write_codecs_count;
 } mcu_canvas_t;
 
 /* Record Node */
@@ -620,6 +632,7 @@ typedef struct conference_obj {
 	char *video_letterbox_bgcolor;
 	char *video_mute_banner;
 	char *no_video_avatar;
+	switch_event_t *variables;
 	conference_video_mode_t conference_video_mode;
 	int video_quality;
 	int members_with_video;
@@ -847,6 +860,7 @@ struct conference_member {
 	char *video_mute_png;
 	char *video_reservation_id;
 	char *video_role_id;
+	char *video_codec_group;
 	switch_vid_params_t vid_params;
 	uint32_t auto_kps_debounce_ticks;
 	uint32_t layer_loops;
@@ -896,15 +910,6 @@ typedef struct api_command {
 	char *pcommand;
 	char *psyntax;
 } api_command_t;
-
-typedef struct codec_set_s {
-	switch_codec_t codec;
-	switch_frame_t frame;
-	uint8_t *packet;
-	switch_image_t *scaled_img;
-	uint8_t fps_divisor;
-	uint32_t frame_count;
-} codec_set_t;
 
 typedef void (*conference_key_callback_t) (conference_member_t *, struct caller_control_actions *);
 
@@ -1200,6 +1205,7 @@ switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, swit
 switch_status_t conference_api_sub_get_uuid(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_get(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_vid_codec_group(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_canvas_fgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
@@ -1262,7 +1268,8 @@ void conference_loop_exec_app(conference_member_t *member, caller_control_action
 void conference_loop_deaf_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_deaf_on(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action);
-
+void conference_set_variable(conference_obj_t *conference, const char *var, const char *val);
+const char *conference_get_variable(conference_obj_t *conference, const char *var);
 
 
 /* Global Structs */

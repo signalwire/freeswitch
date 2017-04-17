@@ -843,6 +843,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		switch_core_hash_destroy(&conference->layout_group_hash);
 	}
 
+	switch_mutex_lock(conference->flag_mutex);
+	switch_event_destroy(&conference->variables);
+	switch_mutex_unlock(conference->flag_mutex);
 
 	if (conference->pool) {
 		switch_memory_pool_t *pool = conference->pool;
@@ -2550,6 +2553,28 @@ conference_obj_t *conference_find(char *name, char *domain)
 	return conference;
 }
 
+void conference_set_variable(conference_obj_t *conference, const char *var, const char *val)
+{
+	switch_mutex_lock(conference->flag_mutex);
+	switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+	switch_mutex_unlock(conference->flag_mutex);
+}
+
+const char *conference_get_variable(conference_obj_t *conference, const char *var)
+{
+	const char *val;
+
+	switch_mutex_lock(conference->flag_mutex);
+	val = switch_event_get_header(conference->variables, var);
+	switch_mutex_unlock(conference->flag_mutex);
+
+	if (val) {
+		return switch_core_strdup(conference->pool, val);
+	}
+
+	return NULL;
+}
+
 /* create a new conferene with a specific profile */
 conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool)
 {
@@ -3070,7 +3095,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->broadcast_chat_messages = broadcast_chat_messages;
 	conference->video_quality = conference_video_quality;
 	conference->auto_kps_debounce = auto_kps_debounce;
-
+	switch_event_create_plain(&conference->variables, SWITCH_EVENT_CHANNEL_DATA);
 	conference->conference_video_mode = conference_video_mode;
 
 	conference->scale_h264_canvas_width = scale_h264_canvas_width;
@@ -3567,7 +3592,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX) {
 		video_layout_t *vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group);
-
+		
 		if (!vlayout) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find layout\n");
 			conference->video_layout_name = conference->video_layout_group = NULL;
@@ -3598,6 +3623,28 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 					switch_mutex_unlock(conference->canvas_mutex);
 				}
 			}
+
+			if (cfg.profile) {
+				for (xml_kvp = switch_xml_child(cfg.profile, "video-codec-group"); xml_kvp; xml_kvp = xml_kvp->next) {
+					char *name = (char *) switch_xml_attr_soft(xml_kvp, "name");
+					char *bw = (char *) switch_xml_attr_soft(xml_kvp, "bandwidth");
+					char *fps = (char *) switch_xml_attr_soft(xml_kvp, "fps-divisor");
+					char *res = (char *) switch_xml_attr_soft(xml_kvp, "res-divisor");
+
+					if (name && bw) {
+						const char *str = switch_core_sprintf(conference->pool, "%s%s%s%s%s", bw,
+															  !zstr(res) ? ":" : "", res, !zstr(fps) ? ":" : "", fps);
+
+						const char *gname = switch_core_sprintf(conference->pool, "group-%s", name);
+						
+						conference_set_variable(conference, gname, str);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video codec group preset %s set to [%s]\n", gname, str);
+					}
+
+				}
+			
+			}
+
 		}
 	}
 

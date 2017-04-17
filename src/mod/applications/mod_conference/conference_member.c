@@ -745,6 +745,10 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference_member_set_logo(member, var);
 		}
 
+		if ((var = switch_channel_get_variable_dup(member->channel, "video_codec_group", SWITCH_FALSE, -1))) {
+			member->video_codec_group = switch_core_strdup(member->pool, var);
+		}
+
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var);
 

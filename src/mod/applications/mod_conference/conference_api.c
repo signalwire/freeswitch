@@ -103,6 +103,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-banner", (void_fn_t) & conference_api_sub_vid_banner, CONF_API_SUB_MEMBER_TARGET, "vid-banner", "<member_id|last> <text>"},
 	{"vid-mute-img", (void_fn_t) & conference_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
 	{"vid-logo-img", (void_fn_t) & conference_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
+	{"vid-codec-group", (void_fn_t) & conference_api_sub_vid_codec_group, CONF_API_SUB_MEMBER_TARGET, "vid-codec-group", "<member_id|last> [<group>|clear]"},
 	{"vid-res-id", (void_fn_t) & conference_api_sub_vid_res_id, CONF_API_SUB_MEMBER_TARGET, "vid-res-id", "<member_id|last> <val>|clear"},
 	{"vid-role-id", (void_fn_t) & conference_api_sub_vid_role_id, CONF_API_SUB_MEMBER_TARGET, "vid-role-id", "<member_id|last> <val>|clear"},
 	{"get-uuid", (void_fn_t) & conference_api_sub_get_uuid, CONF_API_SUB_MEMBER_TARGET, "get-uuid", "<member_id|last>"},
@@ -1314,8 +1315,11 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 {
 	uint32_t i;
 	int32_t video_write_bandwidth;
-	int x = 0;
-
+	int x = 0, id = -1;
+	char *group = NULL;
+	char *array[4] = {0};
+	int sdiv = 0, fdiv = 0;
+	
 	if (!conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 		stream->write_function(stream, "Bandwidth control not available.\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -1325,15 +1329,87 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 		stream->write_function(stream, "Invalid input\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	switch_split(argv[2], ':', array);
 
-	video_write_bandwidth = switch_parse_bandwidth_string(argv[2]);
-	for (i = 0; i <= conference->canvas_count; i++) {
-		if (conference->canvases[i]) {
-			stream->write_function(stream, "Set Bandwidth for canvas %d to %d\n", i + 1, video_write_bandwidth);
-			x++;
-			conference->canvases[i]->video_write_bandwidth = video_write_bandwidth;
+	if (array[1]) {
+		sdiv = atoi(array[2]);
+		if (sdiv < 2 || sdiv > 8) {
+			sdiv = 0;
 		}
 	}
+	
+	if (array[2]) {
+		fdiv = atoi(array[2]);
+		if (fdiv < 2 || fdiv > 8) {
+			fdiv = 0;
+		}
+	}
+
+	video_write_bandwidth = switch_parse_bandwidth_string(array[0]);
+	
+	if (argv[3]) {
+		group = argv[3];
+	}
+
+	if (argv[4]) {
+
+		if (argv[4]) {
+			id = atoi(argv[4]);
+		}
+
+		if (id < 1 || id > MAX_CANVASES+1) {
+			id = -1;
+		}
+
+		if (id < 1 || id > conference->canvas_count) {
+			stream->write_function(stream, "-ERR Invalid canvas\n");
+			goto end;
+		}
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+	for (i = 0; i <= conference->canvas_count; i++) {
+		if (i > -1 && i != id - 1) {
+			continue;
+		}
+
+		if (conference->canvases[i]) {
+			mcu_canvas_t *canvas = conference->canvases[i];
+			int j;
+
+			for (j = 0; j < canvas->write_codecs_count; j++) {
+				if ((zstr(group) || !strcmp(group, switch_str_nil(canvas->write_codecs[j]->video_codec_group)))) {
+					switch_core_codec_control(&canvas->write_codecs[j]->codec, SCC_VIDEO_BANDWIDTH,
+											  SCCT_INT, &video_write_bandwidth, SCCT_NONE, NULL, NULL, NULL);
+					stream->write_function(stream, "Set Bandwidth for canvas %d index %d group[%s] to %d\n", i + 1, j, 
+										   switch_str_nil(canvas->write_codecs[j]->video_codec_group), video_write_bandwidth);
+					
+					if (fdiv) {
+						canvas->write_codecs[j]->fps_divisor = fdiv;
+					}
+					
+					if (sdiv) {
+						int w = 0, h = 0;
+
+						w = canvas->width;
+						h = canvas->width;
+						
+						w /= sdiv;
+						h /= sdiv;
+
+						switch_img_free(&canvas->write_codecs[j]->scaled_img);
+						canvas->write_codecs[j]->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 16);
+					}
+					
+					x++;
+				}
+			}
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);
+
+ end:
 
 	if (!x) {
 		stream->write_function(stream, "Bandwidth not set\n");
@@ -1898,6 +1974,39 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 	stream->write_function(stream, "Video logo %s\n", member->video_logo ? "set" : "cleared");
 
 	conference_video_release_layer(&layer);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+switch_status_t conference_api_sub_vid_codec_group(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	char *text = (char *) data;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (text) {
+
+		if (!strcmp(text, "clear")) {
+			member->video_codec_group = NULL;
+		} else {
+			member->video_codec_group = switch_core_strdup(member->pool, text);
+		}
+
+		switch_mutex_lock(member->conference->member_mutex);
+		member->video_codec_index = -1;
+		switch_mutex_unlock(member->conference->member_mutex);
+		stream->write_function(stream, "Video codec group %s %s\n", member->video_codec_group ? "set" : "cleared", switch_str_nil(member->video_codec_group));
+	} else {
+		stream->write_function(stream, "Video codec group is %s\n", member->video_codec_group);
+	}
+	
 
 	return SWITCH_STATUS_SUCCESS;
 
