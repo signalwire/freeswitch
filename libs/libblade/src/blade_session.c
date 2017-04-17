@@ -319,8 +319,8 @@ KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_stat
 
 	blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_PRE);
 
-	ks_cond_try_signal(bs->cond);
 	ks_mutex_unlock(bs->mutex);
+	ks_cond_try_signal(bs->cond);
 }
 
 KS_DECLARE(void) blade_session_hangup(blade_session_t *bs)

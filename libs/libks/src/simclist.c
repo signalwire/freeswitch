@@ -267,8 +267,6 @@ static void ks_list_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_clean
 		break;
 	case KS_MPCL_TEARDOWN:
 		ks_list_clear(l);
-		break;
-	case KS_MPCL_DESTROY:
 		ks_rwl_write_lock(l->lock);
 		for (unsigned int i = 0; i < l->spareelsnum; i++) ks_pool_free(l->pool, &l->spareels[i]);
 		l->spareelsnum = 0;
@@ -277,6 +275,8 @@ static void ks_list_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_clean
 		ks_pool_free(l->pool, &l->tail_sentinel);
 		ks_rwl_write_unlock(l->lock);
 		ks_rwl_destroy(&l->lock);
+		break;
+	case KS_MPCL_DESTROY:
 		break;
 	}
 }
@@ -648,13 +648,13 @@ KS_DECLARE(int) ks_list_delete_at(ks_list_t *restrict l, unsigned int pos) {
 KS_DECLARE(int) ks_list_delete_iterator(ks_list_t *restrict l) {
 	struct ks_list_entry_s *delendo;
 
-	if (!l->iter_active || l->iter_pos >= l->numels) return -1;
+	if (!l->iter_active || l->iter_pos > l->numels) return -1;
 
 	ks_rwl_write_lock(l->lock);
 
-	delendo = ks_list_findpos(l, l->iter_pos);
-
-	ks_list_drop_elem(l, delendo, l->iter_pos);
+	delendo = ks_list_findpos(l, l->iter_pos - 1);
+	
+	ks_list_drop_elem(l, delendo, l->iter_pos - 1);
 
 	l->numels--;
 

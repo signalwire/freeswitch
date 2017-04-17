@@ -196,22 +196,23 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *poo
 	bh->pool = pool;
 	bh->tpool = tpool;
 
-	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	// @todo this needs to be reviewed, NOLOCK is incorrect, but RWLOCK causes deadlock somewhere
+	ks_hash_create(&bh->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->transports);
-	ks_hash_create(&bh->spaces, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->spaces, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->spaces);
-	ks_hash_create(&bh->events, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->events, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->events);
 
-	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->connections);
 
-	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->sessions);
-	ks_hash_create(&bh->session_state_callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->session_state_callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->session_state_callbacks);
 
-	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
+	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->requests);
 
 	*bhP = bh;
@@ -665,6 +666,13 @@ KS_DECLARE(blade_session_t *) blade_handle_sessions_get(blade_handle_t *bh, cons
 	ks_assert(bh);
 	ks_assert(sid);
 
+	// @todo consider using blade_session_t via reference counting, rather than locking a mutex to simulate a reference count to halt cleanups while in use
+	// using actual reference counting would mean that mutexes would not need to be held locked when looking up a session by id just to prevent cleanup,
+	// instead cleanup would automatically occur when the last reference is actually removed (which SHOULD be at the end of the state machine thread),
+	// which is safer than another thread potentially waiting on the write lock to release while it's being destroyed, or external code forgetting to unlock
+	// then use short lived mutex or rwl for accessing the content of the session while it is referenced
+	// this approach should also be used for blade_connection_t, which has a similar threaded state machine
+
 	ks_hash_read_lock(bh->sessions);
 	bs = ks_hash_search(bh->sessions, (void *)sid, KS_UNLOCKED);
 	if (bs && blade_session_read_lock(bs, KS_FALSE) != KS_STATUS_SUCCESS) bs = NULL;
@@ -766,7 +774,7 @@ KS_DECLARE(ks_status_t) blade_handle_session_state_callback_unregister(blade_han
 	ks_hash_write_lock(bh->session_state_callbacks);
 	bhsscr = (blade_handle_session_state_callback_registration_t *)ks_hash_remove(bh->session_state_callbacks, (void *)id);
 	if (!bhsscr) ret = KS_STATUS_FAIL;
-	ks_hash_write_lock(bh->session_state_callbacks);
+	ks_hash_write_unlock(bh->session_state_callbacks);
 
 	if (bhsscr)	blade_handle_session_state_callback_registration_destroy(&bhsscr);
 
