@@ -1216,14 +1216,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch_core_session_t *session, const char *function)
 {
-	switch_media_bug_t *bp, *last = NULL;
+	switch_media_bug_t *bp, *last = NULL, *next = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_media_bug_t *closed = NULL;
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
-		for (bp = session->bugs; bp; bp = bp->next) {
-			if (!switch_test_flag(session, SSF_DESTROYABLE) && 
+		for (bp = session->bugs; bp; bp = next) {
+			next = bp->next;
+
+			if (!switch_test_flag(session, SSF_DESTROYABLE) &&
 				((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 				last = bp;
