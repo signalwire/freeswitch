@@ -291,7 +291,7 @@ ks_bool_t blade_chat_join_request_handler(blade_module_t *bm, blade_request_t *b
 	props_participant = cJSON_GetObjectItem(props, "blade.chat.participant");
 	if (props_participant && props_participant->type == cJSON_True) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) attempted to join chat but is already a participant\n", blade_session_id_get(bs));
-		blade_rpc_error_create(breq->pool, &res, NULL, breq->message_id, -10000, "Already a participant of chat");
+		blade_rpc_error_create(&res, NULL, breq->message_id, -10000, "Already a participant of chat");
 	} else {
 		ks_log(KS_LOG_DEBUG, "Session (%s) joined chat\n", blade_session_id_get(bs));
 
@@ -300,7 +300,7 @@ ks_bool_t blade_chat_join_request_handler(blade_module_t *bm, blade_request_t *b
 
 		ks_list_append(bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and cleanup when removed
 
-		blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
+		blade_rpc_response_create(&res, NULL, breq->message_id);
 
 		// @todo create an event to send to participants when a session joins and leaves, send after main response though
 	}
@@ -343,7 +343,7 @@ ks_bool_t blade_chat_leave_request_handler(blade_module_t *bm, blade_request_t *
 	props_participant = cJSON_GetObjectItem(props, "blade.chat.participant");
 	if (!props_participant || props_participant->type == cJSON_False) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) attempted to leave chat but is not a participant\n", blade_session_id_get(bs));
-		blade_rpc_error_create(breq->pool, &res, NULL, breq->message_id, -10000, "Not a participant of chat");
+		blade_rpc_error_create(&res, NULL, breq->message_id, -10000, "Not a participant of chat");
 	} else {
 		ks_log(KS_LOG_DEBUG, "Session (%s) left chat\n", blade_session_id_get(bs));
 
@@ -351,7 +351,7 @@ ks_bool_t blade_chat_leave_request_handler(blade_module_t *bm, blade_request_t *
 
 		ks_list_delete(bm_chat->participants, blade_session_id_get(bs)); // @todo make copy of session id instead and search manually, also free the id
 
-		blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
+		blade_rpc_response_create(&res, NULL, breq->message_id);
 
 		// @todo create an event to send to participants when a session joins and leaves, send after main response though
 	}
@@ -388,17 +388,17 @@ ks_bool_t blade_chat_send_request_handler(blade_module_t *bm, blade_request_t *b
 	params = cJSON_GetObjectItem(breq->message, "params"); // @todo cache this in blade_request_t for quicker/easier access
 	if (!params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) attempted to send chat message with no 'params' object\n", blade_session_id_get(bs));
-		blade_rpc_error_create(breq->pool, &res, NULL, breq->message_id, -32602, "Missing params object");
+		blade_rpc_error_create(&res, NULL, breq->message_id, -32602, "Missing params object");
 	} else if (!(message = cJSON_GetObjectCstr(params, "message"))) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) attempted to send chat message with no 'message'\n", blade_session_id_get(bs));
-		blade_rpc_error_create(breq->pool, &res, NULL, breq->message_id, -32602, "Missing params message string");
+		blade_rpc_error_create(&res, NULL, breq->message_id, -32602, "Missing params message string");
 	}
 
 	bs = blade_handle_sessions_get(breq->handle, breq->session_id);
 	ks_assert(bs);
 
 	if (!res) {
-		blade_rpc_response_create(breq->pool, &res, NULL, breq->message_id);
+		blade_rpc_response_create(&res, NULL, breq->message_id);
 		sendevent = KS_TRUE;
 	}
 	blade_session_send(bs, res, NULL);
@@ -408,7 +408,7 @@ ks_bool_t blade_chat_send_request_handler(blade_module_t *bm, blade_request_t *b
 	cJSON_Delete(res);
 
 	if (sendevent) {
-		blade_rpc_event_create(breq->pool, &event, &res, "blade.chat.message");
+		blade_rpc_event_create(&event, &res, "blade.chat.message");
 		ks_assert(event);
 		cJSON_AddStringToObject(res, "from", breq->session_id); // @todo should really be the identity, but we don't have that in place yet
 		cJSON_AddStringToObject(res, "message", message);

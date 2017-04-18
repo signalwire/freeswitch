@@ -37,11 +37,9 @@ struct blade_connection_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
 
-	void *transport_init_data;
 	void *transport_data;
 	blade_transport_callbacks_t *transport_callbacks;
 
-	ks_bool_t shutdown;
 	blade_connection_direction_t direction;
     ks_thread_t *state_thread;
 	blade_connection_state_t state;
@@ -63,10 +61,30 @@ ks_status_t blade_connection_state_on_detach(blade_connection_t *bc);
 ks_status_t blade_connection_state_on_ready(blade_connection_t *bc);
 
 
-KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
-												blade_handle_t *bh,
-												void *transport_init_data,
-												blade_transport_callbacks_t *transport_callbacks)
+static void blade_connection_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_connection_t *bc = (blade_connection_t *)ptr;
+
+	ks_assert(bc);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		blade_connection_shutdown(bc);
+		break;
+	case KS_MPCL_DESTROY:
+		// @todo remove this, it's just for posterity in debugging
+		bc->sending = NULL;
+		bc->lock = NULL;
+
+		//ks_pool_free(bc->pool, &bc->id);
+		bc->id = NULL;
+		break;
+	}
+}
+
+KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_handle_t *bh)
 {
 	blade_connection_t *bc = NULL;
 	ks_pool_t *pool = NULL;
@@ -74,15 +92,13 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 
 	ks_assert(bcP);
 	ks_assert(bh);
-	ks_assert(transport_callbacks);
 
-	pool = blade_handle_pool_get(bh);
+	ks_pool_open(&pool);
+	ks_assert(pool);
 
 	bc = ks_pool_alloc(pool, sizeof(blade_connection_t));
 	bc->handle = bh;
 	bc->pool = pool;
-	bc->transport_init_data = transport_init_data;
-	bc->transport_callbacks = transport_callbacks;
 
 	ks_uuid(&id);
 	bc->id = ks_uuid_str(pool, &id);
@@ -94,9 +110,11 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 	ks_q_create(&bc->sending, pool, 0);
 	ks_assert(bc->sending);
 
-	*bcP = bc;
+	ks_assert(ks_pool_set_cleanup(pool, bc, NULL, blade_connection_cleanup) == KS_STATUS_SUCCESS);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
+
+	*bcP = bc;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -104,41 +122,36 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
 KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 {
 	blade_connection_t *bc = NULL;
+	ks_pool_t *pool = NULL;
 
 	ks_assert(bcP);
 	ks_assert(*bcP);
 
 	bc = *bcP;
 
-	blade_connection_shutdown(bc);
-
-	ks_q_destroy(&bc->sending);
-
-	ks_rwl_destroy(&bc->lock);
-
-	ks_pool_free(bc->pool, &bc->id);
-
-	ks_pool_free(bc->pool, bcP);
+	pool = bc->pool;
+	//ks_pool_free(bc->pool, bcP);
+	ks_pool_close(&pool);
 
 	ks_log(KS_LOG_DEBUG, "Destroyed\n");
+
+	*bcP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction)
 {
+	blade_handle_t *bh = NULL;
+
 	ks_assert(bc);
+
+	bh = blade_connection_handle_get(bc);
 
 	bc->direction = direction;
 	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_NONE);
 
-    if (ks_thread_create_ex(&bc->state_thread,
-							blade_connection_state_thread,
-							bc,
-							KS_THREAD_FLAG_DEFAULT,
-							KS_THREAD_DEFAULT_STACK,
-							KS_PRI_NORMAL,
-							bc->pool) != KS_STATUS_SUCCESS) {
+	if (ks_thread_pool_add_job(blade_handle_tpool_get(bh), blade_connection_state_thread, bc) != KS_STATUS_SUCCESS) {
 		// @todo error logging
 		return KS_STATUS_FAIL;
 	}
@@ -154,14 +167,7 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 
 	ks_assert(bc);
 
-	if (bc->state_thread) {
-		bc->shutdown = KS_TRUE;
-		ks_thread_join(bc->state_thread);
-		ks_pool_free(bc->pool, &bc->state_thread);
-		bc->shutdown = KS_FALSE;
-	}
-
-	if (bc->session) ks_pool_free(bc->pool, &bc->session);
+	blade_handle_connections_remove(bc);
 
 	while (ks_q_trypop(bc->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 
@@ -228,13 +234,6 @@ KS_DECLARE(ks_status_t) blade_connection_write_unlock(blade_connection_t *bc)
 }
 
 
-KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc)
-{
-	ks_assert(bc);
-
-	return bc->transport_init_data;
-}
-
 KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc)
 {
 	ks_assert(bc);
@@ -242,11 +241,14 @@ KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc)
 	return bc->transport_data;
 }
 
-KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data)
+KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data, blade_transport_callbacks_t *transport_callbacks)
 {
 	ks_assert(bc);
+	ks_assert(transport_data);
+	ks_assert(transport_callbacks);
 
 	bc->transport_data = transport_data;
+	bc->transport_callbacks = transport_callbacks;
 }
 
 blade_transport_state_callback_t blade_connection_state_callback_lookup(blade_connection_t *bc, blade_connection_state_t state)
@@ -356,18 +358,20 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 {
 	blade_connection_t *bc = NULL;
 	blade_connection_state_t state;
+	ks_bool_t shutdown = KS_FALSE;
 
 	ks_assert(thread);
 	ks_assert(data);
 
 	bc = (blade_connection_t *)data;
 
-	while (!bc->shutdown) {
+	while (!shutdown) {
 		state = bc->state;
 
 		switch (state) {
 		case BLADE_CONNECTION_STATE_DISCONNECT:
 			blade_connection_state_on_disconnect(bc);
+			shutdown = KS_TRUE;
 			break;
 		case BLADE_CONNECTION_STATE_NEW:
 			blade_connection_state_on_new(bc);
@@ -386,9 +390,9 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 			break;
 		default: break;
 		}
-
-		if (state == BLADE_CONNECTION_STATE_DISCONNECT) break;
 	}
+
+	blade_connection_destroy(&bc);
 
 	return NULL;
 }
@@ -536,7 +540,6 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
-	else ks_sleep_ms(1);
 
 	return KS_STATUS_SUCCESS;
 }

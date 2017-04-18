@@ -205,12 +205,11 @@ KS_DECLARE(ks_status_t) blade_rpc_request_create(ks_pool_t *pool, cJSON **json, 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_response_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *id)
+KS_DECLARE(ks_status_t) blade_rpc_response_create(cJSON **json, cJSON **result, const char *id)
 {
 	cJSON *root = NULL;
 	cJSON *r = NULL;
 
-	ks_assert(pool);
 	ks_assert(json);
 	ks_assert(id);
 
@@ -229,12 +228,11 @@ KS_DECLARE(ks_status_t) blade_rpc_response_create(ks_pool_t *pool, cJSON **json,
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJSON **error, const char *id, int32_t code, const char *message)
+KS_DECLARE(ks_status_t) blade_rpc_error_create(cJSON **json, cJSON **error, const char *id, int32_t code, const char *message)
 {
 	cJSON *root = NULL;
 	cJSON *e = NULL;
 
-	ks_assert(pool);
 	ks_assert(json);
 	//ks_assert(id);
 	ks_assert(message);
@@ -256,13 +254,12 @@ KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJ
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_event_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *event)
+KS_DECLARE(ks_status_t) blade_rpc_event_create(cJSON **json, cJSON **result, const char *event)
 {
 	cJSON *root = NULL;
 	cJSON *b = NULL;
 	cJSON *r = NULL;
 
-	ks_assert(pool);
 	ks_assert(json);
 	ks_assert(event);
 

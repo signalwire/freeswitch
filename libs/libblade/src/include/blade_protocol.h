@@ -47,9 +47,9 @@ KS_DECLARE(ks_status_t) blade_response_destroy(blade_response_t **bresP);
 KS_DECLARE(ks_status_t) blade_event_create(blade_event_t **bevP, blade_handle_t *bh, const char *session_id, cJSON *json);
 KS_DECLARE(ks_status_t) blade_event_destroy(blade_event_t **bevP);
 KS_DECLARE(ks_status_t) blade_rpc_request_create(ks_pool_t *pool, cJSON **json, cJSON **params, const char **id, const char *method);
-KS_DECLARE(ks_status_t) blade_rpc_response_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *id);
-KS_DECLARE(ks_status_t) blade_rpc_error_create(ks_pool_t *pool, cJSON **json, cJSON **error, const char *id, int32_t code, const char *message);
-KS_DECLARE(ks_status_t) blade_rpc_event_create(ks_pool_t *pool, cJSON **json, cJSON **result, const char *event);
+KS_DECLARE(ks_status_t) blade_rpc_response_create(cJSON **json, cJSON **result, const char *id);
+KS_DECLARE(ks_status_t) blade_rpc_error_create(cJSON **json, cJSON **error, const char *id, int32_t code, const char *message);
+KS_DECLARE(ks_status_t) blade_rpc_event_create(cJSON **json, cJSON **result, const char *event);
 KS_END_EXTERN_C
 
 #endif

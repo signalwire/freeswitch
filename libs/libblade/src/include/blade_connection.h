@@ -36,10 +36,7 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP,
-												blade_handle_t *bh,
-												void *transport_data,
-												blade_transport_callbacks_t *transport_callbacks);
+KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_handle_t *bh);
 KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP);
 KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction);
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc);
@@ -50,9 +47,8 @@ KS_DECLARE(ks_status_t) blade_connection_read_lock(blade_connection_t *bc, ks_bo
 KS_DECLARE(ks_status_t) blade_connection_read_unlock(blade_connection_t *bc);
 KS_DECLARE(ks_status_t) blade_connection_write_lock(blade_connection_t *bc, ks_bool_t block);
 KS_DECLARE(ks_status_t) blade_connection_write_unlock(blade_connection_t *bc);
-KS_DECLARE(void *) blade_connection_transport_init_get(blade_connection_t *bc);
 KS_DECLARE(void *) blade_connection_transport_get(blade_connection_t *bc);
-KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data);
+KS_DECLARE(void) blade_connection_transport_set(blade_connection_t *bc, void *transport_data, blade_transport_callbacks_t *transport_callbacks);
 KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connection_state_t state);
 KS_DECLARE(blade_connection_state_t) blade_connection_state_get(blade_connection_t *bc);
 KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc);
