@@ -41,39 +41,43 @@ struct blade_module_s {
 	blade_module_callbacks_t *module_callbacks;
 };
 
+static void blade_module_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_module_t *bm = (blade_module_t *)ptr;
 
-KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, void *module_data, blade_module_callbacks_t *module_callbacks)
+	ks_assert(bm);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
+
+KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks)
 {
 	blade_module_t *bm = NULL;
-	ks_pool_t *pool = NULL;
 
 	ks_assert(bmP);
 	ks_assert(bh);
+	ks_assert(pool);
 	ks_assert(module_data);
 	ks_assert(module_callbacks);
-
-	pool = blade_handle_pool_get(bh);
 
 	bm = ks_pool_alloc(pool, sizeof(blade_module_t));
 	bm->handle = bh;
 	bm->pool = pool;
 	bm->module_data = module_data;
 	bm->module_callbacks = module_callbacks;
+
+	ks_assert(ks_pool_set_cleanup(pool, bm, NULL, blade_module_cleanup) == KS_STATUS_SUCCESS);
+
+	ks_log(KS_LOG_DEBUG, "Created\n");
+
 	*bmP = bm;
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP)
-{
-	blade_module_t *bm = NULL;
-
-	ks_assert(bmP);
-	ks_assert(*bmP);
-
-	bm = *bmP;
-
-	ks_pool_free(bm->pool, bmP);
 
 	return KS_STATUS_SUCCESS;
 }

@@ -42,7 +42,6 @@ typedef struct blade_transport_wss_s blade_transport_wss_t;
 struct blade_module_wss_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
-	ks_thread_pool_t *tpool;
 	blade_module_t *module;
 	blade_module_callbacks_t *module_callbacks;
 	blade_transport_callbacks_t *transport_callbacks;
@@ -53,9 +52,8 @@ struct blade_module_wss_s {
 	int32_t config_wss_endpoints_ipv6_length;
 	int32_t config_wss_endpoints_backlog;
 
-	ks_bool_t shutdown;
+	volatile ks_bool_t shutdown;
 
-	ks_thread_t *listeners_thread;
 	struct pollfd *listeners_poll;
 	int32_t listeners_count;
 };
@@ -86,7 +84,6 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data);
 
 
 ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, ks_pool_t *pool, blade_module_wss_t *bm_wss, ks_socket_t sock, const char *session_id);
-//ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP);
 
 ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target, const char *session_id);
 blade_connection_rank_t blade_transport_wss_on_rank(blade_connection_t *bc, blade_identity_t *target);
@@ -138,6 +135,22 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 };
 
 
+static void blade_module_wss_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_module_wss_t *bm_wss = (blade_module_wss_t *)ptr;
+
+	ks_assert(bm_wss);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		blade_module_wss_on_shutdown(bm_wss->module);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
 ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh)
 {
@@ -147,16 +160,18 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 	ks_assert(bm_wssP);
 	ks_assert(bh);
 
-	pool = blade_handle_pool_get(bh);
+	ks_pool_open(&pool);
+	ks_assert(pool);
 
     bm_wss = ks_pool_alloc(pool, sizeof(blade_module_wss_t));
 	bm_wss->handle = bh;
 	bm_wss->pool = pool;
-	bm_wss->tpool = blade_handle_tpool_get(bh);
 
-	blade_module_create(&bm_wss->module, bh, bm_wss, &g_module_wss_callbacks);
+	blade_module_create(&bm_wss->module, bh, pool, bm_wss, &g_module_wss_callbacks);
 	bm_wss->module_callbacks = &g_module_wss_callbacks;
 	bm_wss->transport_callbacks = &g_transport_wss_callbacks;
+
+	ks_assert(ks_pool_set_cleanup(pool, bm_wss, NULL, blade_module_wss_cleanup) == KS_STATUS_SUCCESS);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -168,19 +183,20 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
 {
 	blade_module_wss_t *bm_wss = NULL;
+	ks_pool_t *pool = NULL;
 
 	ks_assert(bm_wssP);
 	ks_assert(*bm_wssP);
 
 	bm_wss = *bm_wssP;
 
-	blade_module_wss_on_shutdown(bm_wss->module);
-
-	blade_module_destroy(&bm_wss->module);
-
-	ks_pool_free(bm_wss->pool, bm_wssP);
+	pool = bm_wss->pool;
+	//ks_pool_free(bm_wss->pool, bm_wssP);
+	ks_pool_close(&pool);
 
 	ks_log(KS_LOG_DEBUG, "Destroyed\n");
+
+	*bm_wssP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -353,14 +369,12 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 		}
 	}
 
+
 	if (bm_wss->listeners_count > 0 &&
-		ks_thread_create_ex(&bm_wss->listeners_thread,
-							blade_module_wss_listeners_thread,
-							bm_wss,
-							KS_THREAD_FLAG_DEFAULT,
-							KS_THREAD_DEFAULT_STACK,
-							KS_PRI_NORMAL,
-							bm_wss->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+		ks_thread_pool_add_job(blade_handle_tpool_get(bm_wss->handle), blade_module_wss_listeners_thread, bm_wss) != KS_STATUS_SUCCESS) {
+		// @todo error logging
+		return KS_STATUS_FAIL;
+	}
 
 	blade_handle_transport_register(bm_wss->handle, bm, BLADE_MODULE_WSS_TRANSPORT_NAME, bm_wss->transport_callbacks);
 
@@ -372,31 +386,25 @@ KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_s
 KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm)
 {
 	blade_module_wss_t *bm_wss = NULL;
-	ks_bool_t stopped = KS_FALSE;
 
 	ks_assert(bm);
 
 	bm_wss = (blade_module_wss_t *)blade_module_data_get(bm);
 
-	blade_handle_transport_unregister(bm_wss->handle, BLADE_MODULE_WSS_TRANSPORT_NAME);
-
-	if (bm_wss->listeners_thread) {
+	if (bm_wss->listeners_count > 0) {
 		bm_wss->shutdown = KS_TRUE;
-		ks_thread_join(bm_wss->listeners_thread);
-		ks_pool_free(bm_wss->pool, &bm_wss->listeners_thread);
-		bm_wss->shutdown = KS_FALSE;
-		stopped = KS_TRUE;
+		while (bm_wss->shutdown) ks_sleep_ms(1);
 	}
+
+	blade_handle_transport_unregister(bm_wss->handle, BLADE_MODULE_WSS_TRANSPORT_NAME);
 
 	for (int32_t index = 0; index < bm_wss->listeners_count; ++index) {
 		ks_socket_t sock = bm_wss->listeners_poll[index].fd;
 		ks_socket_shutdown(sock, SHUT_RDWR);
 		ks_socket_close(&sock);
 	}
-	bm_wss->listeners_count = 0;
-	if (bm_wss->listeners_poll) ks_pool_free(bm_wss->pool, &bm_wss->listeners_poll);
 
-	if (stopped) ks_log(KS_LOG_DEBUG, "Stopped\n");
+	ks_log(KS_LOG_DEBUG, "Stopped\n");
 
 	return KS_STATUS_SUCCESS;
 }
@@ -465,10 +473,6 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 
 	ks_log(KS_LOG_DEBUG, "Started\n");
 	while (!bm_wss->shutdown) {
-		//if (bm_wss->listeners_count == 0) {
-		//	ks_sleep_ms(500);
-		//	continue;
-		//}
 		// @todo take exact timeout from a setting in config_wss_endpoints
 		if (ks_poll(bm_wss->listeners_poll, bm_wss->listeners_count, 100) > 0) {
 			for (int32_t index = 0; index < bm_wss->listeners_count; ++index) {
@@ -521,6 +525,8 @@ void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data)
 	}
 	ks_log(KS_LOG_DEBUG, "Stopped\n");
 
+	bm_wss->shutdown = KS_FALSE;
+
     return NULL;
 }
 
@@ -566,24 +572,6 @@ ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, ks_pool_
 
 	return KS_STATUS_SUCCESS;
 }
-
-//ks_status_t blade_transport_wss_destroy(blade_transport_wss_t **bt_wssP)
-//{
-//	blade_transport_wss_t *bt_wss = NULL;
-//
-//	ks_assert(bt_wssP);
-//	ks_assert(*bt_wssP);
-//
-//	bt_wss = *bt_wssP;
-//
-//	ks_pool_free(bt_wss->pool, bt_wssP);
-//
-//	ks_log(KS_LOG_DEBUG, "Destroyed\n");
-//
-//	*bt_wssP = NULL;
-//
-//	return KS_STATUS_SUCCESS;
-//}
 
 ks_status_t blade_transport_wss_on_connect(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target, const char *session_id)
 {

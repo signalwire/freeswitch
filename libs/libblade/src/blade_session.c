@@ -475,7 +475,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 
 	while (!shutdown) {
 		// Entering the call below, the mutex is expected to be locked and will be unlocked by the call
-		ks_cond_timedwait(bs->cond, 500);
+		ks_cond_timedwait(bs->cond, 100);
 		// Leaving the call above, the mutex will be locked after being signalled, timing out, or woken up for any reason
 
 		state = bs->state;
@@ -486,6 +486,8 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 				if (blade_session_connections_choose(bs, json, &bc) == KS_STATUS_SUCCESS) {
 					blade_connection_sending_push(bc, json);
 					blade_connection_read_unlock(bc);
+				} else {
+					// @todo review this, possible the connection is dropped after popping a message, which results in it just being deleted without sending
 				}
 				cJSON_Delete(json);
 			}
@@ -503,15 +505,12 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 			break;
 		case BLADE_SESSION_STATE_CONNECT:
 			ks_log(KS_LOG_DEBUG, "Session (%s) state connect\n", bs->id);
-			//ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_ATTACH:
 			ks_log(KS_LOG_DEBUG, "Session (%s) state attach\n", bs->id);
-			//ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_DETACH:
 			ks_log(KS_LOG_DEBUG, "Session (%s) state detach\n", bs->id);
-			//ks_sleep_ms(1000);
 			break;
 		case BLADE_SESSION_STATE_READY:
 			blade_session_state_on_ready(bs);

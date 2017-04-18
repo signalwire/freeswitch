@@ -41,7 +41,6 @@ struct blade_connection_s {
 	blade_transport_callbacks_t *transport_callbacks;
 
 	blade_connection_direction_t direction;
-    ks_thread_t *state_thread;
 	volatile blade_connection_state_t state;
 
 	const char *id;

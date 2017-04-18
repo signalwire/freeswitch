@@ -71,6 +71,24 @@ static blade_module_callbacks_t g_module_chat_callbacks =
 };
 
 
+static void blade_module_chat_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_module_chat_t *bm_chat = (blade_module_chat_t *)ptr;
+
+	ks_assert(bm_chat);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		//ks_list_destroy(&bm_chat->participants);
+		blade_module_chat_on_shutdown(bm_chat->module);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
+
 
 ks_status_t blade_module_chat_create(blade_module_chat_t **bm_chatP, blade_handle_t *bh)
 {
@@ -80,7 +98,8 @@ ks_status_t blade_module_chat_create(blade_module_chat_t **bm_chatP, blade_handl
 	ks_assert(bm_chatP);
 	ks_assert(bh);
 
-	pool = blade_handle_pool_get(bh);
+	ks_pool_open(&pool);
+	ks_assert(pool);
 
     bm_chat = ks_pool_alloc(pool, sizeof(blade_module_chat_t));
 	bm_chat->handle = bh;
@@ -91,12 +110,14 @@ ks_status_t blade_module_chat_create(blade_module_chat_t **bm_chatP, blade_handl
 	ks_list_create(&bm_chat->participants, pool);
 	ks_assert(bm_chat->participants);
 
-	blade_module_create(&bm_chat->module, bh, bm_chat, &g_module_chat_callbacks);
+	blade_module_create(&bm_chat->module, bh, pool, bm_chat, &g_module_chat_callbacks);
 	bm_chat->module_callbacks = &g_module_chat_callbacks;
 
-	*bm_chatP = bm_chat;
+	ks_assert(ks_pool_set_cleanup(pool, bm_chat, NULL, blade_module_chat_cleanup) == KS_STATUS_SUCCESS);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
+
+	*bm_chatP = bm_chat;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -104,21 +125,20 @@ ks_status_t blade_module_chat_create(blade_module_chat_t **bm_chatP, blade_handl
 ks_status_t blade_module_chat_destroy(blade_module_chat_t **bm_chatP)
 {
 	blade_module_chat_t *bm_chat = NULL;
+	ks_pool_t *pool = NULL;
 
 	ks_assert(bm_chatP);
 	ks_assert(*bm_chatP);
 
 	bm_chat = *bm_chatP;
 
-	blade_module_chat_on_shutdown(bm_chat->module);
-
-	ks_list_destroy(&bm_chat->participants);
-
-	blade_module_destroy(&bm_chat->module);
-
-	ks_pool_free(bm_chat->pool, bm_chatP);
+	pool = bm_chat->pool;
+	//ks_pool_free(bm_chat->pool, bm_chatP);
+	ks_pool_close(&pool);
 
 	ks_log(KS_LOG_DEBUG, "Destroyed\n");
+
+	*bm_chatP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

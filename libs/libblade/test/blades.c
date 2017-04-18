@@ -80,8 +80,6 @@ int main(int argc, char **argv)
 	//blade_module_chat_on_shutdown(mod_chat);
 	//blade_module_chat_on_unload(mod_chat);
 
-	blade_module_wss_on_shutdown(mod_wss);
-
 	blade_module_wss_on_unload(mod_wss);
 
 	blade_handle_destroy(&bh);

@@ -36,8 +36,7 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, void *module_data, blade_module_callbacks_t *module_callbacks);
-KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP);
+KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks);
 KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm);
 KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm);
 

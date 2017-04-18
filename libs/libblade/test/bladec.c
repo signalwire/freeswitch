@@ -87,8 +87,6 @@ int main(int argc, char **argv)
 
 	blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
 
-	blade_module_wss_on_shutdown(mod_wss);
-
 	blade_module_wss_on_unload(mod_wss);
 
 	blade_handle_destroy(&bh);
