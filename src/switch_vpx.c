@@ -259,6 +259,10 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 #define IS_VP9_KEY_FRAME(byte) ((((byte) & 0x40) == 0) && ((byte) & 0x0A))
 #define IS_VP9_START_PKT(byte) ((byte) & 0x08)
 
+#ifdef WIN32
+#undef SWITCH_MOD_DECLARE_DATA
+#define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
+#endif
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
 
