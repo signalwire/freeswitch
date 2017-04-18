@@ -1012,7 +1012,7 @@ blade_connection_state_hook_t blade_transport_wss_on_state_attach_inbound(blade_
 	if (json_req) cJSON_Delete(json_req);
 	if (json_res) cJSON_Delete(json_res);
 
-	
+
 	return ret;
 }
 

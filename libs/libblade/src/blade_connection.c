@@ -42,7 +42,7 @@ struct blade_connection_s {
 
 	blade_connection_direction_t direction;
     ks_thread_t *state_thread;
-	blade_connection_state_t state;
+	volatile blade_connection_state_t state;
 
 	const char *id;
 	ks_rwl_t *lock;

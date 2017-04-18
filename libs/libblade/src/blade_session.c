@@ -37,7 +37,7 @@ struct blade_session_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
 
-	blade_session_state_t state;
+	volatile blade_session_state_t state;
 
 	const char *id;
 	ks_rwl_t *lock;
@@ -180,7 +180,7 @@ KS_DECLARE(ks_status_t) blade_session_startup(blade_session_t *bs)
 	ks_assert(tpool);
 
 	blade_session_state_set(bs, BLADE_SESSION_STATE_NONE);
-	
+
 	if (ks_thread_pool_add_job(tpool, blade_session_state_thread, bs) != KS_STATUS_SUCCESS) {
 		// @todo error logging
 		return KS_STATUS_FAIL;
@@ -470,7 +470,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 	ks_assert(data);
 
 	bs = (blade_session_t *)data;
-	
+
 	ks_mutex_lock(bs->mutex);
 
 	while (!shutdown) {
@@ -490,7 +490,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 				cJSON_Delete(json);
 			}
 		}
-		
+
 		blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_POST);
 
 		switch (state) {
