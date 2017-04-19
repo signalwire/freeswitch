@@ -11590,7 +11590,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_request_video_refresh(switch
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+	if (switch_channel_media_up(channel) && switch_channel_test_flag(channel, CF_VIDEO)) {
 		switch_core_session_message_t msg = { 0 };
 		switch_time_t now = switch_micro_time_now();
 
