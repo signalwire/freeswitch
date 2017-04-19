@@ -838,7 +838,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		
 
 		if (layer->logo_img) {
-			int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
+			//int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
+			int ew = layer->img->d_w, eh = layer->img->d_h;
 			int ex = 0, ey = 0;
 
 			switch_img_fit(&layer->logo_img, ew, eh, layer->logo_fit);
