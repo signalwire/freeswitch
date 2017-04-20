@@ -739,6 +739,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local_stream://%s fully reloaded.\n",source->name);
 				switch_thread_rwlock_unlock(source->rwlock);
 				source->full_reload = 0;
+				source->part_reload = 0;
+				if (source->timer.interval) {
+					switch_core_timer_destroy(&source->timer);
+				}
 				launch_streams(source->name);
 				goto done;
 			}
