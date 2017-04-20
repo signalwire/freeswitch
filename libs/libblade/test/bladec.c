@@ -36,8 +36,6 @@ int main(int argc, char **argv)
 	blade_handle_t *bh = NULL;
 	config_t config;
 	config_setting_t *config_blade = NULL;
-	blade_module_t *mod_wss = NULL;
-	blade_identity_t *id = NULL;
 	const char *cfgpath = "bladec.cfg";
 	const char *session_state_callback_id = NULL;
 

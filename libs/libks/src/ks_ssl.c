@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,7 +57,7 @@ KS_DECLARE(void) ks_ssl_init_ssl_locks(void)
 {
 
 	int i, num;
-	
+
 	if (is_init) return;
 
 	is_init = 1;
@@ -66,7 +66,7 @@ KS_DECLARE(void) ks_ssl_init_ssl_locks(void)
 
 	if (ssl_count == 0) {
 		num = CRYPTO_num_locks();
-		
+
 		ssl_mutexes = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ks_mutex_t*));
 		ks_assert(ssl_mutexes != NULL);
 
@@ -105,7 +105,9 @@ KS_DECLARE(void) ks_ssl_destroy_ssl_locks(void)
 		if (ssl_pool) ks_pool_close(&ssl_pool);
 	}
 
+#ifdef _WINDOWS
 	SSL_COMP_free_compression_methods();
+#endif
 	EVP_cleanup();
 }
 
@@ -130,9 +132,9 @@ KS_DECLARE(int) ks_gen_cert(const char *dir, const char *file)
 	}
 
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
-		
+
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
-		
+
 	mkcert(&x509, &pkey, 1024, 0, 36500);
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
@@ -150,7 +152,7 @@ KS_DECLARE(int) ks_gen_cert(const char *dir, const char *file)
 			PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
 			fclose(fp);
 		}
-		
+
 		if (rsa && (fp = fopen(rsa, "w"))) {
 			PEM_write_X509(fp, x509);
 			fclose(fp);
@@ -182,13 +184,13 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	EVP_PKEY *pk;
 	RSA *rsa;
 	X509_NAME *name=NULL;
-	
+
 	ks_assert(pkeyp);
 	ks_assert(x509p);
 
 	if (*pkeyp == NULL) {
 		if ((pk = EVP_PKEY_new()) == NULL) {
-			abort(); 
+			abort();
 		}
 	} else {
 		pk = *pkeyp;
@@ -225,7 +227,7 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	 */
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *)"US", -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)"FreeSWITCH-libKS", -1, -1, 0);
-							   
+
 
 	/* Its self signed so set the issuer name to be the same as the
  	 * subject.

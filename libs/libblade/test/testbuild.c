@@ -11,7 +11,7 @@ int main(void)
 
 	plan(1);
 
-	status = blade_handle_create(&bh, NULL, NULL);
+	status = blade_handle_create(&bh);
 	status = blade_handle_destroy(&bh);
 
 	ok(status == KS_STATUS_SUCCESS);
