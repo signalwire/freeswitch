@@ -1432,6 +1432,7 @@ SWITCH_STANDARD_API(local_stream_function)
 		if ((source = get_source(local_stream_name))) {
 			source->full_reload = 1;
 			source->part_reload = 1;
+			source->hup = 1;
 			stream->write_function(stream, "+OK");
 			switch_thread_rwlock_unlock(source->rwlock);
 		} else {
