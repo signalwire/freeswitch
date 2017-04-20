@@ -300,7 +300,7 @@ void conference_loop_energy_up(conference_member_t *member, caller_control_actio
 		member->auto_energy_level = 0;
 	}
 
-	if (member->max_energy_level && member->max_energy_level > member->max_energy_level) {
+	if (member->max_energy_level && member->energy_level > member->max_energy_level) {
 		member->max_energy_level = 0;
 	}
 
@@ -342,7 +342,7 @@ void conference_loop_energy_equ_conf(conference_member_t *member, caller_control
 		member->auto_energy_level = 0;
 	}
 
-	if (member->max_energy_level && member->max_energy_level > member->max_energy_level) {
+	if (member->max_energy_level && member->energy_level > member->max_energy_level) {
 		member->max_energy_level = 0;
 	}
 
@@ -382,7 +382,7 @@ void conference_loop_energy_dn(conference_member_t *member, caller_control_actio
 		member->auto_energy_level = 0;
 	}
 
-	if (member->max_energy_level && member->max_energy_level > member->max_energy_level) {
+	if (member->max_energy_level && member->energy_level > member->max_energy_level) {
 		member->max_energy_level = 0;
 	}
 
