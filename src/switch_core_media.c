@@ -9417,7 +9417,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 						);
 
 		if (include_external && !zstr(smh->mparams->extsipip)) {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 				tmp3, ice_out->cands[0][0].transport, c1,
 				smh->mparams->extsipip, ice_out->cands[0][0].con_port
 				);
@@ -9443,7 +9443,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 							);
 			
 			if (include_external && !zstr(smh->mparams->extsipip)) {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
 					tmp3, ice_out->cands[0][0].transport, c1,
 					smh->mparams->extsipip, ice_out->cands[0][0].con_port
 					);
@@ -10104,7 +10104,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\r\n",
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\r\na=setup:%s\r\n",
 							a_engine->local_dtls_fingerprint.type,
 							a_engine->local_dtls_fingerprint.str, get_setup(a_engine, session, sdp_type));
 		}
@@ -10153,7 +10153,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							);
 
 			if (include_external && !zstr(smh->mparams->extsipip)) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 					tmp3, ice_out->cands[0][0].transport, c1,
 					smh->mparams->extsipip, ice_out->cands[0][0].con_port
 					);
@@ -10179,7 +10179,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								);
 
 				if (include_external && !zstr(smh->mparams->extsipip)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
 						tmp3, ice_out->cands[0][0].transport, c2,
 						smh->mparams->extsipip, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 						);
@@ -10709,7 +10709,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 									);
 
 					if (include_external && !zstr(smh->mparams->extsipip)) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n",
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 							tmp3, ice_out->cands[0][0].transport, c1,
 							smh->mparams->extsipip, ice_out->cands[0][0].con_port
 							);
@@ -10735,7 +10735,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 										);
 
 					if (include_external && !zstr(smh->mparams->extsipip)) {
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n",
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
 								tmp3, ice_out->cands[0][0].transport, c2,
 								smh->mparams->extsipip, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 								);
@@ -10836,11 +10836,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
-				"m=message %d TCP/%sMSRP *\n"
-				"a=path:%s\n"
-				"a=accept-types:%s\n"
-				"a=accept-wrapped-types:%s\n"
-				"a=setup:%s\n",
+				"m=message %d TCP/%sMSRP *\r\n"
+				"a=path:%s\r\n"
+				"a=accept-types:%s\r\n"
+				"a=accept-wrapped-types:%s\r\n"
+				"a=setup:%s\r\n",
 				msrp_session->local_port,
 				msrp_session->secure ? "TLS/" : "",
 				msrp_session->local_path,
@@ -10865,11 +10865,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
-				"m=message %d TCP/%sMSRP *\n"
-				"a=path:%s\n"
-				"a=accept-types:message/cpim text/* application/im-iscomposing+xml\n"
-				"a=accept-wrapped-types:*\n"
-				"a=setup:%s\n",
+				"m=message %d TCP/%sMSRP *\r\n"
+				"a=path:%s\r\n"
+				"a=accept-types:message/cpim text/* application/im-iscomposing+xml\r\n"
+				"a=accept-wrapped-types:*\r\n"
+				"a=setup:%s\r\n",
 				msrp_session->local_port,
 				msrp_session->secure ? "TLS/" : "",
 				msrp_session->local_path,
@@ -10877,7 +10877,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			if (!zstr(file_selector)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
-					"a=sendonly\na=file-selector:%s\n", file_selector);
+					"a=sendonly\r\na=file-selector:%s\r\n", file_selector);
 			}
 		}
 	}
@@ -11022,7 +11022,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (!zstr(t_engine->local_dtls_fingerprint.type)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\r\n", t_engine->local_dtls_fingerprint.type,
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\r\na=setup:%s\r\n", t_engine->local_dtls_fingerprint.type,
 									t_engine->local_dtls_fingerprint.str, get_setup(t_engine, session, sdp_type));
 				}
 
