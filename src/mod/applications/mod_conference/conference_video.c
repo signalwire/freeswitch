@@ -1846,7 +1846,7 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 			break;
 		}
 
-		if (vlnode->vlayout->layers - file_layers >= (int)count) {
+		if (vlnode->vlayout->layers - file_layers >= (int)count + file_count) {
 			if (!least || least->vlayout->layers > vlnode->vlayout->layers) {
 				least = vlnode;
 			}
