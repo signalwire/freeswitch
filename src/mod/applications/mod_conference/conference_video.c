@@ -2320,6 +2320,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	int files_playing = 0;
 	int last_personal = conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) ? 1 : 0;
 	int last_video_count = 0;
+	int watchers = 0, last_watchers = 0;
 
 	canvas->video_timer_reset = 1;
 	canvas->video_layout_group = conference->video_layout_group;
@@ -2374,10 +2375,17 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		switch_mutex_unlock(conference->file_mutex);
 
 		switch_mutex_lock(conference->member_mutex);
+		watchers = 0;
+
 		for (imember = conference->members; imember; imember = imember->next) {
 			int no_muted = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS);
 			int no_av = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS);
 			int seen = conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN);
+
+			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) &&
+				imember->watching_canvas_id == canvas->canvas_id) {
+				watchers++;
+			}
 
 			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) &&
 				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && 
@@ -2434,6 +2442,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			count_changed = 1;
 		}
 
+		if (count_changed || watchers != last_watchers) {
+			canvas->send_keyframe = 1;
+		}
+
 		if (count_changed && !personal) {
 			layout_group_t *lg = NULL;
 			video_layout_t *vlayout = NULL;
@@ -2447,7 +2459,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 		}
 
-
+		last_watchers = watchers;
 		last_file_count = file_count;
 
 		if (do_refresh) {
