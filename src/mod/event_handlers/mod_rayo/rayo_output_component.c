@@ -518,6 +518,11 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	struct rayo_file_context *context = handle->private_info;
 	struct output_component *output = context->component ? OUTPUT_COMPONENT(context->component) : NULL;
 
+	if (!output) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing output component!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
   top:
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
@@ -1045,8 +1050,7 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 			//switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Read file %"SWITCH_SIZE_T_FMT" bytes\n", o_len * 2);
 
 			/* add file data to audio bufer */
-			read_bytes = switch_buffer_write(fh->audio_buffer, context->abuf, o_len * 2);
-			//switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Write audio frame %"SWITCH_SIZE_T_FMT" bytes\n", read_bytes);
+			switch_buffer_write(fh->audio_buffer, context->abuf, o_len * 2);
 
 			read_bytes = switch_buffer_read(fh->audio_buffer, context->abuf, *len * 2);
 			o_len = read_bytes / 2;
@@ -1114,7 +1118,6 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 			if (wrote_len < new_len) {
 				switch_size_t r_len = new_len - wrote_len;
 				switch_buffer_write(fh->sp_audio_buffer, bp, r_len * 2);
-				wrote_len += r_len;
 			}
 			continue;
 		}

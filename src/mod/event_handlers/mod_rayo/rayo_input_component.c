@@ -447,6 +447,7 @@ static char *setup_grammars_pocketsphinx(struct input_component *component, swit
 	if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
 		*stanza_error = STANZA_ERROR_BAD_REQUEST;
 		*error_detail = "Failed to parse grammar body";
+		switch_safe_free(grammar.data);
 		return NULL;
 	}
 
@@ -454,6 +455,7 @@ static char *setup_grammars_pocketsphinx(struct input_component *component, swit
 	if (!jsgf_path) {
 		*stanza_error = STANZA_ERROR_BAD_REQUEST;
 		*error_detail = "Grammar conversion to JSGF error";
+		switch_safe_free(grammar.data);
 		return NULL;
 	}
 
@@ -483,6 +485,7 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 		switch_mutex_lock(component->handler->mutex);
 		*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
 		*error_detail = "Failed to initialize recognizer";
+		switch_safe_free(grammar_uri_list.data);
 		return NULL;
 	}
 	switch_mutex_lock(component->handler->mutex);
