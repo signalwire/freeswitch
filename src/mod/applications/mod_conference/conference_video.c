@@ -62,6 +62,7 @@ int conference_video_set_fps(conference_obj_t *conference, float fps)
 	return 1;
 }
 
+static int COMPLETE_INIT = 0;
 
 void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int HEIGHT)
 {
@@ -244,10 +245,17 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 				}
 
 				switch_core_hash_insert(conference->layout_hash, name, vlayout);
-				switch_snprintf(cmd_str, sizeof(cmd_str), "add conference ::conference::conference_list_conferences vid-layout %s", name);
-				switch_console_set_complete(cmd_str);
+				
+				if (!COMPLETE_INIT) {
+					switch_mutex_lock(conference_globals.hash_mutex);
+					if (!COMPLETE_INIT) {
+						switch_snprintf(cmd_str, sizeof(cmd_str), "add conference ::conference::conference_list_conferences vid-layout %s", name);
+						switch_console_set_complete(cmd_str);
+						COMPLETE_INIT++;
+					}
+					switch_mutex_unlock(conference_globals.hash_mutex);
+				}
 			}
-
 		}
 
 		if ((x_groups = switch_xml_child(x_layout_settings, "groups"))) {
