@@ -636,6 +636,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	uint8_t *body;
 	uint32_t hdrlen = 0, payload_size = 0, packet_size = 0, start = 0, key = 0;
 	switch_size_t remaining_bytes = 0;
+	switch_status_t status;
 
 	if (!context->pkt) {
 		if ((context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->enc_iter))) {
@@ -756,17 +757,19 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		context->pkt = NULL;
 		frame->datalen += remaining_bytes;
 		frame->m = 1;
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_buffer_read(context->pbuffer, body, payload_size);
 		frame->datalen += payload_size;
 		frame->m = 0;
-		return SWITCH_STATUS_MORE_DATA;
+		status = SWITCH_STATUS_MORE_DATA;
 	}
 
 	if (frame->m && context->is_vp9) {
 		payload_descriptor->vp9.end = 1;
 	}
+
+	return status;
 }
 
 static switch_status_t reset_codec_encoder(switch_codec_t *codec)
