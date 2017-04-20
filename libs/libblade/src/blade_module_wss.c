@@ -69,18 +69,8 @@ struct blade_transport_wss_s {
 
 
 
-ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh);
-ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP);
-
-// @todo remove exporting this, it's only temporary until DSO loading is in place so wss module can be loaded
-KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm);
-KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm);
-
 ks_status_t blade_module_wss_listen(blade_module_wss_t *bm, ks_sockaddr_t *addr);
 void *blade_module_wss_listeners_thread(ks_thread_t *thread, void *data);
-
 
 
 ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, ks_pool_t *pool, blade_module_wss_t *bm_wss, ks_socket_t sock, const char *session_id);
@@ -107,8 +97,6 @@ blade_connection_state_hook_t blade_transport_wss_on_state_ready_outbound(blade_
 
 static blade_module_callbacks_t g_module_wss_callbacks =
 {
-	blade_module_wss_on_load,
-	blade_module_wss_on_unload,
 	blade_module_wss_on_startup,
 	blade_module_wss_on_shutdown,
 };
@@ -145,19 +133,18 @@ static void blade_module_wss_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_p
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		blade_module_wss_on_shutdown(bm_wss->module);
 		break;
 	case KS_MPCL_DESTROY:
 		break;
 	}
 }
 
-ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t *bh)
+KS_DECLARE(ks_status_t) blade_module_wss_create(blade_module_t **bmP, blade_handle_t *bh)
 {
 	blade_module_wss_t *bm_wss = NULL;
 	ks_pool_t *pool = NULL;
 
-	ks_assert(bm_wssP);
+	ks_assert(bmP);
 	ks_assert(bh);
 
 	ks_pool_open(&pool);
@@ -175,63 +162,11 @@ ks_status_t blade_module_wss_create(blade_module_wss_t **bm_wssP, blade_handle_t
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
-	*bm_wssP = bm_wss;
-
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_module_wss_destroy(blade_module_wss_t **bm_wssP)
-{
-	blade_module_wss_t *bm_wss = NULL;
-	ks_pool_t *pool = NULL;
-
-	ks_assert(bm_wssP);
-	ks_assert(*bm_wssP);
-
-	bm_wss = *bm_wssP;
-
-	pool = bm_wss->pool;
-	//ks_pool_free(bm_wss->pool, bm_wssP);
-	ks_pool_close(&pool);
-
-	ks_log(KS_LOG_DEBUG, "Destroyed\n");
-
-	*bm_wssP = NULL;
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh)
-{
-	blade_module_wss_t *bm_wss = NULL;
-
-	ks_assert(bmP);
-	ks_assert(bh);
-
-	blade_module_wss_create(&bm_wss, bh);
-	ks_assert(bm_wss);
-
 	*bmP = bm_wss->module;
 
-	ks_log(KS_LOG_DEBUG, "Loaded\n");
-
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm)
-{
-	blade_module_wss_t *bm_wss = NULL;
-
-	ks_assert(bm);
-
-	bm_wss = blade_module_data_get(bm);
-
-	blade_module_wss_destroy(&bm_wss);
-
-	ks_log(KS_LOG_DEBUG, "Unloaded\n");
-
-	return KS_STATUS_SUCCESS;
-}
 
 ks_status_t blade_module_wss_config(blade_module_wss_t *bm_wss, config_setting_t *config)
 {

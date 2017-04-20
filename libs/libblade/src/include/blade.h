@@ -51,6 +51,8 @@
 #include "ks_dht.h"
 #include "ks_bencode.h"
 
+#include "blade_module_wss.h"
+
 KS_BEGIN_EXTERN_C
 
 #ifdef _WIN32

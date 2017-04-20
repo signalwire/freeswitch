@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	config_t config;
 	config_setting_t *config_blade = NULL;
 	blade_module_t *mod_wss = NULL;
-	//blade_identity_t *id = NULL;
+	blade_identity_t *id = NULL;
 	const char *cfgpath = "bladec.cfg";
 	const char *session_state_callback_id = NULL;
 
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
 	blade_init();
 
-	blade_handle_create(&bh, NULL, NULL);
+	blade_handle_create(&bh);
 
 	if (argc > 1) cfgpath = argv[1];
 
@@ -71,25 +71,16 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (blade_module_wss_on_load(&mod_wss, bh) != KS_STATUS_SUCCESS) {
-		ks_log(KS_LOG_ERROR, "Blade WSS module load failed\n");
-		return EXIT_FAILURE;
-	}
-	if (blade_module_wss_on_startup(mod_wss, config_blade) != KS_STATUS_SUCCESS) {
-		ks_log(KS_LOG_ERROR, "Blade WSS module startup failed\n");
-		return EXIT_FAILURE;
-	}
-
 	blade_handle_event_register(bh, "blade.chat.message", on_blade_chat_message_event);
 	blade_handle_session_state_callback_register(bh, NULL, on_blade_session_state_callback, &session_state_callback_id);
 
 	loop(bh);
 
-	blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
-
-	blade_module_wss_on_unload(mod_wss);
+	//blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
 
 	blade_handle_destroy(&bh);
+
+	config_destroy(&config);
 
 	blade_shutdown();
 
@@ -120,10 +111,10 @@ void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_co
 	if (condition == BLADE_SESSION_STATE_CONDITION_PRE) {
 		ks_log(KS_LOG_DEBUG, "Blade Session State Changed: %s, %d\n", blade_session_id_get(bs), state);
 		if (state == BLADE_SESSION_STATE_READY) {
-			//cJSON *req = NULL;
-			//blade_rpc_request_create(blade_session_pool_get(bs), &req, NULL, NULL, "blade.chat.join");
-			//blade_session_send(bs, req, on_blade_chat_join_response);
-			//cJSON_Delete(req);
+			cJSON *req = NULL;
+			blade_rpc_request_create(blade_handle_pool_get(blade_session_handle_get(bs)), &req, NULL, NULL, "blade.chat.join");
+			blade_session_send(bs, req, on_blade_chat_join_response);
+			cJSON_Delete(req);
 		}
 	}
 }
@@ -186,7 +177,7 @@ void process_console_input(blade_handle_t *bh, char *line)
 
 void command_quit(blade_handle_t *bh, char *args)
 {
-	ks_assert(bh);
+	//ks_assert(bh);
 	ks_assert(args);
 
 	ks_log(KS_LOG_DEBUG, "Shutting down\n");

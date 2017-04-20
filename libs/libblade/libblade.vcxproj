@@ -193,7 +193,6 @@
     <ClCompile Include="src\blade_identity.c" />
     <ClCompile Include="src\blade_method.c" />
     <ClCompile Include="src\blade_module.c" />
-    <ClCompile Include="src\blade_module_chat.c" />
     <ClCompile Include="src\blade_module_wss.c" />
     <ClCompile Include="src\blade_protocol.c" />
     <ClCompile Include="src\blade_session.c" />
@@ -220,6 +219,7 @@
     <ClInclude Include="src\include\blade_identity.h" />
     <ClInclude Include="src\include\blade_method.h" />
     <ClInclude Include="src\include\blade_module.h" />
+    <ClInclude Include="src\include\blade_module_wss.h" />
     <ClInclude Include="src\include\blade_protocol.h" />
     <ClInclude Include="src\include\blade_session.h" />
     <ClInclude Include="src\include\blade_space.h" />

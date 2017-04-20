@@ -42,11 +42,14 @@
 
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP);
-KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP, ks_pool_t *pool, ks_thread_pool_t *tpool);
+KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP);
 KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config);
 KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
 KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh);
 KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh);
+
+KS_DECLARE(ks_status_t) blade_handle_module_register(blade_module_t *bm);
+//KS_DECLARE(ks_status_t) blade_handle_module_unregister(blade_module_t *bm);
 
 KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_handle_t *bh, blade_module_t *bm, const char *name, blade_transport_callbacks_t *callbacks);
 KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_handle_t *bh, const char *name);

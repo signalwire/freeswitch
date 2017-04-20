@@ -36,9 +36,6 @@
     <ClCompile Include="src\blade_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\blade_module_chat.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\blade_module_wss.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -135,6 +132,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\ks_dht-int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_module_wss.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

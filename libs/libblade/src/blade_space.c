@@ -42,6 +42,23 @@ struct blade_space_s {
 	ks_hash_t *methods;
 };
 
+static void blade_space_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_space_t *bs = (blade_space_t *)ptr;
+
+	ks_assert(bs);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		ks_pool_free(bs->pool, &bs->path);
+		ks_hash_destroy(&bs->methods);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
 KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, blade_module_t *bm, const char *path)
 {
@@ -52,46 +69,22 @@ KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *
 	ks_assert(bh);
 	ks_assert(path);
 
-	pool = blade_handle_pool_get(bh);
+	pool = blade_module_pool_get(bm);
+	ks_assert(pool);
 
 	bs = ks_pool_alloc(pool, sizeof(blade_space_t));
 	bs->handle = bh;
 	bs->pool = pool;
 	bs->module = bm;
-	bs->path = path; // @todo dup and keep copy? should mostly be literals
-	ks_hash_create(&bs->methods, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bs->pool);
+	bs->path = ks_pstrdup(pool, path);
+	ks_hash_create(&bs->methods, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_VALUE, bs->pool);
 	ks_assert(bs);
+
+	ks_assert(ks_pool_set_cleanup(pool, bs, NULL, blade_space_cleanup) == KS_STATUS_SUCCESS);
 
 	*bsP = bs;
 
 	ks_log(KS_LOG_DEBUG, "Space Created: %s\n", path);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_space_destroy(blade_space_t **bsP)
-{
-	blade_space_t *bs = NULL;
-	ks_hash_iterator_t *it = NULL;
-
-	ks_assert(bsP);
-	ks_assert(*bsP);
-
-	bs = *bsP;
-
-	for (it = ks_hash_first(bs->methods, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-        void *key = NULL;
-		blade_method_t *value = NULL;
-
-		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
-		blade_method_destroy(&value);
-	}
-
-	ks_hash_destroy(&bs->methods);
-
-	ks_log(KS_LOG_DEBUG, "Space Destroyed: %s\n", bs->path);
-
-	ks_pool_free(bs->pool, bsP);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -101,6 +94,13 @@ KS_DECLARE(blade_handle_t *) blade_space_handle_get(blade_space_t *bs)
 	ks_assert(bs);
 
 	return bs->handle;
+}
+
+KS_DECLARE(ks_pool_t *) blade_space_pool_get(blade_space_t *bs)
+{
+	ks_assert(bs);
+
+	return bs->pool;
 }
 
 KS_DECLARE(blade_module_t *) blade_space_module_get(blade_space_t *bs)
@@ -119,9 +119,7 @@ KS_DECLARE(const char *) blade_space_path_get(blade_space_t *bs)
 
 KS_DECLARE(ks_status_t) blade_space_methods_add(blade_space_t *bs, blade_method_t *bm)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
 	const char *name = NULL;
-	blade_method_t *bm_old = NULL;
 
 	ks_assert(bs);
 	ks_assert(bm);
@@ -129,20 +127,13 @@ KS_DECLARE(ks_status_t) blade_space_methods_add(blade_space_t *bs, blade_method_
 	name = blade_method_name_get(bm);
 	ks_assert(name);
 
-	ks_hash_write_lock(bs->methods);
-	bm_old = ks_hash_search(bs->methods, (void *)name, KS_UNLOCKED);
-	if (bm_old) ks_hash_remove(bs->methods, (void *)name);
-	ret = ks_hash_insert(bs->methods, (void *)name, (void *)bm);
-	ks_hash_write_unlock(bs->methods);
+	ks_hash_insert(bs->methods, (void *)name, (void *)bm);
 
-	if (bm_old) blade_method_destroy(&bm_old);
-
-	return ret;
+	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_space_methods_remove(blade_space_t *bs, blade_method_t *bm)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
 	const char *name = NULL;
 
 	ks_assert(bs);
@@ -151,22 +142,18 @@ KS_DECLARE(ks_status_t) blade_space_methods_remove(blade_space_t *bs, blade_meth
 	name = blade_method_name_get(bm);
 	ks_assert(name);
 
-	ks_hash_write_lock(bs->methods);
 	ks_hash_remove(bs->methods, (void *)name);
-	ks_hash_write_unlock(bs->methods);
 
-	return ret;
+	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(blade_method_t *) blade_space_methods_get(blade_space_t *bs, const char *name)
 {
 	blade_method_t *bm = NULL;
-
 	ks_assert(bs);
 	ks_assert(name);
 
-	ks_hash_read_lock(bs->methods);
-	bm = ks_hash_search(bs->methods, (void *)name, KS_UNLOCKED);
+	bm = ks_hash_search(bs->methods, (void *)name, KS_READLOCKED);
 	ks_hash_read_unlock(bs->methods);
 
 	return bm;

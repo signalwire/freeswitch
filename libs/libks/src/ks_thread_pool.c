@@ -128,7 +128,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		void *pop = NULL;
 		ks_status_t status;
 		
-		status = ks_q_pop_timeout(tp->q, &pop, 1000);
+		status = ks_q_pop_timeout(tp->q, &pop, 100);
 		if (status == KS_STATUS_BREAK) {
 			if (tp->state != TP_STATE_RUNNING) {
 				break;

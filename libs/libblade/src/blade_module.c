@@ -36,6 +36,7 @@
 struct blade_module_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
+	const char *id;
 
 	void *module_data;
 	blade_module_callbacks_t *module_callbacks;
@@ -60,6 +61,7 @@ static void blade_module_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_
 KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks)
 {
 	blade_module_t *bm = NULL;
+	uuid_t uuid;
 
 	ks_assert(bmP);
 	ks_assert(bh);
@@ -67,9 +69,12 @@ KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t
 	ks_assert(module_data);
 	ks_assert(module_callbacks);
 
+	ks_uuid(&uuid);
+
 	bm = ks_pool_alloc(pool, sizeof(blade_module_t));
 	bm->handle = bh;
 	bm->pool = pool;
+	bm->id = ks_uuid_str(pool, &uuid);
 	bm->module_data = module_data;
 	bm->module_callbacks = module_callbacks;
 
@@ -82,11 +87,44 @@ KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP)
+{
+	blade_module_t *bm = NULL;
+	ks_pool_t *pool = NULL;
+
+	ks_assert(bmP);
+	ks_assert(*bmP);
+
+	bm = *bmP;
+
+	pool = bm->pool;
+	//ks_pool_free(bm->pool, bmP);
+	ks_pool_close(&pool);
+
+	*bmP = NULL;
+
+	return KS_STATUS_SUCCESS;
+}
+
 KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm)
 {
 	ks_assert(bm);
 
 	return bm->handle;
+}
+
+KS_DECLARE(ks_pool_t *) blade_module_pool_get(blade_module_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->pool;
+}
+
+KS_DECLARE(const char *) blade_module_id_get(blade_module_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->id;
 }
 
 KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm)
@@ -96,6 +134,12 @@ KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm)
 	return bm->module_data;
 }
 
+KS_DECLARE(blade_module_callbacks_t *) blade_module_callbacks_get(blade_module_t *bm)
+{
+	ks_assert(bm);
+
+	return bm->module_callbacks;
+}
 
 /* For Emacs:
  * Local Variables:

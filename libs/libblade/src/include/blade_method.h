@@ -37,7 +37,6 @@
 
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t *bs, const char *name, blade_request_callback_t callback);
-KS_DECLARE(ks_status_t) blade_method_destroy(blade_method_t **bmP);
 KS_DECLARE(const char *) blade_method_name_get(blade_method_t *bm);
 KS_DECLARE(blade_request_callback_t) blade_method_callback_get(blade_method_t *bm);
 KS_END_EXTERN_C

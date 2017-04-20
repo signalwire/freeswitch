@@ -116,14 +116,10 @@ typedef enum {
 
 
 
-typedef ks_status_t (*blade_module_load_callback_t)(blade_module_t **bmP, blade_handle_t *bh);
-typedef ks_status_t (*blade_module_unload_callback_t)(blade_module_t *bm);
 typedef ks_status_t (*blade_module_startup_callback_t)(blade_module_t *bm, config_setting_t *config);
-typedef ks_status_t (*blade_module_shutdown_callback_t)(blade_module_t *bm);
+typedef ks_status_t(*blade_module_shutdown_callback_t)(blade_module_t *bm);
 
 struct blade_module_callbacks_s {
-	blade_module_load_callback_t onload;
-	blade_module_unload_callback_t onunload;
 	blade_module_startup_callback_t onstartup;
 	blade_module_shutdown_callback_t onshutdown;
 };

@@ -40,7 +40,11 @@ KS_DECLARE(ks_status_t) blade_init(void)
 
 KS_DECLARE(ks_status_t) blade_shutdown(void)
 {
-	return ks_shutdown();
+	ks_status_t ret = ks_shutdown();
+#ifdef _WINDOWS_
+	_CrtDumpMemoryLeaks();
+#endif
+	return ret;
 }
 
 /* For Emacs:

@@ -102,7 +102,11 @@ KS_DECLARE(void) ks_ssl_destroy_ssl_locks(void)
 
 		OPENSSL_free(ssl_mutexes);
 		ssl_count--;
+		if (ssl_pool) ks_pool_close(&ssl_pool);
 	}
+
+	SSL_COMP_free_compression_methods();
+	EVP_cleanup();
 }
 
 

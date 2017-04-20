@@ -49,6 +49,7 @@ KS_BEGIN_EXTERN_C
 #ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #endif
+#define _CRTDBG_MAP_ALLOC
 #endif
 
 #ifndef _GNU_SOURCE
@@ -96,6 +97,7 @@ KS_BEGIN_EXTERN_C
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <crtdbg.h>
 #else
 #include <sys/time.h>
 #include <sys/select.h>

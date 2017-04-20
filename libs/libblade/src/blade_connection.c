@@ -132,8 +132,6 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 	//ks_pool_free(bc->pool, bcP);
 	ks_pool_close(&pool);
 
-	ks_log(KS_LOG_DEBUG, "Destroyed\n");
-
 	*bcP = NULL;
 
 	return KS_STATUS_SUCCESS;

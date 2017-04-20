@@ -36,20 +36,15 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
+
 KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks);
+KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP);
 KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm);
+KS_DECLARE(ks_pool_t *) blade_module_pool_get(blade_module_t *bm);
+KS_DECLARE(const char *) blade_module_id_get(blade_module_t *bm);
 KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm);
+KS_DECLARE(blade_module_callbacks_t *) blade_module_callbacks_get(blade_module_t *bm);
 
-// @todo very temporary, this is just here to get the wss module loaded until DSO is in place
-KS_DECLARE(ks_status_t) blade_module_wss_on_load(blade_module_t **bmP, blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_module_wss_on_unload(blade_module_t *bm);
-KS_DECLARE(ks_status_t) blade_module_wss_on_startup(blade_module_t *bm, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_module_wss_on_shutdown(blade_module_t *bm);
-
-KS_DECLARE(ks_status_t) blade_module_chat_on_load(blade_module_t **bmP, blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_module_chat_on_unload(blade_module_t *bm);
-KS_DECLARE(ks_status_t) blade_module_chat_on_startup(blade_module_t *bm, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_module_chat_on_shutdown(blade_module_t *bm);
 KS_END_EXTERN_C
 
 #endif

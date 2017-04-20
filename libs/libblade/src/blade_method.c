@@ -44,6 +44,22 @@ struct blade_method_s {
 	// @todo more fun descriptive information about the call for remote registrations
 };
 
+static void blade_method_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_method_t *bm = (blade_method_t *)ptr;
+
+	ks_assert(bm);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		ks_pool_free(bm->pool, &bm->name);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
 KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t *bs, const char *name, blade_request_callback_t callback)
 {
@@ -58,35 +74,19 @@ KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t 
 	bh = blade_space_handle_get(bs);
 	ks_assert(bh);
 
-	pool = blade_handle_pool_get(bh);
+	pool = blade_space_pool_get(bs);
 	ks_assert(pool);
 
 	bm = ks_pool_alloc(pool, sizeof(blade_method_t));
 	bm->handle = bh;
 	bm->pool = pool;
 	bm->space = bs;
-	bm->name = name; // @todo dup and keep copy? should mostly be literals
+	bm->name = ks_pstrdup(pool, name);
 	bm->callback = callback;
 
+	ks_assert(ks_pool_set_cleanup(pool, bm, NULL, blade_method_cleanup) == KS_STATUS_SUCCESS);
+
 	*bmP = bm;
-
-    ks_log(KS_LOG_DEBUG, "Method Created: %s.%s\n", blade_space_path_get(bs), name);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_method_destroy(blade_method_t **bmP)
-{
-	blade_method_t *bm = NULL;
-
-	ks_assert(bmP);
-	ks_assert(*bmP);
-
-	bm = *bmP;
-
-    ks_log(KS_LOG_DEBUG, "Method Destroyed: %s.%s\n", blade_space_path_get(bm->space), bm->name);
-
-	ks_pool_free(bm->pool, bmP);
 
 	return KS_STATUS_SUCCESS;
 }

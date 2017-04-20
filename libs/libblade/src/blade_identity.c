@@ -45,6 +45,25 @@ struct blade_identity_s {
 	ks_hash_t *parameters;
 };
 
+// @todo missed a structure to use cleanup callbacks
+static void blade_identity_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_identity_t *bi = (blade_identity_t *)ptr;
+
+	ks_assert(bi);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		if (bi->uri) ks_pool_free(bi->pool, &bi->uri);
+		if (bi->components) ks_pool_free(bi->pool, &bi->components);
+		if (bi->parameters) ks_hash_destroy(&bi->parameters);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
 KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t *pool)
 {
@@ -55,6 +74,9 @@ KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t 
 
 	bi = ks_pool_alloc(pool, sizeof(blade_identity_t));
 	bi->pool = pool;
+
+	ks_assert(ks_pool_set_cleanup(pool, bi, NULL, blade_identity_cleanup) == KS_STATUS_SUCCESS);
+
 	*biP = bi;
 
 	return KS_STATUS_SUCCESS;

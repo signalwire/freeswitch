@@ -163,8 +163,6 @@ KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP)
 	//ks_pool_free(bs->pool, bsP);
 	ks_pool_close(&pool);
 
-	ks_log(KS_LOG_DEBUG, "Destroyed\n");
-
 	*bsP = NULL;
 
 	return KS_STATUS_SUCCESS;
@@ -617,7 +615,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		// 1) Sending a request (client: method caller or consumer)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
 
-		blade_request_create(&request, bs->handle, bs->id, json, callback);
+		blade_request_create(&request, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, callback);
 		ks_assert(request);
 
 		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
@@ -681,7 +679,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		} else {
 			ks_log(KS_LOG_DEBUG, "Session (%s) processing event %s\n", bs->id, blade_event);
 
-			blade_event_create(&bev, bs->handle, bs->id, json);
+			blade_event_create(&bev, bs->handle, bs->pool, bs->id, json);
 			ks_assert(bev);
 
 			disconnect = callback(bev);
@@ -736,7 +734,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 			callback = blade_method_callback_get(tmp_method);
 			ks_assert(callback);
 
-			blade_request_create(&breq, bs->handle, bs->id, json, NULL);
+			blade_request_create(&breq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, NULL);
 			ks_assert(breq);
 
 			disconnect = callback(blade_space_module_get(tmp_space), breq);
@@ -755,7 +753,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 			}
 			blade_handle_requests_remove(breq);
 
-			blade_response_create(&bres, bs->handle, bs->id, breq, json);
+			blade_response_create(&bres, bs->handle, bs->pool, bs->id, breq, json);
 			ks_assert(bres);
 
 			disconnect = breq->callback(bres);

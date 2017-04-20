@@ -1715,8 +1715,8 @@ void ben_free(struct bencode *b)
 		break;
 	case BENCODE_USER:
 		u = ben_user_cast(b);
-		if (u->info->free)
-			u->info->free(b);
+		if (u->info->freer)
+			u->info->freer(b);
 		break;
 	default:
 		die("invalid type: %d\n", b->type);
