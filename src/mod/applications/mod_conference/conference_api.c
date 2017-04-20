@@ -1333,7 +1333,7 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	switch_split(argv[2], ':', array);
 
 	if (array[1]) {
-		sdiv = atoi(array[2]);
+		sdiv = atoi(array[1]);
 		if (sdiv < 2 || sdiv > 8) {
 			sdiv = 0;
 		}
