@@ -495,7 +495,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_connect(switch_pgsql_h
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connecting %s\n", handle->dsn);
-
+	PQinitSSL(0);
 	handle->con = PQconnectdb(handle->dsn);
 	if (PQstatus(handle->con) != CONNECTION_OK) {
 		char *err_str;
