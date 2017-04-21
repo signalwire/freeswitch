@@ -656,7 +656,7 @@ ks_status_t blade_transport_wss_on_send(blade_connection_t *bc, cJSON *json)
 ks_status_t blade_transport_wss_read(blade_transport_wss_t *bt_wss, cJSON **json)
 {
 	// @todo get exact timeout from service config?
-	int32_t poll_flags = ks_wait_sock(bt_wss->sock, 100, KS_POLL_READ); // | KS_POLL_ERROR);
+	int32_t poll_flags = ks_wait_sock(bt_wss->sock, 1, KS_POLL_READ); // | KS_POLL_ERROR);
 
 	*json = NULL;
 

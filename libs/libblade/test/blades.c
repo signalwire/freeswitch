@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
 	blade_handle_create(&bh);
 
-	if (argc > 1) cfgpath = argv[1];
+	//if (argc > 1) cfgpath = argv[1];
 
 	config_init(&config);
 	if (!config_read_file(&config, cfgpath)) {

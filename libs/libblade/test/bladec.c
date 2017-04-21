@@ -38,6 +38,7 @@ int main(int argc, char **argv)
 	config_setting_t *config_blade = NULL;
 	const char *cfgpath = "bladec.cfg";
 	const char *session_state_callback_id = NULL;
+	const char *autoconnect = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 
@@ -45,7 +46,8 @@ int main(int argc, char **argv)
 
 	blade_handle_create(&bh);
 
-	if (argc > 1) cfgpath = argv[1];
+	//if (argc > 1) cfgpath = argv[1];
+	if (argc > 1) autoconnect = argv[1];
 
 	config_init(&config);
 	if (!config_read_file(&config, cfgpath)) {
@@ -72,7 +74,18 @@ int main(int argc, char **argv)
 	blade_handle_event_register(bh, "blade.chat.message", on_blade_chat_message_event);
 	blade_handle_session_state_callback_register(bh, NULL, on_blade_session_state_callback, &session_state_callback_id);
 
-	loop(bh);
+	if (autoconnect) {
+		blade_connection_t *bc = NULL;
+		blade_identity_t *target = NULL;
+
+		blade_identity_create(&target, blade_handle_pool_get(bh));
+
+		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
+
+		blade_identity_destroy(&target);
+
+		ks_sleep_ms(2000);
+	} else loop(bh);
 
 	//blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
 
@@ -197,9 +210,32 @@ void command_connect(blade_handle_t *bh, char *args)
 	blade_identity_destroy(&target);
 }
 
+ks_bool_t on_blade_chat_send_response(blade_response_t *bres);
+
 ks_bool_t on_blade_chat_join_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
 {
+	blade_session_t *bs = NULL;
+	cJSON *req = NULL;
+	cJSON *params = NULL;
+
 	ks_log(KS_LOG_DEBUG, "Received Chat Join Response!\n");
+
+	bs = blade_handle_sessions_get(bres->handle, bres->session_id);
+	if (!bs) {
+		ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", bres->session_id);
+		return KS_FALSE;
+	}
+
+	blade_rpc_request_create(blade_handle_pool_get(bres->handle), &req, &params, NULL, "blade.chat.send");
+	ks_assert(req);
+	ks_assert(params);
+
+	cJSON_AddStringToObject(params, "message", "Hello World!");
+
+	blade_session_send(bs, req, on_blade_chat_send_response);
+
+	blade_session_read_unlock(bs);
+
 	return KS_FALSE;
 }
 

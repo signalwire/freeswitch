@@ -42,7 +42,6 @@ struct blade_session_s {
 	const char *id;
 	ks_rwl_t *lock;
 
-	ks_mutex_t *mutex;
 	ks_cond_t *cond;
 
 	ks_list_t *connections;
@@ -87,7 +86,6 @@ static void blade_session_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool
 		bs->sending = NULL;
 		bs->connections = NULL;
 		bs->cond = NULL;
-		bs->mutex = NULL;
 		bs->lock = NULL;
 
 		//ks_pool_free(bs->pool, &bs->id);
@@ -122,9 +120,7 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
     ks_rwl_create(&bs->lock, pool);
 	ks_assert(bs->lock);
 
-	ks_mutex_create(&bs->mutex, KS_MUTEX_FLAG_DEFAULT, pool);
-	ks_assert(bs->mutex);
-	ks_cond_create_ex(&bs->cond, pool, bs->mutex);
+	ks_cond_create(&bs->cond, pool);
 	ks_assert(bs->cond);
 
 	ks_list_create(&bs->connections, pool);
@@ -311,13 +307,11 @@ KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_stat
 {
 	ks_assert(bs);
 
-	ks_mutex_lock(bs->mutex);
-
+	ks_cond_lock(bs->cond);
 	bs->state = state;
-
 	blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_PRE);
+	ks_cond_unlock(bs->cond);
 
-	ks_mutex_unlock(bs->mutex);
 	ks_cond_try_signal(bs->cond);
 }
 
@@ -469,8 +463,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 
 	bs = (blade_session_t *)data;
 
-	ks_mutex_lock(bs->mutex);
-
+	ks_cond_lock(bs->cond);
 	while (!shutdown) {
 		// Entering the call below, the mutex is expected to be locked and will be unlocked by the call
 		ks_cond_timedwait(bs->cond, 100);
@@ -524,7 +517,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 			blade_session_hangup(bs);
 		}
 	}
-	ks_mutex_unlock(bs->mutex);
+	ks_cond_unlock(bs->cond);
 
 	blade_session_destroy(&bs);
 

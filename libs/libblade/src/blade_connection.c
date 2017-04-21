@@ -43,6 +43,8 @@ struct blade_connection_s {
 	blade_connection_direction_t direction;
 	volatile blade_connection_state_t state;
 
+	ks_cond_t *cond;
+
 	const char *id;
 	ks_rwl_t *lock;
 
@@ -98,6 +100,9 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_
 	bc = ks_pool_alloc(pool, sizeof(blade_connection_t));
 	bc->handle = bh;
 	bc->pool = pool;
+
+	ks_cond_create(&bc->cond, pool);
+	ks_assert(bc->cond);
 
 	ks_uuid(&id);
 	bc->id = ks_uuid_str(pool, &id);
@@ -292,13 +297,19 @@ KS_DECLARE(void) blade_connection_state_set(blade_connection_t *bc, blade_connec
 
 	ks_assert(bc);
 
+	ks_cond_lock(bc->cond);
+
 	callback = blade_connection_state_callback_lookup(bc, state);
 
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_PRE);
 
 	bc->state = state;
 
+	ks_cond_unlock(bc->cond);
+
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT) blade_connection_disconnect(bc);
+
+	ks_cond_try_signal(bc->cond);
 }
 
 KS_DECLARE(blade_connection_state_t) blade_connection_state_get(blade_connection_t *bc)
@@ -362,7 +373,12 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 
 	bc = (blade_connection_t *)data;
 
+	ks_cond_lock(bc->cond);
 	while (!shutdown) {
+		// Entering the call below, the mutex is expected to be locked and will be unlocked by the call
+		ks_cond_timedwait(bc->cond, 100);
+		// Leaving the call above, the mutex will be locked after being signalled, timing out, or woken up for any reason
+
 		state = bc->state;
 
 		switch (state) {
@@ -388,6 +404,7 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 		default: break;
 		}
 	}
+	ks_cond_unlock(bc->cond);
 
 	blade_connection_destroy(&bc);
 
