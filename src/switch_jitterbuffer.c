@@ -1314,7 +1314,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 			if (switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len == jb->min_frame_len) {
 				jb_debug(jb, 2, "%s", "Allow BITRATE changes\n");
-				switch_channel_clear_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+				switch_channel_clear_flag_recursive(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 				jb->bitrate_control = 0;
 				if (jb->session) {
 					switch_core_session_request_video_refresh(jb->session);
@@ -1331,7 +1331,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				jb_debug(jb, 2, "Force BITRATE to %d\n", jb->bitrate_control);
 
 				switch_core_session_receive_message(jb->session, &msg);
-				switch_channel_set_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+				switch_channel_set_flag_recursive(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 				if (jb->session) {
 					switch_core_session_request_video_refresh(jb->session);
 				}

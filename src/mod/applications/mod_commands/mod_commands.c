@@ -4146,6 +4146,10 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+typedef enum {
+	BITRATE_INUSE = (1 << 0)
+} uuid_video_bitrate_enum_t;
+
 #define VIDEO_BITRATE_SYNTAX "<uuid> <bitrate>"
 SWITCH_STANDARD_API(uuid_video_bitrate_function)
 {
@@ -4163,13 +4167,29 @@ SWITCH_STANDARD_API(uuid_video_bitrate_function)
 		switch_core_session_t *lsession = NULL;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
-			int kps = switch_parse_bandwidth_string(argv[1]);
+			int kps;
 			switch_core_session_message_t msg = { 0 };
+			switch_channel_t *channel = switch_core_session_get_channel(lsession);
+
+			if (argv[1] && !strcasecmp(argv[1], "clear")) {
+				if (switch_channel_test_app_flag_key("uuid_video_bitrate", channel, BITRATE_INUSE)) {
+					switch_channel_clear_flag_recursive(channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+					switch_channel_clear_app_flag_key("uuid_video_bitrate", channel, BITRATE_INUSE);
+				}
+			}
+
+
+			kps = switch_parse_bandwidth_string(argv[1]);
 
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 			msg.numeric_arg = kps * 1024;
 			msg.from = __FILE__;
 			
+			if (!switch_channel_test_app_flag_key("uuid_video_bitrate", channel, BITRATE_INUSE)) {
+				switch_channel_set_app_flag_key("uuid_video_bitrate", channel, BITRATE_INUSE);
+				switch_channel_set_flag_recursive(channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+			}
+
 			switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_video_reinit(lsession);
 			switch_channel_video_sync(switch_core_session_get_channel(lsession));
