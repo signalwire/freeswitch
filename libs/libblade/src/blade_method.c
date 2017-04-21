@@ -84,7 +84,7 @@ KS_DECLARE(ks_status_t) blade_method_create(blade_method_t **bmP, blade_space_t 
 	bm->name = ks_pstrdup(pool, name);
 	bm->callback = callback;
 
-	ks_assert(ks_pool_set_cleanup(pool, bm, NULL, blade_method_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bm, NULL, blade_method_cleanup);
 
 	*bmP = bm;
 

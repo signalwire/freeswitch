@@ -75,7 +75,7 @@ KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t 
 	bi = ks_pool_alloc(pool, sizeof(blade_identity_t));
 	bi->pool = pool;
 
-	ks_assert(ks_pool_set_cleanup(pool, bi, NULL, blade_identity_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bi, NULL, blade_identity_cleanup);
 
 	*biP = bi;
 

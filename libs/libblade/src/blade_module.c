@@ -44,9 +44,9 @@ struct blade_module_s {
 
 static void blade_module_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
-	blade_module_t *bm = (blade_module_t *)ptr;
+	//blade_module_t *bm = (blade_module_t *)ptr;
 
-	ks_assert(bm);
+	//ks_assert(bm);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
@@ -78,7 +78,7 @@ KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t
 	bm->module_data = module_data;
 	bm->module_callbacks = module_callbacks;
 
-	ks_assert(ks_pool_set_cleanup(pool, bm, NULL, blade_module_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bm, NULL, blade_module_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 

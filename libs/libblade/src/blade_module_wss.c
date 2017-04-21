@@ -125,9 +125,9 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 
 static void blade_module_wss_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
-	blade_module_wss_t *bm_wss = (blade_module_wss_t *)ptr;
+	//blade_module_wss_t *bm_wss = (blade_module_wss_t *)ptr;
 
-	ks_assert(bm_wss);
+	//ks_assert(bm_wss);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
@@ -158,7 +158,7 @@ KS_DECLARE(ks_status_t) blade_module_wss_create(blade_module_t **bmP, blade_hand
 	bm_wss->module_callbacks = &g_module_wss_callbacks;
 	bm_wss->transport_callbacks = &g_transport_wss_callbacks;
 
-	ks_assert(ks_pool_set_cleanup(pool, bm_wss, NULL, blade_module_wss_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bm_wss, NULL, blade_module_wss_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -499,7 +499,7 @@ ks_status_t blade_transport_wss_create(blade_transport_wss_t **bt_wssP, ks_pool_
 	bt_wss->sock = sock;
 	if (session_id) bt_wss->session_id = ks_pstrdup(pool, session_id);
 
-	ks_assert(ks_pool_set_cleanup(pool, bt_wss, NULL, blade_transport_wss_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bt_wss, NULL, blade_transport_wss_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 

@@ -80,8 +80,9 @@ KS_DECLARE(ks_status_t) ks_init(void)
 #ifdef __WINDOWS__
 	WSADATA wsaData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
-
-	ks_assert(!WSAStartup(wVersionRequested, &wsaData));
+	if (WSAStartup(wVersionRequested, &wsaData)) {
+		abort();
+	}
 #endif
 
 	return KS_STATUS_SUCCESS;

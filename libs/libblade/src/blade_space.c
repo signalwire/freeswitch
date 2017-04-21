@@ -80,7 +80,7 @@ KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *
 	ks_hash_create(&bs->methods, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_VALUE, bs->pool);
 	ks_assert(bs);
 
-	ks_assert(ks_pool_set_cleanup(pool, bs, NULL, blade_space_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bs, NULL, blade_space_cleanup);
 
 	*bsP = bs;
 

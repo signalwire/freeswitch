@@ -114,7 +114,7 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_
 	ks_q_create(&bc->sending, pool, 0);
 	ks_assert(bc->sending);
 
-	ks_assert(ks_pool_set_cleanup(pool, bc, NULL, blade_connection_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bc, NULL, blade_connection_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 

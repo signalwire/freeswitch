@@ -74,7 +74,7 @@ KS_DECLARE(ks_status_t) blade_request_create(blade_request_t **breqP,
 	breq->message_id = cJSON_GetObjectCstr(breq->message, "id");
 	breq->callback = callback;
 
-	ks_assert(ks_pool_set_cleanup(pool, breq, NULL, blade_request_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, breq, NULL, blade_request_cleanup);
 
 	*breqP = breq;
 
@@ -137,7 +137,7 @@ KS_DECLARE(ks_status_t) blade_response_create(blade_response_t **bresP,
 	bres->request = breq;
 	bres->message = cJSON_Duplicate(json, 1);
 
-	ks_assert(ks_pool_set_cleanup(pool, bres, NULL, blade_response_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bres, NULL, blade_response_cleanup);
 
 	*bresP = bres;
 
@@ -196,7 +196,7 @@ KS_DECLARE(ks_status_t) blade_event_create(blade_event_t **bevP,
 	bev->session_id = ks_pstrdup(pool, session_id);
 	bev->message = cJSON_Duplicate(json, 1);
 
-	ks_assert(ks_pool_set_cleanup(pool, bev, NULL, blade_event_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bev, NULL, blade_event_cleanup);
 
 	*bevP = bev;
 

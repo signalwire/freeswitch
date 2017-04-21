@@ -215,8 +215,9 @@ ks_status_t blade_module_chat_create(blade_module_t **bmP, blade_handle_t *bh)
 	ks_assert(bm_chat->participants);
 
 	blade_module_create(&bm_chat->module, bh, pool, bm_chat, &g_module_chat_callbacks);
+	ks_assert(bm_chat->module);
 
-	ks_assert(ks_pool_set_cleanup(pool, bm_chat, NULL, blade_module_chat_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bm_chat, NULL, blade_module_chat_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 

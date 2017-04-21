@@ -74,9 +74,9 @@ struct blade_handle_transport_registration_s {
 
 static void blade_handle_transport_registration_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
-	blade_handle_transport_registration_t *bhtr = (blade_handle_transport_registration_t *)ptr;
+	//blade_handle_transport_registration_t *bhtr = (blade_handle_transport_registration_t *)ptr;
 
-	ks_assert(bhtr);
+	//ks_assert(bhtr);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
@@ -105,7 +105,7 @@ KS_DECLARE(ks_status_t) blade_handle_transport_registration_create(blade_handle_
 	bhtr->module = module;
 	bhtr->callbacks = callbacks;
 
-	ks_assert(ks_pool_set_cleanup(pool, bhtr, NULL, blade_handle_transport_registration_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bhtr, NULL, blade_handle_transport_registration_cleanup);
 
 	*bhtrP = bhtr;
 
@@ -159,7 +159,7 @@ ks_status_t blade_handle_session_state_callback_registration_create(blade_handle
 	bhsscr->data = data;
 	bhsscr->callback = callback;
 
-	ks_assert(ks_pool_set_cleanup(pool, bhsscr, NULL, blade_handle_session_state_callback_registration_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bhsscr, NULL, blade_handle_session_state_callback_registration_cleanup);
 
 	*bhsscrP = bhsscr;
 
@@ -236,7 +236,7 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	ks_hash_create(&bh->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->requests);
 
-	ks_assert(ks_pool_set_cleanup(pool, bh, NULL, blade_handle_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bh, NULL, blade_handle_cleanup);
 
 	*bhP = bh;
 

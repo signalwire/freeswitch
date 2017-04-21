@@ -136,7 +136,7 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
     ks_rwl_create(&bs->properties_lock, pool);
 	ks_assert(bs->properties_lock);
 
-	ks_assert(ks_pool_set_cleanup(pool, bs, NULL, blade_session_cleanup) == KS_STATUS_SUCCESS);
+	ks_pool_set_cleanup(pool, bs, NULL, blade_session_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
