@@ -482,7 +482,13 @@ KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 			ks_sleep_ms(ms);
 		}
 		
-	} while (--sanity > 0 && ((r == -1 && ks_errno_is_blocking(ks_errno())) || (kws->block && wrote < bytes)));
+		if (r == -1) {
+			if (!ks_errno_is_blocking(ks_errno())) {
+				break;
+			}
+		}
+
+	} while (--sanity > 0 && kws->block && wrote < bytes);
 	
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
