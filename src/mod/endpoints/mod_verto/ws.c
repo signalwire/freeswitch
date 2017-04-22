@@ -477,7 +477,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		}
 
 		if (r == -1) {
-			if (!ks_errno_is_blocking(ks_errno())) {
+			if (!xp_is_blocking(xp_errno())) {
 				break;
 			}
 		}
