@@ -3247,17 +3247,28 @@ static int dtls_ok(switch_core_session_t *session)
 #endif
 
 //?
-SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session)
+static switch_call_direction_t switch_ice_direction(switch_rtp_engine_t *engine, switch_core_session_t *session)
 {
 	switch_call_direction_t r = switch_channel_direction(session->channel);
+	switch_media_handle_t *smh;
 
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_CALL_DIRECTION_OUTBOUND;
+	}
+	
 	if (switch_channel_test_flag(session->channel, CF_3PCC)) {
 		r = (r == SWITCH_CALL_DIRECTION_INBOUND) ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
 	}
 
-	if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING))
-		&& switch_channel_test_flag(session->channel, CF_AVPF)) {
-		r = SWITCH_CALL_DIRECTION_OUTBOUND;
+	if (switch_rtp_has_dtls() && dtls_ok(smh->session)) {
+		r = engine->dtls_controller ? SWITCH_CALL_DIRECTION_INBOUND : SWITCH_CALL_DIRECTION_OUTBOUND;
+	} else {
+		if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING))
+			&& switch_channel_test_flag(session->channel, CF_AVPF)) {
+			r = SWITCH_CALL_DIRECTION_OUTBOUND;
+		}
 	}
 
 	return r;
@@ -3367,7 +3378,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 			} else if (!strcasecmp(attr->a_name, "ice-options")) {
 				engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
 			} else if (!strcasecmp(attr->a_name, "setup")) {
-				if (!strcasecmp(attr->a_value, "passive") || !strcasecmp(attr->a_value, "actpass")) {
+				if (!strcasecmp(attr->a_value, "passive") ||
+					(!strcasecmp(attr->a_value, "actpass") && !switch_channel_test_flag(smh->session->channel, CF_REINVITE))) {
 					if (!engine->dtls_controller) {
 						engine->new_dtls = 1;
 						engine->new_ice = 1;
@@ -3641,7 +3653,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(smh->session) == 
+									switch_ice_direction(engine, smh->session) == 
 									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 									&engine->ice_in
 #endif
@@ -3696,7 +3708,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 										ICE_GOOGLE_JINGLE,
 										NULL
 #else
-										switch_ice_direction(smh->session) == 
+										switch_ice_direction(engine, smh->session) == 
 										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 										&engine->ice_in
 #endif
@@ -7048,7 +7060,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(session) == 
+									switch_ice_direction(a_engine, session) == 
 									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 									&a_engine->ice_in
 #endif
@@ -7101,7 +7113,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(session) == 
+											switch_ice_direction(a_engine, session) == 
 											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 											&a_engine->ice_in
 #endif
@@ -7433,7 +7445,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(session) == 
+											switch_ice_direction(v_engine, session) == 
 											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 											&v_engine->ice_in
 #endif
@@ -7486,7 +7498,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													ICE_GOOGLE_JINGLE,
 													NULL
 #else
-													switch_ice_direction(session) == 
+													switch_ice_direction(v_engine, session) == 
 													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 													&v_engine->ice_in
 #endif
