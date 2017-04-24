@@ -482,7 +482,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 			}
 		}
 
-	} while (--sanity > 0 && kws->block && wrote < bytes);
+	} while (--sanity > 0 && wsh->block && wrote < bytes);
 
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
