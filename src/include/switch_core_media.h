@@ -379,6 +379,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t
 
 SWITCH_DECLARE(switch_msrp_session_t *) switch_core_media_get_msrp_session(switch_core_session_t *session);
 
+																		
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
