@@ -770,11 +770,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		switch_cond_next();
 	}
 
-	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
-	conference_event_add_data(conference, event);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
-	switch_event_fire(&event);
-
 	switch_core_timer_destroy(&timer);
 	switch_mutex_lock(conference_globals.hash_mutex);
 	if (conference_utils_test_flag(conference, CFLAG_INHASH)) {
@@ -812,6 +807,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	}
 
 	conference->end_time = switch_epoch_time_now(NULL);
+
+	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+	conference_event_add_data(conference, event);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
+	switch_event_fire(&event);
+
 	conference_cdr_render(conference);
 
 	switch_mutex_lock(conference_globals.setup_mutex);
