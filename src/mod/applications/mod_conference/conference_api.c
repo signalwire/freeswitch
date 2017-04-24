@@ -43,6 +43,7 @@
 
 
 api_command_t conference_api_sub_commands[] = {
+	{"count", (void_fn_t) & conference_api_sub_count, CONF_API_SUB_ARGS_SPLIT, "count", ""},
 	{"list", (void_fn_t) & conference_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "list", "[delim <string>]|[count]"},
 	{"xml_list", (void_fn_t) & conference_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "xml_list", ""},
 	{"json_list", (void_fn_t) & conference_api_sub_json_list, CONF_API_SUB_ARGS_SPLIT, "json_list", "[compact]"},
@@ -220,6 +221,8 @@ switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t 
 			/* special case the list command, because it doesn't require a conference argument */
 			if (strcasecmp(argv[0], "list") == 0) {
 				conference_api_sub_list(NULL, stream, argc, argv);
+			} else if (strcasecmp(argv[0], "count") == 0) {
+				conference_api_sub_count(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "xml_list") == 0) {
 				conference_api_sub_xml_list(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "json_list") == 0) {
@@ -1658,6 +1661,25 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
 		}
 		switch_mutex_unlock(conference->canvases[idx]->mutex);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_count(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+
+	if (conference) {
+		conference_list_count_only(conference, stream);
+	} else {
+		int count = 0;
+		switch_hash_index_t *hi;
+		switch_mutex_lock(conference_globals.hash_mutex);
+		for (hi = switch_core_hash_first(conference_globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
+			count++;
+		}
+		switch_mutex_unlock(conference_globals.hash_mutex);
+		stream->write_function(stream, "%d", count);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
