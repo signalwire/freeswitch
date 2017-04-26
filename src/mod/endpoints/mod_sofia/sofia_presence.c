@@ -4995,7 +4995,7 @@ void sofia_presence_handle_sip_i_message(int status,
 					if (switch_event_dup(&event_dup, event) == SWITCH_STATUS_SUCCESS) {
 						event_dup->event_id = SWITCH_EVENT_RECV_MESSAGE;
 						event_dup->flags |= EF_UNIQ_HEADERS;
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
+						switch_event_add_header_string(event_dup, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event_dup->event_id));
 						switch_event_fire(&event_dup);
 					}
 				}
