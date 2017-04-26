@@ -698,7 +698,9 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 	switch_img_free(&layer->logo_text_img);
 
 	if (member->video_logo) {
+		switch_mutex_lock(member->flag_mutex);
 		switch_img_copy(member->video_logo, &layer->logo_img);
+		switch_mutex_unlock(member->flag_mutex);
 
 		if (layer->logo_img) {
 			layer->logo_pos = member->logo_pos;
@@ -719,7 +721,9 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 	switch_img_position_t pos = POS_LEFT_TOP;
 	switch_img_fit_t fit = SWITCH_FIT_SIZE;
 
+	switch_mutex_lock(member->flag_mutex);
 	switch_img_free(&member->video_logo);
+	switch_mutex_unlock(member->flag_mutex);
 
 	if (!path || !strcasecmp(path, "clear")) {
 		return;
@@ -3967,8 +3971,9 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
+		int canvas_id = member->canvas_id;
 
-		if (frame->img && (member->video_layer_id > -1 || member->canvas) && 
+		if (frame->img && (((member->video_layer_id > -1) && canvas_id > -1) || member->canvas) &&
 			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			switch_queue_size(member->video_queue) < member->conference->video_fps.fps * 2 &&
 			!member->conference->playing_video_file) {

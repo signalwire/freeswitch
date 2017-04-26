@@ -1094,6 +1094,8 @@ switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, sw
 		on = switch_true(argv[2]);
 		if (on) {
 			conference_utils_set_flag(conference, CFLAG_PERSONAL_CANVAS);
+			conference->video_layout_group = "grid";
+			conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
 		} else {
 			conference_utils_clear_flag(conference, CFLAG_PERSONAL_CANVAS);
 		}
