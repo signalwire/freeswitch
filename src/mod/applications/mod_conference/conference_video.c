@@ -1753,7 +1753,8 @@ void conference_video_check_recording(conference_obj_t *conference, mcu_canvas_t
 			continue;
 		}
 
-		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && switch_core_file_has_video(&imember->rec->fh, SWITCH_TRUE)) {
+		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && !switch_test_flag((&imember->rec->fh), SWITCH_FILE_PAUSE) && 
+			switch_core_file_has_video(&imember->rec->fh, SWITCH_TRUE)) {
 			switch_core_file_write_video(&imember->rec->fh, frame);
 		}
 	}
