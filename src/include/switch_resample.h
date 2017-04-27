@@ -185,6 +185,7 @@ SWITCH_DECLARE(void) switch_agc_destroy(switch_agc_t **agcP);
 SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data, uint32_t samples, uint32_t channels);
 SWITCH_DECLARE(void) switch_agc_set_energy_avg(switch_agc_t *agc, uint32_t energy_avg);
 SWITCH_DECLARE(void) switch_agc_set_energy_low(switch_agc_t *agc, uint32_t low_energy_point);
+SWITCH_DECLARE(void) switch_agc_set_token(switch_agc_t *agc, const char *token);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

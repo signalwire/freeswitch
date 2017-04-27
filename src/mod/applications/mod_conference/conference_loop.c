@@ -932,10 +932,6 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 				switch_change_sln_volume(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->volume_in_level);
 			}
 
-			if (member->agc) {
-				switch_agc_feed(member->agc, (int16_t *)read_frame->data, (read_frame->datalen / 2) * member->conference->channels, 1);
-			}
-
 			if ((samples = read_frame->datalen / sizeof(*data))) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
@@ -950,6 +946,10 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			}
 
 			gate_check = conference_member_noise_gate_check(member);
+
+			if (gate_check && member->agc) {
+				switch_agc_feed(member->agc, (int16_t *)read_frame->data, (read_frame->datalen / 2) * member->conference->channels, 1);
+			}
 
 			member->score_iir = (int) (((1.0 - SCORE_DECAY) * (float) member->score) + (SCORE_DECAY * (float) member->score_iir));
 

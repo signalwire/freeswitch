@@ -957,6 +957,7 @@ void conference_api_set_agc(conference_member_t *member, const char *data)
 	if (!member->agc) {
 		switch_agc_create(&member->agc, member->agc_level, member->agc_low_energy_level, member->agc_margin,
 						  member->agc_change_factor, member->agc_period_len);
+		switch_agc_set_token(member->agc, switch_channel_get_name(member->channel));
 	} else {
 		switch_agc_set(member->agc, member->agc_level, member->agc_low_energy_level, member->agc_margin,
 					   member->agc_change_factor, member->agc_period_len);

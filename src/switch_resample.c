@@ -404,7 +404,7 @@ struct switch_agc_s {
 	uint32_t energy_avg;
 	uint32_t margin;
 	uint32_t change_factor;
-
+	char *token;
 	int vol;
 	uint32_t score;
 	uint32_t score_count;
@@ -432,6 +432,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t 
 {
 	switch_agc_t *agc;
 	switch_memory_pool_t *pool;
+	char id[80] = "";
 
 	switch_assert(agcP);
 
@@ -441,6 +442,10 @@ SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t 
 	agc->pool = pool;
 
 	switch_agc_set(agc, energy_avg, low_energy_point, margin, change_factor, period_len);
+
+
+	switch_snprintf(id, sizeof(id), "%p", (void *)agc);
+	switch_agc_set_token(agc, id);
 
 	*agcP = agc;
 
@@ -476,6 +481,11 @@ SWITCH_DECLARE(void) switch_agc_set_energy_low(switch_agc_t *agc, uint32_t low_e
 	agc->low_energy_point = low_energy_point;
 }
 
+SWITCH_DECLARE(void) switch_agc_set_token(switch_agc_t *agc, const char *token)
+{
+	agc->token = switch_core_strdup(agc->pool, token);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data, uint32_t samples, uint32_t channels)
 {
 	
@@ -504,27 +514,32 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 			agc->score_sum = 0;
 									
 			if (agc->score_avg > agc->energy_avg + agc->margin) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] OVER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
+								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 				agc->score_over++;
 			} else {
 				agc->score_over = 0;
 			}
 
 			if (agc->score_avg < agc->energy_avg - agc->margin && (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] UNDER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
+								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 				agc->score_under++;
 			} else {
 				agc->score_under = 0;
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "AVG %d over: %d under: %d\n", agc->score_avg, agc->score_over, agc->score_under);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] AVG %d over: %d under: %d\n", 
+							  agc->token, agc->score_avg, agc->score_over, agc->score_under);
 
 			if (agc->score_over > agc->change_factor) {
 				agc->vol--;
 				switch_normalize_volume_granular(agc->vol);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VOL DOWN %d\n", agc->vol);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] VOL DOWN %d\n", agc->token, agc->vol);
 			} else if (agc->score_under > agc->change_factor) {
 				agc->vol++;
 				switch_normalize_volume_granular(agc->vol);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VOL UP %d\n", agc->vol);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] VOL UP %d\n", agc->token, agc->vol);
 			}
 
 		}
