@@ -6073,6 +6073,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					}
 				}
 				break;
+			case SWITCH_STATUS_BREAK:
+				break;
 			case SWITCH_STATUS_SUCCESS:
 			default:
 				{
