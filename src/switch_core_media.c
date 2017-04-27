@@ -3641,7 +3641,7 @@ static switch_call_direction_t switch_ice_direction(switch_rtp_engine_t *engine,
 	}
 
 	if (switch_rtp_has_dtls() && dtls_ok(smh->session)) {
-		r = engine->dtls_controller ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
+		r = engine->dtls_controller ? SWITCH_CALL_DIRECTION_INBOUND : SWITCH_CALL_DIRECTION_OUTBOUND;
 	} else {
 		if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING))
 			&& switch_channel_test_flag(session->channel, CF_AVPF)) {
