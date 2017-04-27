@@ -712,9 +712,9 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	conference_utils_member_set_flag_locked(member, MFLAG_INTREE);
 	conference_cdr_add(member);
 
-	conference_api_set_agc(member, NULL);
-
 	if (!conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+
+		conference_api_set_agc(member, NULL);
 
 		if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 			conference_utils_member_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
