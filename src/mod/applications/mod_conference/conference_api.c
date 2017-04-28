@@ -2508,6 +2508,7 @@ switch_status_t conference_api_sub_check_record(conference_obj_t *conference, sw
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int id = 0;
+	conference_record_t *rec;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -2533,10 +2534,34 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 	}
 
 	if (id == 0 && conference->canvases[0]) id = 1;
-	
-	if (id > conference->canvas_count) {
+
+	if (id > conference->canvas_count + 1) {
 		id = 1;
 	}
+
+	switch_mutex_lock(conference->flag_mutex);
+	for (rec = conference->rec_node_head; rec; rec = rec->next) {
+		char *path_a, *path_b;
+		
+		if ((path_a = strrchr(rec->path, '}'))) {
+			while(*path_a == ' ' || *path_a == '}') path_a++;
+		} else {
+			path_a = rec->path;
+		}
+
+		if ((path_b = strrchr(argv[2], '}'))) {
+			while(*path_b == ' ' || *path_b == '}') path_b++;
+		} else {
+			path_b = argv[2];
+		}
+		
+		if (!strcmp(path_a, path_b)) {
+			stream->write_function(stream, "-ERR file [%s] is already being used for recording.\n", rec->path);
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	switch_mutex_unlock(conference->flag_mutex);
+
 
 	if (id > 0) {
 		stream->write_function(stream, "Record file %s canvas %d\n", argv[2], id);
