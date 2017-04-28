@@ -108,7 +108,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 
 				dir_status = SWITCH_STATUS_SUCCESS;
 				if (switch_directory_exists(path, globals.pool) != SWITCH_STATUS_SUCCESS) {
-					dir_status = switch_dir_make(path, SWITCH_FPROT_OS_DEFAULT, globals.pool);
+					dir_status = switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, globals.pool);
 				}
 
 				if (dir_status == SWITCH_STATUS_SUCCESS) {
@@ -147,7 +147,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 
 				dir_status = SWITCH_STATUS_SUCCESS;
 				if (switch_directory_exists(path, globals.pool) != SWITCH_STATUS_SUCCESS) {
-					dir_status = switch_dir_make(path, SWITCH_FPROT_OS_DEFAULT, globals.pool);
+					dir_status = switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, globals.pool);
 				}
 
 				if (dir_status == SWITCH_STATUS_SUCCESS) {
