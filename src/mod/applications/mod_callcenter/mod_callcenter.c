@@ -2011,6 +2011,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		switch (cause) {
 			/* When we hang-up agents that did not answer in ring-all strategy */
+			case SWITCH_CAUSE_LOSE_RACE:
 			case SWITCH_CAUSE_ORIGINATOR_CANCEL:
 				break;
 			/* Busy: Do Not Disturb, Circuit congestion */
