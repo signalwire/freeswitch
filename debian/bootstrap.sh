@@ -343,7 +343,7 @@ print_core_control () {
 cat <<EOF
 Package: freeswitch-all
 Architecture: any
-Depends: freeswitch-meta-all (= \${binary:Version})
+Depends: freeswitch-meta-all (= \${binary:Version}), freeswitch-meta-all-dbg (= \${binary:Version})
 Conflicts: freeswitch-all (<= 1.6.7)
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
