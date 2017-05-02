@@ -1,7 +1,7 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_xml_radius
 
-RADCLIENT_VERSION=1.1.6
+RADCLIENT_VERSION=1.1.7
 RADCLIENT=freeradius-client-$(RADCLIENT_VERSION)
 RADCLIENT_DIR=$(switch_srcdir)/libs/$(RADCLIENT)
 RADCLIENT_BUILDDIR=$(switch_builddir)/libs/$(RADCLIENT)
