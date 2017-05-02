@@ -1054,6 +1054,7 @@
 		video: check_video,
 	    },
 	    onsuccess: function(e) {
+
 		e.getTracks().forEach(function(track) {track.stop();});
 		
 		console.info("media perm init complete"); 
