@@ -103,7 +103,6 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 	}
 
 	if (c) {
-		say_file("digits/%d.wav", c);
 		if (method == SSM_COUNTED) {
 			say_file("digits/h-%d.wav", c);
 		} else {
