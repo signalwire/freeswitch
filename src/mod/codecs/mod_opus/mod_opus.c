@@ -471,6 +471,8 @@ static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint3
 	uint8_t * payload = encoded_data;
 
 	if (!encoded_data) {
+		/* print stuff, even if encoded_data is NULL. eg: "PLC correction" */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", print_text);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -721,8 +723,14 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 					avg_encoded_bitrate = (context->encoder_stats.encoded_bytes * 8) / (context->encoder_stats.encoded_msec / 1000);
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Opus encoder stats: Frames[%d] Bytes encoded[%d] Encoded length ms[%d] Average encoded bitrate bps[%d] FEC frames (only for debug mode) [%d]\n",
-										context->encoder_stats.frame_counter, context->encoder_stats.encoded_bytes, context->encoder_stats.encoded_msec, avg_encoded_bitrate, context->encoder_stats.fec_counter);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						"Opus encoder stats: Frames[%d] Bytes encoded[%d] Encoded length ms[%d] Average encoded bitrate bps[%d]\n",
+						context->encoder_stats.frame_counter, context->encoder_stats.encoded_bytes, context->encoder_stats.encoded_msec, avg_encoded_bitrate);
+
+				if (globals.debug || context->debug > 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+							"Opus encoder stats: FEC frames (only for debug mode) [%d]\n", context->encoder_stats.fec_counter);
+				}
 			}
 			opus_encoder_destroy(context->encoder_object);
 			context->encoder_object = NULL;
