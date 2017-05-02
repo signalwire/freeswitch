@@ -1003,6 +1003,8 @@ function pop_select(id, cname, dft, onchange) {
 function refresh_devices()
 {
 
+    $.verto.refreshDevices();
+
     $("#useshare").selectmenu({});
     $("#useshare").selectmenu({});
     $("#usemic").selectmenu({});
