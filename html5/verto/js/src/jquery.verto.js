@@ -2770,14 +2770,13 @@
 
 	function checkTypes(devs) {
 	    for (var i = 0; i !== devs.length; ++i) {
-		console.error(i, devs[i].kind);
+
 		if (devs[i].kind === 'audioinput') {
 		    has_audio++;
 		} else if (devs[i].kind === 'videoinput') {
 		    has_video++;
 		}
 	    }
-	    console.error("BLAH: ", has_audio, has_video);;
 
 	    navigator.getUserMedia({ audio: (has_audio > 0 ? true : false), video: (has_video > 0 ? true : false)},
 				   function(stream) {

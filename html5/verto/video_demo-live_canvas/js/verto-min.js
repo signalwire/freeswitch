@@ -300,8 +300,8 @@ return $.verto.warnOnUnload;});$.verto.videoDevices=[];$.verto.audioInDevices=[]
 $.verto.videoDevices=vid;$.verto.audioInDevices=aud_in;$.verto.audioOutDevices=aud_out;console.info("Audio IN Devices",$.verto.audioInDevices);console.info("Audio Out Devices",$.verto.audioOutDevices);console.info("Video Devices",$.verto.videoDevices);if(Xstream){Xstream.getTracks().forEach(function(track){track.stop();});}
 if(runtime){runtime(true);}}
 function handleError(error){console.log('device enumeration error: ',error);if(runtime)runtime(false);}
-function checkTypes(devs){for(var i=0;i!==devs.length;++i){console.error(i,devs[i].kind);if(devs[i].kind==='audioinput'){has_audio++;}else if(devs[i].kind==='videoinput'){has_video++;}}
-console.error("BLAH: ",has_audio,has_video);;navigator.getUserMedia({audio:(has_audio>0?true:false),video:(has_video>0?true:false)},function(stream){Xstream=stream;navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);},function(err){console.log("The following error occurred: "+err.name);});}
+function checkTypes(devs){for(var i=0;i!==devs.length;++i){if(devs[i].kind==='audioinput'){has_audio++;}else if(devs[i].kind==='videoinput'){has_video++;}}
+navigator.getUserMedia({audio:(has_audio>0?true:false),video:(has_video>0?true:false)},function(stream){Xstream=stream;navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);},function(err){console.log("The following error occurred: "+err.name);});}
 navigator.mediaDevices.enumerateDevices().then(checkTypes).catch(handleError);};$.verto.refreshDevices=function(runtime){checkDevices(runtime);}
 $.verto.init=function(obj,runtime){if(!obj){obj={};}
 if(!obj.skipPermCheck&&!obj.skipDeviceCheck){$.FSRTC.checkPerms(function(status){checkDevices(runtime);},true,true);}else if(obj.skipPermCheck&&!obj.skipDeviceCheck){checkDevices(runtime);}else if(!obj.skipPermCheck&&obj.skipDeviceCheck){$.FSRTC.checkPerms(function(status){runtime(status);},true,true);}else{runtime(null);}}
