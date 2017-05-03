@@ -214,6 +214,7 @@ typedef enum {
 	MFLAG_INDICATE_UNDEAF,
 	MFLAG_TALK_DATA_EVENTS,
 	MFLAG_NO_VIDEO_BLANKS,
+	MFLAG_VIDEO_JOIN,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;

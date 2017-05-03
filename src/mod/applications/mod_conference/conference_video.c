@@ -1383,7 +1383,10 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 	member->video_layer_id = idx;
 	member->canvas_id = canvas->canvas_id;
 	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
-	canvas->send_keyframe = 1;
+	conference_utils_member_set_flag_locked(member, MFLAG_VIDEO_JOIN);
+	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+
+	canvas->send_keyframe = 30;
 
 	//member->watching_canvas_id = canvas->canvas_id;
 	conference_video_check_used_layers(canvas);
@@ -1780,7 +1783,13 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 				if (imember->video_codec_index != codec_index) {
 					continue;
 				}
+				
+				if (conference_utils_member_test_flag(imember, MFLAG_VIDEO_JOIN) && !send_keyframe) {
+					continue;
+				}
 
+				conference_utils_member_clear_flag(imember, MFLAG_VIDEO_JOIN);
+				
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
@@ -3636,6 +3645,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					 switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS)) {
 					continue;
 				}
+				
+				if (conference_utils_member_test_flag(imember, MFLAG_VIDEO_JOIN)) {
+					send_keyframe = SWITCH_TRUE;
+				}
 
 				if (need_refresh && imember->session) {
 					switch_core_session_request_video_refresh(imember->session);
@@ -3750,7 +3763,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			if (canvas->send_keyframe > 0) {
 				if (canvas->send_keyframe == 1 || (canvas->send_keyframe % 10) == 0) {
 					send_keyframe = SWITCH_TRUE;
-					need_refresh = SWITCH_TRUE;
+					//need_refresh = SWITCH_TRUE;
 				}
 				canvas->send_keyframe--;
 			}

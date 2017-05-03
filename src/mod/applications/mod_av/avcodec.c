@@ -923,16 +923,19 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
 		context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
-		context->encoder_ctx->level = 41;
+		context->encoder_ctx->level = 31;
 
 		if (context->hw_encoder) {
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "fast", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
+
+			/*
 			av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", 40, 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", 1, 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "crf",  18, 0);
@@ -948,10 +951,11 @@ FF_ENABLE_DEPRECATION_WARNINGS
 			context->encoder_ctx->keyint_min = 25; // keyint_min=25
 			context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
 			context->encoder_ctx->b_quant_factor = 0.76923078; // Qscale difference between P-frames and B-frames.
-			context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
+			context->encoder_ctx->qcompress = 0;//0.6; // qcomp=0.6
 			context->encoder_ctx->qmin = 10;   // qmin=10
 			context->encoder_ctx->qmax = 51;   // qmax=51
 			context->encoder_ctx->max_qdiff = 4;   // qdiff=4
+			*/
 		}
 	}
 
@@ -1148,8 +1152,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 
 	if (context->need_key_frame) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Send AV KEYFRAME\n");
-		 av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
+		 avframe->key_frame = 1;
 	}
 
 	/* encode the image */
@@ -1164,6 +1168,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 
 	if (context->need_key_frame) {
 		avframe->pict_type = 0;
+		avframe->key_frame = 0;
 		context->need_key_frame = 0;
 	}
 
