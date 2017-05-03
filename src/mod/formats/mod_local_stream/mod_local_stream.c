@@ -1416,6 +1416,7 @@ SWITCH_STANDARD_API(local_stream_function)
 					if (source->agc) {
 						switch_agc_destroy(&source->agc);
 					}
+					source->energy_avg = 0;
 				}
 			}
 
