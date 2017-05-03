@@ -1404,7 +1404,7 @@ SWITCH_STANDARD_API(local_stream_function)
 						stream->write_function(stream, "-ERR invalid auto-volume level for stream: %s\n", source->name);
 					} else {
 						if (!source->agc) {
-							switch_agc_create(&source->agc, source->energy_avg, source->energy_low, 500, 3, (1000 / source->interval) * 2);
+							switch_agc_create(&source->agc, source->energy_avg, source->energy_low, 10, 3, (1000 / source->interval) * 2);
 						} else {
 							switch_agc_set_energy_avg(source->agc, source->energy_avg);
 							switch_agc_set_energy_low(source->agc, source->energy_low);
@@ -1413,6 +1413,9 @@ SWITCH_STANDARD_API(local_stream_function)
 				} else {
 					source->vol = atoi(argv[2]);
 					switch_normalize_volume_granular(source->vol);
+					if (source->agc) {
+						switch_agc_destroy(&source->agc);
+					}
 				}
 			}
 
