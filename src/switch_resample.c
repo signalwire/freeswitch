@@ -513,15 +513,23 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 			agc->score_count = 0;
 			agc->score_sum = 0;
 									
-			if (agc->score_avg > agc->energy_avg + agc->margin) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] OVER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
-								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
-				agc->score_over++;
+			if (agc->score_avg > agc->energy_avg) {
+				if (agc->score_avg - agc->energy_avg > agc->margin) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] OVER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
+									  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
+					agc->score_over++;
+				}
 			} else {
 				agc->score_over = 0;
 			}
 
-			if (agc->score_avg < agc->energy_avg - agc->margin && (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
+			if (agc->score_avg < agc->low_energy_point) {
+				agc->score_under = agc->change_factor + 1;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] BELOW LOW POINT, SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
+								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
+			} else if (((agc->score_avg < agc->energy_avg) && (agc->energy_avg - agc->score_avg > agc->margin))) {
+				//&& (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
+				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] UNDER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 				agc->score_under++;
@@ -536,10 +544,12 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 				agc->vol--;
 				switch_normalize_volume_granular(agc->vol);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] VOL DOWN %d\n", agc->token, agc->vol);
+				//agc->score_over = 0;
 			} else if (agc->score_under > agc->change_factor) {
 				agc->vol++;
 				switch_normalize_volume_granular(agc->vol);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] VOL UP %d\n", agc->token, agc->vol);
+				//agc->score_under = 0;
 			}
 
 		}
