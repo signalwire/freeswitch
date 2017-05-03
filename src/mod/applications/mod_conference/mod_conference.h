@@ -212,6 +212,7 @@ typedef enum {
 	MFLAG_ROTATE_VIDEO,
 	MFLAG_INDICATE_DEAF,
 	MFLAG_INDICATE_UNDEAF,
+	MFLAG_VIDEO_JOIN,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;

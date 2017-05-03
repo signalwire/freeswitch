@@ -4130,6 +4130,7 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
 			switch_core_session_request_video_refresh(lsession);
+			switch_core_media_gen_key_frame(lsession);
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
 		}
