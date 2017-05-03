@@ -21,7 +21,8 @@ Sec-WebSocket-Protocol: blade-1.0
     "jsonrpc": "2.0",
     "method": "BLADE.connect",
     "params": {
-	"blade": "1.0"
+	"blade": "1.0",
+	"session-id": "", // optional, hint to reconnect to existing session
     },
     "id": 1
 }
