@@ -101,6 +101,11 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 
 	switch_mutex_lock(context->command_mutex);
 
+	if (!context->ck) {
+		switch_mutex_unlock(context->command_mutex);
+		return;
+	}
+	
 	context->patch = 0;
 
 	if (n > 0 && argv[i]) { // color
