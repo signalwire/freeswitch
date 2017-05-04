@@ -132,6 +132,7 @@ Sec-WebSocket-Protocol: blade-1.0
     "params": {
 	"realm": "ls1.mydomain.com",
 	"protocol": "LSAPI",
+	"method": "LSAPI.ls",
 	"params": {
 	    "path": "/tmp/testing"
 	}
