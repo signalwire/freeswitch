@@ -7710,6 +7710,22 @@ static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
 }
 
 
+static int ts_delta(int last_val, int cur_val)
+{
+	int32_t delta;
+	int64_t x, y;
+
+	x = last_val;
+	y = cur_val;
+	
+	if (x > UINT32_MAX / 2 && y < UINT32_MAX / 2) {
+		x -= (int64_t)UINT32_MAX+1;
+	}
+	
+	delta = (int32_t)y-x;
+
+	return delta;
+}
 
 
 static int rtp_common_write(switch_rtp_t *rtp_session,
@@ -7770,12 +7786,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-
+		
 		if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m = 0;
 		} else {
+			int delta = ts_delta(rtp_session->last_write_ts, rtp_session->ts);
+
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
+				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (delta > rtp_session->samples_per_interval * 10))
 				|| rtp_session->ts == rtp_session->samples_per_interval)) {
 				m++;
 			}
@@ -7851,17 +7869,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->ts_norm.last_external = external;
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
-			int32_t delta;
-			int64_t x, y;
-
-			x = rtp_session->ts_norm.last_frame;
-			y = ntohl(send_msg->header.ts);
-			
-			if (x > UINT32_MAX / 2 && y < UINT32_MAX / 2) {
-				x -= (int64_t)UINT32_MAX+1;
-			}
-			
-			delta = (int32_t)y-x;
+			int32_t delta = ts_delta(rtp_session->ts_norm.last_frame, ntohl(send_msg->header.ts));
 
 			if (delta < 0 || delta > 90000) {
 				switch_core_media_gen_key_frame(rtp_session->session);
