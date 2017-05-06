@@ -366,6 +366,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open span or channel.\n"); 
         goto fail;
     }
+
+    switch_channel_set_flag(channel, CF_AUDIO);
     
     span = ftdm_channel_get_span(chan);
     

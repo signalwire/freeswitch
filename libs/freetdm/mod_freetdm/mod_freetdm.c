@@ -1718,6 +1718,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		our_chan = switch_core_session_get_channel(*new_session);
 
+		switch_channel_set_flag(our_chan, CF_AUDIO);
+
 		/* Figure out if there is a native bridge requested through SIP x headers */
 		if (network_peer_uuid) {
 			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
@@ -1846,6 +1848,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_core_session_destroy(&session);
 		return FTDM_FAIL;
 	}
+
+	switch_channel_set_flag(channel, CF_AUDIO);
 
 	channel_caller_data->collected[0] = '\0';
 
