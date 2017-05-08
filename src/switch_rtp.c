@@ -5568,6 +5568,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					switch_mutex_lock(rtp_session->flag_mutex);
 					for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {
 
+						if (ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE) {
+							accept_packet = 1;
+							break;
+						}
+
 						if (!pmap->negotiated) {
 							continue;
 						}
