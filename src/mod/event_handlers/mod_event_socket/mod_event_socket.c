@@ -2382,7 +2382,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		goto done_noreply;
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
-		char *level_s;
+		char *level_s, *p;
 		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
 
 		if (!switch_test_flag(listener, LFLAG_ALLOW_LOG)) {
@@ -2395,11 +2395,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		//move past the command
 		level_s = cmd + 3;
 
-		//see if we got an argument
-		if (!zstr(level_s)) {
-			//if so move to the argument
+		while(*level_s == ' ') {
 			level_s++;
 		}
+
+		if ((p = strchr(level_s, ' '))) {
+			*p = '\0';
+		}
+
 		//see if we lined up on an argument or not
 		if (!zstr(level_s)) {
 			ltype = switch_log_str2level(level_s);
