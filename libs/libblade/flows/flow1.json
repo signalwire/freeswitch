@@ -124,6 +124,35 @@ Sec-WebSocket-Protocol: blade-1.0
     }
 }
 
+---> Locate identities holding an api
+// MAYBE ADD SCHEMA and method to fetch it.
+{
+    "jsonrpc": "2.0",
+    "method": "BLADE.locate",
+    "params": {
+	"protocol": "LSAPI",
+	"realm": "ls1.mydomain.com",
+	"session-id": "5b696e8d-9875-45a5-b347-3b9fc288bad3",
+	"master-id": "5164f7f8-a6ca-4dd4-8f36-33db1dc9c35d",
+    },
+    "id": 4.1
+}
+
+
+<--- SUCCESS (TBD FAIL CASE) 
+{
+    "jsonrpc": "2.0",
+    "id": 4.1,
+    "result": {
+	"protocol": "LSAPI",
+	"realm": "ls1.mydomain.com",
+	"sub-realm": null,
+	"targets": ["b9acdce6-3ce6-42db-82fc-39bf37c7a2b1", "5b696e8d-9875-45a5-b347-3b9fc288bad3"],
+	"session-id": "5b696e8d-9875-45a5-b347-3b9fc288bad3",
+	"master-id": "5164f7f8-a6ca-4dd4-8f36-33db1dc9c35d",
+    }
+}
+
 
 
 ---> EXECUTE API
