@@ -96,13 +96,14 @@ Sec-WebSocket-Protocol: blade-1.0
 
  
 
----> PUBLISH API LSAPI "A single node must have exlusive access to the PROTOCOL's namespace with the master to publish"
+---> PUBLISH API LSAPI "A single node must have exclusive access to the PROTOCOL's namespace with the master to publish"
 // MAYBE ADD SCHEMA and method to fetch it.
 {
     "jsonrpc": "2.0",
     "method": "BLADE.publish",
     "params": {
 	"protocol": "LSAPI",
+	"exclusive": true,
 	"realm": "ls1.mydomain.com",
 	"session-id": "5b696e8d-9875-45a5-b347-3b9fc288bad3",
 	"master-id": "5164f7f8-a6ca-4dd4-8f36-33db1dc9c35d",
