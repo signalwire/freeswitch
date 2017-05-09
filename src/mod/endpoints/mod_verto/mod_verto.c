@@ -870,9 +870,11 @@ static void login_fire_custom_event(jsock_t *jsock, cJSON *params, int success, 
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_LOGIN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
-		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_login", cJSON_GetObjectCstr(params, "login"));
-		if (success) {
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_sessid", cJSON_GetObjectCstr(params, "sessid"));
+		if (params) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_login", cJSON_GetObjectCstr(params, "login"));
+			if (success) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_sessid", cJSON_GetObjectCstr(params, "sessid"));
+			}
 		}
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_success", "%d", success);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_result_txt", result_txt);
@@ -2653,6 +2655,11 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 	*response = obj;
 
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
+
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
 		err = 1; goto cleanup;
@@ -2745,6 +2752,11 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	
 	*response = obj;
+
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
@@ -3076,6 +3088,11 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 	
 	*response = obj;
 
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
+
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
 		err = 1; goto cleanup;
@@ -3176,6 +3193,11 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	uint8_t match = 0, p = 0;
 
 	*response = obj;
+
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
@@ -3293,9 +3315,15 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	switch_bool_t r = SWITCH_TRUE;
 	char *proto = VERTO_CHAT_PROTO;
 	char *pproto = NULL;
+	int err = 0;
 
 	*response = cJSON_CreateObject();
-	
+
+	if (!params) {
+		cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
+
 	if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
 		switch_core_session_t *session = NULL;
 		
@@ -3403,8 +3431,13 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		switch_safe_free(pproto);
 	}
 
+ cleanup:
 
-	return r;
+	if (!err) return r;
+
+	cJSON_AddItemToObject(*response, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
+
+	return SWITCH_FALSE;
 }
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
@@ -3424,6 +3457,11 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	switch_event_header_t *hp;
 	
 	*response = obj;
+
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
 
 	if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
 		err=1; goto cleanup;
@@ -3907,8 +3945,17 @@ static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsoc
 
 static switch_bool_t echo_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	*response = cJSON_Duplicate(params, 1);
-	return SWITCH_TRUE;
+	if (params) {
+		*response = cJSON_Duplicate(params, 1);
+		return SWITCH_TRUE;
+	}
+
+	*response = cJSON_CreateObject();
+
+	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Params data missing"));
+	cJSON_AddItemToObject(*response, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
+
+	return SWITCH_FALSE;
 }
 
 static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
@@ -3945,13 +3992,14 @@ static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 
 static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *cmd, *arg, *reply;
+	cJSON *cmd = NULL, *arg = NULL, *reply;
 	switch_stream_handle_t stream = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	cmd = cJSON_GetObjectItem(params, "cmd");
-	arg = cJSON_GetObjectItem(params, "arg");
-
+	if (params) {
+		cmd = cJSON_GetObjectItem(params, "cmd");
+		arg = cJSON_GetObjectItem(params, "arg");
+	}
 
 	if (cmd && jsock->allowed_fsapi) {
 		if (cmd->type == cJSON_String && cmd->valuestring && !auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
