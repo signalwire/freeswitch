@@ -2675,6 +2675,11 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 	*response = obj;
 
+	if (!params) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
+		err = 1; goto cleanup;
+	}
+
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
 		err = 1; goto cleanup;
