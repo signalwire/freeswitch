@@ -263,7 +263,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           id: 'screen',
           label: 'Screen'
         }];
-        data.audioDevices = [];
+        data.audioDevices = [{
+          id: 'none',
+          label: 'No Microphone'
+        }];
         data.speakerDevices = [];
 
         if(!storage.data.selectedShare) {
