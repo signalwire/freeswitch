@@ -2283,7 +2283,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	serving_agent = argv[9];
 
 	if (!cbt.queue_name || !(queue = get_queue(cbt.queue_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, skip this member\n", cbt.queue_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, delete this member\n", cbt.queue_name);
+		sql = switch_mprintf("DELETE FROM members WHERE uuid = '%q' AND system = '%q'", cbt.member_uuid, cbt.member_system);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
 		goto end;
 	} else {
 		queue_name = strdup(queue->name);
