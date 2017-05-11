@@ -3829,6 +3829,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	smh->mparams->num_codecs = 0;
+	smh->num_negotiated_codecs = 0;
+	switch_core_media_prepare_codecs(session, SWITCH_TRUE);
 	codec_array = smh->codecs;
 	total_codecs = smh->mparams->num_codecs;
 
@@ -4247,13 +4250,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 
-			smh->mparams->num_codecs = 0;
-			smh->num_negotiated_codecs = 0;
-			switch_core_media_prepare_codecs(session, SWITCH_TRUE);
-			codec_array = smh->codecs;
-			total_codecs = smh->mparams->num_codecs;
-			
-
 			if (switch_rtp_has_dtls() && dtls_ok(session)) {
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					
@@ -4565,8 +4561,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				match = 1;
 				a_engine->codec_negotiated = 1;
 
-				for(j = 0; j < m_idx; j++) {
-					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
+				for(j = 0; j < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; j++) {
+					payload_map_t *pmap = switch_core_media_add_payload_map(session,
 																			SWITCH_MEDIA_TYPE_AUDIO,
 																			matches[j].map->rm_encoding,
 																			matches[j].imp->modname,
@@ -5008,8 +5004,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				vmatch = 1;
 				v_engine->codec_negotiated = 1;
 
-				for(j = 0; j < m_idx; j++) {
-					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
+				for(j = 0; j < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; j++) {
+					payload_map_t *pmap = switch_core_media_add_payload_map(session,
 																			SWITCH_MEDIA_TYPE_VIDEO,
 																			matches[j].map->rm_encoding, 
 																			matches[j].imp->modname,
