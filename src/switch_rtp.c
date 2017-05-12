@@ -51,6 +51,9 @@
 #include <switch_jitterbuffer.h>
 #include <switch_estimators.h>
 
+//#define DEBUG_TS_ROLLOVER
+//#define TS_ROLLOVER_START 4294951295
+
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
@@ -1511,30 +1514,24 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 
 static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 {
-	uint8_t m = 0;
+	uint8_t m = 0, changed = 0;
 
-	if (rtp_session->rtp_bugs & RTP_BUG_SEND_LINEAR_TIMESTAMPS) {
-		rtp_session->ts += rtp_session->samples_per_interval;
-		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
-			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+	if (!(rtp_session->rtp_bugs & RTP_BUG_SEND_LINEAR_TIMESTAMPS)) {
+		if (timestamp) {
+			rtp_session->ts = (uint32_t) timestamp;
+			changed++;
+			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
+			if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
+				m++;
+			}
+		} else if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+			rtp_session->ts = rtp_session->timer.samplecount;
+			changed++;
 		}
-	} else if (timestamp) {
-		rtp_session->ts = (uint32_t) timestamp;
-		/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-		if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
-			m++;
-		}
-	} else if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-		rtp_session->ts = rtp_session->timer.samplecount;
+	}
 
-		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
-			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
-		}
-	} else {
-		rtp_session->ts += rtp_session->samples_per_interval;
-		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
-			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
-		}
+	if (!changed) {
+		rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 	}
 
 	return m;
@@ -4051,7 +4048,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 	rtp_session->seq = (uint16_t) rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL));
-
+#ifdef DEBUG_TS_ROLLOVER
+	rtp_session->last_write_ts = TS_ROLLOVER_START;
+#endif
 	rtp_session->stats.inbound.R = 100.0;
 	rtp_session->stats.inbound.mos = 4.5;
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
@@ -4095,6 +4094,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
 							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet / 1000);
+#ifdef DEBUG_TS_ROLLOVER
+			rtp_session->timer.tick = TS_ROLLOVER_START / samples_per_interval;
+#endif
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
@@ -7742,24 +7744,6 @@ static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
 }
 
 
-static int ts_delta(int last_val, int cur_val)
-{
-	int32_t delta;
-	int64_t x, y;
-
-	x = last_val;
-	y = cur_val;
-	
-	if (x > UINT32_MAX / 2 && y < UINT32_MAX / 2) {
-		x -= (int64_t)UINT32_MAX+1;
-	}
-	
-	delta = (int32_t)y-x;
-
-	return delta;
-}
-
-
 static int rtp_common_write(switch_rtp_t *rtp_session,
 							rtp_msg_t *send_msg, void *data, uint32_t datalen, switch_payload_t payload, uint32_t timestamp, switch_frame_flag_t *flags)
 {
@@ -7822,10 +7806,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m = 0;
 		} else {
-			int delta = ts_delta(rtp_session->last_write_ts, rtp_session->ts);
+			int delta = rtp_session->ts - rtp_session->last_write_ts;
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (delta > rtp_session->samples_per_interval * 10))
+				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (abs(delta) > rtp_session->samples_per_interval * 10))
 				|| rtp_session->ts == rtp_session->samples_per_interval)) {
 				m++;
 			}
@@ -7901,7 +7885,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->ts_norm.last_external = external;
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
-			int32_t delta = ts_delta(rtp_session->ts_norm.last_frame, ntohl(send_msg->header.ts));
+			int32_t delta = ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame;
 
 			if (delta < 0 || delta > 90000) {
 				switch_core_media_gen_key_frame(rtp_session->session);
@@ -8041,14 +8025,19 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+		uint32_t ts_delta;
+
 		this_ts = ntohl(send_msg->header.ts);
 
-		if ((this_ts - rtp_session->last_write_ts) > 16000) {
+		ts_delta = this_ts - rtp_session->last_write_ts;
+
+		if (abs(ts_delta) > rtp_session->samples_per_second * 2) {
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
 		}
-
-		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf ||
-			(!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && this_ts > rtp_session->one_second && this_ts < rtp_session->last_write_ts)) {
+#ifdef DEBUG_TS_ROLLOVER
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WRITE TS LAST:%u THIS:%u DELTA:%u\n", rtp_session->last_write_ts, this_ts, ts_delta);
+#endif
+		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf) {
 			send = 0;
 		}
 	}
