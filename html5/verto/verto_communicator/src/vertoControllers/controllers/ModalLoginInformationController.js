@@ -19,7 +19,10 @@
           $modalInstance.dismiss('cancel');
         };
 
+        verto.data.name = storage.data.name;
+        verto.data.email = storage.data.email;
+
       }
     ]);
-    
+
 })();
