@@ -1466,10 +1466,12 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seeking to %" SWITCH_INT64_T_FMT "\n", context->seek_ts);
 			avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
 			context->seek_ts = -2;
-			context->video_st.next_pts = 0;
-			context->video_start_time = 0;
 
-			avcodec_flush_buffers(context->video_st.st->codec);
+			if (context->has_video) {
+				context->video_st.next_pts = 0;
+				context->video_start_time = 0;
+				avcodec_flush_buffers(context->video_st.st->codec);
+			}
 		}
 
 		if (context->has_video) {
