@@ -1522,7 +1522,7 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 			rtp_session->ts = (uint32_t) timestamp;
 			changed++;
 			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-			if (abs(rtp_session->ts - rtp_session->last_write_ts) > rtp_session->samples_per_interval 
+			if (abs((int)rtp_session->ts - (int)rtp_session->last_write_ts) > rtp_session->samples_per_interval 
 				&& !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 				m++;
 			}
@@ -8051,9 +8051,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		this_ts = ntohl(send_msg->header.ts);
 
-		ts_delta = this_ts - rtp_session->last_write_ts;
+		ts_delta = abs((int)this_ts - (int)rtp_session->last_write_ts);
 
-		if (abs(ts_delta) > rtp_session->samples_per_second * 2) {
+		if (ts_delta > rtp_session->samples_per_second * 2) {
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
 		}
 #ifdef DEBUG_TS_ROLLOVER
