@@ -1735,3 +1735,8 @@ body:-webkit-full-screen #incall .video-footer {
   color: rgba(0, 10, 66, 0.84);
   background-color: #E8E8E8;
 }
+
+#settings .loader {
+  width: 20px;
+  height: 20px;
+}

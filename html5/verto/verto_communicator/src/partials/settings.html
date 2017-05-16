@@ -144,12 +144,15 @@
             </label>
           </div>
 
-          <a class="btn btn-primary" href="" ng-click="testSpeed()">
-            {{ 'CHECK_NETWORK_SPEED' | translate }}
+          <a class="btn btn-primary" href="" ng-disabled="isTestingSpeed" ng-click="testSpeed()">
+            {{ isTestingSpeed ? 'CHECKING_NETWORK_SPEED' : 'CHECK_NETWORK_SPEED' | translate }}
           </a>
 
           <div>
             <span ng-bind="speedMsg"></span>
+            <span ng-show="isTestingSpeed">
+              <img class="loader" src="src/images/ajax-loader.gif"/>
+            </span>
           </div>
         </div>
 

@@ -125,6 +125,7 @@
   "AUTO_SPEED_RES": "Determinar automaticamente velocidade e configurações de resolução",
   "RECHECK_BANDWIDTH": "Verificar novamente largura de banda antes de realizar cada chamada",
   "CHECK_NETWORK_SPEED": "Verificar velocidade da rede",
+  "CHECKING_NETWORK_SPEED": "Verificando velocidade da rede",
   "VIDEO_QUALITY": "Qualidade do vídeo:",
   "MAX_INCOMING_BANDWIDTH": "Largura de banda de entrada máxima:",
   "MAX_OUTGOING_BANDWIDTH": "Largura de banda de saída máxima:",

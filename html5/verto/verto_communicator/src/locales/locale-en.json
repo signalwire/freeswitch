@@ -125,6 +125,7 @@
   "AUTO_SPEED_RES": "Automatically determine speed and resolution settings",
   "RECHECK_BANDWIDTH": "Recheck bandwidth before each outgoing call",
   "CHECK_NETWORK_SPEED": "Check Network Speed",
+  "CHECKING_NETWORK_SPEED": "Checking Network Speed",
   "VIDEO_QUALITY": "Video quality:",
   "MAX_INCOMING_BANDWIDTH": "Max incoming bandwidth:",
   "MAX_OUTGOING_BANDWIDTH": "Max outgoing bandwidth:",
