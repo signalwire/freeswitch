@@ -740,7 +740,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_api_on(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
 	}
 
-	if (!inner_bridge && switch_channel_up_nosig(chan_a)) {
+	if (!inner_bridge && switch_channel_up_nosig(chan_a) && !switch_channel_test_flag(chan_a, CF_REDIRECT)) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
