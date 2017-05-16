@@ -135,11 +135,24 @@
           </label>
         </div>
 
-        <div class="checkbox" ng-show="mydata.autoBand">
-          <label>
-            <input type="checkbox" ng-model="mydata.testSpeedJoin">
-            <span ng-bind="'RECHECK_BANDWIDTH' | translate"></span>
-          </label>
+        <div ng-show="mydata.autoBand">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" ng-model="mydata.testSpeedJoin">
+              <span ng-bind="'RECHECK_BANDWIDTH' | translate"></span>
+            </label>
+          </div>
+
+          <a class="btn btn-primary" href="" ng-disabled="isTestingSpeed" ng-click="testSpeed()">
+            {{ isTestingSpeed ? 'CHECKING_NETWORK_SPEED' : 'CHECK_NETWORK_SPEED' | translate }}
+          </a>
+
+          <div>
+            <span ng-bind="speedMsg"></span>
+            <span ng-show="isTestingSpeed">
+              <img class="loader" src="src/images/ajax-loader.gif"/>
+            </span>
+          </div>
         </div>
 
         <a ng-show="mydata.autoBand" class="btn btn-primary" href="" ng-click="testSpeed()">{{ 'CHECK_NETWORK_SPEED' | translate }}</a> <span ng-bind="speedMsg"></span>
