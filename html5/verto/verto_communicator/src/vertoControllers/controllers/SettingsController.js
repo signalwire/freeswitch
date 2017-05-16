@@ -94,11 +94,13 @@
         };
 
         $scope.testSpeed = function() {
+          $scope.isTestingSpeed = true;
           return verto.testSpeed(cb);
 
           function cb(data) {
             $scope.mydata.vidQual = storage.data.vidQual;
             $scope.speedMsg = 'Up: ' + data.upKPS + ' Down: ' + data.downKPS;
+            $scope.isTestingSpeed = false;
             $scope.$apply();
           }
         };
