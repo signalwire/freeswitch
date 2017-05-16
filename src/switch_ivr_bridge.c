@@ -1891,7 +1891,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_clear_flag(caller_channel, CF_RESET);
 		} else {
 			state = switch_channel_get_state(caller_channel);
-			if (!(state == CS_RESET || state == CS_PARK || state == CS_ROUTING)) {
+			if (!(state == CS_RESET || state == CS_PARK || state == CS_ROUTING || state == CS_EXECUTE)) {
 				switch_channel_set_state(caller_channel, CS_RESET);
 			}
 		}
