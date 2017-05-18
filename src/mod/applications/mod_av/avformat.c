@@ -1543,10 +1543,6 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 			vid_frames = switch_queue_size(context->eh.video_queue);
 		}
 		
-		if (vid_frames > context->read_fps) {
-			switch_yield(250000);
-		}
-
 		if (switch_buffer_inuse(context->audio_buffer) > AUDIO_BUF_SEC * context->audio_st.sample_rate * context->audio_st.channels * 2 &&
 			(!context->has_video || vid_frames > 5)) {
 			switch_yield(context->has_video ? 1000 : 10000);
@@ -1683,6 +1679,9 @@ again:
 						context->vid_ready = 1;
 						switch_queue_push(context->eh.video_queue, img);
 						context->last_vid_push = switch_time_now();
+						
+						
+
 					}
 				}
 			}
@@ -1830,7 +1829,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		}
 
 		if (context->has_video) {
-			switch_queue_create(&context->eh.video_queue, SWITCH_CORE_QUEUE_LEN, handle->memory_pool);
+			switch_queue_create(&context->eh.video_queue, context->read_fps, handle->memory_pool);
 			switch_mutex_init(&context->eh.mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 			switch_core_timer_init(&context->video_timer, "soft", 66, 1, context->pool);
 		}
@@ -2143,7 +2142,9 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	context->eh.finalize = 1;
 
 	if (context->eh.video_queue) {
+		flush_video_queue(context->eh.video_queue, 0);
 		switch_queue_push(context->eh.video_queue, NULL);
+		switch_queue_term(context->eh.video_queue);
 	}
 
 	if (context->eh.video_thread) {
@@ -2161,10 +2162,6 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	if (context->file_read_thread) {
 		switch_thread_join(&status, context->file_read_thread);
 		context->file_read_thread = NULL;
-	}
-
-	if (context->eh.video_queue) {
-		flush_video_queue(context->eh.video_queue, 0);
 	}
 
 	if (context->fc) {
