@@ -527,12 +527,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_med
 	return SWITCH_STATUS_FALSE;
 }
 
+static int flush_video_queue(switch_queue_t *q, int min)
+{
+	void *pop;
+
+	if (switch_queue_size(q) > min) {
+		while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+			if (min && switch_queue_size(q) <= min) {
+				break;
+			}
+		}
+	}
+
+	return switch_queue_size(q);
+}
+
 static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *obj)
 {
 	switch_media_bug_t *bug = (switch_media_bug_t *) obj;
 	switch_queue_t *main_q = NULL, *other_q = NULL;
 	switch_image_t *IMG = NULL, *img = NULL, *other_img = NULL;
-	void *pop;
+	void *pop, *other_pop;
 	uint8_t *buf;
 	switch_size_t buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_frame_t frame = { 0 };
@@ -574,12 +591,12 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 			h = img->d_h;
 
 			if (other_q) {
-				while(switch_queue_size(other_q) > 0) {
-					if ((status = switch_queue_trypop(other_q, &pop)) == SWITCH_STATUS_SUCCESS) {
-						switch_img_free(&other_img);
-						if (!(other_img = (switch_image_t *) pop)) {
-							goto end;
-						}
+				flush_video_queue(other_q, 1);
+
+				if ((status = switch_queue_trypop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
+					switch_img_free(&other_img);
+					if (!(other_img = (switch_image_t *) other_pop)) {
+						goto end;
 					}
 				}
 
