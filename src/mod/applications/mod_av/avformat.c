@@ -2173,6 +2173,7 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 			switch_queue_push(context->eh.video_queue, NULL);
 		}
 	}
+	
 
 	if (context->eh.video_thread) {
 		switch_thread_join(&status, context->eh.video_thread);
