@@ -2179,6 +2179,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		const char *cdr_var;
 		const char *json_cdr_var;
 
+		if (switch_channel_var_true(caller_channel, "originate_xfer_zombie")) {
+			switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
+			oglobals.early_ok = 0;
+			oglobals.ignore_early_media = 1;
+		}
+
 		if ((cdr_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_prefix"))) {
 			char buf[128] = "";
 			switch_snprintf(buf, sizeof(buf), "%s_total", cdr_var);
@@ -3624,7 +3630,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (caller_channel) {
-				if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+
+				if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE) && !switch_channel_up(caller_channel)) {
+					if (switch_channel_media_up(peer_channel)) {
+						oglobals.idx = IDX_XFER;
+						reason = force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+						switch_channel_execute_on(peer_channel, "execute_on_orphaned_bleg");
+						switch_channel_api_on(peer_channel, "api_on_orphaned_bleg");
+					}
+				} else if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 					switch_channel_pass_callee_id(peer_channel, caller_channel);
 					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 						status = SWITCH_STATUS_SUCCESS;

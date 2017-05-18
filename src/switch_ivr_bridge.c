@@ -886,7 +886,20 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 				switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
 			} else {
 				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+					int x = 0;
+
+					if (switch_channel_execute_on(channel, "execute_on_orphaned_bleg") == SWITCH_STATUS_SUCCESS) {
+						x++;
+					}
+
+					if (switch_channel_api_on(channel, "api_on_orphaned_bleg") == SWITCH_STATUS_SUCCESS) {
+						x++;
+					}
+
+					if (!x) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+					}
+					
 				} else {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
