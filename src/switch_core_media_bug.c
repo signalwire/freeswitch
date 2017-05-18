@@ -577,8 +577,6 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 		switch_status_t status;
 		int w = 0, h = 0, ok = 1;
 
-		flush_video_queue(main_q, 1);
-
 		if ((status = switch_queue_pop(main_q, &pop)) == SWITCH_STATUS_SUCCESS) {
 			if (!pop) {
 				goto end;
@@ -592,7 +590,7 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 			if (other_q) {
 				flush_video_queue(other_q, 1);
 
-				if ((status = switch_queue_pop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_queue_trypop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
 					if (!(other_img = (switch_image_t *) other_pop)) {
 						goto end;
 					}
