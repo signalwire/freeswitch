@@ -1229,6 +1229,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			rh->completion_cause = NULL;
 
 			switch_core_session_get_read_impl(session, &rh->read_impl);
+
+			if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+				switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
+			}
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
@@ -2536,7 +2541,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}
 
-
 	fh->samplerate = 0;
 	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
 		int tmp = 0;
@@ -2553,6 +2557,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	fh->channels = channels;
+
+
 
 	if ((vval = switch_channel_get_variable(channel, "enable_file_write_buffering"))) {
 		int tmp = atoi(vval);
@@ -2640,11 +2646,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 
-			if ((vval = switch_channel_get_variable(channel, "record_concat_video")) && switch_true(vval)) {
+			if (switch_channel_var_true(channel, "record_concat_video")) {
 				flags |= SMBF_READ_VIDEO_STREAM;
 				flags |= SMBF_WRITE_VIDEO_STREAM;
+			} else if (switch_channel_var_true(channel, "record_bleg_video")) {
+				flags |= SMBF_WRITE_VIDEO_STREAM;
 			} else {
-				flags |= SMBF_READ_VIDEO_PING;
+				flags |= SMBF_READ_VIDEO_STREAM;
 			}
 		} else {
 			flags &= ~SMBF_READ_VIDEO_PING;

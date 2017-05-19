@@ -239,7 +239,7 @@ struct switch_media_bug {
 	switch_buffer_t *text_buffer;
 	char *text_framedata;
 	uint32_t text_framesize;
-
+	switch_mm_t mm;
 	struct switch_media_bug *next;
 };
 

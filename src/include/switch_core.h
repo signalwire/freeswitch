@@ -351,6 +351,9 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_demux_frame(_In_ switch_medi
 */
 SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(_In_ switch_media_bug_t *bug);
 
+SWITCH_DECLARE(void) switch_core_media_bug_set_media_params(switch_media_bug_t *bug, switch_mm_t *mm);
+SWITCH_DECLARE(void) switch_core_media_bug_get_media_params(switch_media_bug_t *bug, switch_mm_t *mm);
+
 SWITCH_DECLARE(const char *) switch_core_media_bug_get_text(switch_media_bug_t *bug);
 
 /*!
