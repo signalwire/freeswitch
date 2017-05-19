@@ -228,6 +228,7 @@ struct switch_media_bug {
 	switch_image_t *spy_img[2];
 	switch_vid_spy_fmt_t spy_fmt;
 	switch_thread_t *video_bug_thread;
+	switch_mm_t mm;
 	struct switch_media_bug *next;
 };
 

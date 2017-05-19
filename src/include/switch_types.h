@@ -2624,6 +2624,42 @@ typedef enum {
 	SCFC_PAUSE_READ
 } switch_file_command_t;
 
+typedef enum {
+	SWITCH_VIDEO_ENCODE_SPEED_DEFAULT = 0,
+	SWITCH_VIDEO_ENCODE_SPEED_FAST = 0,
+	SWITCH_VIDEO_ENCODE_SPEED_MEDIUM,
+	SWITCH_VIDEO_ENCODE_SPEED_SLOW
+} switch_video_encode_speed_t;
+
+typedef enum {
+	SWITCH_VIDEO_PROFILE_BASELINE,
+	SWITCH_VIDEO_PROFILE_MAIN,
+	SWITCH_VIDEO_PROFILE_HIGH
+} switch_video_profile_t;
+
+typedef struct switch_mm_s {
+	int samplerate;
+	int channels;
+	int keyint;
+	int ab;
+	int vb;
+	int vw;
+	int vh;
+	int cbr;
+	float fps;
+	float source_fps;
+	int vbuf;
+	switch_video_profile_t vprofile;
+	switch_video_encode_speed_t vencspd;
+	uint8_t try_hardware_encoder;
+	int scale_w;
+	int scale_h;
+	switch_img_fmt_t fmt;
+	char *auth_username;
+	char *auth_password;
+} switch_mm_t;
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

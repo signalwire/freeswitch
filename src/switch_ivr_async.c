@@ -1507,7 +1507,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
 	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
-		if (rh->fh) {
+		if (rh->fh && switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
 			if (!bug->video_ping_frame) break;
 			
 			if ((len || bug->video_ping_frame->img) && switch_core_file_write_video(rh->fh, bug->video_ping_frame) != SWITCH_STATUS_SUCCESS && 
@@ -2559,11 +2559,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 			
-			if ((vval = switch_channel_get_variable(channel, "record_concat_video")) && switch_true(vval)) { 
+			if (switch_channel_var_true(channel, "record_concat_video")) {
 				flags |= SMBF_READ_VIDEO_STREAM;
 				flags |= SMBF_WRITE_VIDEO_STREAM;
+			} else if (switch_channel_var_true(channel, "record_bleg_video")) {
+				flags |= SMBF_WRITE_VIDEO_STREAM;
 			} else {
-				flags |= SMBF_READ_VIDEO_PING;
+				flags |= SMBF_READ_VIDEO_STREAM;
 			}
 		} else {
 			flags &= ~SMBF_READ_VIDEO_PING;

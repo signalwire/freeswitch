@@ -83,6 +83,16 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(switch_media_bug_t *bu
 	return switch_clear_flag(bug, flag);
 }
 
+SWITCH_DECLARE(void) switch_core_media_bug_set_media_params(switch_media_bug_t *bug, switch_mm_t *mm)
+{
+	bug->mm = *mm;
+}
+
+SWITCH_DECLARE(void) switch_core_media_bug_get_media_params(switch_media_bug_t *bug, switch_mm_t *mm)
+{
+	*mm = bug->mm;
+}
+
 SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch_media_bug_t *bug)
 {
 	return bug->session;
@@ -522,15 +532,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_med
 	return SWITCH_STATUS_FALSE;
 }
 
+
+static int flush_video_queue(switch_queue_t *q, int min)
+{
+	void *pop;
+
+	if (switch_queue_size(q) > min) {
+		while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+			if (min && switch_queue_size(q) <= min) {
+				break;
+			}
+		}
+	}
+
+	return switch_queue_size(q);
+}
+
 static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *obj)
 {
 	switch_media_bug_t *bug = (switch_media_bug_t *) obj;
 	switch_queue_t *main_q = NULL, *other_q = NULL;
 	switch_image_t *IMG = NULL, *img = NULL, *other_img = NULL;
-	void *pop;
+	void *pop, *other_pop;
 	uint8_t *buf;
 	switch_size_t buflen = SWITCH_RTP_MAX_BUF_LEN;
-	switch_frame_t frame = { 0 };	
+	switch_frame_t frame = { 0 };
+	switch_timer_t timer = { 0 };
+	switch_mm_t mm = { 0 };
+	int fps = 15;
 
 	buf = switch_core_session_alloc(bug->session, buflen);
 	frame.packet = buf;
@@ -551,66 +582,113 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 		return NULL;
 	}
 
+	switch_core_media_bug_get_media_params(bug, &mm);
+
+	if (mm.fps) {
+		fps = (int) mm.fps;
+	}
+
+	switch_core_timer_init(&timer, "soft", 1000 / fps, (90000 / (1000 / fps)), NULL);
+
 	while (bug->ready) {
 		switch_status_t status;
-		int w = 0, h = 0, ok = 1;
-
+		int w = 0, h = 0, ok = 1, new_main = 0, new_other = 0, new_canvas = 0;
 		
-		if ((status = switch_queue_pop(main_q, &pop)) == SWITCH_STATUS_SUCCESS) {
+		switch_core_timer_next(&timer);
+
+		if (!switch_channel_test_flag(bug->session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bug, SMBF_ANSWER_REQ)) {
+			flush_video_queue(main_q, 0);
+			if (other_q) flush_video_queue(other_q, 0);
+			continue;
+		}
+
+		flush_video_queue(main_q, 1);
+
+		if ((status = switch_queue_trypop(main_q, &pop)) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&img);
-			
+
 			if (!pop) {
 				goto end;
 			}
 
 			img = (switch_image_t *) pop;
-			
+			new_main = 1;
+
 			w = img->d_w;
 			h = img->d_h;
+		}
+		
+		if (other_q) {
+			flush_video_queue(other_q, 1);
+			
+			if ((status = switch_queue_trypop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
+				switch_img_free(&other_img);
+				other_img = (switch_image_t *) other_pop;
+				new_other = 1;
+			}
 
-			if (other_q) {
-				while(switch_queue_size(other_q) > 0) {
-					if ((status = switch_queue_trypop(other_q, &pop)) == SWITCH_STATUS_SUCCESS) {
-						switch_img_free(&other_img);
-						if (!(other_img = (switch_image_t *) pop)) {
-							goto end;
-						}
-					}
-				}
-
-				if (other_img) {
-					if (other_img->d_w != w || other_img->d_h != h) {
-						switch_image_t *tmp_img = NULL;
-						
-						switch_img_scale(other_img, &tmp_img, w, h);
-						switch_img_free(&other_img);
-						other_img = tmp_img;
-					}
-				}
+			if (other_img) {
+				if (!w) w = other_img->d_w;
+				if (!h) h = other_img->d_h;
 				
-				w *= 2;
-				
-				if (!IMG || IMG->d_h != h || IMG->d_w != w) {
-					switch_img_free(&IMG);
-					IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
-				}
+				if (other_img->d_w != w || other_img->d_h != h) {
+					switch_image_t *tmp_img = NULL;
 
-				switch_img_patch(IMG, img, 0, 0);
-
-				if (other_img) {
-					switch_img_patch(IMG, other_img, w / 2, 0);
+					switch_img_scale(other_img, &tmp_img, w, h);
+					switch_img_free(&other_img);
+					other_img = tmp_img;
 				}
 			}
 
+			if (!(w&&h)) continue;
+
+			if (img) {
+				if (img->d_w != w || img->d_h != h) {
+					switch_image_t *tmp_img = NULL;
+					
+					switch_img_scale(img, &tmp_img, w, h);
+					switch_img_free(&img);
+					img = tmp_img;
+				}
+			}
+			
+			w *= 2;
+
+			if (!IMG || IMG->d_h != h || IMG->d_w != w) {
+				switch_rgb_color_t color = { 0 };
+
+				switch_img_free(&IMG);
+				IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
+				new_canvas = 1;
+				switch_color_set_rgb(&color, "#000000");
+				switch_img_fill(IMG, 0, 0, IMG->d_w, IMG->d_h, &color);
+			}
+		}
+
+		
+		if (IMG) {
+			if (img && (new_canvas || new_main)) {
+				switch_img_patch(IMG, img, 0, 0);
+			}
+		
+			if (other_img && (new_canvas || new_other)) {
+				switch_img_patch(IMG, other_img, w / 2, 0);
+			}
+		}
+		
+		if (IMG || img) {
 			switch_thread_rwlock_rdlock(bug->session->bug_rwlock);
 			frame.img = other_q ? IMG : img;
+
 			bug->video_ping_frame = &frame;
+			
 			if (bug->callback) {
 				if (bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_STREAM_VIDEO_PING) == SWITCH_FALSE
 					|| (bug->stop_time && bug->stop_time <= switch_epoch_time_now(NULL))) {
 					ok = SWITCH_FALSE;
 				}
 			}
+
 			bug->video_ping_frame = NULL;
 			switch_thread_rwlock_unlock(bug->session->bug_rwlock);
 
@@ -623,6 +701,8 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 
  end:
 
+	switch_core_timer_destroy(&timer);
+	
 	switch_img_free(&IMG);
 	switch_img_free(&img);
 	switch_img_free(&other_img);
