@@ -1515,7 +1515,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
 	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
-		if (rh->fh) {
+		if (rh->fh && switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
 			if (!bug->video_ping_frame) break;
 
 			if ((len || bug->video_ping_frame->img) && switch_core_file_write_video(rh->fh, bug->video_ping_frame) != SWITCH_STATUS_SUCCESS &&
