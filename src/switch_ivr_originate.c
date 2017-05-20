@@ -3209,7 +3209,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (oglobals.session &&
 					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
 					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
-					!switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE) &&
+					//!switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE) &&
+					switch_channel_up(caller_channel) &&
 					(oglobals.ringback_ok
 					 || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
 
