@@ -328,7 +328,7 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 		const char *realm = bh->master_realms[index];
 		//char *identity = ks_pstrcat(bh->pool, bh->master_user, "@", realm); // @todo this does not work... why?
 		char *identity = ks_psprintf(bh->pool, "%s@%s", bh->master_user, realm);
-		
+
 		blade_handle_identity_register(bh, identity);
 		blade_handle_realm_register(bh, realm);
 
@@ -421,7 +421,7 @@ KS_DECLARE(ks_status_t) blade_handle_identity_register(blade_handle_t *bh, const
 
 	key = ks_pstrdup(bh->pool, identity);
 	ks_hash_insert(bh->identities, (void *)key, (void *)KS_TRUE);
-	
+
 	ks_log(KS_LOG_DEBUG, "Identity Registered: %s\n", key);
 
 	return KS_STATUS_SUCCESS;
@@ -497,9 +497,9 @@ KS_DECLARE(ks_status_t) blade_handle_route_add(blade_handle_t *bh, const char *i
 	key = ks_pstrdup(bh->pool, identity);
 	value = ks_pstrdup(bh->pool, id);
 
-	ks_hash_insert(bh->identities, (void *)key, (void *)id);
+	ks_hash_insert(bh->identities, (void *)key, (void *)value);
 
-	ks_log(KS_LOG_DEBUG, "Route Added: %s through %s\n", key, id);
+	ks_log(KS_LOG_DEBUG, "Route Added: %s through %s\n", key, value);
 
 	// @todo when a route is added, upstream needs to be notified that the identity can be found through the session to the
 	// upstream router, and likewise up the chain to the Master Router Node, to create a complete route from anywhere else
@@ -814,13 +814,13 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 		while ((it = ks_hash_first(bh->identities, KS_UNLOCKED))) {
 			void *key = NULL;
 			void *value = NULL;
-			ks_hash_this(it, &key, NULL, &value);
+			ks_hash_this(it, (const void **)&key, NULL, &value);
 			ks_hash_remove(bh->identities, key);
 		}
 		while ((it = ks_hash_first(bh->realms, KS_UNLOCKED))) {
 			void *key = NULL;
 			void *value = NULL;
-			ks_hash_this(it, &key, NULL, &value);
+			ks_hash_this(it, (const void **)&key, NULL, &value);
 			ks_hash_remove(bh->realms, key);
 		}
 		ks_pool_free(bh->pool, &bh->upstream_id);
@@ -831,7 +831,7 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 
 	blade_session_write_unlock(bs);
 
-	
+
 
 	return ret;
 }

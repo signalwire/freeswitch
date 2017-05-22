@@ -40,8 +40,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	// @todo portable process signal handler (SIGINT, SIGHUP, etc)
-
 	idle(bh);
 
 	blade_handle_destroy(&bh);

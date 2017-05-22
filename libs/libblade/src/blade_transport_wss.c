@@ -638,7 +638,7 @@ ks_status_t blade_transport_wss_link_read(blade_transport_wss_link_t *btwssl, cJ
 {
 	// @todo get exact timeout from service config?
 	int32_t poll_flags = 0;
-	
+
 	ks_assert(btwssl);
 	ks_assert(json);
 
@@ -768,7 +768,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	// @todo start here for a reusable handler for "blade.connect" request jsonrpc method within transport implementations,
 	// output 2 parameters for response and error, if an error occurs, send it, otherwise send the response
-	
+
 	jsonrpc = cJSON_GetObjectCstr(json_req, "jsonrpc"); // @todo check for definitions of these keys and fixed values
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
 		ks_log(KS_LOG_DEBUG, "Received message is not the expected protocol\n");
@@ -852,7 +852,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 			void *value = NULL;
 			char *identity = NULL;
 
-			ks_hash_this(it, &key, NULL, &value);
+			ks_hash_this(it, (const void **)&key, NULL, &value);
 
 			identity = ks_psprintf(pool, "%s@%s", sid, (const char *)key);
 
@@ -900,7 +900,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		void *key = NULL;
 		void *value = NULL;
 
-		ks_hash_this(it, &key, NULL, &value);
+		ks_hash_this(it, (const void **)&key, NULL, &value);
 
 		cJSON_AddItemToArray(json_result_identities, cJSON_CreateString((const char *)key));
 	}
@@ -919,7 +919,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		void *key = NULL;
 		void *value = NULL;
 
-		ks_hash_this(it, &key, NULL, &value);
+		ks_hash_this(it, (const void **)&key, NULL, &value);
 
 		cJSON_AddItemToArray(json_result_realms, cJSON_CreateString((const char *)key));
 	}

@@ -208,7 +208,7 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 		void *key = NULL;
 		void *value = NULL;
 
-		ks_hash_this(it, &key, NULL, &value);
+		ks_hash_this(it, (const void **)&key, NULL, &value);
 
 		blade_handle_route_remove(bs->handle, (const char *)key);
 	}

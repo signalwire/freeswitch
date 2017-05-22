@@ -275,6 +275,7 @@ AC_SUBST([AM_LDFLAGS])
 
 AC_CONFIG_FILES([Makefile
 	test/Makefile
+	switchblade/Makefile
 	libblade.pc
 ])
 

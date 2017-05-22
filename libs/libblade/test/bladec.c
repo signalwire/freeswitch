@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	config_t config;
 	config_setting_t *config_blade = NULL;
 	const char *cfgpath = "bladec.cfg";
-	const char *session_state_callback_id = NULL;
+	//const char *session_state_callback_id = NULL;
 	const char *autoconnect = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
