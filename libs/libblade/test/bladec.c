@@ -17,19 +17,19 @@ struct command_def_s {
 
 void command_quit(blade_handle_t *bh, char *args);
 void command_connect(blade_handle_t *bh, char *args);
-void command_chat(blade_handle_t *bh, char *args);
+//void command_chat(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
 	{ "connect", command_connect },
-	{ "chat", command_chat },
+//	{ "chat", command_chat },
 
 	{ NULL, NULL }
 };
 
-ks_bool_t on_blade_chat_join_response(blade_response_t *bres);
-ks_bool_t on_blade_chat_message_event(blade_event_t *bev);
-void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
+//ks_bool_t on_blade_chat_join_response(blade_response_t *bres);
+//ks_bool_t on_blade_chat_message_event(blade_event_t *bev);
+//void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
 
 int main(int argc, char **argv)
 {
@@ -71,8 +71,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	blade_handle_event_register(bh, "blade.chat.message", on_blade_chat_message_event);
-	blade_handle_session_state_callback_register(bh, NULL, on_blade_session_state_callback, &session_state_callback_id);
+	//blade_handle_event_register(bh, "blade.chat.message", on_blade_chat_message_event);
+	//blade_handle_session_state_callback_register(bh, NULL, on_blade_session_state_callback, &session_state_callback_id);
 
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 		blade_identity_destroy(&target);
 
-		ks_sleep_ms(2000);
+		ks_sleep_ms(5000);
 	} else loop(bh);
 
 	//blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
@@ -98,37 +98,37 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-ks_bool_t on_blade_chat_message_event(blade_event_t *bev)
-{
-	cJSON *res = NULL;
-	const char *from = NULL;
-	const char *message = NULL;
-
-	ks_assert(bev);
-
-	res = cJSON_GetObjectItem(bev->message, "result");
-	from = cJSON_GetObjectCstr(res, "from");
-	message = cJSON_GetObjectCstr(res, "message");
-
-	ks_log(KS_LOG_DEBUG, "Received Chat Message Event: (%s) %s\n", from, message);
-
-	return KS_FALSE;
-}
-
-void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data)
-{
-	blade_session_state_t state = blade_session_state_get(bs);
-
-	if (condition == BLADE_SESSION_STATE_CONDITION_PRE) {
-		ks_log(KS_LOG_DEBUG, "Blade Session State Changed: %s, %d\n", blade_session_id_get(bs), state);
-		if (state == BLADE_SESSION_STATE_READY) {
-			cJSON *req = NULL;
-			blade_rpc_request_create(blade_handle_pool_get(blade_session_handle_get(bs)), &req, NULL, NULL, "blade.chat.join");
-			blade_session_send(bs, req, on_blade_chat_join_response);
-			cJSON_Delete(req);
-		}
-	}
-}
+//ks_bool_t on_blade_chat_message_event(blade_event_t *bev)
+//{
+//	cJSON *res = NULL;
+//	const char *from = NULL;
+//	const char *message = NULL;
+//
+//	ks_assert(bev);
+//
+//	res = cJSON_GetObjectItem(bev->message, "result");
+//	from = cJSON_GetObjectCstr(res, "from");
+//	message = cJSON_GetObjectCstr(res, "message");
+//
+//	ks_log(KS_LOG_DEBUG, "Received Chat Message Event: (%s) %s\n", from, message);
+//
+//	return KS_FALSE;
+//}
+//
+//void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data)
+//{
+//	blade_session_state_t state = blade_session_state_get(bs);
+//
+//	if (condition == BLADE_SESSION_STATE_CONDITION_PRE) {
+//		ks_log(KS_LOG_DEBUG, "Blade Session State Changed: %s, %d\n", blade_session_id_get(bs), state);
+//		if (state == BLADE_SESSION_STATE_READY) {
+//			cJSON *req = NULL;
+//			blade_jsonrpc_request_raw_create(blade_handle_pool_get(blade_session_handle_get(bs)), &req, NULL, NULL, "blade.chat.join");
+//			blade_session_send(bs, req, on_blade_chat_join_response);
+//			cJSON_Delete(req);
+//		}
+//	}
+//}
 
 void loop(blade_handle_t *bh)
 {
@@ -210,77 +210,77 @@ void command_connect(blade_handle_t *bh, char *args)
 	blade_identity_destroy(&target);
 }
 
-ks_bool_t on_blade_chat_send_response(blade_response_t *bres);
-
-ks_bool_t on_blade_chat_join_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
-{
-	blade_session_t *bs = NULL;
-	cJSON *req = NULL;
-	cJSON *params = NULL;
-
-	ks_log(KS_LOG_DEBUG, "Received Chat Join Response!\n");
-
-	bs = blade_handle_sessions_get(bres->handle, bres->session_id);
-	if (!bs) {
-		ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", bres->session_id);
-		return KS_FALSE;
-	}
-
-	blade_rpc_request_create(blade_handle_pool_get(bres->handle), &req, &params, NULL, "blade.chat.send");
-	ks_assert(req);
-	ks_assert(params);
-
-	cJSON_AddStringToObject(params, "message", "Hello World!");
-
-	blade_session_send(bs, req, on_blade_chat_send_response);
-
-	blade_session_read_unlock(bs);
-
-	return KS_FALSE;
-}
-
-ks_bool_t on_blade_chat_send_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
-{
-	ks_log(KS_LOG_DEBUG, "Received Chat Send Response!\n");
-	return KS_FALSE;
-}
-
-void command_chat(blade_handle_t *bh, char *args)
-{
-	char *cmd = NULL;
-
-	ks_assert(bh);
-	ks_assert(args);
-
-	parse_argument(&args, &cmd, ' ');
-	ks_log(KS_LOG_DEBUG, "Chat Command: %s, Args: %s\n", cmd, args);
-
-	if (!strcmp(cmd, "leave")) {
-	} else if (!strcmp(cmd, "send")) {
-		char *sid = NULL;
-		blade_session_t *bs = NULL;
-		cJSON *req = NULL;
-		cJSON *params = NULL;
-
-		parse_argument(&args, &sid, ' ');
-
-		bs = blade_handle_sessions_get(bh, sid);
-		if (!bs) {
-			ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", sid);
-			return;
-		}
-		blade_rpc_request_create(blade_handle_pool_get(bh), &req, &params, NULL, "blade.chat.send");
-		ks_assert(req);
-		ks_assert(params);
-
-		cJSON_AddStringToObject(params, "message", args);
-
-		blade_session_send(bs, req, on_blade_chat_send_response);
-
-		blade_session_read_unlock(bs);
-
-		cJSON_Delete(req);
-	} else {
-		ks_log(KS_LOG_DEBUG, "Unknown Chat Command: %s\n", cmd);
-	}
-}
+//ks_bool_t on_blade_chat_send_response(blade_response_t *bres);
+//
+//ks_bool_t on_blade_chat_join_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
+//{
+//	blade_session_t *bs = NULL;
+//	cJSON *req = NULL;
+//	cJSON *params = NULL;
+//
+//	ks_log(KS_LOG_DEBUG, "Received Chat Join Response!\n");
+//
+//	bs = blade_handle_sessions_get(bres->handle, bres->session_id);
+//	if (!bs) {
+//		ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", bres->session_id);
+//		return KS_FALSE;
+//	}
+//
+//	blade_jsonrpc_request_raw_create(blade_handle_pool_get(bres->handle), &req, &params, NULL, "blade.chat.send");
+//	ks_assert(req);
+//	ks_assert(params);
+//
+//	cJSON_AddStringToObject(params, "message", "Hello World!");
+//
+//	blade_session_send(bs, req, on_blade_chat_send_response);
+//
+//	blade_session_read_unlock(bs);
+//
+//	return KS_FALSE;
+//}
+//
+//ks_bool_t on_blade_chat_send_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
+//{
+//	ks_log(KS_LOG_DEBUG, "Received Chat Send Response!\n");
+//	return KS_FALSE;
+//}
+//
+//void command_chat(blade_handle_t *bh, char *args)
+//{
+//	char *cmd = NULL;
+//
+//	ks_assert(bh);
+//	ks_assert(args);
+//
+//	parse_argument(&args, &cmd, ' ');
+//	ks_log(KS_LOG_DEBUG, "Chat Command: %s, Args: %s\n", cmd, args);
+//
+//	if (!strcmp(cmd, "leave")) {
+//	} else if (!strcmp(cmd, "send")) {
+//		char *sid = NULL;
+//		blade_session_t *bs = NULL;
+//		cJSON *req = NULL;
+//		cJSON *params = NULL;
+//
+//		parse_argument(&args, &sid, ' ');
+//
+//		bs = blade_handle_sessions_get(bh, sid);
+//		if (!bs) {
+//			ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", sid);
+//			return;
+//		}
+//		blade_jsonrpc_request_raw_create(blade_handle_pool_get(bh), &req, &params, NULL, "blade.chat.send");
+//		ks_assert(req);
+//		ks_assert(params);
+//
+//		cJSON_AddStringToObject(params, "message", args);
+//
+//		blade_session_send(bs, req, on_blade_chat_send_response);
+//
+//		blade_session_read_unlock(bs);
+//
+//		cJSON_Delete(req);
+//	} else {
+//		ks_log(KS_LOG_DEBUG, "Unknown Chat Command: %s\n", cmd);
+//	}
+//}

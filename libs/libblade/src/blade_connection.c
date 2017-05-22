@@ -54,12 +54,9 @@ struct blade_connection_s {
 };
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data);
-ks_status_t blade_connection_state_on_disconnect(blade_connection_t *bc);
-ks_status_t blade_connection_state_on_new(blade_connection_t *bc);
-ks_status_t blade_connection_state_on_connect(blade_connection_t *bc);
-ks_status_t blade_connection_state_on_attach(blade_connection_t *bc);
-ks_status_t blade_connection_state_on_detach(blade_connection_t *bc);
-ks_status_t blade_connection_state_on_ready(blade_connection_t *bc);
+ks_status_t blade_connection_onstate_startup(blade_connection_t *bc);
+ks_status_t blade_connection_onstate_shutdown(blade_connection_t *bc);
+ks_status_t blade_connection_onstate_run(blade_connection_t *bc);
 
 
 static void blade_connection_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
@@ -260,29 +257,17 @@ blade_transport_state_callback_t blade_connection_state_callback_lookup(blade_co
 	ks_assert(bc);
 
 	switch (state) {
-	case BLADE_CONNECTION_STATE_DISCONNECT:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_disconnect_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_disconnect_outbound;
+	case BLADE_CONNECTION_STATE_SHUTDOWN:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_shutdown_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_shutdown_outbound;
 		break;
-	case BLADE_CONNECTION_STATE_NEW:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_new_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_new_outbound;
+	case BLADE_CONNECTION_STATE_STARTUP:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_startup_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_startup_outbound;
 		break;
-	case BLADE_CONNECTION_STATE_CONNECT:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_connect_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_connect_outbound;
-		break;
-	case BLADE_CONNECTION_STATE_ATTACH:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_attach_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_attach_outbound;
-		break;
-	case BLADE_CONNECTION_STATE_DETACH:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_detach_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_detach_outbound;
-		break;
-	case BLADE_CONNECTION_STATE_READY:
-		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_ready_inbound;
-		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_ready_outbound;
+	case BLADE_CONNECTION_STATE_RUN:
+		if (bc->direction == BLADE_CONNECTION_DIRECTION_INBOUND) callback = bc->transport_callbacks->onstate_run_inbound;
+		else if(bc->direction == BLADE_CONNECTION_DIRECTION_OUTBOUND) callback = bc->transport_callbacks->onstate_run_outbound;
 		break;
 	default: break;
 	}
@@ -322,9 +307,9 @@ KS_DECLARE(void) blade_connection_disconnect(blade_connection_t *bc)
 {
 	ks_assert(bc);
 
-	if (bc->state != BLADE_CONNECTION_STATE_DETACH && bc->state != BLADE_CONNECTION_STATE_DISCONNECT && bc->state != BLADE_CONNECTION_STATE_CLEANUP) {
+	if (bc->state != BLADE_CONNECTION_STATE_SHUTDOWN && bc->state != BLADE_CONNECTION_STATE_CLEANUP) {
 		ks_log(KS_LOG_DEBUG, "Connection (%s) disconnecting\n", bc->id);
-		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DETACH);
+		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_SHUTDOWN);
 	}
 }
 
@@ -382,24 +367,15 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 		state = bc->state;
 
 		switch (state) {
-		case BLADE_CONNECTION_STATE_DISCONNECT:
-			blade_connection_state_on_disconnect(bc);
+		case BLADE_CONNECTION_STATE_SHUTDOWN:
+			blade_connection_onstate_shutdown(bc);
 			shutdown = KS_TRUE;
 			break;
-		case BLADE_CONNECTION_STATE_NEW:
-			blade_connection_state_on_new(bc);
+		case BLADE_CONNECTION_STATE_STARTUP:
+			blade_connection_onstate_startup(bc);
 			break;
-		case BLADE_CONNECTION_STATE_CONNECT:
-			blade_connection_state_on_connect(bc);
-			break;
-		case BLADE_CONNECTION_STATE_ATTACH:
-			blade_connection_state_on_attach(bc);
-			break;
-		case BLADE_CONNECTION_STATE_DETACH:
-			blade_connection_state_on_detach(bc);
-			break;
-		case BLADE_CONNECTION_STATE_READY:
-			blade_connection_state_on_ready(bc);
+		case BLADE_CONNECTION_STATE_RUN:
+			blade_connection_onstate_run(bc);
 			break;
 		default: break;
 		}
@@ -411,77 +387,27 @@ void *blade_connection_state_thread(ks_thread_t *thread, void *data)
 	return NULL;
 }
 
-ks_status_t blade_connection_state_on_disconnect(blade_connection_t *bc)
-{
-	blade_transport_state_callback_t callback = NULL;
-
-	ks_assert(bc);
-
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_DISCONNECT);
-	if (callback) callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
-
-	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CLEANUP);
-
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_connection_state_on_new(blade_connection_t *bc)
+ks_status_t blade_connection_onstate_startup(blade_connection_t *bc)
 {
 	blade_transport_state_callback_t callback = NULL;
 	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
 
 	ks_assert(bc);
 
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_NEW);
+	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_STARTUP);
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
-	else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
-		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CONNECT);
-	}
-
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_connection_state_on_connect(blade_connection_t *bc)
-{
-	blade_transport_state_callback_t callback = NULL;
-	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
-
-	ks_assert(bc);
-
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_CONNECT);
-	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
-
-	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);
-	else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
-		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_ATTACH);
-	}
-
-	return KS_STATUS_SUCCESS;
-}
-
-ks_status_t blade_connection_state_on_attach(blade_connection_t *bc)
-{
-	blade_transport_state_callback_t callback = NULL;
-	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
-
-	ks_assert(bc);
-
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_ATTACH);
-	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
-
-	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT) blade_connection_disconnect(bc);
 	else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
 		// @todo this is adding a second lock, since we keep it locked in the callback to allow finishing, we don't want get locking here...
-		// or just try unlocking twice to confirm...
-		blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
+		// or just unlock twice...
+		blade_session_t *bs = blade_handle_sessions_lookup(bc->handle, bc->session);
 		ks_assert(bs); // should not happen because bs should still be locked
 
-		blade_session_connections_add(bs, bc->id);
+		blade_session_connection_set(bs, bc->id);
 
-		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_READY);
-		blade_session_state_set(bs, BLADE_SESSION_STATE_READY); // @todo only set this if it's not already in the READY state from prior connection
+		blade_connection_state_set(bc, BLADE_CONNECTION_STATE_RUN);
+		blade_session_state_set(bs, BLADE_SESSION_STATE_STARTUP); // if reconnecting, we go from RUN back to STARTUP for the purpose of the reconnect which will return to RUN
 
 		blade_session_read_unlock(bs); // unlock the session we locked obtaining it above
 		blade_session_read_unlock(bs); // unlock the session we expect to be locked during the callback to ensure we can finish attaching
@@ -490,29 +416,30 @@ ks_status_t blade_connection_state_on_attach(blade_connection_t *bc)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_connection_state_on_detach(blade_connection_t *bc)
+ks_status_t blade_connection_onstate_shutdown(blade_connection_t *bc)
 {
 	blade_transport_state_callback_t callback = NULL;
 
 	ks_assert(bc);
 
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_DETACH);
+	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_SHUTDOWN);
 	if (callback) callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (bc->session) {
-		blade_session_t *bs = blade_handle_sessions_get(bc->handle, bc->session);
+		blade_session_t *bs = blade_handle_sessions_lookup(bc->handle, bc->session);
 		ks_assert(bs);
 
-		blade_session_connections_remove(bs, bc->id);
+		blade_session_connection_set(bs, NULL);
 		blade_session_read_unlock(bs);
 		// keep bc->session for later in case something triggers a reconnect later and needs the old session id for a hint
 	}
-	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_DISCONNECT);
+
+	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_CLEANUP);
 
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
+ks_status_t blade_connection_onstate_run(blade_connection_t *bc)
 {
 	blade_transport_state_callback_t callback = NULL;
 	blade_connection_state_hook_t hook = BLADE_CONNECTION_STATE_HOOK_SUCCESS;
@@ -540,7 +467,7 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 
 		if (!(done = (json == NULL))) {
 			if (!bs) {
-				bs = blade_handle_sessions_get(bc->handle, bc->session);
+				bs = blade_handle_sessions_lookup(bc->handle, bc->session);
 				ks_assert(bs);
 			}
 			blade_session_receiving_push(bs, json);
@@ -550,7 +477,7 @@ ks_status_t blade_connection_state_on_ready(blade_connection_t *bc)
 	}
 	if (bs) blade_session_read_unlock(bs);
 
-	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_READY);
+	callback = blade_connection_state_callback_lookup(bc, BLADE_CONNECTION_STATE_RUN);
 	if (callback) hook = callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (hook == BLADE_CONNECTION_STATE_HOOK_DISCONNECT)	blade_connection_disconnect(bc);

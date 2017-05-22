@@ -24,67 +24,22 @@
     <ClCompile Include="src\blade_connection.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\blade_datastore.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\blade_identity.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\blade_method.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\blade_module.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\blade_module_wss.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\blade_protocol.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\blade_session.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\blade_space.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\blade_stack.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ks_bencode.c">
+    <ClCompile Include="src\blade_transport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dht\ks_dht.c">
+    <ClCompile Include="src\blade_jsonrpc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_bucket.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_datagram.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_distribute.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_endpoint.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_job.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_message.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_publish.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_search.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_storageitem.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dht\ks_dht_transaction.c">
+    <ClCompile Include="src\blade_transport_wss.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,25 +53,10 @@
     <ClInclude Include="src\include\blade_connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\blade_datastore.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\include\blade_identity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\blade_method.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\include\blade_module.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\include\blade_protocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\include\blade_session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\include\blade_space.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\blade_stack.h">
@@ -125,16 +65,13 @@
     <ClInclude Include="src\include\blade_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\ks_bencode.h">
+    <ClInclude Include="src\include\blade_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\ks_dht.h">
+    <ClInclude Include="src\include\blade_jsonrpc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\ks_dht-int.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\include\blade_module_wss.h">
+    <ClInclude Include="src\include\blade_transport_wss.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

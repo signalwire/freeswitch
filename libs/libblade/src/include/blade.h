@@ -34,28 +34,25 @@
 #ifndef _BLADE_H_
 #define _BLADE_H_
 #include <ks.h>
-#include <ks_dht.h>
 #include <sodium.h>
 #include <libconfig.h>
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
 #include "blade_identity.h"
-#include "blade_module.h"
+#include "blade_transport.h"
+#include "blade_jsonrpc.h"
 #include "blade_connection.h"
 #include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_datastore.h"
-#include "blade_space.h"
-#include "blade_method.h"
 #include "ks_dht.h"
 #include "ks_bencode.h"
 
-#include "blade_module_wss.h"
+#include "blade_transport_wss.h"
 
 KS_BEGIN_EXTERN_C
 
 #ifdef _WIN32
+// @todo look into why the tarball build has a different function name from the debian package
 #define config_lookup_from config_setting_lookup
 #endif
 

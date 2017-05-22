@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- *
- *
+ * 
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,20 +31,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_MODULE_H_
-#define _BLADE_MODULE_H_
+#ifndef _BLADE_TRANSPORT_H_
+#define _BLADE_TRANSPORT_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks);
-KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP);
-KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm);
-KS_DECLARE(ks_pool_t *) blade_module_pool_get(blade_module_t *bm);
-KS_DECLARE(const char *) blade_module_id_get(blade_module_t *bm);
-KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm);
-KS_DECLARE(blade_module_callbacks_t *) blade_module_callbacks_get(blade_module_t *bm);
-
+KS_DECLARE(ks_status_t) blade_transport_create(blade_transport_t **btP, blade_handle_t *bh, ks_pool_t *pool, const char *name, void *data, blade_transport_callbacks_t *callbacks);
+KS_DECLARE(ks_status_t) blade_transport_destroy(blade_transport_t **btP);
+KS_DECLARE(blade_handle_t *) blade_transport_handle_get(blade_transport_t *bt);
+KS_DECLARE(const char *) blade_transport_name_get(blade_transport_t *bt);
+KS_DECLARE(void *) blade_transport_data_get(blade_transport_t *bt);
+KS_DECLARE(blade_transport_callbacks_t *) blade_transport_callbacks_get(blade_transport_t *bt);
 KS_END_EXTERN_C
 
 #endif

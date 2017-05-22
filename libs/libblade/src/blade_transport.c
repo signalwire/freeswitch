@@ -33,20 +33,21 @@
 
 #include "blade.h"
 
-struct blade_module_s {
+struct blade_transport_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
-	const char *id;
 
-	void *module_data;
-	blade_module_callbacks_t *module_callbacks;
+	const char *name;
+	void *data;
+	blade_transport_callbacks_t *callbacks;
 };
 
-static void blade_module_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
-{
-	//blade_module_t *bm = (blade_module_t *)ptr;
 
-	//ks_assert(bm);
+static void blade_transport_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	//blade_transport_t *bt = (blade_transport_t *)ptr;
+
+	//ks_assert(bt);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
@@ -58,87 +59,73 @@ static void blade_module_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_module_create(blade_module_t **bmP, blade_handle_t *bh, ks_pool_t *pool, void *module_data, blade_module_callbacks_t *module_callbacks)
+KS_DECLARE(ks_status_t) blade_transport_create(blade_transport_t **btP, blade_handle_t *bh, ks_pool_t *pool, const char *name, void *data, blade_transport_callbacks_t *callbacks)
 {
-	blade_module_t *bm = NULL;
-	uuid_t uuid;
+	blade_transport_t *bt = NULL;
 
-	ks_assert(bmP);
+	ks_assert(btP);
 	ks_assert(bh);
 	ks_assert(pool);
-	ks_assert(module_data);
-	ks_assert(module_callbacks);
+	ks_assert(name);
+	ks_assert(callbacks);
 
-	ks_uuid(&uuid);
+	bt = ks_pool_alloc(pool, sizeof(blade_transport_t));
+	bt->handle = bh;
+	bt->pool = pool;
+	bt->name = ks_pstrdup(pool, name);
+	bt->data = data;
+	bt->callbacks = callbacks;
 
-	bm = ks_pool_alloc(pool, sizeof(blade_module_t));
-	bm->handle = bh;
-	bm->pool = pool;
-	bm->id = ks_uuid_str(pool, &uuid);
-	bm->module_data = module_data;
-	bm->module_callbacks = module_callbacks;
+	ks_pool_set_cleanup(pool, bt, NULL, blade_transport_cleanup);
 
-	ks_pool_set_cleanup(pool, bm, NULL, blade_module_cleanup);
+	ks_log(KS_LOG_DEBUG, "Created transport %s\n", name);
 
-	ks_log(KS_LOG_DEBUG, "Created\n");
-
-	*bmP = bm;
+	*btP = bt;
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_module_destroy(blade_module_t **bmP)
+KS_DECLARE(ks_status_t) blade_transport_destroy(blade_transport_t **btP)
 {
-	blade_module_t *bm = NULL;
+	blade_transport_t *bt = NULL;
 	ks_pool_t *pool = NULL;
 
-	ks_assert(bmP);
-	ks_assert(*bmP);
+	ks_assert(btP);
+	ks_assert(*btP);
 
-	bm = *bmP;
+	bt = *btP;
 
-	pool = bm->pool;
-	//ks_pool_free(bm->pool, bmP);
+	pool = bt->pool;
+
 	ks_pool_close(&pool);
 
-	*bmP = NULL;
+	*btP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(blade_handle_t *) blade_module_handle_get(blade_module_t *bm)
+KS_DECLARE(blade_handle_t *) blade_transport_handle_get(blade_transport_t *bt)
 {
-	ks_assert(bm);
-
-	return bm->handle;
+	ks_assert(bt);
+	return bt->handle;
 }
 
-KS_DECLARE(ks_pool_t *) blade_module_pool_get(blade_module_t *bm)
+KS_DECLARE(const char *) blade_transport_name_get(blade_transport_t *bt)
 {
-	ks_assert(bm);
-
-	return bm->pool;
+	ks_assert(bt);
+	return bt->name;
 }
 
-KS_DECLARE(const char *) blade_module_id_get(blade_module_t *bm)
+KS_DECLARE(void *) blade_transport_data_get(blade_transport_t *bt)
 {
-	ks_assert(bm);
-
-	return bm->id;
+	ks_assert(bt);
+	return bt->data;
 }
 
-KS_DECLARE(void *) blade_module_data_get(blade_module_t *bm)
+KS_DECLARE(blade_transport_callbacks_t *) blade_transport_callbacks_get(blade_transport_t *bt)
 {
-	ks_assert(bm);
-
-	return bm->module_data;
-}
-
-KS_DECLARE(blade_module_callbacks_t *) blade_module_callbacks_get(blade_module_t *bm)
-{
-	ks_assert(bm);
-
-	return bm->module_callbacks;
+	ks_assert(bt);
+	return bt->callbacks;
 }
 
 /* For Emacs:

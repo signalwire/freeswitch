@@ -31,19 +31,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_SPACE_H_
-#define _BLADE_SPACE_H_
+#ifndef _BLADE_MODULE_WSS_H_
+#define _BLADE_MODULE_WSS_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_space_create(blade_space_t **bsP, blade_handle_t *bh, blade_module_t *bm, const char *path);
-KS_DECLARE(blade_handle_t *) blade_space_handle_get(blade_space_t *bs);
-KS_DECLARE(ks_pool_t *) blade_space_pool_get(blade_space_t *bs);
-KS_DECLARE(blade_module_t *) blade_space_module_get(blade_space_t *bs);
-KS_DECLARE(const char *) blade_space_path_get(blade_space_t *bs);
-KS_DECLARE(ks_status_t) blade_space_methods_add(blade_space_t *bs, blade_method_t *bm);
-KS_DECLARE(ks_status_t) blade_space_methods_remove(blade_space_t *bs, blade_method_t *bm);
-KS_DECLARE(blade_method_t *) blade_space_methods_get(blade_space_t *bs, const char *name);
+
+KS_DECLARE(ks_status_t) blade_transport_wss_create(blade_transport_t **btP, blade_handle_t *bh);
+
 KS_END_EXTERN_C
 
 #endif

@@ -40,25 +40,22 @@ KS_BEGIN_EXTERN_C
 
 typedef struct blade_handle_s blade_handle_t;
 typedef struct blade_identity_s blade_identity_t;
-typedef struct blade_module_s blade_module_t;
-typedef struct blade_module_callbacks_s blade_module_callbacks_t;
+typedef struct blade_transport_s blade_transport_t;
 typedef struct blade_transport_callbacks_s blade_transport_callbacks_t;
+typedef struct blade_jsonrpc_s blade_jsonrpc_t;
+typedef struct blade_jsonrpc_request_s blade_jsonrpc_request_t;
+typedef struct blade_jsonrpc_response_s blade_jsonrpc_response_t;
 typedef struct blade_session_callbacks_s blade_session_callbacks_t;
 typedef struct blade_connection_s blade_connection_t;
 typedef struct blade_session_s blade_session_t;
-typedef struct blade_request_s blade_request_t;
-typedef struct blade_response_s blade_response_t;
-typedef struct blade_event_s blade_event_t;
-typedef struct blade_space_s blade_space_t;
-typedef struct blade_method_s blade_method_t;
+typedef struct blade_application_s blade_application_t;
 
 
 typedef struct blade_datastore_s blade_datastore_t;
 
+typedef ks_bool_t (*blade_jsonrpc_request_callback_t)(blade_jsonrpc_request_t *breq, void *data);
+typedef ks_bool_t (*blade_jsonrpc_response_callback_t)(blade_jsonrpc_response_t *bres);
 
-typedef ks_bool_t (*blade_request_callback_t)(blade_module_t *bm, blade_request_t *breq);
-typedef ks_bool_t (*blade_response_callback_t)(blade_response_t *bres);
-typedef ks_bool_t (*blade_event_callback_t)(blade_event_t *bev);
 
 typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
 
@@ -66,12 +63,9 @@ typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, co
 typedef enum {
 	BLADE_CONNECTION_STATE_NONE,
 	BLADE_CONNECTION_STATE_CLEANUP,
-	BLADE_CONNECTION_STATE_DISCONNECT,
-	BLADE_CONNECTION_STATE_NEW,
-	BLADE_CONNECTION_STATE_CONNECT,
-	BLADE_CONNECTION_STATE_ATTACH,
-	BLADE_CONNECTION_STATE_DETACH,
-	BLADE_CONNECTION_STATE_READY,
+	BLADE_CONNECTION_STATE_STARTUP,
+	BLADE_CONNECTION_STATE_SHUTDOWN,
+	BLADE_CONNECTION_STATE_RUN,
 } blade_connection_state_t;
 
 typedef enum {
@@ -90,13 +84,6 @@ typedef enum {
 	BLADE_CONNECTION_STATE_HOOK_BYPASS,
 } blade_connection_state_hook_t;
 
-typedef enum {
-	BLADE_CONNECTION_RANK_POOR,
-	BLADE_CONNECTION_RANK_AVERAGE,
-	BLADE_CONNECTION_RANK_GOOD,
-	BLADE_CONNECTION_RANK_GREAT,
-} blade_connection_rank_t;
-
 
 typedef enum {
 	BLADE_SESSION_STATE_CONDITION_PRE,
@@ -106,82 +93,40 @@ typedef enum {
 typedef enum {
 	BLADE_SESSION_STATE_NONE,
 	BLADE_SESSION_STATE_CLEANUP,
-	BLADE_SESSION_STATE_DESTROY,
-	BLADE_SESSION_STATE_HANGUP,
-	BLADE_SESSION_STATE_CONNECT,
-	BLADE_SESSION_STATE_ATTACH,
-	BLADE_SESSION_STATE_DETACH,
-	BLADE_SESSION_STATE_READY,
+	BLADE_SESSION_STATE_STARTUP,
+	BLADE_SESSION_STATE_SHUTDOWN,
+	BLADE_SESSION_STATE_RUN,
 } blade_session_state_t;
 
 
 
-typedef ks_status_t (*blade_module_startup_callback_t)(blade_module_t *bm, config_setting_t *config);
-typedef ks_status_t(*blade_module_shutdown_callback_t)(blade_module_t *bm);
 
-struct blade_module_callbacks_s {
-	blade_module_startup_callback_t onstartup;
-	blade_module_shutdown_callback_t onshutdown;
-};
-
-
-typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_module_t *bm, blade_identity_t *target, const char *session_id);
-typedef blade_connection_rank_t (*blade_transport_rank_callback_t)(blade_connection_t *bc, blade_identity_t *target);
+typedef ks_status_t (*blade_transport_startup_callback_t)(blade_transport_t *bt, config_setting_t *config);
+typedef ks_status_t (*blade_transport_shutdown_callback_t)(blade_transport_t *bt);
+typedef ks_status_t (*blade_transport_connect_callback_t)(blade_connection_t **bcP, blade_transport_t *bt, blade_identity_t *target, const char *session_id);
 typedef ks_status_t (*blade_transport_send_callback_t)(blade_connection_t *bc, cJSON *json);
 typedef ks_status_t (*blade_transport_receive_callback_t)(blade_connection_t *bc, cJSON **json);
 typedef blade_connection_state_hook_t (*blade_transport_state_callback_t)(blade_connection_t *bc, blade_connection_state_condition_t condition);
 
 struct blade_transport_callbacks_s {
+	blade_transport_startup_callback_t onstartup;
+	blade_transport_shutdown_callback_t onshutdown;
+
 	blade_transport_connect_callback_t onconnect;
-	blade_transport_rank_callback_t onrank;
+
 	blade_transport_send_callback_t onsend;
 	blade_transport_receive_callback_t onreceive;
 
-	blade_transport_state_callback_t onstate_disconnect_inbound;
-	blade_transport_state_callback_t onstate_disconnect_outbound;
-	blade_transport_state_callback_t onstate_new_inbound;
-	blade_transport_state_callback_t onstate_new_outbound;
-	blade_transport_state_callback_t onstate_connect_inbound;
-	blade_transport_state_callback_t onstate_connect_outbound;
-	blade_transport_state_callback_t onstate_attach_inbound;
-	blade_transport_state_callback_t onstate_attach_outbound;
-	blade_transport_state_callback_t onstate_detach_inbound;
-	blade_transport_state_callback_t onstate_detach_outbound;
-	blade_transport_state_callback_t onstate_ready_inbound;
-	blade_transport_state_callback_t onstate_ready_outbound;
+	blade_transport_state_callback_t onstate_startup_inbound;
+	blade_transport_state_callback_t onstate_startup_outbound;
+	blade_transport_state_callback_t onstate_shutdown_inbound;
+	blade_transport_state_callback_t onstate_shutdown_outbound;
+	blade_transport_state_callback_t onstate_run_inbound;
+	blade_transport_state_callback_t onstate_run_outbound;
 };
 
 typedef void (*blade_session_state_callback_t)(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
 
-
-struct blade_request_s {
-	blade_handle_t *handle;
-	ks_pool_t *pool;
-	const char *session_id;
-
-	cJSON *message;
-	const char *message_id; // pulled from message for easier keying
-	blade_response_callback_t callback;
-	// @todo ttl to wait for response before injecting an error response locally
-	// @todo rpc response callback
-};
-
-struct blade_response_s {
-	blade_handle_t *handle;
-	ks_pool_t *pool;
-	const char *session_id;
-	blade_request_t *request;
-
-	cJSON *message;
-};
-
-struct blade_event_s {
-	blade_handle_t *handle;
-	ks_pool_t *pool;
-	const char *session_id;
-
-	cJSON *message;
-};
 
 KS_END_EXTERN_C
 
