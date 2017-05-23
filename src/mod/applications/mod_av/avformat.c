@@ -520,6 +520,9 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			av_set_options_string(c, "quality=realtime", "=", ":");
 		}
 
+		c->colorspace = AVCOL_SPC_RGB;
+		c->color_range = AVCOL_RANGE_JPEG;
+
 		if (mm) {
 			if (mm->vb) {
 				c->bit_rate = mm->vb * 1024;
