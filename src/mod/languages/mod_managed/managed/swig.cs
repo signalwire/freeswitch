@@ -1381,6 +1381,14 @@ else
     return ret;
   }
 
+  public static void switch_core_media_bug_set_media_params(SWIGTYPE_p_switch_media_bug bug, switch_mm_t mm) {
+    freeswitchPINVOKE.switch_core_media_bug_set_media_params(SWIGTYPE_p_switch_media_bug.getCPtr(bug), switch_mm_t.getCPtr(mm));
+  }
+
+  public static void switch_core_media_bug_get_media_params(SWIGTYPE_p_switch_media_bug bug, switch_mm_t mm) {
+    freeswitchPINVOKE.switch_core_media_bug_get_media_params(SWIGTYPE_p_switch_media_bug.getCPtr(bug), switch_mm_t.getCPtr(mm));
+  }
+
   public static string switch_core_media_bug_get_text(SWIGTYPE_p_switch_media_bug bug) {
     string ret = freeswitchPINVOKE.switch_core_media_bug_get_text(SWIGTYPE_p_switch_media_bug.getCPtr(bug));
     return ret;
@@ -1425,8 +1433,8 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_core_media_bug_close(SWIGTYPE_p_p_switch_media_bug bug) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_close(SWIGTYPE_p_p_switch_media_bug.getCPtr(bug));
+  public static switch_status_t switch_core_media_bug_close(SWIGTYPE_p_p_switch_media_bug bug, switch_bool_t destroy) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_close(SWIGTYPE_p_p_switch_media_bug.getCPtr(bug), (int)destroy);
     return ret;
   }
 
@@ -9972,6 +9980,126 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_waitlist_t")]
   public static extern void delete_switch_waitlist_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_samplerate_set")]
+  public static extern void switch_mm_t_samplerate_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_samplerate_get")]
+  public static extern int switch_mm_t_samplerate_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_channels_set")]
+  public static extern void switch_mm_t_channels_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_channels_get")]
+  public static extern int switch_mm_t_channels_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_keyint_set")]
+  public static extern void switch_mm_t_keyint_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_keyint_get")]
+  public static extern int switch_mm_t_keyint_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_ab_set")]
+  public static extern void switch_mm_t_ab_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_ab_get")]
+  public static extern int switch_mm_t_ab_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vb_set")]
+  public static extern void switch_mm_t_vb_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vb_get")]
+  public static extern int switch_mm_t_vb_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vw_set")]
+  public static extern void switch_mm_t_vw_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vw_get")]
+  public static extern int switch_mm_t_vw_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vh_set")]
+  public static extern void switch_mm_t_vh_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vh_get")]
+  public static extern int switch_mm_t_vh_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_set")]
+  public static extern void switch_mm_t_cbr_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_get")]
+  public static extern int switch_mm_t_cbr_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fps_set")]
+  public static extern void switch_mm_t_fps_set(HandleRef jarg1, float jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fps_get")]
+  public static extern float switch_mm_t_fps_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_source_fps_set")]
+  public static extern void switch_mm_t_source_fps_set(HandleRef jarg1, float jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_source_fps_get")]
+  public static extern float switch_mm_t_source_fps_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vbuf_set")]
+  public static extern void switch_mm_t_vbuf_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vbuf_get")]
+  public static extern int switch_mm_t_vbuf_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vprofile_set")]
+  public static extern void switch_mm_t_vprofile_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vprofile_get")]
+  public static extern int switch_mm_t_vprofile_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vencspd_set")]
+  public static extern void switch_mm_t_vencspd_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vencspd_get")]
+  public static extern int switch_mm_t_vencspd_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_try_hardware_encoder_set")]
+  public static extern void switch_mm_t_try_hardware_encoder_set(HandleRef jarg1, byte jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_try_hardware_encoder_get")]
+  public static extern byte switch_mm_t_try_hardware_encoder_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_w_set")]
+  public static extern void switch_mm_t_scale_w_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_w_get")]
+  public static extern int switch_mm_t_scale_w_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_h_set")]
+  public static extern void switch_mm_t_scale_h_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_h_get")]
+  public static extern int switch_mm_t_scale_h_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fmt_set")]
+  public static extern void switch_mm_t_fmt_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fmt_get")]
+  public static extern IntPtr switch_mm_t_fmt_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_username_set")]
+  public static extern void switch_mm_t_auth_username_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_username_get")]
+  public static extern string switch_mm_t_auth_username_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_password_set")]
+  public static extern void switch_mm_t_auth_password_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_password_get")]
+  public static extern string switch_mm_t_auth_password_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_mm_t")]
+  public static extern IntPtr new_switch_mm_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_mm_t")]
+  public static extern void delete_switch_mm_t(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_db_close")]
   public static extern int switch_core_db_close(HandleRef jarg1);
 
@@ -10920,6 +11048,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_get_session")]
   public static extern IntPtr switch_core_media_bug_get_session(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_set_media_params")]
+  public static extern void switch_core_media_bug_set_media_params(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_get_media_params")]
+  public static extern void switch_core_media_bug_get_media_params(HandleRef jarg1, HandleRef jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_get_text")]
   public static extern string switch_core_media_bug_get_text(HandleRef jarg1);
 
@@ -10948,7 +11082,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_media_bug_remove_callback(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_close")]
-  public static extern int switch_core_media_bug_close(HandleRef jarg1);
+  public static extern int switch_core_media_bug_close(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_remove_all_function")]
   public static extern int switch_core_media_bug_remove_all_function(HandleRef jarg1, string jarg2);
@@ -14375,126 +14509,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_file_interface")]
   public static extern void delete_switch_file_interface(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_samplerate_set")]
-  public static extern void switch_mm_t_samplerate_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_samplerate_get")]
-  public static extern int switch_mm_t_samplerate_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_channels_set")]
-  public static extern void switch_mm_t_channels_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_channels_get")]
-  public static extern int switch_mm_t_channels_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_keyint_set")]
-  public static extern void switch_mm_t_keyint_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_keyint_get")]
-  public static extern int switch_mm_t_keyint_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_ab_set")]
-  public static extern void switch_mm_t_ab_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_ab_get")]
-  public static extern int switch_mm_t_ab_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vb_set")]
-  public static extern void switch_mm_t_vb_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vb_get")]
-  public static extern int switch_mm_t_vb_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vw_set")]
-  public static extern void switch_mm_t_vw_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vw_get")]
-  public static extern int switch_mm_t_vw_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vh_set")]
-  public static extern void switch_mm_t_vh_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vh_get")]
-  public static extern int switch_mm_t_vh_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_set")]
-  public static extern void switch_mm_t_cbr_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_get")]
-  public static extern int switch_mm_t_cbr_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fps_set")]
-  public static extern void switch_mm_t_fps_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fps_get")]
-  public static extern float switch_mm_t_fps_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_source_fps_set")]
-  public static extern void switch_mm_t_source_fps_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_source_fps_get")]
-  public static extern float switch_mm_t_source_fps_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vbuf_set")]
-  public static extern void switch_mm_t_vbuf_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vbuf_get")]
-  public static extern int switch_mm_t_vbuf_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vprofile_set")]
-  public static extern void switch_mm_t_vprofile_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vprofile_get")]
-  public static extern int switch_mm_t_vprofile_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vencspd_set")]
-  public static extern void switch_mm_t_vencspd_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vencspd_get")]
-  public static extern int switch_mm_t_vencspd_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_try_hardware_encoder_set")]
-  public static extern void switch_mm_t_try_hardware_encoder_set(HandleRef jarg1, byte jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_try_hardware_encoder_get")]
-  public static extern byte switch_mm_t_try_hardware_encoder_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_w_set")]
-  public static extern void switch_mm_t_scale_w_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_w_get")]
-  public static extern int switch_mm_t_scale_w_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_h_set")]
-  public static extern void switch_mm_t_scale_h_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_scale_h_get")]
-  public static extern int switch_mm_t_scale_h_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fmt_set")]
-  public static extern void switch_mm_t_fmt_set(HandleRef jarg1, HandleRef jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fmt_get")]
-  public static extern IntPtr switch_mm_t_fmt_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_username_set")]
-  public static extern void switch_mm_t_auth_username_set(HandleRef jarg1, string jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_username_get")]
-  public static extern string switch_mm_t_auth_username_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_password_set")]
-  public static extern void switch_mm_t_auth_password_set(HandleRef jarg1, string jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_auth_password_get")]
-  public static extern string switch_mm_t_auth_password_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_mm_t")]
-  public static extern IntPtr new_switch_mm_t();
-
-  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_mm_t")]
-  public static extern void delete_switch_mm_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_file_interface_set")]
   public static extern void switch_file_handle_file_interface_set(HandleRef jarg1, HandleRef jarg2);
