@@ -9981,6 +9981,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char *name_params = NULL;
 	const char *req_uri = NULL;
 	char *req_user = NULL;
+	switch_time_t sip_invite_time;
 
 	if (sip && sip->sip_contact && sip->sip_contact->m_url->url_params) {
 		uparams = sip->sip_contact->m_url->url_params;
@@ -10009,6 +10010,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	tech_pvt = switch_core_session_get_private(session);
+
+	sip_invite_time = switch_micro_time_now();
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
@@ -10274,6 +10277,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 	switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 	switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
+	switch_channel_set_variable_printf(channel, "sip_invite_stamp", "%" SWITCH_TIME_T_FMT, sip_invite_time);
 
 	if (*acl_token) {
 		switch_channel_set_variable(channel, "acl_token", acl_token);
