@@ -398,7 +398,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
   \param bug bug to remove
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media_bug_t **bug);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media_bug_t **bug, switch_bool_t destroy);
 /*!
   \brief Remove all media bugs from the session
   \param session the session to remove the bugs from
