@@ -935,6 +935,10 @@ FF_ENABLE_DEPRECATION_WARNINGS
 			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
+			
+			context->encoder_ctx->colorspace = AVCOL_SPC_RGB;
+			context->encoder_ctx->color_range = AVCOL_RANGE_JPEG;
+
 			/*
 			av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", 40, 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", 1, 0);
