@@ -641,8 +641,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 
 			if (scale == 1) {
-				crop_w = img->d_w;
-				crop_h = img->d_h;
+				crop_w = layer->screen_w;
+				crop_h = layer->screen_h;
 			} else {
 				crop_w = (uint32_t)((double)layer->screen_w / scale);
 				crop_h = (uint32_t)((double)layer->screen_h / scale);
