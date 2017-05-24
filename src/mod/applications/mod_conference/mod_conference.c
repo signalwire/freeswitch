@@ -2599,7 +2599,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *is_locked_sound = NULL;
 	char *is_unlocked_sound = NULL;
 	char *kicked_sound = NULL;
-	char *join_only_sound = NULL;
 	char *deaf_sound = NULL;
 	char *undeaf_sound = NULL;
 	char *pin = NULL;
@@ -2864,8 +2863,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				cdr_event_mode = val;
 			} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 				kicked_sound = val;
-			} else if (!strcasecmp(var, "join-only-sound") && !zstr(val)) {
-				join_only_sound = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
 				pin = val;
 			} else if (!strcasecmp(var, "moderator-pin") && !zstr(val)) {
@@ -3320,10 +3317,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(kicked_sound)) {
 		conference->kicked_sound = switch_core_strdup(conference->pool, kicked_sound);
-	}
-
-	if (!zstr(join_only_sound)) {
-		conference->join_only_sound = switch_core_strdup(conference->pool, join_only_sound);
 	}
 
 	if (!zstr(pin_sound)) {
