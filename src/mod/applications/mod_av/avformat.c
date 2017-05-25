@@ -444,9 +444,9 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 		c->width    = mst->width;
 		c->height   = mst->height;
 		c->bit_rate = mm->vb;
-		mst->st->time_base.den = 1000;
+		mst->st->time_base.den = 90000;
 		mst->st->time_base.num = 1;
-		c->time_base.den = 1000;
+		c->time_base.den = 90000;
 		c->time_base.num = 1;
 		c->gop_size      = 25; /* emit one intra frame every x frames at mmst */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
@@ -705,7 +705,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 {
 	av_file_context_t *context = (av_file_context_t *) obj;
 	void *pop = NULL;
-	switch_image_t *img = NULL, *tmp_img = NULL;
+	switch_image_t *img = NULL;
 	int d_w = context->eh.video_st->width, d_h = context->eh.video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
 	uint64_t delta_avg = 0, delta_sum = 0, delta_i = 0, delta = 0, last_ts = 0;
@@ -732,17 +732,11 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			
 			if (!d_w) d_w = img->d_w;
 			if (!d_h) d_h = img->d_h;
-
-			if (d_w && d_h && (d_w != img->d_w || d_h != img->d_h)) {
+			
+			//if (d_w && d_h && (d_w != img->d_w || d_h != img->d_h)) {
 				/* scale to match established stream */
-
-				switch_img_scale(img, &tmp_img, d_w, d_h);
-				if (tmp_img) {
-					switch_img_free(&img);
-					img = tmp_img;
-					tmp_img = NULL;
-				}
-			}
+			//	switch_img_fit(&img, d_w, d_h, SWITCH_FIT_SIZE);
+			//}
 		} else {
 			continue;
 		}
@@ -826,7 +820,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 				context->eh.video_st->frame->pts = context->eh.timer->samplecount;
 			} else {
-				context->eh.video_st->frame->pts = context->eh.timer->samplecount + 1;
+				context->eh.video_st->frame->pts = (context->eh.timer->samplecount) + 1;
 			}
 		}
 
@@ -1058,7 +1052,7 @@ SWITCH_STANDARD_APP(record_av_function)
 		context.eh.mutex = mutex;
 		context.eh.video_st = &video_st;
 		context.eh.fc = fc;
-		if (switch_core_timer_init(&timer, "soft", 1, 1, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&timer, "soft", 1, 90, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Timer Activation Fail\n");
 			goto end;
 		}
@@ -1854,7 +1848,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		if (context->has_video) {
 			switch_queue_create(&context->eh.video_queue, context->read_fps, handle->memory_pool);
 			switch_mutex_init(&context->eh.mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-			switch_core_timer_init(&context->video_timer, "soft", 66, 1, context->pool);
+			switch_core_timer_init(&context->video_timer, "soft", (int)(1000.0f / context->read_fps), 1, context->pool);
 		}
 
 		{
@@ -2600,7 +2594,7 @@ static switch_status_t av_file_write_video(switch_file_handle_t *handle, switch_
 			switch_threadattr_create(&thd_attr, handle->memory_pool);
 			//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_core_timer_init(&context->video_timer, "soft", 1, 1, context->pool);
+			switch_core_timer_init(&context->video_timer, "soft", 1, 90, context->pool);
 			context->eh.timer = &context->video_timer;
 			context->audio_st.frame->pts = 0;
 			context->audio_st.next_pts = 0;
