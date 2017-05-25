@@ -1522,7 +1522,7 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 			rtp_session->ts = (uint32_t) timestamp;
 			changed++;
 			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-			if (abs((int)rtp_session->ts - (int)rtp_session->last_write_ts) > rtp_session->samples_per_interval 
+			if (abs((int64_t)rtp_session->ts - (int64_t)rtp_session->last_write_ts) > rtp_session->samples_per_interval 
 				&& !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 				m++;
 			}
@@ -1961,11 +1961,12 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 			stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->write_timer.samplecount);
 #endif
 	/* Interarrival jitter calculation */
-	pkt_tsdiff = abs((int)rtp_session->write_timer.samplecount - (int)ntohl(hdr->ts));  /* relative transit times for this packet */
+	pkt_tsdiff = abs((int64_t)rtp_session->write_timer.samplecount - (int64_t)ntohl(hdr->ts));  /* relative transit times for this packet */
 	if (stats->pkt_count < 2) { /* Can not compute Jitter with only one packet */
 		stats->last_pkt_tsdiff = pkt_tsdiff;
 	} else {
-		packet_spacing_diff = abs((int)pkt_tsdiff - (int)stats->last_pkt_tsdiff);    /* Jitter : difference of relative transit times for the two packets */
+		/* Jitter : difference of relative transit times for the two packets */
+		packet_spacing_diff = abs((int64_t)pkt_tsdiff - (int64_t)stats->last_pkt_tsdiff);
 		stats->last_pkt_tsdiff = pkt_tsdiff;
 		/* Interarrival jitter estimation, "J(i) = J(i-1) + ( |D(i-1,i)| - J(i-1) )/16" */
 		stats->inter_jitter = (stats->inter_jitter + (((double)packet_spacing_diff - stats->inter_jitter) /16.));
@@ -8051,7 +8052,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		this_ts = ntohl(send_msg->header.ts);
 
-		ts_delta = abs((int)this_ts - (int)rtp_session->last_write_ts);
+		ts_delta = abs((int64_t)this_ts - (int64_t)rtp_session->last_write_ts);
 
 		if (ts_delta > rtp_session->samples_per_second * 2) {
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
