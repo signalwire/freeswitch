@@ -600,6 +600,11 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 	switch_timer_t timer = { 0 };
 	switch_mm_t mm = { 0 };
 	int fps = 15;
+	int vw = 1280;
+	int vh = 720;
+	int last_w = 0, last_h = 0, other_last_w = 0, other_last_h = 0;
+	switch_rgb_color_t color = { 0 };
+	switch_color_set_rgb(&color, "#000000");
 
 	buf = switch_core_session_alloc(bug->session, buflen);
 	frame.packet = buf;
@@ -626,6 +631,9 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 		fps = (int) mm.fps;
 	}
 
+	if (mm.vw) vw = mm.vw;
+	if (mm.vh) vh = mm.vh;
+
 	switch_core_timer_init(&timer, "soft", 1000 / fps, (90000 / (1000 / fps)), NULL);
 
 	while (bug->ready) {
@@ -642,6 +650,9 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 
 		flush_video_queue(main_q, 1);
 
+		w = vw / 2;
+		h = vh;
+
 		if ((status = switch_queue_trypop(main_q, &pop)) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&img);
 
@@ -652,65 +663,62 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 			img = (switch_image_t *) pop;
 			new_main = 1;
 
-			w = img->d_w;
-			h = img->d_h;
+			if (IMG && !(last_w == img->d_w && last_h == img->d_h)) {
+				switch_img_fill(IMG, 0, 0, w, h, &color);
+			}
+
+			last_w = img->d_w;
+			last_h = img->d_h;
 		}
 		
 		if (other_q) {
 			flush_video_queue(other_q, 1);
-			
+
 			if ((status = switch_queue_trypop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&other_img);
 				other_img = (switch_image_t *) other_pop;
+
+				if (IMG && !(other_last_w == other_img->d_w && other_last_h == other_img->d_h)) {
+					switch_img_fill(IMG, w, 0, w, h, &color);
+				}
+
+				other_last_w = other_img->d_w;
+				other_last_h = other_img->d_h;
 				new_other = 1;
 			}
 
-			if (other_img) {
-				if (!w) w = other_img->d_w;
-				if (!h) h = other_img->d_h;
-				
-				if (other_img->d_w != w || other_img->d_h != h) {
-					switch_image_t *tmp_img = NULL;
-
-					switch_img_scale(other_img, &tmp_img, w, h);
-					switch_img_free(&other_img);
-					other_img = tmp_img;
-				}
-			}
-
-			if (!(w&&h)) continue;
-
-			if (img) {
-				if (img->d_w != w || img->d_h != h) {
-					switch_image_t *tmp_img = NULL;
-					
-					switch_img_scale(img, &tmp_img, w, h);
-					switch_img_free(&img);
-					img = tmp_img;
-				}
-			}
 			
-			w *= 2;
+			if (img && new_main) {
+				switch_img_fit(&img, w, h, SWITCH_FIT_SIZE);
+			}
 
-			if (!IMG || IMG->d_h != h || IMG->d_w != w) {
-				switch_rgb_color_t color = { 0 };
+			if (other_img && new_other) {
+				switch_img_fit(&other_img, w, h, SWITCH_FIT_SIZE);
+			}
 
-				switch_img_free(&IMG);
-				IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
+			if (!IMG) {
+				IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, vw, vh, 1);
 				new_canvas = 1;
-				switch_color_set_rgb(&color, "#000000");
 				switch_img_fill(IMG, 0, 0, IMG->d_w, IMG->d_h, &color);
 			}
 		}
 
 		
 		if (IMG) {
+
+
 			if (img && (new_canvas || new_main)) {
-				switch_img_patch(IMG, img, 0, 0);
+				int x = 0, y = 0;
+				switch_img_find_position(POS_CENTER_MID, w, h, img->d_w, img->d_h, &x, &y);
+
+				switch_img_patch(IMG, img, x, y);
 			}
 		
 			if (other_img && (new_canvas || new_other)) {
-				switch_img_patch(IMG, other_img, w / 2, 0);
+				int x = 0, y = 0;
+				switch_img_find_position(POS_CENTER_MID, w, h, other_img->d_w, other_img->d_h, &x, &y);
+
+				switch_img_patch(IMG, other_img, w + x, y);
 			}
 		}
 		
