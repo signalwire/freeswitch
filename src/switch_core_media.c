@@ -2088,12 +2088,13 @@ static void check_jb_sync(switch_core_session_t *session)
 
 
 	if (!frames) {
+		sync_audio = 1;
+
 		if (cur_frames && min_frames && cur_frames >= min_frames) {
 			frames = cur_frames;
 		} else {
 			frames = fps / 15;
 			if (frames < 1) frames = 1;
-			sync_audio = 1;
 		}
 	}
 	
