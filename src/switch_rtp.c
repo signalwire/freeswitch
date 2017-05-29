@@ -116,7 +116,7 @@ static switch_hash_t *alloc_hash = NULL;
 
 typedef struct {
 	srtp_hdr_t header;
-	char body[SWITCH_RTP_MAX_BUF_LEN];
+	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 	switch_rtp_hdr_ext_t *ext;
 	char *ebody;
 } rtp_msg_t;
