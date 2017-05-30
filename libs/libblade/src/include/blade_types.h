@@ -45,19 +45,16 @@ typedef struct blade_transport_callbacks_s blade_transport_callbacks_t;
 typedef struct blade_jsonrpc_s blade_jsonrpc_t;
 typedef struct blade_jsonrpc_request_s blade_jsonrpc_request_t;
 typedef struct blade_jsonrpc_response_s blade_jsonrpc_response_t;
-typedef struct blade_session_callbacks_s blade_session_callbacks_t;
 typedef struct blade_connection_s blade_connection_t;
 typedef struct blade_session_s blade_session_t;
-typedef struct blade_application_s blade_application_t;
+typedef struct blade_session_callbacks_s blade_session_callbacks_t;
+typedef struct blade_protocol_s blade_protocol_t;
+typedef struct blade_protocol_realm_s blade_protocol_realm_t;
+typedef struct blade_protocol_method_s blade_protocol_method_t;
 
-
-typedef struct blade_datastore_s blade_datastore_t;
 
 typedef ks_bool_t (*blade_jsonrpc_request_callback_t)(blade_jsonrpc_request_t *breq, void *data);
 typedef ks_bool_t (*blade_jsonrpc_response_callback_t)(blade_jsonrpc_response_t *bres);
-
-
-typedef ks_bool_t (*blade_datastore_fetch_callback_t)(blade_datastore_t *bds, const void *data, uint32_t data_length, void *userdata);
 
 
 typedef enum {

@@ -42,27 +42,19 @@ struct blade_handle_s {
 	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 
-	// These are for the master identity, since it has no upstream, but the realm list will also propagate through other router nodes in "blade.connect" calls
-	const char *master_user;
-	const char **master_realms;
-	int32_t master_realms_length;
+	// local nodeid, can also be used to get the upstream session, and is provided by upstream session "blade.connect" response
+	const char *local_nodeid;
+	ks_rwl_t *local_nodeid_rwl;
 
-	// local identities such as upstream-session-id@mydomain.com, messages with a destination matching a key in this hash will be received and processed locally
-	// @todo currently the value is unused, but may find use for it later (could store a blade_identity_t, but these are becoming less useful in the core)
-	ks_hash_t *identities;
+	// master router nodeid, provided by upstream session "blade.connect" response
+	const char *master_nodeid;
+	ks_rwl_t *master_nodeid_rwl;
 
-	// realms for new identities, identities get created in all of these realms, these originate from the master and may be reduced down to a single realm by
-	// the master router, or by each router as it sees fit
+	// realms for new nodes, these originate from the master, and are provided by upstream session "blade.connect" response
 	ks_hash_t *realms;
 
-	// The guts of routing messages, this maps a remote identity key to a local sessionid value, sessions must also track the identities coming through them to
-	// allow for removing downstream identities from these routes when they are no longer available upon session termination
-	// When any node registers an identity through this node, whether it is a locally connected session or downstream through another router node, the registered
-	// identity will be added to this hash, with the sessionid of the session it came through as the value
-	// Any future message received and destined for identities that are not our own (see identities hash above), will use this hash for downstream relays or will
-	// otherwise attempt to send upstream if it did not come from upstream
-	// Messages must never back-travel through a session they were received from, thus when recieved from a downstream session, that downstream session is excluded
-	// for further downstream routing scenarios to avoid any possible circular routing, message routing must be checked through downstreams before passing upstream
+	// routes to reach any downstream node, keyed by nodeid of the target node with a value of the nodeid for the locally connected session
+	// which is the next step from this node to the target node
 	ks_hash_t *routes;
 
 	ks_hash_t *transports; // registered blade_transport_t
@@ -73,14 +65,28 @@ struct blade_handle_s {
 
 	ks_hash_t *connections; // active connections keyed by connection id
 
-	ks_hash_t *sessions; // active sessions keyed by session id
-
-	ks_mutex_t *upstream_mutex; // locked when messing with upstream_id
-	const char *upstream_id; // session id of the currently active upstream session
+	ks_hash_t *sessions; // active sessions keyed by session id (which comes from the nodeid of the downstream side of the session, thus an upstream session is keyed under the local_nodeid)
 
 	ks_hash_t *session_state_callbacks;
+
+	// @note everything below this point is exclusively for the master node 
+
+	// @todo need to track the details from blade.publish, a protocol may be published under multiple realms, and each protocol published to a realm may have multiple target providers
+	// @todo how does "exclusive" play into the providers, does "exclusive" mean only one provider can exist for a given protocol and realm?
+	// for now, ignore exclusive and multiple providers, key by "protocol" in a hash, and use a blade_protocol_t to represent a protocol in the context of being published so it can be located by other nodes
+	// each blade_protocol_t will contain the "protocol", common method/namespace/schema data, and a hash keyed by the "realm", with a value of an object of type blade_protocol_realm_t
+	// each blade_protocol_realm_t will contain the "realm" and a list of publisher nodeid's, any of which can be chosen at random to use the protocol within the given realm (does "exclusive" only limit this to 1 provider per realm?)
+	// @todo protocols must be cleaned up when routes are removed due to session terminations, should incorporate a faster way to lookup which protocols are tied to a given nodeid for efficient removal
+	// create blade_protocol_method_t to represent a method that is executed with blade.execute, and is part of a protocol made available through blade.publish, registered locally by the protocol and method name (protocol.methodname?),
+	// with a callback handler which should also have the realm available when executed so a single provider can easily provide a protocol for multiple realms with the same method callbacks
+	ks_hash_t *protocols; // master only: protocols that have been published with blade.publish, and the details to locate a protocol provider with blade.locate
+	ks_hash_t *protocols_cleanup; // master only: keyed by the nodeid, each value should be a list_t* of which contains string values matching the "protocol@realm" keys to remove each nodeid from as a provider during cleanup
+
 };
 
+
+ks_bool_t blade_protocol_publish_request_handler(blade_jsonrpc_request_t *breq, void *data);
+ks_bool_t blade_protocol_publish_response_handler(blade_jsonrpc_response_t *bres);
 
 
 typedef struct blade_handle_session_state_callback_registration_s blade_handle_session_state_callback_registration_t;
@@ -193,8 +199,11 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	bh->pool = pool;
 	bh->tpool = tpool;
 
-	ks_hash_create(&bh->identities, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
-	ks_assert(bh->identities);
+	ks_rwl_create(&bh->local_nodeid_rwl, bh->pool);
+	ks_assert(bh->local_nodeid_rwl);
+
+	ks_rwl_create(&bh->master_nodeid_rwl, bh->pool);
+	ks_assert(bh->master_nodeid_rwl);
 
 	ks_hash_create(&bh->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
 	ks_assert(bh->realms);
@@ -218,11 +227,14 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	ks_hash_create(&bh->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->sessions);
 
-	ks_mutex_create(&bh->upstream_mutex, KS_MUTEX_FLAG_DEFAULT, bh->pool);
-	ks_assert(bh->upstream_mutex);
-
 	ks_hash_create(&bh->session_state_callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_VALUE, bh->pool);
 	ks_assert(bh->session_state_callbacks);
+
+	ks_hash_create(&bh->protocols, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bh->pool);
+	ks_assert(bh->protocols);
+
+	ks_hash_create(&bh->protocols_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bh->pool);
+	ks_assert(bh->protocols_cleanup);
 
 	ks_pool_set_cleanup(pool, bh, NULL, blade_handle_cleanup);
 
@@ -259,10 +271,9 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
 	config_setting_t *master = NULL;
-	config_setting_t *master_user = NULL;
+	config_setting_t *master_nodeid = NULL;
 	config_setting_t *master_realms = NULL;
-	const char *user = NULL;
-	const char **realms = NULL;
+	const char *nodeid = NULL;
 	int32_t realms_length = 0;
 
 	ks_assert(bh);
@@ -275,32 +286,26 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 
 	master = config_setting_get_member(config, "master");
 	if (master) {
-		master_user = config_lookup_from(master, "user");
-		if (master_user) {
-			if (config_setting_type(master_user) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-			user = config_setting_get_string(master_user);
+		master_nodeid = config_lookup_from(master, "nodeid");
+		if (master_nodeid) {
+			if (config_setting_type(master_nodeid) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+			nodeid = config_setting_get_string(master_nodeid);
+
+			blade_handle_local_nodeid_set(bh, nodeid);
+			blade_handle_master_nodeid_set(bh, nodeid);
 		}
 		master_realms = config_lookup_from(master, "realms");
 		if (master_realms) {
 			if (config_setting_type(master_realms) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
 			realms_length = config_setting_length(master_realms);
 			if (realms_length > 0) {
-				realms = ks_pool_alloc(bh->pool, sizeof(const char *) * realms_length);
 				for (int32_t index = 0; index < realms_length; ++index) {
 					const char *realm = config_setting_get_string_elem(master_realms, index);
 					if (!realm) return KS_STATUS_FAIL;
-					realms[index] = ks_pstrdup(bh->pool, realm);
+					blade_handle_realm_register(bh, realm);
 				}
 			}
 		}
-	}
-
-	// @todo in spirit of simple config, keep the list of routers you can attempt as a client at a root level config setting "routers" using identities with transport parameters if required
-
-	if (user && realms_length > 0) {
-		bh->master_user = ks_pstrdup(bh->pool, user);
-		bh->master_realms = realms;
-		bh->master_realms_length = realms_length;
 	}
 
 	return KS_STATUS_SUCCESS;
@@ -308,6 +313,7 @@ ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 
 KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_t *config)
 {
+	blade_jsonrpc_t *bjsonrpc = NULL;
 	blade_transport_t *bt = NULL;
 	ks_hash_iterator_t *it = NULL;
 
@@ -319,21 +325,13 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 	}
 
 	// register internals
+	blade_jsonrpc_create(&bjsonrpc, bh, "blade.publish", blade_protocol_publish_request_handler, NULL);
+	blade_handle_jsonrpc_register(bjsonrpc);
+
 	blade_transport_wss_create(&bt, bh);
 	ks_assert(bt);
 	bh->default_transport = bt;
 	blade_handle_transport_register(bt);
-
-	for (int32_t index = 0; index < bh->master_realms_length; ++index) {
-		const char *realm = bh->master_realms[index];
-		//char *identity = ks_pstrcat(bh->pool, bh->master_user, "@", realm); // @todo this does not work... why?
-		char *identity = ks_psprintf(bh->pool, "%s@%s", bh->master_user, realm);
-
-		blade_handle_identity_register(bh, identity);
-		blade_handle_realm_register(bh, realm);
-
-		ks_pool_free(bh->pool, &identity);
-	}
 
 	for (it = ks_hash_first(bh->transports, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		void *key = NULL;
@@ -412,44 +410,86 @@ KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh)
 	return bh->tpool;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_identity_register(blade_handle_t *bh, const char *identity)
+KS_DECLARE(ks_status_t) blade_handle_local_nodeid_set(blade_handle_t *bh, const char *nodeid)
 {
-	char *key = NULL;
+	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(bh);
-	ks_assert(identity);
 
-	key = ks_pstrdup(bh->pool, identity);
-	ks_hash_insert(bh->identities, (void *)key, (void *)KS_TRUE);
+	ks_rwl_write_lock(bh->local_nodeid_rwl);
+	if (bh->local_nodeid && nodeid) {
+		ret = KS_STATUS_NOT_ALLOWED;
+		goto done;
+	}
+	if (!bh->local_nodeid && !nodeid) {
+		ret = KS_STATUS_DISCONNECTED;
+		goto done;
+	}
 
-	ks_log(KS_LOG_DEBUG, "Identity Registered: %s\n", key);
+	if (bh->master_nodeid) ks_pool_free(bh->pool, &bh->local_nodeid);
+	if (nodeid) bh->local_nodeid = ks_pstrdup(bh->pool, nodeid);
 
-	return KS_STATUS_SUCCESS;
+	ks_log(KS_LOG_DEBUG, "Local NodeID: %s\n", nodeid);
+
+done:
+	ks_rwl_write_unlock(bh->local_nodeid_rwl);
+	return ret;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_identity_unregister(blade_handle_t *bh, const char *identity)
+KS_DECLARE(ks_bool_t) blade_handle_local_nodeid_compare(blade_handle_t *bh, const char *nodeid)
 {
+	ks_bool_t ret = KS_FALSE;
+
 	ks_assert(bh);
-	ks_assert(identity);
+	ks_assert(nodeid);
 
-	ks_log(KS_LOG_DEBUG, "Identity Unregistered: %s\n", identity);
+	ks_rwl_read_lock(bh->local_nodeid_rwl);
+	ret = ks_safe_strcasecmp(bh->local_nodeid, nodeid) == 0;
+	ks_rwl_read_unlock(bh->local_nodeid_rwl);
 
-	ks_hash_remove(bh->identities, (void *)identity);
-
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
-KS_DECLARE(ks_bool_t) blade_handle_identity_local(blade_handle_t *bh, const char *identity)
+KS_DECLARE(const char *) blade_handle_master_nodeid_copy(blade_handle_t *bh, ks_pool_t *pool)
 {
-	void *exists = NULL;
+	const char *nodeid = NULL;
 
 	ks_assert(bh);
-	ks_assert(identity);
+	ks_assert(pool);
 
-	exists = ks_hash_search(bh->routes, (void *)identity, KS_READLOCKED);
-	ks_hash_read_unlock(bh->routes);
+	ks_rwl_write_lock(bh->master_nodeid_rwl);
+	if (bh->master_nodeid) nodeid = ks_pstrdup(pool, bh->master_nodeid);
+	ks_rwl_write_unlock(bh->master_nodeid_rwl);
 
-	return (ks_bool_t)(uintptr_t)exists == KS_TRUE;
+	return nodeid;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_master_nodeid_set(blade_handle_t *bh, const char *nodeid)
+{
+	ks_assert(bh);
+
+	ks_rwl_write_lock(bh->master_nodeid_rwl);
+	if (bh->master_nodeid) ks_pool_free(bh->pool, &bh->master_nodeid);
+	if (nodeid) bh->master_nodeid = ks_pstrdup(bh->pool, nodeid);
+	ks_rwl_write_unlock(bh->master_nodeid_rwl);
+
+	ks_log(KS_LOG_DEBUG, "Master NodeID: %s\n", nodeid);
+
+return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_bool_t) blade_handle_master_nodeid_compare(blade_handle_t *bh, const char *nodeid)
+{
+	ks_bool_t ret = KS_FALSE;
+
+	ks_assert(bh);
+	ks_assert(nodeid);
+
+	ks_rwl_read_lock(bh->master_nodeid_rwl);
+	ret = ks_safe_strcasecmp(bh->master_nodeid, nodeid) == 0;
+	ks_rwl_read_unlock(bh->master_nodeid_rwl);
+
+	return ret;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_realm_register(blade_handle_t *bh, const char *realm)
@@ -485,19 +525,19 @@ KS_DECLARE(ks_hash_t *) blade_handle_realms_get(blade_handle_t *bh)
 	return bh->realms;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_route_add(blade_handle_t *bh, const char *identity, const char *id)
+KS_DECLARE(ks_status_t) blade_handle_route_add(blade_handle_t *bh, const char *nodeid, const char *sessionid)
 {
 	char *key = NULL;
 	char *value = NULL;
 
 	ks_assert(bh);
-	ks_assert(identity);
-	ks_assert(id);
+	ks_assert(nodeid);
+	ks_assert(sessionid);
 
-	key = ks_pstrdup(bh->pool, identity);
-	value = ks_pstrdup(bh->pool, id);
+	key = ks_pstrdup(bh->pool, nodeid);
+	value = ks_pstrdup(bh->pool, sessionid);
 
-	ks_hash_insert(bh->identities, (void *)key, (void *)value);
+	ks_hash_insert(bh->routes, (void *)key, (void *)value);
 
 	ks_log(KS_LOG_DEBUG, "Route Added: %s through %s\n", key, value);
 
@@ -506,33 +546,71 @@ KS_DECLARE(ks_status_t) blade_handle_route_add(blade_handle_t *bh, const char *i
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_route_remove(blade_handle_t *bh, const char *identity)
+KS_DECLARE(ks_status_t) blade_handle_route_remove(blade_handle_t *bh, const char *nodeid)
 {
+	ks_hash_t *protocols = NULL;
+
 	ks_assert(bh);
-	ks_assert(identity);
+	ks_assert(nodeid);
 
-	ks_log(KS_LOG_DEBUG, "Route Removed: %s\n", identity);
+	ks_log(KS_LOG_DEBUG, "Route Removed: %s\n", nodeid);
 
-	ks_hash_remove(bh->identities, (void *)identity);
+	ks_hash_remove(bh->routes, (void *)nodeid);
 
-	// @todo when a route is removed, upstream needs to be notified, for whatever reason the identity is no longer
-	// available through this node so the routes leading here need to be cleared, the disconnected node cannot be informed
-	// and does not need to change it's routes because upstream is not included in routes (and thus should never call to remove
-	// a route if an upstream session is closed)
+	// @todo when a route is removed, upstream needs to be notified, for whatever reason the node is no longer available through
+	// this node so the routes leading here need to be cleared by passing a "blade.route" upstream to remove the routes, this
+	// should actually happen only for local sessions, and blade.route should be always passed upstream AND processed locally, so
+	// we don't want to duplicate blade.route calls already being passed up if this route is not a local session
+
+	// @note everything below here is for master-only cleanup when a node is no longer routable
+
+	// @note protocols are cleaned up here because routes can be removed that are not locally connected with a session but still
+	// have protocols published to the master node from further downstream, in which case if a route is announced upstream to be
+	// removed, a master node is still able to catch that here even when there is no direct session, but is also hit when there
+	// is a direct session being terminated
+	ks_hash_write_lock(bh->protocols);
+	protocols = (ks_hash_t *)ks_hash_search(bh->protocols_cleanup, (void *)nodeid, KS_UNLOCKED);
+	if (protocols) {
+		for (ks_hash_iterator_t *it = ks_hash_first(protocols, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			void *key = NULL;
+			void *value = NULL;
+			blade_protocol_t *bp = NULL;
+			ks_hash_t *providers = NULL;
+
+			ks_hash_this(it, (const void **)&key, NULL, &value);
+
+			bp = (blade_protocol_t *)ks_hash_search(bh->protocols, key, KS_UNLOCKED);
+			ks_assert(bp); // should not happen when a cleanup still has a provider tracked for a protocol
+
+			ks_log(KS_LOG_DEBUG, "Protocol (%s) provider (%s) removed\n", key, nodeid);
+			blade_protocol_providers_remove(bp, nodeid);
+
+			providers = blade_protocol_providers_get(bp);
+			if (ks_hash_count(providers) == 0) {
+				// @note this depends on locking something outside of the protocol that won't be destroyed, like the top level
+				// protocols hash, but assumes then that any reader keeps the top level hash read locked while using the protocol
+				// so it cannot be deleted
+				ks_log(KS_LOG_DEBUG, "Protocol (%s) removed\n", key);
+				ks_hash_remove(bh->protocols, key);
+			}
+		}
+		ks_hash_remove(bh->protocols_cleanup, (void *)nodeid);
+	}
+	ks_hash_write_unlock(bh->protocols);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(blade_session_t *) blade_handle_route_lookup(blade_handle_t *bh, const char *identity)
+KS_DECLARE(blade_session_t *) blade_handle_route_lookup(blade_handle_t *bh, const char *nodeid)
 {
 	blade_session_t *bs = NULL;
-	const char *id = NULL;
+	const char *sessionid = NULL;
 
 	ks_assert(bh);
-	ks_assert(identity);
+	ks_assert(nodeid);
 
-	id = ks_hash_search(bh->routes, (void *)identity, KS_READLOCKED);
-	if (id) bs = blade_handle_sessions_lookup(bh, id);
+	sessionid = ks_hash_search(bh->routes, (void *)nodeid, KS_READLOCKED);
+	if (sessionid) bs = blade_handle_sessions_lookup(bh, sessionid);
 	ks_hash_read_unlock(bh->routes);
 
 	return bs;
@@ -693,7 +771,8 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 	ks_assert(bh);
 	ks_assert(target);
 
-	if (bh->upstream_id) return KS_STATUS_DUPLICATE_OPERATION;
+	// @todo better locking here
+	if (bh->local_nodeid) return KS_STATUS_DUPLICATE_OPERATION;
 
 	ks_hash_read_lock(bh->transports);
 
@@ -790,6 +869,7 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 	blade_handle_t *bh = NULL;
 	const char *id = NULL;
 	ks_hash_iterator_t *it = NULL;
+	ks_bool_t upstream = KS_FALSE;
 
 	ks_assert(bs);
 
@@ -804,28 +884,20 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 	ks_hash_write_lock(bh->sessions);
 	if (ks_hash_remove(bh->sessions, (void *)id) == NULL) ret = KS_STATUS_FAIL;
 
-	ks_mutex_lock(bh->upstream_mutex);
-	if (bh->upstream_id && !ks_safe_strcasecmp(bh->upstream_id, id)) {
-		// the session is the upstream being terminated, so clear out all of the local identities and realms from the handle,
-		// @todo this complicates any remaining connected downstream sessions, because they are based on realms that may not
-		// be available after a new upstream is registered, therefore all downstream sessions should be fully terminated when
-		// this happens, and ignore inbound downstream sessions until the upstream is available again, and require new
-		// downstream inbound sessions to be completely reestablished fresh
-		while ((it = ks_hash_first(bh->identities, KS_UNLOCKED))) {
-			void *key = NULL;
-			void *value = NULL;
-			ks_hash_this(it, (const void **)&key, NULL, &value);
-			ks_hash_remove(bh->identities, key);
-		}
+	ks_rwl_read_lock(bh->local_nodeid_rwl);
+	upstream = bh->local_nodeid && !ks_safe_strcasecmp(bh->local_nodeid, id);
+	ks_rwl_read_unlock(bh->local_nodeid_rwl);
+
+	if (upstream) {
+		blade_handle_local_nodeid_set(bh, NULL);
+		blade_handle_master_nodeid_set(bh, NULL);
 		while ((it = ks_hash_first(bh->realms, KS_UNLOCKED))) {
 			void *key = NULL;
 			void *value = NULL;
 			ks_hash_this(it, (const void **)&key, NULL, &value);
 			ks_hash_remove(bh->realms, key);
 		}
-		ks_pool_free(bh->pool, &bh->upstream_id);
 	}
-	ks_mutex_unlock(bh->upstream_mutex);
 
 	ks_hash_write_unlock(bh->sessions);
 
@@ -858,28 +930,18 @@ KS_DECLARE(blade_session_t *) blade_handle_sessions_lookup(blade_handle_t *bh, c
 	return bs;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_upstream_set(blade_handle_t *bh, const char *id)
+KS_DECLARE(blade_session_t *) blade_handle_sessions_upstream(blade_handle_t *bh)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_session_t *bs = NULL;
 
 	ks_assert(bh);
 
-	ks_mutex_lock(bh->upstream_mutex);
+	ks_rwl_read_lock(bh->local_nodeid_rwl);
+	bs = blade_handle_sessions_lookup(bh, bh->local_nodeid);
+	ks_rwl_read_unlock(bh->local_nodeid_rwl);
 
-	if (bh->upstream_id) {
-		ret = KS_STATUS_DUPLICATE_OPERATION;
-		goto done;
-	}
-
-	bh->upstream_id = ks_pstrdup(bh->pool, id);
-
-done:
-
-	ks_mutex_unlock(bh->upstream_mutex);
-
-	return ret;
+	return bs;
 }
-
 
 KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, ks_list_t *sessions, const char *exclude, cJSON *json)
 {
@@ -956,6 +1018,296 @@ KS_DECLARE(void) blade_handle_session_state_callbacks_execute(blade_session_t *b
 	ks_hash_read_unlock(bh->session_state_callbacks);
 }
 
+
+// BLADE PROTOCOL HANDLERS
+// This is where the real work happens for the blade protocol, where routing is done based on the specific intent of the given message, these exist here to simplify
+// access to the internals of the blade_handle_t where all the relevant data is stored
+// Each jsonrpc method for the blade protocol will require 3 functions: a request generator, a request handler, and a response handler
+// Responses can be generated internally and are not required for an isolated entry point, in the case of further external layers like blade.execute, they will be
+// handled within the blade protocol handlers to dispatch further execution callbacks, however each jsonrpc exposed to support the blade protocols may deal with
+// routing in their own ways as they have different requirements for different blade layer messages.
+
+
+// blade.publish notes
+// This jsonrpc is used to notify the master of a new protocol being made available, the purpose of which is to make such protocols able to be located by other nodes with
+// only minimal information about the protocol, particularly it's registered name, which is most often the main/only namespace for the protocols methods, however it is
+// possible that additional namespaces could be included in this publish as well if the namespaces are defined separately from the protocol name, and the protocol name could
+// result in an implicitly created namespace in addition to any others provided.
+// Routing Notes:
+// When routing a publish request, it only needs to travel upstream to the master node for processing, however in order to receive a publish response the original request
+// and response must carry a nodeid for the requesting node (requester-nodeid), technically the master does not need to be provided, but for posterity and consistency
+// the master nodeid can be provided in whatever is used for the responder of a request (responder-nodeid).
+// By using requester-nodeid and responder-nodeid, these do not need to be swapped in the response, they can simply be copied over, and the routing looks at the
+// appropriate field depending on whether it is handling a request or a response to determine the appropriate downstream nodeid
+
+
+// blade.publish request generator
+// @todo add additional async callback to be called upon a publish response to inform caller of the result?
+KS_DECLARE(ks_status_t) blade_protocol_publish(blade_handle_t *bh, const char *name, const char *realm)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	blade_session_t *bs = NULL;
+
+	ks_assert(bh);
+	ks_assert(name);
+	ks_assert(realm);
+
+	if (!(bs = blade_handle_sessions_upstream(bh))) {
+		ret = KS_STATUS_DISCONNECTED;
+		goto done;
+	}
+
+	blade_jsonrpc_request_raw_create(blade_handle_pool_get(bh), &req, &req_params, NULL, "blade.publish");
+
+	// fill in the req_params
+	cJSON_AddStringToObject(req_params, "protocol", name);
+	cJSON_AddStringToObject(req_params, "realm", realm);
+
+	ks_rwl_read_lock(bh->local_nodeid_rwl);
+	cJSON_AddStringToObject(req_params, "requester-nodeid", bh->local_nodeid);
+	ks_rwl_read_unlock(bh->local_nodeid_rwl);
+
+	ks_rwl_read_lock(bh->master_nodeid_rwl);
+	cJSON_AddStringToObject(req_params, "responder-nodeid", bh->master_nodeid);
+	ks_rwl_read_unlock(bh->master_nodeid_rwl);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) publish request started\n", blade_session_id_get(bs));
+	ret = blade_session_send(bs, req, blade_protocol_publish_response_handler);
+
+done:
+	if (req) cJSON_Delete(req);
+	if (bs) blade_session_read_unlock(bs);
+
+	return ret;
+}
+
+// blade.publish request handler
+ks_bool_t blade_protocol_publish_request_handler(blade_jsonrpc_request_t *breq, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *req_params_protocol = NULL;
+	const char *req_params_realm = NULL;
+	const char *req_params_requester_nodeid = NULL;
+	const char *req_params_responder_nodeid = NULL;
+	cJSON *res = NULL;
+	cJSON *res_result = NULL;
+	blade_protocol_t *bp = NULL;
+	const char *bp_key = NULL;
+	ks_hash_t *bp_cleanup = NULL;
+
+	ks_assert(breq);
+
+	bh = blade_jsonrpc_request_handle_get(breq);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_jsonrpc_request_sessionid_get(breq));
+	ks_assert(bs);
+
+	req = blade_jsonrpc_request_message_get(breq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (!req_params) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'params' object\n", blade_session_id_get(bs));
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Missing params object");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	req_params_protocol = cJSON_GetObjectCstr(req_params, "protocol");
+	if (!req_params_protocol) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'protocol'\n", blade_session_id_get(bs));
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Missing params protocol");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	req_params_realm = cJSON_GetObjectCstr(req_params, "realm");
+	if (!req_params_realm) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'realm'\n", blade_session_id_get(bs));
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Missing params realm");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	// @todo confirm the realm is permitted for the session, this gets complicated with subdomains, skipping for now
+
+	req_params_requester_nodeid = cJSON_GetObjectCstr(req_params, "requester-nodeid");
+	if (!req_params_requester_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'requester-nodeid'\n", blade_session_id_get(bs));
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Missing params requester-nodeid");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	req_params_responder_nodeid = cJSON_GetObjectCstr(req_params, "responder-nodeid");
+	if (!req_params_responder_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'responder-nodeid'\n", blade_session_id_get(bs));
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Missing params responder-nodeid");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	if (!blade_handle_master_nodeid_compare(bh, req_params_responder_nodeid)) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'responder-nodeid' (%s)\n", blade_session_id_get(bs), req_params_responder_nodeid);
+		blade_jsonrpc_error_raw_create(&res, NULL, blade_jsonrpc_request_messageid_get(breq), -32602, "Invalid params responder-nodeid");
+		blade_session_send(bs, res, NULL);
+		goto done;
+	}
+
+	// errors sent above this point are meant to be handled by the first node which receives the request, should not occur after the first node validates
+	// errors (and the response) sent after this point must include the requester-nodeid and responder-nodeid for proper routing
+
+	if (!blade_handle_local_nodeid_compare(bh, req_params_responder_nodeid)) {
+		// not meant for local processing, continue with routing which on a publish request, it always goes upstream to the master node
+		blade_session_t *bsu = blade_handle_sessions_upstream(bh);
+		if (!bsu) {
+			cJSON *res_error = NULL;
+
+			ks_log(KS_LOG_DEBUG, "Session (%s) publish request (%s to %s) but upstream session unavailable\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
+			blade_jsonrpc_error_raw_create(&res, &res_error, blade_jsonrpc_request_messageid_get(breq), -32603, "Upstream session unavailable");
+
+			// needed in case this error must propagate further than the session which sent it
+			cJSON_AddStringToObject(res_error, "requester-nodeid", req_params_requester_nodeid);
+			cJSON_AddStringToObject(res_error, "responder-nodeid", req_params_responder_nodeid); // @todo responder-nodeid should become the local_nodeid to inform of which node actually responded
+
+			blade_session_send(bs, res, NULL);
+			goto done;
+		}
+
+		// @todo this creates a new request that is tracked locally, in order to receive the response in a callback to route it correctly, this could be simplified
+		// by using a couple special fields to indicate common routing approaches based on a routing block in common for every message, thus being able to bypass this
+		// and still be able to properly route responses without a specific response handler on every intermediate router, in which case messages that are only being
+		// routed would not enter into these handlers and would not leave a footprint passing through routers
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish request (%s to %s) routing upstream (%s)\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid, blade_session_id_get(bsu));
+		blade_session_send(bsu, req, blade_protocol_publish_response_handler);
+		blade_session_read_unlock(bsu);
+
+		goto done;
+	}
+
+	// this local node must be responder-nodeid for the request, so process the request
+	ks_log(KS_LOG_DEBUG, "Session (%s) publish request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
+
+	bp_key = ks_psprintf(bh->pool, "%s@%s", req_params_protocol, req_params_realm);
+
+	ks_hash_write_lock(bh->protocols);
+
+	bp = (blade_protocol_t *)ks_hash_search(bh->protocols, bp_key, KS_UNLOCKED);
+	if (bp) {
+		// @todo deal with exclusive stuff when the protocol is already registered
+	}
+
+	if (!bp) {
+		blade_protocol_create(&bp, bh->pool, req_params_protocol, req_params_realm);
+		ks_assert(bp);
+
+		ks_log(KS_LOG_DEBUG, "Protocol (%s) added\n", bp_key);
+		ks_hash_insert(bh->protocols, (void *)ks_pstrdup(bh->pool, bp_key), bp);
+	}
+
+	bp_cleanup = (ks_hash_t *)ks_hash_search(bh->protocols_cleanup, req_params_requester_nodeid, KS_UNLOCKED);
+	if (!bp_cleanup) {
+		ks_hash_create(&bp_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
+		ks_assert(bp_cleanup);
+
+		ks_hash_insert(bh->protocols_cleanup, (void *)ks_pstrdup(bh->pool, req_params_requester_nodeid), bp_cleanup);
+	}
+	ks_hash_insert(bp_cleanup, (void *)ks_pstrdup(bh->pool, bp_key), (void *)KS_TRUE);
+	blade_protocol_providers_add(bp, req_params_requester_nodeid);
+	ks_log(KS_LOG_DEBUG, "Protocol (%s) provider (%s) added\n", bp_key, req_params_requester_nodeid);
+
+	ks_hash_write_unlock(bh->protocols);
+
+
+	// build the actual response finally
+	blade_jsonrpc_response_raw_create(&res, &res_result, blade_jsonrpc_request_messageid_get(breq));
+
+	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
+	cJSON_AddStringToObject(res_result, "requester-nodeid", req_params_requester_nodeid);
+	cJSON_AddStringToObject(res_result, "responder-nodeid", req_params_responder_nodeid);
+
+	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
+	blade_session_send(bs, res, NULL);
+
+done:
+	
+	if (res) cJSON_Delete(res);
+	if (bs) blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
+
+// blade.publish response handler
+ks_bool_t blade_protocol_publish_response_handler(blade_jsonrpc_response_t *bres)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	cJSON *res = NULL;
+	cJSON *res_error = NULL;
+	cJSON *res_result = NULL;
+	cJSON *res_object = NULL;
+	const char *requester_nodeid = NULL;
+	const char *responder_nodeid = NULL;
+
+	ks_assert(bres);
+
+	bh = blade_jsonrpc_response_handle_get(bres);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_jsonrpc_response_sessionid_get(bres));
+	ks_assert(bs);
+
+	res = blade_jsonrpc_response_message_get(bres);
+	ks_assert(res);
+
+	res_error = cJSON_GetObjectItem(res, "error");
+	res_result = cJSON_GetObjectItem(res, "result");
+
+	if (!res_error && !res_result) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish response missing 'error' or 'result' object\n", blade_session_id_get(bs));
+		goto done;
+	}
+	res_object = res_error ? res_error : res_result;
+
+	requester_nodeid = cJSON_GetObjectCstr(res_object, "requester-nodeid");
+	responder_nodeid = cJSON_GetObjectCstr(res_object, "responder-nodeid");
+
+	if (requester_nodeid && responder_nodeid && !blade_handle_local_nodeid_compare(bh, requester_nodeid)) {
+		blade_session_t *bsd = blade_handle_sessions_lookup(bh, requester_nodeid);
+		if (!bsd) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) publish response (%s to %s) but downstream session unavailable\n", blade_session_id_get(bs), requester_nodeid, responder_nodeid);
+			goto done;
+		}
+
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish response (%s to %s) routing downstream (%s)\n", blade_session_id_get(bs), requester_nodeid, responder_nodeid, blade_session_id_get(bsd));
+		blade_session_send(bsd, res, NULL);
+		blade_session_read_unlock(bsd);
+
+		goto done;
+	}
+
+	// this local node must be requester-nodeid for the response, or the response lacks routing nodeids, so process the response
+	ks_log(KS_LOG_DEBUG, "Session (%s) publish response processing\n", blade_session_id_get(bs));
+
+	if (res_error) {
+		// @todo process error response
+		ks_log(KS_LOG_DEBUG, "Session (%s) publish response error... add details\n", blade_session_id_get(bs));
+		goto done;
+	}
+
+	// @todo process result response
+
+done:
+	if (bs) blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
 
 /* For Emacs:
  * Local Variables:

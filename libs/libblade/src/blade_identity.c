@@ -90,11 +90,6 @@ KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
 	ks_assert(*biP);
 
 	bi = *biP;
-	if (bi->uri) {
-		ks_pool_free(bi->pool, &bi->uri);
-		ks_pool_free(bi->pool, &bi->components);
-	}
-	if (bi->parameters) ks_hash_destroy(&bi->parameters);
 
 	ks_pool_free(bi->pool, biP);
 

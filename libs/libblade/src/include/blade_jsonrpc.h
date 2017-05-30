@@ -51,6 +51,8 @@ KS_DECLARE(ks_status_t) blade_jsonrpc_request_create(blade_jsonrpc_request_t **b
 													 blade_jsonrpc_response_callback_t callback);
 KS_DECLARE(ks_status_t) blade_jsonrpc_request_destroy(blade_jsonrpc_request_t **bjsonrpcreqP);
 KS_DECLARE(blade_handle_t *) blade_jsonrpc_request_handle_get(blade_jsonrpc_request_t *bjsonrpcreq);
+KS_DECLARE(const char *) blade_jsonrpc_request_sessionid_get(blade_jsonrpc_request_t *bjsonrpcreq);
+KS_DECLARE(cJSON *) blade_jsonrpc_request_message_get(blade_jsonrpc_request_t *bjsonrpcreq);
 KS_DECLARE(const char *) blade_jsonrpc_request_messageid_get(blade_jsonrpc_request_t *bjsonrpcreq);
 KS_DECLARE(blade_jsonrpc_response_callback_t) blade_jsonrpc_request_callback_get(blade_jsonrpc_request_t *bjsonrpcreq);
 KS_DECLARE(ks_status_t) blade_jsonrpc_request_raw_create(ks_pool_t *pool, cJSON **json, cJSON **params, const char **id, const char *method);
@@ -63,6 +65,11 @@ KS_DECLARE(ks_status_t) blade_jsonrpc_response_create(blade_jsonrpc_response_t *
 													  cJSON *json);
 KS_DECLARE(ks_status_t) blade_jsonrpc_response_destroy(blade_jsonrpc_response_t **bjsonrpcresP);
 KS_DECLARE(ks_status_t) blade_jsonrpc_response_raw_create(cJSON **json, cJSON **result, const char *id);
+KS_DECLARE(blade_handle_t *) blade_jsonrpc_response_handle_get(blade_jsonrpc_response_t *bjsonrpcres);
+KS_DECLARE(const char *) blade_jsonrpc_response_sessionid_get(blade_jsonrpc_response_t *bjsonrpcres);
+KS_DECLARE(blade_jsonrpc_request_t *) blade_jsonrpc_response_request_get(blade_jsonrpc_response_t *bjsonrpcres);
+KS_DECLARE(cJSON *) blade_jsonrpc_response_message_get(blade_jsonrpc_response_t *bjsonrpcres);
+
 KS_DECLARE(ks_status_t) blade_jsonrpc_error_raw_create(cJSON **json, cJSON **error, const char *id, int32_t code, const char *message);
 KS_END_EXTERN_C
 

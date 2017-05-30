@@ -719,18 +719,18 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	cJSON *json_res = NULL;
 	cJSON *json_params = NULL;
 	cJSON *json_result = NULL;
-	cJSON *json_result_identities = NULL;
 	cJSON *json_result_realms = NULL;
 	//cJSON *error = NULL;
 	blade_session_t *bs = NULL;
 	blade_handle_t *bh = NULL;
+	ks_pool_t *pool = NULL;
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
-	const char *sid = NULL;
+	const char *nodeid = NULL;
+	const char *master_nodeid = NULL;
 	ks_time_t timeout;
 	ks_hash_iterator_t *it = NULL;
-	ks_hash_t *identities = NULL;
 	ks_hash_t *realms = NULL;
 
 	ks_assert(bc);
@@ -795,15 +795,15 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	json_params = cJSON_GetObjectItem(json_req, "params");
 	if (json_params) {
-		sid = cJSON_GetObjectCstr(json_params, "session-id");
-		if (sid) {
+		nodeid = cJSON_GetObjectCstr(json_params, "session-id");
+		if (nodeid) {
 			// @todo validate uuid format by parsing, not currently available in uuid functions, send -32602 (invalid params) if invalid
-			ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", sid);
+			ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", nodeid);
 		}
 	}
 
-	if (sid) {
-		bs = blade_handle_sessions_lookup(bh, sid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+	if (nodeid) {
+		bs = blade_handle_sessions_lookup(bh, nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
 		if (bs) {
 			if (blade_session_terminating(bs)) {
 				blade_session_read_unlock(bs);
@@ -816,18 +816,16 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	}
 
 	if (!bs) {
-		ks_pool_t *pool = NULL;
-
 		blade_session_create(&bs, bh, NULL);
 		ks_assert(bs);
 
-		sid = blade_session_id_get(bs);
-		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", sid);
+		nodeid = blade_session_id_get(bs);
+		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", nodeid);
 
 		blade_session_read_lock(bs, KS_TRUE); // this will be done by blade_handle_sessions_get() otherwise
 
 		if (blade_session_startup(bs) != KS_STATUS_SUCCESS) {
-			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", sid);
+			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", nodeid);
 			blade_transport_wss_jsonrpc_error_send(bc, id, -32603, "Internal error, session could not be started");
 			blade_session_read_unlock(bs);
 			blade_session_destroy(&bs);
@@ -837,10 +835,17 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 		// This is an inbound connection, thus it is always creating a downstream session
 
-		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", sid);
+		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", nodeid);
 		blade_handle_sessions_add(bs);
 
-		pool = blade_connection_pool_get(bc);
+		// This is primarily to cleanup the routes added to the blade_handle for main routing when a session terminates, these don't have a lot of use otherwise but it will keep the main route table
+		// from having long running write locks when a session cleans up
+		blade_session_route_add(bs, nodeid);
+		// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow efficiently determine which session
+		// a message should pass through when it does not match the local node identities from blade_handle_identity_register(), and must be matched with a call to blade_session_route_add() for cleanup,
+		// additionally when a "blade.route" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
+		// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
+		blade_handle_route_add(bh, nodeid, nodeid);
 
 		// iterate the realms from the handle ultimately provided by the master router node, and obtained when establishing upstream sessions (see outbound handler), for each of
 		// these realms an identity based on the sessionid will be created, in the future this process can be adjusted based on authentication which is currently skipped
@@ -850,34 +855,10 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		for (it = ks_hash_first(realms, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 			void *key = NULL;
 			void *value = NULL;
-			char *identity = NULL;
 
 			ks_hash_this(it, (const void **)&key, NULL, &value);
 
-			identity = ks_psprintf(pool, "%s@%s", sid, (const char *)key);
-
-			// @note This is where routing gets complicated, lots of stuff has to be tracked for different reasons and different perspectives, and a lot of it is determined and passed during this
-			// initial "blade.connect" message handler.  As this is a downstream session connecting inbound, this node is responsible for giving the new node identities to be known by, the realms
-			// which the new node is permitted to register or route additional new identities under, and making sure messages for these new identities can be routed to the correct downstream session
-			// when they arrive on this node, this includes making sure upstream nodes are notified of routing changes.
-
-			// This tracks the identities that are specifically for the remote node of this session NOT including further downstream sessions, the remote node calls blade_handle_identity_register()
-			// when these are given to it, these would also include additional explicitly registered identities via "blade.register", but not those received via "blade.route" for new identities
-			blade_session_identity_add(bs, identity);
-			// This tracks the realms that are permitted for the remote node of this session to register or route new identities, these include realms provided from upstream as implicit initial realms
-			// that this downstream session may register or route additional identities under, the remote node calls blade_handle_realm_register() for these, additional explicit subrealm registrations
-			// from "blade.register" would appear in here as well, and "blade.route" has no impact on these
 			blade_session_realm_add(bs, (const char *)key);
-			// This is primarily to cleanup the routes added to the blade_handle for main routing when a session terminates, these don't have a lot of use otherwise but it will keep the main route table
-			// from having long running write locks when a session cleans up
-			blade_session_route_add(bs, identity);
-			// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow efficiently determine which session
-			// a message should pass through when it does not match the local node identities from blade_handle_identity_register(), and must be matched with a call to blade_session_route_add() for cleanup,
-			// additionally when a "blade.route" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
-			// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
-			blade_handle_route_add(bh, identity, sid);
-
-			ks_pool_free(pool, &identity);
 		}
 		ks_hash_read_unlock(realms);
 	}
@@ -885,33 +866,26 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	blade_jsonrpc_response_raw_create(&json_res, &json_result, id);
 	ks_assert(json_res);
 
-	cJSON_AddStringToObject(json_result, "session-id", sid);
+	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
-	// add the list of actual identities the local node will recognize the remote node, this is the same list that the remote side would be adding to the handle with blade_handle_identity_add()
-	// and may contain additional identities that are explicitly registered by the remote node, this ensures upon reconnect that the same list of identities gets provided to the remote node to refresh
-	// the remote nodes local identities on the edge case that the session times out on the remote end while reconnecting
-
-	json_result_identities = cJSON_CreateArray();
-	cJSON_AddItemToObject(json_result, "identities", json_result_identities);
-
-	identities = blade_session_identities_get(bs);
-	ks_hash_read_lock(identities);
-	for (it = ks_hash_first(identities, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-		void *key = NULL;
-		void *value = NULL;
-
-		ks_hash_this(it, (const void **)&key, NULL, &value);
-
-		cJSON_AddItemToArray(json_result_identities, cJSON_CreateString((const char *)key));
+	pool = blade_handle_pool_get(bh);
+	master_nodeid = blade_handle_master_nodeid_copy(bh, pool);
+	if (!master_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
+		blade_transport_wss_jsonrpc_error_send(bc, id, -32602, "Master nodeid unavailable");
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
 	}
-	ks_hash_read_unlock(identities);
+	cJSON_AddStringToObject(json_result, "master-nodeid", master_nodeid);
+	ks_pool_free(pool, &master_nodeid);
 
-	json_result_realms = cJSON_CreateArray();
-	cJSON_AddItemToObject(json_result, "realms", json_result_realms);
 
 	// add the list of actual realms the local node will permit the remote node to register or route, this is the same list that the remote side would be adding to the handle with blade_handle_realm_add()
 	// and may contain additional subrealms that are explicitly registered by the remote node, this ensures upon reconnect that the same list of realms gets provided to the remote node to refresh
 	// the remote nodes local realms on the edge case that the session times out on the remote end while reconnecting
+
+	json_result_realms = cJSON_CreateArray();
+	cJSON_AddItemToObject(json_result, "realms", json_result_realms);
 
 	realms = blade_session_realms_get(bs);
 	ks_hash_read_lock(realms);
@@ -928,7 +902,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	// This starts the final process for associating the connection to the session, including for reconnecting to an existing session, this simply
 	// associates the session to this connection, upon return the remainder of the association for the session to the connection is handled along
 	// with making sure both this connection and the session state machines are in running states
-	blade_connection_session_set(bc, sid);
+	blade_connection_session_set(bc, nodeid);
 
 	// @todo end of reusable handler for "blade.connect" request
 
@@ -964,11 +938,10 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 	const char *id = NULL;
 	cJSON *json_error = NULL;
 	cJSON *json_result = NULL;
-	cJSON *json_result_identities = NULL;
-	int json_result_identities_size = 0;
 	cJSON *json_result_realms = NULL;
 	int json_result_realms_size = 0;
-	const char *sid = NULL;
+	const char *nodeid = NULL;
+	const char *master_nodeid = NULL;
 	blade_session_t *bs = NULL;
 
 	ks_assert(bc);
@@ -1045,16 +1018,16 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	sid = cJSON_GetObjectCstr(json_result, "session-id");
-	if (!sid) {
-		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'session-id'\n");
+	nodeid = cJSON_GetObjectCstr(json_result, "nodeid");
+	if (!nodeid) {
+		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'nodeid'\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	json_result_identities = cJSON_GetObjectItem(json_result, "identities");
-	if (!json_result_identities || json_result_identities->type != cJSON_Array || (json_result_identities_size = cJSON_GetArraySize(json_result_identities)) <= 0) {
-		ks_log(KS_LOG_DEBUG, "Received message is missing 'identities'\n");
+	master_nodeid = cJSON_GetObjectCstr(json_result, "master-nodeid");
+	if (!master_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'master-nodeid'\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -1066,16 +1039,15 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	if (sid) {
-		// @todo validate uuid format by parsing, not currently available in uuid functions
-		bs = blade_handle_sessions_lookup(bh, sid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
-		if (bs) {
-			ks_log(KS_LOG_DEBUG, "Session (%s) located\n", blade_session_id_get(bs));
-		}
+
+	// @todo validate uuid format by parsing, not currently available in uuid functions
+	bs = blade_handle_sessions_lookup(bh, nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+	if (bs) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) located\n", blade_session_id_get(bs));
 	}
 
 	if (!bs) {
-		blade_session_create(&bs, bh, sid);
+		blade_session_create(&bs, bh, nodeid);
 		ks_assert(bs);
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", blade_session_id_get(bs));
@@ -1090,9 +1062,9 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 			goto done;
 		}
 
-		// This is an outbound connection, thus it is always creating an upstream session
+		// This is an outbound connection, thus it is always creating an upstream session, defined by the sessionid matching the local_nodeid in the handle
 
-		if (blade_handle_upstream_set(bh, sid) != KS_STATUS_SUCCESS) {
+		if (blade_handle_local_nodeid_set(bh, nodeid) != KS_STATUS_SUCCESS) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) abandoned, upstream already available\n", blade_session_id_get(bs));
 			blade_session_read_unlock(bs);
 			blade_session_hangup(bs);
@@ -1104,14 +1076,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 		blade_handle_sessions_add(bs);
 
-		// new upstream sessions register the realms and local identities based on the realms and identities of the response, however
-		// upstream sessions do not register any routes and thus do not track any routes on the session
-
-		// iterate identities and register to handle as local node identities
-		for (int index = 0; index < json_result_identities_size; ++index) {
-			cJSON *elem = cJSON_GetArrayItem(json_result_identities, index);
-			blade_handle_identity_register(bh, elem->valuestring);
-		}
+		blade_handle_master_nodeid_set(bh, master_nodeid);
 
 		// iterate realms and register to handle as permitted realms for future registrations
 		for (int index = 0; index < json_result_realms_size; ++index) {

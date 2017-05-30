@@ -85,6 +85,10 @@ int main(int argc, char **argv)
 		blade_identity_destroy(&target);
 
 		ks_sleep_ms(5000);
+
+		blade_protocol_publish(bh, "test", "mydomain.com");
+
+		ks_sleep_ms(5000);
 	} else loop(bh);
 
 	//blade_handle_session_state_callback_unregister(bh, session_state_callback_id);

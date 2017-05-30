@@ -191,6 +191,7 @@
     <ClCompile Include="src\blade_connection.c" />
     <ClCompile Include="src\blade_identity.c" />
     <ClCompile Include="src\blade_jsonrpc.c" />
+    <ClCompile Include="src\blade_protocol.c" />
     <ClCompile Include="src\blade_transport_wss.c" />
     <ClCompile Include="src\blade_session.c" />
     <ClCompile Include="src\blade_stack.c" />
@@ -202,6 +203,7 @@
     <ClInclude Include="src\include\blade_connection.h" />
     <ClInclude Include="src\include\blade_identity.h" />
     <ClInclude Include="src\include\blade_jsonrpc.h" />
+    <ClInclude Include="src\include\blade_protocol.h" />
     <ClInclude Include="src\include\blade_transport_wss.h" />
     <ClInclude Include="src\include\blade_session.h" />
     <ClInclude Include="src\include\blade_stack.h" />

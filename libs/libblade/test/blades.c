@@ -63,6 +63,7 @@ int main(int argc, char **argv)
 	//blade_module_t *mod_chat = NULL;
 	//blade_identity_t *id = NULL;
 	const char *cfgpath = "blades.cfg";
+	const char *autoconnect = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 
@@ -71,6 +72,7 @@ int main(int argc, char **argv)
 	blade_handle_create(&bh);
 
 	//if (argc > 1) cfgpath = argv[1];
+	if (argc > 1) autoconnect = argv[1];
 
 	config_init(&config);
 	if (!config_read_file(&config, cfgpath)) {
@@ -96,6 +98,21 @@ int main(int argc, char **argv)
 	if (blade_handle_startup(bh, config_blade) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_ERROR, "Blade startup failed\n");
 		return EXIT_FAILURE;
+	}
+
+	if (autoconnect) {
+		blade_connection_t *bc = NULL;
+		blade_identity_t *target = NULL;
+
+		blade_identity_create(&target, blade_handle_pool_get(bh));
+
+		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
+
+		blade_identity_destroy(&target);
+
+		ks_sleep_ms(5000);
+
+		blade_protocol_publish(bh, "test", "mydomain.com");
 	}
 
 	loop(bh);

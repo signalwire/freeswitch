@@ -226,6 +226,18 @@ KS_DECLARE(blade_handle_t *) blade_jsonrpc_request_handle_get(blade_jsonrpc_requ
 	return bjsonrpcreq->handle;
 }
 
+KS_DECLARE(const char *) blade_jsonrpc_request_sessionid_get(blade_jsonrpc_request_t *bjsonrpcreq)
+{
+	ks_assert(bjsonrpcreq);
+	return bjsonrpcreq->session_id;
+}
+
+KS_DECLARE(cJSON *) blade_jsonrpc_request_message_get(blade_jsonrpc_request_t *bjsonrpcreq)
+{
+	ks_assert(bjsonrpcreq);
+	return bjsonrpcreq->message;
+}
+
 KS_DECLARE(const char *) blade_jsonrpc_request_messageid_get(blade_jsonrpc_request_t *bjsonrpcreq)
 {
 	ks_assert(bjsonrpcreq);
@@ -356,6 +368,30 @@ KS_DECLARE(ks_status_t) blade_jsonrpc_response_raw_create(cJSON **json, cJSON **
 	if (result) *result = r;
 
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(blade_handle_t *) blade_jsonrpc_response_handle_get(blade_jsonrpc_response_t *bjsonrpcres)
+{
+	ks_assert(bjsonrpcres);
+	return bjsonrpcres->handle;
+}
+
+KS_DECLARE(const char *) blade_jsonrpc_response_sessionid_get(blade_jsonrpc_response_t *bjsonrpcres)
+{
+	ks_assert(bjsonrpcres);
+	return bjsonrpcres->session_id;
+}
+
+KS_DECLARE(blade_jsonrpc_request_t *) blade_jsonrpc_response_request_get(blade_jsonrpc_response_t *bjsonrpcres)
+{
+	ks_assert(bjsonrpcres);
+	return bjsonrpcres->request;
+}
+
+KS_DECLARE(cJSON *) blade_jsonrpc_response_message_get(blade_jsonrpc_response_t *bjsonrpcres)
+{
+	ks_assert(bjsonrpcres);
+	return bjsonrpcres->message;
 }
 
 KS_DECLARE(ks_status_t) blade_jsonrpc_error_raw_create(cJSON **json, cJSON **error, const char *id, int32_t code, const char *message)

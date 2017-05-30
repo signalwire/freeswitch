@@ -50,7 +50,6 @@ struct blade_session_s {
 	ks_q_t *sending;
 	ks_q_t *receiving;
 
-	ks_hash_t *identities;
 	ks_hash_t *realms;
 	ks_hash_t *routes;
 
@@ -131,9 +130,6 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 	ks_assert(bs->sending);
 	ks_q_create(&bs->receiving, pool, 0);
 	ks_assert(bs->receiving);
-
-	ks_hash_create(&bs->identities, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bs->pool);
-	ks_assert(bs->identities);
 
 	ks_hash_create(&bs->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bs->pool);
 	ks_assert(bs->realms);
@@ -244,35 +240,6 @@ KS_DECLARE(blade_session_state_t) blade_session_state_get(blade_session_t *bs)
 	ks_assert(bs);
 
 	return bs->state;
-}
-
-KS_DECLARE(ks_status_t) blade_session_identity_add(blade_session_t *bs, const char *identity)
-{
-	char *key = NULL;
-
-	ks_assert(bs);
-	ks_assert(identity);
-
-	key = ks_pstrdup(bs->pool, identity);
-	ks_hash_insert(bs->identities, (void *)key, (void *)KS_TRUE);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_session_identity_remove(blade_session_t *bs, const char *identity)
-{
-	ks_assert(bs);
-	ks_assert(identity);
-
-	ks_hash_remove(bs->identities, (void *)identity);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_hash_t *) blade_session_identities_get(blade_session_t *bs)
-{
-	ks_assert(bs);
-	return bs->identities;
 }
 
 KS_DECLARE(ks_status_t) blade_session_realm_add(blade_session_t *bs, const char *realm)
