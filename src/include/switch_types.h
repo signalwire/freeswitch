@@ -2659,7 +2659,9 @@ typedef enum {
 
 typedef enum {
 	SCFC_FLUSH_AUDIO,
-	SCFC_PAUSE_READ
+	SCFC_PAUSE_READ,
+	SCFC_PAUSE_WRITE,
+	SCFC_RESUME_WRITE
 } switch_file_command_t;
 
 

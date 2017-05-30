@@ -533,6 +533,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
@@ -610,6 +614,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_
 
 	if (!fh->file_interface->file_write_video) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	return fh->file_interface->file_write_video(fh, frame);

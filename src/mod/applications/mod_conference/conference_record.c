@@ -133,11 +133,13 @@ switch_status_t conference_record_action(conference_obj_t *conference, char *pat
 						case REC_ACTION_PAUSE:
 							conference_utils_member_set_flag_locked(member, MFLAG_PAUSE_RECORDING);
 							switch_set_flag((&member->rec->fh), SWITCH_FILE_PAUSE);
+							switch_core_file_command(&member->rec->fh, SCFC_PAUSE_WRITE);
 							count = 1;
 							break;
 						case REC_ACTION_RESUME:
 							conference_utils_member_clear_flag_locked(member, MFLAG_PAUSE_RECORDING);
 							switch_clear_flag((&member->rec->fh), SWITCH_FILE_PAUSE);
+							switch_core_file_command(&member->rec->fh, SCFC_RESUME_WRITE);
 							count = 1;
 							break;
 						}
