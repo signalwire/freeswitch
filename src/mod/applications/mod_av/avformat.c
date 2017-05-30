@@ -81,6 +81,10 @@ typedef struct record_helper_s {
 	switch_thread_t *video_thread;
 	switch_mm_t *mm;
 	int finalize;
+	switch_file_handle_t *fh;
+	int record_timer_offset;
+	int record_timer_paused;
+	int record_timer_resumed;
 } record_helper_t;
 
 
@@ -802,7 +806,27 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			uint64_t delta_tmp;
 
 			switch_core_timer_sync(context->eh.timer);
-			delta_tmp = context->eh.timer->samplecount - last_ts;
+
+			if (context->eh.record_timer_paused) {
+				continue;
+			} else if (context->eh.record_timer_resumed) {
+				context->eh.record_timer_resumed = 0;
+
+				if (delta_avg) {
+					delta = delta_avg;
+				} else if (context->eh.mm->fps) {
+					delta = 1000 / context->eh.mm->fps;
+				} else {
+					delta = 33;
+				}
+
+				context->eh.video_st->frame->pts += delta;
+				delta_tmp = delta;
+				context->eh.record_timer_offset = context->eh.timer->samplecount - context->eh.video_st->frame->pts;
+				context->eh.record_timer_offset = context->eh.record_timer_offset > 0 ? context->eh.record_timer_offset : 0;
+			} else {
+				delta_tmp = context->eh.timer->samplecount - last_ts;
+			}
 
 			if (delta_tmp != 0) {
 				delta_sum += delta_tmp;
@@ -818,7 +842,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 					delta_avg = (int)(double)(delta_sum / delta_i);
 				}
 
-				context->eh.video_st->frame->pts = context->eh.timer->samplecount;
+				context->eh.video_st->frame->pts = context->eh.timer->samplecount - context->eh.record_timer_offset;
 			} else {
 				context->eh.video_st->frame->pts = (context->eh.timer->samplecount) + 1;
 			}
@@ -826,7 +850,6 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		last_ts = context->eh.video_st->frame->pts;
 
-		//context->eh.video_st->frame->pts = switch_time_now() / 1000 - context->eh.video_st->next_pts;
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pts: %ld\n", context->eh.video_st->frame->pts);
 
 		/* encode the image */
@@ -2098,7 +2121,7 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error encoding audio frame: %d\n", ret);
 			continue;
 		}
-
+		
 		if (got_packet) {
 			if (context->mutex) switch_mutex_lock(context->mutex);
 			ret = write_frame(context->fc, &context->audio_st.st->codec->time_base, context->audio_st.st, &pkt);
@@ -2142,6 +2165,16 @@ static switch_status_t av_file_command(switch_file_handle_t *handle, switch_file
 		} else {
 			context->read_paused = SWITCH_TRUE;
 		}
+		break;
+	case SCFC_PAUSE_WRITE:
+		context->vid_ready = 0;
+		context->eh.record_timer_paused = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s pause write\n", handle->file_path);
+		break;
+	case SCFC_RESUME_WRITE:
+		context->eh.record_timer_paused = 0;
+		context->eh.record_timer_resumed = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s resume write\n", handle->file_path);
 		break;
 	default:
 		break;
