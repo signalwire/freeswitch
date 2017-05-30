@@ -69,7 +69,7 @@ struct blade_handle_s {
 
 	ks_hash_t *session_state_callbacks;
 
-	// @note everything below this point is exclusively for the master node 
+	// @note everything below this point is exclusively for the master node
 
 	// @todo need to track the details from blade.publish, a protocol may be published under multiple realms, and each protocol published to a realm may have multiple target providers
 	// @todo how does "exclusive" play into the providers, does "exclusive" mean only one provider can exist for a given protocol and realm?
@@ -1198,7 +1198,7 @@ ks_bool_t blade_protocol_publish_request_handler(blade_jsonrpc_request_t *breq, 
 
 	ks_hash_write_lock(bh->protocols);
 
-	bp = (blade_protocol_t *)ks_hash_search(bh->protocols, bp_key, KS_UNLOCKED);
+	bp = (blade_protocol_t *)ks_hash_search(bh->protocols, (void *)bp_key, KS_UNLOCKED);
 	if (bp) {
 		// @todo deal with exclusive stuff when the protocol is already registered
 	}
@@ -1211,7 +1211,7 @@ ks_bool_t blade_protocol_publish_request_handler(blade_jsonrpc_request_t *breq, 
 		ks_hash_insert(bh->protocols, (void *)ks_pstrdup(bh->pool, bp_key), bp);
 	}
 
-	bp_cleanup = (ks_hash_t *)ks_hash_search(bh->protocols_cleanup, req_params_requester_nodeid, KS_UNLOCKED);
+	bp_cleanup = (ks_hash_t *)ks_hash_search(bh->protocols_cleanup, (void *)req_params_requester_nodeid, KS_UNLOCKED);
 	if (!bp_cleanup) {
 		ks_hash_create(&bp_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
 		ks_assert(bp_cleanup);
@@ -1236,7 +1236,7 @@ ks_bool_t blade_protocol_publish_request_handler(blade_jsonrpc_request_t *breq, 
 	blade_session_send(bs, res, NULL);
 
 done:
-	
+
 	if (res) cJSON_Delete(res);
 	if (bs) blade_session_read_unlock(bs);
 

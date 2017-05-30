@@ -13,6 +13,7 @@ libunqlite_la_LIBADD    = -lpthread
 lib_LTLIBRARIES	        = libblade.la
 libblade_la_SOURCES     = src/blade.c src/blade_stack.c
 libblade_la_SOURCES	+= src/blade_identity.c src/blade_jsonrpc.c src/blade_connection.c src/blade_session.c
+libblade_la_SOURCES	+= src/blade_protocol.c
 libblade_la_SOURCES	+= src/blade_transport.c src/blade_transport_wss.c
 
 libblade_la_CFLAGS	= $(AM_CFLAGS) $(AM_CPPFLAGS)
@@ -22,6 +23,7 @@ libblade_la_LIBADD      = libunqlite.la
 library_includedir	= $(prefix)/include
 library_include_HEADERS = src/include/blade.h src/include/blade_types.h src/include/blade_stack.h
 library_include_HEADERS += src/include/blade_identity.h src/include/blade_jsonrpc.h src/include/blade_connection.h src/include/blade_session.h
+library_include_HEADERS += src/include/blade_protocol.h
 library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h
 library_include_HEADERS += src/include/unqlite.h test/tap.h
 
