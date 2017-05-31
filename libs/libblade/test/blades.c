@@ -16,9 +16,11 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
+void command_locate(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
+	{ "locate", command_locate },
 
 	{ NULL, NULL }
 };
@@ -110,7 +112,7 @@ int main(int argc, char **argv)
 
 		blade_identity_destroy(&target);
 
-		ks_sleep_ms(5000);
+		ks_sleep_ms(5000); // @todo use session state change callback to know when the session is ready, this ensures it's ready before trying to publish upstream
 
 		blade_protocol_publish(bh, "test", "mydomain.com");
 	}
@@ -191,6 +193,13 @@ void command_quit(blade_handle_t *bh, char *args)
 	g_shutdown = KS_TRUE;
 }
 
+void command_locate(blade_handle_t *bh, char *args)
+{
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_protocol_locate(bh, "test", "mydomain.com");
+}
 
 
 

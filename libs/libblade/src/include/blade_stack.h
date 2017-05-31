@@ -92,6 +92,7 @@ KS_DECLARE(ks_status_t) blade_handle_session_state_callback_unregister(blade_han
 KS_DECLARE(void) blade_handle_session_state_callbacks_execute(blade_session_t *bs, blade_session_state_condition_t condition);
 
 KS_DECLARE(ks_status_t) blade_protocol_publish(blade_handle_t *bh, const char *name, const char *realm);
+KS_DECLARE(ks_status_t) blade_protocol_locate(blade_handle_t *bh, const char *name, const char *realm);
 KS_END_EXTERN_C
 
 #endif
