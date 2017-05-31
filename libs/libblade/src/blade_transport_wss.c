@@ -843,7 +843,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		blade_session_route_add(bs, nodeid);
 		// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow efficiently determine which session
 		// a message should pass through when it does not match the local node identities from blade_handle_identity_register(), and must be matched with a call to blade_session_route_add() for cleanup,
-		// additionally when a "blade.route" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
+		// additionally when a "blade.register" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
 		// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
 		blade_handle_route_add(bh, nodeid, nodeid);
 

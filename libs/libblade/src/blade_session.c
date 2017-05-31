@@ -643,6 +643,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 
 ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 {
+	blade_handle_t *bh = NULL;
 	blade_jsonrpc_request_t *bjsonrpcreq = NULL;
 	blade_jsonrpc_response_t *bjsonrpcres = NULL;
 	const char *jsonrpc = NULL;
@@ -655,6 +656,8 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) processing\n", bs->id);
 
+	bh = blade_session_handle_get(bs);
+	ks_assert(bh);
 
 	jsonrpc = cJSON_GetObjectCstr(json, "jsonrpc");
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
@@ -679,9 +682,48 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		// 2) Receiving a request (server: method callee or provider)
 		blade_jsonrpc_t *bjsonrpc = NULL;
 		blade_jsonrpc_request_callback_t callback = NULL;
+		cJSON *params = NULL;
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
 
+		params = cJSON_GetObjectItem(json, "params");
+		if (params) {
+			const char *params_requester_nodeid = cJSON_GetObjectCstr(params, "requester-nodeid");
+			const char *params_responder_nodeid = cJSON_GetObjectCstr(params, "responder-nodeid");
+			if (params_requester_nodeid && params_responder_nodeid && !blade_handle_local_nodeid_compare(bh, params_responder_nodeid)) {
+				// not meant for local processing, continue with standard unicast routing for requests
+				blade_session_t *bs_router = blade_handle_route_lookup(bh, params_responder_nodeid);
+				if (!bs_router) {
+					bs_router = blade_handle_sessions_upstream(bh);
+					if (!bs_router) {
+						cJSON *res = NULL;
+						cJSON *res_error = NULL;
+
+						ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) but upstream session unavailable\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid);
+						blade_jsonrpc_error_raw_create(&res, &res_error, id, -32603, "Upstream session unavailable");
+
+						// needed in case this error must propagate further than the session which sent it
+						cJSON_AddStringToObject(res_error, "requester-nodeid", params_requester_nodeid);
+						cJSON_AddStringToObject(res_error, "responder-nodeid", params_responder_nodeid); // @todo responder-nodeid should become the local_nodeid to inform of which node actually responded
+
+						blade_session_send(bs, res, NULL);
+						return KS_STATUS_DISCONNECTED;
+					}
+				}
+
+				if (bs_router == bs) {
+					// @todo avoid circular by sending back an error instead, really should not happen but check for posterity in case a node is misbehaving for some reason
+				}
+				
+				ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) routing (%s)\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid, blade_session_id_get(bs_router));
+				blade_session_send(bs_router, json, NULL);
+				blade_session_read_unlock(bs_router);
+
+				return KS_STATUS_SUCCESS;
+			}
+		}
+
+		// reach here if the request was not captured for routing, this SHOULD always mean the message is to be processed by local handlers
 		bjsonrpc = blade_handle_jsonrpc_lookup(bs->handle, method);
 
 		if (!bjsonrpc) {
@@ -702,8 +744,41 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		// @note This is scenario 4
 		// 4) Receiving a response or error (client: method caller or consumer)
 		blade_jsonrpc_response_callback_t callback = NULL;
+		cJSON *error = NULL;
+		cJSON *result = NULL;
+		cJSON *object = NULL;
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) receiving response (%s)\n", bs->id, id);
+
+		error = cJSON_GetObjectItem(json, "error");
+		result = cJSON_GetObjectItem(json, "result");
+		object = error ? error : result;
+
+		if (object) {
+			const char *object_requester_nodeid = cJSON_GetObjectCstr(object, "requester-nodeid");
+			const char *object_responder_nodeid = cJSON_GetObjectCstr(object, "responder-nodeid");
+			if (object_requester_nodeid && object_responder_nodeid && !blade_handle_local_nodeid_compare(bh, object_requester_nodeid)) {
+				// not meant for local processing, continue with standard unicast routing for responses
+				blade_session_t *bs_router = blade_handle_route_lookup(bh, object_requester_nodeid);
+				if (!bs_router) {
+					bs_router = blade_handle_sessions_upstream(bh);
+					if (!bs_router) {
+						ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) but upstream session unavailable\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid);
+						return KS_STATUS_DISCONNECTED;
+					}
+				}
+
+				if (bs_router == bs) {
+					// @todo avoid circular, really should not happen but check for posterity in case a node is misbehaving for some reason
+				}
+
+				ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) routing (%s)\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid, blade_session_id_get(bs_router));
+				blade_session_send(bs_router, json, NULL);
+				blade_session_read_unlock(bs_router);
+
+				return KS_STATUS_SUCCESS;
+			}
+		}
 
 		bjsonrpcreq = blade_handle_requests_lookup(bs->handle, id);
 		if (!bjsonrpcreq) {
