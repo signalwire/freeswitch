@@ -479,15 +479,12 @@
 
 	    if (obj.options.audioParams) {
 	        audio = obj.options.audioParams;
-        }
+            }
 
 	    if (obj.options.useMic !== "any") {
 		//audio.optional = [{sourceId: obj.options.useMic}]
 		audio.deviceId = {exact: obj.options.useMic};
 	    }
-
-
-
 	}
 
 	if (obj.options.useVideo && obj.options.localVideo) {
@@ -510,18 +507,28 @@
 
 	if (obj.options.screenShare) {
 	    // fix for chrome to work for now, will need to change once we figure out how to do this in a non-mandatory style constraint.
-	    var opt = [];
-	    opt.push({sourceId: obj.options.useCamera});
+	    if (!!navigator.mozGetUserMedia) {
+		var dowin = window.confirm("Do you want to share an application window?  If not you will share a screen.");
 
-	    if (bestFrameRate) {
-		opt.push({minFrameRate: bestFrameRate});
-		opt.push({maxFrameRate: bestFrameRate});
+		video = {
+		    width: {min: obj.options.videoParams.minWidth, max: obj.options.videoParams.maxWidth},
+		    height: {min: obj.options.videoParams.minHeight, max: obj.options.videoParams.maxHeight},
+		    mediaSource: dowin ? "window" : "screen"
+		}
+	    } else {
+		var opt = [];
+		opt.push({sourceId: obj.options.useCamera});
+		
+		if (bestFrameRate) {
+		    opt.push({minFrameRate: bestFrameRate});
+		    opt.push({maxFrameRate: bestFrameRate});
+		}
+		
+		video = {
+		    mandatory: obj.options.videoParams,
+		    optional: opt		
+		};
 	    }
-
-	    video = {
-		mandatory: obj.options.videoParams,
-		optional: opt		
-	    };
 	} else {
 
 	    video = {
@@ -603,7 +610,7 @@
                 },
                 constraints: self.constraints,
                 iceServers: self.options.iceServers,
-            });
+            });	        
 
             onStreamSuccess(self, stream);
         }
@@ -622,7 +629,7 @@
             getUserMedia({
 		constraints: {
                     audio: mediaParams.audio,
-                video: mediaParams.video
+                    video: mediaParams.video
 		},
 		video: mediaParams.useVideo,
 		onsuccess: onSuccess,

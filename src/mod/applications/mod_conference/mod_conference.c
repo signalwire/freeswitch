@@ -2381,6 +2381,10 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY) || !switch_channel_test_flag(channel, CF_AUDIO)) {
 		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
+			switch_frame_t *read_frame;
+			if (switch_channel_test_flag(channel, CF_AUDIO)) {
+				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
 			switch_yield(100000);
 		}
 	} else {

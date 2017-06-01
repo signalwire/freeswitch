@@ -934,7 +934,7 @@ function doshare(on) {
 
 
     console.log("Attempting Screen Capture....");
-    getScreenId(function (error, sourceId, screen_constraints) {
+    var sharefunc = function(error, sourceId, screen_constraints) {
 	
 
 
@@ -944,15 +944,22 @@ function doshare(on) {
             caller_id_number: $("#cid").val() + " (screen)",
 	    outgoingBandwidth: outgoingBandwidth,
 	    incomingBandwidth: incomingBandwidth,
-	    videoParams: screen_constraints.video.mandatory,
+	    videoParams: screen_constraints ? screen_constraints.video.mandatory : {},
             useVideo: true,
 	    screenShare: true,
 	    dedEnc: $("#use_dedenc").is(':checked'),
 	    mirrorInput: $("#mirror_input").is(':checked')
 	});
 
-    });
+    };
 
+    if (!!navigator.mozGetUserMedia) {
+	sharefunc();
+    } else {
+	getScreenId(sharefunc);
+    }
+
+    
 
 
     //$("#main_info").html("Trying");
