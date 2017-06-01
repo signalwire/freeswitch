@@ -418,6 +418,7 @@ sub DESTROY {
 *swig_voice_name_set = *freeswitchc::CoreSession_voice_name_set;
 *insertFile = *freeswitchc::CoreSession_insertFile;
 *answer = *freeswitchc::CoreSession_answer;
+*print = *freeswitchc::CoreSession_print;
 *preAnswer = *freeswitchc::CoreSession_preAnswer;
 *hangup = *freeswitchc::CoreSession_hangup;
 *hangupState = *freeswitchc::CoreSession_hangupState;

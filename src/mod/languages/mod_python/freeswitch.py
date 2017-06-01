@@ -317,6 +317,7 @@ class CoreSession(_object):
     if _newclass:voice_name = _swig_property(_freeswitch.CoreSession_voice_name_get, _freeswitch.CoreSession_voice_name_set)
     def insertFile(self, *args): return _freeswitch.CoreSession_insertFile(self, *args)
     def answer(self): return _freeswitch.CoreSession_answer(self)
+    def _print(self, *args): return _freeswitch.CoreSession__print(self, *args)
     def preAnswer(self): return _freeswitch.CoreSession_preAnswer(self)
     def hangup(self, cause="normal_clearing"): return _freeswitch.CoreSession_hangup(self, cause)
     def hangupState(self): return _freeswitch.CoreSession_hangupState(self)

@@ -126,6 +126,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_answer(swigCPtr, this);
   }
 
+  public int print(String txt) {
+    return freeswitchJNI.CoreSession_print(swigCPtr, this, txt);
+  }
+
   public int preAnswer() {
     return freeswitchJNI.CoreSession_preAnswer(swigCPtr, this);
   }
