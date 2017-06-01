@@ -610,7 +610,7 @@
                 },
                 constraints: self.constraints,
                 iceServers: self.options.iceServers,
-            });	        
+            });
 
             onStreamSuccess(self, stream);
         }
