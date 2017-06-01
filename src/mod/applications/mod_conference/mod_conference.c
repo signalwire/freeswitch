@@ -2218,6 +2218,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
 		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
+			switch_frame_t *read_frame;
+			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			switch_yield(100000);
 		}
 	} else {

@@ -475,29 +475,16 @@
 	    audio = false;
 	} else {
 	    audio = {
-		//mandatory: {},
-		//optional: []
-            advanced: []
 	    };
+
+	    if (obj.options.audioParams) {
+	        audio = obj.options.audioParams;
+            }
 
 	    if (obj.options.useMic !== "any") {
 		//audio.optional = [{sourceId: obj.options.useMic}]
 		audio.deviceId = {exact: obj.options.useMic};
 	    }
-
-	    //FIXME
-	    if (obj.options.audioParams) {
-		for (var key in obj.options.audioParams) {
-		    var con = {};
-		    //con[key] = obj.options.audioParams[key];
-		    if (obj.options.audioParams[key]) {
-			con.exact = key;
-			audio.advanced.push(con);
-		    }
-		}
-	    }
-
-
 	}
 
 	if (obj.options.useVideo && obj.options.localVideo) {
@@ -519,19 +506,31 @@
 	delete obj.options.videoParams.vertoBestFrameRate;
 
 	if (obj.options.screenShare) {
-	    // fix for chrome to work for now, will need to change once we figure out how to do this in a non-mandatory style constraint.
-	    var opt = [];
-	    opt.push({sourceId: obj.options.useCamera});
+	    if (!obj.options.useCamera && !!navigator.mozGetUserMedia) {
+		//This is an issue, only FireFox needs to ask this additional question if its screen or window we need a better way
+		var dowin = window.confirm("Do you want to share an application window?  If not you can share an entire screen.");
 
-	    if (bestFrameRate) {
-		opt.push({minFrameRate: bestFrameRate});
-		opt.push({maxFrameRate: bestFrameRate});
+		video = {
+		    width: {min: obj.options.videoParams.minWidth, max: obj.options.videoParams.maxWidth},
+		    height: {min: obj.options.videoParams.minHeight, max: obj.options.videoParams.maxHeight},
+		    mediaSource: dowin ? "window" : "screen"
+		}
+	    } else {
+		var opt = [];
+		if (obj.options.useCamera) {
+		    opt.push({sourceId: obj.options.useCamera});
+		}
+		
+		if (bestFrameRate) {
+		    opt.push({minFrameRate: bestFrameRate});
+		    opt.push({maxFrameRate: bestFrameRate});
+		}
+		
+		video = {
+		    mandatory: obj.options.videoParams,
+		    optional: opt		
+		};
 	    }
-
-	    video = {
-		mandatory: obj.options.videoParams,
-		optional: opt		
-	    };
 	} else {
 
 	    video = {
@@ -588,6 +587,8 @@
 	    
 	    if (screen) {
 		self.constraints.offerToReceiveVideo = false;
+		self.constraints.offerToReceiveAudio = false;
+		self.constraints.offerToSendAudio = false;
 	    }
 	    
             self.peer = FSRTCPeerConnection({
@@ -632,12 +633,13 @@
             getUserMedia({
 		constraints: {
                     audio: mediaParams.audio,
-                video: mediaParams.video
+                    video: mediaParams.video
 		},
 		video: mediaParams.useVideo,
 		onsuccess: onSuccess,
 		onerror: onError
             });
+
 	} else {
 	    onSuccess(null);
 	}
