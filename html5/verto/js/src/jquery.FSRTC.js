@@ -506,9 +506,9 @@
 	delete obj.options.videoParams.vertoBestFrameRate;
 
 	if (obj.options.screenShare) {
-	    // fix for chrome to work for now, will need to change once we figure out how to do this in a non-mandatory style constraint.
-	    if (!!navigator.mozGetUserMedia) {
-		var dowin = window.confirm("Do you want to share an application window?  If not you will share a screen.");
+	    if (!obj.options.useCamera && !!navigator.mozGetUserMedia) {
+		//This is an issue, only FireFox needs to ask this additional question if its screen or window we need a better way
+		var dowin = window.confirm("Do you want to share an application window?  If not you can share an entire screen.");
 
 		video = {
 		    width: {min: obj.options.videoParams.minWidth, max: obj.options.videoParams.maxWidth},
@@ -517,7 +517,9 @@
 		}
 	    } else {
 		var opt = [];
-		opt.push({sourceId: obj.options.useCamera});
+		if (obj.options.useCamera) {
+		    opt.push({sourceId: obj.options.useCamera});
+		}
 		
 		if (bestFrameRate) {
 		    opt.push({minFrameRate: bestFrameRate});
@@ -585,6 +587,8 @@
 	    
 	    if (screen) {
 		self.constraints.offerToReceiveVideo = false;
+		self.constraints.offerToReceiveAudio = false;
+		self.constraints.offerToSendAudio = false;
 	    }
 	    
             self.peer = FSRTCPeerConnection({
@@ -635,6 +639,7 @@
 		onsuccess: onSuccess,
 		onerror: onError
             });
+
 	} else {
 	    onSuccess(null);
 	}
