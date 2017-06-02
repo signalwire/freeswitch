@@ -246,3 +246,6 @@ x64/*.msi
 
 libs/tiff-4.0.7/
 libs/PaxHeaders.1693/
+
+libs/lua-*/
+
