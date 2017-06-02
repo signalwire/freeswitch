@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Codecs", "Codecs", "{F881ADA2-2F1A-4046-9FEB-191D9422D781}"
 EndProject
@@ -648,6 +648,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download libx264", "libs\win32\Download libx264.2015.vcxproj", "{6D1BC01C-3F97-4C08-8A45-69C9B94281AA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download tiff", "libs\win32\Download tiff.2015.vcxproj", "{583D8CEA-4171-4493-9025-B63265F408D8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_http_cache", "src\mod\applications\mod_http_cache\mod_http_cache.vcxproj", "{87933C2D-0159-46F7-B326-E1B6E982C21E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2903,6 +2905,18 @@ Global
 		{583D8CEA-4171-4493-9025-B63265F408D8}.Release|Win32.ActiveCfg = Release|Win32
 		{583D8CEA-4171-4493-9025-B63265F408D8}.Release|Win32.Build.0 = Release|Win32
 		{583D8CEA-4171-4493-9025-B63265F408D8}.Release|x64.ActiveCfg = Release|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.All|Win32.ActiveCfg = Release|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.All|Win32.Build.0 = Release|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.All|x64.ActiveCfg = Release|x64
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.All|x64.Build.0 = Release|x64
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Debug|Win32.Build.0 = Debug|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Debug|x64.ActiveCfg = Debug|x64
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Debug|x64.Build.0 = Debug|x64
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Release|Win32.ActiveCfg = Release|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Release|Win32.Build.0 = Release|Win32
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Release|x64.ActiveCfg = Release|x64
+		{87933C2D-0159-46F7-B326-E1B6E982C21E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3134,5 +3148,6 @@ Global
 		{20179127-853B-4FE9-B7C0-9E817E6A3A72} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{6D1BC01C-3F97-4C08-8A45-69C9B94281AA} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{583D8CEA-4171-4493-9025-B63265F408D8} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{87933C2D-0159-46F7-B326-E1B6E982C21E} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 	EndGlobalSection
 EndGlobal
