@@ -39,6 +39,45 @@
 
 #include <stdlib.h>
 
+#ifdef WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+
+#include <stdlib.h>
+#include <ctype.h>
+
+char *strcasestr(const char *str, const char *pattern) {
+	size_t i;
+
+	if (!*pattern)
+		return (char*)str;
+
+	for (; *str; str++) {
+		if (toupper(*str) == toupper(*pattern)) {
+			for (i = 1;; i++) {
+				if (!pattern[i])
+					return (char*)str;
+				if (toupper(str[i]) != toupper(pattern[i]))
+					break;
+			}
+		}
+	}
+	return NULL;
+}
+
+char *strndup(const char *s, size_t n)
+{
+	char *p;
+
+	p = (char *)malloc(n + 1);
+	if (p == NULL)
+		return NULL;
+	memcpy(p, s, n);
+	p[n] = '\0';
+	return p;
+}
+#endif
+
 /* 253 max domain size + '/' + NUL byte */
 #define DOMAIN_BUF_SIZE 255
 
@@ -1496,10 +1535,10 @@ static switch_status_t do_config(url_cache_t *cache)
 	/* set default config */
 	max_urls = 4000;
 	default_max_age_sec = 86400;
-	cache->location = SWITCH_PREFIX_DIR "/http_cache";
+	cache->location = switch_core_sprintf(cache->pool, "%s%s", SWITCH_GLOBAL_dirs.base_dir, "/http_cache");
 	cache->prefetch_queue_size = 100;
 	cache->prefetch_thread_count = 8;
-	cache->ssl_cacert = SWITCH_PREFIX_DIR "/conf/cacert.pem";
+	cache->ssl_cacert = switch_core_sprintf(cache->pool, "%s%s", SWITCH_GLOBAL_dirs.certs_dir, "/cacert.pem");
 	cache->ssl_verifyhost = 1;
 	cache->ssl_verifypeer = 1;
 	cache->enable_file_formats = 0;

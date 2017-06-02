@@ -49,6 +49,10 @@ struct curl_memory_read {
 };
 typedef struct curl_memory_read curl_memory_read_t;
 
+#if defined(_WIN32) || defined(_WIN64)
+# define strtok_r strtok_s
+#endif
+
 /**
  * Convert query string parameters into string to be appended to
  * Azure authentication header
