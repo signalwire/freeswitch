@@ -46,6 +46,7 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\openssl.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -131,6 +132,12 @@
     <ProjectReference Include="..\..\..\..\libs\win32\apr\libapr.2015.vcxproj">
       <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2015.vcxproj">
+      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2015.vcxproj">
+      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2015.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
