@@ -3323,9 +3323,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag_value(channel, CF_RING_READY, rv);
 
-
-		if (channel->caller_profile && channel->caller_profile->times) {
-			switch_mutex_lock(channel->profile_mutex);
+		switch_mutex_lock(channel->profile_mutex);
+		if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->progress) {
 			channel->caller_profile->times->progress = switch_micro_time_now();
 			if (channel->caller_profile->originator_caller_profile) {
 				switch_core_session_t *other_session;
@@ -3339,8 +3338,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 				}
 				channel->caller_profile->originator_caller_profile->times->progress = channel->caller_profile->times->progress;
 			}
-			switch_mutex_unlock(channel->profile_mutex);
 		}
+		switch_mutex_unlock(channel->profile_mutex);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
