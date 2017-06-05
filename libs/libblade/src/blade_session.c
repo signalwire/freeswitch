@@ -76,23 +76,9 @@ static void blade_session_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool
 		blade_session_shutdown(bs);
 		break;
 	case KS_MPCL_DESTROY:
-
 		// @todo consider looking at supporting externally allocated memory entries that can have cleanup callbacks associated, but the memory is not freed from the pool, only linked as an external allocation for auto cleanup
 		// which would allow calling something like ks_pool_set_cleanup(bs->properties, ...) and when the pool is destroyed, it can call a callback which handles calling cJSON_Delete, which is allocated externally
 		cJSON_Delete(bs->properties);
-		bs->properties = NULL;
-
-		// @todo remove this, it's just for posterity in debugging
-		//bs->state_thread = NULL;
-		bs->properties_lock = NULL;
-		bs->receiving = NULL;
-		bs->sending = NULL;
-		bs->connection = NULL;
-		bs->cond = NULL;
-		bs->lock = NULL;
-
-		//ks_pool_free(bs->pool, &bs->id);
-		bs->id = NULL;
 		break;
 	}
 }
@@ -508,6 +494,8 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 				// we can start stuffing any messages queued for output on the session straight to the connection right away, may need to only
 				// do this when in session ready state but there may be implications of other states sending messages through the session
 				while (blade_session_sending_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
+					// @todo short-circuit with blade_session_receiving_push on the same session if the message has responder-nodeid == requester-nodeid == local_nodeid
+					// which would allow a system to send messages to itself, such as calling a protocolrpc immediately without bouncing upstream first
 					blade_connection_sending_push(bc, json);
 					cJSON_Delete(json);
 				}
@@ -520,9 +508,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 
 		switch (state) {
 		case BLADE_SESSION_STATE_STARTUP:
-			// @todo this may occur from a reconnect, should have some way to identify it is a reconnected session until we hit RUN state at least
-			ks_log(KS_LOG_DEBUG, "Session (%s) state startup\n", bs->id);
-			blade_session_state_set(bs, BLADE_SESSION_STATE_RUN);
+			blade_session_onstate_startup(bs);
 			break;
 		case BLADE_SESSION_STATE_SHUTDOWN:
 			blade_session_onstate_shutdown(bs);
@@ -549,12 +535,21 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 	return NULL;
 }
 
+ks_status_t blade_session_onstate_startup(blade_session_t *bs)
+{
+	ks_assert(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) state startup\n", bs->id);
+	blade_session_state_set(bs, BLADE_SESSION_STATE_RUN);
+
+	return KS_STATUS_SUCCESS;
+}
+
 ks_status_t blade_session_onstate_shutdown(blade_session_t *bs)
 {
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) state shutdown\n", bs->id);
-
 	blade_session_state_set(bs, BLADE_SESSION_STATE_CLEANUP);
 
 	if (bs->connection) {
@@ -565,7 +560,7 @@ ks_status_t blade_session_onstate_shutdown(blade_session_t *bs)
 		}
 	}
 
-	// @note wait for the connection to disconnect before we resume session cleanup
+	// wait for the connection to disconnect before we resume session cleanup
 	while (bs->connection) ks_sleep(100);
 
 	return KS_STATUS_SUCCESS;
@@ -577,28 +572,18 @@ ks_status_t blade_session_onstate_run(blade_session_t *bs)
 
 	ks_assert(bs);
 
-	//ks_log(KS_LOG_DEBUG, "Session (%s) state run\n", bs->id);
-
-	// @todo for now only process messages if there is a connection available
-	if (bs->connection) {
-		// @todo may only want to pop once per call to give sending a chance to keep up
-		while (blade_session_receiving_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
-			// @todo all messages will pass through the local jsonrpc method handlers, but each needs to determine if the
-			// message is destined for the local node, and if not then each handler can determine how routing occurs as
-			// they differ, especially when it comes to the announcing of identities and propagation of multicast events
-			blade_session_process(bs, json);
-			cJSON_Delete(json);
-		}
+	while (bs->connection && blade_session_receiving_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
+		blade_session_process(bs, json);
+		cJSON_Delete(json);
 	}
 
-	//ks_sleep_ms(1);
 	return KS_STATUS_SUCCESS;
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_jsonrpc_response_callback_t callback)
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, void *data)
 {
-	blade_jsonrpc_request_t *bjsonrpcreq = NULL;
+	blade_rpc_request_t *brpcreq = NULL;
 	const char *method = NULL;
 	const char *id = NULL;
 
@@ -615,17 +600,18 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		// 1) Sending a request (client: method caller or consumer)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
 
-		blade_jsonrpc_request_create(&bjsonrpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, callback);
-		ks_assert(bjsonrpcreq);
+		blade_rpc_request_create(&brpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, callback, data);
+		ks_assert(brpcreq);
 
 		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
-		blade_handle_requests_add(bjsonrpcreq);
+		blade_handle_requests_add(brpcreq);
 	} else {
 		// @note This is scenario 3
 		// 3) Sending a response or error (server: method callee or provider)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending response (%s)\n", bs->id, id);
 	}
 
+	//blade_session_sending_push(bs, json);
 	if (!bs->connection) {
 		blade_session_sending_push(bs, json);
 	} else {
@@ -644,8 +630,8 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 {
 	blade_handle_t *bh = NULL;
-	blade_jsonrpc_request_t *bjsonrpcreq = NULL;
-	blade_jsonrpc_response_t *bjsonrpcres = NULL;
+	blade_rpc_request_t *brpcreq = NULL;
+	blade_rpc_response_t *brpcres = NULL;
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
@@ -680,8 +666,8 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 	if (method) {
 		// @note This is scenario 2
 		// 2) Receiving a request (server: method callee or provider)
-		blade_jsonrpc_t *bjsonrpc = NULL;
-		blade_jsonrpc_request_callback_t callback = NULL;
+		blade_rpc_t *brpc = NULL;
+		blade_rpc_request_callback_t callback = NULL;
 		cJSON *params = NULL;
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
@@ -700,13 +686,13 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 						cJSON *res_error = NULL;
 
 						ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) but upstream session unavailable\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid);
-						blade_jsonrpc_error_raw_create(&res, &res_error, id, -32603, "Upstream session unavailable");
+						blade_rpc_error_raw_create(&res, &res_error, id, -32603, "Upstream session unavailable");
 
 						// needed in case this error must propagate further than the session which sent it
 						cJSON_AddStringToObject(res_error, "requester-nodeid", params_requester_nodeid);
 						cJSON_AddStringToObject(res_error, "responder-nodeid", params_responder_nodeid); // @todo responder-nodeid should become the local_nodeid to inform of which node actually responded
 
-						blade_session_send(bs, res, NULL);
+						blade_session_send(bs, res, NULL, NULL);
 						return KS_STATUS_DISCONNECTED;
 					}
 				}
@@ -716,7 +702,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				}
 				
 				ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) routing (%s)\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid, blade_session_id_get(bs_router));
-				blade_session_send(bs_router, json, NULL);
+				blade_session_send(bs_router, json, NULL, NULL);
 				blade_session_read_unlock(bs_router);
 
 				return KS_STATUS_SUCCESS;
@@ -724,26 +710,26 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		}
 
 		// reach here if the request was not captured for routing, this SHOULD always mean the message is to be processed by local handlers
-		bjsonrpc = blade_handle_jsonrpc_lookup(bs->handle, method);
+		brpc = blade_handle_corerpc_lookup(bs->handle, method);
 
-		if (!bjsonrpc) {
-			ks_log(KS_LOG_DEBUG, "Received unknown jsonrpc method %s\n", method);
+		if (!brpc) {
+			ks_log(KS_LOG_DEBUG, "Received unknown rpc method %s\n", method);
 			// @todo send error response, code = -32601 (method not found)
 			return KS_STATUS_FAIL;
 		}
-		callback = blade_jsonrpc_callback_get(bjsonrpc);
+		callback = blade_rpc_callback_get(brpc);
 		ks_assert(callback);
 
-		blade_jsonrpc_request_create(&bjsonrpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, NULL);
-		ks_assert(bjsonrpcreq);
+		blade_rpc_request_create(&brpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, NULL, NULL);
+		ks_assert(brpcreq);
 
-		disconnect = callback(bjsonrpcreq, blade_jsonrpc_callback_data_get(bjsonrpc));
+		disconnect = callback(brpcreq, blade_rpc_callback_data_get(brpc));
 
-		blade_jsonrpc_request_destroy(&bjsonrpcreq);
+		blade_rpc_request_destroy(&brpcreq);
 	} else {
 		// @note This is scenario 4
 		// 4) Receiving a response or error (client: method caller or consumer)
-		blade_jsonrpc_response_callback_t callback = NULL;
+		blade_rpc_response_callback_t callback = NULL;
 		cJSON *error = NULL;
 		cJSON *result = NULL;
 		cJSON *object = NULL;
@@ -773,29 +759,29 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				}
 
 				ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) routing (%s)\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid, blade_session_id_get(bs_router));
-				blade_session_send(bs_router, json, NULL);
+				blade_session_send(bs_router, json, NULL, NULL);
 				blade_session_read_unlock(bs_router);
 
 				return KS_STATUS_SUCCESS;
 			}
 		}
 
-		bjsonrpcreq = blade_handle_requests_lookup(bs->handle, id);
-		if (!bjsonrpcreq) {
+		brpcreq = blade_handle_requests_lookup(bs->handle, id);
+		if (!brpcreq) {
 			// @todo hangup session entirely?
 			return KS_STATUS_FAIL;
 		}
-		blade_handle_requests_remove(bjsonrpcreq);
+		blade_handle_requests_remove(brpcreq);
 
-		callback = blade_jsonrpc_request_callback_get(bjsonrpcreq);
+		callback = blade_rpc_request_callback_get(brpcreq);
 		ks_assert(callback);
 
-		blade_jsonrpc_response_create(&bjsonrpcres, bs->handle, bs->pool, bs->id, bjsonrpcreq, json);
-		ks_assert(bjsonrpcres);
+		blade_rpc_response_create(&brpcres, bs->handle, bs->pool, bs->id, brpcreq, json);
+		ks_assert(brpcres);
 
-		disconnect = callback(bjsonrpcres);
+		disconnect = callback(brpcres, blade_rpc_request_callback_data_get(brpcreq));
 
-		blade_jsonrpc_response_destroy(&bjsonrpcres);
+		blade_rpc_response_destroy(&brpcres);
 	}
 
 	if (disconnect) {

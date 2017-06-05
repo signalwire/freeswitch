@@ -36,13 +36,13 @@
     <ClCompile Include="src\blade_transport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\blade_jsonrpc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\blade_transport_wss.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\blade_protocol.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\blade_rpc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,13 +71,13 @@
     <ClInclude Include="src\include\blade_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\blade_jsonrpc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\include\blade_transport_wss.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\blade_protocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_rpc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

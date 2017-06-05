@@ -687,7 +687,7 @@ ks_status_t blade_transport_wss_onreceive(blade_connection_t *bc, cJSON **json)
 	return blade_transport_wss_link_read(btwssl, json);
 }
 
-ks_status_t blade_transport_wss_jsonrpc_error_send(blade_connection_t *bc, const char *id, int32_t code, const char *message)
+ks_status_t blade_transport_wss_rpc_error_send(blade_connection_t *bc, const char *id, int32_t code, const char *message)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_transport_wss_link_t *btwssl = NULL;
@@ -699,7 +699,7 @@ ks_status_t blade_transport_wss_jsonrpc_error_send(blade_connection_t *bc, const
 
 	btwssl = (blade_transport_wss_link_t *)blade_connection_transport_get(bc);
 
-	blade_jsonrpc_error_raw_create(&json, NULL, id, code, message);
+	blade_rpc_error_raw_create(&json, NULL, id, code, message);
 
     if (blade_transport_wss_link_write(btwssl, json) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed to write error message\n");
@@ -761,18 +761,18 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	if (!json_req) {
 		ks_log(KS_LOG_DEBUG, "Failed to receive message before timeout\n");
-		blade_transport_wss_jsonrpc_error_send(bc, NULL, -32600, "Timeout while expecting request");
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Timeout while expecting request");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
 
-	// @todo start here for a reusable handler for "blade.connect" request jsonrpc method within transport implementations,
+	// @todo start here for a reusable handler for "blade.connect" request rpc method within transport implementations,
 	// output 2 parameters for response and error, if an error occurs, send it, otherwise send the response
 
 	jsonrpc = cJSON_GetObjectCstr(json_req, "jsonrpc"); // @todo check for definitions of these keys and fixed values
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {
 		ks_log(KS_LOG_DEBUG, "Received message is not the expected protocol\n");
-		blade_transport_wss_jsonrpc_error_send(bc, NULL, -32600, "Invalid request, missing 'jsonrpc' field");
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Invalid request, missing 'jsonrpc' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -780,7 +780,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	id = cJSON_GetObjectCstr(json_req, "id");
 	if (!id) {
 		ks_log(KS_LOG_DEBUG, "Received message is missing 'id'\n");
-		blade_transport_wss_jsonrpc_error_send(bc, NULL, -32600, "Invalid request, missing 'id' field");
+		blade_transport_wss_rpc_error_send(bc, NULL, -32600, "Invalid request, missing 'id' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -788,7 +788,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	method = cJSON_GetObjectCstr(json_req, "method");
 	if (!method || strcasecmp(method, "blade.connect")) {
 		ks_log(KS_LOG_DEBUG, "Received message is missing 'method' or is an unexpected method\n");
-		blade_transport_wss_jsonrpc_error_send(bc, id, -32601, "Missing or unexpected 'method' field");
+		blade_transport_wss_rpc_error_send(bc, id, -32601, "Missing or unexpected 'method' field");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -826,7 +826,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 		if (blade_session_startup(bs) != KS_STATUS_SUCCESS) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", nodeid);
-			blade_transport_wss_jsonrpc_error_send(bc, id, -32603, "Internal error, session could not be started");
+			blade_transport_wss_rpc_error_send(bc, id, -32603, "Internal error, session could not be started");
 			blade_session_read_unlock(bs);
 			blade_session_destroy(&bs);
 			ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
@@ -863,7 +863,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		ks_hash_read_unlock(realms);
 	}
 
-	blade_jsonrpc_response_raw_create(&json_res, &json_result, id);
+	blade_rpc_response_raw_create(&json_res, &json_result, id);
 	ks_assert(json_res);
 
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
@@ -872,7 +872,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	master_nodeid = blade_handle_master_nodeid_copy(bh, pool);
 	if (!master_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
-		blade_transport_wss_jsonrpc_error_send(bc, id, -32602, "Master nodeid unavailable");
+		blade_transport_wss_rpc_error_send(bc, id, -32602, "Master nodeid unavailable");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
@@ -961,7 +961,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	blade_jsonrpc_request_raw_create(pool, &json_req, &json_params, &mid, "blade.connect");
+	blade_rpc_request_raw_create(pool, &json_req, &json_params, &mid, "blade.connect");
 	ks_assert(json_req);
 
 	if (btwssl->session_id) cJSON_AddStringToObject(json_params, "session-id", btwssl->session_id);
@@ -988,7 +988,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	// @todo start here for a reusable handler for "blade.connect" response jsonrpc method within transport implementations
+	// @todo start here for a reusable handler for "blade.connect" response rpc method within transport implementations
 
 	jsonrpc = cJSON_GetObjectCstr(json_res, "jsonrpc"); // @todo check for definitions of these keys and fixed values
 	if (!jsonrpc || strcmp(jsonrpc, "2.0")) {

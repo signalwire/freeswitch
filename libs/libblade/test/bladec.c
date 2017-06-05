@@ -16,20 +16,98 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
-void command_connect(blade_handle_t *bh, char *args);
-//void command_chat(blade_handle_t *bh, char *args);
+void command_execute(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
-	{ "connect", command_connect },
-//	{ "chat", command_chat },
+	{ "execute", command_execute },
 
 	{ NULL, NULL }
 };
 
-//ks_bool_t on_blade_chat_join_response(blade_response_t *bres);
-//ks_bool_t on_blade_chat_message_event(blade_event_t *bev);
-//void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
+ks_bool_t test_echo_response_handler(blade_rpc_response_t *brpcres, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	cJSON *result = NULL;
+	const char *text = NULL;
+
+	ks_assert(brpcres);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	result = blade_protocol_execute_response_result_get(brpcres);
+	ks_assert(result);
+
+	text = cJSON_GetObjectCstr(result, "text");
+	ks_assert(text);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) test.echo response processing\n", blade_session_id_get(bs));
+
+	blade_session_read_unlock(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) test.echo: %s\n", blade_session_id_get(bs), text);
+
+	return KS_FALSE;
+}
+
+ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	const char *nodeid = NULL;
+	cJSON *res = NULL;
+	cJSON *res_result = NULL;
+	cJSON *res_result_providers = NULL;
+	const char *res_result_protocol = NULL;
+	const char *res_result_realm = NULL;
+	cJSON *params = NULL;
+
+	ks_assert(brpcres);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	res = blade_rpc_response_message_get(brpcres);
+	ks_assert(res);
+
+	res_result = cJSON_GetObjectItem(res, "result");
+	ks_assert(res_result);
+
+	res_result_protocol = cJSON_GetObjectCstr(res_result, "protocol");
+	ks_assert(res_result_protocol);
+	
+	res_result_realm = cJSON_GetObjectCstr(res_result, "realm");
+	ks_assert(res_result_realm);
+
+	res_result_providers = cJSON_GetObjectItem(res_result, "providers");
+	ks_assert(res_result_providers);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) blade.locate response processing\n", blade_session_id_get(bs));
+
+	for (int index = 0; index < cJSON_GetArraySize(res_result_providers); ++index) {
+		cJSON *elem = cJSON_GetArrayItem(res_result_providers, index);
+		if (elem->type == cJSON_String) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) blade.locate (%s@%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, res_result_realm, elem->valuestring);
+			nodeid = elem->valuestring;
+		}
+	}
+
+	blade_session_read_unlock(bs);
+
+	params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "text", "hello world!");
+	blade_protocol_execute(bh, nodeid, "test.echo", res_result_protocol, res_result_realm, params, test_echo_response_handler, NULL);
+
+	return KS_FALSE;
+}
 
 int main(int argc, char **argv)
 {
@@ -71,9 +149,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	//blade_handle_event_register(bh, "blade.chat.message", on_blade_chat_message_event);
-	//blade_handle_session_state_callback_register(bh, NULL, on_blade_session_state_callback, &session_state_callback_id);
-
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
 		blade_identity_t *target = NULL;
@@ -85,13 +160,9 @@ int main(int argc, char **argv)
 		blade_identity_destroy(&target);
 
 		ks_sleep_ms(5000);
-
-		blade_protocol_publish(bh, "test", "mydomain.com");
-
-		ks_sleep_ms(5000);
-	} else loop(bh);
-
-	//blade_handle_session_state_callback_unregister(bh, session_state_callback_id);
+	}
+	
+	loop(bh);
 
 	blade_handle_destroy(&bh);
 
@@ -101,38 +172,6 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
-//ks_bool_t on_blade_chat_message_event(blade_event_t *bev)
-//{
-//	cJSON *res = NULL;
-//	const char *from = NULL;
-//	const char *message = NULL;
-//
-//	ks_assert(bev);
-//
-//	res = cJSON_GetObjectItem(bev->message, "result");
-//	from = cJSON_GetObjectCstr(res, "from");
-//	message = cJSON_GetObjectCstr(res, "message");
-//
-//	ks_log(KS_LOG_DEBUG, "Received Chat Message Event: (%s) %s\n", from, message);
-//
-//	return KS_FALSE;
-//}
-//
-//void on_blade_session_state_callback(blade_session_t *bs, blade_session_state_condition_t condition, void *data)
-//{
-//	blade_session_state_t state = blade_session_state_get(bs);
-//
-//	if (condition == BLADE_SESSION_STATE_CONDITION_PRE) {
-//		ks_log(KS_LOG_DEBUG, "Blade Session State Changed: %s, %d\n", blade_session_id_get(bs), state);
-//		if (state == BLADE_SESSION_STATE_READY) {
-//			cJSON *req = NULL;
-//			blade_jsonrpc_request_raw_create(blade_handle_pool_get(blade_session_handle_get(bs)), &req, NULL, NULL, "blade.chat.join");
-//			blade_session_send(bs, req, on_blade_chat_join_response);
-//			cJSON_Delete(req);
-//		}
-//	}
-//}
 
 void loop(blade_handle_t *bh)
 {
@@ -199,92 +238,21 @@ void command_quit(blade_handle_t *bh, char *args)
 	g_shutdown = KS_TRUE;
 }
 
-void command_connect(blade_handle_t *bh, char *args)
+void command_execute(blade_handle_t *bh, char *args)
 {
-	blade_connection_t *bc = NULL;
-	blade_identity_t *target = NULL;
-
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_identity_create(&target, blade_handle_pool_get(bh));
-
-	if (blade_identity_parse(target, args) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
-
-	blade_identity_destroy(&target);
+	blade_protocol_locate(bh, "test", "mydomain.com", blade_locate_response_handler, NULL);
 }
 
-//ks_bool_t on_blade_chat_send_response(blade_response_t *bres);
-//
-//ks_bool_t on_blade_chat_join_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
-//{
-//	blade_session_t *bs = NULL;
-//	cJSON *req = NULL;
-//	cJSON *params = NULL;
-//
-//	ks_log(KS_LOG_DEBUG, "Received Chat Join Response!\n");
-//
-//	bs = blade_handle_sessions_get(bres->handle, bres->session_id);
-//	if (!bs) {
-//		ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", bres->session_id);
-//		return KS_FALSE;
-//	}
-//
-//	blade_jsonrpc_request_raw_create(blade_handle_pool_get(bres->handle), &req, &params, NULL, "blade.chat.send");
-//	ks_assert(req);
-//	ks_assert(params);
-//
-//	cJSON_AddStringToObject(params, "message", "Hello World!");
-//
-//	blade_session_send(bs, req, on_blade_chat_send_response);
-//
-//	blade_session_read_unlock(bs);
-//
-//	return KS_FALSE;
-//}
-//
-//ks_bool_t on_blade_chat_send_response(blade_response_t *bres) // @todo this should get userdata passed in from when the callback is registered
-//{
-//	ks_log(KS_LOG_DEBUG, "Received Chat Send Response!\n");
-//	return KS_FALSE;
-//}
-//
-//void command_chat(blade_handle_t *bh, char *args)
-//{
-//	char *cmd = NULL;
-//
-//	ks_assert(bh);
-//	ks_assert(args);
-//
-//	parse_argument(&args, &cmd, ' ');
-//	ks_log(KS_LOG_DEBUG, "Chat Command: %s, Args: %s\n", cmd, args);
-//
-//	if (!strcmp(cmd, "leave")) {
-//	} else if (!strcmp(cmd, "send")) {
-//		char *sid = NULL;
-//		blade_session_t *bs = NULL;
-//		cJSON *req = NULL;
-//		cJSON *params = NULL;
-//
-//		parse_argument(&args, &sid, ' ');
-//
-//		bs = blade_handle_sessions_get(bh, sid);
-//		if (!bs) {
-//			ks_log(KS_LOG_DEBUG, "Unknown Session: %s\n", sid);
-//			return;
-//		}
-//		blade_jsonrpc_request_raw_create(blade_handle_pool_get(bh), &req, &params, NULL, "blade.chat.send");
-//		ks_assert(req);
-//		ks_assert(params);
-//
-//		cJSON_AddStringToObject(params, "message", args);
-//
-//		blade_session_send(bs, req, on_blade_chat_send_response);
-//
-//		blade_session_read_unlock(bs);
-//
-//		cJSON_Delete(req);
-//	} else {
-//		ks_log(KS_LOG_DEBUG, "Unknown Chat Command: %s\n", cmd);
-//	}
-//}
+/* For Emacs:
+* Local Variables:
+* mode:c
+* indent-tabs-mode:t
+* tab-width:4
+* c-basic-offset:4
+* End:
+* For VIM:
+* vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+*/

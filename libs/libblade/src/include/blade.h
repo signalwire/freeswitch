@@ -41,7 +41,7 @@
 #include "blade_stack.h"
 #include "blade_identity.h"
 #include "blade_transport.h"
-#include "blade_jsonrpc.h"
+#include "blade_rpc.h"
 #include "blade_connection.h"
 #include "blade_session.h"
 #include "blade_protocol.h"
