@@ -309,12 +309,13 @@ SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_tab
 	int index;
 
 	switch_mutex_lock(runtime.global_mutex);
-	index = runtime.state_handler_index++;
+	index = runtime.state_handler_index;
 
-	if (runtime.state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
+	if (index > (SWITCH_MAX_STATE_HANDLERS - 1)) {
 		index = -1;
 	} else {
 		runtime.state_handlers[index] = state_handler;
+		runtime.state_handler_index++;
 	}
 
 	switch_mutex_unlock(runtime.global_mutex);
