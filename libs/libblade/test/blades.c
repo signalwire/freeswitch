@@ -34,7 +34,7 @@ ks_bool_t blade_publish_response_handler(blade_rpc_response_t *brpcres, void *da
 
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
-	
+
 	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
@@ -58,7 +58,7 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcreq));
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	// @todo get the inner parameters of a blade.execute request for protocolrpcs
