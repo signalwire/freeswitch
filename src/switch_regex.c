@@ -174,12 +174,15 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 				num = -1;
 			}
 
-			if (pcre_get_substring(field_data, ovector, match_count, num, &replace) > 0) {
-				switch_size_t r;
-				for (r = 0; r < strlen(replace) && y < (len - 1); r++) {
-					substituted[y++] = replace[r];
+			if (pcre_get_substring(field_data, ovector, match_count, num, &replace) >= 0) {
+				if (replace) {
+					switch_size_t r;
+
+					for (r = 0; r < strlen(replace) && y < (len - 1); r++) {
+						substituted[y++] = replace[r];
+					}
+					pcre_free_substring(replace);
 				}
-				pcre_free_substring(replace);
 			}
 		} else {
 			substituted[y++] = data[x];
@@ -200,9 +203,11 @@ SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, c
 	int i;
 
 	for (i = 0; i < match_count; i++) {
-		if (pcre_get_substring(field_data, ovector, match_count, i, &replace) > 0) {
-			callback(var, replace, user_data);
-			pcre_free_substring(replace);
+		if (pcre_get_substring(field_data, ovector, match_count, i, &replace) >= 0) {
+			if (replace) {
+				callback(var, replace, user_data);
+				pcre_free_substring(replace);
+			}
 		}
 	}
 }
