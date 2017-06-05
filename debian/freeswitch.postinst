@@ -39,6 +39,13 @@ case "$1" in
       mkdir -p /etc/freeswitch/tls/
       chown freeswitch:freeswitch /etc/freeswitch/tls
     fi
+    # If we have setcap is installed, try setting cap_sys_nice+ep,
+    # which allows freeswitch daemon set process priority and nice level
+    if command -v setcap > /dev/null; then
+        setcap cap_sys_nice=+ep /usr/bin/freeswitch || echo "Setcap failed on /usr/bin/freeswitch, freeswitch daemon cannot set process priority and nice level" >&2
+    else
+        echo "Setcap is not installed, freeswitch daemon cannot set process priority and nice level" >&2
+    fi
     ;;
   abort-upgrade|abort-remove|abort-deconfigure)
     ;;
