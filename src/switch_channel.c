@@ -4405,15 +4405,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 				X = malloc(len);
 
 				for (i = 0; i < proceed; i++) {
-					if (pcre_get_substring(dtstr, ovector, proceed, i, &replace) > 0) {
-						switch_size_t plen = strlen(replace);
-						memset(X, 'X', plen);
-						*(X+plen) = '\0';
-
-						switch_safe_free(substituted);
-						substituted = switch_string_replace(substituted ? substituted : dtstr, replace, X);
-
-						pcre_free_substring(replace);
+					if (pcre_get_substring(dtstr, ovector, proceed, i, &replace) >= 0) {
+						if (replace) {
+							switch_size_t plen = strlen(replace);
+							memset(X, 'X', plen);
+							*(X+plen) = '\0';
+							
+							switch_safe_free(substituted);
+							substituted = switch_string_replace(substituted ? substituted : dtstr, replace, X);
+							
+							pcre_free_substring(replace);
+						}
 					}
 				}
 
