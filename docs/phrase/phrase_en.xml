@@ -561,7 +561,6 @@
       <prompt phrase="3... 2... 1... WE'RE ASTERISK FREE!!!" filename="ivr-were_asterisk_free.wav"/>
       <prompt phrase="Thank you for calling Douche Telecom, where we make sure that your communications never have that 'not so fresh' feeling!" filename="ivr-douche_telecom.wav"/>
       <prompt phrase="To learn more about FreeSWITCH..." filename="ivr-to_learn_more_about_freeswitch.wav"/>
-      <prompt phrase="Asterisk is like syphilis: it hurts until it's gone." filename="ivr-asterisk_like_syphilis.wav"/>
       <prompt phrase="There is..." filename="ivr-there_is.wav"/>
       <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>
       <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>
