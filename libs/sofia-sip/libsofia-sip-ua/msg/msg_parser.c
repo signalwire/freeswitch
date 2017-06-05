@@ -2017,7 +2017,7 @@ msg_header_t **serialize_one(msg_t *msg, msg_header_t *h, msg_header_t **prev)
     for (last = h; last->sh_succ; last = last->sh_succ) {
       /* Ensure that chain is connected */
       assert(last->sh_next == last->sh_succ);
-      assert(last->sh_succ->sh_prev = &last->sh_succ);
+      assert(last->sh_succ->sh_prev == &last->sh_succ);
     }
     prev = &last->sh_succ;
   }
