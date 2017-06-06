@@ -148,6 +148,20 @@ if ($opts{bug}) {
 	printf "%d file%s attached.\n", scalar @ARGV, scalar @ARGV == 1 ? "" : "s";
     }
 
+    if ($opts{versions_array}) {
+	$input = {
+
+	    update => {
+		fixVersions => [
+		    {set => $opts{versions_array}}
+		    ]
+	    }
+	};
+
+	$jira->PUT("/issue/" . $opts{bug}, undef, $input);
+    }
+
+
     exit;
 }
 
@@ -226,6 +240,22 @@ if ($opts{debug}) {
 } else {
     $issue = $jira->POST('/issue', undef, $input) or die "Issue was not created:";
     print "Issue Posted: " . $issue->{key};
+
+    if ($opts{versions_array}) {
+	$input = {
+
+	    update => {
+		fixVersions => [
+		    {set => $opts{versions_array}}
+		    ]
+	    }
+	};
+
+	$jira->PUT("/issue/" . $issue->{key}, undef, $input);
+
+	print "Fix versions updated for issue " . $issue->{key};;
+    }
+    
 
     if ($opts{attach}) {
 	$jira->attach_files($issue->{key}, @ARGV);
