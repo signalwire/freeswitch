@@ -3,21 +3,54 @@
 use XML::Simple;
 use Data::Dumper;
 use Getopt::Long qw(GetOptions);
+use Term::ReadKey;
+use JIRA::REST;
 
 my %opts;
+
+sub getpass {
+  ReadMode( "noecho");
+  print "Password: ";
+  chomp (my $pwd = <STDIN>);
+  ReadMode ("original");
+  return $pwd;
+}
+
+sub getfield {
+    my $prompt = shift;
+    my $default = shift;
+
+    print $prompt . ($default ? "[$default]: " : "");
+    chomp (my $data = <STDIN>);
+    
+    if (!$data) {
+	$data = $default;
+    }
+
+    return $data;
+}
 
 GetOptions(
     'bug=s' => \$opts{bug},
     'msg=s' => \$opts{msg},
+    'user=s' => \$opts{user},
+    'pass=s' => \$opts{pass},
     'debug' => \$opts{debug},
     'noresolve' => \$opts{noresolve},
     'append=s' => \$opts{append},
     'comment=s' => \$opts{comment},
-    'author=s' => \$opts{author}
-    ) or die "Usage: $0 -bug <bug-id> [-m [edit|<msg>]] [-append <msg>] [-debug] <files>\n";
+    'versions=s' => \$opts{versions},
+    'author=s' => \$opts{author},
+    'auth' => \$opts{auth}
+    ) or die "Usage: $0 -bug <bug-id> [--auth] [-m [edit|<msg>]] [--append <msg>] [--debug] <files>\n";
 
 
 $opts{bug} or $opts{bug} = shift;
+
+if ($opts{versions}) {
+    $opts{auth} = 1;
+    $opts{versions_array} = [map {{name => $_}} split(" ", $opts{versions})];
+}
 
 my $url = "https://freeswitch.org/jira/si/jira.issueviews:issue-xml/$opts{bug}/$opts{bug}.xml";
 my $cmd;
@@ -27,37 +60,72 @@ my $post = " \#resolve";
 
 chomp $prog;
 
-$prog || die "missing url fetch program, install curl or wget";
+if ($opts{auth}) {
+    if (!$opts{user}) {
+	$opts{user} = getfield("User: ");
+    }
+    
+    if (!$opts{pass} && !$opts{debug}) {
+	$opts{pass} = getpass();
+	print "\n";
+    }
 
-if ($prog =~ /wget/) {
-  $cmd = "$prog -O -";
+    $jira = JIRA::REST->new('https://freeswitch.org/jira', $opts{user}, $opts{pass}) or die "login incorrect:";
+    $issue = $jira->GET("/issue/FS-7985") or die "login incorrect:";
+
+    my $issue = $jira->GET("/issue/" . $opts{bug});
+
+    $component = join(",", map {$_->{name}} @{$issue->{fields}->{components}});
+    $summary = $issue->{fields}->{summary};
+
+
+    if ($opts{versions_array}) {
+	$input = {
+
+	    update => {
+		fixVersions => [
+		    {set => $opts{versions_array}}
+		    ]
+	    }
+	};
+	
+	$jira->PUT("/issue/" . $opts{bug}, undef, $input);
+    }
+
 } else {
-  $cmd = $prog;
+    $prog || die "missing url fetch program, install curl or wget";
+
+    if ($prog =~ /wget/) {
+	$cmd = "$prog -O -";
+    } else {
+	$cmd = $prog;
+    }
+
+    my $xml = `$cmd $url 2>/dev/null`;
+    if ($opts{debug}) {
+	print "URL $url\n";
+	print $xml;
+    }
+
+    my $xs= new XML::Simple;
+    my $r = $xs->XMLin($xml);
+
+    my $sum = $r->{channel}->{item}->{summary};
+    $sum =~ s/\"/\\"/g;
+
+    my $component = $r->{channel}->{item}->{component};
+
+    if(ref($component) eq 'ARRAY') {
+	$component = join(",", @{$component});
+    }
+
+    $component =~ s/\"/\\"/g;
 }
-
-my $xml = `$cmd $url 2>/dev/null`;
-if ($opts{debug}) {
-    print "URL $url\n";
-    print $xml;
-}
-
-my $xs= new XML::Simple;
-my $r = $xs->XMLin($xml);
-
-my $sum = $r->{channel}->{item}->{summary};
-$sum =~ s/\"/\\"/g;
-
-my $component = $r->{channel}->{item}->{component};
-
-if(ref($component) eq 'ARRAY') {
-  $component = join(",", @{$component});
-}
-
-$component =~ s/\"/\\"/g;
 
 if ($opts{noresolve}) {
     $post = "";
 }
+
 
 if ($opts{msg} eq "edit") {
   $auto = 0;
