@@ -336,6 +336,10 @@ JS_EVENTHANDLER_FUNCTION_IMPL(GetEvent)
 		if (switch_queue_pop_timeout(_event_queue, &pop, (switch_interval_time_t) timeout * 1000) == SWITCH_STATUS_SUCCESS && pop) {
 			pevent = (switch_event_t *) pop;
 		}
+	} else if (timeout < 0) {
+		if (switch_queue_pop(_event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			pevent = (switch_event_t *) pop;
+		}
 	} else {
 		if (switch_queue_trypop(_event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			pevent = (switch_event_t *) pop;
