@@ -2986,7 +2986,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		if (switch_test_flag(&context->fh, SWITCH_FILE_FLAG_VIDEO)) {
 			switch_set_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 		} else {
-			switch_set_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+			switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 		}
 	}
 
