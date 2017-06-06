@@ -257,25 +257,25 @@ KS_DECLARE(ks_hash_t *) blade_session_realms_get(blade_session_t *bs)
 	return bs->realms;
 }
 
-KS_DECLARE(ks_status_t) blade_session_route_add(blade_session_t *bs, const char *identity)
+KS_DECLARE(ks_status_t) blade_session_route_add(blade_session_t *bs, const char *nodeid)
 {
 	char *key = NULL;
 
 	ks_assert(bs);
-	ks_assert(identity);
+	ks_assert(nodeid);
 
-	key = ks_pstrdup(bs->pool, identity);
+	key = ks_pstrdup(bs->pool, nodeid);
 	ks_hash_insert(bs->routes, (void *)key, (void *)KS_TRUE);
 
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) blade_session_route_remove(blade_session_t *bs, const char *identity)
+KS_DECLARE(ks_status_t) blade_session_route_remove(blade_session_t *bs, const char *nodeid)
 {
 	ks_assert(bs);
-	ks_assert(identity);
+	ks_assert(nodeid);
 
-	ks_hash_remove(bs->routes, (void *)identity);
+	ks_hash_remove(bs->routes, (void *)nodeid);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -774,12 +774,11 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		blade_handle_requests_remove(brpcreq);
 
 		callback = blade_rpc_request_callback_get(brpcreq);
-		ks_assert(callback);
 
 		blade_rpc_response_create(&brpcres, bs->handle, bs->pool, bs->id, brpcreq, json);
 		ks_assert(brpcres);
 
-		disconnect = callback(brpcres, blade_rpc_request_callback_data_get(brpcreq));
+		if (callback) disconnect = callback(brpcres, blade_rpc_request_callback_data_get(brpcreq));
 
 		blade_rpc_response_destroy(&brpcres);
 	}
