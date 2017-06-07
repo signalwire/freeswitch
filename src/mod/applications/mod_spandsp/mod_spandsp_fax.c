@@ -285,6 +285,7 @@ static int phase_b_handler(void *user_data, int result)
 	const char *local_ident;
 	const char *far_ident;
 	char *fax_transfer_rate = NULL;
+	char *fax_document_total_pages = NULL;
 	pvt_t *pvt;
 	switch_event_t *event;
 
@@ -306,6 +307,14 @@ static int phase_b_handler(void *user_data, int result)
 	if (fax_transfer_rate) {
 		switch_channel_set_variable(channel, "fax_transfer_rate", fax_transfer_rate);
 	}
+
+	if (pvt->app_mode == FUNCTION_TX) {
+		fax_document_total_pages = switch_core_session_sprintf(session, "%i", t30_stats.pages_in_file);
+		if (fax_document_total_pages) {
+			switch_channel_set_variable(channel, "fax_document_total_pages", fax_document_total_pages);
+		}
+	}
+
 	switch_channel_set_variable(channel, "fax_ecm_used", (t30_stats.error_correcting_mode) ? "on" : "off");
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
@@ -318,11 +327,13 @@ static int phase_b_handler(void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t30_stats.error_correcting_mode) ? "on" : "off");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
+	if (pvt->app_mode == FUNCTION_TX) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %s\n", fax_document_total_pages);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -341,6 +352,9 @@ static int phase_b_handler(void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(pvt->t30)));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(pvt->t30)));
+		if (pvt->app_mode == FUNCTION_TX) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+		}
 		switch_event_fire(&event);
 	}
 
@@ -359,6 +373,7 @@ static int phase_d_handler(void *user_data, int msg)
 	char *fax_encoding = NULL;
 	char *fax_longest_bad_row_run = NULL;
 	char *fax_document_transferred_pages = NULL;
+	char *fax_document_total_pages = NULL;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	pvt_t *pvt;
@@ -424,9 +439,18 @@ static int phase_d_handler(void *user_data, int msg)
 		switch_channel_set_variable(channel, "fax_document_transferred_pages", fax_document_transferred_pages);
 	}
 
+	if (pvt->app_mode == FUNCTION_TX) {
+		fax_document_total_pages = switch_core_session_sprintf(session, "%i", t30_stats.pages_in_file);
+		if (fax_document_total_pages) {
+			switch_channel_set_variable(channel, "fax_document_total_pages", fax_document_total_pages);
+		}
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
+	if (pvt->app_mode == FUNCTION_TX) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %s\n", fax_document_total_pages);
+	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels (%d x %d pixels in the file)\n", t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n", t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution);
@@ -443,6 +467,9 @@ static int phase_d_handler(void *user_data, int msg)
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
+		if (pvt->app_mode == FUNCTION_TX) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+		}
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_line_image_resolution);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-file-image-resolution", fax_file_image_resolution);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
