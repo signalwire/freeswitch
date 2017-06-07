@@ -604,9 +604,6 @@ done
 if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi
-#AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
-enable_system_lua=yes
-AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
 
 AC_ARG_ENABLE(srtp,
 [AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
