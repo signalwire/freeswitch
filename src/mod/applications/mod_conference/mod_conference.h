@@ -1014,6 +1014,7 @@ mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member);
 void conference_video_release_layer(mcu_layer_t **layer);
 mcu_canvas_t *conference_video_get_canvas_locked(conference_member_t *member);
 void conference_video_release_canvas(mcu_canvas_t **canvasP);
+switch_status_t conference_video_change_res(conference_obj_t *conference, int w, int h, int id);
 int conference_member_setup_media(conference_member_t *member, conference_obj_t *conference);
 
 al_handle_t *conference_al_create(switch_memory_pool_t *pool);
@@ -1209,6 +1210,7 @@ switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, swi
 switch_status_t conference_api_sub_vid_codec_group(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_canvas_fgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

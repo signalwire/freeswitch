@@ -112,6 +112,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-layout", (void_fn_t) & conference_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>|group <group name> [<canvas id>]"},
 	{"vid-write-png", (void_fn_t) & conference_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
 	{"vid-fps", (void_fn_t) & conference_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
+	{"vid-res", (void_fn_t) & conference_api_sub_vid_res, CONF_API_SUB_ARGS_SPLIT, "vid-res", "<WxH>"},
 	{"vid-fgimg", (void_fn_t) & conference_api_sub_canvas_fgimg, CONF_API_SUB_ARGS_SPLIT, "vid-fgimg", "<file> | clear [<canvas-id>]"},
 	{"vid-bgimg", (void_fn_t) & conference_api_sub_canvas_bgimg, CONF_API_SUB_ARGS_SPLIT, "vid-bgimg", "<file> | clear [<canvas-id>]"},
 	{"vid-bandwidth", (void_fn_t) & conference_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"},
@@ -1507,6 +1508,64 @@ switch_status_t conference_api_sub_canvas_fgimg(conference_obj_t *conference, sw
 		stream->write_function(stream, "Error Setting FGimg %s\n", file);
 	}
 
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	int canvas_w = 0, canvas_h = 0, id = 0;
+	char *video_canvas_size = argv[2];
+
+	
+	if (!conference->canvases[0]) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (zstr(video_canvas_size)) {
+		stream->write_function(stream, "Invalid size\n");
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		char *p;
+
+		if ((canvas_w = atoi(video_canvas_size))) {
+			if ((p = strchr(video_canvas_size, 'x'))) {
+				p++;
+				if (*p) {
+					canvas_h = atoi(p);
+				}
+			}
+		}
+	}
+
+	if (canvas_w < 320 || canvas_h < 180) {
+		stream->write_function(stream, "Invalid size\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	if (argv[3]) {
+
+		id = atoi(argv[3]);
+		
+		if (id < 1 || id > MAX_CANVASES+1) {
+			id = -1;
+		}
+
+		if (id < 1) {
+			stream->write_function(stream, "-ERR Invalid canvas\n");
+		}
+
+	}
+
+	if (id == 0 && conference->canvases[0]) id = 1;
+
+	if (id > conference->canvas_count + 1) {
+		id = 1;
+	}
+
+	conference_video_change_res(conference, canvas_w, canvas_h, id - 1);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3211,9 +3270,7 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 
 	if (argv[3]) {
 
-		if (argv[3]) {
-			id = atoi(argv[3]);
-		}
+		id = atoi(argv[3]);
 
 		if (id < 1 || id > MAX_CANVASES+1) {
 			id = -1;
@@ -3230,6 +3287,7 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 	if (id > conference->canvas_count + 1) {
 		id = 1;
 	}
+
 
 	switch_mutex_lock(conference->flag_mutex);
 	for (rec = conference->rec_node_head; rec; rec = rec->next) {
