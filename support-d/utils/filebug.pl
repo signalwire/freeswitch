@@ -239,7 +239,7 @@ if ($opts{debug}) {
     print Dumper $input;
 } else {
     $issue = $jira->POST('/issue', undef, $input) or die "Issue was not created:";
-    print "Issue Posted: " . $issue->{key};
+    print "Issue Posted: " . $issue->{key} . "\n";
 
     if ($opts{versions_array}) {
 	$input = {
@@ -253,7 +253,7 @@ if ($opts{debug}) {
 
 	$jira->PUT("/issue/" . $issue->{key}, undef, $input);
 
-	print "Fix versions updated for issue " . $issue->{key};;
+	print "Fix versions updated for issue " . $issue->{key} . "\n";
     }
     
 

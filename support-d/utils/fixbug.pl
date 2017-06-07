@@ -57,6 +57,8 @@ my $cmd;
 my $prog = `which curl` || `which wget`;
 my $auto = 1;
 my $post = " \#resolve";
+my $component;
+my $summary;
 
 chomp $prog;
 
@@ -65,7 +67,7 @@ if ($opts{auth}) {
 	$opts{user} = getfield("User: ");
     }
     
-    if (!$opts{pass} && !$opts{debug}) {
+    if (!$opts{pass}) {
 	$opts{pass} = getpass();
 	print "\n";
     }
@@ -109,11 +111,10 @@ if ($opts{auth}) {
 
     my $xs= new XML::Simple;
     my $r = $xs->XMLin($xml);
+    $summary = $r->{channel}->{item}->{summary};
+    $summary =~ s/\"/\\"/g;
 
-    my $sum = $r->{channel}->{item}->{summary};
-    $sum =~ s/\"/\\"/g;
-
-    my $component = $r->{channel}->{item}->{component};
+    $component = $r->{channel}->{item}->{component};
 
     if(ref($component) eq 'ARRAY') {
 	$component = join(",", @{$component});
@@ -131,7 +132,7 @@ if ($opts{msg} eq "edit") {
   $auto = 0;
   $opts{msg} = undef;
   open T, ">/tmp/$opts{bug}.tmp";
-  print T "$opts{bug}${post} [$sum]\n\n---Cut this line to confirm commit.....";
+  print T "$opts{bug}${post} [$summary]\n\n---Cut this line to confirm commit.....";
   close T;
 }
 
@@ -148,12 +149,12 @@ if ($opts{comment}) {
 
 if ($auto) {
     if ($opts{msg}) {
-	$opts{msg} =~ s/%s/$sum/;
+	$opts{msg} =~ s/%s/$summary/;
 	$opts{msg} =~ s/%b/$opts{bug}/;
 	$opts{msg} =~ s/%c/$component/;
 	$gitcmd = "git commit $args -m \"$opts{msg}$opts{append}\"";
     } else {
-	$gitcmd = "git commit $args -m \"$opts{bug}: [$component] $sum$opts{append}${post}\"";
+	$gitcmd = "git commit $args -m \"$opts{bug}: [$component] ${summary}$opts{append}${post}\"";
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
