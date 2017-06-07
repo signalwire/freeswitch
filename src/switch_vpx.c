@@ -410,14 +410,14 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	context->start_time = switch_micro_time_now();
 	
 	config->g_timebase.num = 1;
-	config->g_timebase.den = 1000;
+	config->g_timebase.den = 90000;
 	config->g_pass = VPX_RC_ONE_PASS;
 	config->g_w = context->codec_settings.video.width;
 	config->g_h = context->codec_settings.video.height;	
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 360;//2000;
-	threads = cpus / 4;
+	threads = cpus / 2;
 	if (threads < 1) threads = 1;
 	config->g_threads = threads;
 	
@@ -568,7 +568,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			// The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
 			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
 			//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
+			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -16);
 			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
 			
 			// Enable noise reduction
@@ -859,7 +859,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	pts = (now - context->start_time) / 1000;
+	//pts = (now - context->start_time) / 1000;
+	pts = frame->timestamp;
 
 	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
 
