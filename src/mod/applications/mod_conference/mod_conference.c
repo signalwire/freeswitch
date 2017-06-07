@@ -2460,7 +2460,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_uuid_t uuid;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
-	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
+	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL, *force_canvas_size = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 	switch_event_t *event;
 
@@ -2517,6 +2517,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 					force_interval_i = interval = tmp;
 				}
 			}
+		}
+
+
+		if ((force_canvas_size = switch_channel_get_variable(channel, "conference_force_canvas_size"))) {
+			video_canvas_size = (char *)force_canvas_size;
 		}
 	}
 

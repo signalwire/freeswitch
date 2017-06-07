@@ -2317,6 +2317,24 @@ static void personal_attach(mcu_layer_t *layer, conference_member_t *member)
 	layer->member_id = member->id;
 }
 
+switch_status_t conference_video_change_res(conference_obj_t *conference, int w, int h, int id)
+{
+	mcu_canvas_t *canvas = NULL;
+
+	switch_mutex_lock(conference->canvas_mutex);
+	canvas = conference->canvases[id];
+	switch_mutex_lock(canvas->mutex);
+	canvas->width = w;
+	canvas->height = h;
+	switch_img_free(&canvas->img);
+	canvas->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, canvas->width, canvas->height, 0);
+	conference_video_init_canvas_layers(conference, canvas, canvas->vlayout);
+	switch_mutex_unlock(canvas->mutex);
+	switch_mutex_unlock(conference->canvas_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
