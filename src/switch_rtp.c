@@ -4913,6 +4913,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 #endif
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
+		switch_core_timer_destroy(&(*rtp_session)->write_timer);
 	}
 
 	switch_rtp_release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
