@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- *
- *
+ * 
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,34 +31,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <sodium.h>
-#include <libconfig.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_identity.h"
-#include "blade_transport.h"
-#include "blade_rpc.h"
-#include "blade_connection.h"
-#include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_subscription.h"
-
-#include "blade_transport_wss.h"
+#ifndef _BLADE_SUBSCRIPTION_H_
+#define _BLADE_SUBSCRIPTION_H_
+#include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-#ifdef _WIN32
-// @todo look into why the tarball build has a different function name from the debian package
-#define config_lookup_from config_setting_lookup
-#endif
-
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
-
+KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *event, const char *protocol, const char *realm);
+KS_DECLARE(ks_status_t) blade_subscription_destroy(blade_subscription_t **bsubP);
+KS_DECLARE(const char *) blade_subscription_event_get(blade_subscription_t *bsub);
+KS_DECLARE(const char *) blade_subscription_protocol_get(blade_subscription_t *bsub);
+KS_DECLARE(const char *) blade_subscription_realm_get(blade_subscription_t *bsub);
+KS_DECLARE(ks_hash_t *) blade_subscription_subscribers_get(blade_subscription_t *bsub);
+KS_DECLARE(ks_status_t) blade_subscription_subscribers_add(blade_subscription_t *bsub, const char *nodeid);
+KS_DECLARE(ks_status_t) blade_subscription_subscribers_remove(blade_subscription_t *bsub, const char *nodeid);
 KS_END_EXTERN_C
 
 #endif

@@ -65,6 +65,9 @@ struct blade_handle_s {
 
 	ks_hash_t *protocolrpcs; // registered blade_rpc_t, for locally processing protocol messages, keyed by the rpc method
 
+	ks_hash_t *subscriptions; // registered blade_subscription_t, subscribers may include the local node
+	ks_hash_t *subscriptions_cleanup; // cleanup for subscriptions, keyed by the downstream subscriber nodeid, each value is a hash_t* of which contains string keys matching the "protocol@realm/event" keys to remove each nodeid from as a subscriber during cleanup
+
 	ks_hash_t *connections; // active connections keyed by connection id
 
 	ks_hash_t *sessions; // active sessions keyed by session id (which comes from the nodeid of the downstream side of the session, thus an upstream session is keyed under the local_nodeid)
@@ -73,14 +76,7 @@ struct blade_handle_s {
 
 	// @note everything below this point is exclusively for the master node
 
-	// @todo need to track the details from blade.publish, a protocol may be published under multiple realms, and each protocol published to a realm may have multiple target providers
 	// @todo how does "exclusive" play into the providers, does "exclusive" mean only one provider can exist for a given protocol and realm?
-	// for now, ignore exclusive and multiple providers, key by "protocol" in a hash, and use a blade_protocol_t to represent a protocol in the context of being published so it can be located by other nodes
-	// each blade_protocol_t will contain the "protocol", common method/namespace/schema data, and a hash keyed by the "realm", with a value of an object of type blade_protocol_realm_t
-	// each blade_protocol_realm_t will contain the "realm" and a list of publisher nodeid's, any of which can be chosen at random to use the protocol within the given realm (does "exclusive" only limit this to 1 provider per realm?)
-	// @todo protocols must be cleaned up when routes are removed due to session terminations, should incorporate a faster way to lookup which protocols are tied to a given nodeid for efficient removal
-	// create blade_protocol_method_t to represent a method that is executed with blade.execute, and is part of a protocol made available through blade.publish, registered locally by the protocol and method name (protocol.methodname?),
-	// with a callback handler which should also have the realm available when executed so a single provider can easily provide a protocol for multiple realms with the same method callbacks
 	ks_hash_t *protocols; // master only: protocols that have been published with blade.publish, and the details to locate a protocol provider with blade.locate
 	ks_hash_t *protocols_cleanup; // master only: keyed by the nodeid, each value is a hash_t* of which contains string keys matching the "protocol@realm" keys to remove each nodeid from as a provider during cleanup
 
@@ -91,6 +87,7 @@ ks_bool_t blade_protocol_register_request_handler(blade_rpc_request_t *brpcreq, 
 ks_bool_t blade_protocol_publish_request_handler(blade_rpc_request_t *brpcreq, void *data);
 ks_bool_t blade_protocol_locate_request_handler(blade_rpc_request_t *brpcreq, void *data);
 ks_bool_t blade_protocol_execute_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_protocol_subscribe_request_handler(blade_rpc_request_t *brpcreq, void *data);
 
 
 typedef struct blade_handle_session_state_callback_registration_s blade_handle_session_state_callback_registration_t;
@@ -237,6 +234,12 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	ks_hash_create(&bh->protocolrpcs, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
 	ks_assert(bh->protocolrpcs);
 
+	ks_hash_create(&bh->subscriptions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bh->pool);
+	ks_assert(bh->subscriptions);
+
+	ks_hash_create(&bh->subscriptions_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bh->pool);
+	ks_assert(bh->subscriptions_cleanup);
+
 	ks_hash_create(&bh->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bh->pool);
 	ks_assert(bh->connections);
 
@@ -351,6 +354,9 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 	blade_handle_corerpc_register(brpc);
 
 	blade_rpc_create(&brpc, bh, "blade.execute", NULL, NULL, blade_protocol_execute_request_handler, NULL);
+	blade_handle_corerpc_register(brpc);
+
+	blade_rpc_create(&brpc, bh, "blade.subscribe", NULL, NULL, blade_protocol_subscribe_request_handler, NULL);
 	blade_handle_corerpc_register(brpc);
 
 	// register internal transport for secure websockets
@@ -868,6 +874,104 @@ KS_DECLARE(blade_rpc_t *) blade_handle_protocolrpc_lookup(blade_handle_t *bh, co
 	return brpc;
 }
 
+KS_DECLARE(ks_status_t) blade_handle_subscriber_add(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, const char *nodeid)
+{
+	char *key = NULL;
+	blade_subscription_t *bsub = NULL;
+	ks_hash_t *bsub_cleanup = NULL;
+	ks_bool_t propagate = KS_FALSE;
+
+	ks_assert(bh);
+	ks_assert(event);
+	ks_assert(protocol);
+	ks_assert(realm);
+	ks_assert(nodeid);
+
+	key = ks_psprintf(bh->pool, "%s@%s/%s", protocol, realm, event);
+
+	ks_hash_write_lock(bh->subscriptions);
+
+	bsub = (blade_subscription_t *)ks_hash_search(bh->subscriptions, (void *)key, KS_UNLOCKED);
+
+	if (!bsub) {
+		blade_subscription_create(&bsub, bh->pool, event, protocol, realm);
+		ks_assert(bsub);
+
+		ks_hash_insert(bh->subscriptions, (void *)ks_pstrdup(bh->pool, key), bsub);
+		propagate = KS_TRUE;
+	}
+
+	bsub_cleanup = (ks_hash_t *)ks_hash_search(bh->subscriptions_cleanup, (void *)nodeid, KS_UNLOCKED);
+	if (!bsub_cleanup) {
+		ks_hash_create(&bsub_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bh->pool);
+		ks_assert(bsub_cleanup);
+
+		ks_log(KS_LOG_DEBUG, "Subscription (%s) added\n", key);
+		ks_hash_insert(bh->subscriptions_cleanup, (void *)ks_pstrdup(bh->pool, nodeid), bsub_cleanup);
+	}
+	ks_hash_insert(bsub_cleanup, (void *)ks_pstrdup(bh->pool, key), (void *)KS_TRUE);
+
+	blade_subscription_subscribers_add(bsub, nodeid);
+
+	ks_hash_write_unlock(bh->subscriptions);
+
+	ks_log(KS_LOG_DEBUG, "Subscription (%s) subscriber (%s) added\n", key, nodeid);
+
+	ks_pool_free(bh->pool, &key);
+
+	if (propagate) blade_protocol_subscribe_raw(bh, event, protocol, realm, KS_FALSE, NULL, NULL);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_handle_subscriber_remove(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, const char *nodeid)
+{
+	char *key = NULL;
+	blade_subscription_t *bsub = NULL;
+	ks_hash_t *bsub_cleanup = NULL;
+	ks_bool_t propagate = KS_FALSE;
+
+	ks_assert(bh);
+	ks_assert(event);
+	ks_assert(protocol);
+	ks_assert(realm);
+	ks_assert(nodeid);
+
+	key = ks_psprintf(bh->pool, "%s@%s/%s", protocol, realm, event);
+
+	ks_hash_write_lock(bh->subscriptions);
+
+	bsub = (blade_subscription_t *)ks_hash_search(bh->subscriptions, (void *)key, KS_UNLOCKED);
+
+	if (bsub) {
+		bsub_cleanup = (ks_hash_t *)ks_hash_search(bh->subscriptions_cleanup, (void *)nodeid, KS_UNLOCKED);
+		ks_assert(bsub_cleanup);
+		ks_hash_remove(bsub_cleanup, key);
+
+		if (ks_hash_count(bsub_cleanup) == 0) {
+			ks_hash_remove(bh->subscriptions_cleanup, (void *)nodeid);
+		}
+
+		ks_log(KS_LOG_DEBUG, "Subscription (%s) subscriber (%s) removed\n", key, nodeid);
+		blade_subscription_subscribers_remove(bsub, nodeid);
+
+		if (ks_hash_count(blade_subscription_subscribers_get(bsub)) == 0) {
+			ks_log(KS_LOG_DEBUG, "Subscription (%s) removed\n", key);
+			ks_hash_remove(bh->subscriptions, (void *)key);
+			propagate = KS_TRUE;
+		}
+	}
+
+	ks_hash_write_unlock(bh->subscriptions);
+
+	ks_pool_free(bh->pool, &key);
+
+	if (propagate) blade_protocol_subscribe_raw(bh, event, protocol, realm, KS_TRUE, NULL, NULL);
+
+	return KS_STATUS_SUCCESS;
+}
+
+
 
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id)
 {
@@ -975,19 +1079,62 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_handle_t *bh = NULL;
+	ks_pool_t *pool = NULL;
 	const char *id = NULL;
 	ks_hash_iterator_t *it = NULL;
 	ks_bool_t upstream = KS_FALSE;
+	ks_bool_t unsubbed = KS_FALSE;
 
 	ks_assert(bs);
 
 	bh = blade_session_handle_get(bs);
 	ks_assert(bh);
 
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
 	blade_session_write_lock(bs, KS_TRUE);
 
 	id = blade_session_id_get(bs);
 	ks_assert(id);
+
+	// @todo this cleanup is a bit messy, move to using the combined key rather than passing around all 3 parts would make this cleaner
+	while (!unsubbed) {
+		ks_hash_t *subscriptions = NULL;
+		const char *event = NULL;
+		const char *protocol = NULL;
+		const char *realm = NULL;
+
+		ks_hash_read_lock(bh->subscriptions);
+		subscriptions = (ks_hash_t *)ks_hash_search(bh->subscriptions_cleanup, (void *)id, KS_UNLOCKED);
+		if (!subscriptions) unsubbed = KS_TRUE;
+		else {
+			void *key = NULL;
+			void *value = NULL;
+			blade_subscription_t *bsub = NULL;
+
+			it = ks_hash_first(subscriptions, KS_UNLOCKED);
+			ks_assert(it);
+
+			ks_hash_this(it, (const void **)&key, NULL, &value);
+
+			bsub = (blade_subscription_t *)ks_hash_search(bh->subscriptions, key, KS_UNLOCKED);
+			ks_assert(bsub);
+
+			// @note allocate these to avoid lifecycle issues when the last subscriber is removed causing the subscription to be removed
+			event = ks_pstrdup(bh->pool, blade_subscription_event_get(bsub));
+			protocol = ks_pstrdup(bh->pool, blade_subscription_protocol_get(bsub));
+			realm = ks_pstrdup(bh->pool, blade_subscription_realm_get(bsub));
+		}
+		ks_hash_read_unlock(bh->subscriptions);
+
+		if (!unsubbed) {
+			blade_handle_subscriber_remove(bh, event, protocol, realm, id);
+			ks_pool_free(bh->pool, &event);
+			ks_pool_free(bh->pool, &protocol);
+			ks_pool_free(bh->pool, &realm);
+		}
+	}
 
 	ks_hash_write_lock(bh->sessions);
 	if (ks_hash_remove(bh->sessions, (void *)id) == NULL) ret = KS_STATUS_FAIL;
@@ -1010,8 +1157,6 @@ KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs)
 	ks_hash_write_unlock(bh->sessions);
 
 	blade_session_write_unlock(bs);
-
-
 
 	return ret;
 }
@@ -1819,6 +1964,167 @@ KS_DECLARE(void) blade_protocol_execute_response_send(blade_rpc_request_t *brpcr
 	cJSON_Delete(res);
 
 	blade_session_read_unlock(bs);
+}
+
+
+// blade.subscribe request generator
+KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_session_t *bs = NULL;
+
+	ks_assert(bh);
+	ks_assert(event);
+	ks_assert(protocol);
+	ks_assert(realm);
+
+	if (!(bs = blade_handle_sessions_upstream(bh))) {
+		ret = KS_STATUS_DISCONNECTED;
+		goto done;
+	}
+
+	if (remove) {
+		blade_handle_subscriber_remove(bh, event, protocol, realm, bh->local_nodeid);
+	} else {
+		blade_handle_subscriber_add(bh, event, protocol, realm, bh->local_nodeid);
+	}
+
+done:
+	if (bs) blade_session_read_unlock(bs);
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_protocol_subscribe_raw(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_session_t *bs = NULL;
+	ks_pool_t *pool = NULL;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+
+	ks_assert(bh);
+	ks_assert(event);
+	ks_assert(protocol);
+	ks_assert(realm);
+
+	if (!(bs = blade_handle_sessions_upstream(bh))) {
+		ret = KS_STATUS_DISCONNECTED;
+		goto done;
+	}
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.subscribe");
+
+	cJSON_AddStringToObject(req_params, "event", event);
+	cJSON_AddStringToObject(req_params, "protocol", protocol);
+	cJSON_AddStringToObject(req_params, "realm", realm);
+	if (remove) cJSON_AddTrueToObject(req_params, "remove");
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request started\n", blade_session_id_get(bs));
+
+	ret = blade_session_send(bs, req, callback, data);
+
+done:
+	if (req) cJSON_Delete(req);
+	if (bs) blade_session_read_unlock(bs);
+
+	return ret;
+}
+
+// blade.subscribe request handler
+ks_bool_t blade_protocol_subscribe_request_handler(blade_rpc_request_t *brpcreq, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	ks_pool_t *pool = NULL;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *req_params_event = NULL;
+	const char *req_params_protocol = NULL;
+	const char *req_params_realm = NULL;
+	cJSON *req_params_remove = NULL;
+	ks_bool_t remove = KS_FALSE;
+	cJSON *res = NULL;
+	cJSON *res_result = NULL;
+
+	ks_assert(brpcreq);
+
+	bh = blade_rpc_request_handle_get(brpcreq);
+	ks_assert(bh);
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	ks_assert(bs);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (!req_params) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'params' object\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_event = cJSON_GetObjectCstr(req_params, "event");
+	if (!req_params_event) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'event'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params event");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_protocol = cJSON_GetObjectCstr(req_params, "protocol");
+	if (!req_params_protocol) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'protocol'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_realm = cJSON_GetObjectCstr(req_params, "realm");
+	if (!req_params_realm) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'realm'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params realm");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_remove = cJSON_GetObjectItem(req_params, "remove");
+	remove = req_params_remove && req_params_remove->type == cJSON_True;
+
+	// @todo confirm the realm is permitted for the session, this gets complicated with subdomains, skipping for now
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request processing\n", blade_session_id_get(bs));
+
+	if (remove) {
+		blade_handle_subscriber_remove(bh, req_params_event, req_params_protocol, req_params_realm, blade_session_id_get(bs));
+	} else {
+		blade_handle_subscriber_add(bh, req_params_event, req_params_protocol, req_params_realm, blade_session_id_get(bs));
+	}
+
+	// build the actual response finally
+	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
+
+	cJSON_AddStringToObject(res_result, "event", req_params_event);
+	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
+	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
+
+	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
+	blade_session_send(bs, res, NULL, NULL);
+
+done:
+
+	if (res) cJSON_Delete(res);
+	if (bs) blade_session_read_unlock(bs);
+
+	return KS_FALSE;
 }
 
 /* For Emacs:

@@ -280,6 +280,7 @@ KS_DECLARE(ks_status_t) blade_session_route_remove(blade_session_t *bs, const ch
 	return KS_STATUS_SUCCESS;
 }
 
+
 KS_DECLARE(cJSON *) blade_session_properties_get(blade_session_t *bs)
 {
 	ks_assert(bs);

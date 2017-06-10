@@ -49,8 +49,9 @@ typedef struct blade_connection_s blade_connection_t;
 typedef struct blade_session_s blade_session_t;
 typedef struct blade_session_callbacks_s blade_session_callbacks_t;
 typedef struct blade_protocol_s blade_protocol_t;
-typedef struct blade_protocol_realm_s blade_protocol_realm_t;
-typedef struct blade_protocol_method_s blade_protocol_method_t;
+typedef struct blade_subscription_s blade_subscription_t;
+//typedef struct blade_protocol_realm_s blade_protocol_realm_t;
+//typedef struct blade_protocol_method_s blade_protocol_method_t;
 
 
 typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, void *data);

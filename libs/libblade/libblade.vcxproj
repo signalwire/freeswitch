@@ -192,6 +192,7 @@
     <ClCompile Include="src\blade_identity.c" />
     <ClCompile Include="src\blade_rpc.c" />
     <ClCompile Include="src\blade_protocol.c" />
+    <ClCompile Include="src\blade_subscription.c" />
     <ClCompile Include="src\blade_transport_wss.c" />
     <ClCompile Include="src\blade_session.c" />
     <ClCompile Include="src\blade_stack.c" />
@@ -204,6 +205,7 @@
     <ClInclude Include="src\include\blade_identity.h" />
     <ClInclude Include="src\include\blade_rpc.h" />
     <ClInclude Include="src\include\blade_protocol.h" />
+    <ClInclude Include="src\include\blade_subscription.h" />
     <ClInclude Include="src\include\blade_transport_wss.h" />
     <ClInclude Include="src\include\blade_session.h" />
     <ClInclude Include="src\include\blade_stack.h" />

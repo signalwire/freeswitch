@@ -17,10 +17,12 @@ struct command_def_s {
 
 void command_quit(blade_handle_t *bh, char *args);
 void command_execute(blade_handle_t *bh, char *args);
+void command_subscribe(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
 	{ "execute", command_execute },
+	{ "subscribe", command_subscribe },
 
 	{ NULL, NULL }
 };
@@ -105,6 +107,26 @@ ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *dat
 	params = cJSON_CreateObject();
 	cJSON_AddStringToObject(params, "text", "hello world!");
 	blade_protocol_execute(bh, nodeid, "test.echo", res_result_protocol, res_result_realm, params, test_echo_response_handler, NULL);
+
+	return KS_FALSE;
+}
+
+ks_bool_t blade_subscribe_response_handler(blade_rpc_response_t *brpcres, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+
+	ks_assert(brpcres);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) blade.subscribe response processing\n", blade_session_id_get(bs));
+
+	blade_session_read_unlock(bs);
 
 	return KS_FALSE;
 }
@@ -244,6 +266,14 @@ void command_execute(blade_handle_t *bh, char *args)
 	ks_assert(args);
 
 	blade_protocol_locate(bh, "test", "mydomain.com", blade_locate_response_handler, NULL);
+}
+
+void command_subscribe(blade_handle_t *bh, char *args)
+{
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_protocol_subscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL);
 }
 
 /* For Emacs:
