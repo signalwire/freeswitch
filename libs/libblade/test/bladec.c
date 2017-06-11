@@ -131,6 +131,26 @@ ks_bool_t blade_subscribe_response_handler(blade_rpc_response_t *brpcres, void *
 	return KS_FALSE;
 }
 
+ks_bool_t test_event_request_handler(blade_rpc_request_t *brpcreq, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+
+	ks_assert(brpcreq);
+
+	bh = blade_rpc_request_handle_get(brpcreq);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	ks_assert(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) test.event request processing\n", blade_session_id_get(bs));
+
+	blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
+
 int main(int argc, char **argv)
 {
 	blade_handle_t *bh = NULL;
@@ -273,7 +293,7 @@ void command_subscribe(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_subscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL);
+	blade_protocol_subscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
 }
 
 /* For Emacs:

@@ -40,6 +40,9 @@ struct blade_subscription_s {
 	const char *protocol;
 	const char *realm;
 	ks_hash_t *subscribers;
+
+	blade_rpc_request_callback_t callback;
+	void *callback_data;
 };
 
 
@@ -158,6 +161,34 @@ KS_DECLARE(ks_status_t) blade_subscription_subscribers_remove(blade_subscription
 
 	return KS_STATUS_SUCCESS;
 
+}
+
+KS_DECLARE(blade_rpc_request_callback_t) blade_subscription_callback_get(blade_subscription_t *bsub)
+{
+	ks_assert(bsub);
+
+	return bsub->callback;
+}
+
+KS_DECLARE(void) blade_subscription_callback_set(blade_subscription_t *bsub, blade_rpc_request_callback_t callback)
+{
+	ks_assert(bsub);
+
+	bsub->callback = callback;
+}
+
+KS_DECLARE(void *) blade_subscription_callback_data_get(blade_subscription_t *bsub)
+{
+	ks_assert(bsub);
+
+	return bsub->callback_data;
+}
+
+KS_DECLARE(void) blade_subscription_callback_data_set(blade_subscription_t *bsub, void *data)
+{
+	ks_assert(bsub);
+
+	bsub->callback_data = data;
 }
 
 /* For Emacs:

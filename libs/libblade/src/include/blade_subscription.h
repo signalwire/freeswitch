@@ -44,6 +44,10 @@ KS_DECLARE(const char *) blade_subscription_realm_get(blade_subscription_t *bsub
 KS_DECLARE(ks_hash_t *) blade_subscription_subscribers_get(blade_subscription_t *bsub);
 KS_DECLARE(ks_status_t) blade_subscription_subscribers_add(blade_subscription_t *bsub, const char *nodeid);
 KS_DECLARE(ks_status_t) blade_subscription_subscribers_remove(blade_subscription_t *bsub, const char *nodeid);
+KS_DECLARE(blade_rpc_request_callback_t) blade_subscription_callback_get(blade_subscription_t *bsub);
+KS_DECLARE(void) blade_subscription_callback_set(blade_subscription_t *bsub, blade_rpc_request_callback_t callback);
+KS_DECLARE(void *) blade_subscription_callback_data_get(blade_subscription_t *bsub);
+KS_DECLARE(void) blade_subscription_callback_data_set(blade_subscription_t *bsub, void *data);
 KS_END_EXTERN_C
 
 #endif
