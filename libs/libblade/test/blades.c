@@ -16,9 +16,11 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
+void command_broadcast(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
+	{ "broadcast", command_broadcast },
 
 	{ NULL, NULL }
 };
@@ -81,6 +83,25 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	return KS_FALSE;
 }
 
+ks_bool_t test_event_response_handler(blade_rpc_response_t *brpcres, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+
+	ks_assert(brpcres);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) test.event response processing\n", blade_session_id_get(bs));
+
+	blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
 
 int main(int argc, char **argv)
 {
@@ -214,6 +235,14 @@ void command_quit(blade_handle_t *bh, char *args)
 
 	ks_log(KS_LOG_DEBUG, "Shutting down\n");
 	g_shutdown = KS_TRUE;
+}
+
+void command_broadcast(blade_handle_t *bh, char *args)
+{
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_protocol_broadcast(bh, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
 }
 
 
