@@ -1990,7 +1990,7 @@ KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char 
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
-	
+
 	if (remove) {
 		propagate = blade_handle_subscriber_remove(bh, &bsub, event, protocol, realm, bh->local_nodeid);
 	} else {
@@ -2193,7 +2193,7 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const c
 			cJSON *req = NULL;
 			cJSON *req_params = NULL;
 
-			ks_hash_this(it, &key, NULL, &value);
+			ks_hash_this(it, (const void **)&key, NULL, &value);
 
 			if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key)) continue;
 
@@ -2311,7 +2311,7 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 		goto done;
 	}
 
-	req_params_params = cJSON_GetObjectCstr(req_params, "params");
+	req_params_params = cJSON_GetObjectItem(req_params, "params");
 
 
 	blade_protocol_broadcast_raw(bh, blade_session_id_get(bs), req_params_event, req_params_protocol, req_params_realm, req_params_params, NULL, NULL);
@@ -2324,7 +2324,7 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	bsub = (blade_subscription_t *)ks_hash_search(bh->subscriptions, (void *)bsub_key, KS_UNLOCKED);
 	if (bsub) {
 		ks_rwl_read_lock(bh->local_nodeid_rwl);
-		if (ks_hash_search(blade_subscription_subscribers_get(bsub), bh->local_nodeid, KS_UNLOCKED)) {
+		if (ks_hash_search(blade_subscription_subscribers_get(bsub), (void *)bh->local_nodeid, KS_UNLOCKED)) {
 			callback = blade_subscription_callback_get(bsub);
 			if (callback) ret = callback(brpcreq, blade_subscription_callback_data_get(bsub));
 		}
