@@ -1111,10 +1111,12 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 #endif
 
 	switch_b64_encode(key, SUITES[ctype].keylen, b64_key, sizeof(b64_key));
-	p = strrchr((char *) b64_key, '=');
+	if (!switch_channel_var_true(channel, "rtp_pad_srtp_keys")) {
+		p = strrchr((char *) b64_key, '=');
 
-	while (p && *p && *p == '=') {
-		*p-- = '\0';
+		while (p && *p && *p == '=') {
+			*p-- = '\0';
+		}
 	}
 
 	if (index == SWITCH_NO_CRYPTO_TAG) index = ctype + 1;
