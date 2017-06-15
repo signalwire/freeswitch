@@ -971,11 +971,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				switch_stun_error_code_t *err = (switch_stun_error_code_t *) attr->value;
 				uint32_t code = (err->code * 100) + err->number;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s got %s stun binding response %u %s\n",
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s got %s stun binding response %u\n",
 								  rtp_session_name(rtp_session),
 								  rtp_type(rtp_session),
-								  code,
-								  err->reason
+								  code
 								  );
 
 				if ((ice->type & ICE_VANILLA) && code == 487) {
