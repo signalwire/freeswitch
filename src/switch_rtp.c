@@ -3974,8 +3974,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_ses
 
 		if (rtp_session->timer.timer_interface) {
 			switch_core_timer_destroy(&rtp_session->timer);
+		}
+
+		if (rtp_session->write_timer.timer_interface) {
 			switch_core_timer_destroy(&rtp_session->write_timer);
 		}
+
 		if ((status = switch_core_timer_init(&rtp_session->timer,
 											 rtp_session->timer_name, ms_per_packet / 1000,
 											 samples_per_interval, rtp_session->pool)) == SWITCH_STATUS_SUCCESS) {
@@ -4914,6 +4918,9 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 #endif
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
+	}
+
+	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->write_timer);
 	}
 
