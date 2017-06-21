@@ -390,6 +390,15 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
       goto done;
   }
 
+  /* Disable SSLv2 */
+  SSL_CTX_set_options(wspri->ssl_ctx, SSL_OP_NO_SSLv2);
+  /* Disable SSLv3 */
+  SSL_CTX_set_options(wspri->ssl_ctx, SSL_OP_NO_SSLv3);
+  /* Disable TLSv1 */
+  SSL_CTX_set_options(wspri->ssl_ctx, SSL_OP_NO_TLSv1);
+  /* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+  SSL_CTX_set_options(wspri->ssl_ctx, SSL_OP_NO_COMPRESSION);
+  
   if (chain) {
 	  if ( !SSL_CTX_use_certificate_chain_file(wspri->ssl_ctx, chain) ) {
             tls_log_errors(3, "tport_ws_init_primary_secure", 0);
