@@ -4815,7 +4815,7 @@ SWITCH_STANDARD_API(pause_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define ORIGINATE_SYNTAX "<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]"
+#define ORIGINATE_SYNTAX "<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>] [<originator_uuid>]"
 SWITCH_STANDARD_API(originate_function)
 {
 	switch_channel_t *caller_channel;
@@ -4841,7 +4841,7 @@ SWITCH_STANDARD_API(originate_function)
 	switch_assert(mycmd);
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 2 || argc > 7) {
+	if (argc < 2 || argc > 8) {
 		stream->write_function(stream, "-USAGE: %s\n", ORIGINATE_SYNTAX);
 		goto done;
 	}
@@ -4869,6 +4869,30 @@ SWITCH_STANDARD_API(originate_function)
 
 	if (argv[6]) {
 		timeout = atoi(argv[6]);
+	}
+
+	/* It is OK to use the caller_session and caller_channel variables instead of adding new ones, since this isn't a real originate */
+	if (argv[7]) {
+		caller_session = switch_core_session_locate(argv[7]);
+		if (caller_session) {
+			caller_channel = switch_core_session_get_channel(caller_session);
+			if (caller_channel) {
+				if (switch_channel_test_flag(caller_channel, CF_ORIGINATOR) && switch_channel_test_flag(caller_channel, CF_ADD_ENDPOINTS) &&
+																			!switch_channel_get_variable(caller_channel, "originate_add_endpoints")) {
+					switch_channel_set_variable(caller_channel, "originate_add_endpoints", aleg);
+					stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(caller_session));
+				} else {
+					stream->write_function(stream, "-ERR originator is in the wrong state (originator: %d, add endpoints: %d, var: %s)\n",
+										   switch_channel_test_flag(caller_channel, CF_ORIGINATOR),
+										   switch_channel_test_flag(caller_channel, CF_ADD_ENDPOINTS),
+										   switch_channel_get_variable(caller_channel, "originate_add_endpoints"));
+				}
+			}
+			switch_core_session_rwunlock(caller_session);
+		} else {
+			stream->write_function(stream, "-ERR originator session not found\n");
+		}
+		goto done;
 	}
 
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL) != SWITCH_STATUS_SUCCESS
