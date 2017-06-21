@@ -16,10 +16,12 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
+void command_publish(blade_handle_t *bh, char *args);
 void command_broadcast(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
+	{ "publish", command_publish },
 	{ "broadcast", command_broadcast },
 
 	{ NULL, NULL }
@@ -144,7 +146,6 @@ int main(int argc, char **argv)
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
 		blade_identity_t *target = NULL;
-		blade_rpc_t *brpc = NULL;
 
 		blade_identity_create(&target, blade_handle_pool_get(bh));
 
@@ -152,13 +153,7 @@ int main(int argc, char **argv)
 
 		blade_identity_destroy(&target);
 
-		ks_sleep_ms(5000); // @todo use session state change callback to know when the session is ready, this hack temporarily ensures it's ready before trying to publish upstream
-
-		blade_rpc_create(&brpc, bh, "test.echo", "test", "mydomain.com", test_echo_request_handler, NULL);
-		blade_handle_protocolrpc_register(brpc);
-
-		// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_protocol_publish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
-		blade_protocol_publish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);
+		ks_sleep_ms(3000); // @todo use session state change callback to know when the session is ready, this hack temporarily ensures it's ready before trying to publish upstream
 	}
 
 	loop(bh);
@@ -237,12 +232,26 @@ void command_quit(blade_handle_t *bh, char *args)
 	g_shutdown = KS_TRUE;
 }
 
+void command_publish(blade_handle_t *bh, char *args)
+{
+	blade_rpc_t *brpc = NULL;
+
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_rpc_create(&brpc, bh, "test.echo", "test", "mydomain.com", test_echo_request_handler, NULL);
+	blade_handle_protocolrpc_register(brpc);
+
+	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_protocol_publish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
+	blade_protocol_publish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);
+}
+
 void command_broadcast(blade_handle_t *bh, char *args)
 {
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_broadcast(bh, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
+	blade_protocol_broadcast(bh, NULL, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
 }
 
 

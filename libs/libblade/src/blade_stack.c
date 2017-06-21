@@ -1557,6 +1557,9 @@ done:
 
 
 // blade.locate request generator
+// @todo discuss system to support caching locate results, and internally subscribing to receive event updates related to protocols which have been located
+// to ensure local caches remain synced when protocol providers change, but this requires additional filters for event propagating to avoid broadcasting
+// every protocol update to everyone which may actually be a better way than an explicit locate request
 KS_DECLARE(ks_status_t) blade_protocol_locate(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
@@ -1878,6 +1881,40 @@ done:
 	return ret;
 }
 
+KS_DECLARE(const char *) blade_protocol_execute_request_requester_nodeid_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *req_requester_nodeid = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (req_params) req_requester_nodeid = cJSON_GetObjectCstr(req_params, "requester-nodeid");
+
+	return req_requester_nodeid;
+}
+
+KS_DECLARE(const char *) blade_protocol_execute_request_responder_nodeid_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *req_responder_nodeid = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (req_params) req_responder_nodeid = cJSON_GetObjectCstr(req_params, "responder-nodeid");
+
+	return req_responder_nodeid;
+}
+
 KS_DECLARE(cJSON *) blade_protocol_execute_request_params_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
@@ -2147,7 +2184,7 @@ done:
 
 
 // blade.broadcast request generator
-KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char *broadcaster_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
@@ -2157,7 +2194,10 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char 
 	ks_assert(realm);
 
 	// this will ensure any downstream subscriber sessions, and upstream session if available will be broadcasted to
-	ret = blade_protocol_broadcast_raw(bh, NULL, event, protocol, realm, params, callback, data);
+	ks_rwl_read_lock(bh->local_nodeid_rwl);
+	if (!broadcaster_nodeid) broadcaster_nodeid = bh->local_nodeid;
+	ret = blade_protocol_broadcast_raw(bh, broadcaster_nodeid, NULL, event, protocol, realm, params, callback, data);
+	ks_rwl_read_unlock(bh->local_nodeid_rwl);
 
 	// @todo must check if the local node is also subscribed to receive the event, this is a special edge case which has some extra considerations
 	// if the local node is subscribed to receive the event, it should be received here as a special case, otherwise the broadcast request handler
@@ -2166,13 +2206,14 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char 
 	return ret;
 }
 
-KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const char *excluded_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const char *broadcaster_nodeid, const char *excluded_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	const char *bsub_key = NULL;
 	blade_subscription_t *bsub = NULL;
 	blade_session_t *bs = NULL;
 
 	ks_assert(bh);
+	ks_assert(broadcaster_nodeid);
 	ks_assert(event);
 	ks_assert(protocol);
 	ks_assert(realm);
@@ -2205,6 +2246,7 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const c
 
 				blade_rpc_request_raw_create(bh->pool, &req, &req_params, NULL, "blade.broadcast");
 
+				cJSON_AddStringToObject(req_params, "broadcaster-nodeid", broadcaster_nodeid);
 				cJSON_AddStringToObject(req_params, "event", event);
 				cJSON_AddStringToObject(req_params, "protocol", protocol);
 				cJSON_AddStringToObject(req_params, "realm", realm);
@@ -2234,6 +2276,7 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const c
 
 			blade_rpc_request_raw_create(bh->pool, &req, &req_params, NULL, "blade.broadcast");
 
+			cJSON_AddStringToObject(req_params, "broadcaster-nodeid", broadcaster_nodeid);
 			cJSON_AddStringToObject(req_params, "event", event);
 			cJSON_AddStringToObject(req_params, "protocol", protocol);
 			cJSON_AddStringToObject(req_params, "realm", realm);
@@ -2258,6 +2301,7 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	blade_session_t *bs = NULL;
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
+	const char *req_params_broadcaster_nodeid = NULL;
 	const char *req_params_event = NULL;
 	const char *req_params_protocol = NULL;
 	const char *req_params_realm = NULL;
@@ -2283,6 +2327,14 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_broadcaster_nodeid = cJSON_GetObjectCstr(req_params, "broadcaster-nodeid");
+	if (!req_params_broadcaster_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'broadcaster-nodeid'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params broadcaster-nodeid");
 		blade_session_send(bs, res, NULL, NULL);
 		goto done;
 	}
@@ -2314,7 +2366,7 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	req_params_params = cJSON_GetObjectItem(req_params, "params");
 
 
-	blade_protocol_broadcast_raw(bh, blade_session_id_get(bs), req_params_event, req_params_protocol, req_params_realm, req_params_params, NULL, NULL);
+	blade_protocol_broadcast_raw(bh, req_params_broadcaster_nodeid, blade_session_id_get(bs), req_params_event, req_params_protocol, req_params_realm, req_params_params, NULL, NULL);
 
 
 	bsub_key = ks_psprintf(bh->pool, "%s@%s/%s", req_params_protocol, req_params_realm, req_params_event);
@@ -2338,6 +2390,7 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	// build the actual response finally
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
 
+	cJSON_AddStringToObject(res_result, "broadcaster-nodeid", req_params_broadcaster_nodeid);
 	cJSON_AddStringToObject(res_result, "event", req_params_event);
 	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
 	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
@@ -2352,6 +2405,23 @@ done:
 	if (bs) blade_session_read_unlock(bs);
 
 	return ret;
+}
+
+KS_DECLARE(const char *) blade_protocol_broadcast_request_broadcaster_nodeid_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *req_broadcaster_nodeid = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (req_params) req_broadcaster_nodeid = cJSON_GetObjectCstr(req_params, "broadcaster-nodeid");
+
+	return req_broadcaster_nodeid;
 }
 
 KS_DECLARE(cJSON *) blade_protocol_broadcast_request_params_get(blade_rpc_request_t *brpcreq)

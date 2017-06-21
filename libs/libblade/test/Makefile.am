@@ -18,6 +18,16 @@ blades_SOURCES = blades.c tap.c
 blades_CFLAGS = $(AM_CFLAGS)
 blades_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += testcli
+testcli_SOURCES = testcli.c tap.c
+testcli_CFLAGS = $(AM_CFLAGS)
+testcli_LDADD = $(TEST_LDADD)
+
+check_PROGRAMS += testcon
+testcon_SOURCES = testcon.c tap.c
+testcon_CFLAGS = $(AM_CFLAGS)
+testcon_LDADD = $(TEST_LDADD)
+
 #check_PROGRAMS += testdht2
 #testdht2_SOURCES = testdht2.c tap.c
 #testdht2_CFLAGS = $(AM_CFLAGS)

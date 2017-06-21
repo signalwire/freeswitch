@@ -201,9 +201,7 @@ int main(int argc, char **argv)
 
 		blade_identity_destroy(&target);
 
-		ks_sleep_ms(5000);
-
-
+		ks_sleep_ms(3000);
 	}
 	
 	loop(bh);
