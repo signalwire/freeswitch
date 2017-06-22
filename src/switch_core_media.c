@@ -1806,9 +1806,9 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 
 		session->media_handle->mparams = params;
 
-		if (!session->media_handle->mparams->video_key_freq) {
-			session->media_handle->mparams->video_key_freq = 10000000;
-		}
+		//if (!session->media_handle->mparams->video_key_freq) {
+		//	session->media_handle->mparams->video_key_freq = 10000000;
+		//}
 
 		if (!session->media_handle->mparams->video_key_first) {
 			session->media_handle->mparams->video_key_first = 1000000;
@@ -13720,7 +13720,7 @@ SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_request_video_refresh(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switch_core_session_t *session, const char *file, const char *func, int line)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_handle_t *smh = NULL;
@@ -13740,7 +13740,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_request_video_refresh(switch
 		}
 
 		smh->last_video_refresh_req = now;
-
+		msg._file = file;
+		msg._func = func;
+		msg._line = line;
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), 
+						  SWITCH_LOG_DEBUG1, "%s Video refresh requested.\n", switch_channel_get_name(session->channel));
 		msg.from = __FILE__;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 		switch_core_session_receive_message(session, &msg);

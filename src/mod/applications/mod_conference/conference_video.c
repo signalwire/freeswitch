@@ -2901,7 +2901,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	switch_codec_t *check_codec = NULL;
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int i = 0;
-	uint32_t video_key_freq = 10000000;
+	uint32_t video_key_freq = 0;
 	switch_time_t last_key_time = 0;
 	mcu_layer_t *layer = NULL;
 	switch_frame_t write_frame = { 0 };
@@ -4022,7 +4022,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int i = 0;
 	switch_time_t last_key_time = 0;
-	uint32_t video_key_freq = 10000000;
+	uint32_t video_key_freq = 0;
 	mcu_layer_t *layer = NULL;
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
