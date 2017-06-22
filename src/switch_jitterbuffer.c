@@ -505,9 +505,9 @@ static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 
 	if (old_frame_len != jb->frame_len) {
 		jb_debug(jb, 2, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
-		if (jb->session) {
-			switch_core_session_request_video_refresh(jb->session);
-		}
+		//if (jb->session) {
+		//	switch_core_session_request_video_refresh(jb->session);
+		//}
 	}
 
 }
@@ -742,9 +742,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 			jb_debug(jb, 2, "%s", "DROPPED FRAME DETECTED RESYNCING\n");
 			jb->target_seq = 0;
 
-			if (jb->session) {
-				switch_core_session_request_video_refresh(jb->session);
-			}
+			//if (jb->session) {
+			//	switch_core_session_request_video_refresh(jb->session);
+			//}
 		}
 	}
 
@@ -772,9 +772,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 				jb_frame_inc(jb, 1);
 			}
 
-			if (jb->session) {
-				switch_core_session_request_video_refresh(jb->session);
-			}
+			//if (jb->session) {
+			//	switch_core_session_request_video_refresh(jb->session);
+			//}
 
 			for (x = 0; x < 10; x++) {
 				increment_seq(jb);
@@ -919,9 +919,9 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 		switch_core_inthash_init(&jb->missing_seq_hash);
 		switch_mutex_unlock(jb->mutex);
 
-		if (jb->session) {
-			switch_core_session_request_video_refresh(jb->session);
-		}
+		//if (jb->session) {
+		//	switch_core_session_request_video_refresh(jb->session);
+		//}
 	}
 
 	jb_debug(jb, 2, "%s", "RESET BUFFER\n");
@@ -1210,9 +1210,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 			if (got - want > jb->max_frame_len && got - want > 17) {
 				jb_debug(jb, 2, "Missing %u frames, Resetting\n", got - want);
 				switch_jb_reset(jb);
-				if (jb->session) {
-					switch_core_session_request_video_refresh(jb->session);
-				}
 			} else {
 
 				if (jb->frame_len < got - want) {

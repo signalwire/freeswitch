@@ -1643,8 +1643,8 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 	}
 }
 
-#define SWITCH_IMG_MAX_WIDTH  1920 * 2
-#define SWITCH_IMG_MAX_HEIGHT 1080 * 2
+#define SWITCH_IMG_MAX_WIDTH  1920 * 4
+#define SWITCH_IMG_MAX_HEIGHT 1080 * 4
 
 #if !defined(SWITCH_HAVE_YUV)
 #undef SWITCH_HAVE_PNG
