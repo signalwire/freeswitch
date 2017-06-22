@@ -230,19 +230,14 @@
     }
 
     FSRTCattachMediaStream = function(element, stream) {
-	if (element && element.id && attachMediaStream) {
-	    attachMediaStream(element, stream);
+        if (typeof element.srcObject !== 'undefined') {
+	    element.srcObject = stream;
+	} else if (typeof element.src !== 'undefined') {
+	    element.src = URL.createObjectURL(stream);
 	} else {
-            if (typeof element.srcObject !== 'undefined') {
-		element.srcObject = stream;
-	    } else if (typeof element.src !== 'undefined') {
-		element.src = URL.createObjectURL(stream);
-	    } else {
-		console.error('Error attaching stream to element.');
-	    }
+	    console.error('Error attaching stream to element.');
 	}
     }
-
     
     function onRemoteStream(self, stream) {
         if (self.options.useVideo) {
