@@ -190,8 +190,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_get_partner(switch_c
 																		const char *file, const char *func, int line)
 {
 	const char *uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-	if ((uuid = switch_channel_get_partner_uuid(session->channel))) {
+	if ((uuid = switch_channel_get_partner_uuid_copy(session->channel, uuid_str, sizeof(uuid_str)))) {
 		if ((*partner = switch_core_session_perform_locate(uuid, file, func, line))) {
 			return SWITCH_STATUS_SUCCESS;
 		}

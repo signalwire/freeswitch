@@ -4674,6 +4674,25 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	return status;
 }
 
+SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid_copy(switch_channel_t *channel, char *buf, switch_size_t blen)
+{
+	const char *uuid = NULL;
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (!(uuid = switch_channel_get_variable_dup(channel, SWITCH_SIGNAL_BOND_VARIABLE, SWITCH_TRUE, -1))) {
+		uuid = switch_channel_get_variable_dup(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, SWITCH_TRUE, -1);
+	}
+
+	if (uuid) {
+		strncpy(buf, uuid, blen);
+		uuid = (const char *) buf;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return uuid;
+}
+
+
 SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *channel)
 {
 	const char *uuid = NULL;
