@@ -821,8 +821,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         data.mutedMic = false;
         data.mutedVideo = false;
 
-        this.refreshDevices();
-
         if (angular.isFunction(callback)) {
           callback(data.instance, call);
         }
