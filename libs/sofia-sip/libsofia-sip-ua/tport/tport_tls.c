@@ -505,7 +505,7 @@ tls_t *tls_init_master(tls_issues_t *ti)
     return NULL;
   }
 
-  RAND_pseudo_bytes(sessionId, sizeof(sessionId));
+  RAND_bytes(sessionId, sizeof(sessionId));
 
   if (!SSL_CTX_set_session_id_context(tls->ctx,
                                  (void*) sessionId,
@@ -516,7 +516,11 @@ tls_t *tls_init_master(tls_issues_t *ti)
   if (ti->CAfile != NULL) {
     SSL_CTX_set_client_CA_list(tls->ctx,
                                SSL_load_client_CA_file(ti->CAfile));
-    if (tls->ctx->client_CA == NULL)
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+	if (SSL_CTX_get_client_CA_list(tls->ctx) == NULL)
+#else
+	if (tls->ctx->client_CA == NULL)
+#endif
       tls_log_errors(3, "tls_init_master", 0);
   }
 

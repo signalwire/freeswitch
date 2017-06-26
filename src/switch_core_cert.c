@@ -359,7 +359,22 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 		x = *x509p;
 	}
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+	rsa = RSA_new();
+	{
+		static const BN_ULONG ULONG_RSA_F4 = RSA_F4;
+		BIGNUM* BN_value_RSA_F4 = BN_new();
+		if (!BN_value_RSA_F4) {
+			abort();
+			goto err;
+		}
+		BN_set_word(BN_value_RSA_F4,ULONG_RSA_F4);
+		RSA_generate_key_ex(rsa, bits, BN_value_RSA_F4, NULL);
+		BN_free(BN_value_RSA_F4);
+	}
+#else
 	rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
+#endif
 
 	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
 		abort();
