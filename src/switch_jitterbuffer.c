@@ -742,9 +742,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 			jb_debug(jb, 2, "%s", "DROPPED FRAME DETECTED RESYNCING\n");
 			jb->target_seq = 0;
 
-			//if (jb->session) {
-			//	switch_core_session_request_video_refresh(jb->session);
-			//}
+			if (jb->session) {
+				switch_core_session_request_video_refresh(jb->session);
+			}
 		}
 	}
 
@@ -772,9 +772,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 				jb_frame_inc(jb, 1);
 			}
 
-			//if (jb->session) {
-			//	switch_core_session_request_video_refresh(jb->session);
-			//}
+			if (jb->session) {
+				switch_core_session_request_video_refresh(jb->session);
+			}
 
 			for (x = 0; x < 10; x++) {
 				increment_seq(jb);
@@ -930,9 +930,9 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 		switch_core_inthash_init(&jb->missing_seq_hash);
 		switch_mutex_unlock(jb->mutex);
 
-		//if (jb->session) {
-		//	switch_core_session_request_video_refresh(jb->session);
-		//}
+		if (jb->session) {
+			switch_core_session_request_video_refresh(jb->session);
+		}
 	}
 
 	jb_debug(jb, 2, "%s", "RESET BUFFER\n");

@@ -1664,9 +1664,9 @@ static void check_jitter(switch_rtp_t *rtp_session)
 						  (rtp_session->stats.inbound.last_processed_seq + 1), lost);
 		rtp_session->stats.inbound.last_loss++;
 
-		//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			//switch_core_session_request_video_refresh(rtp_session->session);
-		//}
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			switch_core_session_request_video_refresh(rtp_session->session);
+		}
 
 		if (rtp_session->stats.inbound.last_loss > 0 && rtp_session->stats.inbound.last_loss < LOST_BURST_CAPTURE) {
 			rtp_session->stats.inbound.loss[rtp_session->stats.inbound.last_loss] += lost;
@@ -6187,7 +6187,8 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Got NACK [%u][0x%x] for seq %u\n", nack, nack, ntohs(seq));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u\n", 
+					  switch_core_session_get_name(rtp_session->session), nack, nack, ntohs(seq));
 
 	if (switch_jb_get_packet_by_seq(rtp_session->vbw, seq, (switch_rtp_packet_t *) send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 
@@ -6211,7 +6212,8 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	blp = ntohs(blp);
 	for (i = 0; i < 16; i++) {
 		if (blp & (1 << i)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Also Got NACK for seq %u\n", ntohs(seq) + i + 1);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Also Got NACK for seq %u\n", 
+							  switch_core_session_get_name(rtp_session->session), ntohs(seq) + i + 1);
 			/* If they are missing more than one, may as well gen a key frame for good measure */
 			//switch_core_media_gen_key_frame(rtp_session->session);
 			if (switch_jb_get_packet_by_seq(rtp_session->vbw, htons(ntohs(seq) + i + 1), (switch_rtp_packet_t *) &send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
