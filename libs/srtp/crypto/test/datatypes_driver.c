@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -44,9 +44,14 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
 #include <stdio.h>            /* for printf() */
 #include <string.h>           /* for strlen() */
 #include "datatypes.h"
+#include "util.h"
 
 void
 byte_order(void);
@@ -205,7 +210,7 @@ test_hex_string_funcs(void) {
 
 void
 print_string(char *s) {
-  int i;  
+  size_t i;
   printf("%s\n", s);
   printf("strlen(s) = %u\n", (unsigned)strlen(s));
   printf("{ ");
@@ -222,7 +227,7 @@ test_bswap(void) {
   uint32_t x = 0x11223344;
   uint64_t y = 0x1122334455667788LL;
 
-  printf("before: %0x\nafter:  %0x\n", x, be32_to_cpu(x));
+  printf("before: %0x\nafter:  %0x\n", x, (unsigned int)be32_to_cpu(x));
   printf("before: %0llx\nafter:  %0llx\n", (unsigned long long)y,
 	 (unsigned long long)be64_to_cpu(y));
 

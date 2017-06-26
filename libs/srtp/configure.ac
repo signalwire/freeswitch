@@ -266,7 +266,6 @@ if test "$enable_openssl" = "yes"; then
              [AC_MSG_FAILURE([can't find openssl >1.0.1 crypto lib])])
    AC_DEFINE(OPENSSL, 1, [Define this to use OpenSSL crypto.])
    AES_ICM_OBJS="crypto/cipher/aes_icm_ossl.o crypto/cipher/aes_gcm_ossl.o"
-   RNG_OBJS=rand_source_ossl.o
    HMAC_OBJS=crypto/hash/hmac_ossl.o
    USE_OPENSSL=1
    AC_SUBST(USE_OPENSSL)
@@ -275,10 +274,8 @@ else
    AES_ICM_OBJS="crypto/cipher/aes_icm.o crypto/cipher/aes.o crypto/cipher/aes_cbc.o"
    AC_MSG_CHECKING(which random device to use)
    if test "$enable_kernel_linux" = "yes"; then
-      RNG_OBJS=rand_linux_kernel.o
       AC_MSG_RESULT([Linux kernel builtin])
    else
-      RNG_OBJS=rand_source.o
       if test -n "$DEV_URANDOM"; then
          AC_DEFINE_UNQUOTED(DEV_URANDOM, "$DEV_URANDOM",[Path to random device])
          AC_MSG_RESULT([$DEV_URANDOM])
@@ -286,15 +283,11 @@ else
          AC_MSG_RESULT([standard rand() function...])
       fi
    fi
-   RNG_EXTRA_OBJS="crypto/rng/prng.o crypto/rng/ctr_prng.o"
    HMAC_OBJS="crypto/hash/hmac.o crypto/hash/sha1.o"
 fi
 AM_CONDITIONAL([ENABLE_OPENSSL],[test "${enable_openssl}" = "yes"])
-AM_CONDITIONAL([RNG_OBJS_LINUX], test x$enable_kernel_linux = xyes)
 
 AC_SUBST(AES_ICM_OBJS)                              
-AC_SUBST(RNG_OBJS)
-AC_SUBST(RNG_EXTRA_OBJS)
 AC_SUBST(HMAC_OBJS)
 AC_MSG_RESULT($enable_openssl)
 
@@ -343,13 +336,11 @@ AC_CONFIG_HEADERS(crypto/include/config.h:config_in.h)
 AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile srtp-1.42.pc)
 
 # This is needed when building outside the source dir.
-AS_MKDIR_P(crypto/ae_xfm)
 AS_MKDIR_P(crypto/cipher)
 AS_MKDIR_P(crypto/hash)
 AS_MKDIR_P(crypto/kernel)
 AS_MKDIR_P(crypto/math)
 AS_MKDIR_P(crypto/replay)
-AS_MKDIR_P(crypto/rng)
 AS_MKDIR_P(crypto/test)
 AS_MKDIR_P(doc)
 AS_MKDIR_P(srtp)

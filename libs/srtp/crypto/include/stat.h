@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright(c) 2001-2006, Cisco Systems, Inc.
+ * Copyright(c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,22 +48,20 @@
 #define STAT_H
 
 #include "datatypes.h"       /* for uint8_t                       */
-#include "err.h"             /* for err_status_t                  */
-#include "rand_source.h"     /* for rand_source_func_t definition */
+#include "err.h"             /* for srtp_err_status_t             */
 
-err_status_t
-stat_test_monobit(uint8_t *data);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-err_status_t
-stat_test_poker(uint8_t *data);
+srtp_err_status_t stat_test_monobit(uint8_t *data);
 
-err_status_t
-stat_test_runs(uint8_t *data);
+srtp_err_status_t stat_test_poker(uint8_t *data);
 
-err_status_t
-stat_test_rand_source(rand_source_func_t rs);
+srtp_err_status_t stat_test_runs(uint8_t *data);
 
-err_status_t
-stat_test_rand_source_with_repetition(rand_source_func_t source, unsigned num_trials);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STAT_H */

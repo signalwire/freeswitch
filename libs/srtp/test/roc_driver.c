@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -44,11 +44,15 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
 #include <stdio.h>
 
 /*
  * defining ROC_TEST causes small datatypes to be used in
- * xtd_seq_num_t - this allows the functions to be exhaustively tested.
+ * srtp_xtd_seq_num_t - this allows the functions to be exhaustively tested.
  */
 #if ROC_NEEDS_TO_BE_TESTED
 #define ROC_TEST     
@@ -57,12 +61,12 @@
 #include "rdbx.h"
 #include "ut_sim.h"
 
-err_status_t
+srtp_err_status_t
 roc_test(int num_trials);
 
 int
 main (void) {
-  err_status_t status;
+  srtp_err_status_t status;
 
   printf("rollover counter test driver\n"
 	 "David A. McGrew\n"
@@ -81,22 +85,22 @@ main (void) {
 
 #define ROC_VERBOSE 0
 
-err_status_t
+srtp_err_status_t
 roc_test(int num_trials) {
-  xtd_seq_num_t local, est, ref;
+  srtp_xtd_seq_num_t local, est, ref;
   ut_connection utc;
   int i, num_bad_est = 0;
   int delta;
   uint32_t ircvd;
   double failure_rate;
 
-  index_init(&local);
-  index_init(&ref);
-  index_init(&est);
+  srtp_index_init(&local);
+  srtp_index_init(&ref);
+  srtp_index_init(&est);
 
   printf("\n\ttesting sequential insertion...");
   for (i=0; i < 2048; i++) {
-    delta = index_guess(&local, &est, (uint16_t) ref);
+    delta = srtp_index_guess(&local, &est, (uint16_t) ref);
 #if ROC_VERBOSE
     printf("%lld, %lld, %d\n", ref, est,  i);
 #endif
@@ -106,21 +110,21 @@ roc_test(int num_trials) {
 #endif
       ++num_bad_est;
     }
-    index_advance(&ref, 1);
+    srtp_index_advance(&ref, 1);
   }
   failure_rate = (double) num_bad_est / num_trials;
   if (failure_rate > 0.01) {
     printf("error: failure rate too high (%d bad estimates in %d trials)\n", 
 	   num_bad_est, num_trials);
-    return err_status_algo_fail;
+    return srtp_err_status_algo_fail;
   }
   printf("done\n");
 
 
   printf("\ttesting non-sequential insertion...");
-  index_init(&local);
-  index_init(&ref);
-  index_init(&est);
+  srtp_index_init(&local);
+  srtp_index_init(&ref);
+  srtp_index_init(&est);
   ut_init(&utc);
   
   for (i=0; i < num_trials; i++) {
@@ -132,7 +136,7 @@ roc_test(int num_trials) {
     ref = ircvd; 
 
     /* estimate index based on low bits of ircvd */
-    delta = index_guess(&local, &est, (uint16_t) ref);
+    delta = srtp_index_guess(&local, &est, (uint16_t) ref);
 #if ROC_VERBOSE
     printf("ref: %lld, local: %lld, est: %lld, ircvd: %d, delta: %d\n", 
 	   ref, local, est, ircvd, delta);
@@ -141,12 +145,12 @@ roc_test(int num_trials) {
     if (local + delta != est) {
       printf(" *bad delta*: local %llu + delta %d != est %llu\n",
 	     (unsigned long long)local, delta, (unsigned long long)est);
-      return err_status_algo_fail;
+      return srtp_err_status_algo_fail;
     }
 
-    /* now update local xtd_seq_num_t as necessary */
+    /* now update local srtp_xtd_seq_num_t as necessary */
     if (delta > 0) 
-      index_advance(&local, delta);
+      srtp_index_advance(&local, delta);
 
     if (ref != est) {
 #if ROC_VERBOSE
@@ -163,9 +167,9 @@ roc_test(int num_trials) {
   if (failure_rate > 0.01) {
     printf("error: failure rate too high (%d bad estimates in %d trials)\n", 
 	   num_bad_est, num_trials);
-    return err_status_algo_fail;
+    return srtp_err_status_algo_fail;
   }
   printf("done\n");
 
-  return err_status_ok;
+  return srtp_err_status_ok;
 }

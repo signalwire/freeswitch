@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2006 Cisco Systems, Inc.
+ * Copyright (c) 2001-2017 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,16 @@
 
 #include "datatypes.h"
 
-void *
-crypto_alloc(size_t size);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void
-crypto_free(void *ptr);
+void * srtp_crypto_alloc(size_t size);
+
+void srtp_crypto_free(void *ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CRYPTO_ALLOC_H */

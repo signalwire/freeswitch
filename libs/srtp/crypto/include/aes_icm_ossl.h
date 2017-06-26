@@ -9,7 +9,7 @@
  */
 /*
  *
- * Copyright (c) 2001-2005,2012, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,27 +47,16 @@
 #define AES_ICM_H
 
 #include "cipher.h"
+#include "datatypes.h"
 #include <openssl/evp.h>
 #include <openssl/aes.h>
-
-#define     SALT_SIZE               14
-#define     AES_128_KEYSIZE         AES_BLOCK_SIZE
-#define     AES_192_KEYSIZE         AES_BLOCK_SIZE + AES_BLOCK_SIZE / 2
-#define     AES_256_KEYSIZE         AES_BLOCK_SIZE * 2
-#define     AES_128_KEYSIZE_WSALT   AES_128_KEYSIZE + SALT_SIZE
-#define     AES_192_KEYSIZE_WSALT   AES_192_KEYSIZE + SALT_SIZE
-#define     AES_256_KEYSIZE_WSALT   AES_256_KEYSIZE + SALT_SIZE
 
 typedef struct {
     v128_t counter;                /* holds the counter value          */
     v128_t offset;                 /* initial offset value             */
-    v256_t key;
     int key_size;
-    EVP_CIPHER_CTX ctx;
-} aes_icm_ctx_t;
-
-err_status_t aes_icm_openssl_set_iv(aes_icm_ctx_t *c, void *iv, int dir);
-
+    EVP_CIPHER_CTX* ctx;
+} srtp_aes_icm_ctx_t;
 
 #endif /* AES_ICM_H */
 

@@ -9,7 +9,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2006 Cisco Systems, Inc.
+ * Copyright (c) 2001-2017 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,14 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
+#ifdef OPENSSL
+#include <openssl/crypto.h>
+#endif
 
 #include "datatypes.h"
 
@@ -98,14 +106,13 @@ octet_get_weight(uint8_t octet) {
 char bit_string[MAX_PRINT_STRING_LEN];
 
 uint8_t
-nibble_to_hex_char(uint8_t nibble) {
+srtp_nibble_to_hex_char(uint8_t nibble) {
   char buf[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
 		  '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
   return buf[nibble & 0xF];
 }
 
-char *
-octet_string_hex_string(const void *s, int length) {
+char * srtp_octet_string_hex_string(const void *s, int length) {
   const uint8_t *str = (const uint8_t *)s;
   int i;
   
@@ -114,84 +121,14 @@ octet_string_hex_string(const void *s, int length) {
 
   /* truncate string if it would be too long */
   if (length > MAX_PRINT_STRING_LEN)
-    length = MAX_PRINT_STRING_LEN-1;
+    length = MAX_PRINT_STRING_LEN-2;
   
   for (i=0; i < length; i+=2) {
-    bit_string[i]   = nibble_to_hex_char(*str >> 4);
-    bit_string[i+1] = nibble_to_hex_char(*str++ & 0xF);
+    bit_string[i]   = srtp_nibble_to_hex_char(*str >> 4);
+    bit_string[i+1] = srtp_nibble_to_hex_char(*str++ & 0xF);
   }
   bit_string[i] = 0; /* null terminate string */
   return bit_string;
-}
-
-static inline int
-hex_char_to_nibble(uint8_t c) {
-  switch(c) {
-  case ('0'): return 0x0;
-  case ('1'): return 0x1;
-  case ('2'): return 0x2;
-  case ('3'): return 0x3;
-  case ('4'): return 0x4;
-  case ('5'): return 0x5;
-  case ('6'): return 0x6;
-  case ('7'): return 0x7;
-  case ('8'): return 0x8;
-  case ('9'): return 0x9;
-  case ('a'): return 0xa;
-  case ('A'): return 0xa;
-  case ('b'): return 0xb;
-  case ('B'): return 0xb;
-  case ('c'): return 0xc;
-  case ('C'): return 0xc;
-  case ('d'): return 0xd;
-  case ('D'): return 0xd;
-  case ('e'): return 0xe;
-  case ('E'): return 0xe;
-  case ('f'): return 0xf;
-  case ('F'): return 0xf;
-  default: return -1;   /* this flags an error */
-  }
-  /* NOTREACHED */
-#ifndef WIN32
-  return -1;  /* this keeps compilers from complaining */
-#endif
-}
-
-int
-is_hex_string(char *s) {
-  while(*s != 0)
-    if (hex_char_to_nibble(*s++) == -1)
-      return 0;
-  return 1;
-}
-
-/*
- * hex_string_to_octet_string converts a hexadecimal string
- * of length 2 * len to a raw octet string of length len
- */
-
-int
-hex_string_to_octet_string(char *raw, char *hex, int len) {
-  uint8_t x;
-  int tmp;
-  int hex_len;
-
-  hex_len = 0;
-  while (hex_len < len) {
-    tmp = hex_char_to_nibble(hex[0]);
-    if (tmp == -1)
-      return hex_len;
-    x = (uint8_t)(tmp << 4);
-    hex_len++;
-    tmp = hex_char_to_nibble(hex[1]);
-    if (tmp == -1)
-      return hex_len;
-    x |= (tmp & 0xff);
-    hex_len++;
-    *raw++ = x;
-    hex += 2;
-  }
-  return hex_len;
 }
 
 char *
@@ -199,8 +136,8 @@ v128_hex_string(v128_t *x) {
   int i, j;
 
   for (i=j=0; i < 16; i++) {
-    bit_string[j++]  = nibble_to_hex_char(x->v8[i] >> 4);
-    bit_string[j++]  = nibble_to_hex_char(x->v8[i] & 0xF);
+    bit_string[j++]  = srtp_nibble_to_hex_char(x->v8[i] >> 4);
+    bit_string[j++]  = srtp_nibble_to_hex_char(x->v8[i] & 0xF);
   }
   
   bit_string[j] = 0; /* null terminate string */
@@ -427,7 +364,7 @@ bitvector_alloc(bitvector_t *v, unsigned long length) {
   if (l == 0)
     v->word = NULL;
   else {
-    v->word = (uint32_t*)crypto_alloc(l);
+    v->word = (uint32_t*)srtp_crypto_alloc(l);
     if (v->word == NULL) {
       v->word = NULL;
       v->length = 0;
@@ -446,7 +383,7 @@ bitvector_alloc(bitvector_t *v, unsigned long length) {
 void
 bitvector_dealloc(bitvector_t *v) {
   if (v->word != NULL)
-    crypto_free(v->word);
+    srtp_crypto_free(v->word);
   v->word = NULL;
   v->length = 0;
 }
@@ -507,214 +444,75 @@ bitvector_left_shift(bitvector_t *x, int shift) {
 
 }
 
-
 int
 octet_string_is_eq(uint8_t *a, uint8_t *b, int len) {
   uint8_t *end = b + len;
+  uint8_t accumulator = 0;
+
+  /*
+   * We use this somewhat obscure implementation to try to ensure the running
+   * time only depends on len, even accounting for compiler optimizations.
+   * The accumulator ends up zero iff the strings are equal.
+   */
   while (b < end)
-    if (*a++ != *b++)
-      return 1;
-  return 0;
+    accumulator |= (*a++ ^ *b++);
+
+  /* Return 1 if *not* equal. */
+  return accumulator != 0;
 }
 
 void
-octet_string_set_to_zero(uint8_t *s, int len) {
-  uint8_t *end = s + len;
-
-  do {
-    *s = 0;
-  } while (++s < end);
-  
+srtp_cleanse(void *s, size_t len)
+{
+  volatile unsigned char *p = (volatile unsigned char *)s;
+  while(len--) *p++ = 0;
 }
 
-
-/*
- *  From RFC 1521: The Base64 Alphabet
- *
- *   Value Encoding  Value Encoding  Value Encoding  Value Encoding
- *        0 A            17 R            34 i            51 z
- *        1 B            18 S            35 j            52 0
- *        2 C            19 T            36 k            53 1
- *        3 D            20 U            37 l            54 2
- *        4 E            21 V            38 m            55 3
- *        5 F            22 W            39 n            56 4
- *        6 G            23 X            40 o            57 5
- *        7 H            24 Y            41 p            58 6
- *        8 I            25 Z            42 q            59 7
- *        9 J            26 a            43 r            60 8
- *       10 K            27 b            44 s            61 9
- *       11 L            28 c            45 t            62 +
- *       12 M            29 d            46 u            63 /
- *       13 N            30 e            47 v
- *       14 O            31 f            48 w         (pad) =
- *       15 P            32 g            49 x
- *       16 Q            33 h            50 y
- */
-
-int
-base64_char_to_sextet(uint8_t c) {
-  switch(c) {
-  case 'A':
-    return 0;
-  case 'B':
-    return 1;
-  case 'C':
-    return 2;
-  case 'D':
-    return 3;
-  case 'E':
-    return 4;
-  case 'F':
-    return 5;
-  case 'G':
-    return 6;
-  case 'H':
-    return 7;
-  case 'I':
-    return 8;
-  case 'J':
-    return 9;
-  case 'K':
-    return 10;
-  case 'L':
-    return 11;
-  case 'M':
-    return 12;
-  case 'N':
-    return 13;
-  case 'O':
-    return 14;
-  case 'P':
-    return 15;
-  case 'Q':
-    return 16;
-  case 'R':
-    return 17;
-  case 'S':
-    return 18;
-  case 'T':
-    return 19;
-  case 'U':
-    return 20;
-  case 'V':
-    return 21;
-  case 'W':
-    return 22;
-  case 'X':
-    return 23;
-  case 'Y':
-    return 24;
-  case 'Z':
-    return 25;
-  case 'a':
-    return 26;
-  case 'b':
-    return 27;
-  case 'c':
-    return 28;
-  case 'd':
-    return 29;
-  case 'e':
-    return 30;
-  case 'f':
-    return 31;
-  case 'g':
-    return 32;
-  case 'h':
-    return 33;
-  case 'i':
-    return 34;
-  case 'j':
-    return 35;
-  case 'k':
-    return 36;
-  case 'l':
-    return 37;
-  case 'm':
-    return 38;
-  case 'n':
-    return 39;
-  case 'o':
-    return 40;
-  case 'p':
-    return 41;
-  case 'q':
-    return 42;
-  case 'r':
-    return 43;
-  case 's':
-    return 44;
-  case 't':
-    return 45;
-  case 'u':
-    return 46;
-  case 'v':
-    return 47;
-  case 'w':
-    return 48;
-  case 'x':
-    return 49;
-  case 'y':
-    return 50;
-  case 'z':
-    return 51;
-  case '0':
-    return 52;
-  case '1':
-    return 53;
-  case '2':
-    return 54;
-  case '3':
-    return 55;
-  case '4':
-    return 56;
-  case '5':
-    return 57;
-  case '6':
-    return 58;
-  case '7':
-    return 59;
-  case '8':
-    return 60;
-  case '9':
-    return 61;
-  case '+':
-    return 62;
-  case '/':
-    return 63;
-  case '=':
-    return 64;
-  default:
-    break;
- }
- return -1;
+void
+octet_string_set_to_zero(void *s, size_t len)
+{
+#ifdef OPENSSL
+  OPENSSL_cleanse(s, len);
+#else
+  srtp_cleanse(s, len);
+#endif
 }
 
-/*
- * base64_string_to_octet_string converts a hexadecimal string
- * of length 2 * len to a raw octet string of length len
- */
+#ifdef TESTAPP_SOURCE
 
-int
-base64_string_to_octet_string(char *raw, char *base64, int len) {
-  uint8_t x;
-  int tmp;
-  int base64_len;
+static const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  "abcdefghijklmnopqrstuvwxyz0123456789+/";
 
-  base64_len = 0;
-  while (base64_len < len) {
-    tmp = base64_char_to_sextet(base64[0]);
-    if (tmp == -1)
-      return base64_len;
-    x = (uint8_t)(tmp << 6);
-    base64_len++;
-    tmp = base64_char_to_sextet(base64[1]);
-    if (tmp == -1)
-      return base64_len;
-    x |= (tmp & 0xffff);
-    base64_len++;
-    *raw++ = x;
-    base64 += 2;
+static int base64_block_to_octet_triple(char *out, char *in) {
+  unsigned char sextets[4] = {0};
+  int j = 0;
+  int i;
+
+  for (i = 0; i < 4; i++) {
+    char *p = strchr(b64chars, in[i]);
+    if (p != NULL) sextets[i] = p - b64chars;
+    else j++;
   }
-  return base64_len;
+
+  out[0] = (sextets[0]<<2)|(sextets[1]>>4);
+  if (j < 2) out[1] = (sextets[1]<<4)|(sextets[2]>>2);
+  if (j < 1) out[2] = (sextets[2]<<6)|sextets[3];
+  return j;
 }
+
+int base64_string_to_octet_string(char *out, int *pad, char *in, int len) {
+  int k = 0;
+  int i = 0;
+  int j = 0;
+  if (len % 4 != 0) return 0;
+
+  while (i < len && j == 0) {
+    j = base64_block_to_octet_triple(out + k, in + i);
+    k += 3;
+    i += 4;
+  }
+  *pad = j;
+  return i;
+}
+
+#endif

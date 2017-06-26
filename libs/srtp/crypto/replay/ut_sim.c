@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,10 @@
  *
  */
 
+
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
 
 #include "ut_sim.h"
 

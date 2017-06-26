@@ -43,7 +43,6 @@
 #undef VERSION
 #undef PACKAGE
 #undef inline
-#include <datatypes.h>
 #include <switch_types.h>
 
 #define KALMAN_SYSTEM_MODELS 3 /*loss, jitter, rtt*/

@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,10 @@
 
 #include "integers.h"  /* for uint32_t */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define UT_BUF 160      /* maximum amount of packet reorder */
 
 typedef struct {
@@ -76,5 +80,8 @@ ut_init(ut_connection *utc);
 uint32_t
 ut_next_index(ut_connection *utc);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UT_SIM_H */
