@@ -4920,7 +4920,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
 
-	if ((*rtp_session)->timer.timer_interface) {
+	if ((*rtp_session)->write_timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->write_timer);
 	}
 
