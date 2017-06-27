@@ -6,7 +6,7 @@ RUBY_GEM_DIR=$(shell $(RUBY) -e 'puts RbConfig::CONFIG["rubylibdir"]')
 all: ESL.so
 
 esl_wrap.cpp:
-	swig2.0 -module ESL -ruby -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig3.0 -module ESL -ruby -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o

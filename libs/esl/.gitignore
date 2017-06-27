@@ -10,3 +10,6 @@ Makefile.in
 !python/Makefile
 !ruby/Makefile
 !tcl/Makefile
+java/classes/org/
+java/esl.jar
+		
