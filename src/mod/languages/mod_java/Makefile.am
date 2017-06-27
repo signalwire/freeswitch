@@ -18,11 +18,12 @@ CLASSES=src/org/freeswitch/Launcher.java \
 	src/org/freeswitch/Event.java \
 	src/org/freeswitch/swig/*
 
-BUILT_SOURCES=classes
+BUILT_SOURCES=classes freeswitch.jar
 
 classes:
 	mkdir -p classes
 	javac -sourcepath src -d classes $(CLASSES)
+freeswitch.jar: classes
 	jar cf freeswitch.jar -C classes org
 
 reswig:
