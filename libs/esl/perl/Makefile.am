@@ -21,7 +21,7 @@ endif
 	$(MAKE) -C ..
 
 esl_wrap.cpp:
-	swig2.0 -module ESL -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig3.0 -module ESL -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 perlxsi.c:
 	$(PERL) -MExtUtils::Embed -e xsinit -- -o perlxsi.c
