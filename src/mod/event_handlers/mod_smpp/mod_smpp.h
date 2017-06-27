@@ -35,10 +35,16 @@
 #define MOD_SMPP_H
 
 #include <switch.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 #include <smpp34.h>
 #include <smpp34_structs.h>
 #include <smpp34_params.h>
-
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 typedef struct mod_smpp_globals_s {
 	switch_memory_pool_t *pool;
 	switch_hash_t *gateways;
