@@ -325,13 +325,23 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] was unable to connect to any connection\n", profile->name);
 		goto err;
 	}
-
+#if AMQP_VERSION_MAJOR == 0 && (AMQP_VERSION_MINOR > 5 || (AMQP_VERSION_MINOR == 5 && AMQP_VERSION_PATCH >= 2 ))
+	amqp_exchange_declare(profile->conn_active->state, 1,
+						  amqp_cstring_bytes(profile->exchange),
+						  amqp_cstring_bytes(profile->exchange_type),
+						  0, /* passive */
+						  profile->exchange_durable,
+						  profile->exchange_auto_delete,
+						  0,
+						  amqp_empty_table);
+#else
 	amqp_exchange_declare(profile->conn_active->state, 1,
 						  amqp_cstring_bytes(profile->exchange),
 						  amqp_cstring_bytes(profile->exchange_type),
 						  0, /* passive */
 						  profile->exchange_durable,
 						  amqp_empty_table);
+#endif
 
 	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] failed to create exchange\n", profile->name);
@@ -458,13 +468,23 @@ void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void
 			status = mod_amqp_connection_open(profile->conn_root, &(profile->conn_active), profile->name, profile->custom_attr);
 			if ( status	== SWITCH_STATUS_SUCCESS ) {
 				// Ensure that the exchange exists, and is of the correct type
+#if AMQP_VERSION_MAJOR == 0 && (AMQP_VERSION_MINOR > 5 || (AMQP_VERSION_MINOR == 5 && AMQP_VERSION_PATCH >= 2 ))
+				amqp_exchange_declare(profile->conn_active->state, 1,
+									  amqp_cstring_bytes(profile->exchange),
+									  amqp_cstring_bytes(profile->exchange_type),
+									  passive,
+									  durable,
+									  profile->exchange_auto_delete,
+									  0,
+									  amqp_empty_table);
+#else
 				amqp_exchange_declare(profile->conn_active->state, 1,
 									  amqp_cstring_bytes(profile->exchange),
 									  amqp_cstring_bytes(profile->exchange_type),
 									  passive,
 									  durable,
 									  amqp_empty_table);
-
+#endif
 				if (!mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Amqp reconnect successful- connected\n");
 					continue;

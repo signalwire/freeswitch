@@ -280,12 +280,23 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			}
 
 			/* Check if exchange already exists */
+#if AMQP_VERSION_MAJOR == 0 && (AMQP_VERSION_MINOR > 5 || (AMQP_VERSION_MINOR == 5 && AMQP_VERSION_PATCH >= 2 ))
+ 			amqp_exchange_declare(profile->conn_active->state, 1,
+								  amqp_cstring_bytes(profile->exchange),
+								  amqp_cstring_bytes("topic"),
+								  0, /* passive */
+								  1, /* durable */
+								  0, /* auto-delete */
+								  0,
+								  amqp_empty_table);
+#else
 			amqp_exchange_declare(profile->conn_active->state, 1,
 								  amqp_cstring_bytes(profile->exchange),
 								  amqp_cstring_bytes("topic"),
 								  0, /* passive */
 								  1, /* durable */
 								  amqp_empty_table);
+#endif
 
 			if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Checking for command exchange")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to create missing command exchange", profile->name);
