@@ -2075,6 +2075,9 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 		}
 	}
 
+	if (!context->audio_timer.interval) {
+		switch_core_timer_init(&context->audio_timer, "soft", 1, handle->samplerate / 1000, context->pool);
+	}
 
 	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
 		AVPacket pkt = { 0 };
@@ -2128,8 +2131,10 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 			ret = write_frame(context->fc, &context->audio_st.st->codec->time_base, context->audio_st.st, &pkt);
 			if (context->mutex) switch_mutex_unlock(context->mutex);
 			if (ret < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %s\n", get_error_text(ret));
 				context->errs++;
+				if ((context->errs % 10) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %s\n", get_error_text(ret));
+				}
 				//switch_goto_status(SWITCH_STATUS_FALSE, end);
 			} else {
 				context->errs = 0;
@@ -2641,7 +2646,6 @@ static switch_status_t av_file_write_video(switch_file_handle_t *handle, switch_
 			//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 			switch_core_timer_init(&context->video_timer, "soft", 1, 90, context->pool);
-			switch_core_timer_init(&context->audio_timer, "soft", 1, handle->samplerate / 1000, context->pool);
 			context->eh.video_timer = &context->video_timer;
 			context->audio_st.frame->pts = 0;
 			context->audio_st.next_pts = 0;
