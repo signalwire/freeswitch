@@ -800,7 +800,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
 			int id = atoi(var) - 1;
 
-			if (id == 0) {
+			if (id == -1) {
 				id = conference->canvas_count;
 			}
 
