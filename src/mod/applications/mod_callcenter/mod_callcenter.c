@@ -203,7 +203,7 @@ static char agents_sql[] =
 "   system    VARCHAR(255),\n"
 "   uuid      VARCHAR(255),\n"
 "   type      VARCHAR(255),\n" /* Callback , Dial in...*/
-"   contact   VARCHAR(255),\n"
+"   contact   VARCHAR(1024),\n"
 "   status    VARCHAR(255),\n"
 /*User Personal Status
   Available
