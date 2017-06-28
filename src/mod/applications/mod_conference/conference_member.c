@@ -205,6 +205,8 @@ void conference_member_update_status_field(conference_member_t *member)
 								  cJSON_CreateString(member->video_role_id) : cJSON_CreateNull());
 
 			cJSON_AddItemToObject(video, "videoLayerID", cJSON_CreateNumber(member->video_layer_id));
+			cJSON_AddItemToObject(video, "canvasID", cJSON_CreateNumber(member->canvas_id));
+			cJSON_AddItemToObject(video, "watchingCanvasID", cJSON_CreateNumber(member->watching_canvas_id));
 
 			cJSON_AddItemToObject(json, "video", video);
 		} else {
