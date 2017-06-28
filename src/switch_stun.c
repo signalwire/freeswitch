@@ -206,11 +206,17 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 
 	switch_stun_packet_first_attribute(packet, attr);
 	do {
+		int16_t alen;
+
+		if (bytes_left < 4) return NULL;
+		
 		attr->length = ntohs(attr->length);
 		attr->type = ntohs(attr->type);
 		bytes_left -= 4;		/* attribute header consumed */
 
-		if (switch_stun_attribute_padded_length(attr) > (int)bytes_left) {
+		alen = switch_stun_attribute_padded_length(attr);
+		
+		if (alen > (int)bytes_left || alen <= 0) {
 			/*
 			 * Note we simply don't "break" here out of the loop anymore because
 			 * we don't want the upper layers to have to deal with attributes without a value
@@ -323,10 +329,10 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			break;
 		}
 
-		bytes_left -= switch_stun_attribute_padded_length(attr);	/* attribute value consumed, substract padded length */
-		xlen += 4 + switch_stun_attribute_padded_length(attr);
+		bytes_left -= alen;	/* attribute value consumed, substract padded length */
+		xlen += 4 + alen;
 
-		attr = (switch_stun_packet_attribute_t *) (attr->value + switch_stun_attribute_padded_length(attr));
+		attr = (switch_stun_packet_attribute_t *) (attr->value + alen);
 		if ((void *)attr > end_buf) {
 			break;
 		}
