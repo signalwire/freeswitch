@@ -216,7 +216,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 
 		alen = switch_stun_attribute_padded_length(attr);
 		
-		if (alen > (int)bytes_left || alen <= 0) {
+		if (alen > (int)bytes_left || alen < 0) {
 			/*
 			 * Note we simply don't "break" here out of the loop anymore because
 			 * we don't want the upper layers to have to deal with attributes without a value
@@ -330,6 +330,9 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		}
 
 		bytes_left -= alen;	/* attribute value consumed, substract padded length */
+
+		if (alen == 0) break;
+
 		xlen += 4 + alen;
 
 		attr = (switch_stun_packet_attribute_t *) (attr->value + alen);
