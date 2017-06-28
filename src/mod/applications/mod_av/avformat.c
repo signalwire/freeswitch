@@ -386,7 +386,7 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 	}
 
 	if (!(*codec)) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find encoder for '%s'\n", avcodec_get_name(codec_id));
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find encoder\n");
 		return status;
 	}
 
@@ -916,8 +916,10 @@ static void close_stream(AVFormatContext *fc, MediaStream *mst)
 	if (mst->sws_ctx) sws_freeContext(mst->sws_ctx);
 	if (mst->frame) av_frame_free(&mst->frame);
 	if (mst->tmp_frame) av_frame_free(&mst->tmp_frame);
-
-	avcodec_close(mst->st->codec);
+	
+	if (mst->st && mst->st->codec) {
+		avcodec_close(mst->st->codec);
+	}
 }
 
 SWITCH_STANDARD_APP(record_av_function)
@@ -1367,14 +1369,19 @@ SWITCH_STANDARD_API(av_format_api_function)
 static void mod_avformat_destroy_output_context(av_file_context_t *context)
 {
 
-	if (context->has_video) close_stream(context->fc, &context->video_st);
-	if (context->has_audio) close_stream(context->fc, &context->audio_st);
+	close_stream(context->fc, &context->video_st);
+	close_stream(context->fc, &context->audio_st);
 
 	if (context->audio_st.resample_ctx) {
 		avresample_free(&context->audio_st.resample_ctx);
 	}
 
 	avformat_close_input(&context->fc);
+
+	context->fc = NULL;
+	context->audio_st.st = NULL;
+	context->video_st.st = NULL;
+	
 }
 
 static switch_status_t open_input_file(av_file_context_t *context, switch_file_handle_t *handle, const char *filename)
@@ -2238,7 +2245,9 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	}
 
 	if (context->fc) {
-		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) av_write_trailer(context->fc);
+		if (context->has_video) {
+			av_write_trailer(context->fc);
+		}
 
 		mod_avformat_destroy_output_context(context);
 	}

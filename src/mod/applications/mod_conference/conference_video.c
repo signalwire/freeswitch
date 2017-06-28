@@ -1755,7 +1755,10 @@ void conference_video_check_recording(conference_obj_t *conference, mcu_canvas_t
 
 		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && !switch_test_flag((&imember->rec->fh), SWITCH_FILE_PAUSE) && 
 			switch_core_file_has_video(&imember->rec->fh, SWITCH_TRUE)) {
-			switch_core_file_write_video(&imember->rec->fh, frame);
+			if (switch_core_file_write_video(&imember->rec->fh, frame) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video Write Failed\n");
+				conference_utils_member_clear_flag_locked(imember, MFLAG_RUNNING);
+			}
 		}
 	}
 
@@ -3063,7 +3066,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				write_frame.img = imember->canvas->img;
 				
 				if (imember->rec) {
-					switch_core_file_write_video(&imember->rec->fh, &write_frame);
+					if (switch_core_file_write_video(&imember->rec->fh, &write_frame) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video Write Failed\n");
+						conference_utils_member_clear_flag_locked(imember, MFLAG_RUNNING);
+					}
 				} else {
 					switch_set_flag(&write_frame, SFF_RAW_RTP);
 					write_frame.packet = packet;
