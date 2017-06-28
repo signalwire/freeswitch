@@ -33,6 +33,10 @@
 
 #include <stdint.h>
 #include <v8.h>
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+#include <libplatform/libplatform.h>
+#include <v8-util.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -202,7 +206,11 @@ private:
 	JSMain *js;										/* The "owner" of this instance */
 
 	/* The callback that happens when the V8 GC cleans up object instances */
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	static void WeakCallback(const v8::WeakCallbackInfo<JSBase>& data);
+#else
 	static void WeakCallback(const v8::WeakCallbackData<v8::Object, JSBase>& data);
+#endif	
 
 	/* Internal basic constructor when creating a new instance from JS. It will call the actual user code inside */
 	static void CreateInstance(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -305,7 +313,12 @@ public:
 	const std::string ExecuteScript(const std::string& filename, bool *resultIsError);
 	const std::string ExecuteString(const std::string& scriptData, const std::string& fileName, bool *resultIsError);
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	static void Initialize(v8::Platform **platform);					/* Initialize the V8 engine */
+#else
 	static void Initialize();											/* Initialize the V8 engine */
+#endif
+
 	static void Dispose();												/* Deinitialize the V8 engine */
 
 	static void Include(const v8::FunctionCallbackInfo<v8::Value>& args);		/* Adds functionality to include another JavaScript from the running script */

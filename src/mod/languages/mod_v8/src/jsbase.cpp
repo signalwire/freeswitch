@@ -102,18 +102,33 @@ void JSBase::AddInstance(Isolate *isolate, const Handle<Object>& handle, const H
 
 	// Make the handle weak
 	obj->persistentHandle->Reset(isolate, handle);
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	obj->persistentHandle->SetWeak<JSBase>(obj, WeakCallback, WeakCallbackType::kParameter);
+#else
 	obj->persistentHandle->SetWeak<JSBase>(obj, WeakCallback);
+#endif
 	obj->persistentHandle->MarkIndependent();
 }
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+void JSBase::WeakCallback(const WeakCallbackInfo<JSBase>& data)
+#else
 void JSBase::WeakCallback(const WeakCallbackData<Object, JSBase>& data)
+#endif
 {
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	JSBase *wrap = (JSBase*)data.GetParameter();
+#else
 	JSBase *wrap = data.GetParameter();
 	Local<Object> pobj = data.GetValue();
+#endif
 
 	if (wrap->autoDestroy) {
 		HandleScope scope(data.GetIsolate());
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+#else
 		assert(pobj == *wrap->persistentHandle);
+#endif
 		delete wrap;
 	} else if (!wrap->persistentHandle->IsEmpty()) {
 		wrap->persistentHandle->ClearWeak();
@@ -138,7 +153,11 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 		autoDestroy = args[1]->BooleanValue();
 	} else {
 		// Create a new C++ instance
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetPrivate(args.GetIsolate()->GetCurrentContext(), Private::New(args.GetIsolate(), String::NewFromUtf8(args.GetIsolate(), "constructor_method"))).ToLocalChecked());
+#else
 		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetHiddenValue(String::NewFromUtf8(args.GetIsolate(), "constructor_method")));
+#endif
 
 		if (ex->Value()) {
 			ConstructorCallback cb = (ConstructorCallback)ex->Value();
@@ -189,7 +208,11 @@ void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 		function->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, desc->properties[i].name), desc->properties[i].get, desc->properties[i].set);
 	}
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	function->GetFunction()->SetPrivate(isolate->GetCurrentContext(), Private::New(isolate, String::NewFromUtf8(isolate, "constructor_method")), External::New(isolate, (void *)desc->constructor));
+#else
 	function->GetFunction()->SetHiddenValue(String::NewFromUtf8(isolate, "constructor_method"), External::New(isolate, (void *)desc->constructor));
+#endif
 
 	// Set the function in the global scope, to make it available
 	global->Set(v8::String::NewFromUtf8(isolate, desc->name), function->GetFunction());

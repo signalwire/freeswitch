@@ -41,6 +41,9 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+#include <switch.h>
+#endif
 
 using namespace std;
 using namespace v8;
@@ -97,7 +100,14 @@ const string JSMain::LoadFileToString(const string& filename)
 
 JSMain::JSMain(void)
 {
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	Isolate::CreateParams params;
+	params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	isolate = Isolate::New(params);
+#else
 	isolate = Isolate::New();
+#endif
 
 	extenderClasses = new vector<const js_class_definition_t *>();
 	extenderFunctions = new vector<js_function_t *>();
@@ -136,7 +146,11 @@ JSMain::~JSMain(void)
 	extenderClasses->clear();
 	extenderFunctions->clear();
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	if (isolate) {
+#else
 	if (!Isolate::GetCurrent()) {
+#endif
 		enteredIsolate = true;
 		isolate->Enter();
 	}
@@ -216,7 +230,11 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 		if (js_file.length() > 0) {
 			Handle<String> source = String::NewFromUtf8(args.GetIsolate(), js_file.c_str());
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+			Handle<Script> script = Script::Compile(source, args[i]->ToString());
+#else
 			Handle<Script> script = Script::Compile(source, args[i]);
+#endif
 
 			args.GetReturnValue().Set(script->Run());
 
@@ -302,7 +320,11 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			TryCatch try_catch;
 
 			// Compile the source code.
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+			Handle<Script> script = Script::Compile(source, String::NewFromUtf8(isolate, fileName.c_str()));
+#else
 			Handle<Script> script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, fileName.c_str())));
+#endif
 
 			if (try_catch.HasCaught()) {
 				res = JSMain::GetExceptionInfo(isolate, &try_catch);
@@ -404,18 +426,37 @@ Isolate *JSMain::GetIsolate()
 	return isolate;
 }
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+void JSMain::Initialize(v8::Platform **platform)
+{
+	bool res = V8::InitializeICUDefaultLocation(SWITCH_GLOBAL_dirs.mod_dir);
+	V8::InitializeExternalStartupData(SWITCH_GLOBAL_dirs.mod_dir);
+
+	*platform = v8::platform::CreateDefaultPlatform();
+	V8::InitializePlatform(*platform);
+	V8::Initialize();
+}
+#else
 void JSMain::Initialize()
 {
 	V8::InitializeICU(); // Initialize();
 }
+#endif
 
 void JSMain::Dispose()
 {
 	// Make sure to cleanup properly!
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	v8::Isolate::GetCurrent()->LowMemoryNotification();
+	while (!v8::Isolate::GetCurrent()->IdleNotificationDeadline(0.500)) {}
+	V8::Dispose();
+	V8::ShutdownPlatform();
+#else
 	V8::LowMemoryNotification();
 	while (!V8::IdleNotification()) {}
-
 	V8::Dispose();
+#endif
+	
 }
 
 const vector<const js_class_definition_t *>& JSMain::GetExtenderClasses() const

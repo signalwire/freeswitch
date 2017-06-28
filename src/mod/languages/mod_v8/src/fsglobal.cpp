@@ -478,7 +478,11 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 
 				if (js_file.length() > 0) {
 					Handle<String> source = String::NewFromUtf8(info.GetIsolate(), js_file.c_str());
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+					Handle<Script> script = Script::Compile(source, info[i]->ToString());
+#else
 					Handle<Script> script = Script::Compile(source, info[i]);
+#endif
 					info.GetReturnValue().Set(script->Run());
 					switch_safe_free(path);
 					return;
