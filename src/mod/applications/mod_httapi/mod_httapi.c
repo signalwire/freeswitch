@@ -2603,7 +2603,9 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	}
 
 	if (headers) {
-		switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
+		if (!client->headers) {
+			switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
+		}
 		if (save_path) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
