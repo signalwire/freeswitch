@@ -9930,13 +9930,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {
-				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
-					switch_rtp_video_refresh(v_engine->rtp_session);
-				}// else {
+				if (msg->numeric_arg || !switch_channel_test_flag(session->channel, CF_MANUAL_VID_REFRESH)) {
+					if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
+						switch_rtp_video_refresh(v_engine->rtp_session);
+					}// else {
 					if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
 						switch_rtp_video_loss(v_engine->rtp_session);
 					}
-					//				}
+					//}
+				}
 			}
 		}
 
@@ -11590,7 +11592,7 @@ SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session
 
 }
 
-SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switch_core_session_t *session, const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switch_core_session_t *session, int force, const char *file, const char *func, int line)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_handle_t *smh = NULL;
@@ -11605,11 +11607,16 @@ SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switc
 		switch_core_session_message_t msg = { 0 };
 		switch_time_t now = switch_micro_time_now();
 
-		if (smh->last_video_refresh_req && (now - smh->last_video_refresh_req) < VIDEO_REFRESH_FREQ) {
+		if (!force && (smh->last_video_refresh_req && (now - smh->last_video_refresh_req) < VIDEO_REFRESH_FREQ)) {
 			return SWITCH_STATUS_BREAK;
 		}
 
 		smh->last_video_refresh_req = now;
+
+		if (force) {
+			msg.numeric_arg = 1;
+		}
+
 		msg._file = file;
 		msg._func = func;
 		msg._line = line;

@@ -2744,8 +2744,9 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
-SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switch_core_session_t *session, const char *file, const char *func, int line);
-#define switch_core_session_request_video_refresh(_s) _switch_core_session_request_video_refresh(_s, __FILE__, __SWITCH_FUNC__, __LINE__)
+SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switch_core_session_t *session, int force, const char *file, const char *func, int line);
+#define switch_core_session_request_video_refresh(_s) _switch_core_session_request_video_refresh(_s, 0, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_session_force_request_video_refresh(_s) _switch_core_session_request_video_refresh(_s, 1, __FILE__, __SWITCH_FUNC__, __LINE__)
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_and_request_video_refresh(switch_core_session_t *session);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);

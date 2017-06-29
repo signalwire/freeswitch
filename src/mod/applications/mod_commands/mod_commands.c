@@ -4147,7 +4147,7 @@ SWITCH_STANDARD_API(uuid_xfer_zombie)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define VIDEO_REFRESH_SYNTAX "<uuid>"
+#define VIDEO_REFRESH_SYNTAX "<uuid> [auto|manual]"
 SWITCH_STANDARD_API(uuid_video_refresh_function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -4164,11 +4164,28 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 		switch_core_session_t *lsession = NULL;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
-			switch_channel_set_flag(switch_core_session_get_channel(lsession), CF_XFER_ZOMBIE);
-			switch_core_session_request_video_refresh(lsession);
-			switch_core_media_gen_key_frame(lsession);
+			char *cmd = (char *)argv[1];
+	
+			if (!zstr(cmd)) {
+				switch_channel_t *channel = switch_core_session_get_channel(lsession);
+				
+				if (!strcasecmp(cmd, "manual")) {
+					switch_channel_set_flag(channel, CF_MANUAL_VID_REFRESH);
+				} else if (!strcasecmp(cmd, "auto")) {
+					switch_channel_clear_flag(channel, CF_MANUAL_VID_REFRESH);
+				}
+
+				stream->write_function(stream, "%s video refresh now in %s mode.\n", switch_channel_get_name(channel),
+									   switch_channel_test_flag(channel, CF_MANUAL_VID_REFRESH) ? "manual" : "auto");
+
+			} else {
+				switch_core_session_force_request_video_refresh(lsession);
+				switch_core_media_gen_key_frame(lsession);
+			}
+
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
+
 		}
 	}
 
