@@ -1431,9 +1431,27 @@ SWITCH_STANDARD_APP(video_set_decode_function)
 SWITCH_STANDARD_APP(video_refresh_function)
 {
 	switch_core_session_message_t msg = { 0 };
+	char *cmd = (char *)data;
+	
+	if (!zstr(cmd)) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 
+		if (!strcasecmp(cmd, "manual")) {
+			switch_channel_set_flag(channel, CF_MANUAL_VID_REFRESH);
+		} else if (!strcasecmp(cmd, "auto")) {
+			switch_channel_clear_flag(channel, CF_MANUAL_VID_REFRESH);
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "%s video refresh now in %s mode.\n", switch_channel_get_name(channel), 
+						  switch_channel_test_flag(channel, CF_MANUAL_VID_REFRESH) ? "manual" : "auto");	
+
+		return;
+	}
+	
 	/* Tell the channel to refresh video */
 	msg.from = __FILE__;
+	msg.numeric_arg = 1;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 	switch_core_session_receive_message(session, &msg);
@@ -6321,7 +6339,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "video_refresh", "Send video refresh.", "Send video refresh.", video_refresh_function, "",
+	SWITCH_ADD_APP(app_interface, "video_refresh", "Send video refresh.", "Send video refresh.", video_refresh_function, "[manual|auto]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "video_decode", "Set video decode.", "Set video decode.", video_set_decode_function, "[[on|wait]|off]",
 				   SAF_NONE);

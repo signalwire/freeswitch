@@ -1528,7 +1528,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
-		if (switch_channel_media_up(channel) && !switch_channel_test_flag(channel, CF_AVPF) &&
+		if (switch_channel_media_up(channel) && !switch_channel_test_flag(channel, CF_AVPF) && !switch_channel_test_flag(channel, CF_MANUAL_VID_REFRESH) &&
 			switch_channel_var_true(channel, "sofia_send_info_vid_refresh")) {
 			const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control><vc_primitive><to_encoder><picture_fast_update /></to_encoder></vc_primitive></media_control>\n";
 			switch_time_t now = switch_micro_time_now();
