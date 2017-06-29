@@ -1035,6 +1035,8 @@ switch_status_t conference_api_sub_watching_canvas(conference_member_t *member, 
 	member->conference->canvases[index]->refresh = 1;
 	stream->write_function(stream, "+OK watching canvas %d\n", index + 1);
 
+	conference_member_update_status_field(member);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
