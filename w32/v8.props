@@ -13,7 +13,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\v8-$(V8Version)\build\$(Configuration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>icui18n.lib;icuuc.lib;v8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icui18n.lib;icuuc.lib;v8.lib;v8_libplatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

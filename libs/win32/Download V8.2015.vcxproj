@@ -67,12 +67,12 @@
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading V8.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\v8-$(V8Version)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-vs2015.tar.bz2 "$(ProjectDir).."
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\v8-$(V8Version)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version).tar.bz2 "$(ProjectDir).."
 if not exist "$(ProjectDir)..\v8-$(V8Version)\third_party\cygwin" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-win.tar.bz2 "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\v8-$(V8Version);%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading V8.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\v8-$(V8Version)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-vs2015.tar.bz2 "$(ProjectDir).."
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\v8-$(V8Version)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version).tar.bz2 "$(ProjectDir).."
 if not exist "$(ProjectDir)..\v8-$(V8Version)\third_party\cygwin" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-win.tar.bz2 "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\v8-$(V8Version);%(Outputs)</Outputs>
