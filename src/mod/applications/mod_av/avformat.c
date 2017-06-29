@@ -2245,10 +2245,10 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	}
 
 	if (context->fc) {
-		if (context->has_video) {
+		if (context->has_video && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 			av_write_trailer(context->fc);
 		}
-
+		
 		mod_avformat_destroy_output_context(context);
 	}
 
