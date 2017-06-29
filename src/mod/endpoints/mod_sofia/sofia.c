@@ -8660,6 +8660,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		goto done;
 	}
 
+	home = su_home_new(sizeof(*home));
+	switch_assert(home != NULL);
+
 	if ((refer_to = sip->sip_refer_to)) {
 		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
 	}
@@ -8678,9 +8681,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 	from = sip->sip_from;
 	//to = sip->sip_to;
-
-	home = su_home_new(sizeof(*home));
-	switch_assert(home != NULL);
 
 	nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_EXPIRES_STR("60"), TAG_END());
 
