@@ -1250,6 +1250,9 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		x_tag = switch_xml_add_child_d(x_flags, "can_hear", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false");
 
+		x_tag = switch_xml_add_child_d(x_flags, "can_see", count++);
+		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_SEE) ? "true" : "false");
+
 		x_tag = switch_xml_add_child_d(x_flags, "can_speak", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false");
 
@@ -1365,6 +1368,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		cJSON_AddNumberToObject(json_conference_member, "output-volume", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->volume_in_level);
 		ADDBOOL(json_conference_member_flags, "can_hear", conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
+		ADDBOOL(json_conference_member_flags, "can_see", conference_utils_member_test_flag(member, MFLAG_CAN_SEE));
 		ADDBOOL(json_conference_member_flags, "can_speak", conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));
 		ADDBOOL(json_conference_member_flags, "mute_detect", conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT));
 		ADDBOOL(json_conference_member_flags, "talking", conference_utils_member_test_flag(member, MFLAG_TALKING));
@@ -2605,6 +2609,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *kicked_sound = NULL;
 	char *deaf_sound = NULL;
 	char *undeaf_sound = NULL;
+	char *blind_sound = NULL;
+	char *unblind_sound = NULL;
 	char *pin = NULL;
 	char *mpin = NULL;
 	char *pin_sound = NULL;
@@ -2862,6 +2868,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				deaf_sound = val;
 			} else if (!strcasecmp(var, "undeaf-sound") && !zstr(val)) {
 				undeaf_sound = val;
+			} else if (!strcasecmp(var, "blind-sound") && !zstr(val)) {
+				blind_sound = val;
+			} else if (!strcasecmp(var, "unblind-sound") && !zstr(val)) {
+				unblind_sound = val;
 			} else if (!strcasecmp(var, "member-flags") && !zstr(val)) {
 				member_flags = val;
 			} else if (!strcasecmp(var, "conference-flags") && !zstr(val)) {
@@ -3271,7 +3281,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
 	}
 
-	conference->mflags[MFLAG_CAN_SPEAK] = conference->mflags[MFLAG_CAN_HEAR] = conference->mflags[MFLAG_CAN_BE_SEEN] = 1;
+	conference->mflags[MFLAG_CAN_SPEAK] = conference->mflags[MFLAG_CAN_HEAR] = conference->mflags[MFLAG_CAN_BE_SEEN] = conference->mflags[MFLAG_CAN_SEE] = 1;
 
 	if (!zstr(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
@@ -3342,6 +3352,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(undeaf_sound)) {
 		conference->undeaf_sound = switch_core_strdup(conference->pool, undeaf_sound);
+	}
+
+	if (!zstr(blind_sound)) {
+		conference->blind_sound = switch_core_strdup(conference->pool, blind_sound);
+	}
+
+	if (!zstr(unblind_sound)) {
+		conference->unblind_sound = switch_core_strdup(conference->pool, unblind_sound);
 	}
 
 	if (!zstr(pin)) {

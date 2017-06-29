@@ -77,6 +77,9 @@ api_command_t conference_api_sub_commands[] = {
 	{"tvmute", (void_fn_t) & conference_api_sub_tvmute, CONF_API_SUB_MEMBER_TARGET, "tvmute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
 	{"vmute-snap", (void_fn_t) & conference_api_sub_conference_video_vmute_snap, CONF_API_SUB_MEMBER_TARGET, "vmute-snap", "<[member_id|all]|last|non_moderator>"},
 	{"unvmute", (void_fn_t) & conference_api_sub_unvmute, CONF_API_SUB_MEMBER_TARGET, "unvmute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
+	{"vblind", (void_fn_t) & conference_api_sub_vblind, CONF_API_SUB_MEMBER_TARGET, "vblind", "<[member_id|all]|last|non_moderator> [<quiet>]"},
+	{"tvblind", (void_fn_t) & conference_api_sub_tvblind, CONF_API_SUB_MEMBER_TARGET, "tvblind", "<[member_id|all]|last|non_moderator> [<quiet>]"},
+	{"unvblind", (void_fn_t) & conference_api_sub_unvblind, CONF_API_SUB_MEMBER_TARGET, "unvblind", "<[member_id|all]|last|non_moderator> [<quiet>]"},
 	{"deaf", (void_fn_t) & conference_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last|non_moderator>"},
 	{"undeaf", (void_fn_t) & conference_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "undeaf", "<[member_id|all]|last|non_moderator>"},
 	{"vid-filter", (void_fn_t) & conference_api_sub_video_filter, CONF_API_SUB_MEMBER_TARGET, "vid-filter", "<[member_id|all]|last|non_moderator> <string>"},
@@ -513,6 +516,93 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unvmute-member");
+		switch_event_fire(&event);
+	}
+
+
+	conference_member_update_status_field(member);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_session_write_blank_video(member->session, 50);
+	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SEE);
+	conference_video_reset_video_bitrate_counters(member);
+
+	if (!(data) || !strstr((char *) data, "quiet")) {
+		conference_utils_member_set_flag(member, MFLAG_INDICATE_BLIND);
+	}
+
+	if (stream != NULL) {
+		stream->write_function(stream, "OK vblind %u\n", member->id);
+	}
+
+	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_member_add_event_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vblind-member");
+		switch_event_fire(&event);
+	}
+
+	conference_member_update_status_field(member);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_tvblind(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (conference_utils_member_test_flag(member, MFLAG_CAN_SEE)) {
+		return conference_api_sub_vblind(member, stream, data);
+	}
+
+	return conference_api_sub_unvblind(member, stream, data);
+}
+
+
+switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SEE);
+	conference_video_reset_video_bitrate_counters(member);
+
+	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+
+	if (!(data) || !strstr((char *) data, "quiet")) {
+		conference_utils_member_set_flag(member, MFLAG_INDICATE_UNBLIND);
+	}
+
+	if (stream != NULL) {
+		stream->write_function(stream, "OK unvblind %u\n", member->id);
+	}
+
+	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_member_add_event_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unvblind-member");
 		switch_event_fire(&event);
 	}
 

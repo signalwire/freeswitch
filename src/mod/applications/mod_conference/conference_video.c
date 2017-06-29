@@ -1800,6 +1800,7 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 				}
 
 				if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY || 
+					!conference_utils_member_test_flag(imember, MFLAG_CAN_SEE) ||
 					switch_channel_test_flag(imember->channel, CF_VIDEO_WRITING) ||
 					switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
 					switch_core_session_rwunlock(imember->session);
@@ -3921,6 +3922,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY || 
 					switch_channel_test_flag(imember->channel, CF_VIDEO_WRITING) ||
+					!conference_utils_member_test_flag(imember, MFLAG_CAN_SEE) ||
 					switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
 					switch_core_session_rwunlock(imember->session);
 					continue;
@@ -4303,6 +4305,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 
 			if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY || 
 				switch_channel_test_flag(imember->channel, CF_VIDEO_WRITING) ||
+				!conference_utils_member_test_flag(imember, MFLAG_CAN_SEE) ||
 				switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
 				switch_core_session_rwunlock(imember->session);
 				continue;
