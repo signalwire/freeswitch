@@ -462,11 +462,6 @@ Module: endpoints/mod_skinny
 Description: mod_skinny
  Adds mod_skinny.
 
-Module: endpoints/mod_skypopen
-Description: mod_skypopen
- Adds mod_skypopen.
-Build-Depends: libx11-dev
-
 Module: endpoints/mod_sofia
 Description: mod_sofia
  Adds mod_sofia.

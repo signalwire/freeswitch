@@ -90,7 +90,6 @@ endpoints/mod_portaudio
 endpoints/mod_rtc
 endpoints/mod_rtmp
 endpoints/mod_skinny
-endpoints/mod_skypopen
 endpoints/mod_sofia
 endpoints/mod_verto
 event_handlers/mod_amqp

@@ -1598,17 +1598,6 @@ Files: src/mod/endpoints/mod_gsmopen/asterisk/celliax_spandsp.[ch]
 Copyright: 2001-2006 Steve Underwood
 License: GPL-2
 
-Files: src/mod/endpoints/mod_skypopen/oss/skypopen.h
- src/mod/endpoints/mod_skypopen/oss/main.c
-Copyright: 2010 Giovanni Maruzzelli
- 2001 Alessandro Rubini and Jonathan Corbet
- 2001 O'Reilly & Associates
-License: MPL-1.1
-
-Files: src/mod/endpoints/mod_skypopen/old-stuff/*
-Copyright: Jaroslav Kysela <perex@perex.cz>
-License: GPL-2+
-
 Files: src/mod/endpoints/mod_skinny/*
  src/mod/asr_tts/mod_tts_commandline/mod_tts_commandline.c
 Copyright: 2009-2010, Mathieu Parent <math.parent@gmail.com>
