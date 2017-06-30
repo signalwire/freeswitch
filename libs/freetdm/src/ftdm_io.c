@@ -3817,7 +3817,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	if (!ftdmchan->dtmfdbg.file) {
 		struct tm currtime;
 		time_t currsec;
-		char dfile[1024];
+		char dfile[1138];
 
 		currsec = time(NULL);
 
@@ -5636,7 +5636,7 @@ FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_dso_lib_t lib = NULL;
-	char modpath[255] = { 0 };
+	char modpath[256] = { 0 };
 
 	/* stop signaling interfaces first as signaling depends on I/O and not the other way around */
 	for (i = hashtable_first(globals.module_hash); i; i = hashtable_next(i)) {
