@@ -81,7 +81,11 @@ static void do_reopen(cdr_fd_t *fd)
 	}
 
 	for (x = 0; x < 10; x++) {
+#ifdef _MSC_VER
 		if ((fd->fd = open(fd->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) > -1) {
+#else
+		if ((fd->fd = open(fd->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+#endif
 			fd->bytes = fd_size(fd->fd);
 			break;
 		}
