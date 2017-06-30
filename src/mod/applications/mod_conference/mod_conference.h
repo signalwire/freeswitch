@@ -348,7 +348,7 @@ typedef enum {
 	EFLAG_HUP_MEMBER = (1 << 28),
 	EFLAG_PLAY_FILE_DONE = (1 << 29),
 	EFLAG_SET_POSITION_MEMBER = (1 << 30),
-	EFLAG_BLIND_MEMBER = (1 << 31)
+	EFLAG_BLIND_MEMBER = (int)(1U << 31U)
 } event_type_t;
 
 #ifdef OPENAL_POSITIONING
