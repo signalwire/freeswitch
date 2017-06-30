@@ -1908,7 +1908,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		}
 	}
 
-	if (!strcasecmp(ext, "wav")) {
+	if (!strcasecmp(ext, "wav") || switch_true(switch_event_get_header(handle->params, "av_record_audio_only"))) {
 		context->has_video = 0;
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 	}
