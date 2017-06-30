@@ -255,8 +255,6 @@ void conference_utils_clear_eflags(char *events, uint32_t *f)
 				*f &= ~EFLAG_MUTE_DETECT;
 			} else if (!strcmp(event, "mute-member")) {
 				*f &= ~EFLAG_MUTE_MEMBER;
-			} else if (!strcmp(event, "unmute-member")) {
-				*f &= ~EFLAG_UNMUTE_MEMBER;
 			} else if (!strcmp(event, "kick-member")) {
 				*f &= ~EFLAG_KICK_MEMBER;
 			} else if (!strcmp(event, "dtmf-member")) {
