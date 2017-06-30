@@ -1900,6 +1900,19 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	fmt = context->fc->oformat;
 
+	if ((tmp = switch_event_get_header(handle->params, "av_audio_codec"))) {
+		if ((context->audio_codec = avcodec_find_encoder_by_name(tmp))) {
+			fmt->audio_codec = context->audio_codec->id;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "specified audio codec %s %s [%s]\n", 
+							  tmp, context->audio_codec->name, context->audio_codec->long_name);
+		}
+	}
+
+	if (!strcasecmp(ext, "wav")) {
+		context->has_video = 0;
+		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+	}
+
 	/* open the output file, if needed */
 	if (!(fmt->flags & AVFMT_NOFILE)) {
 		ret = avio_open(&context->fc->pb, file, AVIO_FLAG_WRITE);
@@ -2743,6 +2756,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	supported_formats[i++] = "mov";
 	supported_formats[i++] = "mkv";
 	supported_formats[i++] = "webm";
+	//supported_formats[i++] = "wav";
 
 	file_interface = (switch_file_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
