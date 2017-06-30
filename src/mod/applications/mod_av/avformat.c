@@ -1570,9 +1570,18 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 			context->seek_ts = -2;
 
 			if (context->has_video) {
+				void *pop;
+				
 				context->video_st.next_pts = 0;
 				context->video_start_time = 0;
 				avcodec_flush_buffers(context->video_st.st->codec);
+				
+				while(switch_queue_trypop(context->eh.video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+					switch_image_t *img;
+					if (!pop) break;
+					img = (switch_image_t *) pop;
+					switch_img_free(&img);
+				}
 			}
 		}
 
@@ -2428,7 +2437,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->read_paused) {
+	if (context->read_paused || context->seek_ts == -2) {
 		int sanity = 10;
 
 		if (context->seek_ts == -2) { // just seeked, try read a new img
@@ -2597,8 +2606,13 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		}
 		context->vid_ready = 1;
 	}
-	if (!frame->img) context->closed = 1;
-	return frame->img ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+
+	if ((flags & SVR_BLOCK)) {
+		if (!frame->img) context->closed = 1;
+		return frame->img ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	} else {
+		return frame->img ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_BREAK;
+	}
 }
 #endif
 
