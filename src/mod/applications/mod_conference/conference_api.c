@@ -413,7 +413,7 @@ switch_status_t conference_api_sub_unmute(conference_member_t *member, switch_st
 		stream->write_function(stream, "OK unmute %u\n", member->id);
 	}
 
-	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
+	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
@@ -546,7 +546,7 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 		stream->write_function(stream, "OK unvmute %u\n", member->id);
 	}
 
-	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
+	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unvmute-member");
