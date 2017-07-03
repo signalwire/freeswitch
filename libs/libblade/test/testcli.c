@@ -165,7 +165,7 @@ ks_bool_t test_join_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	blade_session_t *bs = NULL;
 	const char *broadcaster_nodeid = NULL;
 	cJSON *params = NULL;
-	cJSON *result = NULL;
+	//cJSON *result = NULL;
 
 	ks_assert(brpcreq);
 
@@ -194,7 +194,7 @@ ks_bool_t test_leave_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	blade_session_t *bs = NULL;
 	const char *broadcaster_nodeid = NULL;
 	cJSON *params = NULL;
-	cJSON *result = NULL;
+	//cJSON *result = NULL;
 
 	ks_assert(brpcreq);
 
@@ -223,7 +223,7 @@ ks_bool_t test_talk_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	blade_session_t *bs = NULL;
 	const char *broadcaster_nodeid = NULL;
 	cJSON *params = NULL;
-	cJSON *result = NULL;
+	//cJSON *result = NULL;
 
 	ks_assert(brpcreq);
 
@@ -292,17 +292,16 @@ int main(int argc, char **argv)
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
 		blade_identity_t *target = NULL;
-		ks_bool_t connected = KS_FALSE;
 
 		blade_identity_create(&target, blade_handle_pool_get(bh));
 
-		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) connected = blade_handle_connect(bh, &bc, target, NULL) == KS_STATUS_SUCCESS;
+		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
 
 		blade_identity_destroy(&target);
 
 		ks_sleep_ms(3000);
 	}
-	
+
 	loop(bh);
 
 	blade_handle_destroy(&bh);

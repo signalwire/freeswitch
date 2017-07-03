@@ -61,7 +61,7 @@ static void blade_handle_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_
 	blade_handle_t *bh = (blade_handle_t *)ptr;
 
 	ks_assert(bh);
-	
+
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
 		break;
@@ -670,7 +670,6 @@ ks_bool_t blade_protocol_locate_request_handler(blade_rpc_request_t *brpcreq, vo
 	cJSON *res_result = NULL;
 	cJSON *res_result_controllers;
 	blade_protocol_t *bp = NULL;
-	const char *bp_key = NULL;
 
 	ks_assert(brpcreq);
 
@@ -735,8 +734,6 @@ ks_bool_t blade_protocol_locate_request_handler(blade_rpc_request_t *brpcreq, vo
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
 
 	res_result_controllers = cJSON_CreateObject();
-
-	bp_key = ks_psprintf(bh->pool, "%s@%s", req_params_protocol, req_params_realm);
 
 	bp = blade_mastermgr_protocol_lookup(bh->mastermgr, req_params_protocol, req_params_realm);
 	if (bp) {

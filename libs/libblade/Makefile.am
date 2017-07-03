@@ -12,6 +12,8 @@ libunqlite_la_LIBADD    = -lpthread
 
 lib_LTLIBRARIES	        = libblade.la
 libblade_la_SOURCES     = src/blade.c src/blade_stack.c
+libblade_la_SOURCES     += src/blade_transportmgr.c src/blade_rpcmgr.c src/blade_routemgr.c src/blade_subscriptionmgr.c
+libblade_la_SOURCES     += src/blade_upstreammgr.c src/blade_mastermgr.c src/blade_connectionmgr.c src/blade_sessionmgr.c
 libblade_la_SOURCES	+= src/blade_identity.c src/blade_rpc.c src/blade_connection.c src/blade_session.c
 libblade_la_SOURCES	+= src/blade_protocol.c src/blade_subscription.c
 libblade_la_SOURCES	+= src/blade_transport.c src/blade_transport_wss.c
@@ -22,6 +24,8 @@ libblade_la_LIBADD      = libunqlite.la
 
 library_includedir	= $(prefix)/include
 library_include_HEADERS = src/include/blade.h src/include/blade_types.h src/include/blade_stack.h
+library_include_HEADERS += src/include/blade_transportmgr.h src/include/blade_rpcmgr.h src/include/blade_routemgr.h src/include/blade_subscriptionmgr.h
+library_include_HEADERS += src/include/blade_upstreammgr.h src/include/blade_mastermgr.h src/include/blade_connectionmgr.h src/include/blade_sessionmgr.h
 library_include_HEADERS += src/include/blade_identity.h src/include/blade_rpc.h src/include/blade_connection.h src/include/blade_session.h
 library_include_HEADERS += src/include/blade_protocol.h src/include/blade_subscription.h
 library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h

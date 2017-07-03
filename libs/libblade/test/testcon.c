@@ -73,7 +73,7 @@ ks_status_t testproto_create(testproto_t **testP, blade_handle_t *bh)
 ks_status_t testproto_destroy(testproto_t **testP)
 {
 	testproto_t *test = NULL;
-	ks_pool_t *pool = NULL;
+	//ks_pool_t *pool = NULL;
 
 	ks_assert(testP);
 	ks_assert(*testP);
@@ -87,14 +87,14 @@ ks_status_t testproto_destroy(testproto_t **testP)
 
 ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, void *data)
 {
-	testproto_t *test = NULL;
+	//testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 
 	ks_assert(brpcres);
 	ks_assert(data);
 
-	test = (testproto_t *)data;
+	//test = (testproto_t *)data;
 
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
@@ -140,7 +140,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	key = ks_pstrdup(test->pool, requester_nodeid);
 	ks_assert(key);
-	
+
 	ks_hash_write_lock(test->participants);
 	ks_hash_insert(test->participants, (void *)key, (void *)KS_TRUE);
 	ks_hash_write_unlock(test->participants);
@@ -164,7 +164,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	const char *requester_nodeid = NULL;
-	const char *key = NULL;
+	//const char *key = NULL;
 	cJSON *params = NULL;
 	cJSON *result = NULL;
 
@@ -206,7 +206,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
-	testproto_t *test = NULL;
+	//testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	const char *requester_nodeid = NULL;
@@ -217,7 +217,7 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	ks_assert(brpcreq);
 	ks_assert(data);
 
-	test = (testproto_t *)data;
+	//test = (testproto_t *)data;
 
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
