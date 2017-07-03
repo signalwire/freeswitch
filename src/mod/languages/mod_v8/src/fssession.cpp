@@ -39,7 +39,7 @@ using namespace v8;
 
 static const char js_class_name[] = "Session";
 
-#define METHOD_SANITY_CHECK()  if (!this->_session) {	\
+#define METHOD_SANITY_CHECK() if (!this->_session) {\
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "No session is active, you must have an active session before calling this method"));\
 		return;\
 	} else CheckHangupHook(this, NULL)
@@ -71,6 +71,15 @@ static const char js_class_name[] = "Session";
 			return;\
 		}\
 	} while (foo == 1)
+
+#define LOCK_ISOLATE_ON_CALLBACK_MACRO() \
+	FSSession *obj = cb_state->session_state;\
+	Isolate *isolate = obj->GetOwner()->GetIsolate();\
+	Locker lock(isolate);\
+	Isolate::Scope isolate_scope(isolate);\
+	HandleScope handle_scope(isolate);\
+	Local<Context> context = Local<Context>::New(isolate, cb_state->context);\
+	Context::Scope context_scope(context);
 
 static int foo = 0;
 
@@ -173,6 +182,7 @@ FSInputCallbackState::~FSInputCallbackState(void)
 	ret.Reset();
 	session_obj_a.Reset();
 	session_obj_b.Reset();
+	context.Reset();
 }
 
 #define MAX_STACK_DEPTH 2
@@ -285,8 +295,8 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 switch_status_t FSSession::StreamInputCallback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	FSInputCallbackState *cb_state = (FSInputCallbackState *)buf;
-	FSSession *obj = cb_state->session_state;
-	HandleScope handle_scope(obj->GetOwner()->GetIsolate());
+	LOCK_ISOLATE_ON_CALLBACK_MACRO();
+
 	switch_status_t status;
 	switch_file_handle_t *fh = (switch_file_handle_t *)cb_state->extra;
 
@@ -400,8 +410,8 @@ switch_status_t FSSession::StreamInputCallback(switch_core_session_t *session, v
 switch_status_t FSSession::RecordInputCallback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	FSInputCallbackState *cb_state = (FSInputCallbackState *)buf;
-	FSSession *obj = cb_state->session_state;
-	HandleScope handle_scope(obj->GetOwner()->GetIsolate());
+	LOCK_ISOLATE_ON_CALLBACK_MACRO();
+
 	switch_status_t status;
 	switch_file_handle_t *fh = (switch_file_handle_t *)cb_state->extra;
 
@@ -441,8 +451,8 @@ switch_status_t FSSession::RecordInputCallback(switch_core_session_t *session, v
 switch_status_t FSSession::CollectInputCallback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	FSInputCallbackState *cb_state = (FSInputCallbackState *)buf;
-	FSSession *obj = cb_state->session_state;
-	HandleScope handle_scope(obj->GetOwner()->GetIsolate());
+	LOCK_ISOLATE_ON_CALLBACK_MACRO();
+
 	const char *ret;
 	switch_status_t status;
 
@@ -528,6 +538,7 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 
 		if (!func.IsEmpty()) {
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			cb_state.function.Reset(info.GetIsolate(), func);
 			if (info.Length() > 2 && !info[2].IsEmpty()) {
 				cb_state.arg.Reset(info.GetIsolate(), info[2]);
@@ -557,7 +568,7 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 	args.buf = bp;
 	args.buflen = len;
 
-	switch_ivr_record_file(this->_session, &fh, file_name.c_str(), &args, limit);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_record_file(this->_session, &fh, file_name.c_str(), &args, limit));
 	info.GetReturnValue().Set(cb_state.ret);
 
 	CheckHangupHook(this, &ret);
@@ -593,6 +604,7 @@ JS_SESSION_FUNCTION_IMPL(CollectInput)
 			}
 
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			dtmf_func = CollectInputCallback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
@@ -611,7 +623,7 @@ JS_SESSION_FUNCTION_IMPL(CollectInput)
 	args.buf = bp;
 	args.buflen = len;
 
-	switch_ivr_collect_digits_callback(this->_session, &args, digit_timeout, abs_timeout);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_collect_digits_callback(this->_session, &args, digit_timeout, abs_timeout));
 	info.GetReturnValue().Set(cb_state.ret);
 
 	CheckHangupHook(this, &ret);
@@ -674,6 +686,7 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 			}
 
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			dtmf_func = CollectInputCallback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
@@ -685,7 +698,7 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 	args.buf = bp;
 	args.buflen = len;
 
-	switch_ivr_phrase_macro(this->_session, phrase_name.c_str(), phrase_data.c_str(), phrase_lang.c_str(), &args);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_phrase_macro(this->_session, phrase_name.c_str(), phrase_data.c_str(), phrase_lang.c_str(), &args));
 	info.GetReturnValue().Set(cb_state.ret);
 
 	CheckHangupHook(this, &ret);
@@ -825,6 +838,7 @@ JS_SESSION_FUNCTION_IMPL(StreamFile)
 			}
 
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			dtmf_func = StreamInputCallback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
@@ -847,7 +861,7 @@ JS_SESSION_FUNCTION_IMPL(StreamFile)
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	switch_ivr_play_file(this->_session, &fh, file_name.c_str(), &args);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_play_file(this->_session, &fh, file_name.c_str(), &args));
 	info.GetReturnValue().Set(cb_state.ret);
 
 	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
@@ -894,6 +908,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 			}
 
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			dtmf_func = CollectInputCallback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
@@ -908,7 +923,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	switch_ivr_sleep(this->_session, ms, (switch_bool_t)sync, &args);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_sleep(this->_session, ms, (switch_bool_t)sync, &args));
 	info.GetReturnValue().Set(cb_state.ret);
 
 	CheckHangupHook(this, &ret);
@@ -1069,6 +1084,7 @@ JS_SESSION_FUNCTION_IMPL(Speak)
 			}
 
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 			dtmf_func = CollectInputCallback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
@@ -1083,7 +1099,7 @@ JS_SESSION_FUNCTION_IMPL(Speak)
 	switch_core_speech_flush_tts(&this->_speech->sh);
 	if (switch_core_codec_ready(&this->_speech->codec)) {
 		this->_speech->speaking = 1;
-		switch_ivr_speak_text_handle(this->_session, &this->_speech->sh, &this->_speech->codec, NULL, (char *)text, &args);
+		JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_speak_text_handle(this->_session, &this->_speech->sh, &this->_speech->codec, NULL, (char *)text, &args));
 		this->_speech->speaking = 0;
 	}
 
@@ -1811,13 +1827,14 @@ JS_SESSION_FUNCTION_IMPL(Bridge)
 			cb_state.session_obj_a.Reset(info.GetIsolate(), info.Holder());
 			cb_state.session_obj_b.Reset(info.GetIsolate(), obj_b);
 			cb_state.session_state = this;
+			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());
 
 			dtmf_func = CollectInputCallback;
 			bp = &cb_state;
 		}
 	}
 
-	switch_ivr_multi_threaded_bridge(_session, jss_b->_session, dtmf_func, bp, bp);
+	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_multi_threaded_bridge(_session, jss_b->_session, dtmf_func, bp, bp));
 
 	info.GetReturnValue().Set(true);
 }
