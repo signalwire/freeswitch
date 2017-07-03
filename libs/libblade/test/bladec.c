@@ -39,7 +39,7 @@ ks_bool_t test_echo_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	result = blade_protocol_execute_response_result_get(brpcres);
@@ -64,7 +64,7 @@ ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *dat
 	const char *nodeid = NULL;
 	cJSON *res = NULL;
 	cJSON *res_result = NULL;
-	cJSON *res_result_providers = NULL;
+	cJSON *res_result_controllers = NULL;
 	const char *res_result_protocol = NULL;
 	const char *res_result_realm = NULL;
 	cJSON *params = NULL;
@@ -74,7 +74,7 @@ ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *dat
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	res = blade_rpc_response_message_get(brpcres);
@@ -89,13 +89,13 @@ ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *dat
 	res_result_realm = cJSON_GetObjectCstr(res_result, "realm");
 	ks_assert(res_result_realm);
 
-	res_result_providers = cJSON_GetObjectItem(res_result, "providers");
-	ks_assert(res_result_providers);
+	res_result_controllers = cJSON_GetObjectItem(res_result, "controllers");
+	ks_assert(res_result_controllers);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) blade.locate response processing\n", blade_session_id_get(bs));
 
-	for (int index = 0; index < cJSON_GetArraySize(res_result_providers); ++index) {
-		cJSON *elem = cJSON_GetArrayItem(res_result_providers, index);
+	for (int index = 0; index < cJSON_GetArraySize(res_result_controllers); ++index) {
+		cJSON *elem = cJSON_GetArrayItem(res_result_controllers, index);
 		if (elem->type == cJSON_String) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) blade.locate (%s@%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, res_result_realm, elem->valuestring);
 			nodeid = elem->valuestring;
@@ -121,7 +121,7 @@ ks_bool_t blade_subscribe_response_handler(blade_rpc_response_t *brpcres, void *
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) blade.subscribe response processing\n", blade_session_id_get(bs));
@@ -141,7 +141,7 @@ ks_bool_t test_event_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.event request processing\n", blade_session_id_get(bs));

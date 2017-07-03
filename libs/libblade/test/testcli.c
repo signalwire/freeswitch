@@ -40,7 +40,7 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	const char *nodeid = NULL;
 	cJSON *res = NULL;
 	cJSON *res_result = NULL;
-	cJSON *res_result_providers = NULL;
+	cJSON *res_result_controllers = NULL;
 	const char *res_result_protocol = NULL;
 	const char *res_result_realm = NULL;
 	//cJSON *params = NULL;
@@ -50,7 +50,7 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	res = blade_rpc_response_message_get(brpcres);
@@ -65,13 +65,13 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	res_result_realm = cJSON_GetObjectCstr(res_result, "realm");
 	ks_assert(res_result_realm);
 
-	res_result_providers = cJSON_GetObjectItem(res_result, "providers");
-	ks_assert(res_result_providers);
+	res_result_controllers = cJSON_GetObjectItem(res_result, "controllers");
+	ks_assert(res_result_controllers);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) response processing\n", blade_session_id_get(bs), res_result_protocol, res_result_realm);
 
-	for (int index = 0; index < cJSON_GetArraySize(res_result_providers); ++index) {
-		cJSON *elem = cJSON_GetArrayItem(res_result_providers, index);
+	for (int index = 0; index < cJSON_GetArraySize(res_result_controllers); ++index) {
+		cJSON *elem = cJSON_GetArrayItem(res_result_controllers, index);
 		if (elem->type == cJSON_String) {
 			nodeid = elem->valuestring;
 		}
@@ -98,7 +98,7 @@ ks_bool_t test_join_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	result = blade_protocol_execute_response_result_get(brpcres);
@@ -122,7 +122,7 @@ ks_bool_t test_leave_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	result = blade_protocol_execute_response_result_get(brpcres);
@@ -146,7 +146,7 @@ ks_bool_t test_talk_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	result = blade_protocol_execute_response_result_get(brpcres);
@@ -172,7 +172,7 @@ ks_bool_t test_join_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	params = blade_protocol_broadcast_request_params_get(brpcreq);
@@ -201,7 +201,7 @@ ks_bool_t test_leave_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	params = blade_protocol_broadcast_request_params_get(brpcreq);
@@ -230,7 +230,7 @@ ks_bool_t test_talk_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	broadcaster_nodeid = blade_protocol_broadcast_request_broadcaster_nodeid_get(brpcreq);

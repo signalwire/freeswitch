@@ -38,9 +38,9 @@
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, const char *name, const char *realm);
 KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP);
-KS_DECLARE(ks_hash_t *) blade_protocol_providers_get(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_providers_add(blade_protocol_t *bp, const char *nodeid);
-KS_DECLARE(ks_status_t) blade_protocol_providers_remove(blade_protocol_t *bp, const char *nodeid);
+KS_DECLARE(ks_hash_t *) blade_protocol_controllers_get(blade_protocol_t *bp);
+KS_DECLARE(ks_status_t) blade_protocol_controllers_add(blade_protocol_t *bp, const char *nodeid);
+KS_DECLARE(ks_status_t) blade_protocol_controllers_remove(blade_protocol_t *bp, const char *nodeid);
 KS_END_EXTERN_C
 
 #endif

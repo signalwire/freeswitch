@@ -99,7 +99,7 @@ ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, void *dat
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) publish response processing\n", blade_session_id_get(bs));
@@ -127,7 +127,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
@@ -176,7 +176,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
@@ -222,7 +222,7 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
@@ -315,13 +315,13 @@ int main(int argc, char **argv)
 			ks_sleep_ms(3000);
 
 			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, test);
-			blade_handle_protocolrpc_register(brpc);
+			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, test);
-			blade_handle_protocolrpc_register(brpc);
+			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, test);
-			blade_handle_protocolrpc_register(brpc);
+			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			blade_protocol_publish(bh, "test", "mydomain.com", test_publish_response_handler, test);
 		}

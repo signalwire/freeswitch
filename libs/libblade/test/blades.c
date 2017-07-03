@@ -39,7 +39,7 @@ ks_bool_t blade_publish_response_handler(blade_rpc_response_t *brpcres, void *da
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) blade.publish response processing\n", blade_session_id_get(bs));
@@ -62,7 +62,7 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_request_sessionid_get(brpcreq));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
 	// @todo get the inner parameters of a blade.execute request for protocolrpcs
@@ -95,7 +95,7 @@ ks_bool_t test_event_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
 
-	bs = blade_handle_sessions_lookup(bh, blade_rpc_response_sessionid_get(brpcres));
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.event response processing\n", blade_session_id_get(bs));
@@ -240,7 +240,7 @@ void command_publish(blade_handle_t *bh, char *args)
 	ks_assert(args);
 
 	blade_rpc_create(&brpc, bh, "test.echo", "test", "mydomain.com", test_echo_request_handler, NULL);
-	blade_handle_protocolrpc_register(brpc);
+	blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_protocol_publish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
 	blade_protocol_publish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);

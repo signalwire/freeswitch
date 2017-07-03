@@ -48,55 +48,16 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh);
 KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh);
 KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh);
 
-KS_DECLARE(ks_status_t) blade_handle_local_nodeid_set(blade_handle_t *bh, const char *nodeid);
-KS_DECLARE(ks_bool_t) blade_handle_local_nodeid_compare(blade_handle_t *bh, const char *nodeid);
-
-KS_DECLARE(const char *) blade_handle_master_nodeid_copy(blade_handle_t *bh, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) blade_handle_master_nodeid_set(blade_handle_t *bh, const char *nodeid);
-KS_DECLARE(ks_bool_t) blade_handle_master_nodeid_compare(blade_handle_t *bh, const char *nodeid);
-
-KS_DECLARE(ks_status_t) blade_handle_realm_register(blade_handle_t *bh, const char *realm);
-KS_DECLARE(ks_status_t) blade_handle_realm_unregister(blade_handle_t *bh, const char *realm);
-KS_DECLARE(ks_hash_t *) blade_handle_realms_get(blade_handle_t *bh);
-
-KS_DECLARE(ks_status_t) blade_handle_route_add(blade_handle_t *bh, const char *nodeid, const char *sessionid);
-KS_DECLARE(ks_status_t) blade_handle_route_remove(blade_handle_t *bh, const char *nodeid);
-KS_DECLARE(blade_session_t *) blade_handle_route_lookup(blade_handle_t *bh, const char *nodeid);
-
-KS_DECLARE(ks_status_t) blade_handle_transport_register(blade_transport_t *bt);
-KS_DECLARE(ks_status_t) blade_handle_transport_unregister(blade_transport_t *bt);
-
-KS_DECLARE(ks_status_t) blade_handle_corerpc_register(blade_rpc_t *brpc);
-KS_DECLARE(ks_status_t) blade_handle_corerpc_unregister(blade_rpc_t *brpc);
-KS_DECLARE(blade_rpc_t *) blade_handle_corerpc_lookup(blade_handle_t *bh, const char *method);
-
-KS_DECLARE(ks_status_t) blade_handle_requests_add(blade_rpc_request_t *brpcreq);
-KS_DECLARE(ks_status_t) blade_handle_requests_remove(blade_rpc_request_t *brpcreq);
-KS_DECLARE(blade_rpc_request_t *) blade_handle_requests_lookup(blade_handle_t *bh, const char *id);
-
-KS_DECLARE(ks_status_t) blade_handle_protocolrpc_register(blade_rpc_t *brpc);
-KS_DECLARE(ks_status_t) blade_handle_protocolrpc_unregister(blade_rpc_t *brpc);
-KS_DECLARE(blade_rpc_t *) blade_handle_protocolrpc_lookup(blade_handle_t *bh, const char *method, const char *protocol, const char *realm);
-
-KS_DECLARE(ks_bool_t) blade_handle_subscriber_add(blade_handle_t *bh, blade_subscription_t **bsubP, const char *event, const char *protocol, const char *realm, const char *nodeid);
-KS_DECLARE(ks_bool_t) blade_handle_subscriber_remove(blade_handle_t *bh, blade_subscription_t **bsubP, const char *event, const char *protocol, const char *realm, const char *nodeid);
-
+KS_DECLARE(blade_transportmgr_t *) blade_handle_transportmgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_rpcmgr_t *) blade_handle_rpcmgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_routemgr_t *) blade_handle_routemgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_subscriptionmgr_t *) blade_handle_subscriptionmgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_upstreammgr_t *) blade_handle_upstreammgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_mastermgr_t *) blade_handle_mastermgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_connectionmgr_t *) blade_handle_connectionmgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_sessionmgr_t *) blade_handle_sessionmgr_get(blade_handle_t *bh);
 
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id);
-
-KS_DECLARE(ks_status_t) blade_handle_connections_add(blade_connection_t *bc);
-KS_DECLARE(ks_status_t) blade_handle_connections_remove(blade_connection_t *bc);
-KS_DECLARE(blade_connection_t *) blade_handle_connections_lookup(blade_handle_t *bh, const char *id);
-
-KS_DECLARE(ks_status_t) blade_handle_sessions_add(blade_session_t *bs);
-KS_DECLARE(ks_status_t) blade_handle_sessions_remove(blade_session_t *bs);
-KS_DECLARE(blade_session_t *) blade_handle_sessions_lookup(blade_handle_t *bh, const char *id);
-KS_DECLARE(blade_session_t *) blade_handle_sessions_upstream(blade_handle_t *bh);
-KS_DECLARE(void) blade_handle_sessions_send(blade_handle_t *bh, ks_list_t *sessions, const char *exclude, cJSON *json);
-
-KS_DECLARE(ks_status_t) blade_handle_session_state_callback_register(blade_handle_t *bh, void *data, blade_session_state_callback_t callback, const char **id);
-KS_DECLARE(ks_status_t) blade_handle_session_state_callback_unregister(blade_handle_t *bh, const char *id);
-KS_DECLARE(void) blade_handle_session_state_callbacks_execute(blade_session_t *bs, blade_session_state_condition_t condition);
 
 KS_DECLARE(ks_status_t) blade_protocol_register(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data);
 
@@ -115,7 +76,6 @@ KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char 
 KS_DECLARE(ks_status_t) blade_protocol_subscribe_raw(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data);
 
 KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char *broadcaster_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data);
-KS_DECLARE(ks_status_t) blade_protocol_broadcast_raw(blade_handle_t *bh, const char *broadcaster_nodeid, const char *excluded_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data);
 KS_DECLARE(const char *) blade_protocol_broadcast_request_broadcaster_nodeid_get(blade_rpc_request_t *brpcreq);
 KS_DECLARE(cJSON *) blade_protocol_broadcast_request_params_get(blade_rpc_request_t *brpcreq);
 

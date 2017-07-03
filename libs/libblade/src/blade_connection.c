@@ -166,7 +166,7 @@ KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc)
 
 	ks_assert(bc);
 
-	blade_handle_connections_remove(bc);
+	blade_connectionmgr_connection_remove(blade_handle_connectionmgr_get(bc->handle), bc);
 
 	while (ks_q_trypop(bc->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 
@@ -401,7 +401,7 @@ ks_status_t blade_connection_onstate_startup(blade_connection_t *bc)
 	else if (hook == BLADE_CONNECTION_STATE_HOOK_SUCCESS) {
 		// @todo this is adding a second lock, since we keep it locked in the callback to allow finishing, we don't want get locking here...
 		// or just unlock twice...
-		blade_session_t *bs = blade_handle_sessions_lookup(bc->handle, bc->session);
+		blade_session_t *bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bc->handle), bc->session);
 		ks_assert(bs); // should not happen because bs should still be locked
 
 		blade_session_connection_set(bs, bc->id);
@@ -426,7 +426,7 @@ ks_status_t blade_connection_onstate_shutdown(blade_connection_t *bc)
 	if (callback) callback(bc, BLADE_CONNECTION_STATE_CONDITION_POST);
 
 	if (bc->session) {
-		blade_session_t *bs = blade_handle_sessions_lookup(bc->handle, bc->session);
+		blade_session_t *bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bc->handle), bc->session);
 		ks_assert(bs);
 
 		blade_session_connection_set(bs, NULL);
@@ -467,7 +467,7 @@ ks_status_t blade_connection_onstate_run(blade_connection_t *bc)
 
 		if (!(done = (json == NULL))) {
 			if (!bs) {
-				bs = blade_handle_sessions_lookup(bc->handle, bc->session);
+				bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bc->handle), bc->session);
 				ks_assert(bs);
 			}
 			blade_session_receiving_push(bs, json);

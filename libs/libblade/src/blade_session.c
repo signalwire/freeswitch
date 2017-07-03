@@ -192,12 +192,12 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 
 		ks_hash_this(it, (const void **)&key, NULL, &value);
 
-		blade_handle_route_remove(bs->handle, (const char *)key);
+		blade_routemgr_route_remove(blade_handle_routemgr_get(bs->handle), (const char *)key);
 	}
 	ks_hash_read_unlock(bs->routes);
 
-	// this will also clear the identities and realms in the handle if this is the upstream session
-	blade_handle_sessions_remove(bs);
+	// this will also clear the local id, master id and realms in the handle if this is the upstream session
+	blade_sessionmgr_session_remove(blade_handle_sessionmgr_get(bs->handle), bs);
 
 	while (ks_q_trypop(bs->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 	while (ks_q_trypop(bs->receiving, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
@@ -368,7 +368,7 @@ KS_DECLARE(void) blade_session_state_set(blade_session_t *bs, blade_session_stat
 
 	ks_cond_lock(bs->cond);
 	bs->state = state;
-	blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_PRE);
+	blade_sessionmgr_callback_execute(blade_handle_sessionmgr_get(bs->handle), bs, BLADE_SESSION_STATE_CONDITION_PRE);
 	ks_cond_unlock(bs->cond);
 
 	ks_cond_try_signal(bs->cond);
@@ -489,7 +489,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 		state = bs->state;
 
 		if (bs->connection) {
-			blade_connection_t *bc = blade_handle_connections_lookup(bs->handle, bs->connection);
+			blade_connection_t *bc = blade_connectionmgr_connection_lookup(blade_handle_connectionmgr_get(bs->handle), bs->connection);
 			if (bc) {
 				// @note in order for this to work on session reconnecting, the assumption is that as soon as a session has a connection set,
 				// we can start stuffing any messages queued for output on the session straight to the connection right away, may need to only
@@ -505,7 +505,7 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 		}
 
 		// @todo evolve this system, it's probably not the best way to handle receiving session state updates externally
-		blade_handle_session_state_callbacks_execute(bs, BLADE_SESSION_STATE_CONDITION_POST);
+		blade_sessionmgr_callback_execute(blade_handle_sessionmgr_get(bs->handle), bs, BLADE_SESSION_STATE_CONDITION_POST);
 
 		switch (state) {
 		case BLADE_SESSION_STATE_STARTUP:
@@ -554,7 +554,7 @@ ks_status_t blade_session_onstate_shutdown(blade_session_t *bs)
 	blade_session_state_set(bs, BLADE_SESSION_STATE_CLEANUP);
 
 	if (bs->connection) {
-		blade_connection_t *bc = blade_handle_connections_lookup(bs->handle, bs->connection);
+		blade_connection_t *bc = blade_connectionmgr_connection_lookup(blade_handle_connectionmgr_get(bs->handle), bs->connection);
 		if (bc) {
 			blade_connection_disconnect(bc);
 			blade_connection_read_unlock(bc);
@@ -605,7 +605,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		ks_assert(brpcreq);
 
 		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
-		blade_handle_requests_add(brpcreq);
+		blade_rpcmgr_request_add(blade_handle_rpcmgr_get(bs->handle), brpcreq);
 	} else {
 		// @note This is scenario 3
 		// 3) Sending a response or error (server: method callee or provider)
@@ -616,7 +616,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 	if (!bs->connection) {
 		blade_session_sending_push(bs, json);
 	} else {
-		blade_connection_t *bc = blade_handle_connections_lookup(bs->handle, bs->connection);
+		blade_connection_t *bc = blade_connectionmgr_connection_lookup(blade_handle_connectionmgr_get(bs->handle), bs->connection);
 		if (!bc) {
 			blade_session_sending_push(bs, json);
 			return KS_STATUS_FAIL;
@@ -677,11 +677,11 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		if (params) {
 			const char *params_requester_nodeid = cJSON_GetObjectCstr(params, "requester-nodeid");
 			const char *params_responder_nodeid = cJSON_GetObjectCstr(params, "responder-nodeid");
-			if (params_requester_nodeid && params_responder_nodeid && !blade_handle_local_nodeid_compare(bh, params_responder_nodeid)) {
+			if (params_requester_nodeid && params_responder_nodeid && !blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bh), params_responder_nodeid)) {
 				// not meant for local processing, continue with standard unicast routing for requests
-				blade_session_t *bs_router = blade_handle_route_lookup(bh, params_responder_nodeid);
+				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), params_responder_nodeid);
 				if (!bs_router) {
-					bs_router = blade_handle_sessions_upstream(bh);
+					bs_router = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bh));
 					if (!bs_router) {
 						cJSON *res = NULL;
 						cJSON *res_error = NULL;
@@ -711,7 +711,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		}
 
 		// reach here if the request was not captured for routing, this SHOULD always mean the message is to be processed by local handlers
-		brpc = blade_handle_corerpc_lookup(bs->handle, method);
+		brpc = blade_rpcmgr_corerpc_lookup(blade_handle_rpcmgr_get(bs->handle), method);
 
 		if (!brpc) {
 			ks_log(KS_LOG_DEBUG, "Received unknown rpc method %s\n", method);
@@ -744,11 +744,11 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		if (object) {
 			const char *object_requester_nodeid = cJSON_GetObjectCstr(object, "requester-nodeid");
 			const char *object_responder_nodeid = cJSON_GetObjectCstr(object, "responder-nodeid");
-			if (object_requester_nodeid && object_responder_nodeid && !blade_handle_local_nodeid_compare(bh, object_requester_nodeid)) {
+			if (object_requester_nodeid && object_responder_nodeid && !blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bh), object_requester_nodeid)) {
 				// not meant for local processing, continue with standard unicast routing for responses
-				blade_session_t *bs_router = blade_handle_route_lookup(bh, object_requester_nodeid);
+				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), object_requester_nodeid);
 				if (!bs_router) {
-					bs_router = blade_handle_sessions_upstream(bh);
+					bs_router = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bh));
 					if (!bs_router) {
 						ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) but upstream session unavailable\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid);
 						return KS_STATUS_DISCONNECTED;
@@ -767,12 +767,12 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 			}
 		}
 
-		brpcreq = blade_handle_requests_lookup(bs->handle, id);
+		brpcreq = blade_rpcmgr_request_lookup(blade_handle_rpcmgr_get(bs->handle), id);
 		if (!brpcreq) {
 			// @todo hangup session entirely?
 			return KS_STATUS_FAIL;
 		}
-		blade_handle_requests_remove(brpcreq);
+		blade_rpcmgr_request_remove(blade_handle_rpcmgr_get(bs->handle), brpcreq);
 
 		callback = blade_rpc_request_callback_get(brpcreq);
 

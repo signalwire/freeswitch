@@ -38,7 +38,7 @@ struct blade_protocol_s {
 
 	const char *name;
 	const char *realm;
-	ks_hash_t *providers;
+	ks_hash_t *controllers;
 	// @todo descriptors (schema, etc) for each method within a protocol
 };
 
@@ -55,7 +55,7 @@ static void blade_protocol_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_poo
 	case KS_MPCL_TEARDOWN:
 		if (bp->name) ks_pool_free(bp->pool, &bp->name);
 		if (bp->realm) ks_pool_free(bp->pool, &bp->realm);
-		if (bp->providers) ks_hash_destroy(&bp->providers);
+		if (bp->controllers) ks_hash_destroy(&bp->controllers);
 		break;
 	case KS_MPCL_DESTROY:
 		break;
@@ -76,8 +76,8 @@ KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t 
 	bp->name = ks_pstrdup(pool, name);
 	bp->realm = ks_pstrdup(pool, realm);
 
-	ks_hash_create(&bp->providers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bp->pool);
-	ks_assert(bp->providers);
+	ks_hash_create(&bp->controllers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bp->pool);
+	ks_assert(bp->controllers);
 
 	ks_pool_set_cleanup(pool, bp, NULL, blade_protocol_cleanup);
 
@@ -100,15 +100,14 @@ KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_hash_t *) blade_protocol_providers_get(blade_protocol_t *bp)
+KS_DECLARE(ks_hash_t *) blade_protocol_controllers_get(blade_protocol_t *bp)
 {
 	ks_assert(bp);
-
-	return bp->providers;
+	return bp->controllers;
 
 }
 
-KS_DECLARE(ks_status_t) blade_protocol_providers_add(blade_protocol_t *bp, const char *nodeid)
+KS_DECLARE(ks_status_t) blade_protocol_controllers_add(blade_protocol_t *bp, const char *nodeid)
 {
 	char *key = NULL;
 
@@ -116,18 +115,18 @@ KS_DECLARE(ks_status_t) blade_protocol_providers_add(blade_protocol_t *bp, const
 	ks_assert(nodeid);
 
 	key = ks_pstrdup(bp->pool, nodeid);
-	ks_hash_insert(bp->providers, (void *)key, (void *)KS_TRUE);
+	ks_hash_insert(bp->controllers, (void *)key, (void *)KS_TRUE);
 
 	return KS_STATUS_SUCCESS;
 
 }
 
-KS_DECLARE(ks_status_t) blade_protocol_providers_remove(blade_protocol_t *bp, const char *nodeid)
+KS_DECLARE(ks_status_t) blade_protocol_controllers_remove(blade_protocol_t *bp, const char *nodeid)
 {
 	ks_assert(bp);
 	ks_assert(nodeid);
 
-	ks_hash_remove(bp->providers, (void *)nodeid);
+	ks_hash_remove(bp->controllers, (void *)nodeid);
 
 	return KS_STATUS_SUCCESS;
 

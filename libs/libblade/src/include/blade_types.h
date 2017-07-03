@@ -50,9 +50,16 @@ typedef struct blade_session_s blade_session_t;
 typedef struct blade_session_callbacks_s blade_session_callbacks_t;
 typedef struct blade_protocol_s blade_protocol_t;
 typedef struct blade_subscription_s blade_subscription_t;
-//typedef struct blade_protocol_realm_s blade_protocol_realm_t;
-//typedef struct blade_protocol_method_s blade_protocol_method_t;
 
+typedef struct blade_transportmgr_s blade_transportmgr_t;
+typedef struct blade_rpcmgr_s blade_rpcmgr_t;
+typedef struct blade_routemgr_s blade_routemgr_t;
+typedef struct blade_subscriptionmgr_s blade_subscriptionmgr_t;
+typedef struct blade_upstreammgr_s blade_upstreammgr_t;
+typedef struct blade_mastermgr_s blade_mastermgr_t;
+typedef struct blade_connectionmgr_s blade_connectionmgr_t;
+typedef struct blade_sessionmgr_s blade_sessionmgr_t;
+typedef struct blade_session_callback_data_s blade_session_callback_data_t;
 
 typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, void *data);
 typedef ks_bool_t (*blade_rpc_response_callback_t)(blade_rpc_response_t *brpcres, void *data);
@@ -123,7 +130,7 @@ struct blade_transport_callbacks_s {
 	blade_transport_state_callback_t onstate_run_outbound;
 };
 
-typedef void (*blade_session_state_callback_t)(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
+typedef void (*blade_session_callback_t)(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
 
 
 KS_END_EXTERN_C

@@ -476,7 +476,7 @@ void *blade_transport_wss_listeners_thread(ks_thread_t *thread, void *data)
 				}
 				ks_log(KS_LOG_DEBUG, "Connection (%s) started\n", blade_connection_id_get(bc));
 
-				blade_handle_connections_add(bc);
+				blade_connectionmgr_connection_add(blade_handle_connectionmgr_get(btwss->handle), bc);
 
 				blade_connection_state_set(bc, BLADE_CONNECTION_STATE_STARTUP);
 
@@ -577,7 +577,7 @@ ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_transp
 	}
 	ks_log(KS_LOG_DEBUG, "Connection (%s) started\n", blade_connection_id_get(bc));
 
-	blade_handle_connections_add(bc);
+	blade_connectionmgr_connection_add(blade_handle_connectionmgr_get(btwss->handle), bc);
 
 	blade_connection_state_set(bc, BLADE_CONNECTION_STATE_STARTUP);
 
@@ -803,7 +803,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	}
 
 	if (nodeid) {
-		bs = blade_handle_sessions_lookup(bh, nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+		bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
 		if (bs) {
 			if (blade_session_terminating(bs)) {
 				blade_session_read_unlock(bs);
@@ -836,31 +836,21 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		// This is an inbound connection, thus it is always creating a downstream session
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", nodeid);
-		blade_handle_sessions_add(bs);
+		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
 		// This is primarily to cleanup the routes added to the blade_handle for main routing when a session terminates, these don't have a lot of use otherwise but it will keep the main route table
 		// from having long running write locks when a session cleans up
 		blade_session_route_add(bs, nodeid);
-		// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow efficiently determine which session
-		// a message should pass through when it does not match the local node identities from blade_handle_identity_register(), and must be matched with a call to blade_session_route_add() for cleanup,
-		// additionally when a "blade.register" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
+		// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow to efficiently determine which session
+		// a message should pass through when it does not match the local node id from blade_upstreammgr_t, and must be matched with a call to blade_session_route_add() for cleanup, additionally when
+		// a "blade.register" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
 		// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
-		blade_handle_route_add(bh, nodeid, nodeid);
+		blade_routemgr_route_add(blade_handle_routemgr_get(bh), nodeid, nodeid);
 
-		// iterate the realms from the handle ultimately provided by the master router node, and obtained when establishing upstream sessions (see outbound handler), for each of
-		// these realms an identity based on the sessionid will be created, in the future this process can be adjusted based on authentication which is currently skipped
-		// so for now if a master node provides more than a single realm, all provided realms will be used in addition to any additionally registered identities or entire subrealms
-		realms = blade_handle_realms_get(bh);
-		ks_hash_read_lock(realms);
-		for (it = ks_hash_first(realms, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-			void *key = NULL;
-			void *value = NULL;
-
-			ks_hash_this(it, (const void **)&key, NULL, &value);
-
-			blade_session_realm_add(bs, (const char *)key);
-		}
-		ks_hash_read_unlock(realms);
+		// iterate and copy the realms ultimately provided by the master router node to the new downstream session, realms are obtained when establishing upstream sessions (see outbound handler), in
+		// the future this process can be adjusted based on authentication which is currently skipped, so for now if a master node provides more than a single realm then all provided realms will be
+		// acceptable for protocol publishing and passing to downstream sessions for their realms
+		blade_upstreammgr_realm_propagate(blade_handle_upstreammgr_get(bh), bs);
 	}
 
 	blade_rpc_response_raw_create(&json_res, &json_result, id);
@@ -869,7 +859,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
 	pool = blade_handle_pool_get(bh);
-	master_nodeid = blade_handle_master_nodeid_copy(bh, pool);
+	blade_upstreammgr_masterid_copy(blade_handle_upstreammgr_get(bh), pool, &master_nodeid);
 	if (!master_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
 		blade_transport_wss_rpc_error_send(bc, id, -32602, "Master nodeid unavailable");
@@ -1041,7 +1031,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 
 	// @todo validate uuid format by parsing, not currently available in uuid functions
-	bs = blade_handle_sessions_lookup(bh, nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
 	if (bs) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) located\n", blade_session_id_get(bs));
 	}
@@ -1064,7 +1054,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 		// This is an outbound connection, thus it is always creating an upstream session, defined by the sessionid matching the local_nodeid in the handle
 
-		if (blade_handle_local_nodeid_set(bh, nodeid) != KS_STATUS_SUCCESS) {
+		if (blade_upstreammgr_localid_set(blade_handle_upstreammgr_get(bh), nodeid) != KS_STATUS_SUCCESS) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) abandoned, upstream already available\n", blade_session_id_get(bs));
 			blade_session_read_unlock(bs);
 			blade_session_hangup(bs);
@@ -1074,14 +1064,14 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", blade_session_id_get(bs));
 
-		blade_handle_sessions_add(bs);
+		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
-		blade_handle_master_nodeid_set(bh, master_nodeid);
+		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bh), master_nodeid);
 
 		// iterate realms and register to handle as permitted realms for future registrations
 		for (int index = 0; index < json_result_realms_size; ++index) {
 			cJSON *elem = cJSON_GetArrayItem(json_result_realms, index);
-			blade_handle_realm_register(bh, elem->valuestring);
+			blade_upstreammgr_realm_add(blade_handle_upstreammgr_get(bh), elem->valuestring);
 		}
 	}
 

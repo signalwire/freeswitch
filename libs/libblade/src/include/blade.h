@@ -47,6 +47,15 @@
 #include "blade_protocol.h"
 #include "blade_subscription.h"
 
+#include "blade_transportmgr.h"
+#include "blade_rpcmgr.h"
+#include "blade_routemgr.h"
+#include "blade_subscriptionmgr.h"
+#include "blade_upstreammgr.h"
+#include "blade_mastermgr.h"
+#include "blade_connectionmgr.h"
+#include "blade_sessionmgr.h"
+
 #include "blade_transport_wss.h"
 
 KS_BEGIN_EXTERN_C
