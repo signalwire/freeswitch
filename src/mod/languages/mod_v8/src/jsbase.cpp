@@ -154,7 +154,11 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 	} else {
 		// Create a new C++ instance
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetPrivate(args.GetIsolate()->GetCurrentContext(), Private::New(args.GetIsolate(), String::NewFromUtf8(args.GetIsolate(), "constructor_method"))).ToLocalChecked());
+		Isolate *isolate = args.GetIsolate();
+		v8::Local<v8::Context> context = isolate->GetCurrentContext();
+		v8::Local<v8::String> key = String::NewFromUtf8(isolate, "constructor_method");
+		v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, key);
+		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetPrivate(context, privateKey).ToLocalChecked());
 #else
 		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetHiddenValue(String::NewFromUtf8(args.GetIsolate(), "constructor_method")));
 #endif
@@ -209,7 +213,10 @@ void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 	}
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-	function->GetFunction()->SetPrivate(isolate->GetCurrentContext(), Private::New(isolate, String::NewFromUtf8(isolate, "constructor_method")), External::New(isolate, (void *)desc->constructor));
+	v8::Local<v8::Context> context = isolate->GetCurrentContext();
+	v8::Local<v8::String> key = String::NewFromUtf8(isolate, "constructor_method");
+	v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, key);
+	function->GetFunction()->SetPrivate(context, privateKey, External::New(isolate, (void *)desc->constructor));
 #else
 	function->GetFunction()->SetHiddenValue(String::NewFromUtf8(isolate, "constructor_method"), External::New(isolate, (void *)desc->constructor));
 #endif
