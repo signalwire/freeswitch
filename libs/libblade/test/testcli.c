@@ -292,14 +292,19 @@ int main(int argc, char **argv)
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
 		blade_identity_t *target = NULL;
+		ks_bool_t connected = KS_FALSE;
 
 		blade_identity_create(&target, blade_handle_pool_get(bh));
 
-		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
+		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) connected = blade_handle_connect(bh, &bc, target, NULL) == KS_STATUS_SUCCESS;
 
 		blade_identity_destroy(&target);
 
-		ks_sleep_ms(3000);
+
+		if (connected) {
+			// @todo use session state change callback to know when the session is ready and the realm(s) available from blade.connect
+			ks_sleep_ms(3000);
+		}
 	}
 
 	loop(bh);

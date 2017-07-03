@@ -73,14 +73,17 @@ ks_status_t testproto_create(testproto_t **testP, blade_handle_t *bh)
 ks_status_t testproto_destroy(testproto_t **testP)
 {
 	testproto_t *test = NULL;
-	//ks_pool_t *pool = NULL;
+	ks_pool_t *pool = NULL;
 
 	ks_assert(testP);
 	ks_assert(*testP);
 
 	test = *testP;
+	pool = test->pool;
 
-	ks_pool_free(test->pool, testP);
+	ks_pool_close(&pool);
+
+	*testP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

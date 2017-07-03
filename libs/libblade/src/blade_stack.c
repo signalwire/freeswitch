@@ -1084,7 +1084,7 @@ KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char 
 	}
 	ks_pool_free(bh->pool, &localid);
 
-	if (bsub) {
+	if (!remove && bsub) {
 		blade_subscription_callback_set(bsub, event_callback);
 		blade_subscription_callback_data_set(bsub, event_data);
 	}

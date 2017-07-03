@@ -184,7 +184,8 @@ KS_DECLARE(blade_transport_t *) blade_transportmgr_transport_lookup(blade_transp
 
 	ks_assert(btmgr);
 
-	if (name && name[0]) bt = (blade_transport_t *)ks_hash_search(btmgr->transports, (void *)name, KS_READLOCKED);
+	ks_hash_read_lock(btmgr->transports);
+	if (name && name[0]) bt = (blade_transport_t *)ks_hash_search(btmgr->transports, (void *)name, KS_UNLOCKED);
 	if (!bt && ordefault) bt = btmgr->default_transport;
 	// @todo if (bt) blade_transport_read_lock(bt);
 	ks_hash_read_unlock(btmgr->transports);
