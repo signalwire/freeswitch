@@ -1237,8 +1237,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_media_bug_t *closed = NULL;
 
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (session->bugs) {
-		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = next) {
 			next = bp->next;
 
@@ -1265,12 +1265,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 
 			switch_core_media_bug_close(&bp, SWITCH_FALSE);
 		}
-		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = SWITCH_STATUS_SUCCESS;
 	}
+	switch_thread_rwlock_unlock(session->bug_rwlock);
 
+		
 	if (closed) {
-		for (bp = session->bugs; bp; bp = next) {
+		for (bp = closed; bp; bp = next) {
 			next = bp->next;
 			switch_core_media_bug_destroy(&bp);
 		}
@@ -1422,7 +1423,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_core_session_t *session, switch_media_bug_callback_t callback)
 {
-	switch_media_bug_t *cur = NULL, *bp = NULL, *last = NULL, *closed = NULL;
+	switch_media_bug_t *cur = NULL, *bp = NULL, *last = NULL, *closed = NULL, *next = NULL;
 	int total = 0;
 
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -1450,9 +1451,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 			}
 		}
 	}
-
+	switch_thread_rwlock_unlock(session->bug_rwlock);
+	
 	if (closed) {
-		for (bp = session->bugs; bp; bp = bp->next) {
+		for (bp = closed; bp; bp = next) {
+			next = bp->next;
 			switch_core_media_bug_destroy(&bp);
 		}
 	}
@@ -1460,9 +1463,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 	}
-
-	switch_thread_rwlock_unlock(session->bug_rwlock);
-
 
 	return total ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
