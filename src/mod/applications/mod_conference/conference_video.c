@@ -2849,7 +2849,14 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 				
 				if (imember->session && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE) {
-					conference_video_pop_next_image(imember, &imember->pcanvas_img);
+					switch_image_t *next_img = NULL;
+
+					conference_video_pop_next_image(imember, &next_img);
+					
+					if (next_img) {
+						switch_img_free(&imember->pcanvas_img);
+						imember->pcanvas_img = next_img;
+					}
 				}
 
 				if (imember->session) {
