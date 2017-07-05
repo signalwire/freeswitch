@@ -99,6 +99,9 @@ else
   GCCMAGIC1=-c
   GCCMAGIC2=
 fi
+#  newer gcc on debian 9 doesn't support this, and we don't need it here as its an embedded lib so we will disable this explicitly
+GCCMAGIC1=-c
+GCCMAGIC2=
 AC_SUBST(GCCMAGIC1)
 AC_SUBST(GCCMAGIC2)
 
