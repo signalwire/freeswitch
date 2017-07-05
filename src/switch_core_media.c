@@ -4026,8 +4026,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		engine->rtcp_mux = -1;
 	}
 
-	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
-		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready && engine->new_ice) {
+	if (engine->new_ice) {
+		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "RE-Activating %s ICE\n", type2str(type));
 
 			switch_rtp_activate_ice(engine->rtp_session,
