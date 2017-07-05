@@ -930,7 +930,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
 			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
 			av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "fast", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
