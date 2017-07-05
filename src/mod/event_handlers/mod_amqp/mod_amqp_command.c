@@ -280,7 +280,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			}
 
 			/* Check if exchange already exists */
-#if AMQP_VERSION_MAJOR == 0 && (AMQP_VERSION_MINOR > 5 || (AMQP_VERSION_MINOR == 5 && AMQP_VERSION_PATCH >= 2 ))
+#if AMQP_VERSION_MAJOR == 0 && AMQP_VERSION_MINOR >= 6
  			amqp_exchange_declare(profile->conn_active->state, 1,
 								  amqp_cstring_bytes(profile->exchange),
 								  amqp_cstring_bytes("topic"),
