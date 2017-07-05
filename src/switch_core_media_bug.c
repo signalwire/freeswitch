@@ -1270,7 +1270,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 	}
 
 	if (closed) {
-		for (bp = session->bugs; bp; bp = bp->next) {
+		for (bp = session->bugs; bp; bp = next) {
+			next = bp->next;
 			switch_core_media_bug_destroy(&bp);
 		}
 	}
