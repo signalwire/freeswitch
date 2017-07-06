@@ -650,11 +650,12 @@ Build-Depends: python-dev
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
+Build-Depends: git
 
 Module: languages/mod_yaml
 Description: mod_yaml
  Adds mod_yaml.
-Build-Depends: libyaml-dev
+Build-Depends: libyaml-dev, libglib2.0-dev
 
 ## mod/loggers
 

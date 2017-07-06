@@ -104,7 +104,7 @@ getlibs () {
   getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
     || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
+  #getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 }
 
 check_repo_clean () {
@@ -274,7 +274,7 @@ build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
-    local keep_pbuilder_config=false keyring="" custom_keyring="/tmp/fs.asc"
+    local keep_pbuilder_config=false keyring="" custom_keyring="/tmp/fs.gpg"
     local use_custom_sources=true
     local custom_sources_file="/etc/apt/sources.list"
     while getopts 'BbdK:kT:t' o "$@"; do
@@ -296,8 +296,8 @@ build_debs () {
         for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
       fi
       custom_sources_file="/tmp/fs.sources.list"
-      apt-key exportall > "/tmp/fs.asc"
-      custom_keyring="/tmp/fs.asc"
+      apt-key exportall > "/tmp/fs.gpg"
+      custom_keyring="/tmp/fs.gpg"
     fi
     if [ "$custom_sources_file" == "" ]; then
       # Caller has explicitly set the custom sources file to empty string. They must intend to not use additional mirrors.
@@ -306,32 +306,59 @@ build_debs () {
     if [[ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]]; then
       echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
     fi
-    if [[ "$custom_keyring" == "/tmp/fs.asc" && ! -r "/tmp/fs.asc" ]]; then
-      cat << EOF > "/tmp/fs.asc"
+    if [[ "$custom_keyring" == "/tmp/fs.gpg" && ! -r "/tmp/fs.gpg" ]]; then
+      cat << EOF > "/tmp/fs.gpg"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-mQGiBE8jEfIRBAC+Cca0fPQxhyhn0NMsPaMQJgTvqhWb5/f4Mel++kosmUQQ4fJq
-4U9NFvpfNyLp5MoHpnlDfAb+e57B2sr47NOJLTh83yQIAnvU+8O0Q4kvMaiiesX5
-CisApLBs6Vx28y7VWmLsY3vWu8mC7M+PORKfpBV8DWy/7569wQPx2SCsIwCgzv2T
-8YsnYsSVRrrmh46J1o4/ngsD/13ETX4ws/wNN+82RdqUxu7fjc0fNbUAb6XYddAb
-1hrw5npQulgUNWkpnVmIDRHDXLNMeT8nZDkxsA8AsT+u7ACfPFa2o3R8w9zOPSO+
-oSO0+Puhop2+z1gm6lmfMKq9HpeXG3yt/8zsEVUmOYT9m+vYEVghfpXtACVYheDq
-LzUuA/9E9HBiNPVhJ/mEpOk9bZ1gpwr3mjlpUbvX5aGwTJJ+YoTfZOCL7go3uQHn
-/sT35WoJ23wJCRlW0SYTFJqCoris9AhI+qw7xRTw9wb+txSI96uhafUUMCn6GLkN
-+yAixqDwNHKkdax3GSGJtLB0t67QoBDIpcGog7ZfRMvWP3QLNLQ4RnJlZVNXSVRD
-SCBQYWNrYWdlIFNpZ25pbmcgS2V5IDxwYWNrYWdlc0BmcmVlc3dpdGNoLm9yZz6I
-YgQTEQIAIgUCTyMR8gIbAwYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ127c
-dyXgEM879ACffY0HFi+mACtfFYmX/Uk/qGELSP4An1B8D5L4dLFFr1zV9YawQUbz
-O9/MuQENBE8jEfIQBAC7vnn855YDuz1gTsUMYDxfIRH5KPmDDEAf1WXoD3QG4qOQ
-xVW5nhp/bolh2CacAxdOjZePdhGkkdNOBpcu9NlTNRru0myGN8etbnzP3O5dq0io
-VMf23C5u9KPbxwRWS+WFtC4CRFn6DafDI1qa3Gv3CkiBWtKR0Wid2SQLzl3mVwAF
-EQP9HlwGjhBfFA26LlSMPhSo0Ll+sdcOJupJ21zmGeg7c0GpBnzDzyyJg04gbahs
-xWtW3Y/+B4LGM97o6lnu0OQI7MX5gY1G4Jgu6pgYv8tQd5XyU/CAJUA5VWTxUMIi
-JP6qlzm1bz4AAPmGw4mkS1u4N+vai21Zl4iyFIQFeiuU/K2ISQQYEQIACQUCTyMR
-8gIbDAAKCRDXbtx3JeAQzxReAJ4uvms1n7xV3CcJPQlM7ndX5MZU3QCgxp8zubcL
-/SsMvw7XApSHFs5ooYc=
-=Xc8P
+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
+=06q/
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
     fi
