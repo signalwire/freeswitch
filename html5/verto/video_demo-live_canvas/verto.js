@@ -750,6 +750,9 @@ var callbacks = {
                 }
             }
             break;
+        case $.verto.enum.message.clientReady:
+//            console.error("clientReady", data);
+						break;
         case $.verto.enum.message.info:
 	    if (data.msg) {
 		data = data.msg;

@@ -632,6 +632,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               case $.verto.enum.message.display:
                     $rootScope.$apply(function() {});
                     break;
+              case $.verto.enum.message.clientReady:
+                    $rootScope.$emit('clientReady', {
+                      reattached_sessions: params.reattached_sessions,
+                    });
+                    break;
               default:
                 console.warn('Got a not implemented message:', msg, dialog, params);
                 break;
