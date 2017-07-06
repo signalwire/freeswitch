@@ -38,6 +38,9 @@ RUN apt-get update && apt-get install -y curl \
 RUN apt-get update && apt-get install -y freeswitch-all \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Clean up
+RUN apt-get autoremove
+
 COPY docker-entrypoint.sh /
 # Add anything else here
 
@@ -66,9 +69,6 @@ COPY    build/freeswitch.limits.conf /etc/security/limits.d/
 SHELL       ["/bin/bash"]
 HEALTHCHECK --interval=15s --timeout=5s \
     CMD  fs_cli -x status | grep -q ^UP || exit 1
-
-# Clean up
-RUN apt-clean --aggressive
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
