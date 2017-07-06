@@ -728,12 +728,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference_file_stop(conference, FILE_STOP_ASYNC);
 	conference_file_stop(conference, FILE_STOP_ALL);
 
-	for (np = conference->cdr_nodes; np; np = np->next) {
-		if (np->var_event) {
-			switch_event_destroy(&np->var_event);
-		}
-	}
-
 	switch_mutex_lock(conference->member_mutex);
 	for (imember = conference->members; imember; imember = imember->next) {
 		switch_channel_t *channel;
@@ -812,8 +806,16 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference_event_add_data(conference, event);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
 	switch_event_fire(&event);
-
+	
+	switch_mutex_lock(conference->member_mutex);
 	conference_cdr_render(conference);
+
+	for (np = conference->cdr_nodes; np; np = np->next) {
+		if (np->var_event) {
+			switch_event_destroy(&np->var_event);
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);
 
 	switch_mutex_lock(conference_globals.setup_mutex);
 	if (conference->layout_hash) {
