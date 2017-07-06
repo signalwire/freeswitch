@@ -1929,6 +1929,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
 	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
 	char *pipe_names[MAX_PEERS] = { 0 };
+	const char *newep = NULL;
 	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
@@ -1941,7 +1942,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	time_t start, global_start;
 	switch_time_t last_retry_start = 0;
 	switch_frame_t *read_frame = NULL;
-	int r = 0, i, and_argc = 0, or_argc = 0;
+	int r = 0, i, and_argc = 0, or_argc = 0, and_argc_offset = 0;
 	int32_t sleep_ms = 1000, try = 0, retries = 1, retry_timelimit_sec = 0;
 	int32_t min_retry_period_ms = sleep_ms;
 	switch_codec_t write_codec = { 0 };
@@ -2613,6 +2614,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				last_retry_start = switch_micro_time_now();
 			}
 
+		add_endpoints:
 			p = pipe_names[r];
 
 			while (p && *p) {
@@ -2646,20 +2648,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				p++;
 			}
 
-			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
+			and_argc += switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 
 			if ((flags & SOF_NOBLOCK) && and_argc > 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 				and_argc = 1;
 			}
 
-			for (i = 0; i < and_argc; i++) {
+			for (i = and_argc_offset; i < and_argc; i++) {
 				const char *current_variable;
 				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
 
 				end = NULL;
 
-				chan_type = peer_names[i];
+				chan_type = peer_names[i-and_argc_offset];
 
 
 				/* strip leading spaces */
@@ -3055,7 +3057,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (;;) {
 				uint32_t valid_channels = 0;
-				for (i = 0; i < and_argc; i++) {
+				for (i = and_argc_offset; i < and_argc; i++) {
 					int state;
 					time_t elapsed;
 
@@ -3135,6 +3137,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
+				switch_channel_set_flag(caller_channel, CF_ADD_ENDPOINTS);
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
@@ -3279,6 +3282,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							case SWITCH_STATUS_BREAK:
 								status = SWITCH_STATUS_FALSE;
+								switch_channel_clear_flag(caller_channel, CF_ADD_ENDPOINTS);
+								switch_channel_set_variable(caller_channel, "originate_add_endpoints", NULL);
 								goto done;
 								break;
 							default:
@@ -3382,6 +3387,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			do_continue:
 
+				if(caller_channel) {
+					newep = switch_channel_get_variable(caller_channel, "originate_add_endpoints");
+					if (newep) {
+						switch_channel_set_variable(caller_channel, "originate_add_endpoints", NULL);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Add new originate endpoint(s): %s\n", newep);
+						and_argc_offset = and_argc;
+						pipe_names[r] = strdup(newep);
+						goto add_endpoints;
+					}
+				}
+
 				if (!read_packet) {
 					switch_yield(20000);
 				}
@@ -3390,6 +3406,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  notready:
 
 			if (caller_channel) {
+
+				switch_channel_clear_flag(caller_channel, CF_ADD_ENDPOINTS);
+				newep = switch_channel_get_variable(caller_channel, "originate_add_endpoints");
+				if (newep) {
+					switch_channel_set_variable(caller_channel, "originate_add_endpoints", NULL);
+
+					/* Only add new endpoints at this stage, if it's not originator cancel and if no outbound leg was aswered */
+					if(oglobals.idx != IDX_CANCEL && oglobals.hups == and_argc) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Add new originate endpoints: %s\n", newep);
+						and_argc_offset = and_argc;
+						pipe_names[r] = strdup(newep);
+						goto add_endpoints;
+					}
+				}
+
 				holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
 				switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 
