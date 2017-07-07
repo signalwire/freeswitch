@@ -4602,6 +4602,10 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 			continue;
 		}
 
+		if (!conference_utils_member_test_flag(imember, MFLAG_CAN_SEE)) {
+			continue;
+		}
+
 		if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 			want_refresh++;
 			switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
