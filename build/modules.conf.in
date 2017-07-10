@@ -124,6 +124,7 @@ formats/mod_sndfile
 #formats/mod_ssml
 formats/mod_tone_stream
 #formats/mod_vlc
+#formats/mod_opusfile
 #languages/mod_basic
 #languages/mod_java
 languages/mod_lua

@@ -1383,6 +1383,14 @@ PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
 
+PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
+   AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
+   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[false])])
+PKG_CHECK_MODULES([OPUSFILE_ENCODE], [libopusenc >= 0.1],[
+   AM_CONDITIONAL([HAVE_OPUSFILE_ENCODE],[true])],[
+   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUSFILE_ENCODE],[false])])
+
+
 PKG_CHECK_MODULES([MAGICK], [ImageMagick >= 6.0.0],[
   AM_CONDITIONAL([HAVE_MAGICK],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MAGICK],[false])])
@@ -1893,6 +1901,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
+		src/mod/formats/mod_opusfile/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
