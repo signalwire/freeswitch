@@ -5896,33 +5896,6 @@ fail:
 }
 
 
-static int _wrap_CoreSession_print(lua_State* L) {
-  int SWIG_arg = 0;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("CoreSession::print",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CoreSession::print",1,"CoreSession *");
-  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("CoreSession::print",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_print",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (int)(arg1)->print(arg2);
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static int _wrap_CoreSession_preAnswer(lua_State* L) {
   int SWIG_arg = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7627,7 +7600,6 @@ static swig_lua_attribute swig_CoreSession_attributes[] = {
 static swig_lua_method swig_CoreSession_methods[]= {
     { "insertFile", _wrap_CoreSession_insertFile},
     { "answer", _wrap_CoreSession_answer},
-    { "print", _wrap_CoreSession_print},
     { "preAnswer", _wrap_CoreSession_preAnswer},
     { "hangup", _wrap_CoreSession_hangup},
     { "hangupState", _wrap_CoreSession_hangupState},

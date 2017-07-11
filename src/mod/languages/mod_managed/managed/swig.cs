@@ -3415,8 +3415,8 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static switch_status_t _switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session session, int force, string file, string func, int line) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE._switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session.getCPtr(session), force, file, func, line);
     return ret;
   }
 
@@ -5166,6 +5166,12 @@ else
 
   public static string switch_channel_get_partner_uuid(SWIGTYPE_p_switch_channel channel) {
     string ret = freeswitchPINVOKE.switch_channel_get_partner_uuid(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    return ret;
+  }
+
+  public static string switch_channel_get_partner_uuid_copy(SWIGTYPE_p_switch_channel channel, string buf, SWIGTYPE_p_switch_size_t blen) {
+    string ret = freeswitchPINVOKE.switch_channel_get_partner_uuid_copy(SWIGTYPE_p_switch_channel.getCPtr(channel), buf, SWIGTYPE_p_switch_size_t.getCPtr(blen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
@@ -12232,8 +12238,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_cert_verify")]
   public static extern int switch_core_cert_verify(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_video_refresh")]
-  public static extern int switch_core_session_request_video_refresh(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp__switch_core_session_request_video_refresh")]
+  public static extern int _switch_core_session_request_video_refresh(HandleRef jarg1, int jarg2, string jarg3, string jarg4, int jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_send_and_request_video_refresh")]
   public static extern int switch_core_session_send_and_request_video_refresh(HandleRef jarg1);
@@ -16557,6 +16563,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_partner_uuid")]
   public static extern string switch_channel_get_partner_uuid(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_partner_uuid_copy")]
+  public static extern string switch_channel_get_partner_uuid_copy(HandleRef jarg1, string jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_hold_record")]
   public static extern IntPtr switch_channel_get_hold_record(HandleRef jarg1);
@@ -29742,6 +29751,7 @@ public enum switch_channel_flag_t {
   CF_INTERCEPT,
   CF_INTERCEPTED,
   CF_VIDEO_REFRESH_REQ,
+  CF_MANUAL_VID_REFRESH,
   CF_SERVICE_AUDIO,
   CF_SERVICE_VIDEO,
   CF_ZRTP_PASSTHRU_REQ,

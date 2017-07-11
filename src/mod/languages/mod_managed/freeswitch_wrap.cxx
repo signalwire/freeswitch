@@ -17343,13 +17343,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_cert_verify(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_request_video_refresh(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp__switch_core_session_request_video_refresh(void * jarg1, int jarg2, char * jarg3, char * jarg4, int jarg5) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_core_session_request_video_refresh(arg1);
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (int)jarg5; 
+  result = (switch_status_t)_switch_core_session_request_video_refresh(arg1,arg2,(char const *)arg3,(char const *)arg4,arg5);
   jresult = result; 
   return jresult;
 }
@@ -34870,6 +34878,28 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_partner_uuid(void * jarg
   
   arg1 = (switch_channel_t *)jarg1; 
   result = (char *)switch_channel_get_partner_uuid(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_partner_uuid_copy(void * jarg1, char * jarg2, void * jarg3) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_size_t arg3 ;
+  switch_size_t *argp3 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  result = (char *)switch_channel_get_partner_uuid_copy(arg1,arg2,arg3);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
