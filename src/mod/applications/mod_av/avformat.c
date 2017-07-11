@@ -1957,6 +1957,19 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			fmt->audio_codec = context->audio_codec->id;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "specified audio codec %s %s [%s]\n", 
 							  tmp, context->audio_codec->name, context->audio_codec->long_name);
+
+			if (!strcasecmp(tmp, "pcm_mulaw")) {
+				handle->mm.samplerate = 8000;
+				handle->mm.ab = 64;
+			}
+		}
+	}
+
+	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_codec"))) {
+		if ((context->video_codec = avcodec_find_encoder_by_name(tmp))) {
+			fmt->video_codec = context->video_codec->id;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "specified video codec %s %s [%s]\n",
+							  tmp, context->video_codec->name, context->video_codec->long_name);
 		}
 	}
 
@@ -1977,7 +1990,15 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	}
 
 	if (handle->mm.samplerate) {
+		handle->samplerate = handle->mm.samplerate;
+	} else {
 		handle->mm.samplerate = handle->samplerate;
+	}
+
+	if (handle->mm.channels) {
+		handle->channels = handle->mm.channels;
+	} else {
+		handle->mm.channels = handle->channels;
 	}
 
 	if (!handle->mm.ab) {
@@ -1988,10 +2009,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		handle->mm.vb = switch_calc_bitrate(handle->mm.vw, handle->mm.vh, 1, handle->mm.fps);
 	}
 
-	if (fmt->video_codec != AV_CODEC_ID_NONE) {
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
-		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "rtsp") || !strcasecmp(handle->stream_name, "youtube")))) {
+		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube")))) {
 
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264

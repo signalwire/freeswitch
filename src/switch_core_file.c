@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 		if ((val = switch_event_get_header(fh->params, "samplerate"))) {
 			tmp = atoi(val);
-			if (tmp > 8000) {
+			if (tmp >= 8000) {
 				fh->mm.samplerate = tmp;
 			}
 		}
