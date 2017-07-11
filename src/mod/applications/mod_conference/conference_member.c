@@ -1143,9 +1143,6 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 	}
 
 	member->avatar_patched = 0;
-	switch_img_free(&member->avatar_png_img);
-	switch_img_free(&member->video_mute_img);
-	switch_img_free(&member->pcanvas_img);
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
 	switch_mutex_lock(member->audio_in_mutex);
@@ -1168,6 +1165,10 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 		}
 		last = imember;
 	}
+
+	switch_img_free(&member->avatar_png_img);
+	switch_img_free(&member->video_mute_img);
+	switch_img_free(&member->pcanvas_img);
 
 	switch_thread_rwlock_unlock(member->rwlock);
 

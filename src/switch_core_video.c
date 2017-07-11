@@ -174,6 +174,7 @@ SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 unsigned int align)
 {
 #ifdef SWITCH_HAVE_VPX
+	switch_image_t *r = NULL;
 #ifdef HAVE_LIBGD
 	if (fmt == SWITCH_IMG_FMT_GD) {
 		gdImagePtr gd = gdImageCreateTrueColor(d_w, d_h);
@@ -196,7 +197,14 @@ SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 	}
 #endif
 
-	return (switch_image_t *)vpx_img_alloc((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align);
+	switch_assert(d_w > 0);
+	switch_assert(d_h > 0);
+	r = (switch_image_t *)vpx_img_alloc((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align);
+	switch_assert(r);
+	switch_assert(r->d_w == d_w);
+	switch_assert(r->d_h = d_h);
+
+	return r;
 #else
 	return NULL;
 #endif
@@ -275,6 +283,9 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 				switch_safe_free((*img)->user_priv);
 			}
 		}
+		switch_assert((*img)->fmt <= SWITCH_IMG_FMT_I44016);
+		switch_assert((*img)->d_w <= 7860 && (*img)->d_w > 0);
+		switch_assert((*img)->d_h <= 4320 && (*img)->d_h > 0);
 		vpx_img_free((vpx_image_t *)*img);
 		*img = NULL;
 	}
@@ -2527,6 +2538,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 		dest = *destP;
 	}
 
+	switch_assert(width > 0);
+	switch_assert(height > 0);
+	
 	if (dest && src->fmt != dest->fmt) switch_img_free(&dest);
 
 	if (!dest) dest = switch_img_alloc(NULL, src->fmt, width, height, 1);
