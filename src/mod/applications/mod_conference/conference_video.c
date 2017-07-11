@@ -420,8 +420,10 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 	}
 
 	switch_img_free(&layer->img);
-	layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
-	switch_assert(layer->img);
+	if (layer->screen_w && layer->screen_h) {
+		layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
+		switch_assert(layer->img);
+	}
 
 	conference_video_clear_layer(layer);
 	switch_img_free(&layer->cur_img);
@@ -2570,6 +2572,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_READY)) {
 		do {
+			pop = NULL;
 			if (switch_queue_trypop(member->video_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 				switch_img_free(&img);
 				img = (switch_image_t *)pop;
