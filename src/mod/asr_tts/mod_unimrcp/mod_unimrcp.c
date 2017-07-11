@@ -144,6 +144,9 @@ struct profile {
 	/** MIME type to use for SRGS ABNF grammars */
 	const char *srgs_mime_type;
 
+	/** MIME type to use for Google Speech module context */
+	const char *xml_mime_type;
+
 	/** MIME type to use for SSML (TTS) */
 	const char *ssml_mime_type;
 
@@ -209,6 +212,7 @@ static int get_next_speech_channel_number(void);
 #define GSL_ID  ";GSL2.0"
 #define ABNF_ID "#ABNF"
 #define JSGF_ID "#JSGF"
+#define GSR_ID "<speech-context"
 #define BUILTIN_ID "builtin:"
 #define SESSION_ID "session:"
 #define HTTP_ID "http://"
@@ -428,7 +432,9 @@ enum grammar_type {
 	/* application/x-nuance-gsl */
 	GRAMMAR_TYPE_NUANCE_GSL,
 	/* application/x-jsgf */
-	GRAMMAR_TYPE_JSGF
+	GRAMMAR_TYPE_JSGF,
+	/* application/xml */
+	GRAMMAR_TYPE_XML
 };
 typedef enum grammar_type grammar_type_t;
 
@@ -550,6 +556,7 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 		lprofile->gsl_mime_type = "application/x-nuance-gsl";
 		lprofile->jsgf_mime_type = "application/x-jsgf";
 		lprofile->ssml_mime_type = "application/ssml+xml";
+		lprofile->xml_mime_type = "application/xml";
 		switch_core_hash_init(&lprofile->default_synth_params);
 		switch_core_hash_init(&lprofile->default_recog_params);
 		*profile = lprofile;
@@ -2161,6 +2168,8 @@ static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile)
 		return profile->gsl_mime_type;
 	case GRAMMAR_TYPE_JSGF:
 		return profile->jsgf_mime_type;
+	case GRAMMAR_TYPE_XML:
+		return profile->xml_mime_type;
 	}
 	return "";
 }
@@ -3270,6 +3279,8 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 			type = GRAMMAR_TYPE_SRGS;
 		} else if (text_starts_with(grammar_data, JSGF_ID)) {
 			type = GRAMMAR_TYPE_JSGF;
+		} else if (text_starts_with(grammar_data, GSR_ID)) {
+			type = GRAMMAR_TYPE_XML;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) unable to determine grammar type: %s\n", schannel->name, grammar_data);
 			status = SWITCH_STATUS_FALSE;
