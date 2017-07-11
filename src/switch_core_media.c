@@ -586,7 +586,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_get_vid_params(switch_core_ses
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_mutex_lock(smh->control_mutex);
 	*vid_params = smh->vid_params;
+	switch_mutex_unlock(smh->control_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -11848,15 +11850,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 
 	/* When desired, scale video to match the input signal (if output is bigger) */
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 
-		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT) && 
-		((smh->vid_params.width != img->d_w) || (smh->vid_params.height != img->d_h))) {
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) &&
+		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT)) {
+		switch_vid_params_t vid_params = { 0 };
 
-		switch_img_letterbox(img, &dup_img, smh->vid_params.width, smh->vid_params.height, "#000000f");
+		switch_core_media_get_vid_params(session, &vid_params);
 
-		img = dup_img;
+		if (vid_params.width && vid_params.height && ((vid_params.width != img->d_w) || (vid_params.height != img->d_h))) {
+			switch_img_letterbox(img, &dup_img, vid_params.width, vid_params.height, "#000000f");
+			if (!(img = dup_img)) {
+				return SWITCH_STATUS_INUSE;
+			}
+		}
 	}
-
+	
 	if (!switch_channel_test_flag(session->channel, CF_VIDEO_WRITING)) {
 		smh->vid_params.d_width = img->d_w;
 		smh->vid_params.d_height = img->d_h;
@@ -12183,15 +12190,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		}
 
 		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h) {
+			int new_w = 0, new_h = 0;
+			
+			if ((*frame)->img->d_w != smh->vid_params.width || (*frame)->img->d_h != smh->vid_params.height) {
+				new_w = (*frame)->img->d_w;
+				new_h = (*frame)->img->d_h;
 
-			if ((*frame)->img->d_w != smh->vid_params.width) {
-				switch_channel_set_variable_printf(session->channel, "video_width", "%d", (*frame)->img->d_w);
-				smh->vid_params.width = (*frame)->img->d_w;
-			}
-
-			if ((*frame)->img->d_h != smh->vid_params.height) {
-				switch_channel_set_variable_printf(session->channel, "video_height", "%d", (*frame)->img->d_h);
-				smh->vid_params.height = (*frame)->img->d_h;
+				if (new_w && new_h) {
+					switch_mutex_lock(smh->control_mutex);
+					smh->vid_params.width = new_w;
+					smh->vid_params.height = new_h;
+					switch_channel_set_variable_printf(session->channel, "video_width", "%d", new_w);
+					switch_channel_set_variable_printf(session->channel, "video_height", "%d", new_h);
+					switch_mutex_unlock(smh->control_mutex);
+				}
 			}
 		}
 
