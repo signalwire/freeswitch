@@ -130,6 +130,16 @@
 	if (v8::V8::IsExecutionTerminating(info.GetIsolate())) return;\
 	if (JSMain::GetScriptInstanceFromIsolate(info.GetIsolate()) && JSMain::GetScriptInstanceFromIsolate(info.GetIsolate())->GetForcedTermination()) return
 
+/* Macro for easy unlocking an isolate on a long running c call */
+#define JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(call) {\
+		/* Unlock isolate on a long running c call to let another thread execute the callback */\
+		info.GetIsolate()->Exit();\
+		Unlocker unlock(info.GetIsolate());\
+		call;\
+	}\
+	/* Lock it back */\
+	info.GetIsolate()->Enter();
+
 /* strdup function for all platforms */
 #ifdef NDEBUG
 #if (_MSC_VER >= 1500)			// VC9+

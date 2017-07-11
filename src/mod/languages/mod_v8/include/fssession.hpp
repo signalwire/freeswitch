@@ -146,6 +146,7 @@ public:
 	FSSession *jss_b;
 	v8::Persistent<v8::Object> session_obj_a;
 	v8::Persistent<v8::Object> session_obj_b;
+	v8::Persistent<v8::Context> context;
 
 	FSInputCallbackState(void);
 	~FSInputCallbackState(void);
