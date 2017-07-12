@@ -133,10 +133,10 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
+	requester_nodeid = blade_rpcexecute_request_requester_nodeid_get(brpcreq);
 	ks_assert(requester_nodeid);
 
-	params = blade_protocol_execute_request_params_get(brpcreq);
+	params = blade_rpcexecute_request_params_get(brpcreq);
 	ks_assert(params);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.join request processing\n", blade_session_id_get(bs));
@@ -152,11 +152,11 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	result = cJSON_CreateObject();
 
-	blade_protocol_execute_response_send(brpcreq, result);
+	blade_rpcexecute_response_send(brpcreq, result);
 
 	params = cJSON_CreateObject();
 
-	blade_protocol_broadcast(bh, requester_nodeid, "test.join", "test", "mydomain.com", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, requester_nodeid, "test.join", "test", "mydomain.com", params, NULL, NULL);
 
 	return KS_FALSE;
 }
@@ -182,10 +182,10 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
+	requester_nodeid = blade_rpcexecute_request_requester_nodeid_get(brpcreq);
 	ks_assert(requester_nodeid);
 
-	params = blade_protocol_execute_request_params_get(brpcreq);
+	params = blade_rpcexecute_request_params_get(brpcreq);
 	ks_assert(params);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.leave (%s) request processing\n", blade_session_id_get(bs), requester_nodeid);
@@ -198,11 +198,11 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	result = cJSON_CreateObject();
 
-	blade_protocol_execute_response_send(brpcreq, result);
+	blade_rpcexecute_response_send(brpcreq, result);
 
 	params = cJSON_CreateObject();
 
-	blade_protocol_broadcast(bh, requester_nodeid, "test.leave", "test", "mydomain.com", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, requester_nodeid, "test.leave", "test", "mydomain.com", params, NULL, NULL);
 
 	return KS_FALSE;
 }
@@ -228,10 +228,10 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	requester_nodeid = blade_protocol_execute_request_requester_nodeid_get(brpcreq);
+	requester_nodeid = blade_rpcexecute_request_requester_nodeid_get(brpcreq);
 	ks_assert(requester_nodeid);
 
-	params = blade_protocol_execute_request_params_get(brpcreq);
+	params = blade_rpcexecute_request_params_get(brpcreq);
 	ks_assert(params);
 
 	text = cJSON_GetObjectCstr(params, "text");
@@ -243,13 +243,13 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	result = cJSON_CreateObject();
 
-	blade_protocol_execute_response_send(brpcreq, result);
+	blade_rpcexecute_response_send(brpcreq, result);
 
 	params = cJSON_CreateObject();
 
 	cJSON_AddStringToObject(params, "text", text);
 
-	blade_protocol_broadcast(bh, requester_nodeid, "test.talk", "test", "mydomain.com", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, requester_nodeid, "test.talk", "test", "mydomain.com", params, NULL, NULL);
 
 	return KS_FALSE;
 }
@@ -326,7 +326,7 @@ int main(int argc, char **argv)
 			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_protocol_publish(bh, "test", "mydomain.com", test_publish_response_handler, test);
+			blade_handle_rpcpublish(bh, "test", "mydomain.com", test_publish_response_handler, test);
 		}
 	}
 

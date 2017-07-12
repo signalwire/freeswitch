@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,47 +31,72 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_H_
-#define _BLADE_H_
-#include <ks.h>
-#include <sodium.h>
-#include <libconfig.h>
-#include "unqlite.h"
-#include "blade_types.h"
-#include "blade_stack.h"
-#include "blade_identity.h"
-#include "blade_transport.h"
-#include "blade_rpc.h"
-#include "blade_connection.h"
-#include "blade_session.h"
-#include "blade_protocol.h"
-#include "blade_subscription.h"
-#include "blade_tuple.h"
+#include "blade.h"
 
-#include "blade_transportmgr.h"
-#include "blade_rpcmgr.h"
-#include "blade_routemgr.h"
-#include "blade_subscriptionmgr.h"
-#include "blade_upstreammgr.h"
-#include "blade_mastermgr.h"
-#include "blade_connectionmgr.h"
-#include "blade_sessionmgr.h"
+struct blade_tuple_s {
+	ks_pool_t *pool;
 
-#include "blade_transport_wss.h"
+	void *value1;
+	void *value2;
+};
 
-KS_BEGIN_EXTERN_C
 
-#ifdef _WIN32
-// @todo look into why the tarball build has a different function name from the debian package
-#define config_lookup_from config_setting_lookup
-#endif
+static void blade_tuple_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	//blade_tuple_t *bt = (blade_tuple_t *)ptr;
 
-KS_DECLARE(ks_status_t) blade_init(void);
-KS_DECLARE(ks_status_t) blade_shutdown(void);
+	//ks_assert(bt);
 
-KS_END_EXTERN_C
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
-#endif
+KS_DECLARE(ks_status_t) blade_tuple_create(blade_tuple_t **btP, ks_pool_t *pool, void *value1, void *value2)
+{
+	blade_tuple_t *bt = NULL;
+
+	ks_assert(btP);
+	ks_assert(pool);
+
+	bt = ks_pool_alloc(pool, sizeof(blade_tuple_t));
+	bt->pool = pool;
+	bt->value1 = value1;
+	bt->value2 = value2;
+
+	ks_pool_set_cleanup(pool, bt, NULL, blade_tuple_cleanup);
+
+	*btP = bt;
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_tuple_destroy(blade_tuple_t **btP)
+{
+	ks_assert(btP);
+	ks_assert(*btP);
+
+	ks_pool_free((*btP)->pool, btP);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(void *) blade_tuple_value1_get(blade_tuple_t *bt)
+{
+	ks_assert(bt);
+	return bt->value1;
+}
+
+KS_DECLARE(void *) blade_tuple_value2_get(blade_tuple_t *bt)
+{
+	ks_assert(bt);
+	return bt->value2;
+}
 
 /* For Emacs:
  * Local Variables:

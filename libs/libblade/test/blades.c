@@ -66,7 +66,7 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	ks_assert(bs);
 
 	// @todo get the inner parameters of a blade.execute request for protocolrpcs
-	params = blade_protocol_execute_request_params_get(brpcreq);
+	params = blade_rpcexecute_request_params_get(brpcreq);
 	ks_assert(params);
 
 	text = cJSON_GetObjectCstr(params, "text");
@@ -80,7 +80,7 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	result = cJSON_CreateObject();
 	cJSON_AddStringToObject(result, "text", text);
 
-	blade_protocol_execute_response_send(brpcreq, result);
+	blade_rpcexecute_response_send(brpcreq, result);
 
 	return KS_FALSE;
 }
@@ -242,8 +242,8 @@ void command_publish(blade_handle_t *bh, char *args)
 	blade_rpc_create(&brpc, bh, "test.echo", "test", "mydomain.com", test_echo_request_handler, NULL);
 	blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_protocol_publish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
-	blade_protocol_publish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);
+	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_handle_rpcpublish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
+	blade_handle_rpcpublish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);
 }
 
 void command_broadcast(blade_handle_t *bh, char *args)
@@ -251,7 +251,7 @@ void command_broadcast(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_broadcast(bh, NULL, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
+	blade_handle_rpcbroadcast(bh, NULL, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
 }
 
 

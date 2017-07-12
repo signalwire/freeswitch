@@ -204,6 +204,7 @@
     <ClCompile Include="src\blade_session.c" />
     <ClCompile Include="src\blade_stack.c" />
     <ClCompile Include="src\blade_transport.c" />
+    <ClCompile Include="src\blade_tuple.c" />
     <ClCompile Include="src\blade_upstreammgr.c" />
     <ClCompile Include="src\unqlite.c" />
   </ItemGroup>
@@ -225,6 +226,7 @@
     <ClInclude Include="src\include\blade_session.h" />
     <ClInclude Include="src\include\blade_stack.h" />
     <ClInclude Include="src\include\blade_transport.h" />
+    <ClInclude Include="src\include\blade_tuple.h" />
     <ClInclude Include="src\include\blade_types.h" />
     <ClInclude Include="src\include\blade_upstreammgr.h" />
     <ClInclude Include="src\include\unqlite.h" />

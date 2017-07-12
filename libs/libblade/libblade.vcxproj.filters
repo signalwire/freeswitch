@@ -72,6 +72,9 @@
     <ClCompile Include="src\blade_sessionmgr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\blade_tuple.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\unqlite.h">
@@ -132,6 +135,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\blade_sessionmgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_tuple.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

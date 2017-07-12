@@ -42,7 +42,7 @@ ks_bool_t test_echo_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
-	result = blade_protocol_execute_response_result_get(brpcres);
+	result = blade_rpcexecute_response_result_get(brpcres);
 	ks_assert(result);
 
 	text = cJSON_GetObjectCstr(result, "text");
@@ -106,7 +106,7 @@ ks_bool_t blade_locate_response_handler(blade_rpc_response_t *brpcres, void *dat
 
 	params = cJSON_CreateObject();
 	cJSON_AddStringToObject(params, "text", "hello world!");
-	blade_protocol_execute(bh, nodeid, "test.echo", res_result_protocol, res_result_realm, params, test_echo_response_handler, NULL);
+	blade_handle_rpcexecute(bh, nodeid, "test.echo", res_result_protocol, res_result_realm, params, test_echo_response_handler, NULL);
 
 	return KS_FALSE;
 }
@@ -285,7 +285,7 @@ void command_execute(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_locate(bh, "test", "mydomain.com", blade_locate_response_handler, NULL);
+	blade_handle_rpclocate(bh, "test", "mydomain.com", blade_locate_response_handler, NULL);
 }
 
 void command_subscribe(blade_handle_t *bh, char *args)
@@ -293,7 +293,7 @@ void command_subscribe(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_subscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
+	blade_handle_rpcsubscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
 }
 
 /* For Emacs:

@@ -47,13 +47,12 @@ struct blade_handle_s {
 	blade_sessionmgr_t *sessionmgr;
 };
 
-
-ks_bool_t blade_protocol_register_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_protocol_publish_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_protocol_locate_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_protocol_execute_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_protocol_subscribe_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void *data);
 
 
 static void blade_handle_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
@@ -220,22 +219,22 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 
 
 	// register internal core rpcs for blade.xxx
-	blade_rpc_create(&brpc, bh, "blade.register", NULL, NULL, blade_protocol_register_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.register", NULL, NULL, blade_rpcregister_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
-	blade_rpc_create(&brpc, bh, "blade.publish", NULL, NULL, blade_protocol_publish_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.publish", NULL, NULL, blade_rpcpublish_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
-	blade_rpc_create(&brpc, bh, "blade.locate", NULL, NULL, blade_protocol_locate_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.locate", NULL, NULL, blade_rpclocate_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
-	blade_rpc_create(&brpc, bh, "blade.execute", NULL, NULL, blade_protocol_execute_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.execute", NULL, NULL, blade_rpcexecute_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
-	blade_rpc_create(&brpc, bh, "blade.subscribe", NULL, NULL, blade_protocol_subscribe_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.subscribe", NULL, NULL, blade_rpcsubscribe_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
-	blade_rpc_create(&brpc, bh, "blade.broadcast", NULL, NULL, blade_protocol_broadcast_request_handler, NULL);
+	blade_rpc_create(&brpc, bh, "blade.broadcast", NULL, NULL, blade_rpcbroadcast_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
 
@@ -349,7 +348,7 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 // which is important for implementation of blade.execute where errors can be relayed back to the requester properly
 
 // blade.register request generator
-KS_DECLARE(ks_status_t) blade_protocol_register(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcregister(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -386,7 +385,7 @@ done:
 }
 
 // blade.register request handler
-ks_bool_t blade_protocol_register_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -450,7 +449,7 @@ done:
 
 
 // blade.publish request generator
-KS_DECLARE(ks_status_t) blade_protocol_publish(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -504,7 +503,7 @@ done:
 }
 
 // blade.publish request handler
-ks_bool_t blade_protocol_publish_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -605,7 +604,7 @@ done:
 // @todo discuss system to support caching locate results, and internally subscribing to receive event updates related to protocols which have been located
 // to ensure local caches remain synced when protocol controllers change, but this requires additional filters for event propagating to avoid broadcasting
 // every protocol update to everyone which may actually be a better way than an explicit locate request
-KS_DECLARE(ks_status_t) blade_protocol_locate(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -656,7 +655,7 @@ done:
 }
 
 // blade.locate request handler
-ks_bool_t blade_protocol_locate_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -771,7 +770,7 @@ done:
 
 
 // blade.execute request generator
-KS_DECLARE(ks_status_t) blade_protocol_execute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -798,7 +797,6 @@ KS_DECLARE(ks_status_t) blade_protocol_execute(blade_handle_t *bh, const char *n
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.execute");
 
-	// fill in the req_params
 	cJSON_AddStringToObject(req_params, "method", method);
 	cJSON_AddStringToObject(req_params, "protocol", protocol);
 	cJSON_AddStringToObject(req_params, "realm", realm);
@@ -815,8 +813,14 @@ KS_DECLARE(ks_status_t) blade_protocol_execute(blade_handle_t *bh, const char *n
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) execute request started\n", blade_session_id_get(bs));
 
+	// @todo change what blade_rpc_request_t carries for tracking data, use a tuple instead which makes it
+	// easier to free the tuple and potentially associated data if a request needs to be destroyed without
+	// the callback being called to know that the data is a tuple to destroy, meanwhile a tuple offers a
+	// spare pointer for universally wrapping callback + data pairs in a case like this
+	// in which case do not create the tuple here, just pass 2 data pointers to send and let it store them
+	// in the internal tuple
 	ret = blade_session_send(bs, req, callback, data);
-
+	
 done:
 	if (req) cJSON_Delete(req);
 	if (bs) blade_session_read_unlock(bs);
@@ -825,7 +829,7 @@ done:
 }
 
 // blade.execute request handler
-ks_bool_t blade_protocol_execute_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	ks_bool_t ret = KS_FALSE;
 	blade_handle_t *bh = NULL;
@@ -913,9 +917,9 @@ ks_bool_t blade_protocol_execute_request_handler(blade_rpc_request_t *brpcreq, v
 		blade_session_send(bs, res, NULL, NULL);
 		goto done;
 	}
-
+	
 	callback = blade_rpc_callback_get(brpc);
-	if (callback) ret = callback(brpcreq, blade_rpc_callback_data_get(brpc));
+	if (callback) ret = callback(brpcreq, blade_rpc_data_get(brpc));
 
 done:
 
@@ -925,7 +929,7 @@ done:
 	return ret;
 }
 
-KS_DECLARE(const char *) blade_protocol_execute_request_requester_nodeid_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(const char *) blade_rpcexecute_request_requester_nodeid_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
@@ -942,7 +946,7 @@ KS_DECLARE(const char *) blade_protocol_execute_request_requester_nodeid_get(bla
 	return req_requester_nodeid;
 }
 
-KS_DECLARE(const char *) blade_protocol_execute_request_responder_nodeid_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(const char *) blade_rpcexecute_request_responder_nodeid_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
@@ -959,7 +963,7 @@ KS_DECLARE(const char *) blade_protocol_execute_request_responder_nodeid_get(bla
 	return req_responder_nodeid;
 }
 
-KS_DECLARE(cJSON *) blade_protocol_execute_request_params_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(cJSON *) blade_rpcexecute_request_params_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
@@ -976,7 +980,7 @@ KS_DECLARE(cJSON *) blade_protocol_execute_request_params_get(blade_rpc_request_
 	return req_params_params;
 }
 
-KS_DECLARE(cJSON *) blade_protocol_execute_response_result_get(blade_rpc_response_t *brpcres)
+KS_DECLARE(cJSON *) blade_rpcexecute_response_result_get(blade_rpc_response_t *brpcres)
 {
 	cJSON *res = NULL;
 	cJSON *res_result = NULL;
@@ -996,7 +1000,7 @@ KS_DECLARE(cJSON *) blade_protocol_execute_response_result_get(blade_rpc_respons
 // @note added blade_rpc_request_duplicate() to support async responding where the callbacks return immediately and the blade_rpc_request_t will be destroyed,
 // in such cases duplicate the request to retain a copy for passing to blade_protocol_execute_response_send when sending the response as it contains everything
 // needed to produce a response except the inner result block for blade.execute and call blade_rpc_request_destroy() to clean up the duplicate when finished
-KS_DECLARE(void) blade_protocol_execute_response_send(blade_rpc_request_t *brpcreq, cJSON *result)
+KS_DECLARE(void) blade_rpcexecute_response_send(blade_rpc_request_t *brpcreq, cJSON *result)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -1055,7 +1059,7 @@ KS_DECLARE(void) blade_protocol_execute_response_send(blade_rpc_request_t *brpcr
 
 
 // blade.subscribe request generator
-KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data, blade_rpc_request_callback_t event_callback, void *event_data)
+KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data, blade_rpc_request_callback_t event_callback, void *event_data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -1089,7 +1093,7 @@ KS_DECLARE(ks_status_t) blade_protocol_subscribe(blade_handle_t *bh, const char 
 		blade_subscription_callback_data_set(bsub, event_data);
 	}
 
-	if (propagate) ret = blade_protocol_subscribe_raw(bh, event, protocol, realm, remove, callback, data);
+	if (propagate) ret = blade_handle_rpcsubscribe_raw(bh, event, protocol, realm, remove, callback, data);
 
 done:
 	if (bs) blade_session_read_unlock(bs);
@@ -1097,7 +1101,7 @@ done:
 	return ret;
 }
 
-KS_DECLARE(ks_status_t) blade_protocol_subscribe_raw(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -1137,7 +1141,7 @@ done:
 }
 
 // blade.subscribe request handler
-ks_bool_t blade_protocol_subscribe_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -1212,7 +1216,7 @@ ks_bool_t blade_protocol_subscribe_request_handler(blade_rpc_request_t *brpcreq,
 		propagate = blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, NULL, req_params_event, req_params_protocol, req_params_realm, blade_session_id_get(bs));
 	}
 
-	if (propagate) blade_protocol_subscribe_raw(bh, req_params_event, req_params_protocol, req_params_realm, remove, NULL, NULL);
+	if (propagate) blade_handle_rpcsubscribe_raw(bh, req_params_event, req_params_protocol, req_params_realm, remove, NULL, NULL);
 
 	// build the actual response finally
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
@@ -1234,7 +1238,7 @@ done:
 
 
 // blade.broadcast request generator
-KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char *broadcaster_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char *broadcaster_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_pool_t *pool = NULL;
@@ -1266,7 +1270,7 @@ KS_DECLARE(ks_status_t) blade_protocol_broadcast(blade_handle_t *bh, const char 
 }
 
 // blade.broadcast request handler
-ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	ks_bool_t ret = KS_FALSE;
 	blade_handle_t *bh = NULL;
@@ -1366,7 +1370,6 @@ ks_bool_t blade_protocol_broadcast_request_handler(blade_rpc_request_t *brpcreq,
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
 	blade_session_send(bs, res, NULL, NULL);
 
-
 done:
 
 	if (res) cJSON_Delete(res);
@@ -1375,7 +1378,7 @@ done:
 	return ret;
 }
 
-KS_DECLARE(const char *) blade_protocol_broadcast_request_broadcaster_nodeid_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(const char *) blade_rpcbroadcast_request_broadcaster_nodeid_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
@@ -1392,7 +1395,7 @@ KS_DECLARE(const char *) blade_protocol_broadcast_request_broadcaster_nodeid_get
 	return req_broadcaster_nodeid;
 }
 
-KS_DECLARE(cJSON *) blade_protocol_broadcast_request_params_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(cJSON *) blade_rpcbroadcast_request_params_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;

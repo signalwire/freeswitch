@@ -50,6 +50,7 @@ typedef struct blade_session_s blade_session_t;
 typedef struct blade_session_callbacks_s blade_session_callbacks_t;
 typedef struct blade_protocol_s blade_protocol_t;
 typedef struct blade_subscription_s blade_subscription_t;
+typedef struct blade_tuple_s blade_tuple_t;
 
 typedef struct blade_transportmgr_s blade_transportmgr_t;
 typedef struct blade_rpcmgr_s blade_rpcmgr_t;

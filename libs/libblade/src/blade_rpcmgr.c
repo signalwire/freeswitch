@@ -62,7 +62,7 @@ static void blade_rpcmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_
 			ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
 			ks_hash_remove(brpcmgr->protocolrpcs, key);
 
-			blade_rpc_destroy(&value); // must call destroy to close the rpc pool, using FREE_VALUE on the hash would attempt to free the rpc from the wrong pool
+			blade_rpc_destroy(&value); // must call destroy to close the method pool, using FREE_VALUE on the hash would attempt to free the method from the wrong pool
 		}
 		while ((it = ks_hash_first(brpcmgr->corerpcs, KS_UNLOCKED)) != NULL) {
 			void *key = NULL;

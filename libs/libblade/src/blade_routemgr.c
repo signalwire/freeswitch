@@ -140,7 +140,7 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_add(blade_routemgr_t *brmgr, const 
 
 	ks_log(KS_LOG_DEBUG, "Route Added: %s through %s\n", key, value);
 
-	blade_protocol_register(brmgr->handle, target, KS_FALSE, NULL, NULL);
+	blade_handle_rpcregister(brmgr->handle, target, KS_FALSE, NULL, NULL);
 
 	return KS_STATUS_SUCCESS;
 
@@ -155,7 +155,7 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_remove(blade_routemgr_t *brmgr, con
 
 	ks_log(KS_LOG_DEBUG, "Route Removed: %s\n", target);
 
-	blade_protocol_register(brmgr->handle, target, KS_TRUE, NULL, NULL);
+	blade_handle_rpcregister(brmgr->handle, target, KS_TRUE, NULL, NULL);
 
 	// @note protocols are cleaned up here because routes can be removed that are not locally connected with a session but still
 	// have protocols published to the master node from further downstream, in which case if a route is announced upstream to be

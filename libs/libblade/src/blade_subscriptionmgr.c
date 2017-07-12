@@ -284,7 +284,7 @@ KS_DECLARE(void) blade_subscriptionmgr_subscriber_cleanup(blade_subscriptionmgr_
 
 		if (!unsubbed) {
 			if (blade_subscriptionmgr_subscriber_remove(bsmgr, NULL, event, protocol, realm, target)) {
-				blade_protocol_subscribe_raw(bsmgr->handle, event, protocol, realm, KS_TRUE, NULL, NULL);
+				blade_handle_rpcsubscribe_raw(bsmgr->handle, event, protocol, realm, KS_TRUE, NULL, NULL);
 			}
 			ks_pool_free(bsmgr->pool, &event);
 			ks_pool_free(bsmgr->pool, &protocol);

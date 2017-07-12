@@ -42,7 +42,7 @@ struct blade_rpc_s {
 	const char *realm;
 
 	blade_rpc_request_callback_t callback;
-	void *callback_data;
+	void *data;
 };
 
 struct blade_rpc_request_s {
@@ -54,7 +54,7 @@ struct blade_rpc_request_s {
 	cJSON *message;
 	const char *message_id; // pulled from message for easier keying
 	blade_rpc_response_callback_t callback;
-	void *callback_data;
+	void *data;
 	// @todo ttl to wait for response before injecting an error response locally
 };
 
@@ -86,7 +86,7 @@ static void blade_rpc_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cle
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, void *callback_data)
+KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, void *data)
 {
 	blade_rpc_t *brpc = NULL;
 	ks_pool_t *pool = NULL;
@@ -106,7 +106,7 @@ KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh
 	if (protocol) brpc->protocol = ks_pstrdup(pool, protocol);
 	if (realm) brpc->realm = ks_pstrdup(pool, realm);
 	brpc->callback = callback;
-	brpc->callback_data = callback_data;
+	brpc->data = data;
 
 	ks_pool_set_cleanup(pool, brpc, NULL, blade_rpc_cleanup);
 
@@ -169,11 +169,11 @@ KS_DECLARE(blade_rpc_request_callback_t) blade_rpc_callback_get(blade_rpc_t *brp
 	return brpc->callback;
 }
 
-KS_DECLARE(void *) blade_rpc_callback_data_get(blade_rpc_t *brpc)
+KS_DECLARE(void *) blade_rpc_data_get(blade_rpc_t *brpc)
 {
 	ks_assert(brpc);
 
-	return brpc->callback_data;
+	return brpc->data;
 }
 
 
@@ -218,7 +218,7 @@ KS_DECLARE(ks_status_t) blade_rpc_request_create(blade_rpc_request_t **brpcreqP,
 	brpcreq->message = cJSON_Duplicate(json, 1);
 	brpcreq->message_id = cJSON_GetObjectCstr(brpcreq->message, "id");
 	brpcreq->callback = callback;
-	brpcreq->callback_data = data;
+	brpcreq->data = data;
 
 	ks_pool_set_cleanup(pool, brpcreq, NULL, blade_rpc_request_cleanup);
 
@@ -243,7 +243,7 @@ KS_DECLARE(ks_status_t) blade_rpc_request_destroy(blade_rpc_request_t **brpcreqP
 
 KS_DECLARE(ks_status_t) blade_rpc_request_duplicate(blade_rpc_request_t **brpcreqP, blade_rpc_request_t *brpcreq)
 {
-	return blade_rpc_request_create(brpcreqP, brpcreq->handle, brpcreq->pool, brpcreq->session_id, brpcreq->message, brpcreq->callback, brpcreq->callback_data);
+	return blade_rpc_request_create(brpcreqP, brpcreq->handle, brpcreq->pool, brpcreq->session_id, brpcreq->message, brpcreq->callback, brpcreq->data);
 }
 
 KS_DECLARE(blade_handle_t *) blade_rpc_request_handle_get(blade_rpc_request_t *brpcreq)
@@ -276,11 +276,10 @@ KS_DECLARE(blade_rpc_response_callback_t) blade_rpc_request_callback_get(blade_r
 	return brpcreq->callback;
 }
 
-KS_DECLARE(void *) blade_rpc_request_callback_data_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(void *) blade_rpc_request_data_get(blade_rpc_request_t *brpcreq)
 {
 	ks_assert(brpcreq);
-
-	return brpcreq->callback_data;
+	return brpcreq->data;
 }
 
 KS_DECLARE(ks_status_t) blade_rpc_request_raw_create(ks_pool_t *pool, cJSON **json, cJSON **params, const char **id, const char *method)

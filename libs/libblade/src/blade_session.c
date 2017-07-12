@@ -724,7 +724,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		blade_rpc_request_create(&brpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, NULL, NULL);
 		ks_assert(brpcreq);
 
-		disconnect = callback(brpcreq, blade_rpc_callback_data_get(brpc));
+		disconnect = callback(brpcreq, blade_rpc_data_get(brpc));
 
 		blade_rpc_request_destroy(&brpcreq);
 	} else {
@@ -779,7 +779,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		blade_rpc_response_create(&brpcres, bs->handle, bs->pool, bs->id, brpcreq, json);
 		ks_assert(brpcres);
 
-		if (callback) disconnect = callback(brpcres, blade_rpc_request_callback_data_get(brpcreq));
+		if (callback) disconnect = callback(brpcres, blade_rpc_request_data_get(brpcreq));
 
 		blade_rpc_response_destroy(&brpcres);
 	}

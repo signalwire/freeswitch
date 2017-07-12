@@ -101,7 +101,7 @@ ks_bool_t test_join_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
-	result = blade_protocol_execute_response_result_get(brpcres);
+	result = blade_rpcexecute_response_result_get(brpcres);
 	ks_assert(result);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.join response processing\n", blade_session_id_get(bs));
@@ -125,7 +125,7 @@ ks_bool_t test_leave_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
-	result = blade_protocol_execute_response_result_get(brpcres);
+	result = blade_rpcexecute_response_result_get(brpcres);
 	ks_assert(result);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.leave response processing\n", blade_session_id_get(bs));
@@ -149,7 +149,7 @@ ks_bool_t test_talk_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
-	result = blade_protocol_execute_response_result_get(brpcres);
+	result = blade_rpcexecute_response_result_get(brpcres);
 	ks_assert(result);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.talk response processing\n", blade_session_id_get(bs));
@@ -175,10 +175,10 @@ ks_bool_t test_join_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	params = blade_protocol_broadcast_request_params_get(brpcreq);
+	params = blade_rpcbroadcast_request_params_get(brpcreq);
 	ks_assert(params);
 
-	broadcaster_nodeid = blade_protocol_broadcast_request_broadcaster_nodeid_get(brpcreq);
+	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
 	ks_assert(broadcaster_nodeid);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.join (%s) broadcast processing\n", blade_session_id_get(bs), broadcaster_nodeid);
@@ -204,10 +204,10 @@ ks_bool_t test_leave_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	params = blade_protocol_broadcast_request_params_get(brpcreq);
+	params = blade_rpcbroadcast_request_params_get(brpcreq);
 	ks_assert(params);
 
-	broadcaster_nodeid = blade_protocol_broadcast_request_broadcaster_nodeid_get(brpcreq);
+	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
 	ks_assert(broadcaster_nodeid);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.leave (%s) broadcast processing\n", blade_session_id_get(bs), broadcaster_nodeid);
@@ -233,10 +233,10 @@ ks_bool_t test_talk_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	broadcaster_nodeid = blade_protocol_broadcast_request_broadcaster_nodeid_get(brpcreq);
+	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
 	ks_assert(broadcaster_nodeid);
 
-	params = blade_protocol_broadcast_request_params_get(brpcreq);
+	params = blade_rpcbroadcast_request_params_get(brpcreq);
 	ks_assert(params);
 
 	// @todo pull out text from params
@@ -385,7 +385,7 @@ void command_locate(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_protocol_locate(bh, "test", "mydomain.com", test_locate_response_handler, NULL);
+	blade_handle_rpclocate(bh, "test", "mydomain.com", test_locate_response_handler, NULL);
 }
 
 void command_join(blade_handle_t *bh, char *args)
@@ -403,11 +403,11 @@ void command_join(blade_handle_t *bh, char *args)
 
 	params = cJSON_CreateObject();
 
-	blade_protocol_execute(bh, g_testcon_nodeid, "test.join", "test", "mydomain.com", params, test_join_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", "mydomain.com", params, test_join_response_handler, NULL);
 
-	blade_protocol_subscribe(bh, "test.join", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_join_broadcast_handler, NULL);
-	blade_protocol_subscribe(bh, "test.leave", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_leave_broadcast_handler, NULL);
-	blade_protocol_subscribe(bh, "test.talk", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_talk_broadcast_handler, NULL);
+	blade_handle_rpcsubscribe(bh, "test.join", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_join_broadcast_handler, NULL);
+	blade_handle_rpcsubscribe(bh, "test.leave", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_leave_broadcast_handler, NULL);
+	blade_handle_rpcsubscribe(bh, "test.talk", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_talk_broadcast_handler, NULL);
 }
 
 void command_leave(blade_handle_t *bh, char *args)
@@ -424,11 +424,11 @@ void command_leave(blade_handle_t *bh, char *args)
 
 	params = cJSON_CreateObject();
 
-	blade_protocol_execute(bh, g_testcon_nodeid, "test.leave", "test", "mydomain.com", params, test_leave_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", "mydomain.com", params, test_leave_response_handler, NULL);
 
-	blade_protocol_subscribe(bh, "test.join", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
-	blade_protocol_subscribe(bh, "test.leave", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
-	blade_protocol_subscribe(bh, "test.talk", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
+	blade_handle_rpcsubscribe(bh, "test.join", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
+	blade_handle_rpcsubscribe(bh, "test.leave", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
+	blade_handle_rpcsubscribe(bh, "test.talk", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
 }
 
 void command_talk(blade_handle_t *bh, char *args)
@@ -451,7 +451,7 @@ void command_talk(blade_handle_t *bh, char *args)
 
 	cJSON_AddStringToObject(params, "text", args);
 
-	blade_protocol_execute(bh, g_testcon_nodeid, "test.talk", "test", "mydomain.com", params, test_talk_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.talk", "test", "mydomain.com", params, test_talk_response_handler, NULL);
 }
 
 /* For Emacs:
