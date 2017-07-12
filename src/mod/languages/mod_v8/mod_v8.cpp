@@ -109,6 +109,7 @@ SWITCH_MODULE_DEFINITION_EX(mod_v8, mod_v8_load, mod_v8_shutdown, NULL, SMODF_GL
 /* API interfaces */
 static switch_api_interface_t *jsrun_interface = NULL;
 static switch_api_interface_t *jsapi_interface = NULL;
+static switch_api_interface_t *jsmon_interface = NULL;
 
 /* Module manager for loadable modules */
 module_manager_t module_manager = { 0 };
@@ -122,10 +123,25 @@ typedef struct {
 	char *xml_handler;
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 	v8::Platform *v8platform;
+	switch_hash_t *compiled_script_hash;
+	switch_mutex_t *compiled_script_hash_mutex;
+	char *script_caching;
+	switch_time_t cache_expires_seconds;
+	bool performance_monitor;
+	switch_mutex_t *mutex;
 #endif
 } mod_v8_global_t;
 
 static mod_v8_global_t globals = { 0 };
+
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+/* Struct to store cached script data */
+typedef struct {
+	std::shared_ptr<uint8_t> data;
+	int length;
+	switch_time_t compile_time;
+} v8_compiled_script_cache_t;
+#endif
 
 /* Loadable module struct, used for external extension modules */
 typedef struct {
@@ -318,6 +334,14 @@ static void load_configuration(void)
 				char *var = (char *)switch_xml_attr_soft(param, "name");
 				char *val = (char *)switch_xml_attr_soft(param, "value");
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+				if (!strcmp(var, "script-caching")) {
+					globals.script_caching = switch_core_strdup(globals.pool, val);
+				} else if (!strcmp(var, "cache-expires-sec")) {
+					int v = atoi(val);
+					globals.cache_expires_seconds = (v > 0) ? v : 0;
+				} else 
+#endif
 				if (!strcmp(var, "xml-handler-script")) {
 					globals.xml_handler = switch_core_strdup(globals.pool, val);
 				}
@@ -333,6 +357,12 @@ static void load_configuration(void)
 					}
 				}
 			}
+
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+			if (zstr(globals.script_caching)) {
+				globals.script_caching = switch_core_strdup(globals.pool, "disabled");
+			}
+#endif
 
 			for (hook = switch_xml_child(settings, "hook"); hook; hook = hook->next) {
 				char *event = (char *)switch_xml_attr_soft(hook, "event");
@@ -461,6 +491,121 @@ static char *v8_get_script_path(const char *script_file)
 		return NULL;
 	}
 }
+
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+void perf_log(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+
+	switch_mutex_lock(globals.mutex);
+	if (globals.performance_monitor) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, fmt, ap);
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	va_end(ap);
+}
+
+template< typename T >
+struct array_deleter
+{
+	void operator ()(T const * p)
+	{
+		delete[] p;
+	}
+};
+
+static void destructor(void *ptr)
+{
+	delete (v8_compiled_script_cache_t*)ptr;
+}
+
+void LoadScript(MaybeLocal<v8::Script> *v8_script, Isolate *isolate, const char *script_data, const char *script_file)
+{
+	switch_time_t start = switch_time_now();
+
+	ScriptCompiler::CachedData *cached_data = 0;
+	v8_compiled_script_cache_t *stored_compiled_script_cache = NULL;
+	ScriptCompiler::CompileOptions options;
+
+	/*
+		Do not cache if the caching is disabled
+		Do not cache inline scripts
+	*/
+	if (!strcasecmp(globals.script_caching, "disabled") || !strcasecmp(globals.script_caching, "false") || !strcasecmp(globals.script_caching, "no") ||	!strcasecmp(script_file, "inline") || zstr(script_file)) {
+		options = ScriptCompiler::kNoCompileOptions;
+		perf_log("Javascript caching is disabled.\n", script_file);
+	} else {
+		options = ScriptCompiler::kConsumeCodeCache;
+
+		switch_mutex_lock(globals.compiled_script_hash_mutex);
+
+		void *hash_found = switch_core_hash_find(globals.compiled_script_hash, script_file);
+		if (hash_found)
+		{
+			stored_compiled_script_cache = new v8_compiled_script_cache_t;
+			*stored_compiled_script_cache = *((v8_compiled_script_cache_t *)hash_found);
+		}
+
+		switch_mutex_unlock(globals.compiled_script_hash_mutex);
+
+		if (stored_compiled_script_cache)
+		{
+			switch_time_t time_left_since_compile_sec = (switch_time_now() - stored_compiled_script_cache->compile_time) / 1000000;
+			if (time_left_since_compile_sec <= globals.cache_expires_seconds || globals.cache_expires_seconds == 0) {
+				cached_data = new ScriptCompiler::CachedData(stored_compiled_script_cache->data.get(), stored_compiled_script_cache->length, ScriptCompiler::CachedData::BufferNotOwned);
+			} else {
+				perf_log("Javascript ['%s'] cache expired.\n", script_file);
+				switch_core_hash_delete_locked(globals.compiled_script_hash, script_file, globals.compiled_script_hash_mutex);
+			}
+
+		}
+		
+		if (!cached_data) options = ScriptCompiler::kProduceCodeCache;
+
+	}
+
+	ScriptCompiler::Source source(String::NewFromUtf8(isolate, script_data), cached_data);
+	*v8_script = ScriptCompiler::Compile(isolate->GetCurrentContext(), &source, options);	
+
+	if (!v8_script->IsEmpty()) {
+
+		if (options == ScriptCompiler::kProduceCodeCache && !source.GetCachedData()->rejected) {
+			int length = source.GetCachedData()->length;
+			uint8_t* raw_cached_data = new uint8_t[length];
+			v8_compiled_script_cache_t *compiled_script_cache = new v8_compiled_script_cache_t;
+			memcpy(raw_cached_data, source.GetCachedData()->data, static_cast<size_t>(length));
+			compiled_script_cache->data.reset(raw_cached_data, array_deleter<uint8_t>());
+			compiled_script_cache->length = length;
+			compiled_script_cache->compile_time = switch_time_now();
+
+			switch_mutex_lock(globals.compiled_script_hash_mutex);
+			switch_core_hash_insert_destructor(globals.compiled_script_hash, script_file, compiled_script_cache, destructor);
+			switch_mutex_unlock(globals.compiled_script_hash_mutex);
+			
+			perf_log("Javascript ['%s'] cache was produced.\n", script_file);
+
+		} else if (options == ScriptCompiler::kConsumeCodeCache) {
+
+			if (source.GetCachedData()->rejected) {
+				perf_log("Javascript ['%s'] cache was rejected.\n", script_file);
+				switch_core_hash_delete_locked(globals.compiled_script_hash, script_file, globals.compiled_script_hash_mutex);
+			} else {
+				perf_log("Javascript ['%s'] execution using cache.\n", script_file);
+			}
+
+		}
+	}
+
+	if (stored_compiled_script_cache)
+		delete stored_compiled_script_cache;
+
+	switch_time_t end = switch_time_now();
+	perf_log("Javascript ['%s'] loaded in %u microseconds.\n", script_file, (end - start));
+
+}
+#endif
 
 static int v8_parse_and_execute(switch_core_session_t *session, const char *input_code, switch_stream_handle_t *api_stream, v8_event_t *v8_event, v8_xml_handler_t* xml_handler)
 {
@@ -653,27 +798,17 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 							context->Global()->Set(String::NewFromUtf8(isolate, "scriptPath"), String::NewFromUtf8(isolate, path));
 							free(path);
 						}
-						// Create a string containing the JavaScript source code.
-#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-						ScriptCompiler::Source source(String::NewFromUtf8(isolate, script_data));
-#else
-						Handle<String> source = String::NewFromUtf8(isolate, script_data);
-#endif
 
 						TryCatch try_catch;
 
 						// Compile the source code.
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-						v8::ScriptCompiler::CompileOptions options = v8::ScriptCompiler::kNoCompileOptions;
-						Handle<v8::Script> v8_script;
-						v8::MaybeLocal<v8::Script> v8_script_check = v8::ScriptCompiler::Compile(context, &source, options);
-						
-						if (!v8_script_check.IsEmpty()) {
-							v8_script = v8_script_check.ToLocalChecked();
-						}
-						//Handle<v8::Script> v8_script = v8::ScriptCompiler::Compile(context, source,/* String::NewFromUtf8(isolate, script_file),*/ v8::ScriptCompiler::kProduceCodeCache).ToLocalChecked();
-						//source->GetCachedData();
+						switch_time_t start = switch_time_now();
+						MaybeLocal<v8::Script> v8_script;
+						LoadScript(&v8_script, isolate, script_data, script_file);
 #else
+						// Create a string containing the JavaScript source code.
+						Handle<String> source = String::NewFromUtf8(isolate, script_data);
 						Handle<Script> v8_script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, script_file)));
 #endif
 
@@ -687,7 +822,24 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 								Debug::DebugBreak(isolate);
 							}
 #endif
+
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+							Handle<Value> result;
+
+							if (!v8_script.IsEmpty()) {
+								result = v8_script.ToLocalChecked()->Run();
+							}
+
+							switch_mutex_lock(globals.mutex);
+							if (globals.performance_monitor) {
+								switch_time_t end = switch_time_now();
+								switch_time_t delay = (end - start);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Javascript execution time: %u microseconds\n", delay);
+							}
+							switch_mutex_unlock(globals.mutex);
+#else
 							Handle<Value> result = v8_script->Run();
+#endif
 							if (try_catch.HasCaught()) {
 								v8_error(isolate, &try_catch);
 							} else {
@@ -1006,6 +1158,32 @@ SWITCH_STANDARD_API(launch_async)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(jsmon_function)
+{
+	if (zstr(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", jsmon_interface->syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!strcasecmp(cmd, "on")) {
+		switch_mutex_lock(globals.mutex);
+		globals.performance_monitor = true;
+		switch_mutex_unlock(globals.mutex);
+		stream->write_function(stream, "Performance monitor has been enabled.\n", jsmon_interface->syntax);
+	} else if (!strcasecmp(cmd, "off")) {
+		switch_mutex_lock(globals.mutex);
+		globals.performance_monitor = false;
+		switch_mutex_unlock(globals.mutex);
+		stream->write_function(stream, "Performance monitor has been disabled.\n", jsmon_interface->syntax);
+	} else {
+		stream->write_function(stream, "USAGE: %s\n", jsmon_interface->syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	stream->write_function(stream, "+OK\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 {
 	switch_application_interface_t *app_interface;
@@ -1019,6 +1197,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 
 	globals.pool = pool;
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+	switch_mutex_init(&globals.compiled_script_hash_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+#endif
 	switch_mutex_init(&globals.event_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	globals.event_handlers = new set<FSEventHandler *>();
 
@@ -1028,7 +1210,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 	globals.v8platform = NULL;
+	globals.cache_expires_seconds = 0;
+	globals.performance_monitor = false;
 	JSMain::Initialize(&globals.v8platform);
+
+	switch_core_hash_init(&globals.compiled_script_hash);
 #else
 	JSMain::Initialize();
 #endif
@@ -1051,6 +1237,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(jsrun_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
 	SWITCH_ADD_API(jsapi_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
+	SWITCH_ADD_API(jsmon_interface, "jsmon", "toggle performance monitor", jsmon_function, "jsmon on|off");
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", v8_dp_function, "<script> [additional_vars [...]]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "javascript", "execute a js script", "execute a js script", v8_chat_function, "<script>", SCAF_NONE);
 
@@ -1071,6 +1258,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_v8_shutdown)
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 	delete globals.v8platform;
+
+	switch_core_hash_destroy(&globals.compiled_script_hash);
+	switch_mutex_destroy(globals.compiled_script_hash_mutex);
+	switch_mutex_destroy(globals.mutex);
 #endif
 
 	switch_core_hash_destroy(&module_manager.load_hash);

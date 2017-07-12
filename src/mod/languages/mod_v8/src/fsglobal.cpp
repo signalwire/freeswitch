@@ -477,13 +477,20 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 				string js_file = JSMain::LoadFileToString(script_name);
 
 				if (js_file.length() > 0) {
-					Handle<String> source = String::NewFromUtf8(info.GetIsolate(), js_file.c_str());
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-					Handle<Script> script = Script::Compile(source, info[i]->ToString());
+					MaybeLocal<v8::Script> script;
+					LoadScript(&script, info.GetIsolate(), js_file.c_str(), script_name);
+					
+					if (script.IsEmpty()) {
+						info.GetReturnValue().Set(false);
+					} else {
+						info.GetReturnValue().Set(script.ToLocalChecked()->Run());
+					}
 #else
+					Handle<String> source = String::NewFromUtf8(info.GetIsolate(), js_file.c_str());
 					Handle<Script> script = Script::Compile(source, info[i]);
-#endif
 					info.GetReturnValue().Set(script->Run());
+#endif
 					switch_safe_free(path);
 					return;
 				}
