@@ -79,7 +79,7 @@ static int fail2ban_logger(const char *message, char *user, char *ip)
 
 static void fail2ban_event_handler(switch_event_t *event)
 {
-	if (event->event_id == SWITCH_EVENT_CUSTOM) {
+	if (event->event_id == SWITCH_EVENT_CUSTOM && event->subclass_name) {
 		if (strncmp(event->subclass_name, "sofia::register_attempt",23) == 0) {
 			fail2ban_logger("A registration was attempted", switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
 		} else if (strncmp(event->subclass_name, "sofia::register_failure",23) == 0) {
