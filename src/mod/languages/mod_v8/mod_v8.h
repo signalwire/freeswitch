@@ -36,6 +36,10 @@
 #include "javascript.hpp"
 #include <switch.h>
 
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+void LoadScript(v8::MaybeLocal<v8::Script> *v8_script, v8::Isolate *isolate, const char *script_data, const char *script_file);
+#endif
+
 SWITCH_BEGIN_EXTERN_C
 
 #define JS_BUFFER_SIZE 1024 * 32
