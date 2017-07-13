@@ -2194,14 +2194,6 @@
         dialog.lastState = dialog.state;
         dialog.state = state;
 
-        if (!dialog.causeCode) {
-            dialog.causeCode = 16;
-        }
-
-        if (!dialog.cause) {
-            dialog.cause = "NORMAL CLEARING";
-        }
-
         if (dialog.callbacks.onDialogState) {
             dialog.callbacks.onDialogState(this);
         }
@@ -2320,6 +2312,10 @@
 		dialog.cause = params.cause;
             }
         }
+
+	if (!dialog.cause && !dialog.causeCode) {
+	    dialog.cause = "NORMAL_CLEARING";
+	}
 
         if (dialog.state.val >= $.verto.enum.state.new.val && dialog.state.val < $.verto.enum.state.hangup.val) {
             dialog.setState($.verto.enum.state.hangup);

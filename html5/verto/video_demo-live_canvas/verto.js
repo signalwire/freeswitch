@@ -874,7 +874,7 @@ var callbacks = {
             });
 
             $("#declinebtn").click(function() {
-                cur_call.hangup();
+                cur_call.hangup({"cause": "CALL_REJECTED"});
                 $('#dialog-incoming-call').dialog('close');
             });
 

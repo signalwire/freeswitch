@@ -2766,11 +2766,11 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject();
+	cJSON *obj = cJSON_CreateObject(), *causeObj = NULL;
 	switch_core_session_t *session;
 	cJSON *dialog = NULL;
 	const char *call_id = NULL, *cause_str = NULL;
-	int err = 0;
+	int err = 0, got_cause = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	*response = obj;
@@ -2795,6 +2795,24 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 
 		if (check != SWITCH_CAUSE_NONE) {
 			cause = check;
+			got_cause = 1;
+		}
+	} 
+
+	if (!got_cause && (causeObj = cJSON_GetObjectItem(params, "causeCode"))) {
+		int check = 0;
+		const char *cause_str = NULL;
+
+		if (!zstr(causeObj->valuestring)) {
+			check = atoi(causeObj->valuestring);
+		} else if (causeObj->valueint) {
+			check = causeObj->valueint;
+		}
+
+		cause_str = switch_channel_cause2str((switch_call_cause_t)check);
+
+		if (!zstr(cause_str) && strcasecmp(cause_str, "unknown")) {
+			cause = (switch_call_cause_t) check;
 		}
 	}
 
