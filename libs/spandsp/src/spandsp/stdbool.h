@@ -39,15 +39,14 @@
 
 #if !defined(__cplusplus)
 
-#define _Bool   int
-#define bool    int
+typedef int     _Bool;
+typedef int     bool;
 #define false   0
 #define true    (!false)
 
 #else
 
-#define _Bool   bool
-#define bool    bool
+typedef bool    _Bool;
 #define false   false
 #define true    true
 

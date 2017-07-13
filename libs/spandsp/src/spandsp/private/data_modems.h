@@ -43,6 +43,9 @@ struct data_modems_state_s
         silent audio. */
     bool transmit_on_idle;
 
+    at_state_t at_state;
+    data_modems_control_handler_t modem_control_handler;
+    void *modem_control_user_data;
     get_bit_func_t get_bit;
     void *get_user_data;
     put_bit_func_t put_bit;
@@ -59,6 +62,9 @@ struct data_modems_state_s
     int use_v14;
     async_tx_state_t async_tx;
     async_rx_state_t async_rx;
+
+    /*! \brief Samples elapsed in the current call */
+    int64_t call_samples;
 
     union
     {

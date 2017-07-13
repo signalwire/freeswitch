@@ -79,7 +79,16 @@ static void log_signal(int signum)
 }
 /*- End of function --------------------------------------------------------*/
 
-int socket_harness_run(socket_harness_state_t *s)
+int terminal_write(void *user_data, const char *buf, int len)
+{
+    socket_harness_state_t *s;
+    
+    s = (socket_harness_state_t *) user_data;
+    return write(s->pty_fd, buf, len);
+}
+/*- End of function --------------------------------------------------------*/
+
+int socket_harness_run(socket_harness_state_t *s, int kick)
 {
     struct timeval tmo;
     fd_set rset;
@@ -91,6 +100,23 @@ int socket_harness_run(socket_harness_state_t *s)
     int tx_samples;
     int ret;
 
+    if (kick)
+    {
+        samples = 160;
+        tx_samples = s->tx_callback(s->user_data, outbuf, samples);
+        if (tx_samples < samples)
+            memset(&outbuf[tx_samples], 0, (samples - tx_samples)*2);
+
+        if ((count = write(s->audio_fd, outbuf, samples*2)) < 0)
+        {
+            if (errno != EAGAIN)
+            {
+                fprintf(stderr, "Error: audio write: %s\n", strerror(errno));
+                return -1;
+            }
+            /* TODO: */
+        }
+    }
     while (keep_running)
     {
         //if (s->modem->event)
@@ -131,7 +157,6 @@ int socket_harness_run(socket_harness_state_t *s)
             fprintf(stderr, "Error: select: %s\n", strerror(errno));
             return ret;
         }
-
         if (ret == 0)
         {
             /* Timeout */

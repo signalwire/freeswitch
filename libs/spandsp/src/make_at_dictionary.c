@@ -646,7 +646,7 @@ int main(int argc, char *argv[])
         exit(2);
     /*endif*/
 
-    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS\n");
     printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
     printf("\n");
 
@@ -661,7 +661,7 @@ int main(int argc, char *argv[])
     trie_recursive_build_packed_trie(s->root);
 
     dump_trie();
-     
+
     trie_free(s);
 
     return 0;

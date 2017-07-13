@@ -53,7 +53,9 @@ typedef struct socket_harness_state_s
     modem_t modem;
 } socket_harness_state_t;
 
-int socket_harness_run(socket_harness_state_t *s);
+int socket_harness_run(socket_harness_state_t *s, int kick);
+
+int terminal_write(void *user_data, const char *buf, int len);
 
 socket_harness_state_t *socket_harness_init(socket_harness_state_t *s,
                                             const char *socket_name,

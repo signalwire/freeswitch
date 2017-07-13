@@ -31,13 +31,16 @@
  */
 struct awgn_state_s
 {
+    /* Scaling factor */
     double rms;
-    long int ix1;
-    long int ix2;
-    long int ix3;
-    double r[98];
-    double gset;
-    int iset;
+    /* Working data for the Gaussian generator */
+    bool odd;
+    double amp2;
+    /* Working data for the random number generator */
+    int32_t ix1;
+    int32_t ix2;
+    int32_t ix3;
+    double r[97];
 };
 
 #endif

@@ -23,7 +23,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define LPC10_ORDER     10
+#define LPC10_ORDER         10
+#define LPC10_MAX_PITCH     20
+#define LPC10_MIN_PITCH     156
 
 #if !defined(min)
 #define min(a,b) ((a) <= (b) ? (a) : (b))

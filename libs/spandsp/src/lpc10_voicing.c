@@ -353,10 +353,6 @@ void lpc10_voicing(lpc10_encode_state_t *s,
     /* Voicing decision for current half-frame:  1 = Voiced; 0 = Unvoiced */
     s->voibuf[3][half] = (s->voice[2][half] > 0.0f)  ?  1  :  0;
     /* Skip voicing decision smoothing in first half-frame: */
-    /* Give a value to VSTATE, so that trace statements below will print */
-    /* a consistent value from one call to the next when HALF .EQ. 1. */
-    /* The value of VSTATE is not used for any other purpose when this is */
-    /* true. */
     if (half != 0)
     {
         /* Voicing decision smoothing rules (override of linear combination): */

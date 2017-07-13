@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2004-2009 Steve Underwood
+ * Copyright (C) 2004-2015 Steve Underwood
  *
  * All rights reserved.
  *

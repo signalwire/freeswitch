@@ -177,6 +177,10 @@ SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
                                                 at_modem_control_handler_t modem_control_handler,
                                                 void *modem_control_user_data);
 
+SPAN_DECLARE(void) at_set_at_tx_handler(at_state_t *s,
+                                        at_tx_handler_t at_tx_handler,
+                                        void *at_tx_user_data);
+
 /*! Initialise an AT interpreter context.
     \brief Initialise an AT interpreter context.
     \param s The AT context.

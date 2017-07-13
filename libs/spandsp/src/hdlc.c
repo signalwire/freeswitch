@@ -89,6 +89,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
 {
     if (s->octet_count_report_interval == 0)
         return;
+    /*endif*/
 
     /* If we are not in octet counting mode, we start it.
        If we are in octet counting mode, we update it. */
@@ -625,6 +626,7 @@ SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
         /* An input byte will generate between 8 and 10 output bits */
         return (s->octets_in_progress >> s->num_bits) & 0xFF;
     }
+    /*endif*/
     /* Untimed idling on flags */
     if (s->tx_end)
     {
@@ -644,8 +646,10 @@ SPAN_DECLARE(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
     {
         if ((s->byte = hdlc_tx_get_byte(s)) < 0)
             return s->byte;
+        /*endif*/
         s->bits = 8;
     }
+    /*endif*/
     s->bits--;
     txbit = (s->byte >> s->bits) & 0x01;
     return txbit;
@@ -661,8 +665,10 @@ SPAN_DECLARE(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
     {
         if ((x = hdlc_tx_get_byte(s)) == SIG_STATUS_END_OF_DATA)
             return i;
+        /*endif*/
         buf[i] = (uint8_t) x;
     }
+    /*endfor*/
     return (int) i;
 }
 /*- End of function --------------------------------------------------------*/

@@ -188,6 +188,10 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
         bert_set_report(bert[i], 100000, reporter, (void *) (intptr_t) i);
         if ((data_modems_state[i] = data_modems_init(NULL,
                                                      calling_party,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL,
                                                      put_msg,
                                                      get_msg,
                                                      NULL)) == NULL)

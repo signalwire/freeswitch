@@ -71,8 +71,10 @@
 
 enum
 {
-    V8_WAIT_1S = 0,     /* Start point when sending CI */
-    V8_AWAIT_ANSAM,     /* Start point when sending initial silence */
+    /* Start point when sending CI */
+    V8_WAIT_1S = 0,
+    /* Start point when sending initial silence */
+    V8_AWAIT_ANSAM,
     V8_CI_ON,
     V8_CI_OFF,
     V8_HEARD_ANSAM,
@@ -113,6 +115,8 @@ enum
     V8_V92_SYNC_OCTET = 0x55
 };
 
+#define Te_TIMEOUT      500
+
 SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
 {
     switch (call_function)
@@ -134,6 +138,7 @@ SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
     case V8_CALL_FUNCTION_EXTENSION:
         return "Call function is in extension octet";
     }
+    /*endswitch*/
     return "Unknown call function";
 }
 /*- End of function --------------------------------------------------------*/
@@ -171,6 +176,7 @@ SPAN_DECLARE(const char *) v8_modulation_to_str(int modulation_scheme)
     case V8_MOD_V92:
         return "V.92 duplex";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -186,6 +192,7 @@ SPAN_DECLARE(const char *) v8_protocol_to_str(int protocol)
     case V8_PROTOCOL_EXTENSION:
         return "Extension";
     }
+    /*endswitch*/
     return "Undefined";
 }
 /*- End of function --------------------------------------------------------*/
@@ -209,6 +216,7 @@ SPAN_DECLARE(const char *) v8_pstn_access_to_str(int pstn_access)
     case (V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR):
         return "DCE on digital, and answering and calling modems on cellular";
     }
+    /*endswitch*/
     return "PSTN access unknown";
 }
 /*- End of function --------------------------------------------------------*/
@@ -220,6 +228,7 @@ SPAN_DECLARE(const char *) v8_nsf_to_str(int nsf)
     case 0:
         return "???";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -245,6 +254,7 @@ SPAN_DECLARE(const char *) v8_pcm_modem_availability_to_str(int pcm_modem_availa
     case (V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE):
         return "V.91 and V.90/V.92 digital/analogue available";
     }
+    /*endswitch*/
     return "PCM availability unknown";
 }
 /*- End of function --------------------------------------------------------*/
@@ -271,6 +281,7 @@ SPAN_DECLARE(const char *) v8_t66_to_str(int t66)
     case 7:
         return "Reserved TIA + others";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -289,7 +300,9 @@ SPAN_DECLARE(void) v8_log_supported_modulations(v8_state_t *s, int modulation_sc
             span_log(&s->logging, SPAN_LOG_FLOW | SPAN_LOG_SUPPRESS_LABELLING, "%s%s", comma, v8_modulation_to_str(modulation_schemes & (1 << i)));
             comma = ", ";
         }
+        /*endif*/
     }
+    /*endfor*/
     span_log(&s->logging, SPAN_LOG_FLOW | SPAN_LOG_SUPPRESS_LABELLING, " supported\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -298,6 +311,7 @@ static int report_event(v8_state_t *s)
 {
     if (s->result_handler)
         s->result_handler(s->result_handler_user_data, &s->result);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -321,10 +335,13 @@ static const uint8_t *process_modulation_mode(v8_state_t *s, const uint8_t *p)
     s->modulation_bytes = 1;
     if (*p & 0x80)
         modulations |= V8_MOD_V34HDX;
+    /*endif*/
     if (*p & 0x40)
         modulations |= V8_MOD_V34;
+    /*endif*/
     if (*p & 0x20)
         modulations |= V8_MOD_V90;
+    /*endif*/
     ++p;
 
     /* Check for an extension octet */
@@ -333,14 +350,19 @@ static const uint8_t *process_modulation_mode(v8_state_t *s, const uint8_t *p)
         s->modulation_bytes++;
         if (*p & 0x80)
             modulations |= V8_MOD_V27TER;
+        /*endif*/
         if (*p & 0x40)
             modulations |= V8_MOD_V29;
+        /*endif*/
         if (*p & 0x04)
             modulations |= V8_MOD_V17;
+        /*endif*/
         if (*p & 0x02)
             modulations |= V8_MOD_V22;
+        /*endif*/
         if (*p & 0x01)
             modulations |= V8_MOD_V32;
+        /*endif*/
         ++p;
 
         /* Check for an extension octet */
@@ -349,17 +371,24 @@ static const uint8_t *process_modulation_mode(v8_state_t *s, const uint8_t *p)
             s->modulation_bytes++;
             if (*p & 0x80)
                 modulations |= V8_MOD_V21;
+            /*endif*/
             if (*p & 0x40)
                 modulations |= V8_MOD_V23HDX;
+            /*endif*/
             if (*p & 0x04)
                 modulations |= V8_MOD_V23;
+            /*endif*/
             if (*p & 0x02)
                 modulations |= V8_MOD_V26BIS;
+            /*endif*/
             if (*p & 0x01)
                 modulations |= V8_MOD_V26TER;
-             ++p;
+            /*endif*/
+            ++p;
         }
+        /*endif*/
     }
+    /*endif*/
     s->result.modulations = modulations;
     v8_log_supported_modulations(s, modulations);
     return p;
@@ -411,6 +440,7 @@ static void ci_decode(v8_state_t *s)
 {
     if ((s->rx_data[0] & 0x1F) == V8_CALL_FUNCTION_TAG)
         process_call_function(s, &s->rx_data[0]);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -420,6 +450,7 @@ static void cm_jm_decode(v8_state_t *s)
 
     if (s->got_cm_jm)
         return;
+    /*endif*/
 
     /* We must receive two consecutive identical CM or JM sequences to accept it. */
     if (s->cm_jm_len <= 0
@@ -433,6 +464,7 @@ static void cm_jm_decode(v8_state_t *s)
         memcpy(s->cm_jm_data, s->rx_data, s->rx_data_ptr);
         return;
     }
+    /*endif*/
     /* We have a matching pair of CMs or JMs, so we are happy this is correct. */
     s->got_cm_jm = true;
 
@@ -473,10 +505,13 @@ static void cm_jm_decode(v8_state_t *s)
             p++;
             break;
         }
+        /*endswitch*/
         /* Skip any future extensions we do not understand */
         while ((*p & 0x38) == 0x10)
             p++;
+        /*endwhile*/
     }
+    /*endwhile*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -501,8 +536,10 @@ static void put_bit(void *user_data, int bit)
         default:
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     //span_log(&s->logging, SPAN_LOG_FLOW, "Bit %d\n", bit);
     /* Wait until we sync. */
     s->bit_stream = (s->bit_stream >> 1) | (bit << 19);
@@ -529,6 +566,7 @@ static void put_bit(void *user_data, int bit)
         new_preamble_type = V8_SYNC_UNKNOWN;
         break;
     }
+    /*endswitch*/
     if (new_preamble_type != V8_SYNC_UNKNOWN)
     {
         /* We have seen a fresh sync code */
@@ -552,9 +590,12 @@ static void put_bit(void *user_data, int bit)
                     tag = ">??: ";
                     break;
                 }
+                /*endswitch*/
                 span_log_buf(&s->logging, SPAN_LOG_FLOW, tag, s->rx_data, s->rx_data_ptr);
             }
+            /*endif*/
         }
+        /*endif*/
         /* If we were handling a valid sync code then we should process what has been
            received to date. */
         switch (s->preamble_type)
@@ -566,10 +607,12 @@ static void put_bit(void *user_data, int bit)
             cm_jm_decode(s);
             break;
         }
+        /*endswitch*/
         s->preamble_type = new_preamble_type;
         s->bit_cnt = 0;
         s->rx_data_ptr = 0;
     }
+    /*endif*/
 
     if (s->preamble_type != V8_SYNC_UNKNOWN)
     {
@@ -585,17 +628,22 @@ static void put_bit(void *user_data, int bit)
             {
                 if (++s->zero_byte_count == 3)
                     s->got_cj = true;
+                /*endif*/
             }
             else
             {
                 s->zero_byte_count = 0;
             }
+            /*endif*/
 
             if (s->rx_data_ptr < (int) (sizeof(s->rx_data) - 1))
                 s->rx_data[s->rx_data_ptr++] = data;
+            /*endif*/
             s->bit_cnt = 0;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -625,6 +673,7 @@ static int get_bit(void *user_data)
     s = user_data;
     if (queue_read(s->tx_queue, &bit, 1) <= 0)
         return SIG_STATUS_END_OF_DATA;
+    /*endif*/
     return bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -657,9 +706,11 @@ static void v8_put_bytes(v8_state_t *s, uint8_t buf[], int len)
             bits[j] = byte & 1;
             byte >>= 1;
         }
+        /*endfor*/
         bits[9] = 1;
         queue_write(s->tx_queue, bits, 10);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -684,50 +735,68 @@ static void send_cm_jm(v8_state_t *s)
     val = 0x05;
     if (offered_modulations & V8_MOD_V90)
         val |= 0x20;
+    /*endif*/
     if (offered_modulations & V8_MOD_V34)
         val |= 0x40;
+    /*endif*/
     if (offered_modulations & V8_MOD_V34HDX)
         val |= 0x80;
+    /*endif*/
     buf[ptr++] = val;
     if (++bytes < s->modulation_bytes)
     {
         val = 0x10;
         if (offered_modulations & V8_MOD_V32)
             val |= 0x01;
+        /*endif*/
         if (offered_modulations & V8_MOD_V22)
             val |= 0x02;
+        /*endif*/
         if (offered_modulations & V8_MOD_V17)
             val |= 0x04;
+        /*endif*/
         if (offered_modulations & V8_MOD_V29)
             val |= 0x40;
+        /*endif*/
         if (offered_modulations & V8_MOD_V27TER)
             val |= 0x80;
+        /*endif*/
         buf[ptr++] = val;
     }
+    /*endif*/
     if (++bytes < s->modulation_bytes)
     {
         val = 0x10;
         if (offered_modulations & V8_MOD_V26TER)
             val |= 0x01;
+        /*endif*/
         if (offered_modulations & V8_MOD_V26BIS)
             val |= 0x02;
+        /*endif*/
         if (offered_modulations & V8_MOD_V23)
             val |= 0x04;
+        /*endif*/
         if (offered_modulations & V8_MOD_V23HDX)
             val |= 0x40;
+        /*endif*/
         if (offered_modulations & V8_MOD_V21)
             val |= 0x80;
+        /*endif*/
         buf[ptr++] = val;
     }
-
+    /*endif*/
     if (s->parms.protocol)
         buf[ptr++] = (s->parms.protocol << 5) | V8_PROTOCOLS_TAG;
+    /*endif*/
     if (s->parms.pstn_access)
         buf[ptr++] = (s->parms.pstn_access << 5) | V8_PSTN_ACCESS_TAG;
+    /*endif*/
     if (s->parms.pcm_modem_availability)
         buf[ptr++] = (s->parms.pcm_modem_availability << 5) | V8_PCM_MODEM_AVAILABILITY_TAG;
+    /*endif*/
     if (s->parms.t66 >= 0)
         buf[ptr++] = (s->parms.t66 << 5) | V8_T66_TAG;
+    /*endif*/
     /* No NSF */
     //buf[ptr++] = (0 << 5) | V8_NSF_TAG;
     span_log_buf(&s->logging, SPAN_LOG_FLOW, (s->calling_party)  ?  "<CM: "  :  "<JM: ", &buf[1], ptr - 1);
@@ -743,23 +812,25 @@ SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
     len = 0;
     if (s->modem_connect_tone_tx_on)
     {
-        if (s->modem_connect_tone_tx_on == (ms_to_samples(75) + 2))
+        if (s->modem_connect_tone_tx_on == (milliseconds_to_samples(75) + 2))
         {
             if (s->fsk_tx_on)
             {
                 /* The initial silence is over */
                 s->modem_connect_tone_tx_on = 0;
             }
+            /*endif*/
         }
-        else if (s->modem_connect_tone_tx_on == (ms_to_samples(75) + 1))
+        else if (s->modem_connect_tone_tx_on == (milliseconds_to_samples(75) + 1))
         {
             /* Send the ANSam tone */
             len = modem_connect_tones_tx(&s->ansam_tx, amp, max_len);
             if (len < max_len)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "ANSam or ANSam/ ended\n");
-                s->modem_connect_tone_tx_on = ms_to_samples(75);
+                s->modem_connect_tone_tx_on = milliseconds_to_samples(75);
             }
+            /*endif*/
         }
         else
         {
@@ -768,10 +839,13 @@ SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
                 len = s->modem_connect_tone_tx_on;
             else
                 len = max_len;
+            /*endif*/
             vec_zeroi16(amp, len);
             s->modem_connect_tone_tx_on -= len;
         }
+        /*endif*/
     }
+    /*endif*/
     if (s->fsk_tx_on  &&  len < max_len)
     {
         len += fsk_tx(&s->v21tx, &amp[len], max_len - len);
@@ -781,33 +855,38 @@ SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
             s->fsk_tx_on = false;
             //s->state = V8_PARKED;
         }
+        /*endif*/
     }
+    /*endif*/
     if (s->state != V8_PARKED  &&  len < max_len)
     {
         vec_zeroi16(&amp[len], max_len - len);
         len = max_len;
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
 
-static void send_v92(v8_state_t *s)
+static void conditionally_send_v92(v8_state_t *s)
 {
     int i;
     uint8_t buf[2];
 
-    if (s->result.v92 >= 0)
+    if (s->parms.v92 >= 0)
     {
         /* Send 2 V.92 packets */
         for (i = 0;  i < 2;  i++)
         {
             v8_put_preamble(s);
             buf[0] = V8_V92_SYNC_OCTET;
-            buf[1] = s->result.v92;
+            buf[1] = s->parms.v92;
             span_log_buf(&s->logging, SPAN_LOG_FLOW, "<V.92: ", &buf[1], 1);
             v8_put_bytes(s, buf, 2);
         }
+        /*endfor*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -825,6 +904,7 @@ static void send_ci(v8_state_t *s)
         span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CI: ", &buf[1], 1);
         v8_put_bytes(s, buf, 2);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -839,7 +919,9 @@ static void handle_modem_connect_tone(v8_state_t *s, int tone)
         /* Set the Te interval. The spec. says 500ms is the minimum,
            but gives reasons why 1 second is a better value (V.8/8.1.1). */
         s->state = V8_HEARD_ANSAM;
-        s->ci_timer = ms_to_samples(1000);
+        s->ci_timer = milliseconds_to_samples(2*Te_TIMEOUT);
+        s->negotiation_timer = milliseconds_to_samples(5000);
+        v8_decode_init(s);
     }
     else
     {
@@ -850,6 +932,7 @@ static void handle_modem_connect_tone(v8_state_t *s, int tone)
         s->result.status = V8_STATUS_NON_V8_CALL;
         report_event(s);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -868,6 +951,7 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
         /* Wait 1 second before sending the first CI packet */
         if ((s->negotiation_timer -= len) > 0)
             break;
+        /*endif*/
         fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
         send_ci(s);
         s->state = V8_CI_ON;
@@ -881,12 +965,15 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             handle_modem_connect_tone(s, tone);
             break;
         }
+        /*endif*/
         if (!s->fsk_tx_on)
         {
             s->state = V8_CI_OFF;
-            s->ci_timer = ms_to_samples(500);
+            s->ci_timer = milliseconds_to_samples(Te_TIMEOUT);
+            s->negotiation_timer = milliseconds_to_samples(5000);
             break;
         }
+        /*endif*/
         break;
     case V8_CI_OFF:
         residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
@@ -896,6 +983,7 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             handle_modem_connect_tone(s, tone);
             break;
         }
+        /*endif*/
         if ((s->ci_timer -= len) <= 0)
         {
             if (++s->ci_count >= 10)
@@ -914,28 +1002,30 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
                 s->state = V8_CI_ON;
                 s->fsk_tx_on = true;
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case V8_AWAIT_ANSAM:
         residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
         /* Check if an ANSam or ANSam/ tone has been detected */
         if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
             handle_modem_connect_tone(s, tone);
+        /*endif*/
         break;
     case V8_HEARD_ANSAM:
         /* We have heard the ANSam or ANSam/ signal, but we still need to wait for the
            end of the Te timeout period to comply with the spec. */
         if ((s->ci_timer -= len) <= 0)
         {
-            v8_decode_init(s);
-            s->negotiation_timer = ms_to_samples(5000);
             fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-            send_v92(s);
+            conditionally_send_v92(s);
             send_cm_jm(s);
-            s->state = V8_CM_ON;
             s->fsk_tx_on = true;
+            s->state = V8_CM_ON;
         }
-        break;
+        /*endif*/
+        /* Fall through */
     case V8_CM_ON:
         residual_samples = fsk_rx(&s->v21rx, amp, len);
         if (s->got_cm_jm)
@@ -951,6 +1041,7 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->fsk_tx_on = true;
             break;
         }
+        /*endif*/
         if ((s->negotiation_timer -= len) <= 0)
         {
             /* Timeout */
@@ -959,20 +1050,23 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->result.status = V8_STATUS_FAILED;
             report_event(s);
         }
+        /*endif*/
         if (queue_contents(s->tx_queue) < 10)
         {
             /* Send CM again */
             send_cm_jm(s);
         }
+        /*endif*/
         break;
     case V8_CJ_ON:
         residual_samples = fsk_rx(&s->v21rx, amp, len);
         if (!s->fsk_tx_on)
         {
 #if 0
-            s->negotiation_timer = ms_to_samples(75);
+            s->negotiation_timer = milliseconds_to_samples(75);
             s->state = V8_SIGC;
         }
+        /*endif*/
         break;
     case V8_SIGC:
         if ((s->negotiation_timer -= len) <= 0)
@@ -984,6 +1078,7 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->result.status = V8_STATUS_V8_CALL;
             report_event(s);
         }
+        /*endif*/
         break;
     case V8_CM_WAIT:
         residual_samples = fsk_rx(&s->v21rx, amp, len);
@@ -997,13 +1092,14 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             /* Stop sending ANSam or ANSam/ and send JM instead */
             fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH2], get_bit, s);
             /* Set the timeout for JM */
-            s->negotiation_timer = ms_to_samples(5000);
+            s->negotiation_timer = milliseconds_to_samples(5000);
             s->state = V8_JM_ON;
             send_cm_jm(s);
-            s->modem_connect_tone_tx_on = ms_to_samples(75);
+            s->modem_connect_tone_tx_on = milliseconds_to_samples(75);
             s->fsk_tx_on = true;
             break;
         }
+        /*endif*/
         if ((s->negotiation_timer -= len) <= 0)
         {
             /* Timeout */
@@ -1012,6 +1108,7 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->result.status = V8_STATUS_FAILED;
             report_event(s);
         }
+        /*endif*/
         break;
     case V8_JM_ON:
         residual_samples = fsk_rx(&s->v21rx, amp, len);
@@ -1020,10 +1117,11 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             span_log(&s->logging, SPAN_LOG_FLOW, "CJ recognised\n");
             /* Stop sending JM, flushing anything left in the buffer, and wait 75 ms */
             queue_flush(s->tx_queue);
-            s->negotiation_timer = ms_to_samples(75);
+            s->negotiation_timer = milliseconds_to_samples(75);
             s->state = V8_SIGA;
             break;
         }
+        /*endif*/
         if ((s->negotiation_timer -= len) <= 0)
         {
             /* Timeout */
@@ -1033,11 +1131,13 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             report_event(s);
             break;
         }
+        /*endif*/
         if (queue_contents(s->tx_queue) < 10)
         {
             /* Send JM */
             send_cm_jm(s);
         }
+        /*endif*/
         break;
     case V8_SIGA:
         if (!s->fsk_tx_on)
@@ -1049,11 +1149,13 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->result.status = V8_STATUS_V8_CALL;
             report_event(s);
         }
+        /*endif*/
         break;
     case V8_PARKED:
         residual_samples = len;
         break;
     }
+    /*endswitch*/
     return residual_samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1085,30 +1187,34 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, bool calling_party, v8_parms_t *parm
         if (s->result.send_ci)
         {
             s->state = V8_WAIT_1S;
-            s->negotiation_timer = ms_to_samples(1000);
+            s->negotiation_timer = milliseconds_to_samples(1000);
             s->ci_count = 0;
         }
         else
         {
             s->state = V8_AWAIT_ANSAM;
         }
+        /*endif*/
         modem_connect_tones_rx_init(&s->ansam_rx, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
         fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH1], get_bit, s);
-        s->modem_connect_tone_tx_on = ms_to_samples(75) + 2;
+        s->modem_connect_tone_tx_on = milliseconds_to_samples(75) + 2;
     }
     else
     {
         /* Send the ANSam or ANSam/ tone */
         s->state = V8_CM_WAIT;
-        s->negotiation_timer = ms_to_samples(200 + 5000);
+        s->negotiation_timer = milliseconds_to_samples(200 + 5000);
         v8_decode_init(s);
         modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
-        s->modem_connect_tone_tx_on = ms_to_samples(75) + 1;
+        s->modem_connect_tone_tx_on = milliseconds_to_samples(75) + 1;
     }
+    /*endif*/
     if (s->tx_queue)
         queue_free(s->tx_queue);
+    /*endif*/
     if ((s->tx_queue = queue_init(NULL, 1024, 0)) == NULL)
         return -1;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1123,7 +1229,9 @@ SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
     {
         if ((s = (v8_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.8");

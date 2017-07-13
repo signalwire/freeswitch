@@ -115,7 +115,7 @@ extern "C"
 /* Enable the trap as per the MIL-STD */
 //#define G711_ULAW_ZEROTRAP
 /*! Bias for u-law encoding from linear. */
-#define G711_ULAW_BIAS      0x84
+#define G711_ULAW_BIAS              0x84
 
 /*! \brief Encode a linear sample to u-law
     \param linear The sample to encode.

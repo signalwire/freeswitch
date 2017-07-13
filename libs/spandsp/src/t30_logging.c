@@ -959,6 +959,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 96, "Extension indicator", NULL, NULL);
     if (!(pkt[14] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 15)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");

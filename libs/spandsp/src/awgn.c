@@ -52,6 +52,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -62,67 +67,76 @@
 
 #include "spandsp/private/awgn.h"
 
-/* Gaussian noise generator constants */
+/* Random number generator constants */
 #define M1 259200
 #define IA1 7141
 #define IC1 54773
-#define RM1 (1.0/M1)
+#define RM1 (1.0/(double) M1)
 #define M2 134456
 #define IA2 8121
 #define IC2 28411
-#define RM2 (1.0/M2)
+#define RM2 (1.0/(double) M2)
 #define M3 243000
 #define IA3 4561
 #define IC3 51349
 
-static double ran1(awgn_state_t *s)
+static void ran_init(awgn_state_t *s, int idum)
+{
+    int j;
+
+    if (idum < 0)
+        idum = -idum;
+    s->ix1 = (IC1 + (int32_t) idum)%M1;
+    s->ix1 = (IA1*s->ix1 + IC1)%M1;
+    s->ix2 = s->ix1%M2;
+    s->ix1 = (IA1*s->ix1 + IC1)%M1;
+    s->ix3 = s->ix1%M3;
+    for (j = 0;  j < 97;  j++)
+    {
+        s->ix1 = (IA1*s->ix1 + IC1)%M1;
+        s->ix2 = (IA2*s->ix2 + IC2)%M2;
+        s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static double ran(awgn_state_t *s)
 {
     double temp;
     int j;
 
+    /* This produces evenly spread random numbers between 0.0 and 1.0 */
     s->ix1 = (IA1*s->ix1 + IC1)%M1;
     s->ix2 = (IA2*s->ix2 + IC2)%M2;
     s->ix3 = (IA3*s->ix3 + IC3)%M3;
-    j = 1 + ((97*s->ix3)/M3);
-    if (j > 97  ||  j < 1)
+    j = (97*s->ix3)/M3;
+    if (j > 96  ||  j < 0)
     {
         /* Error */
-        return -1;
+        temp = -1.0;
     }
-    temp = s->r[j];
-    s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
+    else
+    {
+        temp = s->r[j];
+        s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
+    }
     return temp;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float level)
 {
-    int j;
-
     if (s == NULL)
     {
         if ((s = (awgn_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
-    if (idum < 0)
-        idum = -idum;
+
+    ran_init(s, idum);
 
     s->rms = pow(10.0, level/20.0)*32768.0;
-
-    s->ix1 = (IC1 + idum)%M1;
-    s->ix1 = (IA1*s->ix1 + IC1)%M1;
-    s->ix2 = s->ix1%M2;
-    s->ix1 = (IA1*s->ix1 + IC1)%M1;
-    s->ix3 = s->ix1%M3;
-    s->r[0] = 0.0;
-    for (j = 1;  j <= 97;  j++)
-    {
-        s->ix1 = (IA1*s->ix1 + IC1)%M1;
-        s->ix2 = (IA2*s->ix2 + IC2)%M2;
-        s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
-    }
-    s->gset = 0.0;
-    s->iset = 0;
+    s->amp2 = 0.0;
+    s->odd = true;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -148,31 +162,30 @@ SPAN_DECLARE(int) awgn_free(awgn_state_t *s)
 
 SPAN_DECLARE(int16_t) awgn(awgn_state_t *s)
 {
-    double fac;
     double r;
     double v1;
     double v2;
     double amp;
 
-    if (s->iset == 0)
+    /* The polar method of generating a Gaussian distribution */
+    if ((s->odd = !s->odd))
     {
-        do
-        {
-            v1 = 2.0*ran1(s) - 1.0;
-            v2 = 2.0*ran1(s) - 1.0;
-            r = v1*v1 + v2*v2;
-        }
-        while (r >= 1.0);
-        fac = sqrt(-2.0*log(r)/r);
-        s->gset = v1*fac;
-        s->iset = 1;
-        amp = v2*fac*s->rms;
+        amp = s->amp2;
     }
     else
     {
-        s->iset = 0;
-        amp = s->gset*s->rms;
+        do
+        {
+            v1 = 2.0*ran(s) - 1.0;
+            v2 = 2.0*ran(s) - 1.0;
+            r = v1*v1 + v2*v2;
+        }
+        while (r >= 1.0);
+        r = sqrt(-2.0*log(r)/r);
+        s->amp2 = v1*r;
+        amp = v2*r;
     }
+    amp *= s->rms;
     return fsaturate(amp);
 }
 /*- End of function --------------------------------------------------------*/

@@ -50,6 +50,8 @@ enum
 */
 typedef struct data_modems_state_s data_modems_state_t;
 
+typedef int (*data_modems_control_handler_t)(data_modems_state_t *s, void *user_data, int op, const char *num);
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -61,6 +63,8 @@ SPAN_DECLARE(const char *) data_modems_modulation_to_str(int modulation_scheme);
 SPAN_DECLARE(void) data_modems_set_tep_mode(data_modems_state_t *s, int use_tep);
 
 SPAN_DECLARE(logging_state_t *) data_modems_get_logging_state(data_modems_state_t *s);
+
+SPAN_DECLARE(void) data_modems_call_event(data_modems_state_t *s, int event);
 
 SPAN_DECLARE(int) data_modems_restart(data_modems_state_t *s);
 
@@ -77,8 +81,16 @@ SPAN_DECLARE(int) data_modems_rx_fillin(data_modems_state_t *s, int len);
 
 SPAN_DECLARE(int) data_modems_tx(data_modems_state_t *s, int16_t amp[], int max_len);
 
+SPAN_DECLARE(void) data_modems_set_at_tx_handler(data_modems_state_t *s,
+                                                 at_tx_handler_t at_tx_handler,
+                                                 void *at_tx_user_data);
+
 SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
                                                      bool calling_party,
+                                                     at_tx_handler_t at_tx_handler,
+                                                     void *at_tx_user_data,
+                                                     data_modems_control_handler_t modem_control_handler,
+                                                     void *modem_control_user_data,
                                                      put_msg_func_t put_msg,
                                                      get_msg_func_t get_msg,
                                                      void *user_data);

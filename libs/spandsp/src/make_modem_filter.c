@@ -32,11 +32,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <math.h>
-#if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
-#else
-#include "spandsp/stdbool.h"
-#endif
 #if defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
 #include <getopt.h>
 #endif
@@ -103,7 +99,7 @@ static void make_tx_filter(int coeff_sets,
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
-    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS\n");
     printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
     printf("\n");
     printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");

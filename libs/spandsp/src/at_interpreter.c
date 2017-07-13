@@ -5594,6 +5594,15 @@ SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) at_set_at_tx_handler(at_state_t *s,
+                                        at_tx_handler_t at_tx_handler,
+                                        void *at_tx_user_data)
+{
+    s->at_tx_handler = at_tx_handler;
+    s->at_tx_user_data = at_tx_user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s)
 {
     return &s->logging;

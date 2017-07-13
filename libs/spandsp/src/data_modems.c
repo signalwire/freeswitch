@@ -63,6 +63,7 @@
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
 #include "spandsp/async.h"
+#include "spandsp/at_interpreter.h"
 #include "spandsp/silence_gen.h"
 #include "spandsp/fsk.h"
 #include "spandsp/v29rx.h"
@@ -86,6 +87,7 @@
 #include "spandsp/data_modems.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/at_interpreter.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
@@ -139,6 +141,7 @@ SPAN_DECLARE(const char *) data_modems_modulation_to_str(int modulation_scheme)
     case DATA_MODEM_V34:
         return "V.34 duplex";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -146,6 +149,13 @@ SPAN_DECLARE(const char *) data_modems_modulation_to_str(int modulation_scheme)
 SPAN_DECLARE(logging_state_t *) data_modems_get_logging_state(data_modems_state_t *s)
 {
     return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) data_modems_call_event(data_modems_state_t *s, int event)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "Call event %s (%d) received\n", at_call_state_to_str(event), event);
+    at_call_event(&s->at_state, event);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -169,6 +179,7 @@ static void async_put_byte(void *user_data, int byte)
     msg[0] = byte;
     if (byte < 0)
         s->put_msg(s->user_data,  msg, byte);
+    /*endif*/
     s->put_msg(s->user_data,  msg, 1);
 }
 /*- End of function --------------------------------------------------------*/
@@ -193,7 +204,9 @@ static void log_supported_modulations(data_modems_state_t *s, int modulation_sch
             span_log(&s->logging, SPAN_LOG_FLOW | SPAN_LOG_SUPPRESS_LABELLING, "%s%s", comma, v8_modulation_to_str(modulation_schemes & (1 << i)));
             comma = ", ";
         }
+        /*endif*/
     }
+    /*endfor*/
     span_log(&s->logging, SPAN_LOG_FLOW | SPAN_LOG_SUPPRESS_LABELLING, " supported\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -385,6 +398,7 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             v8_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
         else
             v8_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+        /*endif*/
         v8_parms.send_ci = false;
         v8_parms.v92 = -1;
         v8_parms.call_function = V8_CALL_V_SERIES;
@@ -396,6 +410,9 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
                              | V8_MOD_V23
                              | V8_MOD_V27TER
                              | V8_MOD_V29
+#if defined(SPANDSP_SUPPORT_V34)
+                             | V8_MOD_V34HDX
+#endif
                              | 0;
         v8_parms.protocol = V8_PROTOCOL_LAPM_V42;
 #elif 1
@@ -417,10 +434,10 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         v8_parms.nsf = -1;
         v8_parms.t66 = -1;
         v8_init(&s->modems.v8, s->calling_party, &v8_parms, v8_handler, (void *) s);
-    logging = v8_get_logging_state(&s->modems.v8);
-    level = span_log_get_level(&s->logging);
-    span_log_set_level(logging, level);
-    span_log_set_tag(logging, "V.8");
+        logging = v8_get_logging_state(&s->modems.v8);
+        level = span_log_get_level(&s->logging);
+        span_log_set_level(logging, level);
+        span_log_set_tag(logging, "V.8");
         break;
     case DATA_MODEM_BELL103:
         s->rx_handler = (span_rx_handler_t) &fsk_rx;
@@ -438,6 +455,7 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_rx_spec = &preset_fsk_specs[FSK_BELL103CH1];
             fsk_tx_spec = &preset_fsk_specs[FSK_BELL103CH2];
         }
+        /*endif*/
         fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
@@ -457,6 +475,7 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_rx_spec = &preset_fsk_specs[FSK_V21CH1];
             fsk_tx_spec = &preset_fsk_specs[FSK_V21CH2];
         }
+        /*endif*/
         fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
@@ -487,6 +506,7 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_rx_spec = &preset_fsk_specs[FSK_V23CH1];
             fsk_tx_spec = &preset_fsk_specs[FSK_V23CH2];
         }
+        /*endif*/
         fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
@@ -497,10 +517,10 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         s->tx_handler = (span_tx_handler_t) &v22bis_tx;
         s->tx_user_data = &s->modems.v22bis;
         v22bis_init(&s->modems.v22bis, bit_rate, 0, s->calling_party, s->get_bit, s->get_user_data, s->put_bit, s->put_user_data);
-    logging = v22bis_get_logging_state(&s->modems.v22bis);
-    level = span_log_get_level(&s->logging);
-    span_log_set_level(logging, level);
-    span_log_set_tag(logging, "V.22bis");
+        logging = v22bis_get_logging_state(&s->modems.v22bis);
+        level = span_log_get_level(&s->logging);
+        span_log_set_level(logging, level);
+        span_log_set_tag(logging, "V.22bis");
         break;
 #if defined(SPANDSP_SUPPORT_V32BIS)
     case DATA_MODEM_V32BIS:
@@ -510,10 +530,10 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         s->tx_handler = (span_tx_handler_t) &v32bis_tx;
         s->tx_user_data = &s->modems.v32bis;
         v32bis_init(&s->modems.v32bis, bit_rate, s->calling_party, s->get_bit, s->get_user_data, s->put_bit, s->put_user_data);
-    logging = v32bis_get_logging_state(&s->modems.v32bis);
-    level = span_log_get_level(&s->logging);
-    span_log_set_level(logging, level);
-    span_log_set_tag(logging, "V.32bis");
+        logging = v32bis_get_logging_state(&s->modems.v32bis);
+        level = span_log_get_level(&s->logging);
+        span_log_set_level(logging, level);
+        span_log_set_tag(logging, "V.32bis");
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_V34)
@@ -524,13 +544,14 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         s->tx_handler = (span_tx_handler_t) &v34_tx;
         s->tx_user_data = &s->modems.v34;
         v34_init(&s->modems.v34, baud_rate, bit_rate, s->calling_party, true, s->get_bit, s->get_user_data, s->put_bit, s->put_user_data);
-    logging = v34_get_logging_state(&s->modems.v34);
-    level = span_log_get_level(&s->logging);
-    span_log_set_level(logging, level);
-    span_log_set_tag(logging, "V.34");
+        logging = v34_get_logging_state(&s->modems.v34);
+        level = span_log_get_level(&s->logging);
+        span_log_set_level(logging, level);
+        span_log_set_tag(logging, "V.34");
         break;
 #endif
     }
+    /*endswitch*/
     s->current_modem = which;
 }
 /*- End of function --------------------------------------------------------*/
@@ -541,9 +562,11 @@ SPAN_DECLARE(int) data_modems_rx(data_modems_state_t *s, const int16_t amp[], in
 
     if (s->rx_handler == NULL)
         return len;
+    /*endif*/
     res = s->rx_handler(s->rx_user_data, amp, len);
     if (s->current_modem != s->queued_modem)
         data_modems_set_modem_type(s, s->queued_modem, s->queued_baud_rate, s->queued_bit_rate);
+    /*endif*/
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -552,6 +575,7 @@ SPAN_DECLARE(int) data_modems_rx_fillin(data_modems_state_t *s, int len)
 {
     if (s->rx_fillin_handler == NULL)
         return len;
+    /*endif*/
     return s->rx_fillin_handler(s->rx_user_data, len);
 }
 /*- End of function --------------------------------------------------------*/
@@ -564,9 +588,49 @@ SPAN_DECLARE(int) data_modems_tx(data_modems_state_t *s, int16_t amp[], int max_
     {
         if (s->tx_handler == NULL)
             break;
+        /*endif*/
         len += s->tx_handler(s->tx_user_data, &amp[len], max_len - len);
     }
+    /*endfor*/
     return len;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int data_modems_control_handler(void *user_data, int op, const char *num)
+{
+    data_modems_state_t *s;
+
+    s = (data_modems_state_t *) user_data;
+    switch (op)
+    {
+    case AT_MODEM_CONTROL_CALL:
+        s->call_samples = 0;
+        break;
+    case AT_MODEM_CONTROL_ANSWER:
+        s->call_samples = 0;
+        break;
+    case AT_MODEM_CONTROL_ONHOOK:
+        if (s->at_state.rx_signal_present)
+        {
+            s->at_state.rx_data_bytes = 0;
+        }
+        /*endif*/
+        break;
+    case AT_MODEM_CONTROL_RESTART:
+        return 0;
+    case AT_MODEM_CONTROL_DTE_TIMEOUT:
+        return 0;
+    }
+    /*endswitch*/
+    return s->modem_control_handler(s, s->modem_control_user_data, op, num);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) data_modems_set_at_tx_handler(data_modems_state_t *s,
+                                                 at_tx_handler_t at_tx_handler,
+                                                 void *at_tx_user_data)
+{
+    at_set_at_tx_handler(&s->at_state, at_tx_handler, at_tx_user_data);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -578,20 +642,33 @@ SPAN_DECLARE(int) data_modems_restart(data_modems_state_t *s)
 
 SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
                                                      bool calling_party,
+                                                     at_tx_handler_t at_tx_handler,
+                                                     void *at_tx_user_data,
+                                                     data_modems_control_handler_t modem_control_handler,
+                                                     void *modem_control_user_data,
                                                      put_msg_func_t put_msg,
                                                      get_msg_func_t get_msg,
                                                      void *user_data)
 {
+    if (at_tx_handler == NULL  ||  modem_control_handler == NULL)
+        return NULL;
+    /*endif*/
+
     if (s == NULL)
     {
         if ((s = (data_modems_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "Modem");
 
     dc_restore_init(&s->dc_restore);
+
+    s->modem_control_handler = modem_control_handler;
+    s->modem_control_user_data = modem_control_user_data;
 
     s->put_msg = put_msg;
     s->get_msg = get_msg;
@@ -601,6 +678,8 @@ SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
     v42_init(&s->v42, true, true, NULL, (put_msg_func_t) v42bis_decompress, &s->v42bis);
 
     data_modems_set_async_mode(s, 8, 1, 1);
+
+    at_init(&s->at_state, at_tx_handler, at_tx_user_data, data_modems_control_handler, s);
 
     s->get_bit = async_tx_get_bit;
     s->get_user_data = &s->async_tx;
@@ -627,6 +706,7 @@ SPAN_DECLARE(int) data_modems_free(data_modems_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

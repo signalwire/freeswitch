@@ -532,7 +532,7 @@ static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[])
                 s->output_row = -1;
         }
     }
-    /* Apply Floyd-Steinberg dithering to the 8 bit pixels, using a bustrophodontic
+    /* Apply Floyd-Steinberg dithering to the 8 bit pixels, using a bustrophedontic
        scan, to reduce the grayscale image to pure black and white */
     /* The first and last pixels in each row need special treatment, so we do not
        step outside the row. */

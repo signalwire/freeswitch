@@ -66,6 +66,8 @@ enum
 {
     V18_AUTOMODING_GLOBAL = 0,
 
+    V18_AUTOMODING_NONE,
+
     /* 5-bit, V.21, V.23, EDT, DTMF, Bell 103 */
     V18_AUTOMODING_AUSTRALIA,
     V18_AUTOMODING_IRELAND,
@@ -172,6 +174,11 @@ SPAN_DECLARE(int) v18_rx_fillin(v18_state_t *s, int len);
             length of the digit string, if the buffer fills up. If the string is
             invalid, this function will return -1. */
 SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len);
+
+/*! \brief Get the current mode of a V.18 connection.
+    \param s The V.18 context.
+    \return The mode. */
+SPAN_DECLARE(int) v18_get_current_mode(v18_state_t *s);
 
 /*! \brief Return a short name for an V.18 mode
     \param mode The code for the V.18 mode.

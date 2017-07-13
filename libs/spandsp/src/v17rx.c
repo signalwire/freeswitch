@@ -202,6 +202,7 @@ static void report_status_change(v17_rx_state_t *s, int status)
         s->status_handler(s->status_user_data, status);
     else if (s->put_bit)
         s->put_bit(s->put_bit_user_data, status);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -360,6 +361,7 @@ static int descramble(v17_rx_state_t *s, int in_bit)
         s->scramble_reg |= out_bit;
     else
         s->scramble_reg |= (in_bit & 1);
+    /*endif*/
     return out_bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -382,6 +384,7 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
            testing for ones, but just rely on a constellation mismatch measurement. */
         //span_log(&s->logging, SPAN_LOG_FLOW, "A 1 is really %d\n", out_bit);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -437,6 +440,8 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     int re;
     int im;
     int raw;
+    int min_index;
+    int set;
     int constellation_state;
 #if defined(SPANDSP_USE_FIXED_POINTx)
 #define DIST_FACTOR 1024    /* Something less than sqrt(0xFFFFFFFF/10)/10 */
@@ -462,20 +467,23 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
         re = 35;
     else if (re < 0)
         re = 0;
+    /*endif*/
     if (im > 35)
         im = 35;
     else if (im < 0)
         im = 0;
+    /*endif*/
     if (s->bits_per_symbol == 2)
     {
         /* 4800bps V.32bis mode, without trellis coding */
-        nearest = constel_map_4800[re][im];
-        raw = v32bis_4800_differential_decoder[s->diff][nearest];
-        s->diff = nearest;
+        constellation_state = constel_map_4800[re][im];
+        raw = v32bis_4800_differential_decoder[s->diff][constellation_state];
+        s->diff = constellation_state;
         put_bit(s, raw);
         put_bit(s, raw >> 1);
-        return nearest;
+        return constellation_state;
     }
+    /*endif*/
 
     /* Find a set of 8 candidate constellation positions, that are the closest
        to the target, with different patterns in the last 3 bits. */
@@ -485,7 +493,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
 #else
     min = 9999999.0f;
 #endif
-    j = 0;
+    min_index = 0;
     for (i = 0;  i < 8;  i++)
     {
         nearest = constel_maps[s->space_map][re][im][i];
@@ -499,13 +507,16 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
         if (min > distances[i])
         {
             min = distances[i];
-            j = i;
+            min_index = i;
         }
+        /*endif*/
     }
-    /* Use the nearest of these soft-decisions as the basis for DFE */
-    constellation_state = constel_maps[s->space_map][re][im][j];
-    /* Control the equalizer, carrier tracking, etc. based on the non-trellis
-       corrected information. The trellis correct stuff comes out a bit late. */
+    /*endfor*/
+    /* Use the nearest of these soft-decisions as the basis for DFE and carrier
+       tracking. This is a compromise. It means we will use the correct error
+       less often, but using the output of the traceback would put more lag
+       into the feedback path. */
+    constellation_state = constel_maps[s->space_map][re][im][min_index];
     track_carrier(s, z, &s->constellation[constellation_state]);
     //tune_equalizer(s, z, &s->constellation[constellation_state]);
 
@@ -517,70 +528,62 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     /* Update the minimum accumulated distance to each of the 8 states */
     if (++s->trellis_ptr >= V17_TRELLIS_STORAGE_DEPTH)
         s->trellis_ptr = 0;
-    for (i = 0;  i < 4;  i++)
+    /*endif*/
+    for (i = 0;  i < 8;  i++)
     {
-        min = distances[tcm_paths[i][0]] + s->distances[0];
-        k = 0;
+        set = i >> 2;
+        min = distances[tcm_paths[i][0]] + s->distances[set];
+        min_index = 0;
         for (j = 1;  j < 4;  j++)
         {
-            if (min > distances[tcm_paths[i][j]] + s->distances[j << 1])
+            k = (j << 1) + set;
+            if (min > distances[tcm_paths[i][j]] + s->distances[k])
             {
-                min = distances[tcm_paths[i][j]] + s->distances[j << 1];
-                k = j;
+                min = distances[tcm_paths[i][j]] + s->distances[k];
+                min_index = j;
             }
+            /*endif*/
         }
+        /*endfor*/
+        k = (min_index << 1) + set;
         /* Use an elementary IIR filter to track the distance to date. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
-        new_distances[i] = s->distances[k << 1]*9/10 + distances[tcm_paths[i][k]]*1/10;
+        new_distances[i] = s->distances[k]*9/10 + distances[tcm_paths[i][min_index]]*1/10;
 #else
-        new_distances[i] = s->distances[k << 1]*0.9f + distances[tcm_paths[i][k]]*0.1f;
+        new_distances[i] = s->distances[k]*0.9f + distances[tcm_paths[i][min_index]]*0.1f;
 #endif
-        s->full_path_to_past_state_locations[s->trellis_ptr][i] = constel_maps[s->space_map][re][im][tcm_paths[i][k]];
-        s->past_state_locations[s->trellis_ptr][i] = k << 1;
+        s->full_path_to_past_state_locations[s->trellis_ptr][i] = constel_maps[s->space_map][re][im][tcm_paths[i][min_index]];
+        s->past_state_locations[s->trellis_ptr][i] = k;
     }
-    for (i = 4;  i < 8;  i++)
-    {
-        min = distances[tcm_paths[i][0]] + s->distances[1];
-        k = 0;
-        for (j = 1;  j < 4;  j++)
-        {
-            if (min > distances[tcm_paths[i][j]] + s->distances[(j << 1) + 1])
-            {
-                min = distances[tcm_paths[i][j]] + s->distances[(j << 1) + 1];
-                k = j;
-            }
-        }
-#if defined(SPANDSP_USE_FIXED_POINTx)
-        new_distances[i] = s->distances[(k << 1) + 1]*9/10 + distances[tcm_paths[i][k]]*1/10;
-#else
-        new_distances[i] = s->distances[(k << 1) + 1]*0.9f + distances[tcm_paths[i][k]]*0.1f;
-#endif
-        s->full_path_to_past_state_locations[s->trellis_ptr][i] = constel_maps[s->space_map][re][im][tcm_paths[i][k]];
-        s->past_state_locations[s->trellis_ptr][i] = (k << 1) + 1;
-    }
+    /*endfor*/
     memcpy(s->distances, new_distances, sizeof(s->distances));
 
     /* Find the minimum distance to date. This is the start of the path back to the result. */
     min = s->distances[0];
-    k = 0;
+    min_index = 0;
     for (i = 1;  i < 8;  i++)
     {
         if (min > s->distances[i])
         {
             min = s->distances[i];
-            k = i;
+            min_index = i;
         }
+        /*endif*/
     }
+    /*endfor*/
     /* Trace back through every time step, starting with the current one, and find the
        state from which the path came one step before. At the end of this search, the
        last state found also points to the constellation point at that state. This is the
        output of the trellis. */
+    k = min_index;
     for (i = 0, j = s->trellis_ptr;  i < V17_TRELLIS_LOOKBACK_DEPTH - 1;  i++)
     {
         k = s->past_state_locations[j][k];
         if (--j < 0)
             j = V17_TRELLIS_STORAGE_DEPTH - 1;
+        /*endif*/
     }
+    /*endfor*/
     nearest = s->full_path_to_past_state_locations[j][k] >> 1;
 
     /* Differentially decode */
@@ -591,6 +594,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
         put_bit(s, raw);
         raw >>= 1;
     }
+    /*endfor*/
     return constellation_state;
 }
 /*- End of function --------------------------------------------------------*/
@@ -645,10 +649,12 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
         i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  15  :  1;
         if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
             i = -i;
+        /*endif*/
         //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -696,10 +702,12 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
     s->eq_buf[s->eq_step] = *sample;
     if (++s->eq_step >= V17_EQUALIZER_LEN)
         s->eq_step = 0;
+    /*endif*/
 
     /* On alternate insertions we have a whole baud and must process it. */
     if ((s->baud_half ^= 1))
         return;
+    /*endif*/
 
     /* Symbol timing synchronisation */
     symbol_sync(s);
@@ -725,7 +733,9 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->last_angles[0] = arctan2(z.im, z.re);
             if (s->agc_scaling_save == FP_SCALE(0.0f))
                 s->agc_scaling_save = s->agc_scaling;
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_LOG_PHASE:
         /* Record the current alternate phase angle */
@@ -749,6 +759,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->last_angles[0] = DDS_PHASE(180.0f + 18.433f);
                 s->last_angles[1] = DDS_PHASE(270.0f + 18.433f);
             }
+            /*endif*/
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
             /* angle is now the difference between where A is, and where it should be */
@@ -759,6 +770,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             z16 = complex_seti16(fixed_cos(ip), -fixed_sin(ip));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
+            /*endfor*/
             s->carrier_track_p = 500000;
 #else
             p = dds_phase_to_radians(phase_step);
@@ -766,6 +778,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mulf(&s->eq_buf[i], &zz);
+            /*endfor*/
             s->carrier_track_p = 500000.0f;
 #endif
             s->carrier_phase += phase_step;
@@ -776,6 +789,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->last_angles[1] = angle;
             s->training_stage = TRAINING_STAGE_WAIT_FOR_CDBA;
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_WAIT_FOR_CDBA:
         target = &zero;
@@ -803,6 +817,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->carrier_phase_rate += 3*16*(ang/20);
                 span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, dist %d\n", s->last_angles[0], s->last_angles[1], i);
             }
+            /*endif*/
             span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
             /* Check if the carrier frequency is plausible */
             if (s->carrier_phase_rate < DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ - 20.0f)
@@ -816,6 +831,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
                 break;
             }
+            /*endif*/
 
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer buffer,
                as well as the carrier phase, for this to play out nicely. */
@@ -827,12 +843,14 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             z16 = complex_seti16(fixed_cos(ip), -fixed_sin(ip));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
+            /*endfor*/
 #else
             p = dds_phase_to_radians(phase_step);
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (long) by %.5f rads\n", p);
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mulf(&s->eq_buf[i], &zz);
+            /*endfor*/
 #endif
             s->carrier_phase += phase_step;
 
@@ -845,6 +863,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
             break;
         }
+        /*endif*/
         if (++s->training_count > V17_TRAINING_SEG_1_LEN)
         {
             /* This is bogus. There are not this many bits in this section
@@ -855,6 +874,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->training_stage = TRAINING_STAGE_PARKED;
             report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_COARSE_TRAIN_ON_CDBA:
         /* Train on the scrambled CDBA section. */
@@ -886,6 +906,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 #endif
             s->training_stage = TRAINING_STAGE_FINE_TRAIN_ON_CDBA;
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_FINE_TRAIN_ON_CDBA:
         /* Train on the scrambled CDBA section. */
@@ -907,6 +928,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 #endif
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDBA_AND_TEST;
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_TRAIN_ON_CDBA_AND_TEST:
         /* Continue training on the scrambled CDBA section, but measure the quality of training too. */
@@ -950,7 +972,9 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_BRIDGE:
         descramble(s, V17_BRIDGE_WORD >> ((s->training_count & 0x7) << 1));
@@ -972,7 +996,9 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 /* Wait for the trellis to wind up */
                 s->training_stage = TRAINING_STAGE_TCM_WINDUP;
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_SHORT_WAIT_FOR_CDBA:
         /* Look for the initial ABAB sequence to display a phase reversal, which will
@@ -989,19 +1015,23 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->training_error = FP_SCALE(0.0f);
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_SHORT_TRAIN_ON_CDBA_AND_TEST;
-            break;
         }
-        target = &cdba[(s->training_count & 1) + 2];
-        track_carrier(s, &z, target);
-        if (++s->training_count > V17_TRAINING_SEG_1_LEN)
+        else
         {
-            /* This is bogus. There are not this many bits in this section
-               of a real training sequence. Note that this might be TEP. */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
-            /* Park this modem */
-            s->training_stage = TRAINING_STAGE_PARKED;
-            report_status_change(s, SIG_STATUS_TRAINING_FAILED);
+            target = &cdba[(s->training_count & 1) + 2];
+            track_carrier(s, &z, target);
+            if (++s->training_count > V17_TRAINING_SEG_1_LEN)
+            {
+                /* This is bogus. There are not this many bits in this section
+                   of a real training sequence. Note that this might be TEP. */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
+                /* Park this modem */
+                s->training_stage = TRAINING_STAGE_PARKED;
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
+            }
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_SHORT_TRAIN_ON_CDBA_AND_TEST:
         /* Short retrain on the scrambled CDBA section, but measure the quality of training too. */
@@ -1022,6 +1052,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->training_error += powerf(&zz);
 #endif
         }
+        /*endif*/
         if (++s->training_count >= V17_TRAINING_SHORT_SEG_2_LEN)
         {
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -1052,6 +1083,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                     /* Wait for the trellis to wind up */
                     s->training_stage = TRAINING_STAGE_TCM_WINDUP;
                 }
+                /*endif*/
                 report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
             }
             else
@@ -1061,7 +1093,9 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_TCM_WINDUP:
         /* We need to wait 15 bauds while the trellis fills up. */
@@ -1084,6 +1118,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->diff = (s->short_train)  ?  0  :  1;
             s->training_stage = TRAINING_STAGE_TEST_ONES;
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_TEST_ONES:
         /* We are in the test phase, where we check that we can receive reliably.
@@ -1128,10 +1163,13 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 #endif
                 if (!s->short_train)
                     s->agc_scaling_save = FP_SCALE(0.0f);
+                /*endif*/
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case TRAINING_STAGE_PARKED:
     default:
@@ -1140,6 +1178,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         target = &zero;
         break;
     }
+    /*endswitch*/
     if (s->qam_report)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -1155,6 +1194,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         s->qam_report(s->qam_user_data, &z, target, constellation_state);
 #endif
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1183,13 +1223,16 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
             s->high_sample = 0;
             s->low_samples = 0;
         }
+        /*endif*/
     }
     else
     {
         s->low_samples = 0;
         if (diff > s->high_sample)
             s->high_sample = diff;
+        /*endif*/
     }
+    /*endif*/
 #endif
     if (s->signal_present > 0)
     {
@@ -1208,23 +1251,27 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
                 report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                 return 0;
             }
+            /*endif*/
 #if defined(IAXMODEM_STUFF)
             /* Carrier has dropped, but the put_bit is pending the signal_present delay. */
             s->carrier_drop_pending = true;
 #endif
         }
+        /*endif*/
     }
     else
     {
         /* Look for power exceeding turn-on threshold to turn the carrier on */
         if (power < s->carrier_on_power)
             return 0;
+        /*endif*/
         s->signal_present = 1;
 #if defined(IAXMODEM_STUFF)
         s->carrier_drop_pending = false;
 #endif
         report_status_change(s, SIG_STATUS_CARRIER_UP);
     }
+    /*endif*/
     return power;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1252,21 +1299,26 @@ SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
         s->rrc_filter[s->rrc_filter_step] = amp[i];
         if (++s->rrc_filter_step >= V17_RX_FILTER_STEPS)
             s->rrc_filter_step = 0;
+        /*endif*/
 
         if ((power = signal_detect(s, amp[i])) == 0)
             continue;
+        /*endif*/
         if (s->training_stage == TRAINING_STAGE_PARKED)
             continue;
+        /*endif*/
         /* Only spend effort processing this data if the modem is not
            parked, after training failure. */
         s->eq_put_step -= RX_PULSESHAPER_COEFF_SETS;
         step = -s->eq_put_step;
         if (step < 0)
             step += RX_PULSESHAPER_COEFF_SETS;
+        /*endif*/
         if (step < 0)
             step = 0;
         else if (step > RX_PULSESHAPER_COEFF_SETS - 1)
             step = RX_PULSESHAPER_COEFF_SETS - 1;
+        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINTx)
         v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V17_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
         sample.re = (v*s->agc_scaling) >> 10;
@@ -1305,12 +1357,14 @@ SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             {
                 if ((root_power = fixed_sqrt32(power)) == 0)
                     root_power = 1;
+                /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINTx)
                 s->agc_scaling = saturate16(((int32_t) (FP_SCALE(2.17f)*1024.0f))/root_power);
 #else
                 s->agc_scaling = (FP_SCALE(2.17f)/RX_PULSESHAPER_GAIN)/root_power;
 #endif
             }
+            /*endif*/
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
                signal, which can be brought directly to baseband by complex mixing.
@@ -1331,12 +1385,14 @@ SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
             process_half_baud(s, &zz);
         }
+        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
         dds_advance(&s->carrier_phase, s->carrier_phase_rate);
 #else
         dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
 #endif
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1350,8 +1406,10 @@ SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len)
     span_log(&s->logging, SPAN_LOG_FLOW, "Fill-in %d samples\n", len);
     if (s->signal_present <= 0)
         return 0;
+    /*endif*/
     if (s->training_stage == TRAINING_STAGE_PARKED)
         return 0;
+    /*endif*/
     for (i = 0;  i < len;  i++)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -1363,8 +1421,10 @@ SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len)
         s->eq_put_step -= RX_PULSESHAPER_COEFF_SETS;
         if (s->eq_put_step <= 0)
             s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
+        /*endif*/
         /* TODO: Should we rotate any buffers */
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1426,6 +1486,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     default:
         return -1;
     }
+    /*endswitch*/
     s->bit_rate = bit_rate;
 #if defined(SPANDSP_USE_FIXED_POINTx)
     vec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
@@ -1447,6 +1508,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
 #endif
     if (short_train != 2)
         s->short_train = short_train;
+    /*endif*/
     vec_zeroi32(s->last_angles, 2);
     vec_zeroi32(s->diff_angles, 16);
 
@@ -1456,6 +1518,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
        initial paths to merge at the zero states. */
     for (i = 0;  i < 8;  i++)
         s->distances[i] = FP_CONSTELLATION_SCALE(99.0f)*FP_CONSTELLATION_SCALE(1.0f);
+    /*endfor*/
     memset(s->full_path_to_past_state_locations, 0, sizeof(s->full_path_to_past_state_locations));
     memset(s->past_state_locations, 0, sizeof(s->past_state_locations));
     s->distances[0] = 0;
@@ -1493,6 +1556,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->carrier_track_p = 40000.0f;
 #endif
     }
+    /*endif*/
     s->last_sample = 0;
     span_log(&s->logging, SPAN_LOG_FLOW, "Gains %f %f\n", (float) s->agc_scaling_save, (float) s->agc_scaling);
     span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
@@ -1504,6 +1568,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->symbol_sync_high[i] = FP_SCALE(0.0f);
         s->symbol_sync_dc_filter[i] = FP_SCALE(0.0f);
     }
+    /*endfor*/
     s->baud_phase = FP_SCALE(0.0f);
     s->baud_half = 0;
 
@@ -1527,11 +1592,14 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     default:
         return NULL;
     }
+    /*endswitch*/
     if (s == NULL)
     {
         if ((s = (v17_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.17 RX");

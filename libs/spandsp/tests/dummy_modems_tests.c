@@ -67,6 +67,61 @@ int16_t wave_buffer[4096];
 
 data_modems_state_t *data_modem_state;
 
+int answered = false;
+int done = false;
+
+static int modem_call_control(data_modems_state_t *s, void *user_data, int op, const char *num)
+{
+    printf("\nModem control - %s", at_modem_control_to_str(op));
+    switch (op)
+    {
+    case AT_MODEM_CONTROL_CALL:
+        printf(" %s", num);
+        data_modems_call_event(s, AT_CALL_EVENT_CONNECTED);
+        break;
+    case AT_MODEM_CONTROL_ANSWER:
+        answered = true;
+        data_modems_call_event(s, AT_CALL_EVENT_ANSWERED);
+        break;
+    case AT_MODEM_CONTROL_HANGUP:
+        done = true;
+        break;
+    case AT_MODEM_CONTROL_OFFHOOK:
+        break;
+    case AT_MODEM_CONTROL_DTR:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_RTS:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_CTS:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_CAR:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_RNG:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_DSR:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_SETID:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_RESTART:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    case AT_MODEM_CONTROL_DTE_TIMEOUT:
+        printf(" %d", (int) (intptr_t) num);
+        break;
+    }
+    /*endswitch*/
+    printf("\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int get_msg(void *user_data, uint8_t msg[], int len)
 {
     return 0;
@@ -79,17 +134,31 @@ static void put_msg(void *user_data, const uint8_t msg[], int len)
         printf("Status %s\n", signal_status_to_str(len));
     else
         printf("Put %d '%s'\n", len, msg);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
 static void terminal_callback(void *user_data, const uint8_t msg[], int len)
 {
+    data_modems_state_t *s;
+    int i;
+
+    s = (data_modems_state_t *) user_data;
     printf("terminal callback %d\n", len);
+    for (i = 0;  i < len;  i++)
+    {
+        printf("0x%x ", msg[i]);
+    }
+    printf("\n");
+    at_interpreter(&s->at_state, msg, len);
 }
 /*- End of function --------------------------------------------------------*/
 
 static int termios_callback(void *user_data, struct termios *termios)
 {
+    data_modems_state_t *s;
+
+    s = (data_modems_state_t *) user_data;
     printf("termios callback\n");
     return 0;
 }
@@ -116,7 +185,9 @@ static int rx_callback(void *user_data, const int16_t amp[], int samples)
     {
         for (i = 0;  i < samples;  i++)
             wave_buffer[2*i] = amp[i];
+        /*endfor*/
     }
+    /*endif*/
     return out_samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -137,10 +208,13 @@ static int tx_callback(void *user_data, int16_t amp[], int samples)
     {
         if (out_samples < samples)
             memset(&amp[out_samples], 0, (samples - out_samples)*2);
+        /*endif*/
         for (i = 0;  i < samples;  i++)
             wave_buffer[2*i + 1] = amp[i];
+        /*endfor*/
         sf_writef_short(wave_handle, wave_buffer, samples);
     }
+    /*endif*/
     return samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -153,6 +227,10 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
     /* Now set up and run the modems */
     if ((data_modem_state = data_modems_init(NULL,
                                              calling_party,
+                                             terminal_write,
+                                             NULL,
+                                             modem_call_control,
+                                             NULL,
                                              put_msg,
                                              get_msg,
                                              NULL)) == NULL)
@@ -160,6 +238,7 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
         fprintf(stderr, "    Cannot start the data modem\n");
         exit(2);
     }
+    /*endif*/
     logging = data_modems_get_logging_state(data_modem_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_DATE);
     span_log_set_tag(logging, "Modem");
@@ -180,6 +259,9 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
         fprintf(stderr, "    Cannot start the socket harness\n");
         exit(2);
     }
+    /*endif*/
+
+    data_modems_set_at_tx_handler(data_modem_state, terminal_write, s);
 
     wave_handle = NULL;
     if (log_audio)
@@ -189,9 +271,11 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
-    socket_harness_run(s);
+    socket_harness_run(s, calling_party);
 
     if (log_audio)
     {
@@ -200,7 +284,9 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     return 0;
 }
@@ -242,10 +328,13 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (modem_tests(use_gui, log_audio, calling_party))
         exit(2);
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }
