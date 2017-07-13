@@ -1050,7 +1050,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout);
 switch_status_t conference_video_init_canvas(conference_obj_t *conference, video_layout_t *vlayout, mcu_canvas_t **canvasP);
 switch_status_t conference_video_attach_canvas(conference_obj_t *conference, mcu_canvas_t *canvas, int super);
-void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout);
+void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout, switch_bool_t force);
 switch_status_t conference_video_attach_video_layer(conference_member_t *member, mcu_canvas_t *canvas, int idx);
 void conference_video_reset_video_bitrate_counters(conference_member_t *member);
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text);
