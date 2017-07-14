@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <G722_1_Version>0.2.0</G722_1_Version>
+  </PropertyGroup>
+  <PropertyGroup>
+    <G722_1_VersionImported>true</G722_1_VersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="G722_1_Version">
+      <Value>$(G722_1_Version)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

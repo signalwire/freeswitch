@@ -48,6 +48,7 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)w32\g722_1.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -73,7 +74,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\libg722_1\src\msvc\;%(RootDir)%(Directory)..\..\libg722_1\src\generated\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -85,7 +85,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\libg722_1\src\msvc\;%(RootDir)%(Directory)..\..\libg722_1\src\generated\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -98,7 +97,6 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\libg722_1\src\msvc\;%(RootDir)%(Directory)..\..\libg722_1\src\generated\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -113,7 +111,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\libg722_1\src\msvc\;%(RootDir)%(Directory)..\..\libg722_1\src\generated\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -121,35 +118,40 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libg722_1\src\basop32.c" />
-    <ClCompile Include="..\..\libg722_1\src\bitstream.c" />
-    <ClCompile Include="..\..\libg722_1\src\coef2sam.c" />
-    <ClCompile Include="..\..\libg722_1\src\common.c" />
-    <ClCompile Include="..\..\libg722_1\src\commonf.c" />
-    <ClCompile Include="..\..\libg722_1\src\dct4.c" />
-    <ClCompile Include="..\..\libg722_1\src\dct4_a.c" />
-    <ClCompile Include="..\..\libg722_1\src\dct4_s.c" />
-    <ClCompile Include="..\..\libg722_1\src\decoder.c" />
-    <ClCompile Include="..\..\libg722_1\src\decoderf.c" />
-    <ClCompile Include="..\..\libg722_1\src\encoder.c" />
-    <ClCompile Include="..\..\libg722_1\src\encoderf.c" />
-    <ClCompile Include="..\..\libg722_1\src\huff_tab.c" />
-    <ClCompile Include="..\..\libg722_1\src\sam2coef.c" />
-    <ClCompile Include="..\..\libg722_1\src\tables.c" />
-    <ClCompile Include="..\..\libg722_1\src\utilities.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\basop32.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\bitstream.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\coef2sam.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\common.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\commonf.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4_a.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4_s.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\decoder.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\decoderf.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\encoder.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\encoderf.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\huff_tab.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\sam2coef.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\tables.c" />
+    <ClCompile Include="$(SolutionDir)libs\g722_1-0.2.0\src\utilities.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libg722_1\src\basop32.h" />
-    <ClInclude Include="..\..\libg722_1\src\bitstream.h" />
-    <ClInclude Include="..\..\libg722_1\src\coef2sam.h" />
-    <ClInclude Include="..\..\libg722_1\src\dct4.h" />
-    <ClInclude Include="..\..\libg722_1\src\dct4_a.h" />
-    <ClInclude Include="..\..\libg722_1\src\dct4_s.h" />
-    <ClInclude Include="..\..\libg722_1\src\defs.h" />
-    <ClInclude Include="..\..\libg722_1\src\huff_tab.h" />
-    <ClInclude Include="..\..\libg722_1\src\sam2coef.h" />
-    <ClInclude Include="..\..\libg722_1\src\tables.h" />
-    <ClInclude Include="..\..\libg722_1\src\utilities.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\basop32.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\bitstream.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\coef2sam.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4_a.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\dct4_s.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\defs.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\huff_tab.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\sam2coef.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\tables.h" />
+    <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download g722_1.2015.vcxproj">
+      <Project>{36603fe1-253f-4c2c-aab6-12927a626135}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
