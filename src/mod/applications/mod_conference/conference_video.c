@@ -1428,7 +1428,6 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	switch_thread_rwlock_wrlock(canvas->video_rwlock);
 	switch_mutex_lock(canvas->mutex);
-	canvas->layout_floor_id = -1;
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		mcu_layer_t *layer = &canvas->layers[i];
@@ -1447,6 +1446,8 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		switch_thread_rwlock_unlock(canvas->video_rwlock);
 		return;
 	}
+
+	canvas->layout_floor_id = -1;
 
 	if (!vlayout) {
 		vlayout = canvas->new_vlayout;
@@ -3664,18 +3665,20 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				for (j = 0; j < file_count; j++) {
 					switch_image_t *img = file_imgs[j];
+					layer = NULL;
 
 					if (j == 0 && imember->canvas->layout_floor_id > -1) {
 						layer = &imember->canvas->layers[imember->canvas->layout_floor_id];
-						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					} else if (i < imember->canvas->total_layers) {
 						layer = &imember->canvas->layers[i++];
+					}
+
+					if (layer) {
+						switch_img_free(&layer->banner_img);
+						switch_img_free(&layer->logo_img);
+						layer->member_id = -1;
 						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					}
-				}
-
-				if (imember->session) {
-					switch_core_session_rwunlock(imember->session);
 				}
 			}
 
