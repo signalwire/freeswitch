@@ -2623,7 +2623,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				video_super_canvas_bgcolor= val;
 			} else if (!strcasecmp(var, "video-letterbox-bgcolor") && !zstr(val)) {
 				video_letterbox_bgcolor= val;
-			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
+			} else if (!video_canvas_size && !strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
 			} else if (!strcasecmp(var, "video-fps") && !zstr(val)) {
 				fps = (float)atof(val);
