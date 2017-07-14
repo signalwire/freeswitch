@@ -3680,6 +3680,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					}
 				}
+
+				if (imember->session) {
+					switch_core_session_rwunlock(imember->session);
+				}
 			}
 
 			for (j = 0; j < file_count; j++) {
