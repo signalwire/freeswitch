@@ -39,7 +39,9 @@
 
 #if !defined(__cplusplus)
 
+#ifndef _MSC_VER 
 typedef int     _Bool;
+#endif
 typedef int     bool;
 #define false   0
 #define true    (!false)
