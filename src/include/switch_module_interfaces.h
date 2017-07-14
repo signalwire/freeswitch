@@ -378,6 +378,8 @@ struct switch_file_handle {
 	int64_t duration;
 	/*! current video position, or current page in pdf */
 	int64_t vpos;
+	void *muxbuf;
+	switch_size_t muxlen;
 };
 
 /*! \brief Abstract interface to an asr module */

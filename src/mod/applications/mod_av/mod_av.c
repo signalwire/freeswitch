@@ -31,6 +31,7 @@
  */
 
 #include <switch.h>
+#include "mod_av.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
@@ -40,9 +41,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown);
 SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, mod_av_shutdown, NULL);
 
-static struct {
-	int debug;
-} globals;
+struct mod_av_globals mod_av_globals;
 
 typedef struct av_mutex_helper_s {
 	switch_mutex_t *mutex;
@@ -99,7 +98,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
  
 	/* naggy messages */
-	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING) && !globals.debug) return;
+	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING) && !mod_av_globals.debug) return;
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
@@ -126,6 +125,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define AV_USAGE "debug [on|off] | show <formats | codecs>"
+
 SWITCH_STANDARD_API(av_function)
 {
 	char *argv[2] = { 0 };
@@ -134,25 +135,43 @@ SWITCH_STANDARD_API(av_function)
 	int ok = 0;
 
 	if (cmd) {
+
+		if (!strcmp(cmd, "show formats")) {
+			show_formats(stream);
+			ok = 1;
+			goto end;
+		} else if (!strcmp(cmd, "show codecs")) {
+			show_codecs(stream);
+			ok = 1;
+			goto end;
+		}
+
+
 		mycmd = strdup(cmd);
 		argc = switch_split(mycmd, ' ', argv);
 
 		if (argc > 0) {
 			if (!strcasecmp(argv[0], "debug")) {
 				if (argc > 1) {
-					int tmp = atoi(argv[1]);
-					if (tmp > -1) {
-						globals.debug = tmp;
+					if (switch_is_number(argv[1])) {
+						int tmp = atoi(argv[1]);
+						if (tmp > -1) {
+							mod_av_globals.debug = tmp;
+						}
+					} else {
+						mod_av_globals.debug = switch_true(argv[1]);
 					}
 				}
-				stream->write_function(stream, "Debug Level: %d\n", globals.debug);
+				stream->write_function(stream, "Debug Level: %d\n", mod_av_globals.debug);
 				ok++;
 			}
 		}
 	}
 
+ end:
+
 	if (!ok) {
-		stream->write_function(stream, "No input received\n");
+		stream->write_function(stream, "Usage %s\n", AV_USAGE);
 	}
 
 	switch_safe_free(mycmd);
@@ -175,10 +194,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(api_interface, "av", "AV general commands", av_function, "debug [on|off]");
+	SWITCH_ADD_API(api_interface, "av", "AV general commands", av_function, AV_USAGE);
 
 	mod_avformat_load(module_interface, pool);
 	mod_avcodec_load(module_interface, pool);
+
+	switch_console_set_complete("add av debug on");
+	switch_console_set_complete("add av debug off");
+	switch_console_set_complete("add av debug 0");
+	switch_console_set_complete("add av debug 1");
+	switch_console_set_complete("add av debug 2");
+	switch_console_set_complete("add av show formats");
+	switch_console_set_complete("add av show codecs");
 
 	return SWITCH_STATUS_SUCCESS;
 }

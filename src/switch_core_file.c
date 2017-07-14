@@ -49,6 +49,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	int is_stream = 0;
 	char *fp = NULL;
 	int to = 0;
+	int force_channels = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -128,10 +129,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			}
 		}
 
-		if ((val = switch_event_get_header(fh->params, "channels"))) {
+		if ((val = switch_event_get_header(fh->params, "force_channels"))) {
 			tmp = atoi(val);
-			if (tmp == 1 || tmp == 2) {
-				fh->mm.channels = tmp;
+			if (tmp >= 0 && tmp < 3) {
+				force_channels = tmp;
 			}
 		}
 
@@ -298,10 +299,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->handler = NULL;
 	}
 
-	if (channels) {
-		fh->channels = channels;
+	if (force_channels == channels) {
+		force_channels = 0;
+	}
+
+	if (force_channels && force_channels > 0 && force_channels < 3) {
+		fh->real_channels = channels ? channels : fh->channels;
+		fh->channels = force_channels;
+		fh->mm.channels = fh->channels;
 	} else {
-		fh->channels = 1;
+
+		if (channels) {
+			fh->channels = channels;
+		} else {
+			fh->channels = 1;
+		}
+
+		fh->mm.channels = fh->channels;
 	}
 
 	file_path = fh->spool_path ? fh->spool_path : fh->file_path;
@@ -314,10 +328,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		goto fail;
 	}
 
-	fh->real_channels = fh->channels;
+	if (!force_channels && !fh->real_channels) {
+		fh->real_channels = fh->channels;
 
-	if (channels) {
-		fh->channels = channels;
+		if (channels) {
+			fh->channels = channels;
+		}
 	}
 
 	if ((flags & SWITCH_FILE_FLAG_WRITE) && !is_stream && (status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
@@ -537,6 +553,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+
+	if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
+		int need = *len * 2 * fh->real_channels;
+
+		if (need > fh->muxlen) {
+			fh->muxbuf = realloc(fh->muxbuf, need);
+			switch_assert(fh->muxbuf);
+			fh->muxlen = need;
+			memcpy(fh->muxbuf, data, fh->muxlen);
+			data = fh->muxbuf;
+
+		}
+
+		switch_mux_channels((int16_t *) data, *len, fh->real_channels, fh->channels);
+	}
+
+
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
@@ -571,6 +604,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	if (!*len) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 
 	if (fh->pre_buffer) {
 		switch_size_t rlen, blen;
@@ -847,6 +881,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	fh->memory_pool = NULL;
 
 	switch_safe_free(fh->dbuf);
+	switch_safe_free(fh->muxbuf);
 
 	if (fh->spool_path) {
 		char *command;
