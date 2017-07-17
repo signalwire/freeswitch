@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="iLBC-version.props" Condition=" '$(iLBC_VersionImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <iLBCLibDir>$(SolutionDir)libs\iLBC-$(iLBC_Version)</iLBCLibDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(iLBCLibDir)\src;$(iLBCLibDir)\src\ilbc;$(iLBCLibDir)\src\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\codec\ilbc\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

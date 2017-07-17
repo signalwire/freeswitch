@@ -393,7 +393,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeex", "libs\win32\spee
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeexdsp", "libs\win32\speex\libspeexdsp.2015.vcxproj", "{03207781-0D1C-4DB3-A71D-45C608F28DBD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libilbc", "libs\ilbc\libilbc.2015.vcxproj", "{9A5DDF08-C88C-4A35-B7F6-D605228446BD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libilbc", "libs\win32\ilbc\libilbc.2015.vcxproj", "{9A5DDF08-C88C-4A35-B7F6-D605228446BD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_opal", "src\mod\endpoints\mod_opal\mod_opal.2015.vcxproj", "{05C9FB27-480E-4D53-B3B7-6338E2526666}"
 EndProject
@@ -654,6 +654,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download lua", "libs\win32\Download lua.2015.vcxproj", "{45CD36EE-0AF3-4387-8790-4F11E928299D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download g722_1", "libs\win32\Download g722_1.2015.vcxproj", "{36603FE1-253F-4C2C-AAB6-12927A626135}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download iLBC", "libs\win32\Download iLBC.2015.vcxproj", "{53AADA60-DF12-46FF-BF94-566BBF849336}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2949,6 +2951,18 @@ Global
 		{36603FE1-253F-4C2C-AAB6-12927A626135}.Release|Win32.Build.0 = Release|Win32
 		{36603FE1-253F-4C2C-AAB6-12927A626135}.Release|x64.ActiveCfg = Release|Win32
 		{36603FE1-253F-4C2C-AAB6-12927A626135}.Release|x64.Build.0 = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.All|Win32.ActiveCfg = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.All|Win32.Build.0 = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.All|x64.ActiveCfg = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.All|x64.Build.0 = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Debug|Win32.ActiveCfg = Debug|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Debug|Win32.Build.0 = Debug|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Debug|x64.ActiveCfg = Debug|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Debug|x64.Build.0 = Debug|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|Win32.ActiveCfg = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|Win32.Build.0 = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|x64.ActiveCfg = Release|Win32
+		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|x64.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3183,5 +3197,6 @@ Global
 		{4F990563-6DFB-45C3-B083-1938C6D7FFA4} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{45CD36EE-0AF3-4387-8790-4F11E928299D} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{36603FE1-253F-4C2C-AAB6-12927A626135} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{53AADA60-DF12-46FF-BF94-566BBF849336} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 	EndGlobalSection
 EndGlobal
