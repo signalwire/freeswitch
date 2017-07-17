@@ -430,7 +430,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_ru", "src\mod\say\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_valet_parking", "src\mod\applications\mod_valet_parking\mod_valet_parking.2015.vcxproj", "{432DB165-1EB2-4781-A9C0-71E62610B20A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbroadvoice", "libs\broadvoice\src\libbroadvoice.2015.vcxproj", "{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbroadvoice", "libs\win32\broadvoice\libbroadvoice.2015.vcxproj", "{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_bv", "src\mod\codecs\mod_bv\mod_bv.2015.vcxproj", "{D5C87B19-150D-4EF3-A671-96589BD2D14A}"
 EndProject
@@ -656,6 +656,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download g722_1", "libs\win32\Download g722_1.2015.vcxproj", "{36603FE1-253F-4C2C-AAB6-12927A626135}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download iLBC", "libs\win32\Download iLBC.2015.vcxproj", "{53AADA60-DF12-46FF-BF94-566BBF849336}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download broadvoice", "libs\win32\Download broadvoice.2015.vcxproj", "{46502007-0D94-47AC-A640-C2B5EEA98333}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2963,6 +2965,18 @@ Global
 		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|Win32.Build.0 = Release|Win32
 		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|x64.ActiveCfg = Release|Win32
 		{53AADA60-DF12-46FF-BF94-566BBF849336}.Release|x64.Build.0 = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.All|Win32.ActiveCfg = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.All|Win32.Build.0 = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.All|x64.ActiveCfg = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.All|x64.Build.0 = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Debug|Win32.ActiveCfg = Debug|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Debug|Win32.Build.0 = Debug|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Debug|x64.ActiveCfg = Debug|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Debug|x64.Build.0 = Debug|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Release|Win32.ActiveCfg = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Release|Win32.Build.0 = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Release|x64.ActiveCfg = Release|Win32
+		{46502007-0D94-47AC-A640-C2B5EEA98333}.Release|x64.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3198,5 +3212,6 @@ Global
 		{45CD36EE-0AF3-4387-8790-4F11E928299D} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{36603FE1-253F-4C2C-AAB6-12927A626135} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{53AADA60-DF12-46FF-BF94-566BBF849336} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{46502007-0D94-47AC-A640-C2B5EEA98333} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 	EndGlobalSection
 EndGlobal
