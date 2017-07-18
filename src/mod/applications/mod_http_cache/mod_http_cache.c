@@ -416,10 +416,10 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			if (!zstr(cache->ssl_cacert)) {
 				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
 			}
-			/* verify that the host name matches the cert */
-			if (!cache->ssl_verifyhost) {
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-			}
+		}
+		/* verify that the host name matches the cert */
+		if (!cache->ssl_verifyhost) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
 		}
 		switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, httpRes);
@@ -1098,6 +1098,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	http_get_data_t get_data = {0};
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
+	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1117,6 +1118,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		if (headers) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
@@ -1140,12 +1142,14 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 			if (!zstr(cache->ssl_cacert)) {
 				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
 			}
-			/* verify that the host name matches the cert */
-			if (!cache->ssl_verifyhost) {
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-			}
 		}
-		switch_curl_easy_perform(curl_handle);
+		
+		/* verify that the host name matches the cert */
+		if (!cache->ssl_verifyhost) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+		}
+		
+		curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
@@ -1155,7 +1159,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		goto done;
 	}
 
-	if (httpRes == 200) {
+	if (curl_status == CURLE_OK) {
 		int duration_ms = (switch_time_now() / 1000) - start_time_ms;
 		if (duration_ms > 500) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "URL %s downloaded in %d ms\n", url->url, duration_ms);
@@ -1167,7 +1171,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		}
 	} else {
 		url->size = 0; // nothing downloaded or download interrupted
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\n", httpRes, url->url);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to fetch %s\n", curl_status, httpRes, url->url);
 		status = SWITCH_STATUS_GENERR;
 		goto done;
 	}
