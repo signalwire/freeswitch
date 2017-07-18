@@ -101,8 +101,7 @@ typedef enum {
 	CC_AGENT_STATUS_LOGGED_OUT = 1,
 	CC_AGENT_STATUS_AVAILABLE = 2,
 	CC_AGENT_STATUS_AVAILABLE_ON_DEMAND = 3,
-	CC_AGENT_STATUS_ON_BREAK = 4,
-	CC_AGENT_STATUS_ON_EXTERNAL_CALL = 5
+	CC_AGENT_STATUS_ON_BREAK = 4
 } cc_agent_status_t;
 
 static struct cc_status_table AGENT_STATUS_CHART[] = {
@@ -111,7 +110,6 @@ static struct cc_status_table AGENT_STATUS_CHART[] = {
 	{"Available", CC_AGENT_STATUS_AVAILABLE},
 	{"Available (On Demand)", CC_AGENT_STATUS_AVAILABLE_ON_DEMAND},
 	{"On Break", CC_AGENT_STATUS_ON_BREAK},
-	{"On External Call", CC_AGENT_STATUS_ON_EXTERNAL_CALL},
 	{NULL, 0}
 
 };
@@ -210,7 +208,6 @@ static char agents_sql[] =
 /*User Personal Status
   Available
   On Break
-  On External Call
   Logged Out
  */
 "   state   VARCHAR(255),\n"
@@ -228,14 +225,12 @@ static char agents_sql[] =
 "   last_bridge_start INTEGER NOT NULL DEFAULT 0,\n"
 "   last_bridge_end INTEGER NOT NULL DEFAULT 0,\n"
 "   last_offered_call INTEGER NOT NULL DEFAULT 0,\n"
-"   last_waiting_state INTEGER NOT NULL DEFAULT 0,\n"
 "   last_status_change INTEGER NOT NULL DEFAULT 0,\n"
 "   no_answer_count INTEGER NOT NULL DEFAULT 0,\n"
 "   calls_answered  INTEGER NOT NULL DEFAULT 0,\n"
 "   talk_time  INTEGER NOT NULL DEFAULT 0,\n"
 "   ready_time INTEGER NOT NULL DEFAULT 0,\n"
-"   external_calls_count INTEGER NOT NULL DEFAULT 0,\n"
-"   status_before_external_calls VARCHAR(255) DEFAULT ''\n"
+"   external_calls_count INTEGER NOT NULL DEFAULT 0\n"
 ");\n";
 
 static char tiers_sql[] =
@@ -897,7 +892,6 @@ static cc_profile_t *load_profile(const char *profile_name) {
 			"alter table agents add busy_delay_time  integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
-	switch_cache_db_test_reactive(dbh, "select status_before_external_calls from agents", NULL, "alter table agents add status_before_external_calls VARCHAR(255);");
 	switch_cache_db_test_reactive(dbh, "select external_calls_count from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 	switch_cache_db_test_reactive(dbh, "select count(last_waiting_state) FROM agents", NULL, "alter table agents add last_waiting_state integer not null default 0;");
@@ -909,11 +903,8 @@ static cc_profile_t *load_profile(const char *profile_name) {
 	sql = switch_mprintf("update agents set state = 'Waiting', uuid = '' where system = 'single_box';"
 			"update tiers set state = 'Ready' where agent IN (select name from agents where system = 'single_box');"
 			"update members set state = '%q', session_uuid = '' where system = '%q';"
-			"update agents set external_calls_count = 0 where system = 'single_box';"
-			"update agents set status_before_external_calls = '' where system = 'single_box';"
-			"update agents set status = '%q' where status = '%q' and system = 'single_box'",  /* This is not perfect... but better than having a call stuck on external call after a crash */
-			cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.core_uuid, cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL));
-
+			"update agents set external_calls_count = 0 where system = 'single_box';",
+			cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.core_uuid);
 	cc_execute_sql(profile, NULL, sql, NULL);
 	switch_safe_free(sql);
 
@@ -1656,6 +1647,7 @@ static switch_status_t load_agent(cc_profile_t *profile, const char *agent_name,
 				goto end;
 			}
 		}
+
 
 		if (!(x_agents = switch_xml_child(x_profile, "agents"))) {
 			goto end;
@@ -2519,9 +2511,6 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	if (! (strcasecmp(agent_status, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK)))) {
 		contact_agent = SWITCH_FALSE;
 	}
-	if (! (strcasecmp(agent_status, cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL)))) {
-		contact_agent = SWITCH_FALSE;
-	}
 	/* XXX callcenter_track app can update this counter after we selected this agent on database */
 	if (cbt->skip_agents_with_external_calls && atoi(agent_external_calls_count) > 0) {
 		contact_agent = SWITCH_FALSE;
@@ -2700,7 +2689,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	if (!cbt.queue_name || !(queue = get_queue(profile, cbt.queue_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, delete this member\n", cbt.queue_name);
 		sql = switch_mprintf("DELETE FROM members WHERE uuid = '%q' AND system = '%q'", cbt.member_uuid, cbt.member_system);
-		cc_execute_sql(profile, NULL, sql, NULL);
+		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 		goto end;
 	} else {
@@ -2827,39 +2816,38 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
-				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > %d"
 				" AND tiers.level = %d"
 				" UNION "
 				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
-				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 				position,
 				level,
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
-				level
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
 				);
 	} else if (!strcasecmp(queue_strategy, "round-robin")) {
 		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
-				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" UNION "
 				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
-				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 				queue_name,
 				queue_name,
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
 				);
 
 	} else {
@@ -2887,10 +2875,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
-				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY %q",
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 				sql_order_by);
 		switch_safe_free(sql_order_by);
 
@@ -3586,7 +3574,6 @@ static switch_status_t cc_hook_state_run(switch_core_session_t *session)
 	const char *profile_name = NULL;
 	char *sql = NULL;
 	cc_profile_t *profile = NULL;
-	char agent_status[255];
 
 	profile_name = switch_channel_get_variable(channel, "cc_profile");
 
@@ -3594,7 +3581,7 @@ static switch_status_t cc_hook_state_run(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile %s not found\n", profile_name);
 		switch_core_event_hook_remove_state_run(session, cc_hook_state_run);
 		UNPROTECT_INTERFACE(app_interface);
-		goto end;
+		return SWITCH_STATUS_SUCCESS;
 
 	}
 
@@ -3602,47 +3589,19 @@ static switch_status_t cc_hook_state_run(switch_core_session_t *session)
 	agent_name = switch_channel_get_variable(channel, "cc_tracked_agent");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
 
-	if (cc_agent_get(profile, "status", agent_name, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", agent_name);
-		goto end;
-	}
-
-
 	if (state == CS_HANGUP) {
-		char agent_status_changed[255];
-		switch_event_t *event;
-
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
 		sql = switch_mprintf("UPDATE agents SET external_calls_count = external_calls_count - 1 WHERE name = '%q'", agent_name);
 		cc_execute_sql(profile, NULL, sql, NULL);
 		switch_safe_free(sql);
-		sql = switch_mprintf("UPDATE agents SET status = status_before_external_calls, status_before_external_calls = '' WHERE name = '%q' AND external_calls_count = 0 AND status = '%q'", agent_name, cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL));
-		cc_execute_sql(profile, NULL, sql, NULL);
-		switch_safe_free(sql);
-
-		if (cc_agent_get(profile, "status", agent_name, agent_status_changed, sizeof(agent_status_changed)) != CC_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", agent_name);
-		} else if (strcasecmp(agent_status, agent_status_changed) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Profile", profile_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", agent_status_changed); 
-			switch_event_fire(&event);
-		}
-
 		switch_core_event_hook_remove_state_run(session, cc_hook_state_run);
 		UNPROTECT_INTERFACE(app_interface);
 	}
-end:
-	profile_rwunlock(profile);
 
 	profile_rwunlock(profile);
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-#define CC_TRACK_DESC "Track external mod_callcenter calls to avoid place new calls"
-#define CC_TRACK_USAGE "[profile/]queue_name"
 
 SWITCH_STANDARD_APP(callcenter_track)
 {
@@ -3670,38 +3629,22 @@ SWITCH_STANDARD_APP(callcenter_track)
 	if (!profile_name || !(profile = get_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile %s not found\n", profile_name);
 		goto end;
+
 	}
 
 	switch_channel_set_variable(channel, "cc_profile", profile_name);
 
-	if (cc_agent_get(profile, "status", agent_name, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
+	if (cc_agent_get(profile, "status", data, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", data);
 		goto end;
 	}
 
 	switch_channel_set_variable(channel, "cc_tracked_agent", agent_name);
+
 	sql = switch_mprintf("UPDATE agents SET external_calls_count = external_calls_count + 1 WHERE name = '%q'", agent_name);
 	cc_execute_sql(profile, NULL, sql, NULL);
 	switch_safe_free(sql);
 
-	if (switch_true(switch_channel_get_variable(channel, "cc_set_external_call_status"))) {
-		switch_event_t *event;
-		char agent_status_changed[255];
-
-		sql = switch_mprintf("UPDATE agents SET status_before_external_calls = status, status = '%q' WHERE name = '%q' AND external_calls_count > 0 AND status != '%q'", cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL), agent_name, cc_agent_status2str(CC_AGENT_STATUS_ON_EXTERNAL_CALL));
-		cc_execute_sql(profile, NULL, sql, NULL);
-		switch_safe_free(sql);
-
-		if (cc_agent_get(profile, "status", agent_name, agent_status_changed, sizeof(agent_status_changed)) != CC_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", agent_name);
-		} else if (strcasecmp(agent_status, agent_status_changed) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Profile", profile_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", agent_status_changed);
-			switch_event_fire(&event);
-		}
-	}
 	switch_core_event_hook_add_state_run(session, cc_hook_state_run);
 	PROTECT_INTERFACE(app_interface);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracking this call for agent %s", data);
@@ -4704,7 +4647,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", CC_TRACK_DESC, callcenter_track, CC_TRACK_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_NONE);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
 
 	SWITCH_ADD_JSON_API(json_api_interface, "callcenter_config", "JSON Callcenter API", json_callcenter_config_function, "");
