@@ -2509,13 +2509,15 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND tiers.level > %d"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
 				queue_name,
 				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 				position,
 				level,
 				queue_name,
-				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				level
 				);
 	} else if (!strcasecmp(queue->strategy, "round-robin")) {
 		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
@@ -2600,6 +2602,17 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		queue->last_agent_exist_check = local_epoch_time_now(NULL);
 		if (cbt.agent_found) {
 			queue->last_agent_exist = queue->last_agent_exist_check;
+		} else {
+			/* If no agent found in top-down mode, restart to the begining */
+			if (!strcasecmp(queue->strategy, "top-down")) {
+				switch_core_session_t *member_session = switch_core_session_locate(cbt.member_session_uuid);
+				if (member_session) {
+					switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+					switch_channel_set_variable(member_channel, "cc_last_agent_tier_position", NULL);
+					switch_channel_set_variable(member_channel, "cc_last_agent_tier_level", NULL);
+					switch_core_session_rwunlock(member_session);
+				}
+			}
 		}
 		queue_rwunlock(queue);
 	}
