@@ -370,6 +370,7 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
+	int want_w = 0, want_h = 0;
 
 	switch_mutex_lock(layer->canvas->mutex);
 
@@ -452,10 +453,19 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
-		if (layer->img && (layer->img->d_w != img_w || layer->img->d_h != img_h)) {
-			switch_img_free(&layer->img);
-			layer->banner_patched = 0;
-			conference_video_clear_layer(layer);
+		if (layer->img) {
+			if (layer->banner_img) {
+				want_h = img_h - layer->banner_img->d_h;
+			} else {
+				want_h = layer->img->d_h;
+			}
+
+			want_w = layer->img->d_w;
+			
+			if (want_w != layer->img->d_w || want_h != layer->img->d_h) {
+				switch_img_free(&layer->img);
+				layer->banner_patched = 0;
+			}
 		}
 
 		switch_mutex_lock(layer->overlay_mutex);
@@ -463,18 +473,6 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img_w, img_h, 1);
 		}
 		switch_mutex_unlock(layer->overlay_mutex);
-
-		if (layer->banner_img && !layer->banner_patched) {
-			switch_img_fill(layer->canvas->img, layer->x_pos + layer->geometry.border, layer->y_pos + layer->geometry.border, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
-			switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
-			switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border, layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
-
-			if (!freeze) {
-				switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
-			}
-
-			layer->banner_patched = 1;
-		}
 
 		switch_assert(layer->img);
 
@@ -499,6 +497,18 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 				layer->bugged = 0;
 			}
+
+			if (layer->banner_img && !layer->banner_patched) {
+				int ew = layer->img->d_w, eh = layer->img->d_h;
+				int ex = 0, ey = 0;
+				
+				switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
+				switch_img_find_position(POS_LEFT_BOT, ew, eh, layer->banner_img->d_w, layer->banner_img->d_h, &ex, &ey);
+				switch_img_patch(layer->img, layer->banner_img, ex, ey);
+				
+				layer->banner_patched = 1;
+			}
+		
 			
 			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
 		}
@@ -523,7 +533,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 
 		}
-		
+
 		layer->last_img_addr = img_addr;
 
 	} else {
@@ -2881,14 +2891,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 				
 				if (imember->session && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE) {
-					switch_image_t *next_img = NULL;
-
-					conference_video_pop_next_image(imember, &next_img);
-					
-					if (next_img) {
-						switch_img_free(&imember->pcanvas_img);
-						imember->pcanvas_img = next_img;
-					}
+					conference_video_pop_next_image(imember, &imember->pcanvas_img);
 				}
 
 				if (imember->session) {
@@ -3051,9 +3054,14 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 
 						if (layer && use_img) {
-							conference_video_scale_and_patch(layer, use_img, SWITCH_FALSE);
+							switch_img_copy(use_img, &layer->cur_img);
+						} 
+
+						if (layer) {
+							conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
 						}
-					}
+						
+					}					
 				}
 
 				for (j = 0; j < file_count; j++) {
@@ -3129,6 +3137,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						dupframe = NULL;
 					}
 				}
+
+				switch_img_free(&imember->pcanvas_img);
 
 				if (imember->session) {
 					switch_core_session_rwunlock(imember->session);
