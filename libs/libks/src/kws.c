@@ -451,6 +451,7 @@ KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 				if ((ssl_err = SSL_get_error(kws->ssl, r)) != SSL_ERROR_WANT_WRITE) {
 					break;
 				}
+				ssl_err = 0;
 			}
 
 		} while (--sanity > 0 && kws->block && wrote < bytes);
