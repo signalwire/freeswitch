@@ -2126,7 +2126,6 @@ void conference_video_wake_layer_thread(conference_member_t *member)
 		if (!member->layer_thread_wake_up && switch_mutex_trylock(member->layer_cond_mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_signal(member->layer_cond);
 			switch_mutex_unlock(member->layer_cond_mutex);
-			printf("WAKE IT?\n");
 			member->layer_thread_wake_up = 1;
 		}
 		
