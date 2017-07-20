@@ -2084,14 +2084,9 @@ void *SWITCH_THREAD_FUNC conference_video_layer_thread_run(switch_thread_t *thre
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING) && member->layer_thread_running) {
 		mcu_layer_t *layer = NULL;
 		mcu_canvas_t *canvas = NULL;
-
-
-		if (member->layer_thread_wake_up) {
-			printf("STAY UP!\n");
-		} else {
-			printf("FUCK SLEEP\n");
+		
+		if (!member->layer_thread_wake_up) {
 			switch_thread_cond_wait(member->layer_cond, member->layer_cond_mutex);
-			printf("FUCK AWAKE\n");
 		}
 
 		member->layer_thread_wake_up = 0;
