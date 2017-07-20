@@ -2482,7 +2482,9 @@ void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id) 
 		}
 
 		if (full_screen) {
-			canvas->play_file = 1;
+			if (canvas->play_file == 0) {
+				canvas->play_file = 1;
+			}
 			if (fnode->fh.mm.fmt == SWITCH_IMG_FMT_ARGB) {
 				canvas->overlay_video_file = 1;
 			} else {
@@ -3864,16 +3866,15 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			write_img = canvas->img;
 			timestamp = canvas->timer.samplecount;
 
+			if (canvas->play_file == 1) {
+				canvas->send_keyframe = 1;
+				canvas->play_file = -1;
+			}
+
 			switch_mutex_lock(conference->file_mutex);
 			if (conference->fnode && switch_test_flag(&conference->fnode->fh, SWITCH_FILE_OPEN)) {
 				if (canvas->overlay_video_file) {
-					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
-					
-						if (canvas->play_file) {
-							canvas->send_keyframe = 1;
-							canvas->play_file = 0;
-						}
-					
+					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {										
 						switch_img_free(&file_img);
 						switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
 						file_img = write_frame.img;
@@ -3907,24 +3908,25 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 					
 						//switch_core_timer_sync(&canvas->timer);
-						timestamp = canvas->timer.samplecount;
+						//timestamp = canvas->timer.samplecount;
 					} else if (file_img) {
 						write_img = file_img;
 					}
 				} else if (canvas->playing_video_file) {
 					if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
-					
-						if (canvas->play_file) {
-							canvas->send_keyframe = 1;
-							canvas->play_file = 0;
-						}
-					
+						switch_image_t *tmp = NULL;
+
 						switch_img_free(&file_img);
-						switch_img_fit(&write_frame.img, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
-						file_img = write_img = write_frame.img;
+						switch_img_letterbox(write_frame.img, &tmp, canvas->img->d_w, canvas->img->d_h, "#000000");
+						if (tmp) {
+							switch_img_free(&write_frame.img);
+							file_img = write_img = write_frame.img = tmp;
+						} else {
+							file_img = write_img = write_frame.img;
+						}
 
 						//switch_core_timer_sync(&canvas->timer);
-						timestamp = canvas->timer.samplecount;
+						//timestamp = canvas->timer.samplecount;
 					} else if (file_img) {
 						write_img = file_img;
 					}
@@ -3936,7 +3938,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			write_frame.img = write_img;
 
-			wait_for_canvas(canvas);
+			if (!canvas->playing_video_file && !canvas->overlay_video_file) {
+				wait_for_canvas(canvas);
+			}
 
 			if (canvas->recording) {
 				conference_video_check_recording(conference, canvas, &write_frame);

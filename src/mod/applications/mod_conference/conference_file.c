@@ -105,6 +105,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 			canvas->send_keyframe = 1;
 			canvas->overlay_video_file = 0;
 		}
+		canvas->play_file = 0;
 	}
 
 	return switch_core_file_close(&node->fh);
