@@ -828,7 +828,6 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			want_w = img_w;
 
 			if (layer->img->d_w != img_w || layer->img->d_h != img_h) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "BAH %d/%d %d/%d\n", want_w, img_w, want_h, img_h);
 				switch_img_free(&layer->img);
 				conference_video_clear_layer(layer);
 			}
