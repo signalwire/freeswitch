@@ -2722,7 +2722,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						layer->tagged = 1;
 						//layer->is_avatar = 1;
 						switch_img_free(&layer->cur_img);
-						switch_img_copy(imember->avatar_png_img, &layer->cur_img);
+						switch_img_letterbox(imember->avatar_png_img,
+											 &layer->cur_img, layer->screen_w, layer->screen_h, conference->video_letterbox_bgcolor);
 						imember->avatar_patched = 1;
 					}
 				}
@@ -2771,7 +2772,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							if (!layer->mute_img) {								
 								if (imember->video_mute_img) {
 									//layer->mute_img = switch_img_read_png(imember->video_mute_png, SWITCH_IMG_FMT_I420);
-									switch_img_copy(imember->video_mute_img, &layer->mute_img);
+									switch_img_letterbox(imember->video_mute_img, 
+														 &layer->mute_img, layer->screen_w, layer->screen_h, conference->video_letterbox_bgcolor);
+									//switch_img_copy(imember->video_mute_img, &layer->mute_img);
 								}
 							}
 
@@ -3025,7 +3028,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						} else {
 							if (!layer->avatar_patched) {
 								if (omember->avatar_png_img) {
-									switch_img_copy(omember->avatar_png_img, &layer->cur_img);
+									switch_img_letterbox(omember->avatar_png_img,
+														 &layer->cur_img, layer->screen_w, layer->screen_h, conference->video_letterbox_bgcolor);
 								}
 								layer->avatar_patched = 1;
 							}
