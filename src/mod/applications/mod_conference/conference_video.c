@@ -391,6 +391,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 	if (layer->refresh) {
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
+		layer->banner_patched = 0;
 		layer->refresh = 0;
 	}
 
@@ -457,14 +458,14 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			if (layer->banner_img) {
 				want_h = img_h - layer->banner_img->d_h;
 			} else {
-				want_h = layer->img->d_h;
+				want_h = img_h;
 			}
-
-			want_w = layer->img->d_w;
 			
-			if (want_w != layer->img->d_w || want_h != layer->img->d_h) {
+			want_w = img_w;
+
+			if (layer->img->d_w != img_w || layer->img->d_h != img_h) {
 				switch_img_free(&layer->img);
-				layer->banner_patched = 0;
+				conference_video_clear_layer(layer);
 			}
 		}
 
@@ -504,13 +505,13 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				
 				switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
 				switch_img_find_position(POS_LEFT_BOT, ew, eh, layer->banner_img->d_w, layer->banner_img->d_h, &ex, &ey);
-				switch_img_patch(layer->img, layer->banner_img, ex, ey);
+				switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border,
+								 layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
 				
 				layer->banner_patched = 1;
 			}
 		
-			
-			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
+			switch_img_patch_rect(IMG, x_pos + layer->geometry.border, y_pos + layer->geometry.border, layer->img, 0, 0, want_w, want_h);
 		}
 
 		if (layer->logo_img) {
