@@ -94,8 +94,11 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 
 	if (conference->playing_video_file) {
 		conference->canvases[node->canvas_id]->send_keyframe = 1;
+		conference->canvases[node->canvas_id]->play_file = 0;
 		conference->playing_video_file = 0;
 	}
+
+
 	return switch_core_file_close(&node->fh);
 }
 
