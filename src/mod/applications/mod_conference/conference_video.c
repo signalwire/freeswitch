@@ -3622,7 +3622,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 					}
 
-					if (layer) {
+					if (layer && !file_count) {
 						personal_attach(layer, omember);
 					}
 
@@ -3642,7 +3642,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							layer->avatar_patched = 0;
 						} else {
 							if (!layer->avatar_patched) {
-								conference_video_scale_and_patch(layer, omember->avatar_png_img, SWITCH_FALSE);
+								if (omember->avatar_png_img) {
+									switch_img_copy(omember->avatar_png_img, &layer->cur_img);
+								}
 								layer->avatar_patched = 1;
 							}
 							use_img = NULL;
@@ -3663,7 +3665,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 										switch_img_fit(&tmp, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
 										//conference_video_member_video_mute_banner(imember->canvas, layer, imember);
 										conference_video_member_video_mute_banner(tmp, omember);
-										conference_video_scale_and_patch(layer, tmp, SWITCH_FALSE);
+										switch_img_copy(tmp, &layer->cur_img);
 									}
 									
 									layer->mute_patched = 1;
@@ -3689,6 +3691,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					switch_image_t *img = file_imgs[j];
 					layer = NULL;
 
+					if (!img) continue;
+
 					if (j == 0 && imember->canvas->layout_floor_id > -1) {
 						layer = &imember->canvas->layers[imember->canvas->layout_floor_id];
 					} else if (i < imember->canvas->total_layers) {
@@ -3699,7 +3703,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						switch_img_free(&layer->banner_img);
 						switch_img_free(&layer->logo_img);
 						layer->member_id = -1;
-						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
+						switch_img_copy(img, &layer->cur_img);
+						conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
 					}
 				}
 
