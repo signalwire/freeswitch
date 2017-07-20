@@ -848,6 +848,7 @@ struct conference_member {
 	switch_thread_t *input_thread;
 	switch_thread_cond_t *layer_cond;
 	switch_mutex_t *layer_cond_mutex;
+	switch_mutex_t *layer_cond2_mutex;
 	cJSON *json;
 	cJSON *status_field;
 	uint8_t loop_loop;
