@@ -2993,6 +2993,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 
 			if (fit == SWITCH_FIT_SIZE_AND_SCALE) {
 				src = *srcP;
+				tmp = NULL;
 				switch_img_scale(src, &tmp, width, height);
 				switch_img_free(&src);
 				*srcP = tmp;
