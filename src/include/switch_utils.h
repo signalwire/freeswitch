@@ -57,7 +57,9 @@ static inline char *switch_get_hex_bytes(switch_byte_t *buf, switch_size_t datal
 	pp = new_buf;
 
 	for (p = buf; p < e && pp < ee - 4; p++) {
-		snprintf(pp, 4, "%.2x ", (int)*p);
+		if (snprintf(pp, 4, "%.2x ", (int)*p) < 0) {
+			return NULL;
+		}
 		pp += 3;
 	}
 	*(pp-1) = '\0';
