@@ -454,7 +454,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		/* Resolution must be a multiple of two. */
 		c->width    = mst->width;
 		c->height   = mst->height;
-		c->bit_rate = mm->vb;
+		c->bit_rate = mm->vb * 1024;
 		mst->st->time_base.den = 90000;
 		mst->st->time_base.num = 1;
 		c->time_base.den = 90000;
@@ -585,6 +585,10 @@ GCC_DIAG_OFF(deprecated-declarations)
 	AVCodecContext *c = mst->st->codec;
 GCC_DIAG_ON(deprecated-declarations)
 	switch_status_t status = SWITCH_STATUS_FALSE;
+ 	int threads = switch_core_cpu_count();
+ 
+	if (threads > 4) threads = 4;
+	c->thread_count = threads;
 
 	/* open the codec */
 	ret = avcodec_open2(c, codec, NULL);

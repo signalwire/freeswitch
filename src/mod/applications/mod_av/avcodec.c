@@ -821,6 +821,7 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
 	int sane = 0;
+	int threads = switch_core_cpu_count();
 
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
@@ -881,24 +882,26 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15);
 	}
 
-	sane = switch_calc_bitrate(1920, 1080, 2, 30);
+	sane = switch_calc_bitrate(1920, 1080, 3, 60);
 
 	if (context->bandwidth > sane) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
 		context->bandwidth = sane;
 	}
 
-	context->bandwidth *= 3;
+	if (threads > 4) threads = 4;
+	context->bandwidth *= 4;
 
-	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	/* frames per second */
 	context->encoder_ctx->time_base = (AVRational){1, 90};
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-	context->encoder_ctx->thread_count = 1;//switch_core_cpu_count() > 2 ? 2 : 1;
-	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+	context->encoder_ctx->thread_count = threads;
+
 	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 4;
 
@@ -975,6 +978,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 {
 	int encoding, decoding;
 	h264_codec_context_t *context = NULL;
+	int threads = switch_core_cpu_count();
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -1018,7 +1022,10 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "codec: id=%d %s\n", context->decoder->id, context->decoder->long_name);
 
+		if (threads > 4) threads = 4;
+		
 		context->decoder_ctx = avcodec_alloc_context3(context->decoder);
+		context->decoder_ctx->thread_count = threads;
 		if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
 			goto error;
