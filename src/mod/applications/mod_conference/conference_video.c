@@ -607,6 +607,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 	if (layer->refresh) {
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
+		layer->banner_patched = 0;
 		layer->refresh = 0;
 	}
 
@@ -821,14 +822,15 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			if (layer->banner_img) {
 				want_h = img_h - layer->banner_img->d_h;
 			} else {
-				want_h = layer->img->d_h;
+				want_h = img_h;
 			}
-
-			want_w = layer->img->d_w;
 			
-			if (want_w != layer->img->d_w || want_h != layer->img->d_h) {
+			want_w = img_w;
+
+			if (layer->img->d_w != img_w || layer->img->d_h != img_h) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "BAH %d/%d %d/%d\n", want_w, img_w, want_h, img_h);
 				switch_img_free(&layer->img);
-				layer->banner_patched = 0;
+				conference_video_clear_layer(layer);
 			}
 		}
 
@@ -871,8 +873,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 			switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
 			switch_img_find_position(POS_LEFT_BOT, ew, eh, layer->banner_img->d_w, layer->banner_img->d_h, &ex, &ey);
-			switch_img_patch(layer->img, layer->banner_img, ex, ey);
-			
+			switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border,
+							 layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
 			layer->banner_patched = 1;
 		}
 
@@ -906,7 +908,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 			switch_mutex_unlock(layer->overlay_mutex);
 
-			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
+			switch_img_patch_rect(IMG, x_pos + layer->geometry.border, y_pos + layer->geometry.border, layer->img, 0, 0, want_w, want_h);
 
 		}
 
@@ -2083,9 +2085,16 @@ void *SWITCH_THREAD_FUNC conference_video_layer_thread_run(switch_thread_t *thre
 		mcu_layer_t *layer = NULL;
 		mcu_canvas_t *canvas = NULL;
 
-		switch_mutex_lock(member->layer_cond2_mutex);
-		switch_thread_cond_wait(member->layer_cond, member->layer_cond_mutex);
-		switch_mutex_unlock(member->layer_cond2_mutex);
+
+		if (member->layer_thread_wake_up) {
+			printf("STAY UP!\n");
+		} else {
+			printf("FUCK SLEEP\n");
+			switch_thread_cond_wait(member->layer_cond, member->layer_cond_mutex);
+			printf("FUCK AWAKE\n");
+		}
+
+		member->layer_thread_wake_up = 0;
 
 		if (!conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
 			break;
@@ -2119,27 +2128,13 @@ void *SWITCH_THREAD_FUNC conference_video_layer_thread_run(switch_thread_t *thre
 void conference_video_wake_layer_thread(conference_member_t *member)
 {
 	if (member->layer_cond) {
-		switch_status_t status;
-		int tries = 0;
-
-	top:
-
-		status = switch_mutex_trylock(member->layer_cond_mutex);
-
-		if (status == SWITCH_STATUS_SUCCESS) {
+		if (!member->layer_thread_wake_up && switch_mutex_trylock(member->layer_cond_mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_signal(member->layer_cond);
 			switch_mutex_unlock(member->layer_cond_mutex);
-			return;
-		} else {
-			if (switch_mutex_trylock(member->layer_cond2_mutex) == SWITCH_STATUS_SUCCESS) {
-				switch_mutex_unlock(member->layer_cond2_mutex);
-			} else {
-				if (++tries < 10) {
-					switch_cond_next();
-					goto top;
-				}
-			}
+			printf("WAKE IT?\n");
+			member->layer_thread_wake_up = 1;
 		}
+		
 	}
 }
 	
@@ -2155,7 +2150,6 @@ void conference_video_launch_layer_thread(conference_member_t *member)
 	if (!member->layer_cond) {
 		switch_thread_cond_create(&member->layer_cond, member->pool);
 		switch_mutex_init(&member->layer_cond_mutex, SWITCH_MUTEX_NESTED, member->pool);
-		switch_mutex_init(&member->layer_cond2_mutex, SWITCH_MUTEX_NESTED, member->pool);
 	}
 
 	switch_mutex_lock(conference_globals.hash_mutex);
@@ -2879,6 +2873,8 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 
 static void wait_for_canvas(mcu_canvas_t *canvas)
 {
+	//int q = 0;
+
 	for (;;) {
 		int x = 0;
 		int i = 0;
@@ -2889,6 +2885,7 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 			if (layer->need_patch) {
 				if (layer->member_id && layer->member && conference_utils_member_test_flag(layer->member, MFLAG_RUNNING) && layer->member->fb) {
 					conference_video_wake_layer_thread(layer->member);
+					//printf("BALLZ? %d\n", q++);
 					x++;
 				} else {
 					layer->need_patch = 0;
@@ -2897,7 +2894,7 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 		}
 
 		if (!x) break;
-		switch_cond_next();
+
 		switch_thread_rwlock_wrlock(canvas->video_rwlock);
 		switch_thread_rwlock_unlock(canvas->video_rwlock);
 	}
