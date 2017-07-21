@@ -40,6 +40,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown);
 SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, mod_av_shutdown, NULL);
 
+static struct {
+	int debug;
+} globals;
+
 typedef struct av_mutex_helper_s {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
@@ -93,9 +97,9 @@ int mod_av_lockmgr_cb(void **m, enum AVLockOp op)
 static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
-	return;
+ 
 	/* naggy messages */
-	if (level == AV_LOG_DEBUG || level == AV_LOG_WARNING) return;
+	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING) && !globals.debug) return;
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
@@ -122,8 +126,44 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(av_function)
+{
+	char *argv[2] = { 0 };
+	int argc = 0;
+	char *mycmd = NULL;
+	int ok = 0;
+
+	if (cmd) {
+		mycmd = strdup(cmd);
+		argc = switch_split(mycmd, ' ', argv);
+
+		if (argc > 0) {
+			if (!strcasecmp(argv[0], "debug")) {
+				if (argc > 1) {
+					int tmp = atoi(argv[1]);
+					if (tmp > -1) {
+						globals.debug = tmp;
+					}
+				}
+				stream->write_function(stream, "Debug Level: %d\n", globals.debug);
+				ok++;
+			}
+		}
+	}
+
+	if (!ok) {
+		stream->write_function(stream, "No input received\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 {
+	switch_api_interface_t *api_interface = NULL;
+
 	av_lockmgr_register(&mod_av_lockmgr_cb);
 	av_log_set_callback(log_callback);
 	av_log_set_level(AV_LOG_INFO);
@@ -134,6 +174,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_API(api_interface, "av", "AV general commands", av_function, "debug [on|off]");
 
 	mod_avformat_load(module_interface, pool);
 	mod_avcodec_load(module_interface, pool);
