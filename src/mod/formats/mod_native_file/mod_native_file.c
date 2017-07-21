@@ -184,6 +184,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 	uint32_t x;
 
 	for (x = 0; x < num_codecs; x++) {
+		if (codecs[x]->encoded_bytes_per_packet == 0) {
+			continue;
+		}
 		supported_formats[x] = switch_core_strdup(pool, codecs[x]->iananame);
 	}
 
