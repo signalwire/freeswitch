@@ -71,6 +71,8 @@ MY_DEFAULT_ARGS= --build=$(build) --host=$(host) --target=$(target) --prefix="$(
 
 sounds: sounds-en-us-callie-8000
 sounds-install: sounds-en-us-callie-8000-install
+sounds-allison: sounds-en-us-allison-8000
+sounds-allison-install: sounds-en-us-allison-8000-install
 sounds-ru: sounds-ru-RU-elena-8000
 sounds-ru-install: sounds-ru-RU-elena-8000-install
 sounds-fr: sounds-fr-ca-june-8000
@@ -80,6 +82,8 @@ moh-install: sounds-music-8000-install
 
 hd-sounds: sounds sounds-en-us-callie-16000
 hd-sounds-install: sounds-install sounds-en-us-callie-16000-install
+hd-sounds-allison: sounds-allison sounds-en-us-allison-16000
+hd-sounds-allison-install: sounds-allison-install sounds-en-us-allison-16000-install
 hd-sounds-ru: sounds-ru sounds-ru-RU-elena-16000
 hd-sounds-ru-install: sounds-ru-install sounds-ru-RU-elena-16000-install
 hd-sounds-fr: sounds-fr-ca-june-16000
@@ -89,6 +93,8 @@ hd-moh-install: moh-install sounds-music-16000-install
 
 uhd-sounds: hd-sounds sounds-en-us-callie-32000
 uhd-sounds-install: hd-sounds-install sounds-en-us-callie-32000-install
+uhd-sounds-allison: hd-sounds-allison sounds-en-us-allison-32000
+uhd-sounds-allison-install: hd-sounds-allison-install sounds-en-us-allison-32000-install
 uhd-sounds-ru: hd-sounds-ru sounds-ru-RU-elena-32000
 uhd-sounds-ru-install: hd-sounds-ru-install sounds-ru-RU-elena-32000-install
 uhd-sounds-fr: sounds-fr-ca-june-32000
@@ -98,6 +104,8 @@ uhd-moh-install: hd-moh-install sounds-music-32000-install
 
 cd-sounds: uhd-sounds sounds-en-us-callie-48000
 cd-sounds-install: uhd-sounds-install sounds-en-us-callie-48000-install
+cd-sounds-allison: uhd-sounds-allison sounds-en-us-allison-48000
+cd-sounds-allison-install: uhd-sounds-allison-install sounds-en-us-allison-48000-install
 cd-sounds-ru: uhd-sounds-ru sounds-ru-RU-elena-48000
 cd-sounds-ru-install: uhd-sounds-ru-install sounds-ru-RU-elena-48000-install
 cd-sounds-fr: sounds-fr-ca-june-48000
