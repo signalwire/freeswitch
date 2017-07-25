@@ -701,8 +701,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 				mpg123err = mpg123_strerror(context->mh);
 				goto error;
 			}
-			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
+			context->stream_url = switch_core_sprintf(context->memory_pool, "http%s://%s",
+				(handle->stream_name && !strcmp(handle->stream_name, "shouts")) ? "s" : "", path);
 			context->prebuf = handle->prebuf;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening stream: %s\n", context->stream_url);
+
 			launch_read_stream_thread(context);
 			switch_cond_next();
 		} else {
@@ -1713,11 +1717,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	switch_codec_interface_t *codec_interface;
 	int mpf = 10000, spf = 80, bpf = 160, count = 1;
 	int RATES[] = {8000, 11025, 16000, 22050, 32000, 44100, 48000};
-	int i;
+	int i = 0;
 
-	supported_formats[0] = "shout";
-	supported_formats[1] = "mp3";
-	supported_formats[2] = "mpga";
+	supported_formats[i++] = "shout";
+	supported_formats[i++] = "shouts";
+	supported_formats[i++] = "mp3";
+	supported_formats[i++] = "mpga";
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
