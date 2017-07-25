@@ -81,11 +81,12 @@ ks_bool_t test_echo_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	cJSON_AddStringToObject(result, "text", text);
 
 	blade_rpcexecute_response_send(brpcreq, result);
+	cJSON_Delete(result);
 
 	return KS_FALSE;
 }
 
-ks_bool_t test_event_response_handler(blade_rpc_response_t *brpcres, void *data)
+ks_bool_t test_broadcast_response_handler(blade_rpc_response_t *brpcres, void *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -98,7 +99,7 @@ ks_bool_t test_event_response_handler(blade_rpc_response_t *brpcres, void *data)
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
 	ks_assert(bs);
 
-	ks_log(KS_LOG_DEBUG, "Session (%s) test.event response processing\n", blade_session_id_get(bs));
+	ks_log(KS_LOG_DEBUG, "Session (%s) test broadcast response processing\n", blade_session_id_get(bs));
 
 	blade_session_read_unlock(bs);
 
@@ -243,7 +244,7 @@ void command_publish(blade_handle_t *bh, char *args)
 	blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_handle_rpcpublish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
-	blade_handle_rpcpublish(bh, "test", "mydomain.com", blade_publish_response_handler, NULL);
+	blade_handle_rpcpublish(bh, "test", "mydomain.com", NULL, blade_publish_response_handler, NULL);
 }
 
 void command_broadcast(blade_handle_t *bh, char *args)
@@ -251,7 +252,7 @@ void command_broadcast(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_handle_rpcbroadcast(bh, NULL, "test.event", "test", "mydomain.com", NULL, test_event_response_handler, NULL);
+	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "event", NULL, test_broadcast_response_handler, NULL);
 }
 
 

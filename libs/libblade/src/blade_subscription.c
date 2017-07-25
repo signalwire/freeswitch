@@ -36,9 +36,9 @@
 struct blade_subscription_s {
 	ks_pool_t *pool;
 
-	const char *event;
 	const char *protocol;
 	const char *realm;
+	const char *channel;
 	ks_hash_t *subscribers;
 
 	blade_rpc_request_callback_t callback;
@@ -56,9 +56,9 @@ static void blade_subscription_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (bsub->event) ks_pool_free(bsub->pool, &bsub->event);
 		if (bsub->protocol) ks_pool_free(bsub->pool, &bsub->protocol);
 		if (bsub->realm) ks_pool_free(bsub->pool, &bsub->subscribers);
+		if (bsub->channel) ks_pool_free(bsub->pool, &bsub->channel);
 		if (bsub->subscribers) ks_hash_destroy(&bsub->subscribers);
 		break;
 	case KS_MPCL_DESTROY:
@@ -66,21 +66,21 @@ static void blade_subscription_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *event, const char *protocol, const char *realm)
+KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *protocol, const char *realm, const char *channel)
 {
 	blade_subscription_t *bsub = NULL;
 
 	ks_assert(bsubP);
 	ks_assert(pool);
-	ks_assert(event);
 	ks_assert(protocol);
 	ks_assert(realm);
+	ks_assert(channel);
 
 	bsub = ks_pool_alloc(pool, sizeof(blade_subscription_t));
 	bsub->pool = pool;
-	bsub->event = ks_pstrdup(pool, event);
 	bsub->protocol = ks_pstrdup(pool, protocol);
 	bsub->realm = ks_pstrdup(pool, realm);
+	bsub->channel = ks_pstrdup(pool, channel);
 
 	ks_hash_create(&bsub->subscribers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bsub->pool);
 	ks_assert(bsub->subscribers);
@@ -106,14 +106,6 @@ KS_DECLARE(ks_status_t) blade_subscription_destroy(blade_subscription_t **bsubP)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(const char *) blade_subscription_event_get(blade_subscription_t *bsub)
-{
-	ks_assert(bsub);
-
-	return bsub->event;
-
-}
-
 KS_DECLARE(const char *) blade_subscription_protocol_get(blade_subscription_t *bsub)
 {
 	ks_assert(bsub);
@@ -127,6 +119,14 @@ KS_DECLARE(const char *) blade_subscription_realm_get(blade_subscription_t *bsub
 	ks_assert(bsub);
 
 	return bsub->realm;
+
+}
+
+KS_DECLARE(const char *) blade_subscription_channel_get(blade_subscription_t *bsub)
+{
+	ks_assert(bsub);
+
+	return bsub->channel;
 
 }
 

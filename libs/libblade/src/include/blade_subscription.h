@@ -36,11 +36,11 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *event, const char *protocol, const char *realm);
+KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *protocol, const char *realm, const char *channel);
 KS_DECLARE(ks_status_t) blade_subscription_destroy(blade_subscription_t **bsubP);
-KS_DECLARE(const char *) blade_subscription_event_get(blade_subscription_t *bsub);
 KS_DECLARE(const char *) blade_subscription_protocol_get(blade_subscription_t *bsub);
 KS_DECLARE(const char *) blade_subscription_realm_get(blade_subscription_t *bsub);
+KS_DECLARE(const char *) blade_subscription_channel_get(blade_subscription_t *bsub);
 KS_DECLARE(ks_hash_t *) blade_subscription_subscribers_get(blade_subscription_t *bsub);
 KS_DECLARE(ks_status_t) blade_subscription_subscribers_add(blade_subscription_t *bsub, const char *nodeid);
 KS_DECLARE(ks_status_t) blade_subscription_subscribers_remove(blade_subscription_t *bsub, const char *nodeid);

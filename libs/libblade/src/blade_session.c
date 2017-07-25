@@ -582,7 +582,7 @@ ks_status_t blade_session_onstate_run(blade_session_t *bs)
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	blade_rpc_request_t *brpcreq = NULL;
 	const char *method = NULL;
@@ -706,6 +706,12 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				blade_session_send(bs_router, json, NULL, NULL);
 				blade_session_read_unlock(bs_router);
 
+				// @todo if this is a subscribe request to remove subscriptions, it must carry a field unsubscribed-channels for which
+				// subscriptions should be removed along the request path, regardless of whether it's the consumer requesting or the
+				// master due to a deauthorization, without respect to waiting for the response as it should be a gaurenteed operation
+				// even when requested by the subscriber.  This unsubscribed-channels field is simply treated as a special field, regardless
+				// of the actual method of the request.
+
 				return KS_STATUS_SUCCESS;
 			}
 		}
@@ -762,6 +768,11 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) routing (%s)\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid, blade_session_id_get(bs_router));
 				blade_session_send(bs_router, json, NULL, NULL);
 				blade_session_read_unlock(bs_router);
+
+				// @todo if this is a subscribe response to add a subscriber with the master as the responder-nodeid, it must have a
+				// subscribed-channels field which should be added for the requester-nodeid, this will ensure the subscriptions are
+				// added with respect to the master response and not immediately upon request.  This subscribed-channels field is
+				// simply treated as a special field, regardless of the actual method of the request which is unavailable here.
 
 				return KS_STATUS_SUCCESS;
 			}

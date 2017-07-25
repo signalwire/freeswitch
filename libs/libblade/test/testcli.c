@@ -33,7 +33,7 @@ static const struct command_def_s command_defs[] = {
 
 const char *g_testcon_nodeid = NULL;
 
-ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data)
+ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -87,7 +87,7 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	return KS_FALSE;
 }
 
-ks_bool_t test_join_response_handler(blade_rpc_response_t *brpcres, void *data)
+ks_bool_t test_join_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -111,7 +111,7 @@ ks_bool_t test_join_response_handler(blade_rpc_response_t *brpcres, void *data)
 	return KS_FALSE;
 }
 
-ks_bool_t test_leave_response_handler(blade_rpc_response_t *brpcres, void *data)
+ks_bool_t test_leave_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -135,7 +135,7 @@ ks_bool_t test_leave_response_handler(blade_rpc_response_t *brpcres, void *data)
 	return KS_FALSE;
 }
 
-ks_bool_t test_talk_response_handler(blade_rpc_response_t *brpcres, void *data)
+ks_bool_t test_talk_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -159,11 +159,10 @@ ks_bool_t test_talk_response_handler(blade_rpc_response_t *brpcres, void *data)
 	return KS_FALSE;
 }
 
-ks_bool_t test_join_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t test_broadcast_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
-	const char *broadcaster_nodeid = NULL;
 	cJSON *params = NULL;
 	//cJSON *result = NULL;
 
@@ -178,70 +177,7 @@ ks_bool_t test_join_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
 	params = blade_rpcbroadcast_request_params_get(brpcreq);
 	ks_assert(params);
 
-	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
-	ks_assert(broadcaster_nodeid);
-
-	ks_log(KS_LOG_DEBUG, "Session (%s) test.join (%s) broadcast processing\n", blade_session_id_get(bs), broadcaster_nodeid);
-
-	blade_session_read_unlock(bs);
-
-	return KS_FALSE;
-}
-
-ks_bool_t test_leave_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
-{
-	blade_handle_t *bh = NULL;
-	blade_session_t *bs = NULL;
-	const char *broadcaster_nodeid = NULL;
-	cJSON *params = NULL;
-	//cJSON *result = NULL;
-
-	ks_assert(brpcreq);
-
-	bh = blade_rpc_request_handle_get(brpcreq);
-	ks_assert(bh);
-
-	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
-	ks_assert(bs);
-
-	params = blade_rpcbroadcast_request_params_get(brpcreq);
-	ks_assert(params);
-
-	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
-	ks_assert(broadcaster_nodeid);
-
-	ks_log(KS_LOG_DEBUG, "Session (%s) test.leave (%s) broadcast processing\n", blade_session_id_get(bs), broadcaster_nodeid);
-
-	blade_session_read_unlock(bs);
-
-	return KS_FALSE;
-}
-
-ks_bool_t test_talk_broadcast_handler(blade_rpc_request_t *brpcreq, void *data)
-{
-	blade_handle_t *bh = NULL;
-	blade_session_t *bs = NULL;
-	const char *broadcaster_nodeid = NULL;
-	cJSON *params = NULL;
-	//cJSON *result = NULL;
-
-	ks_assert(brpcreq);
-
-	bh = blade_rpc_request_handle_get(brpcreq);
-	ks_assert(bh);
-
-	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
-	ks_assert(bs);
-
-	broadcaster_nodeid = blade_rpcbroadcast_request_broadcaster_nodeid_get(brpcreq);
-	ks_assert(broadcaster_nodeid);
-
-	params = blade_rpcbroadcast_request_params_get(brpcreq);
-	ks_assert(params);
-
-	// @todo pull out text from params
-
-	ks_log(KS_LOG_DEBUG, "Session (%s) test.talk (%s) broadcast processing\n", blade_session_id_get(bs), broadcaster_nodeid);
+	ks_log(KS_LOG_DEBUG, "Session (%s) test broadcast processing\n", blade_session_id_get(bs));
 
 	blade_session_read_unlock(bs);
 
@@ -391,6 +327,7 @@ void command_locate(blade_handle_t *bh, char *args)
 void command_join(blade_handle_t *bh, char *args)
 {
 	cJSON *params = NULL;
+	cJSON *channels = NULL;
 
 	ks_assert(bh);
 	ks_assert(args);
@@ -402,17 +339,19 @@ void command_join(blade_handle_t *bh, char *args)
 
 
 	params = cJSON_CreateObject();
-
 	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", "mydomain.com", params, test_join_response_handler, NULL);
+	cJSON_Delete(params);
 
-	blade_handle_rpcsubscribe(bh, "test.join", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_join_broadcast_handler, NULL);
-	blade_handle_rpcsubscribe(bh, "test.leave", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_leave_broadcast_handler, NULL);
-	blade_handle_rpcsubscribe(bh, "test.talk", "test", "mydomain.com", KS_FALSE, NULL, NULL, test_talk_broadcast_handler, NULL);
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString("test"));
+	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", channels, NULL, NULL, NULL, test_broadcast_handler, NULL);
+	cJSON_Delete(channels);
 }
 
 void command_leave(blade_handle_t *bh, char *args)
 {
 	cJSON *params = NULL;
+	cJSON *channels = NULL;
 
 	ks_assert(bh);
 	ks_assert(args);
@@ -423,12 +362,13 @@ void command_leave(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-
 	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", "mydomain.com", params, test_leave_response_handler, NULL);
+	cJSON_Delete(params);
 
-	blade_handle_rpcsubscribe(bh, "test.join", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
-	blade_handle_rpcsubscribe(bh, "test.leave", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
-	blade_handle_rpcsubscribe(bh, "test.talk", "test", "mydomain.com", KS_TRUE, NULL, NULL, NULL, NULL);
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString("test"));
+	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", NULL, channels, NULL, NULL, NULL, NULL);
+	cJSON_Delete(channels);
 }
 
 void command_talk(blade_handle_t *bh, char *args)
@@ -448,10 +388,9 @@ void command_talk(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-
 	cJSON_AddStringToObject(params, "text", args);
-
 	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.talk", "test", "mydomain.com", params, test_talk_response_handler, NULL);
+	cJSON_Delete(params);
 }
 
 /* For Emacs:

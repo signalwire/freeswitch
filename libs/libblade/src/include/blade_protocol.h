@@ -38,9 +38,13 @@
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, const char *name, const char *realm);
 KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP);
-KS_DECLARE(ks_hash_t *) blade_protocol_controllers_get(blade_protocol_t *bp);
+KS_DECLARE(ks_bool_t) blade_protocol_purge(blade_protocol_t *bp, const char *nodeid);
 KS_DECLARE(ks_status_t) blade_protocol_controllers_add(blade_protocol_t *bp, const char *nodeid);
-KS_DECLARE(ks_status_t) blade_protocol_controllers_remove(blade_protocol_t *bp, const char *nodeid);
+KS_DECLARE(cJSON *) blade_protocol_controllers_pack(blade_protocol_t *bp);
+KS_DECLARE(ks_status_t) blade_protocol_channel_add(blade_protocol_t *bp, const char *name);
+KS_DECLARE(ks_status_t) blade_protocol_channel_remove(blade_protocol_t *bp, const char *name);
+KS_DECLARE(ks_status_t) blade_protocol_channel_authorize(blade_protocol_t *bp, ks_bool_t remove, const char *channel, const char *controller, const char *target);
+KS_DECLARE(ks_bool_t) blade_protocol_channel_verify(blade_protocol_t *bp, const char *channel, const char *target);
 KS_END_EXTERN_C
 
 #endif

@@ -157,12 +157,14 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_remove(blade_routemgr_t *brmgr, con
 
 	blade_handle_rpcregister(brmgr->handle, target, KS_TRUE, NULL, NULL);
 
+	blade_subscriptionmgr_purge(blade_handle_subscriptionmgr_get(brmgr->handle), target);
+
 	// @note protocols are cleaned up here because routes can be removed that are not locally connected with a session but still
 	// have protocols published to the master node from further downstream, in which case if a route is announced upstream to be
 	// removed, a master node is still able to catch that here even when there is no direct session, but is also hit when there
 	// is a direct session being terminated
 
-	blade_mastermgr_controller_remove(blade_handle_mastermgr_get(brmgr->handle), target);
+	blade_mastermgr_purge(blade_handle_mastermgr_get(brmgr->handle), target);
 
 	return KS_STATUS_SUCCESS;
 }

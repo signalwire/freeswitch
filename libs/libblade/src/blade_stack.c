@@ -47,12 +47,14 @@ struct blade_handle_s {
 	blade_sessionmgr_t *sessionmgr;
 };
 
-ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void *data);
-ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void *data);
+ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
+ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, cJSON *data);
+ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, cJSON *data);
 
 
 static void blade_handle_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
@@ -225,6 +227,9 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 	blade_rpc_create(&brpc, bh, "blade.publish", NULL, NULL, blade_rpcpublish_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
+	blade_rpc_create(&brpc, bh, "blade.authorize", NULL, NULL, blade_rpcauthorize_request_handler, NULL);
+	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
+
 	blade_rpc_create(&brpc, bh, "blade.locate", NULL, NULL, blade_rpclocate_request_handler, NULL);
 	blade_rpcmgr_corerpc_add(bh->rpcmgr, brpc);
 
@@ -348,7 +353,7 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 // which is important for implementation of blade.execute where errors can be relayed back to the requester properly
 
 // blade.register request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcregister(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcregister(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -385,7 +390,7 @@ done:
 }
 
 // blade.register request handler
-ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -449,7 +454,7 @@ done:
 
 
 // blade.publish request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *protocol, const char *realm, cJSON *channels, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -459,7 +464,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *
 	const char *id = NULL;
 
 	ks_assert(bh);
-	ks_assert(name);
+	ks_assert(protocol);
 	ks_assert(realm);
 
 	// @todo consideration for the Master trying to publish a protocol, with no upstream
@@ -474,7 +479,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.publish");
 
 	// fill in the req_params
-	cJSON_AddStringToObject(req_params, "protocol", name);
+	cJSON_AddStringToObject(req_params, "protocol", protocol);
 	cJSON_AddStringToObject(req_params, "realm", realm);
 
 	blade_upstreammgr_localid_copy(bh->upstreammgr, pool, &id);
@@ -488,6 +493,12 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *
 
 	cJSON_AddStringToObject(req_params, "responder-nodeid", id);
 	ks_pool_free(pool, &id);
+
+	// @todo may want to switch this system to use a blade_rpcpublish_args_t with validation on the contents on this list internally
+	// and to produce the entire json block internally in case the channel args change to include additional information like an encryption key,
+	// however if passing encryption keys then they should be asymetrically encrypted using a public key provided by the master so that
+	// the channel keys can be transmitted without intermediate nodes being able to snoop them
+	if (channels) cJSON_AddItemToObject(req_params, "channels", cJSON_Duplicate(channels, 1));
 
 	// @todo add a parameter containing a block of json for schema definitions for each of the methods being published
 
@@ -503,12 +514,13 @@ done:
 }
 
 // blade.publish request handler
-ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
+	cJSON *req_params_channels = NULL;
 	const char *req_params_protocol = NULL;
 	const char *req_params_realm = NULL;
 	const char *req_params_requester_nodeid = NULL;
@@ -576,9 +588,40 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 		goto done;
 	}
 
+	req_params_channels = cJSON_GetObjectItem(req_params, "channels");
+	if (req_params_channels) {
+		int size = 0;
+
+		if (req_params_channels->type != cJSON_Array) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'channels' type, expected array\n", blade_session_id_get(bs));
+			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
+			blade_session_send(bs, res, NULL, NULL);
+			goto done;
+		}
+
+		size = cJSON_GetArraySize(req_params_channels);
+		for (int index = 0; index < size; ++index) {
+			cJSON *element = cJSON_GetArrayItem(req_params_channels, index);
+			if (element->type != cJSON_String) {
+				ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'channels' element type, expected string\n", blade_session_id_get(bs));
+				blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
+				blade_session_send(bs, res, NULL, NULL);
+				goto done;
+			}
+		}
+	}
+
 	ks_log(KS_LOG_DEBUG, "Session (%s) publish request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
 
 	blade_mastermgr_controller_add(bh->mastermgr, req_params_protocol, req_params_realm, req_params_requester_nodeid);
+
+	if (req_params_channels) {
+		int size = cJSON_GetArraySize(req_params_channels);
+		for (int index = 0; index < size; ++index) {
+			cJSON *element = cJSON_GetArrayItem(req_params_channels, index);
+			blade_mastermgr_channel_add(bh->mastermgr, req_params_protocol, req_params_realm, element->valuestring);
+		}
+	}
 
 	// build the actual response finally
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
@@ -600,11 +643,8 @@ done:
 }
 
 
-// blade.locate request generator
-// @todo discuss system to support caching locate results, and internally subscribing to receive event updates related to protocols which have been located
-// to ensure local caches remain synced when protocol controllers change, but this requires additional filters for event propagating to avoid broadcasting
-// every protocol update to everyone which may actually be a better way than an explicit locate request
-KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *name, const char *realm, blade_rpc_response_callback_t callback, void *data)
+// blade.authorize request generator
+KS_DECLARE(ks_status_t) blade_handle_rpcauthorize(blade_handle_t *bh, const char *nodeid, ks_bool_t remove, const char *protocol, const char *realm, cJSON *channels, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -614,7 +654,230 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *n
 	const char *id = NULL;
 
 	ks_assert(bh);
-	ks_assert(name);
+	ks_assert(nodeid);
+	ks_assert(protocol);
+	ks_assert(realm);
+	ks_assert(channels);
+
+	// @todo consideration for the Master trying to publish a protocol, with no upstream
+	if (!(bs = blade_upstreammgr_session_get(bh->upstreammgr))) {
+		ret = KS_STATUS_DISCONNECTED;
+		goto done;
+	}
+
+	pool = blade_handle_pool_get(bh);
+	ks_assert(pool);
+
+	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.authorize");
+
+	// fill in the req_params
+	cJSON_AddStringToObject(req_params, "protocol", protocol);
+	cJSON_AddStringToObject(req_params, "realm", realm);
+	if (remove) cJSON_AddTrueToObject(req_params, "remove");
+	cJSON_AddStringToObject(req_params, "authorized-nodeid", nodeid);
+
+	blade_upstreammgr_localid_copy(bh->upstreammgr, pool, &id);
+	ks_assert(id);
+
+	cJSON_AddStringToObject(req_params, "requester-nodeid", id);
+	ks_pool_free(pool, &id);
+
+	blade_upstreammgr_masterid_copy(bh->upstreammgr, pool, &id);
+	ks_assert(id);
+
+	cJSON_AddStringToObject(req_params, "responder-nodeid", id);
+	ks_pool_free(pool, &id);
+
+	cJSON_AddItemToObject(req_params, "channels", cJSON_Duplicate(channels, 1));
+
+	// @todo add a parameter containing a block of json for schema definitions for each of the methods being published
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) authorize request started\n", blade_session_id_get(bs));
+
+	ret = blade_session_send(bs, req, callback, data);
+
+done:
+	if (req) cJSON_Delete(req);
+	if (bs) blade_session_read_unlock(bs);
+
+	return ret;
+}
+
+// blade.authorize request handler
+ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	cJSON *req_params_channels = NULL;
+	cJSON *req_params_remove = NULL;
+	cJSON *channel = NULL;
+	ks_bool_t remove = KS_FALSE;
+	const char *req_params_protocol = NULL;
+	const char *req_params_realm = NULL;
+	const char *req_params_authorized_nodeid = NULL;
+	const char *req_params_requester_nodeid = NULL;
+	const char *req_params_responder_nodeid = NULL;
+	cJSON *res = NULL;
+	cJSON *res_result = NULL;
+	cJSON *res_result_authorized_channels = NULL;
+	cJSON *res_result_unauthorized_channels = NULL;
+	cJSON *res_result_failed_channels = NULL;
+
+	ks_assert(brpcreq);
+
+	bh = blade_rpc_request_handle_get(brpcreq);
+	ks_assert(bh);
+
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
+	ks_assert(bs);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_params = cJSON_GetObjectItem(req, "params");
+	if (!req_params) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'params' object\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_protocol = cJSON_GetObjectCstr(req_params, "protocol");
+	if (!req_params_protocol) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'protocol'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_realm = cJSON_GetObjectCstr(req_params, "realm");
+	if (!req_params_realm) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'realm'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params realm");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_remove = cJSON_GetObjectItem(req_params, "remove");
+	if (req_params_remove && req_params_remove->type == cJSON_True) remove = KS_TRUE;
+
+	req_params_authorized_nodeid = cJSON_GetObjectCstr(req_params, "authorized-nodeid");
+	if (!req_params_authorized_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'authorized-nodeid'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params authorized-nodeid");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	// @todo confirm the realm is permitted for the session, this gets complicated with subdomains, skipping for now
+
+	req_params_requester_nodeid = cJSON_GetObjectCstr(req_params, "requester-nodeid");
+	if (!req_params_requester_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'requester-nodeid'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params requester-nodeid");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_responder_nodeid = cJSON_GetObjectCstr(req_params, "responder-nodeid");
+	if (!req_params_responder_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'responder-nodeid'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params responder-nodeid");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_channels = cJSON_GetObjectItem(req_params, "channels");
+	if (!req_params_channels) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'channels'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channels");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	if (req_params_channels->type != cJSON_Array) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'channels' type, expected array\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	cJSON_ArrayForEach(channel, req_params_channels) {
+		if (channel->type != cJSON_String) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'channels' element type, expected string\n", blade_session_id_get(bs));
+			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
+			blade_session_send(bs, res, NULL, NULL);
+			goto done;
+		}
+	}
+
+	if (!blade_upstreammgr_masterid_compare(bh->upstreammgr, req_params_responder_nodeid)) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'responder-nodeid' (%s)\n", blade_session_id_get(bs), req_params_responder_nodeid);
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params responder-nodeid");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) authorize request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
+
+	// build the actual response finally
+	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
+
+	cJSON_ArrayForEach(channel, req_params_channels) {
+		if (blade_mastermgr_channel_authorize(bh->mastermgr, remove, req_params_protocol, req_params_realm, channel->valuestring, req_params_requester_nodeid, req_params_authorized_nodeid) == KS_STATUS_SUCCESS) {
+			if (remove) {
+				if (!res_result_unauthorized_channels) res_result_unauthorized_channels = cJSON_CreateArray();
+				cJSON_AddItemToArray(res_result_unauthorized_channels, cJSON_CreateString(channel->valuestring));
+				// @todo unauthorizing channels should force a subscribe remove request for the target if they are subscribed, to prevent further events from reaching the target
+				// this will require the master node to invoke the subscription removal as opposed to the target who normally invokes subscribe
+			} else {
+				if (!res_result_authorized_channels) res_result_authorized_channels = cJSON_CreateArray();
+				cJSON_AddItemToArray(res_result_authorized_channels, cJSON_CreateString(channel->valuestring));
+			}
+		} else {
+			if (!res_result_failed_channels) res_result_failed_channels = cJSON_CreateArray();
+			cJSON_AddItemToArray(res_result_failed_channels, cJSON_CreateString(channel->valuestring));
+		}
+	}
+
+	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
+	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
+	cJSON_AddStringToObject(res_result, "authorized-nodeid", req_params_authorized_nodeid);
+	cJSON_AddStringToObject(res_result, "requester-nodeid", req_params_requester_nodeid);
+	cJSON_AddStringToObject(res_result, "responder-nodeid", req_params_responder_nodeid);
+	if (res_result_authorized_channels)  cJSON_AddItemToObject(res_result, "authorized-channels", res_result_authorized_channels);
+	if (res_result_unauthorized_channels)  cJSON_AddItemToObject(res_result, "unauthorized-channels", res_result_unauthorized_channels);
+	if (res_result_failed_channels)  cJSON_AddItemToObject(res_result, "failed-channels", res_result_failed_channels);
+
+	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
+	blade_session_send(bs, res, NULL, NULL);
+
+done:
+
+	if (res) cJSON_Delete(res);
+	if (bs) blade_session_read_unlock(bs);
+
+	return KS_FALSE;
+}
+
+
+// blade.locate request generator
+// @todo discuss system to support caching locate results, and internally subscribing to receive event updates related to protocols which have been located
+// to ensure local caches remain synced when protocol controllers change, but this requires additional filters for event propagating to avoid broadcasting
+// every protocol update to everyone which may actually be a better way than an explicit locate request
+KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *protocol, const char *realm, blade_rpc_response_callback_t callback, cJSON *data)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	blade_session_t *bs = NULL;
+	ks_pool_t *pool = NULL;
+	cJSON *req = NULL;
+	cJSON *req_params = NULL;
+	const char *id = NULL;
+
+	ks_assert(bh);
+	ks_assert(protocol);
 	ks_assert(realm);
 
 	if (!(bs = blade_upstreammgr_session_get(bh->upstreammgr))) {
@@ -628,7 +891,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *n
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.locate");
 
 	// fill in the req_params
-	cJSON_AddStringToObject(req_params, "protocol", name);
+	cJSON_AddStringToObject(req_params, "protocol", protocol);
 	cJSON_AddStringToObject(req_params, "realm", realm);
 
 	blade_upstreammgr_localid_copy(bh->upstreammgr, pool, &id);
@@ -655,7 +918,7 @@ done:
 }
 
 // blade.locate request handler
-ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
@@ -667,7 +930,7 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	const char *req_params_responder_nodeid = NULL;
 	cJSON *res = NULL;
 	cJSON *res_result = NULL;
-	cJSON *res_result_controllers;
+	cJSON *res_result_controllers = NULL;
 	blade_protocol_t *bp = NULL;
 
 	ks_assert(brpcreq);
@@ -732,20 +995,8 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
 
-	res_result_controllers = cJSON_CreateObject();
-
 	bp = blade_mastermgr_protocol_lookup(bh->mastermgr, req_params_protocol, req_params_realm);
-	if (bp) {
-		ks_hash_t *controllers = blade_protocol_controllers_get(bp);
-		for (ks_hash_iterator_t *it = ks_hash_first(controllers, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-			const char *key = NULL;
-			void *value = NULL;
-
-			ks_hash_this(it, (const void **)&key, NULL, &value);
-
-			cJSON_AddItemToArray(res_result_controllers, cJSON_CreateString(key));
-		}
-	}
+	if (bp) res_result_controllers = blade_protocol_controllers_pack(bp);
 
 
 	// build the actual response finally
@@ -755,7 +1006,7 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
 	cJSON_AddStringToObject(res_result, "requester-nodeid", req_params_requester_nodeid);
 	cJSON_AddStringToObject(res_result, "responder-nodeid", req_params_responder_nodeid);
-	cJSON_AddItemToObject(res_result, "controllers", res_result_controllers);
+	if (res_result_controllers) cJSON_AddItemToObject(res_result, "controllers", res_result_controllers);
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
 	blade_session_send(bs, res, NULL, NULL);
@@ -770,7 +1021,7 @@ done:
 
 
 // blade.execute request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -813,12 +1064,6 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) execute request started\n", blade_session_id_get(bs));
 
-	// @todo change what blade_rpc_request_t carries for tracking data, use a tuple instead which makes it
-	// easier to free the tuple and potentially associated data if a request needs to be destroyed without
-	// the callback being called to know that the data is a tuple to destroy, meanwhile a tuple offers a
-	// spare pointer for universally wrapping callback + data pairs in a case like this
-	// in which case do not create the tuple here, just pass 2 data pointers to send and let it store them
-	// in the internal tuple
 	ret = blade_session_send(bs, req, callback, data);
 	
 done:
@@ -829,7 +1074,7 @@ done:
 }
 
 // blade.execute request handler
-ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	ks_bool_t ret = KS_FALSE;
 	blade_handle_t *bh = NULL;
@@ -1059,19 +1304,20 @@ KS_DECLARE(void) blade_rpcexecute_response_send(blade_rpc_request_t *brpcreq, cJ
 
 
 // blade.subscribe request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data, blade_rpc_request_callback_t event_callback, void *event_data)
+KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char *protocol, const char *realm, cJSON *subscribe_channels, cJSON *unsubscribe_channels, blade_rpc_response_callback_t callback, cJSON *data, blade_rpc_request_callback_t channel_callback, cJSON *channel_data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
 	const char *localid = NULL;
-	ks_bool_t propagate = KS_FALSE;
 	blade_subscription_t *bsub = NULL;
+	cJSON *temp_data = NULL;
 
 	ks_assert(bh);
-	ks_assert(event);
 	ks_assert(protocol);
 	ks_assert(realm);
+	ks_assert(subscribe_channels || unsubscribe_channels);
 
+	// @note this is always produced by a subscriber, and sent upstream, master will only use the internal raw call
 	if (!(bs = blade_upstreammgr_session_get(bh->upstreammgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
@@ -1080,20 +1326,24 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char
 	blade_upstreammgr_localid_copy(bh->upstreammgr, bh->pool, &localid);
 	ks_assert(localid);
 
-	if (remove) {
-		propagate = blade_subscriptionmgr_subscriber_remove(bh->subscriptionmgr, &bsub, event, protocol, realm, localid);
-	} else {
-		propagate = blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, &bsub, event, protocol, realm, localid);
-		ks_assert(event_callback);
+	if (unsubscribe_channels) {
+		cJSON *channel = NULL;
+		cJSON_ArrayForEach(channel, unsubscribe_channels) {
+			blade_subscriptionmgr_subscriber_remove(bh->subscriptionmgr, &bsub, protocol, realm, channel->valuestring, localid);
+		}
 	}
+
+	temp_data = cJSON_CreateObject();
+	
+	if (callback) cJSON_AddItemToObject(temp_data, "callback", cJSON_CreatePtr((uintptr_t)callback));
+	if (data) cJSON_AddItemToObject(temp_data, "data", data);
+
+	if (channel_callback) cJSON_AddItemToObject(temp_data, "channel-callback", cJSON_CreatePtr((uintptr_t)channel_callback));
+	if (channel_data) cJSON_AddItemToObject(temp_data, "channel-data", channel_data);
+
+	ret = blade_handle_rpcsubscribe_raw(bh, protocol, realm, subscribe_channels, unsubscribe_channels, localid, KS_FALSE, blade_rpcsubscribe_response_handler, temp_data);
+
 	ks_pool_free(bh->pool, &localid);
-
-	if (!remove && bsub) {
-		blade_subscription_callback_set(bsub, event_callback);
-		blade_subscription_callback_data_set(bsub, event_data);
-	}
-
-	if (propagate) ret = blade_handle_rpcsubscribe_raw(bh, event, protocol, realm, remove, callback, data);
 
 done:
 	if (bs) blade_session_read_unlock(bs);
@@ -1101,7 +1351,7 @@ done:
 	return ret;
 }
 
-KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const char *event, const char *protocol, const char *realm, ks_bool_t remove, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const char *protocol, const char *realm, cJSON *subscribe_channels, cJSON *unsubscribe_channels, const char *subscriber, ks_bool_t downstream, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -1110,11 +1360,23 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const 
 	cJSON *req_params = NULL;
 
 	ks_assert(bh);
-	ks_assert(event);
 	ks_assert(protocol);
 	ks_assert(realm);
+	ks_assert(subscribe_channels || unsubscribe_channels);
+	ks_assert(subscriber);
 
-	if (!(bs = blade_upstreammgr_session_get(bh->upstreammgr))) {
+	if (downstream) {
+		// @note if a master is sending a downstream update, it may only use unsubscribe_channels, cannot force a subscription without a subscriber callback
+		if (subscribe_channels) {
+			ret = KS_STATUS_NOT_ALLOWED;
+			goto done;
+		}
+		if (!(bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), subscriber))) {
+			ret = KS_STATUS_DISCONNECTED;
+			goto done;
+		}
+	}
+	else if (!(bs = blade_upstreammgr_session_get(bh->upstreammgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -1124,14 +1386,17 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const 
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.subscribe");
 
-	cJSON_AddStringToObject(req_params, "event", event);
 	cJSON_AddStringToObject(req_params, "protocol", protocol);
 	cJSON_AddStringToObject(req_params, "realm", realm);
-	if (remove) cJSON_AddTrueToObject(req_params, "remove");
+	cJSON_AddStringToObject(req_params, "subscriber-nodeid", subscriber);
+	if (downstream) cJSON_AddTrueToObject(req_params, "downstream");
+
+	if (subscribe_channels) cJSON_AddItemToObject(req_params, "subscribe-channels", cJSON_Duplicate(subscribe_channels, 1));
+	if (unsubscribe_channels) cJSON_AddItemToObject(req_params, "unsubscribe-channels", cJSON_Duplicate(unsubscribe_channels, 1));
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, blade_rpcsubscribe_response_handler, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -1141,21 +1406,25 @@ done:
 }
 
 // blade.subscribe request handler
-ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	ks_pool_t *pool = NULL;
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
-	const char *req_params_event = NULL;
 	const char *req_params_protocol = NULL;
 	const char *req_params_realm = NULL;
-	cJSON *req_params_remove = NULL;
-	ks_bool_t remove = KS_FALSE;
+	const char *req_params_subscriber_nodeid = NULL;
+	cJSON *req_params_downstream = NULL;
+	ks_bool_t downstream = KS_FALSE;
+	cJSON *req_params_subscribe_channels = NULL;
+	cJSON *req_params_unsubscribe_channels = NULL;
+	ks_bool_t masterlocal = KS_FALSE;
 	cJSON *res = NULL;
 	cJSON *res_result = NULL;
-	ks_bool_t propagate = KS_FALSE;
+	cJSON *res_result_subscribe_channels = NULL;
+	cJSON *res_result_failed_channels = NULL;
 
 	ks_assert(brpcreq);
 
@@ -1179,14 +1448,6 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 		goto done;
 	}
 
-	req_params_event = cJSON_GetObjectCstr(req_params, "event");
-	if (!req_params_event) {
-		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'event'\n", blade_session_id_get(bs));
-		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params event");
-		blade_session_send(bs, res, NULL, NULL);
-		goto done;
-	}
-
 	req_params_protocol = cJSON_GetObjectCstr(req_params, "protocol");
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'protocol'\n", blade_session_id_get(bs));
@@ -1203,30 +1464,82 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 		goto done;
 	}
 
-	req_params_remove = cJSON_GetObjectItem(req_params, "remove");
-	remove = req_params_remove && req_params_remove->type == cJSON_True;
+	req_params_subscriber_nodeid = cJSON_GetObjectCstr(req_params, "subscriber-nodeid");
+	if (!req_params_subscriber_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'subscriber-nodeid'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params subscriber-nodeid");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	// @todo this may not be required, may be able to assume direction based on the session the message is received from, if came from upstream
+	// then it is heading downstream, otherwise it is heading upstream
+	req_params_downstream = cJSON_GetObjectItem(req_params, "downstream");
+	downstream = req_params_downstream && req_params_downstream->type == cJSON_True;
+
+	req_params_subscribe_channels = cJSON_GetObjectItem(req_params, "subscribe-channels");
+	req_params_unsubscribe_channels = cJSON_GetObjectItem(req_params, "unsubscribe-channels");
+
+	if (!req_params_subscribe_channels && !req_params_unsubscribe_channels) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'subscribe-channels' or 'unsubscribe-channels'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params subscribe-channels or unsubscribe-channels");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
 
 	// @todo confirm the realm is permitted for the session, this gets complicated with subdomains, skipping for now
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request processing\n", blade_session_id_get(bs));
 
-	if (remove) {
-		propagate = blade_subscriptionmgr_subscriber_remove(bh->subscriptionmgr, NULL, req_params_event, req_params_protocol, req_params_realm, blade_session_id_get(bs));
-	} else {
-		propagate = blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, NULL, req_params_event, req_params_protocol, req_params_realm, blade_session_id_get(bs));
+	if (req_params_unsubscribe_channels) {
+		cJSON *channel = NULL;
+		cJSON_ArrayForEach(channel, req_params_unsubscribe_channels) {
+			blade_subscriptionmgr_subscriber_remove(bh->subscriptionmgr, NULL, req_params_protocol, req_params_realm, channel->valuestring, req_params_subscriber_nodeid);
+		}
 	}
 
-	if (propagate) blade_handle_rpcsubscribe_raw(bh, req_params_event, req_params_protocol, req_params_realm, remove, NULL, NULL);
+	masterlocal = blade_upstreammgr_masterlocal(blade_handle_upstreammgr_get(bh));
 
-	// build the actual response finally
-	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
+	if (masterlocal || blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bh), req_params_subscriber_nodeid)) {
+		blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
 
-	cJSON_AddStringToObject(res_result, "event", req_params_event);
-	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
-	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
+		cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
+		cJSON_AddStringToObject(res_result, "realm", req_params_realm);
+		cJSON_AddStringToObject(res_result, "subscriber-nodeid", req_params_subscriber_nodeid);
+		if (downstream) cJSON_AddTrueToObject(res_result, "downstream");
 
-	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+		if (req_params_subscribe_channels) {
+			// @note this can only be received by the master due to other validation logic in requests which prevents the master from sending a request containing subscribe-channels
+			cJSON *channel = NULL;
+
+			cJSON_ArrayForEach(channel, req_params_subscribe_channels) {
+				if (blade_mastermgr_channel_verify(bh->mastermgr, req_params_protocol, req_params_realm, channel->valuestring, req_params_subscriber_nodeid)) {
+					blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, NULL, req_params_protocol, req_params_realm, channel->valuestring, req_params_subscriber_nodeid);
+					if (!res_result_subscribe_channels) res_result_subscribe_channels = cJSON_CreateArray();
+					cJSON_AddItemToArray(res_result_subscribe_channels, cJSON_CreateString(channel->valuestring));
+				} else {
+					if (!res_result_failed_channels) res_result_failed_channels = cJSON_CreateArray();
+					cJSON_AddItemToArray(res_result_failed_channels, cJSON_CreateString(channel->valuestring));
+				}
+			}
+		}
+
+		if (res_result_subscribe_channels) cJSON_AddItemToObject(res_result, "subscribe-channels", res_result_subscribe_channels);
+		if (res_result_failed_channels) cJSON_AddItemToObject(res_result, "failed-channels", res_result_failed_channels);
+		// @note unsubscribe-channels get handled during the request path, so the response handlers do not need to reiterate them for any forseeable reason, and if they are needed they
+		// could be pulled from the original request associated to the response
+
+		// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
+		blade_session_send(bs, res, NULL, NULL);
+	} else {
+		cJSON *temp_data = cJSON_CreateObject();
+
+		// @note track this so that when this local node gets a response to this propagated request we know what messageid to propagate the response with
+		cJSON_AddStringToObject(temp_data, "messageid", blade_rpc_request_messageid_get(brpcreq));
+
+		blade_handle_rpcsubscribe_raw(bh, req_params_protocol, req_params_realm, req_params_subscribe_channels, req_params_unsubscribe_channels, req_params_subscriber_nodeid, downstream, blade_rpcsubscribe_response_handler, temp_data);
+		cJSON_Delete(temp_data);
+	}
 
 done:
 
@@ -1236,31 +1549,141 @@ done:
 	return KS_FALSE;
 }
 
+// blade.subscribe response handler
+ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
+{
+	ks_bool_t ret = KS_FALSE;
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	blade_rpc_response_callback_t original_callback = NULL;
+	cJSON *original_data = NULL;
+	blade_rpc_request_callback_t channel_callback = NULL;
+	cJSON *channel_data = NULL;
+	const char *messageid = NULL;
+	cJSON *res = NULL;
+	cJSON *res_result = NULL;
+	const char *res_result_protocol = NULL;
+	const char *res_result_realm = NULL;
+	const char *res_result_subscriber_nodeid = NULL;
+	cJSON *res_result_downstream = NULL;
+	ks_bool_t downstream = KS_FALSE;
+	cJSON *res_result_subscribe_channels = NULL;
+	cJSON *res_result_failed_channels = NULL;
+
+	ks_assert(brpcres);
+	ks_assert(data);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_sessionmgr_session_lookup(bh->sessionmgr, blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	original_data = cJSON_GetObjectItem(data, "data");
+	original_callback = (blade_rpc_response_callback_t)(uintptr_t)cJSON_GetObjectPtr(data, "callback");
+	channel_data = cJSON_GetObjectItem(data, "channel-data");
+	channel_callback = (blade_rpc_request_callback_t)(uintptr_t)cJSON_GetObjectPtr(data, "channel-callback");
+
+	// @note when messageid exists, it means this message is only intended to be examined and relayed, the local node is not the subscriber
+	messageid = cJSON_GetObjectCstr(data, "messageid");
+
+	res = blade_rpc_response_message_get(brpcres);
+	ks_assert(res);
+
+	res_result = cJSON_GetObjectItem(res, "result");
+	if (!res_result) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe response missing 'result' object\n", blade_session_id_get(bs));
+		goto done;
+	}
+
+	// @todo the following 3 fields, protocol, realm, and subscriber-nodeid may not be required to carry in the response as they could be
+	// obtained from the original request tied to the response, change this later
+	res_result_protocol = cJSON_GetObjectCstr(res_result, "protocol");
+	if (!res_result_protocol) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe response missing 'protocol'\n", blade_session_id_get(bs));
+		goto done;
+	}
+
+	res_result_realm = cJSON_GetObjectCstr(res_result, "realm");
+	if (!res_result_realm) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe response missing 'realm'\n", blade_session_id_get(bs));
+		goto done;
+	}
+
+	res_result_subscriber_nodeid = cJSON_GetObjectCstr(res_result, "subscriber-nodeid");
+	if (!res_result_subscriber_nodeid) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe response missing 'subscriber-nodeid'\n", blade_session_id_get(bs));
+		goto done;
+	}
+
+	res_result_downstream = cJSON_GetObjectItem(res_result, "downstream");
+	downstream = res_result_downstream && res_result_downstream->type == cJSON_True;
+
+	res_result_subscribe_channels = cJSON_GetObjectItem(res_result, "subscribe-channels");
+	res_result_failed_channels = cJSON_GetObjectItem(res_result, "failed-channels");
+
+	if (res_result_subscribe_channels) {
+		// @note only reach here when the master has responded to authorize subscriptions to channels, so all nodes along the path must
+		// add the subscriber
+		cJSON *channel = NULL;
+		blade_subscription_t *bsub = NULL;
+
+		cJSON_ArrayForEach(channel, res_result_subscribe_channels) {
+			blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, &bsub, res_result_protocol, res_result_realm, channel->valuestring, res_result_subscriber_nodeid);
+			// @note these will only get assigned on the last response, received by the subscriber
+			if (channel_callback) blade_subscription_callback_set(bsub, channel_callback);
+			if (channel_data) blade_subscription_callback_data_set(bsub, channel_data);
+		}
+	}
+
+	// @note this will only happen on the last response, received by the subscriber
+	if (original_callback) ret = original_callback(brpcres, original_data);
+
+	if (messageid) {
+		blade_session_t *relay = NULL;
+		if (downstream) {
+			if (!(relay = blade_upstreammgr_session_get(bh->upstreammgr))) {
+				goto done;
+			}
+		} else {
+			if (!(relay = blade_routemgr_route_lookup(bh->routemgr, res_result_subscriber_nodeid))) {
+				goto done;
+			}
+		}
+
+		blade_rpc_response_raw_create(&res, &res_result, messageid);
+
+		cJSON_AddStringToObject(res_result, "protocol", res_result_protocol);
+		cJSON_AddStringToObject(res_result, "realm", res_result_realm);
+		cJSON_AddStringToObject(res_result, "subscriber-nodeid", res_result_subscriber_nodeid);
+		if (downstream) cJSON_AddTrueToObject(res_result, "downstream");
+		if (res_result_subscribe_channels) cJSON_AddItemToObject(res_result, "subscribe-channels", cJSON_Duplicate(res_result_subscribe_channels, 1));
+		if (res_result_failed_channels) cJSON_AddItemToObject(res_result, "failed-channels", cJSON_Duplicate(res_result_failed_channels, 1));
+
+		blade_session_send(relay, res, NULL, NULL);
+
+		cJSON_Delete(res);
+
+		blade_session_read_unlock(relay);
+	}
+
+done:
+	blade_session_read_unlock(bs);
+	return ret;
+}
+
 
 // blade.broadcast request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char *broadcaster_nodeid, const char *event, const char *protocol, const char *realm, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, cJSON *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	ks_pool_t *pool = NULL;
-	const char *localid = NULL;
 
 	ks_assert(bh);
 	ks_assert(event);
 	ks_assert(protocol);
 	ks_assert(realm);
 
-	// this will ensure any downstream subscriber sessions, and upstream session if available will be broadcasted to
-	pool = blade_handle_pool_get(bh);
-
-	if (!broadcaster_nodeid) {
-		blade_upstreammgr_localid_copy(bh->upstreammgr, pool, &localid);
-		ks_assert(localid);
-		broadcaster_nodeid = localid;
-	}
-
-	ret = blade_subscriptionmgr_broadcast(bh->subscriptionmgr, broadcaster_nodeid, NULL, event, protocol, realm, params, callback, data);
-
-	if (localid) ks_pool_free(pool, &localid);
+	ret = blade_subscriptionmgr_broadcast(bh->subscriptionmgr, NULL,  protocol, realm, channel, event, params, callback, data);
 
 	// @todo must check if the local node is also subscribed to receive the event, this is a special edge case which has some extra considerations
 	// if the local node is subscribed to receive the event, it should be received here as a special case, otherwise the broadcast request handler
@@ -1270,17 +1693,17 @@ KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char
 }
 
 // blade.broadcast request handler
-ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void *data)
+ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 {
 	ks_bool_t ret = KS_FALSE;
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
-	const char *req_params_broadcaster_nodeid = NULL;
-	const char *req_params_event = NULL;
 	const char *req_params_protocol = NULL;
 	const char *req_params_realm = NULL;
+	const char *req_params_channel = NULL;
+	const char *req_params_event = NULL;
 	cJSON *req_params_params = NULL;
 	blade_subscription_t *bsub = NULL;
 	blade_rpc_request_callback_t callback = NULL;
@@ -1306,22 +1729,6 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 		goto done;
 	}
 
-	req_params_broadcaster_nodeid = cJSON_GetObjectCstr(req_params, "broadcaster-nodeid");
-	if (!req_params_broadcaster_nodeid) {
-		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'broadcaster-nodeid'\n", blade_session_id_get(bs));
-		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params broadcaster-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
-		goto done;
-	}
-
-	req_params_event = cJSON_GetObjectCstr(req_params, "event");
-	if (!req_params_event) {
-		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'event'\n", blade_session_id_get(bs));
-		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params event");
-		blade_session_send(bs, res, NULL, NULL);
-		goto done;
-	}
-
 	req_params_protocol = cJSON_GetObjectCstr(req_params, "protocol");
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'protocol'\n", blade_session_id_get(bs));
@@ -1338,11 +1745,27 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 		goto done;
 	}
 
+	req_params_channel = cJSON_GetObjectCstr(req_params, "channel");
+	if (!req_params_channel) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'channel'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channel");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
+	req_params_event = cJSON_GetObjectCstr(req_params, "event");
+	if (!req_params_event) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'event'\n", blade_session_id_get(bs));
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params event");
+		blade_session_send(bs, res, NULL, NULL);
+		goto done;
+	}
+
 	req_params_params = cJSON_GetObjectItem(req_params, "params");
 
-	blade_subscriptionmgr_broadcast(bh->subscriptionmgr, req_params_broadcaster_nodeid, blade_session_id_get(bs), req_params_event, req_params_protocol, req_params_realm, req_params_params, NULL, NULL);
+	blade_subscriptionmgr_broadcast(bh->subscriptionmgr, blade_session_id_get(bs), req_params_protocol, req_params_realm, req_params_channel, req_params_event, req_params_params, NULL, NULL);
 
-	bsub = blade_subscriptionmgr_subscription_lookup(bh->subscriptionmgr, req_params_event, req_params_protocol, req_params_realm);
+	bsub = blade_subscriptionmgr_subscription_lookup(bh->subscriptionmgr, req_params_protocol, req_params_realm, req_params_channel);
 	if (bsub) {
 		const char *localid = NULL;
 		ks_pool_t *pool = NULL;
@@ -1362,10 +1785,11 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 	// build the actual response finally
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
 
-	cJSON_AddStringToObject(res_result, "broadcaster-nodeid", req_params_broadcaster_nodeid);
-	cJSON_AddStringToObject(res_result, "event", req_params_event);
+	// @todo this is not neccessary, can obtain this from the original request
 	cJSON_AddStringToObject(res_result, "protocol", req_params_protocol);
 	cJSON_AddStringToObject(res_result, "realm", req_params_realm);
+	cJSON_AddStringToObject(res_result, "channel", req_params_channel);
+	cJSON_AddStringToObject(res_result, "event", req_params_event);
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
 	blade_session_send(bs, res, NULL, NULL);
@@ -1376,23 +1800,6 @@ done:
 	if (bs) blade_session_read_unlock(bs);
 
 	return ret;
-}
-
-KS_DECLARE(const char *) blade_rpcbroadcast_request_broadcaster_nodeid_get(blade_rpc_request_t *brpcreq)
-{
-	cJSON *req = NULL;
-	cJSON *req_params = NULL;
-	const char *req_broadcaster_nodeid = NULL;
-
-	ks_assert(brpcreq);
-
-	req = blade_rpc_request_message_get(brpcreq);
-	ks_assert(req);
-
-	req_params = cJSON_GetObjectItem(req, "params");
-	if (req_params) req_broadcaster_nodeid = cJSON_GetObjectCstr(req_params, "broadcaster-nodeid");
-
-	return req_broadcaster_nodeid;
 }
 
 KS_DECLARE(cJSON *) blade_rpcbroadcast_request_params_get(blade_rpc_request_t *brpcreq)

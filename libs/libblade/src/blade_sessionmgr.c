@@ -200,8 +200,6 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 
 	ks_log(KS_LOG_DEBUG, "Session Removed: %s\n", id);
 
-	blade_subscriptionmgr_subscriber_cleanup(blade_handle_subscriptionmgr_get(bsmgr->handle), id);
-
 	if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), id)) {
 		blade_upstreammgr_localid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);
 		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);

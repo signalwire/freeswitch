@@ -250,6 +250,21 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_masterid_copy(blade_upstreammgr_t *bum
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(ks_bool_t) blade_upstreammgr_masterlocal(blade_upstreammgr_t *bumgr)
+{
+	ks_bool_t ret = KS_FALSE;
+
+	ks_assert(bumgr);
+
+	ks_rwl_read_lock(bumgr->masterid_rwl);
+	ks_rwl_read_lock(bumgr->localid_rwl);
+	ret = bumgr->masterid && bumgr->localid && !ks_safe_strcasecmp(bumgr->masterid, bumgr->localid);
+	ks_rwl_read_unlock(bumgr->localid_rwl);
+	ks_rwl_read_unlock(bumgr->masterid_rwl);
+
+	return ret;
+}
+
 KS_DECLARE(ks_status_t) blade_upstreammgr_realm_add(blade_upstreammgr_t *bumgr, const char *realm)
 {
 	char *key = NULL;

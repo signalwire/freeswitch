@@ -290,10 +290,15 @@ void command_execute(blade_handle_t *bh, char *args)
 
 void command_subscribe(blade_handle_t *bh, char *args)
 {
+	cJSON *channels = NULL;
+
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_handle_rpcsubscribe(bh, "test.event", "test", "mydomain.com", KS_FALSE, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString("test"));
+	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", channels, NULL, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
+	cJSON_Delete(channels);
 }
 
 /* For Emacs:
