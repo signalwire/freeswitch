@@ -14,7 +14,7 @@
   <condition field="destination_number" expression="^(machine_detected)$">
     <action application="wait_for_silence" data="300 30 5 25000"/>
     <action application="sleep" data="8000"/>
-    <action application="playback" data="$${sounds_dir}/en/us/callie/ivr/8000/ivr-welcome_to_freeswitch.wav"/>
+    <action application="playback" data="$${sound_prefix}/ivr/8000/ivr-welcome_to_freeswitch.wav"/>
     <action application="info"/>
     <action application="hangup"/>
   </condition>

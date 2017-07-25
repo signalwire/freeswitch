@@ -15,7 +15,7 @@
 
 	<!-- say voices in order of preference -->
 	<say-voices>
-		<voice name="callie" language="en-US" gender="female" prefix="$${sounds_dir}/en/us/callie/"/>
+		<voice name="callie" language="en-US" gender="female" prefix="$${sound_prefix}/"/>
 	</say-voices>
 
 	<!-- map interpret-as to say macros -->
