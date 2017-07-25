@@ -3142,6 +3142,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			}
 		}
 
+		if ((canvas_w % 2) != 0) {
+			canvas_w++;
+		}
+
+		if ((canvas_h % 2) != 0) {
+			canvas_h++;
+		}
+
 		if (canvas_w < 320 || canvas_h < 180) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s video-canvas-size, falling back to %ux%u\n",
 							  video_canvas_size ? "Invalid" : "Unspecified", CONFERENCE_CANVAS_DEFAULT_WIDTH, CONFERENCE_CANVAS_DEFAULT_HIGHT);
