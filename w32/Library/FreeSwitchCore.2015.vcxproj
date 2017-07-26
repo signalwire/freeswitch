@@ -889,12 +889,6 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ProjectReference Include="..\..\libs\win32\curl\curllib.2015.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\openssl\libeay32.2015.vcxproj">
-      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\openssl\ssleay32.2015.vcxproj">
-      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\pcre\libpcre.2015.vcxproj">
       <Project>{8d04b550-d240-4a44-8a18-35da3f7038d9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

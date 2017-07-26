@@ -49,45 +49,27 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="..\..\w32\openssl.props" />
+  <Import Project="libblade.props" />
+  <Import Project="..\..\w32\sodium.props" />
+  <Import Project="..\..\w32\config.props" />
+  <Import Project="..\..\w32\civetweb.props" />
+  <Import Project="..\..\w32\pcre.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libblade.props" />
-    <Import Project="..\..\w32\openssl-version.props" />
-    <Import Project="..\..\w32\sodium.props" />
-    <Import Project="..\..\w32\config.props" />
-    <Import Project="..\..\w32\civetweb.props" />
-    <Import Project="..\..\w32\pcre.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libblade.props" />
-    <Import Project="..\..\w32\openssl-version.props" />
-    <Import Project="..\..\w32\sodium.props" />
-    <Import Project="..\..\w32\config.props" />
-    <Import Project="..\..\w32\civetweb.props" />
-    <Import Project="..\..\w32\pcre.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libblade.props" />
-    <Import Project="..\..\w32\openssl-version.props" />
-    <Import Project="..\..\w32\sodium.props" />
-    <Import Project="..\..\w32\config.props" />
-    <Import Project="..\..\w32\civetweb.props" />
-    <Import Project="..\..\w32\pcre.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="libblade.props" />
-    <Import Project="..\..\w32\openssl-version.props" />
-    <Import Project="..\..\w32\sodium.props" />
-    <Import Project="..\..\w32\config.props" />
-    <Import Project="..\..\w32\civetweb.props" />
-    <Import Project="..\..\w32\pcre.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -124,7 +106,6 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
@@ -145,7 +126,6 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4711;4574;4100;4127;4668;4255;4706;4710;4820;4090;4702;4456;4242;4457;4459;4244;4324;4204;4388;4245;4267</DisableSpecificWarnings>
@@ -162,7 +142,6 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;KS_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <WarningLevel>EnableAllWarnings</WarningLevel>
@@ -182,7 +161,6 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\win32\openssl\include;$(SolutionDir)..\win32\openssl\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;KS_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>

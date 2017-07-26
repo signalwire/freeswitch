@@ -46,27 +46,24 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="..\..\..\..\w32\openssl.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -90,7 +87,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-$(OpenSSLVersion)\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -109,7 +106,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-$(OpenSSLVersion)\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -126,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-$(OpenSSLVersion)\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -145,7 +142,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-$(OpenSSLVersion)\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -165,12 +162,6 @@
     <ClCompile Include="ws.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2015.vcxproj">
-      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2015.vcxproj">
-      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\xmlrpc-c\abyss.2015.vcxproj">
       <Project>{d2396dd7-7d38-473a-abb7-6f96d65ae1b9}</Project>
     </ProjectReference>
