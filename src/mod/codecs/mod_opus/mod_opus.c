@@ -437,12 +437,20 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
  * at the beginning of the call. */
 static int switch_opus_get_fec_bitrate(int fs, int loss)
 {
-	int threshold_bitrates[25] = {
+	int threshold_bitrates_8k[25] = {
 		15600,15200,15200,15200,14800,
 		14800,14800,14800,14400,14400,
 		14400,14000,14000,14000,13600,
 		13600,13600,13600,13200,13200,
 		13200,12800,12800,12800,12400
+	};
+
+	int threshold_bitrates_16k[25] = {
+		20400, 20400, 20000, 20000, 19600,
+		19600, 19600, 19200, 19200, 18800,
+		18800, 18800, 18400, 18400, 18000,
+		18000, 18000, 17600, 17600, 17200,
+		17200, 17200, 16800, 16800, 16400
 	};
 
 	if (loss <= 0){
@@ -451,9 +459,15 @@ static int switch_opus_get_fec_bitrate(int fs, int loss)
 
 	if (fs == 8000) {
 		if (loss >=25) {
-			return threshold_bitrates[24];
+			return threshold_bitrates_8k[24];
 		} else {
-			return threshold_bitrates[loss-1];
+			return threshold_bitrates_8k[loss-1];
+		}
+	} else if (fs == 16000) {
+		if (loss >=25) {
+			return threshold_bitrates_16k[24];
+		} else {
+			return threshold_bitrates_16k[loss-1];
 		}
 	}
 
