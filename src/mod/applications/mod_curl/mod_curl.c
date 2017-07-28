@@ -841,9 +841,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 				method = "put";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
-					printf("DDDD [%s]\n", postdata);
 					switch_url_decode(postdata);
-					printf("DDDD [%s]\n", postdata);
 				} else {
 					postdata = "";
 				}
