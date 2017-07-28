@@ -400,7 +400,6 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
-		switch_size_t img_addr = 0;
 
 		img_w = layer->screen_w = (uint32_t)(IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
 		img_h = layer->screen_h = (uint32_t)(IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
@@ -409,9 +408,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
 
-		img_addr = (switch_size_t)img;
-
-		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
+		if (layer->geometry.zoom) {
 			if (screen_aspect < img_aspect) {
 				unsigned int cropsize = 0;
 				double scale = 1;
@@ -534,8 +531,6 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 
 		}
-
-		layer->last_img_addr = img_addr;
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
@@ -3064,9 +3059,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 						if (layer && use_img) {
 							switch_img_copy(use_img, &layer->cur_img);
-						} 
-
-						if (layer) {
 							conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
 						}
 						
