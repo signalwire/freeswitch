@@ -731,7 +731,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf lua-reconf spandsp-reconf srtp-reconf
+update-clean: clean python-reconf spandsp-reconf srtp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
@@ -776,10 +776,6 @@ sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/sofia-sip && ./configure $(MY_DEFAULT_ARGS) --with-pic --with-glib=no --disable-shared
-
-lua-reconf:
-	cd src/mod/languages/mod_lua/lua && make clean
-	cd src/mod/languages/mod_lua && make clean
 
 cluecon:
 	@clear
