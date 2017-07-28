@@ -731,7 +731,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf spandsp-reconf srtp-reconf
+update-clean: clean python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
