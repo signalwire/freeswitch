@@ -480,7 +480,6 @@ typedef struct mcu_layer_s {
 	int last_w;
 	int last_h;
 	uint32_t img_count;
-	switch_size_t last_img_addr;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 	switch_image_t *overlay_img;
