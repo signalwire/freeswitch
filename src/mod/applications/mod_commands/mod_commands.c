@@ -5178,19 +5178,38 @@ SWITCH_STANDARD_API(bgapi_function)
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	
+	const char *p, *arg = cmd;
+	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
 	if (!cmd) {
 		stream->write_function(stream, "-ERR Invalid syntax\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (!strncasecmp(cmd, "uuid:", 5)) {
+		p = cmd + 5;
+		if ((arg = strchr(p, ' ')) && *arg++) {
+			switch_copy_string(my_uuid, p, arg - p);
+		}
+	}
+
+	if (zstr(arg)) {
+		stream->write_function(stream, "-ERR Invalid syntax\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_core_new_memory_pool(&pool);
 	job = switch_core_alloc(pool, sizeof(*job));
-	job->cmd = switch_core_strdup(pool, cmd);
+	job->cmd = switch_core_strdup(pool, arg);
 	job->pool = pool;
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(job->uuid_str, &uuid);
+	if (*my_uuid) {
+		switch_copy_string(job->uuid_str, my_uuid, strlen(my_uuid)+1);
+	} else {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(job->uuid_str, &uuid);
+	}
 
 	switch_threadattr_create(&thd_attr, job->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
