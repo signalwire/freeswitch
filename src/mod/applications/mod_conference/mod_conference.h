@@ -554,6 +554,7 @@ typedef struct mcu_canvas_s {
 	switch_rgb_color_t border_color;
 	switch_rgb_color_t letterbox_bgcolor;
 	switch_mutex_t *mutex;
+	switch_mutex_t *write_mutex;
 	switch_timer_t timer;
 	switch_memory_pool_t *pool;
 	video_layout_t *vlayout;
@@ -566,7 +567,6 @@ typedef struct mcu_canvas_s {
 	int recording;
 	switch_image_t *bgimg;
 	switch_image_t *fgimg;
-	switch_thread_rwlock_t *video_rwlock;
 	int playing_video_file;
 	int overlay_video_file;
 	codec_set_t *write_codecs[MAX_MUX_CODECS];

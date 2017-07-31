@@ -6288,7 +6288,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_timer_t timer = { 0 };
 	int fps;
-	switch_video_read_flag_t read_flags = SVR_FLUSH;
+	switch_video_read_flag_t read_flags = SVR_BLOCK;
 	switch_core_session_t *b_session = NULL;
 	core_fps_t fps_data = { 0 };
 	switch_image_t *last_frame = NULL;
@@ -6344,11 +6344,11 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 		switch_core_timer_next(&timer);
 		switch_mutex_lock(v_engine->mh.file_write_mutex);
 
-		if (smh->video_write_fh && smh->video_write_fh->mm.source_fps && smh->video_write_fh->mm.source_fps != fps) {
-			switch_core_timer_destroy(&timer);
-			video_get_fps(&fps_data, fps);
-			switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , fps_data.samples, switch_core_session_get_pool(session));
-		}
+		//if (smh->video_write_fh && smh->video_write_fh->mm.source_fps && smh->video_write_fh->mm.source_fps != fps) {
+		//	switch_core_timer_destroy(&timer);
+		//	video_get_fps(&fps_data, fps);
+		//	switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , fps_data.samples, switch_core_session_get_pool(session));
+		//}
 
 		if (smh->video_write_fh && !switch_test_flag(smh->video_write_fh, SWITCH_FILE_FLAG_VIDEO_EOF)) {
 			wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, read_flags);

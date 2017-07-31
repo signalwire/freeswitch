@@ -7512,7 +7512,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	do_continue:
 
-		if (!bytes && !rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
+		if (!bytes && !rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 
 			if (sleep_mss) {
 				switch_yield(sleep_mss);

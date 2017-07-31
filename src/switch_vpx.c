@@ -329,7 +329,11 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		//	context->decoder_init = 0;
 		//}
 
-		cfg.threads = 1;//(switch_core_cpu_count() > 1) ? 2 : 1;
+		//cfg.threads = 1;//(switch_core_cpu_count() > 1) ? 2 : 1;
+
+		cfg.threads = switch_core_cpu_count() / 2;
+		if (cfg.threads > 4) cfg.threads = 4;
+		if (cfg.threads < 1) cfg.threads = 1;
 
 		if (!context->is_vp9) { // vp8 only
 			// dec_flags = VPX_CODEC_USE_POSTPROC;
@@ -394,7 +398,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	}
 
-	sane = switch_calc_bitrate(1920, 1080, 2, 30);
+	sane = switch_calc_bitrate(1920, 1080, 5, 60);
 
 	if (context->bandwidth > sane) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, sane);
@@ -418,6 +422,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 360;//2000;
 	threads = cpus / 2;
+	if (threads > 4) threads = 4;
 	if (threads < 1) threads = 1;
 	config->g_threads = threads;
 

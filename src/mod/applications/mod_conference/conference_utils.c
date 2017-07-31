@@ -118,6 +118,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
                 f[MFLAG_CAN_BE_SEEN] = 0;
 			} else if (!strcasecmp(argv[i], "deaf")) {
 				f[MFLAG_CAN_HEAR] = 0;
+			} else if (!strcasecmp(argv[i], "blind")) {
+				f[MFLAG_CAN_SEE] = 0;
 			} else if (!strcasecmp(argv[i], "mute-detect")) {
 				f[MFLAG_MUTE_DETECT] = 1;
 			} else if (!strcasecmp(argv[i], "dist-dtmf")) {
