@@ -8347,8 +8347,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-
-
 		if ((val = switch_channel_get_variable(session->channel, "rtcp_audio_interval_msec")) || (val = smh->mparams->rtcp_audio_interval_msec)) {
 			const char *rport = switch_channel_get_variable(session->channel, "rtp_remote_audio_rtcp_port");
 			switch_port_t remote_rtcp_port = a_engine->remote_rtcp_port;
@@ -8373,8 +8371,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 			}
 
-			if (a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].ready) {
-				if (a_engine->rtcp_mux > 0 && !strcmp(a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_addr, a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_addr)
+			if (a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].ready && a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready &&
+				!zstr(a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_addr) && 
+				!zstr(a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_addr)) {
+				if (a_engine->rtcp_mux > 0 && 
+					!strcmp(a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_addr, a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_addr)
 					&& a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_port == a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Skipping RTCP ICE (Same as RTP)\n");
 				} else {
