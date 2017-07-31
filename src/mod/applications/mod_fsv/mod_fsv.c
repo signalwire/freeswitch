@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load);
 SWITCH_MODULE_DEFINITION(mod_fsv, mod_fsv_load, NULL, NULL);
 
 #define VID_BIT (1 << 31)
-#define VERSION 4201
+#define VERSION 4202
 
 struct file_header {
 	int32_t version;
@@ -47,6 +47,7 @@ struct file_header {
 	uint32_t audio_rate;
 	uint32_t audio_ptime;
 	switch_time_t created;
+	int channels;
 };
 
 struct record_helper {
@@ -61,8 +62,8 @@ static void record_video_thread(switch_core_session_t *session, void *obj)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	switch_frame_t *read_frame;
-	int bytes;
-
+	int bytes, j = 0;
+	
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -72,6 +73,10 @@ static void record_video_thread(switch_core_session_t *session, void *obj)
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
+		}
+
+		if (j < 240 && (++j % 60) == 0) {
+			switch_core_session_request_video_refresh(session);
 		}
 
 		bytes = read_frame->packetlen | VID_BIT;
@@ -150,7 +155,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
@@ -164,6 +169,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		struct file_header h;
 		memset(&h, 0, sizeof(h));
+
 		vid_codec = switch_core_session_get_video_read_codec(session);
 
 		h.version = VERSION;
@@ -174,6 +180,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		}
 		h.audio_rate = read_impl.samples_per_second;
 		h.audio_ptime = read_impl.microseconds_per_packet / 1000;
+		h.channels = read_impl.number_of_channels;
 
 		if (write(fd, &h, sizeof(h)) != sizeof(h)) {
 			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "File write failed");
@@ -184,6 +191,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		eh.mutex = mutex;
 		eh.fd = fd;
 		switch_core_media_start_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO, record_video_thread, &eh);
+		switch_core_session_request_video_refresh(session);
 	}
 
 
@@ -337,13 +345,15 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		goto end;
 	}
 
+	if (!h.channels) h.channels = 1;
+
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
 							   NULL,
 							   h.audio_rate,
 							   h.audio_ptime,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   h.channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
