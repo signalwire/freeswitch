@@ -406,7 +406,6 @@ void command_unsubscribe(blade_handle_t *bh, char *args)
 void command_leave(blade_handle_t *bh, char *args)
 {
 	cJSON *params = NULL;
-	cJSON *channels = NULL;
 
 	ks_assert(bh);
 	ks_assert(args);

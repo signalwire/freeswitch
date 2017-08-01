@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -64,7 +64,7 @@ KS_DECLARE(ks_status_t) blade_mastermgr_create(blade_mastermgr_t **bmmgrP, blade
 	blade_mastermgr_t *bmmgr = NULL;
 
 	ks_assert(bmmgrP);
-	
+
 	ks_pool_open(&pool);
 	ks_assert(pool);
 
@@ -122,7 +122,7 @@ KS_DECLARE(ks_status_t) blade_mastermgr_purge(blade_mastermgr_t *bmmgr, const ch
 
 		if (blade_protocol_purge(bp, nodeid)) {
 			if (!cleanup) ks_hash_create(&cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, bmmgr->pool);
-			ks_hash_insert(cleanup, key, bp);
+			ks_hash_insert(cleanup, (void *)key, bp);
 		}
 	}
 	if (cleanup) {
@@ -133,7 +133,7 @@ KS_DECLARE(ks_status_t) blade_mastermgr_purge(blade_mastermgr_t *bmmgr, const ch
 			ks_hash_this(it, (const void **)&key, NULL, (void **)&bp);
 
 			ks_log(KS_LOG_DEBUG, "Protocol Removed: %s\n", key);
-			ks_hash_remove(bmmgr->protocols, key);
+			ks_hash_remove(bmmgr->protocols, (void *)key);
 		}
 		ks_hash_destroy(&cleanup);
 	}
@@ -276,7 +276,7 @@ KS_DECLARE(ks_status_t) blade_mastermgr_channel_authorize(blade_mastermgr_t *bmm
 		ret = KS_STATUS_NOT_FOUND;
 		goto done;
 	}
-	
+
 	ret = blade_protocol_channel_authorize(bp, remove, channel, controller, target);
 
 done:

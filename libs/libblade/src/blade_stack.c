@@ -1079,7 +1079,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 	ks_log(KS_LOG_DEBUG, "Session (%s) execute request started\n", blade_session_id_get(bs));
 
 	ret = blade_session_send(bs, req, callback, data);
-	
+
 done:
 	if (req) cJSON_Delete(req);
 	if (bs) blade_session_read_unlock(bs);
@@ -1176,7 +1176,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 		blade_session_send(bs, res, NULL, NULL);
 		goto done;
 	}
-	
+
 	callback = blade_rpc_callback_get(brpc);
 	if (callback) ret = callback(brpcreq, blade_rpc_data_get(brpc));
 
@@ -1369,7 +1369,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char
 	temp_data->channel_callback = channel_callback;
 	temp_data->channel_data = channel_data;
 	ks_pool_set_cleanup(pool, temp_data, NULL, blade_rpcsubscribe_data_cleanup);
-	
+
 	ret = blade_handle_rpcsubscribe_raw(bh, protocol, realm, subscribe_channels, unsubscribe_channels, localid, KS_FALSE, blade_rpcsubscribe_response_handler, temp_data);
 
 	ks_pool_free(bh->pool, &localid);
@@ -1590,7 +1590,6 @@ done:
 ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, void *data)
 {
 	ks_bool_t ret = KS_FALSE;
-	blade_rpc_request_t *brpcreq = NULL;
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
 	blade_rpcsubscribe_data_t *temp_data = NULL;
@@ -1606,8 +1605,6 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 
 	ks_assert(brpcres);
 	ks_assert(data);
-
-	brpcreq = blade_rpc_response_request_get(brpcres);
 
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);

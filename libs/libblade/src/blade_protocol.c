@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -94,7 +94,7 @@ KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t 
 KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP)
 {
 	blade_protocol_t *bp = NULL;
-	
+
 	ks_assert(bpP);
 	ks_assert(*bpP);
 
@@ -120,7 +120,7 @@ KS_DECLARE(ks_bool_t) blade_protocol_purge(blade_protocol_t *bp, const char *nod
 
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&authorizations);
 
-		if (ks_hash_remove(authorizations, nodeid)) {
+		if (ks_hash_remove(authorizations, (void *)nodeid)) {
 			ks_log(KS_LOG_DEBUG, "Protocol Channel Authorization Removed: %s from %s@%s/%s\n", nodeid, bp->name, bp->realm, key);
 		}
 	}
@@ -180,7 +180,7 @@ KS_DECLARE(ks_status_t) blade_protocol_channel_add(blade_protocol_t *bp, const c
 
 	ks_hash_write_lock(bp->channels);
 
-	if (ks_hash_search(bp->channels, name, KS_UNLOCKED)) {
+	if (ks_hash_search(bp->channels, (void *)name, KS_UNLOCKED)) {
 		ret = KS_STATUS_DUPLICATE_OPERATION;
 		goto done;
 	}
@@ -262,7 +262,7 @@ KS_DECLARE(ks_bool_t) blade_protocol_channel_verify(blade_protocol_t *bp, const 
 
 	// @todo verify controller, get ks_hash_t* value based on channel, add target to the channels hash
 	authorizations = (ks_hash_t *)ks_hash_search(bp->channels, (void *)channel, KS_READLOCKED);
-	if (authorizations) ret = ks_hash_search(authorizations, target, KS_UNLOCKED) != NULL;
+	if (authorizations) ret = ks_hash_search(authorizations, (void *)target, KS_UNLOCKED) != NULL;
 	ks_hash_read_unlock(bp->channels);
 
 	return ret;

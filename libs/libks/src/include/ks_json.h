@@ -42,12 +42,9 @@ extern "C"
 
 #include "ks_cJSON.h"
 #include "ks_cJSON_Utils.h"
-	
+
 KS_DECLARE(cJSON *) cJSON_CreateStringPrintf(const char *fmt, ...);
 KS_DECLARE(const char *)cJSON_GetObjectCstr(const cJSON *object, const char *string);
-KS_DECLARE(cJSON *) cJSON_CreatePtr(uintptr_t pointer);
-KS_DECLARE(uintptr_t) cJSON_GetPtrValue(const cJSON *object);
-KS_DECLARE(uintptr_t) cJSON_GetObjectPtr(const cJSON *object, const char *string);
 
 static inline cJSON *ks_json_add_child_obj(cJSON *json, const char *name, cJSON *obj)
 {
