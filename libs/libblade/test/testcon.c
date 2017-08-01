@@ -88,7 +88,7 @@ ks_status_t testproto_destroy(testproto_t **testP)
 	return KS_STATUS_SUCCESS;
 }
 
-ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, cJSON *data)
+ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, void *data)
 {
 	//testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
@@ -97,7 +97,7 @@ ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, cJSON *da
 	ks_assert(brpcres);
 	ks_assert(data);
 
-	//test = (testproto_t *)cJSON_GetPtrValue(data);
+	//test = (testproto_t *)data;
 
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
@@ -112,7 +112,7 @@ ks_bool_t test_publish_response_handler(blade_rpc_response_t *brpcres, cJSON *da
 	return KS_FALSE;
 }
 
-ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
+ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
@@ -126,7 +126,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	ks_assert(brpcreq);
 	ks_assert(data);
 
-	test = (testproto_t *)cJSON_GetPtrValue(data);
+	test = (testproto_t *)data;
 
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
@@ -183,7 +183,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	return KS_FALSE;
 }
 
-ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
+ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
@@ -191,12 +191,13 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	const char *requester_nodeid = NULL;
 	//const char *key = NULL;
 	cJSON *params = NULL;
+	cJSON *channels = NULL;
 	cJSON *result = NULL;
 
 	ks_assert(brpcreq);
 	ks_assert(data);
 
-	test = (testproto_t *)cJSON_GetPtrValue(data);
+	test = (testproto_t *)data;
 
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
@@ -216,22 +217,36 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	ks_hash_remove(test->participants, (void *)requester_nodeid);
 	ks_hash_write_unlock(test->participants);
 
-	blade_session_read_unlock(bs);
+	// deauthorize channels with the master for the requester
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
 
+	blade_handle_rpcauthorize(bh, requester_nodeid, KS_TRUE, "test", "mydomain.com", channels, NULL, NULL);
+
+	cJSON_Delete(channels);
+
+	// send rpcexecute response to the requester
 	result = cJSON_CreateObject();
 
 	blade_rpcexecute_response_send(brpcreq, result);
 
+	cJSON_Delete(result);
+
+	blade_session_read_unlock(bs);
+
+	// broadcast to authorized nodes that have subscribed, that the requester has left
 	params = cJSON_CreateObject();
 
 	cJSON_AddStringToObject(params, "leaver-nodeid", requester_nodeid);
 
 	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "leave", params, NULL, NULL);
 
+	cJSON_Delete(params);
+
 	return KS_FALSE;
 }
 
-ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
+ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 {
 	//testproto_t *test = NULL;
 	blade_handle_t *bh = NULL;
@@ -244,7 +259,7 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	ks_assert(brpcreq);
 	ks_assert(data);
 
-	//test = (testproto_t *)cJSON_GetPtrValue(data);
+	//test = (testproto_t *)data;
 
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
@@ -263,12 +278,16 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) test.talk (%s) request processing\n", blade_session_id_get(bs), requester_nodeid);
 
-	blade_session_read_unlock(bs);
-
+	// send rpcexecute response to the requester
 	result = cJSON_CreateObject();
 
 	blade_rpcexecute_response_send(brpcreq, result);
 
+	cJSON_Delete(result);
+
+	blade_session_read_unlock(bs);
+
+	// broadcast to authorized nodes that have subscribed, that the requester has said something
 	params = cJSON_CreateObject();
 
 	cJSON_AddStringToObject(params, "text", text);
@@ -276,6 +295,8 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, cJSON *data)
 	cJSON_AddStringToObject(params, "talker-nodeid", requester_nodeid);
 
 	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "talk", params, NULL, NULL);
+
+	cJSON_Delete(params);
 
 	return KS_FALSE;
 }
@@ -345,19 +366,21 @@ int main(int argc, char **argv)
 			// @todo use session state change callback to know when the session is ready and the realm(s) available from blade.connect, this hack temporarily ensures it's ready before trying to publish upstream
 			ks_sleep_ms(3000);
 
-			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, cJSON_CreatePtr((uintptr_t)test));
+			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, (void *)test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, cJSON_CreatePtr((uintptr_t)test));
+			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, (void *)test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, cJSON_CreatePtr((uintptr_t)test));
+			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, (void *)test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			channels = cJSON_CreateArray();
 			cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
 
-			blade_handle_rpcpublish(bh, "test", "mydomain.com", channels, test_publish_response_handler, cJSON_CreatePtr((uintptr_t)test));
+			blade_handle_rpcpublish(bh, "test", "mydomain.com", channels, test_publish_response_handler, (void *)test);
+
+			cJSON_Delete(channels);
 		}
 	}
 

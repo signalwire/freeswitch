@@ -582,7 +582,7 @@ ks_status_t blade_session_onstate_run(blade_session_t *bs)
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, cJSON *data)
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, void *data)
 {
 	blade_rpc_request_t *brpcreq = NULL;
 	const char *method = NULL;

@@ -42,7 +42,7 @@ struct blade_rpc_s {
 	const char *realm;
 
 	blade_rpc_request_callback_t callback;
-	cJSON *data;
+	void *data;
 };
 
 struct blade_rpc_request_s {
@@ -54,7 +54,7 @@ struct blade_rpc_request_s {
 	cJSON *message;
 	const char *message_id; // pulled from message for easier keying
 	blade_rpc_response_callback_t callback;
-	cJSON *data;
+	void *data;
 	// @todo ttl to wait for response before injecting an error response locally
 };
 
@@ -72,22 +72,22 @@ struct blade_rpc_response_s {
 
 static void blade_rpc_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
-	blade_rpc_t *brpc = (blade_rpc_t *)ptr;
+	//blade_rpc_t *brpc = (blade_rpc_t *)ptr;
 
-	ks_assert(brpc);
+	//ks_assert(brpc);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (brpc->data) cJSON_Delete(brpc->data);
+		// @todo delete data if present, requires update to ks_pool for self tracking the pool in allocation header
 		break;
 	case KS_MPCL_DESTROY:
 		break;
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, cJSON *data)
+KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, void *data)
 {
 	blade_rpc_t *brpc = NULL;
 	ks_pool_t *pool = NULL;
@@ -170,7 +170,7 @@ KS_DECLARE(blade_rpc_request_callback_t) blade_rpc_callback_get(blade_rpc_t *brp
 	return brpc->callback;
 }
 
-KS_DECLARE(cJSON *) blade_rpc_data_get(blade_rpc_t *brpc)
+KS_DECLARE(void *) blade_rpc_data_get(blade_rpc_t *brpc)
 {
 	ks_assert(brpc);
 
@@ -190,7 +190,7 @@ static void blade_rpc_request_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_
 	case KS_MPCL_TEARDOWN:
 		ks_pool_free(brpcreq->pool, (void **)&brpcreq->session_id);
 		cJSON_Delete(brpcreq->message);
-		if (brpcreq->data) cJSON_Delete(brpcreq->data);
+		// @todo delete data if present, requires update to ks_pool for self tracking the pool in allocation header
 		break;
 	case KS_MPCL_DESTROY:
 		break;
@@ -203,7 +203,7 @@ KS_DECLARE(ks_status_t) blade_rpc_request_create(blade_rpc_request_t **brpcreqP,
 													 const char *session_id,
 													 cJSON *json,
 													 blade_rpc_response_callback_t callback,
-													 cJSON *data)
+													 void *data)
 {
 	blade_rpc_request_t *brpcreq = NULL;
 
@@ -278,7 +278,7 @@ KS_DECLARE(blade_rpc_response_callback_t) blade_rpc_request_callback_get(blade_r
 	return brpcreq->callback;
 }
 
-KS_DECLARE(cJSON *) blade_rpc_request_data_get(blade_rpc_request_t *brpcreq)
+KS_DECLARE(void *) blade_rpc_request_data_get(blade_rpc_request_t *brpcreq)
 {
 	ks_assert(brpcreq);
 	return brpcreq->data;

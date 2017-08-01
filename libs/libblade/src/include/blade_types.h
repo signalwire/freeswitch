@@ -62,8 +62,8 @@ typedef struct blade_connectionmgr_s blade_connectionmgr_t;
 typedef struct blade_sessionmgr_s blade_sessionmgr_t;
 typedef struct blade_session_callback_data_s blade_session_callback_data_t;
 
-typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, cJSON *data);
-typedef ks_bool_t (*blade_rpc_response_callback_t)(blade_rpc_response_t *brpcres, cJSON *data);
+typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, void *data);
+typedef ks_bool_t (*blade_rpc_response_callback_t)(blade_rpc_response_t *brpcres, void *data);
 
 
 typedef enum {
