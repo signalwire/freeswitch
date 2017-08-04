@@ -18,7 +18,7 @@ struct foo {
 };
 
 
-void cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+void cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	struct foo *foo = (struct foo *) ptr;
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
 	void *blah = ks_pool_alloc(pool, 64 * 1024);
 
-	ks_pool_free(pool, &blah);
+	ks_pool_free(&blah);
 
 	blah = ks_pool_alloc(pool, 2 * 1024);
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
 	printf("FREE:\n");
 
-	status = ks_pool_free(pool, &str);
+	status = ks_pool_free(&str);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE ERR: [%s]\n", ks_pool_strerror(err));
 		exit(255);
@@ -119,17 +119,17 @@ int main(int argc, char **argv)
 
 	printf("ALLOC3 (refs):\n");
 
-	str = ks_pool_ref(pool, str);
+	str = ks_pool_ref(str);
 
 	printf("STR [%s]\n", str);
 
-	ks_pool_free(pool, &str);
+	ks_pool_free(&str);
 
 	ok(str != NULL && !strcmp(str, STR));
 
 	printf("STR [%s]\n", str);
 
-	ks_pool_free(pool, &str);
+	ks_pool_free(&str);
 
 	ok(str == NULL);
 
@@ -158,11 +158,11 @@ int main(int argc, char **argv)
 
 	foo->x = 12;
 	foo->str = strdup("This is a test 1234 abcd; This will be called on explicit free\n");
-	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
+	ks_pool_set_cleanup(foo, NULL, cleanup);
 
 	printf("FREE OBJ:\n");
 
-	status = ks_pool_free(pool, &foo);
+	status = ks_pool_free(&foo);
 	ok(status == KS_STATUS_SUCCESS);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE OBJ ERR: [%s]\n", ks_pool_strerror(status));
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 
 	foo->x = 12;
 	foo->str = strdup("This is a second test 1234 abcd; This will be called on pool clear/destroy\n");
-	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
+	ks_pool_set_cleanup(foo, NULL, cleanup);
 
 
 	printf("ALLOC OBJ3: %p\n", (void *)pool);
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 	printf("CLEANUP: %p\n", (void *)pool);
 	foo->x = 12;
 	foo->str = strdup("This is a third test 1234 abcd; This will be called on pool clear/destroy\n");
-	ks_pool_set_cleanup(pool, foo, NULL, cleanup);
+	ks_pool_set_cleanup(foo, NULL, cleanup);
 
 
 
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 	ks_snprintf(str, bytes, "%s", STR);
 	printf("1 STR [%s]\n", str);
 	bytes *= 2;
-	str = ks_pool_resize(pool, str, bytes);
+	str = ks_pool_resize(str, bytes);
 	printf("2 STR [%s]\n", str);
 
 	ok(!strcmp(str, STR));
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 
 	printf("FREE 2:\n");
 
-	status = ks_pool_free(pool, &str);
+	status = ks_pool_free(&str);
 	ok(status == KS_STATUS_SUCCESS);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE2 ERR: [%s]\n", ks_pool_strerror(status));

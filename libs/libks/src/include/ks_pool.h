@@ -147,6 +147,12 @@ KS_DECLARE(ks_status_t) ks_pool_close(ks_pool_t **poolP);
 
 KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool);
 
+// @todo fill in documentation
+KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr);
+
+// @todo fill in documentation
+KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr);
+
 /*
  * void *ks_pool_alloc
  *
@@ -260,14 +266,11 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *pool, const ks_size_t ele_n, con
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.  If NULL then it will do a
- * normal free.
- *
  * addr <-> Address to free.
  *
  */
 
-KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *pool, void **addrP);
+KS_DECLARE(ks_status_t) ks_pool_free_ex(void **addrP);
 
 
 /*
@@ -285,17 +288,15 @@ KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *pool, void **addrP);
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
  * addr -> The addr to ref
  *
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
 
-KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *pool, void *addr, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_ref_ex(void *addr, ks_status_t *error_p);
 
-#define ks_pool_ref(_p, _x) ks_pool_ref_ex(_p, _x, NULL)
+#define ks_pool_ref(_x) ks_pool_ref_ex(_x, NULL)
 
 /*
  * void *ks_pool_resize
@@ -312,15 +313,12 @@ KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *pool, void *addr, ks_status_t *erro
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.  If NULL then it will do a
- * normal realloc.
- *
  * old_addr -> Previously allocated address.
  *
  * new_size -> New size of the allocation.
  *
  */
-KS_DECLARE(void *) ks_pool_resize(ks_pool_t *pool, void *old_addr, const ks_size_t new_size);
+KS_DECLARE(void *) ks_pool_resize(void *old_addr, const ks_size_t new_size);
 
 /*
  * void *ks_pool_resize_ex
@@ -337,8 +335,6 @@ KS_DECLARE(void *) ks_pool_resize(ks_pool_t *pool, void *old_addr, const ks_size
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
  * old_addr -> Previously allocated address.
  *
  * new_size -> New size of the allocation.
@@ -346,7 +342,7 @@ KS_DECLARE(void *) ks_pool_resize(ks_pool_t *pool, void *old_addr, const ks_size
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *pool, void *old_addr, const ks_size_t new_size, ks_status_t *error_p);
+KS_DECLARE(void *) ks_pool_resize_ex(void *old_addr, const ks_size_t new_size, ks_status_t *error_p);
 
 /*
  * int ks_pool_stats
@@ -423,9 +419,9 @@ KS_DECLARE(ks_status_t) ks_pool_set_log_func(ks_pool_t *pool, ks_pool_log_func_t
  */
 KS_DECLARE(const char *) ks_pool_strerror(const ks_status_t error);
 
-KS_DECLARE(ks_status_t) ks_pool_set_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_callback_t callback);
+KS_DECLARE(ks_status_t) ks_pool_set_cleanup(void *ptr, void *arg, ks_pool_cleanup_callback_t callback);
 
-#define ks_pool_free(_p, _x) ks_pool_free_ex(_p, (void **)_x)
+#define ks_pool_free(_x) ks_pool_free_ex((void **)_x)
 
 /*<<<<<<<<<<   This is end of the auto-generated output from fillproto. */
 

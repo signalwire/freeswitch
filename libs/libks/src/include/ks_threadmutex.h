@@ -64,7 +64,6 @@ typedef enum {
 #define KS_THREAD_IS_RUNNING(_thread) _thread->state == KS_THREAD_RUNNING
 
 struct ks_thread {
-		ks_pool_t *pool;
 #ifdef WIN32
 		void *handle;
 #else

@@ -35,13 +35,12 @@
 
 struct blade_connectionmgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *connections; // id, blade_connection_t*
 };
 
 
-static void blade_connectionmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_connectionmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_connectionmgr_t *bcmgr = (blade_connectionmgr_t *)ptr;
 
@@ -69,12 +68,11 @@ KS_DECLARE(ks_status_t) blade_connectionmgr_create(blade_connectionmgr_t **bcmgr
 
 	bcmgr = ks_pool_alloc(pool, sizeof(blade_connectionmgr_t));
 	bcmgr->handle = bh;
-	bcmgr->pool = pool;
 
-	ks_hash_create(&bcmgr->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bcmgr->pool);
+	ks_hash_create(&bcmgr->connections, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bcmgr->connections);
 
-	ks_pool_set_cleanup(pool, bcmgr, NULL, blade_connectionmgr_cleanup);
+	ks_pool_set_cleanup(bcmgr, NULL, blade_connectionmgr_cleanup);
 
 	*bcmgrP = bcmgr;
 
@@ -92,10 +90,7 @@ KS_DECLARE(ks_status_t) blade_connectionmgr_destroy(blade_connectionmgr_t **bcmg
 	bcmgr = *bcmgrP;
 	*bcmgrP = NULL;
 
-	ks_assert(bcmgr);
-
-	pool = bcmgr->pool;
-
+	pool = ks_pool_get(bcmgr);
 	ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
@@ -149,7 +144,7 @@ KS_DECLARE(ks_status_t) blade_connectionmgr_connection_add(blade_connectionmgr_t
 	ks_assert(bcmgr);
 	ks_assert(bc);
 
-	key = ks_pstrdup(bcmgr->pool, blade_connection_id_get(bc));
+	key = ks_pstrdup(ks_pool_get(bcmgr), blade_connection_id_get(bc));
 	ks_hash_insert(bcmgr->connections, (void *)key, bc);
 
 	ks_log(KS_LOG_DEBUG, "Connection Added: %s\n", key);

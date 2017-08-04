@@ -35,7 +35,6 @@
 
 struct blade_rpc_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	const char *method;
 	const char *protocol;
@@ -47,7 +46,6 @@ struct blade_rpc_s {
 
 struct blade_rpc_request_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	const char *session_id;
 
@@ -60,7 +58,6 @@ struct blade_rpc_request_s {
 
 struct blade_rpc_response_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	const char *session_id;
 
@@ -70,7 +67,7 @@ struct blade_rpc_response_s {
 };
 
 
-static void blade_rpc_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_rpc_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_rpc_t *brpc = (blade_rpc_t *)ptr;
 
@@ -102,14 +99,13 @@ KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh
 
 	brpc = ks_pool_alloc(pool, sizeof(blade_rpc_t));
 	brpc->handle = bh;
-	brpc->pool = pool;
 	brpc->method = ks_pstrdup(pool, method);
 	if (protocol) brpc->protocol = ks_pstrdup(pool, protocol);
 	if (realm) brpc->realm = ks_pstrdup(pool, realm);
 	brpc->callback = callback;
 	brpc->data = data;
 
-	ks_pool_set_cleanup(pool, brpc, NULL, blade_rpc_cleanup);
+	ks_pool_set_cleanup(brpc, NULL, blade_rpc_cleanup);
 
 	*brpcP = brpc;
 
@@ -125,12 +121,11 @@ KS_DECLARE(ks_status_t) blade_rpc_destroy(blade_rpc_t **brpcP)
 	ks_assert(*brpcP);
 
 	brpc = *brpcP;
+	*brpcP = NULL;
 
-	pool = brpc->pool;
+	pool = ks_pool_get(brpc);
 
 	ks_pool_close(&pool);
-
-	*brpcP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -178,7 +173,7 @@ KS_DECLARE(void *) blade_rpc_data_get(blade_rpc_t *brpc)
 }
 
 
-static void blade_rpc_request_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_rpc_request_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_rpc_request_t *brpcreq = (blade_rpc_request_t *)ptr;
 
@@ -188,7 +183,7 @@ static void blade_rpc_request_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		ks_pool_free(brpcreq->pool, (void **)&brpcreq->session_id);
+		ks_pool_free((void **)&brpcreq->session_id);
 		cJSON_Delete(brpcreq->message);
 		// @todo delete data if present, requires update to ks_pool for self tracking the pool in allocation header
 		break;
@@ -215,14 +210,13 @@ KS_DECLARE(ks_status_t) blade_rpc_request_create(blade_rpc_request_t **brpcreqP,
 
 	brpcreq = ks_pool_alloc(pool, sizeof(blade_rpc_request_t));
 	brpcreq->handle = bh;
-	brpcreq->pool = pool;
 	brpcreq->session_id = ks_pstrdup(pool, session_id);
 	brpcreq->message = cJSON_Duplicate(json, 1);
 	brpcreq->message_id = cJSON_GetObjectCstr(brpcreq->message, "id");
 	brpcreq->callback = callback;
 	brpcreq->data = data;
 
-	ks_pool_set_cleanup(pool, brpcreq, NULL, blade_rpc_request_cleanup);
+	ks_pool_set_cleanup(brpcreq, NULL, blade_rpc_request_cleanup);
 
 	*brpcreqP = brpcreq;
 
@@ -238,14 +232,14 @@ KS_DECLARE(ks_status_t) blade_rpc_request_destroy(blade_rpc_request_t **brpcreqP
 
 	brpcreq = *brpcreqP;
 
-	ks_pool_free(brpcreq->pool, brpcreqP);
+	ks_pool_free(brpcreqP);
 
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_rpc_request_duplicate(blade_rpc_request_t **brpcreqP, blade_rpc_request_t *brpcreq)
 {
-	return blade_rpc_request_create(brpcreqP, brpcreq->handle, brpcreq->pool, brpcreq->session_id, brpcreq->message, brpcreq->callback, brpcreq->data);
+	return blade_rpc_request_create(brpcreqP, brpcreq->handle, ks_pool_get(brpcreq), brpcreq->session_id, brpcreq->message, brpcreq->callback, brpcreq->data);
 }
 
 KS_DECLARE(blade_handle_t *) blade_rpc_request_handle_get(blade_rpc_request_t *brpcreq)
@@ -302,7 +296,7 @@ KS_DECLARE(ks_status_t) blade_rpc_request_raw_create(ks_pool_t *pool, cJSON **js
 	ks_uuid(&msgid);
 	mid = ks_uuid_str(pool, &msgid);
 	cJSON_AddStringToObject(root, "id", mid);
-	ks_pool_free(pool, &mid);
+	ks_pool_free(&mid);
 
 	cJSON_AddStringToObject(root, "method", method);
 
@@ -317,7 +311,7 @@ KS_DECLARE(ks_status_t) blade_rpc_request_raw_create(ks_pool_t *pool, cJSON **js
 }
 
 
-static void blade_rpc_response_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_rpc_response_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_rpc_response_t *brpcres = (blade_rpc_response_t *)ptr;
 
@@ -327,7 +321,7 @@ static void blade_rpc_response_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		ks_pool_free(brpcres->pool, (void **)&brpcres->session_id);
+		ks_pool_free((void **)&brpcres->session_id);
 		blade_rpc_request_destroy(&brpcres->request);
 		cJSON_Delete(brpcres->message);
 		break;
@@ -354,12 +348,11 @@ KS_DECLARE(ks_status_t) blade_rpc_response_create(blade_rpc_response_t **brpcres
 
 	brpcres = ks_pool_alloc(pool, sizeof(blade_rpc_response_t));
 	brpcres->handle = bh;
-	brpcres->pool = pool;
 	brpcres->session_id = ks_pstrdup(pool, session_id);
 	brpcres->request = brpcreq;
 	brpcres->message = cJSON_Duplicate(json, 1);
 
-	ks_pool_set_cleanup(pool, brpcres, NULL, blade_rpc_response_cleanup);
+	ks_pool_set_cleanup(brpcres, NULL, blade_rpc_response_cleanup);
 
 	*brpcresP = brpcres;
 
@@ -375,7 +368,7 @@ KS_DECLARE(ks_status_t) blade_rpc_response_destroy(blade_rpc_response_t **brpcre
 
 	brpcres = *brpcresP;
 
-	ks_pool_free(brpcres->pool, brpcresP);
+	ks_pool_free(brpcresP);
 
 	return KS_STATUS_SUCCESS;
 }

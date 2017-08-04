@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	ok (!match);
 
 
-	ks_pool_free(pool, &list);
+	ks_pool_free(&list);
 
 
 	ks_network_list_create(&list, "test", KS_TRUE, pool);
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	match = ks_check_network_list_ip_cidr("2637:f368:1281::10", "fe80::/10");
 	ok(!match);
 
-	ks_pool_free(pool, &list);
+	ks_pool_free(&list);
 
 	ks_pool_close(&pool);
 

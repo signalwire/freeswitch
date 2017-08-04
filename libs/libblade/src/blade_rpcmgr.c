@@ -35,7 +35,6 @@
 
 struct blade_rpcmgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *corerpcs; // method, blade_rpc_t*
 	ks_hash_t *protocolrpcs; // method, blade_rpc_t*
@@ -44,7 +43,7 @@ struct blade_rpcmgr_s {
 };
 
 
-static void blade_rpcmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_rpcmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_rpcmgr_t *brpcmgr = (blade_rpcmgr_t *)ptr;
 	ks_hash_iterator_t *it = NULL;
@@ -91,18 +90,17 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_create(blade_rpcmgr_t **brpcmgrP, blade_han
 
 	brpcmgr = ks_pool_alloc(pool, sizeof(blade_rpcmgr_t));
 	brpcmgr->handle = bh;
-	brpcmgr->pool = pool;
 
-	ks_hash_create(&brpcmgr->corerpcs, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, brpcmgr->pool);
+	ks_hash_create(&brpcmgr->corerpcs, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(brpcmgr->corerpcs);
 
-	ks_hash_create(&brpcmgr->protocolrpcs, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, brpcmgr->pool);
+	ks_hash_create(&brpcmgr->protocolrpcs, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(brpcmgr->protocolrpcs);
 
-	ks_hash_create(&brpcmgr->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, brpcmgr->pool);
+	ks_hash_create(&brpcmgr->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(brpcmgr->requests);
 
-	ks_pool_set_cleanup(pool, brpcmgr, NULL, blade_rpcmgr_cleanup);
+	ks_pool_set_cleanup(brpcmgr, NULL, blade_rpcmgr_cleanup);
 
 	*brpcmgrP = brpcmgr;
 
@@ -120,9 +118,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_destroy(blade_rpcmgr_t **brpcmgrP)
 	brpcmgr = *brpcmgrP;
 	*brpcmgrP = NULL;
 
-	ks_assert(brpcmgr);
-
-	pool = brpcmgr->pool;
+	pool = ks_pool_get(brpcmgr);
 
 	ks_pool_close(&pool);
 
@@ -157,7 +153,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_corerpc_add(blade_rpcmgr_t *brpcmgr, blade_
 	ks_assert(brpcmgr);
 	ks_assert(brpc);
 
-	key = ks_pstrdup(brpcmgr->pool, blade_rpc_method_get(brpc));
+	key = ks_pstrdup(ks_pool_get(brpcmgr), blade_rpc_method_get(brpc));
 	ks_hash_insert(brpcmgr->corerpcs, (void *)key, (void *)brpc);
 
 	ks_log(KS_LOG_DEBUG, "CoreRPC Added: %s\n", key);
@@ -191,12 +187,12 @@ KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmg
 	ks_assert(protocol);
 	ks_assert(realm);
 
-	key = ks_psprintf(brpcmgr->pool, "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
 	brpc = ks_hash_search(brpcmgr->protocolrpcs, (void *)key, KS_READLOCKED);
 	// @todo if (brpc) blade_rpc_read_lock(brpc);
 	ks_hash_read_unlock(brpcmgr->protocolrpcs);
 
-	ks_pool_free(brpcmgr->pool, &key);
+	ks_pool_free(&key);
 
 	return brpc;
 }
@@ -220,7 +216,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_add(blade_rpcmgr_t *brpcmgr, bl
 	realm = blade_rpc_realm_get(brpc);
 	ks_assert(realm);
 
-	key = ks_psprintf(brpcmgr->pool, "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
 	ks_assert(key);
 
 	ks_hash_insert(brpcmgr->protocolrpcs, (void *)key, (void *)brpc);
@@ -250,14 +246,14 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_remove(blade_rpcmgr_t *brpcmgr,
 	realm = blade_rpc_realm_get(brpc);
 	ks_assert(realm);
 
-	key = ks_psprintf(brpcmgr->pool, "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
 	ks_assert(key);
 
 	ks_hash_remove(brpcmgr->protocolrpcs, (void *)key);
 
 	ks_log(KS_LOG_DEBUG, "ProtocolRPC Removed: %s\n", key);
 
-	ks_pool_free(brpcmgr->pool, &key);
+	ks_pool_free(&key);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -283,7 +279,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_request_add(blade_rpcmgr_t *brpcmgr, blade_
 	ks_assert(brpcmgr);
 	ks_assert(brpcreq);
 
-	key = ks_pstrdup(brpcmgr->pool, blade_rpc_request_messageid_get(brpcreq));
+	key = ks_pstrdup(ks_pool_get(brpcmgr), blade_rpc_request_messageid_get(brpcreq));
 	ks_hash_insert(brpcmgr->requests, (void *)key, (void *)brpcreq);
 
 	ks_log(KS_LOG_DEBUG, "Request Added: %s\n", key);

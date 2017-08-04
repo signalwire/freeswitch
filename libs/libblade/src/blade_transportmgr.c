@@ -35,14 +35,13 @@
 
 struct blade_transportmgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *transports; // name, blade_transport_t*
 	blade_transport_t *default_transport; // default wss transport
 };
 
 
-static void blade_transportmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_transportmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_transportmgr_t *btmgr = (blade_transportmgr_t *)ptr;
 	ks_hash_iterator_t *it = NULL;
@@ -80,12 +79,11 @@ KS_DECLARE(ks_status_t) blade_transportmgr_create(blade_transportmgr_t **btmgrP,
 
 	btmgr = ks_pool_alloc(pool, sizeof(blade_transportmgr_t));
 	btmgr->handle = bh;
-	btmgr->pool = pool;
 
-	ks_hash_create(&btmgr->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, btmgr->pool);
+	ks_hash_create(&btmgr->transports, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(btmgr->transports);
 
-	ks_pool_set_cleanup(pool, btmgr, NULL, blade_transportmgr_cleanup);
+	ks_pool_set_cleanup(btmgr, NULL, blade_transportmgr_cleanup);
 
 	*btmgrP = btmgr;
 
@@ -103,9 +101,7 @@ KS_DECLARE(ks_status_t) blade_transportmgr_destroy(blade_transportmgr_t **btmgrP
 	btmgr = *btmgrP;
 	*btmgrP = NULL;
 
-	ks_assert(btmgr);
-
-	pool = btmgr->pool;
+	pool = ks_pool_get(btmgr);
 
 	ks_pool_close(&pool);
 
@@ -201,7 +197,7 @@ KS_DECLARE(ks_status_t) blade_transportmgr_transport_add(blade_transportmgr_t *b
 	ks_assert(btmgr);
 	ks_assert(bt);
 
-	key = ks_pstrdup(btmgr->pool, blade_transport_name_get(bt));
+	key = ks_pstrdup(ks_pool_get(btmgr), blade_transport_name_get(bt));
 	ks_hash_insert(btmgr->transports, (void *)key, (void *)bt);
 
 	ks_log(KS_LOG_DEBUG, "Transport Added: %s\n", key);

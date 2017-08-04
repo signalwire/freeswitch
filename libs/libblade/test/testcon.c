@@ -30,7 +30,7 @@ struct testproto_s {
 };
 typedef struct testproto_s testproto_t;
 
-static void testproto_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void testproto_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//testproto_t *test = (testproto_t *)ptr;
 
@@ -63,7 +63,7 @@ ks_status_t testproto_create(testproto_t **testP, blade_handle_t *bh)
 
 	ks_hash_create(&test->participants, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 
-	ks_pool_set_cleanup(pool, test, NULL, testproto_cleanup);
+	ks_pool_set_cleanup(test, NULL, testproto_cleanup);
 
 	*testP = test;
 
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 	blade_handle_create(&bh);
 	ks_assert(bh);
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	if (argc > 1) autoconnect = argv[1];
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
 		ks_bool_t connected = KS_FALSE;
 		blade_rpc_t *brpc = NULL;
 
-		blade_identity_create(&target, blade_handle_pool_get(bh));
+		blade_identity_create(&target, ks_pool_get(bh));
 
 		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) connected = blade_handle_connect(bh, &bc, target, NULL) == KS_STATUS_SUCCESS;
 

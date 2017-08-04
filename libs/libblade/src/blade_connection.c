@@ -35,7 +35,6 @@
 
 struct blade_connection_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	void *transport_data;
 	blade_transport_callbacks_t *transport_callbacks;
@@ -59,7 +58,7 @@ ks_status_t blade_connection_onstate_shutdown(blade_connection_t *bc);
 ks_status_t blade_connection_onstate_run(blade_connection_t *bc);
 
 
-static void blade_connection_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_connection_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_connection_t *bc = (blade_connection_t *)ptr;
 
@@ -72,12 +71,6 @@ static void blade_connection_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_p
 		blade_connection_shutdown(bc);
 		break;
 	case KS_MPCL_DESTROY:
-		// @todo remove this, it's just for posterity in debugging
-		bc->sending = NULL;
-		bc->lock = NULL;
-
-		//ks_pool_free(bc->pool, &bc->id);
-		bc->id = NULL;
 		break;
 	}
 }
@@ -96,7 +89,6 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_
 
 	bc = ks_pool_alloc(pool, sizeof(blade_connection_t));
 	bc->handle = bh;
-	bc->pool = pool;
 
 	ks_cond_create(&bc->cond, pool);
 	ks_assert(bc->cond);
@@ -111,7 +103,7 @@ KS_DECLARE(ks_status_t) blade_connection_create(blade_connection_t **bcP, blade_
 	ks_q_create(&bc->sending, pool, 0);
 	ks_assert(bc->sending);
 
-	ks_pool_set_cleanup(pool, bc, NULL, blade_connection_cleanup);
+	ks_pool_set_cleanup(bc, NULL, blade_connection_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -129,12 +121,10 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP)
 	ks_assert(*bcP);
 
 	bc = *bcP;
-
-	pool = bc->pool;
-	//ks_pool_free(bc->pool, bcP);
-	ks_pool_close(&pool);
-
 	*bcP = NULL;
+
+	pool = ks_pool_get(bc);
+	ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -180,13 +170,6 @@ KS_DECLARE(blade_handle_t *) blade_connection_handle_get(blade_connection_t *bc)
 	ks_assert(bc);
 
 	return bc->handle;
-}
-
-KS_DECLARE(ks_pool_t *) blade_connection_pool_get(blade_connection_t *bc)
-{
-	ks_assert(bc);
-
-	return bc->pool;
 }
 
 KS_DECLARE(const char *) blade_connection_id_get(blade_connection_t *bc)
@@ -343,8 +326,8 @@ KS_DECLARE(void) blade_connection_session_set(blade_connection_t *bc, const char
 {
 	ks_assert(bc);
 
-	if (bc->session) ks_pool_free(bc->pool, &bc->session);
-	bc->session = ks_pstrdup(bc->pool, id);
+	if (bc->session) ks_pool_free(&bc->session);
+	bc->session = ks_pstrdup(ks_pool_get(bc), id);
 }
 
 void *blade_connection_state_thread(ks_thread_t *thread, void *data)

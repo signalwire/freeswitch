@@ -53,7 +53,6 @@ struct ks_thread_pool_s {
 	uint32_t dying_thread_count;
 	ks_thread_pool_state_t state;
 	ks_mutex_t *mutex;
-	ks_pool_t *pool;
 };
 
 typedef struct ks_thread_job_s {
@@ -94,7 +93,7 @@ static int check_queue(ks_thread_pool_t *tp, ks_bool_t adding)
 	ks_mutex_unlock(tp->mutex);
 
 	while(need > 0) {
-		if (ks_thread_create_ex(&thread, worker_thread, tp, KS_THREAD_FLAG_DETACHED, tp->stack_size, tp->priority, tp->pool) != KS_STATUS_SUCCESS) {
+		if (ks_thread_create_ex(&thread, worker_thread, tp, KS_THREAD_FLAG_DETACHED, tp->stack_size, tp->priority, ks_pool_get(tp)) != KS_STATUS_SUCCESS) {
 			ks_mutex_lock(tp->mutex);
 			tp->thread_count--;
 			ks_mutex_unlock(tp->mutex);
@@ -176,7 +175,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		idle_sec = 0;
 		job->func(thread, job->data);
 		
-		ks_pool_free(tp->pool, &job);
+		ks_pool_free(&job);
 
 		ks_mutex_lock(tp->mutex);
 		tp->busy_thread_count--;
@@ -197,7 +196,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 KS_DECLARE(ks_status_t) ks_thread_pool_create(ks_thread_pool_t **tp, uint32_t min, uint32_t max, size_t stack_size, 
 											  ks_thread_priority_t priority, uint32_t idle_sec)
 {
-	ks_pool_t *pool;
+	ks_pool_t *pool = NULL;
 
 	ks_pool_open(&pool);
 
@@ -205,14 +204,13 @@ KS_DECLARE(ks_status_t) ks_thread_pool_create(ks_thread_pool_t **tp, uint32_t mi
 
 	(*tp)->min = min;
 	(*tp)->max = max;
-	(*tp)->pool = pool;
 	(*tp)->stack_size = stack_size;
 	(*tp)->priority = priority;
 	(*tp)->state = TP_STATE_RUNNING;
 	(*tp)->idle_sec = idle_sec;
 
-	ks_mutex_create(&(*tp)->mutex, KS_MUTEX_FLAG_DEFAULT, (*tp)->pool);
-	ks_q_create(&(*tp)->q, (*tp)->pool, TP_MAX_QLEN);
+	ks_mutex_create(&(*tp)->mutex, KS_MUTEX_FLAG_DEFAULT, pool);
+	ks_q_create(&(*tp)->q, pool, TP_MAX_QLEN);
 
 	check_queue(*tp, KS_FALSE);
 
@@ -223,7 +221,7 @@ KS_DECLARE(ks_status_t) ks_thread_pool_create(ks_thread_pool_t **tp, uint32_t mi
 
 KS_DECLARE(ks_status_t) ks_thread_pool_destroy(ks_thread_pool_t **tp)
 {
-	ks_pool_t *pool;
+	ks_pool_t *pool = NULL;
 
 	ks_assert(tp);
 
@@ -233,7 +231,7 @@ KS_DECLARE(ks_status_t) ks_thread_pool_destroy(ks_thread_pool_t **tp)
 		ks_sleep(100000);
 	}
 
-	pool = (*tp)->pool;
+	pool = ks_pool_get(*tp);
 	ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
@@ -242,7 +240,7 @@ KS_DECLARE(ks_status_t) ks_thread_pool_destroy(ks_thread_pool_t **tp)
 
 KS_DECLARE(ks_status_t) ks_thread_pool_add_job(ks_thread_pool_t *tp, ks_thread_function_t func, void *data)
 {
-	ks_thread_job_t *job = (ks_thread_job_t *) ks_pool_alloc(tp->pool, sizeof(*job));
+	ks_thread_job_t *job = (ks_thread_job_t *) ks_pool_alloc(ks_pool_get(tp), sizeof(*job));
 
 	job->func = func;
 	job->data = data;

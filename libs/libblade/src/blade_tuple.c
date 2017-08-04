@@ -34,14 +34,12 @@
 #include "blade.h"
 
 struct blade_tuple_s {
-	ks_pool_t *pool;
-
 	void *value1;
 	void *value2;
 };
 
 
-static void blade_tuple_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_tuple_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_tuple_t *bt = (blade_tuple_t *)ptr;
 
@@ -65,11 +63,10 @@ KS_DECLARE(ks_status_t) blade_tuple_create(blade_tuple_t **btP, ks_pool_t *pool,
 	ks_assert(pool);
 
 	bt = ks_pool_alloc(pool, sizeof(blade_tuple_t));
-	bt->pool = pool;
 	bt->value1 = value1;
 	bt->value2 = value2;
 
-	ks_pool_set_cleanup(pool, bt, NULL, blade_tuple_cleanup);
+	ks_pool_set_cleanup(bt, NULL, blade_tuple_cleanup);
 
 	*btP = bt;
 
@@ -81,7 +78,7 @@ KS_DECLARE(ks_status_t) blade_tuple_destroy(blade_tuple_t **btP)
 	ks_assert(btP);
 	ks_assert(*btP);
 
-	ks_pool_free((*btP)->pool, btP);
+	ks_pool_free(btP);
 
 	return KS_STATUS_SUCCESS;
 }

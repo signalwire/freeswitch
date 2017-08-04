@@ -184,7 +184,6 @@ extern "C" {
 
 	/** list object */
 	typedef struct {
-		ks_pool_t *pool;
 		ks_rwl_t *lock;
 
 		struct ks_list_entry_s *head_sentinel;

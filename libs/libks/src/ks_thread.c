@@ -79,7 +79,7 @@ void ks_thread_override_default_stacksize(size_t size)
 	thread_default_stacksize = size;
 }
 
-static void ks_thread_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void ks_thread_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_thread_t *thread = (ks_thread_t *) ptr;
 
@@ -243,7 +243,6 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	thread->stack_size = stack_size;
 	thread->flags = flags;
 	thread->priority = priority;
-	thread->pool = pool;
 
 #if defined(WIN32)
 	thread->handle = (void *) _beginthreadex(NULL, (unsigned) thread->stack_size, (unsigned int (__stdcall *) (void *)) thread_launch, thread, 0, NULL);
@@ -293,9 +292,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
   fail:
 	if (thread) {
 		thread->state = KS_THREAD_FAIL;
-		if (pool) {
-			ks_pool_free(pool, &thread);
-		}
+		ks_pool_free(&thread);
 	}
   done:
 	if (status == KS_STATUS_SUCCESS) {
@@ -309,7 +306,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 		}
 
 		*rthread = thread;
-		ks_pool_set_cleanup(pool, thread, NULL, ks_thread_cleanup);
+		ks_pool_set_cleanup(thread, NULL, ks_thread_cleanup);
 	}
 
 	return status;

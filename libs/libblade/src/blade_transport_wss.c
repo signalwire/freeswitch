@@ -41,7 +41,6 @@ typedef struct blade_transport_wss_link_s blade_transport_wss_link_t;
 
 struct blade_transport_wss_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 	blade_transport_t *transport;
 	blade_transport_callbacks_t *callbacks;
 
@@ -59,7 +58,6 @@ struct blade_transport_wss_s {
 
 struct blade_transport_wss_link_s {
 	blade_transport_wss_t *transport;
-	ks_pool_t *pool;
 
 	const char *session_id;
 	ks_socket_t sock;
@@ -109,7 +107,7 @@ static blade_transport_callbacks_t g_transport_wss_callbacks =
 };
 
 
-static void blade_transport_wss_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_transport_wss_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_transport_wss_t *btwss = (blade_transport_wss_t *)ptr;
 
@@ -138,12 +136,11 @@ KS_DECLARE(ks_status_t) blade_transport_wss_create(blade_transport_t **btP, blad
 
     btwss = ks_pool_alloc(pool, sizeof(blade_transport_wss_t));
 	btwss->handle = bh;
-	btwss->pool = pool;
 
 	blade_transport_create(&btwss->transport, bh, pool, BLADE_MODULE_WSS_TRANSPORT_NAME, btwss, &g_transport_wss_callbacks);
 	btwss->callbacks = &g_transport_wss_callbacks;
 
-	ks_pool_set_cleanup(pool, btwss, NULL, blade_transport_wss_cleanup);
+	ks_pool_set_cleanup(btwss, NULL, blade_transport_wss_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -152,7 +149,7 @@ KS_DECLARE(ks_status_t) blade_transport_wss_create(blade_transport_t **btP, blad
 	return KS_STATUS_SUCCESS;
 }
 
-static void blade_transport_wss_link_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_transport_wss_link_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_transport_wss_link_t *btwssl = (blade_transport_wss_link_t *)ptr;
 
@@ -162,7 +159,7 @@ static void blade_transport_wss_link_cleanup(ks_pool_t *pool, void *ptr, void *a
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (btwssl->session_id) ks_pool_free(btwssl->pool, &btwssl->session_id);
+		if (btwssl->session_id) ks_pool_free(&btwssl->session_id);
 		if (btwssl->kws) kws_destroy(&btwssl->kws);
 		else ks_socket_close(&btwssl->sock);
 		break;
@@ -182,11 +179,10 @@ ks_status_t blade_transport_wss_link_create(blade_transport_wss_link_t **btwsslP
 
 	btwssl = ks_pool_alloc(pool, sizeof(blade_transport_wss_link_t));
 	btwssl->transport = btwss;
-	btwssl->pool = pool;
 	btwssl->sock = sock;
 	if (session_id) btwssl->session_id = ks_pstrdup(pool, session_id);
 
-	ks_pool_set_cleanup(pool, btwssl, NULL, blade_transport_wss_link_cleanup);
+	ks_pool_set_cleanup(btwssl, NULL, blade_transport_wss_link_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -403,9 +399,8 @@ ks_status_t blade_transport_wss_listen(blade_transport_wss_t *btwss, ks_sockaddr
 	}
 
 	listener_index = btwss->listeners_count++;
-	btwss->listeners_poll = (struct pollfd *)ks_pool_resize(btwss->pool,
-		btwss->listeners_poll,
-		sizeof(struct pollfd) * btwss->listeners_count);
+	if (!btwss->listeners_poll) btwss->listeners_poll = (struct pollfd *)ks_pool_alloc(ks_pool_get(btwss), sizeof(struct pollfd) * btwss->listeners_count);
+	else btwss->listeners_poll = (struct pollfd *)ks_pool_resize(btwss->listeners_poll, sizeof(struct pollfd) * btwss->listeners_count);
 	ks_assert(btwss->listeners_poll);
 	btwss->listeners_poll[listener_index].fd = listener;
 	btwss->listeners_poll[listener_index].events = POLLIN; // | POLLERR;
@@ -461,7 +456,7 @@ void *blade_transport_wss_listeners_thread(ks_thread_t *thread, void *data)
 				blade_connection_create(&bc, btwss->handle);
 				ks_assert(bc);
 
-				blade_transport_wss_link_create(&btwssl, blade_connection_pool_get(bc), btwss, sock, NULL);
+				blade_transport_wss_link_create(&btwssl, ks_pool_get(bc), btwss, sock, NULL);
 				ks_assert(btwssl);
 
 				blade_connection_transport_set(bc, btwssl, btwss->callbacks);
@@ -561,7 +556,7 @@ ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_transp
 	blade_connection_create(&bc, btwss->handle);
 	ks_assert(bc);
 
-	blade_transport_wss_link_create(&btwssl, blade_connection_pool_get(bc), btwss, sock, session_id);
+	blade_transport_wss_link_create(&btwssl, ks_pool_get(bc), btwss, sock, session_id);
 	ks_assert(btwssl);
 
 	blade_connection_transport_set(bc, btwssl, btwss->callbacks);
@@ -745,7 +740,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	btwssl = (blade_transport_wss_link_t *)blade_connection_transport_get(bc);
 
 	// @todo: SSL init stuffs based on data from config to pass into kws_init
-	if (kws_init(&btwssl->kws, btwssl->sock, NULL, NULL, KWS_BLOCK, btwssl->pool) != KS_STATUS_SUCCESS) {
+	if (kws_init(&btwssl->kws, btwssl->sock, NULL, NULL, KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed websocket init\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
@@ -858,7 +853,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	blade_upstreammgr_masterid_copy(blade_handle_upstreammgr_get(bh), pool, &master_nodeid);
 	if (!master_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
@@ -867,7 +862,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		goto done;
 	}
 	cJSON_AddStringToObject(json_result, "master-nodeid", master_nodeid);
-	ks_pool_free(pool, &master_nodeid);
+	ks_pool_free(&master_nodeid);
 
 
 	// add the list of actual realms the local node will permit the remote node to register or route, this is the same list that the remote side would be adding to the handle with blade_handle_realm_add()
@@ -942,10 +937,10 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 	bh = blade_connection_handle_get(bc);
 	btwssl = (blade_transport_wss_link_t *)blade_connection_transport_get(bc);
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 
 	// @todo: SSL init stuffs based on data from config to pass into kws_init
-	if (kws_init(&btwssl->kws, btwssl->sock, NULL, "/blade:blade.invalid:blade", KWS_BLOCK, btwssl->pool) != KS_STATUS_SUCCESS) {
+	if (kws_init(&btwssl->kws, btwssl->sock, NULL, "/blade:blade.invalid:blade", KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed websocket init\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;

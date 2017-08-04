@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 		blade_connection_t *bc = NULL;
 		blade_identity_t *target = NULL;
 
-		blade_identity_create(&target, blade_handle_pool_get(bh));
+		blade_identity_create(&target, ks_pool_get(bh));
 
 		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) blade_handle_connect(bh, &bc, target, NULL);
 

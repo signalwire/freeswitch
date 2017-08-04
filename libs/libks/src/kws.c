@@ -54,7 +54,6 @@ static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy
 
 
 struct kws_s {
-	ks_pool_t *pool;
 	ks_socket_t sock;
 	kws_type_t type;
 	char *buffer;
@@ -295,7 +294,7 @@ static int ws_server_handshake(kws_t *kws)
 		goto err;
 	}
 
-	kws->uri = ks_pool_alloc(kws->pool, (unsigned long)(e-p) + 1);
+	kws->uri = ks_pool_alloc(ks_pool_get(kws), (unsigned long)(e-p) + 1);
 	strncpy(kws->uri, p, e-p);
 	*(kws->uri + (e-p)) = '\0';
 
@@ -678,7 +677,6 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 	kws_t *kws;
 
 	kws = ks_pool_alloc(pool, sizeof(*kws));
-	kws->pool = pool;
 
 	if ((flags & KWS_CLOSE_SOCK)) {
 		kws->close_sock = 1;
@@ -694,7 +692,7 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 
 	if (client_data) {
 		char *p = NULL;
-		kws->req_uri = ks_pstrdup(kws->pool, client_data);
+		kws->req_uri = ks_pstrdup(pool, client_data);
 
 		if ((p = strchr(kws->req_uri, ':'))) {
 			*p++ = '\0';
@@ -717,8 +715,8 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 	kws->buflen = 1024 * 64;
 	kws->bbuflen = kws->buflen;
 
-	kws->buffer = ks_pool_alloc(kws->pool, (unsigned long)kws->buflen);
-	kws->bbuffer = ks_pool_alloc(kws->pool, (unsigned long)kws->bbuflen);
+	kws->buffer = ks_pool_alloc(pool, (unsigned long)kws->buflen);
+	kws->bbuffer = ks_pool_alloc(pool, (unsigned long)kws->bbuflen);
 	//printf("init %p %ld\n", (void *) kws->bbuffer, kws->bbuflen);
 	//memset(kws->buffer, 0, kws->buflen);
 	//memset(kws->bbuffer, 0, kws->bbuflen);
@@ -767,7 +765,7 @@ KS_DECLARE(void) kws_destroy(kws_t **kwsP)
 	kws->down = 2;
 
 	if (kws->write_buffer) {
-		ks_pool_free(kws->pool, &kws->write_buffer);
+		ks_pool_free(&kws->write_buffer);
 		kws->write_buffer = NULL;
 		kws->write_buffer_len = 0;
 	}
@@ -782,12 +780,12 @@ KS_DECLARE(void) kws_destroy(kws_t **kwsP)
 		kws->ssl = NULL;
 	}
 
-	if (kws->buffer) ks_pool_free(kws->pool, &kws->buffer);
-	if (kws->bbuffer) ks_pool_free(kws->pool, &kws->bbuffer);
+	if (kws->buffer) ks_pool_free(&kws->buffer);
+	if (kws->bbuffer) ks_pool_free(&kws->bbuffer);
 
 	kws->buffer = kws->bbuffer = NULL;
 
-	ks_pool_free(kws->pool, &kws);
+	ks_pool_free(&kws);
 	kws = NULL;
 }
 
@@ -801,7 +799,7 @@ KS_DECLARE(ks_ssize_t) kws_close(kws_t *kws, int16_t reason)
 	kws->down = 1;
 	
 	if (kws->uri) {
-		ks_pool_free(kws->pool, &kws->uri);
+		ks_pool_free(&kws->uri);
 		kws->uri = NULL;
 	}
 
@@ -1014,7 +1012,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				void *tmp;
 				
 				kws->bbuflen = need + blen + kws->rplen;
-				if ((tmp = ks_pool_resize(kws->pool, kws->bbuffer, (unsigned long)kws->bbuflen))) {
+				if ((tmp = ks_pool_resize(kws->bbuffer, (unsigned long)kws->bbuflen))) {
 					kws->bbuffer = tmp;
 				} else {
 					abort();
@@ -1156,7 +1154,8 @@ KS_DECLARE(ks_ssize_t) kws_write_frame(kws_t *kws, kws_opcode_t oc, void *data, 
 		void *tmp;
 
 		kws->write_buffer_len = hlen + bytes + 1;
-		if ((tmp = ks_pool_resize(kws->pool, kws->write_buffer, (unsigned long)kws->write_buffer_len))) {
+		if (!kws->write_buffer) kws->write_buffer = ks_pool_alloc(ks_pool_get(kws), (unsigned long)kws->write_buffer_len);
+		else if ((tmp = ks_pool_resize(kws->write_buffer, (unsigned long)kws->write_buffer_len))) {
 			kws->write_buffer = tmp;
 		} else {
 			abort();

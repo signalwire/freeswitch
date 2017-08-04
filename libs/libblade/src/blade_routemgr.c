@@ -35,13 +35,12 @@
 
 struct blade_routemgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *routes; // id, id
 };
 
 
-static void blade_routemgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_routemgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_routemgr_t *brmgr = (blade_routemgr_t *)ptr;
 
@@ -69,13 +68,12 @@ KS_DECLARE(ks_status_t) blade_routemgr_create(blade_routemgr_t **brmgrP, blade_h
 
 	brmgr = ks_pool_alloc(pool, sizeof(blade_routemgr_t));
 	brmgr->handle = bh;
-	brmgr->pool = pool;
 
 	// @note can let removes free keys and values for routes, both are strings and allocated from the same pool as the hash itself
-	ks_hash_create(&brmgr->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, brmgr->pool);
+	ks_hash_create(&brmgr->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	ks_assert(brmgr->routes);
 
-	ks_pool_set_cleanup(pool, brmgr, NULL, blade_routemgr_cleanup);
+	ks_pool_set_cleanup(brmgr, NULL, blade_routemgr_cleanup);
 
 	*brmgrP = brmgr;
 
@@ -93,9 +91,7 @@ KS_DECLARE(ks_status_t) blade_routemgr_destroy(blade_routemgr_t **brmgrP)
 	brmgr = *brmgrP;
 	*brmgrP = NULL;
 
-	ks_assert(brmgr);
-
-	pool = brmgr->pool;
+	pool = ks_pool_get(brmgr);
 
 	ks_pool_close(&pool);
 
@@ -126,6 +122,7 @@ KS_DECLARE(blade_session_t *) blade_routemgr_route_lookup(blade_routemgr_t *brmg
 
 KS_DECLARE(ks_status_t) blade_routemgr_route_add(blade_routemgr_t *brmgr, const char *target, const char *router)
 {
+	ks_pool_t *pool = NULL;
 	char *key = NULL;
 	char *value = NULL;
 
@@ -133,8 +130,10 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_add(blade_routemgr_t *brmgr, const 
 	ks_assert(target);
 	ks_assert(router);
 
-	key = ks_pstrdup(brmgr->pool, target);
-	value = ks_pstrdup(brmgr->pool, router);
+	pool = ks_pool_get(brmgr);
+
+	key = ks_pstrdup(pool, target);
+	value = ks_pstrdup(pool, router);
 
 	ks_hash_insert(brmgr->routes, (void *)key, (void *)value);
 

@@ -34,8 +34,6 @@
 #include "blade.h"
 
 struct blade_subscription_s {
-	ks_pool_t *pool;
-
 	const char *protocol;
 	const char *realm;
 	const char *channel;
@@ -46,7 +44,7 @@ struct blade_subscription_s {
 };
 
 
-static void blade_subscription_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_subscription_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_subscription_t *bsub = (blade_subscription_t *)ptr;
 
@@ -56,9 +54,9 @@ static void blade_subscription_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (bsub->protocol) ks_pool_free(bsub->pool, &bsub->protocol);
-		if (bsub->realm) ks_pool_free(bsub->pool, &bsub->subscribers);
-		if (bsub->channel) ks_pool_free(bsub->pool, &bsub->channel);
+		if (bsub->protocol) ks_pool_free(&bsub->protocol);
+		if (bsub->realm) ks_pool_free(&bsub->subscribers);
+		if (bsub->channel) ks_pool_free(&bsub->channel);
 		if (bsub->subscribers) ks_hash_destroy(&bsub->subscribers);
 		break;
 	case KS_MPCL_DESTROY:
@@ -77,15 +75,14 @@ KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, 
 	ks_assert(channel);
 
 	bsub = ks_pool_alloc(pool, sizeof(blade_subscription_t));
-	bsub->pool = pool;
 	bsub->protocol = ks_pstrdup(pool, protocol);
 	bsub->realm = ks_pstrdup(pool, realm);
 	bsub->channel = ks_pstrdup(pool, channel);
 
-	ks_hash_create(&bsub->subscribers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bsub->pool);
+	ks_hash_create(&bsub->subscribers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bsub->subscribers);
 
-	ks_pool_set_cleanup(pool, bsub, NULL, blade_subscription_cleanup);
+	ks_pool_set_cleanup(bsub, NULL, blade_subscription_cleanup);
 
 	*bsubP = bsub;
 
@@ -101,7 +98,7 @@ KS_DECLARE(ks_status_t) blade_subscription_destroy(blade_subscription_t **bsubP)
 
 	bsub = *bsubP;
 
-	ks_pool_free(bsub->pool, bsubP);
+	ks_pool_free(bsubP);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -145,7 +142,7 @@ KS_DECLARE(ks_status_t) blade_subscription_subscribers_add(blade_subscription_t 
 	ks_assert(bsub);
 	ks_assert(nodeid);
 
-	key = ks_pstrdup(bsub->pool, nodeid);
+	key = ks_pstrdup(ks_pool_get(bsub), nodeid);
 	ks_hash_insert(bsub->subscribers, (void *)key, (void *)KS_TRUE);
 
 	return KS_STATUS_SUCCESS;

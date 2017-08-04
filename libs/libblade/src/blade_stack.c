@@ -34,7 +34,6 @@
 #include "blade.h"
 
 struct blade_handle_s {
-	ks_pool_t *pool;
 	ks_thread_pool_t *tpool;
 
 	blade_transportmgr_t *transportmgr;
@@ -57,7 +56,7 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void *data);
 
 
-static void blade_handle_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_handle_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_handle_t *bh = (blade_handle_t *)ptr;
 
@@ -98,7 +97,6 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	ks_assert(tpool);
 
 	bh = ks_pool_alloc(pool, sizeof(blade_handle_t));
-	bh->pool = pool;
 	bh->tpool = tpool;
 
 	blade_transportmgr_create(&bh->transportmgr, bh);
@@ -126,7 +124,7 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	ks_assert(bh->sessionmgr);
 
 
-	ks_pool_set_cleanup(pool, bh, NULL, blade_handle_cleanup);
+	ks_pool_set_cleanup(bh, NULL, blade_handle_cleanup);
 
 	*bhP = bh;
 
@@ -141,17 +139,16 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 	ks_pool_t *pool;
 
 	ks_assert(bhP);
+	ks_assert(*bhP);
 
 	bh = *bhP;
 	*bhP = NULL;
 
-	ks_assert(bh);
-
-	pool = bh->pool;
-
 	// shutdown cannot happen inside of the cleanup callback because it'll lock a mutex for the pool during cleanup callbacks which connections and sessions need to finish their cleanup
 	// and more importantly, memory needs to remain intact until shutdown is completed to avoid various things hitting teardown before shutdown runs
 	blade_handle_shutdown(bh);
+
+	pool = ks_pool_get(bh);
 
 	ks_pool_close(&pool);
 
@@ -261,12 +258,6 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_pool_t *) blade_handle_pool_get(blade_handle_t *bh)
-{
-	ks_assert(bh);
-	return bh->pool;
-}
-
 KS_DECLARE(ks_thread_pool_t *) blade_handle_tpool_get(blade_handle_t *bh)
 {
 	ks_assert(bh);
@@ -354,7 +345,6 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 
 typedef struct blade_rpcsubscribe_data_s blade_rpcsubscribe_data_t;
 struct blade_rpcsubscribe_data_s {
-	ks_pool_t *pool;
 	blade_rpc_response_callback_t original_callback;
 	void *original_data;
 	blade_rpc_request_callback_t channel_callback;
@@ -381,7 +371,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcregister(blade_handle_t *bh, const char 
 		goto done;
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.register");
@@ -485,7 +475,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *
 		goto done;
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.publish");
@@ -498,13 +488,13 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, const char *
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "requester-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	blade_upstreammgr_masterid_copy(bh->upstreammgr, pool, &id);
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "responder-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	// @todo may want to switch this system to use a blade_rpcpublish_args_t with validation on the contents on this list internally
 	// and to produce the entire json block internally in case the channel args change to include additional information like an encryption key,
@@ -677,7 +667,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcauthorize(blade_handle_t *bh, const char
 		goto done;
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.authorize");
@@ -692,13 +682,13 @@ KS_DECLARE(ks_status_t) blade_handle_rpcauthorize(blade_handle_t *bh, const char
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "requester-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	blade_upstreammgr_masterid_copy(bh->upstreammgr, pool, &id);
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "responder-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	cJSON_AddItemToObject(req_params, "channels", cJSON_Duplicate(channels, 1));
 
@@ -899,7 +889,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *p
 		goto done;
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.locate");
@@ -912,13 +902,13 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *p
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "requester-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	blade_upstreammgr_masterid_copy(bh->upstreammgr, pool, &id);
 	ks_assert(id);
 
 	cJSON_AddStringToObject(req_params, "responder-nodeid", id);
-	ks_pool_free(pool, &id);
+	ks_pool_free(&id);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate request started\n", blade_session_id_get(bs));
 
@@ -1057,7 +1047,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 		}
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.execute");
@@ -1070,7 +1060,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 	ks_assert(localid);
 
 	cJSON_AddStringToObject(req_params, "requester-nodeid", localid);
-	ks_pool_free(pool, &localid);
+	ks_pool_free(&localid);
 
 	cJSON_AddStringToObject(req_params, "responder-nodeid", nodeid);
 
@@ -1317,7 +1307,7 @@ KS_DECLARE(void) blade_rpcexecute_response_send(blade_rpc_request_t *brpcreq, cJ
 }
 
 
-static void blade_rpcsubscribe_data_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_rpcsubscribe_data_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_rpcsubscribe_data_t *brpcsd = (blade_rpcsubscribe_data_t *)ptr;
 
@@ -1327,7 +1317,7 @@ static void blade_rpcsubscribe_data_cleanup(ks_pool_t *pool, void *ptr, void *ar
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (brpcsd->relayed_messageid) ks_pool_free(brpcsd->pool, &brpcsd->relayed_messageid);
+		if (brpcsd->relayed_messageid) ks_pool_free(&brpcsd->relayed_messageid);
 		break;
 	case KS_MPCL_DESTROY:
 		break;
@@ -1348,7 +1338,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char
 	ks_assert(realm);
 	ks_assert(subscribe_channels || unsubscribe_channels);
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	// @note this is always produced by a subscriber, and sent upstream, master will only use the internal raw call
@@ -1357,22 +1347,21 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, const char
 		goto done;
 	}
 
-	blade_upstreammgr_localid_copy(bh->upstreammgr, bh->pool, &localid);
+	blade_upstreammgr_localid_copy(bh->upstreammgr, ks_pool_get(bh), &localid);
 	ks_assert(localid);
 
 	// @note since this is allocated in the handle's pool, if the handle is shutdown during a pending request, then the data
 	// memory will be cleaned up with the handle, otherwise should be cleaned up in the response callback
 	temp_data = (blade_rpcsubscribe_data_t *)ks_pool_alloc(pool, sizeof(blade_rpcsubscribe_data_t));
-	temp_data->pool = pool;
 	temp_data->original_callback = callback;
 	temp_data->original_data = data;
 	temp_data->channel_callback = channel_callback;
 	temp_data->channel_data = channel_data;
-	ks_pool_set_cleanup(pool, temp_data, NULL, blade_rpcsubscribe_data_cleanup);
+	ks_pool_set_cleanup(temp_data, NULL, blade_rpcsubscribe_data_cleanup);
 
 	ret = blade_handle_rpcsubscribe_raw(bh, protocol, realm, subscribe_channels, unsubscribe_channels, localid, KS_FALSE, blade_rpcsubscribe_response_handler, temp_data);
 
-	ks_pool_free(bh->pool, &localid);
+	ks_pool_free(&localid);
 
 done:
 	if (bs) blade_session_read_unlock(bs);
@@ -1410,7 +1399,7 @@ ks_status_t blade_handle_rpcsubscribe_raw(blade_handle_t *bh, const char *protoc
 		goto done;
 	}
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	if (unsubscribe_channels) {
@@ -1467,7 +1456,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	bh = blade_rpc_request_handle_get(brpcreq);
 	ks_assert(bh);
 
-	pool = blade_handle_pool_get(bh);
+	pool = ks_pool_get(bh);
 	ks_assert(pool);
 
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
@@ -1571,9 +1560,8 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 		blade_session_send(bs, res, NULL, NULL);
 	} else {
 		blade_rpcsubscribe_data_t *temp_data = (blade_rpcsubscribe_data_t *)ks_pool_alloc(pool, sizeof(blade_rpcsubscribe_data_t));
-		temp_data->pool = pool;
 		temp_data->relayed_messageid = ks_pstrdup(pool, blade_rpc_request_messageid_get(brpcreq));
-		ks_pool_set_cleanup(pool, temp_data, NULL, blade_rpcsubscribe_data_cleanup);
+		ks_pool_set_cleanup(temp_data, NULL, blade_rpcsubscribe_data_cleanup);
 
 		blade_handle_rpcsubscribe_raw(bh, req_params_protocol, req_params_realm, req_params_subscribe_channels, req_params_unsubscribe_channels, req_params_subscriber_nodeid, downstream, blade_rpcsubscribe_response_handler, temp_data);
 	}
@@ -1604,7 +1592,6 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 	cJSON *res_result_failed_channels = NULL;
 
 	ks_assert(brpcres);
-	ks_assert(data);
 
 	bh = blade_rpc_response_handle_get(brpcres);
 	ks_assert(bh);
@@ -1695,7 +1682,7 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 	}
 
 done:
-	if (temp_data) ks_pool_free(temp_data->pool, &temp_data);
+	if (temp_data) ks_pool_free(&temp_data);
 	blade_session_read_unlock(bs);
 	return ret;
 }
@@ -1798,7 +1785,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 		const char *localid = NULL;
 		ks_pool_t *pool = NULL;
 
-		pool = blade_handle_pool_get(bh);
+		pool = ks_pool_get(bh);
 
 		blade_upstreammgr_localid_copy(bh->upstreammgr, pool, &localid);
 		ks_assert(localid);
@@ -1807,7 +1794,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 			callback = blade_subscription_callback_get(bsub);
 			if (callback) ret = callback(brpcreq, blade_subscription_callback_data_get(bsub));
 		}
-		ks_pool_free(pool, &localid);
+		ks_pool_free(&localid);
 	}
 
 	// build the actual response finally

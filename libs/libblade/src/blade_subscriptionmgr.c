@@ -35,7 +35,6 @@
 
 struct blade_subscriptionmgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *subscriptions; // key, blade_subscription_t*
 	ks_hash_t *subscriptions_cleanup; // target, ks_hash_t*
@@ -43,7 +42,7 @@ struct blade_subscriptionmgr_s {
 };
 
 
-static void blade_subscriptionmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_subscriptionmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_routemgr_t *brmgr = (blade_routemgr_t *)ptr;
 
@@ -71,16 +70,15 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_create(blade_subscriptionmgr_t **b
 
 	bsmgr = ks_pool_alloc(pool, sizeof(blade_subscriptionmgr_t));
 	bsmgr->handle = bh;
-	bsmgr->pool = pool;
 
 	// @note can let removes free keys and values for subscriptions, both are allocated from the same pool as the hash itself
-	ks_hash_create(&bsmgr->subscriptions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bsmgr->pool);
+	ks_hash_create(&bsmgr->subscriptions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	ks_assert(bsmgr->subscriptions);
 
-	ks_hash_create(&bsmgr->subscriptions_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bsmgr->pool);
+	ks_hash_create(&bsmgr->subscriptions_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	ks_assert(bsmgr->subscriptions_cleanup);
 
-	ks_pool_set_cleanup(pool, bsmgr, NULL, blade_subscriptionmgr_cleanup);
+	ks_pool_set_cleanup(bsmgr, NULL, blade_subscriptionmgr_cleanup);
 
 	*bsmgrP = bsmgr;
 
@@ -98,9 +96,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_destroy(blade_subscriptionmgr_t **
 	bsmgr = *bsmgrP;
 	*bsmgrP = NULL;
 
-	ks_assert(bsmgr);
-
-	pool = bsmgr->pool;
+	pool = ks_pool_get(bsmgr);
 
 	ks_pool_close(&pool);
 
@@ -138,19 +134,20 @@ KS_DECLARE(blade_subscription_t *) blade_subscriptionmgr_subscription_lookup(bla
 	ks_assert(realm);
 	ks_assert(channel);
 
-	key = ks_psprintf(bsmgr->pool, "%s@%s/%s", protocol, realm, channel);
+	key = ks_psprintf(ks_pool_get(bsmgr), "%s@%s/%s", protocol, realm, channel);
 
 	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)key, KS_READLOCKED);
 	// @todo if (bsub) blade_subscription_read_lock(bsub);
 	ks_hash_read_unlock(bsmgr->subscriptions);
 
-	ks_pool_free(bsmgr->pool, &key);
+	ks_pool_free(&key);
 
 	return bsub;
 }
 
 KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *realm, const char *channel, const char *subscriber)
 {
+	ks_pool_t *pool = NULL;
 	char *key = NULL;
 	blade_subscription_t *bsub = NULL;
 	ks_hash_t *bsub_cleanup = NULL;
@@ -162,29 +159,31 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 	ks_assert(channel);
 	ks_assert(subscriber);
 
-	key = ks_psprintf(bsmgr->pool, "%s@%s/%s", protocol, realm, channel);
+	pool = ks_pool_get(bsmgr);
+
+	key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
 
 	ks_hash_write_lock(bsmgr->subscriptions);
 
 	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)key, KS_UNLOCKED);
 
 	if (!bsub) {
-		blade_subscription_create(&bsub, bsmgr->pool, protocol, realm, channel);
+		blade_subscription_create(&bsub, pool, protocol, realm, channel);
 		ks_assert(bsub);
 
-		ks_hash_insert(bsmgr->subscriptions, (void *)ks_pstrdup(bsmgr->pool, key), bsub);
+		ks_hash_insert(bsmgr->subscriptions, (void *)ks_pstrdup(pool, key), bsub);
 		propagate = KS_TRUE;
 	}
 
 	bsub_cleanup = (ks_hash_t *)ks_hash_search(bsmgr->subscriptions_cleanup, (void *)subscriber, KS_UNLOCKED);
 	if (!bsub_cleanup) {
-		ks_hash_create(&bsub_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bsmgr->pool);
+		ks_hash_create(&bsub_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 		ks_assert(bsub_cleanup);
 
 		ks_log(KS_LOG_DEBUG, "Subscription Added: %s\n", key);
-		ks_hash_insert(bsmgr->subscriptions_cleanup, (void *)ks_pstrdup(bsmgr->pool, subscriber), (void *)bsub_cleanup);
+		ks_hash_insert(bsmgr->subscriptions_cleanup, (void *)ks_pstrdup(pool, subscriber), (void *)bsub_cleanup);
 	}
-	ks_hash_insert(bsub_cleanup, (void *)ks_pstrdup(bsmgr->pool, key), (void *)KS_TRUE);
+	ks_hash_insert(bsub_cleanup, (void *)ks_pstrdup(pool, key), (void *)KS_TRUE);
 
 	blade_subscription_subscribers_add(bsub, subscriber);
 
@@ -192,7 +191,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 
 	ks_log(KS_LOG_DEBUG, "Subscriber Added: %s to %s\n", subscriber, key);
 
-	ks_pool_free(bsmgr->pool, &key);
+	ks_pool_free(&key);
 
 	if (bsubP) *bsubP = bsub;
 
@@ -212,7 +211,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscription
 	ks_assert(channel);
 	ks_assert(subscriber);
 
-	key = ks_psprintf(bsmgr->pool, "%s@%s/%s", protocol, realm, channel);
+	key = ks_psprintf(ks_pool_get(bsmgr), "%s@%s/%s", protocol, realm, channel);
 
 	ks_hash_write_lock(bsmgr->subscriptions);
 
@@ -220,26 +219,27 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscription
 
 	if (bsub) {
 		bsub_cleanup = (ks_hash_t *)ks_hash_search(bsmgr->subscriptions_cleanup, (void *)subscriber, KS_UNLOCKED);
-		ks_assert(bsub_cleanup);
-		ks_hash_remove(bsub_cleanup, key);
+		if (bsub_cleanup) {
+			ks_hash_remove(bsub_cleanup, key);
 
-		if (ks_hash_count(bsub_cleanup) == 0) {
-			ks_hash_remove(bsmgr->subscriptions_cleanup, (void *)subscriber);
-		}
+			if (ks_hash_count(bsub_cleanup) == 0) {
+				ks_hash_remove(bsmgr->subscriptions_cleanup, (void *)subscriber);
+			}
 
-		ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from %s\n", subscriber, key);
-		blade_subscription_subscribers_remove(bsub, subscriber);
+			ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from %s\n", subscriber, key);
+			blade_subscription_subscribers_remove(bsub, subscriber);
 
-		if (ks_hash_count(blade_subscription_subscribers_get(bsub)) == 0) {
-			ks_log(KS_LOG_DEBUG, "Subscription Removed: %s\n", key);
-			ks_hash_remove(bsmgr->subscriptions, (void *)key);
-			propagate = KS_TRUE;
+			if (ks_hash_count(blade_subscription_subscribers_get(bsub)) == 0) {
+				ks_log(KS_LOG_DEBUG, "Subscription Removed: %s\n", key);
+				ks_hash_remove(bsmgr->subscriptions, (void *)key);
+				propagate = KS_TRUE;
+			}
 		}
 	}
 
 	ks_hash_write_unlock(bsmgr->subscriptions);
 
-	ks_pool_free(bsmgr->pool, &key);
+	ks_pool_free(&key);
 
 	if (bsubP) *bsubP = bsub;
 
@@ -248,10 +248,13 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscription
 
 KS_DECLARE(void) blade_subscriptionmgr_purge(blade_subscriptionmgr_t *bsmgr, const char *target)
 {
+	ks_pool_t *pool = NULL;
 	ks_bool_t unsubbed = KS_FALSE;
 
 	ks_assert(bsmgr);
 	ks_assert(target);
+
+	pool = ks_pool_get(bsmgr);
 
 	while (!unsubbed) {
 		ks_hash_t *subscriptions = NULL;
@@ -276,24 +279,25 @@ KS_DECLARE(void) blade_subscriptionmgr_purge(blade_subscriptionmgr_t *bsmgr, con
 			ks_assert(bsub);
 
 			// @note allocate these to avoid lifecycle issues when the last subscriber is removed causing the subscription to be removed
-			protocol = ks_pstrdup(bsmgr->pool, blade_subscription_protocol_get(bsub));
-			realm = ks_pstrdup(bsmgr->pool, blade_subscription_realm_get(bsub));
-			channel = ks_pstrdup(bsmgr->pool, blade_subscription_channel_get(bsub));
+			protocol = ks_pstrdup(pool, blade_subscription_protocol_get(bsub));
+			realm = ks_pstrdup(pool, blade_subscription_realm_get(bsub));
+			channel = ks_pstrdup(pool, blade_subscription_channel_get(bsub));
 		}
 		ks_hash_read_unlock(bsmgr->subscriptions);
 
 		if (!unsubbed) {
 			blade_subscriptionmgr_subscriber_remove(bsmgr, NULL, protocol, realm, channel, target);
 
-			ks_pool_free(bsmgr->pool, &protocol);
-			ks_pool_free(bsmgr->pool, &realm);
-			ks_pool_free(bsmgr->pool, &channel);
+			ks_pool_free(&protocol);
+			ks_pool_free(&realm);
+			ks_pool_free(&channel);
 		}
 	}
 }
 
 KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t *bsmgr, const char *excluded_nodeid, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
+	ks_pool_t *pool = NULL;
 	const char *bsub_key = NULL;
 	blade_subscription_t *bsub = NULL;
 	blade_session_t *bs = NULL;
@@ -305,9 +309,11 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 	ks_assert(realm);
 	ks_assert(channel);
 
-	bsub_key = ks_psprintf(bsmgr->pool, "%s@%s/%s", protocol, realm, channel);
+	pool = ks_pool_get(bsmgr);
 
-	blade_rpc_request_raw_create(bsmgr->pool, &req, &req_params, NULL, "blade.broadcast");
+	bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+
+	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.broadcast");
 	cJSON_AddStringToObject(req_params, "protocol", protocol);
 	cJSON_AddStringToObject(req_params, "realm", realm);
 	cJSON_AddStringToObject(req_params, "channel", channel);
@@ -359,7 +365,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 
 	cJSON_Delete(req);
 
-	ks_pool_free(bsmgr->pool, &bsub_key);
+	ks_pool_free(&bsub_key);
 
 	return KS_STATUS_SUCCESS;
 }

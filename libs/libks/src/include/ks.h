@@ -87,7 +87,6 @@ _Check_return_ static __inline int _zstr(_In_opt_z_ const char *s)
 KS_DECLARE(ks_status_t) ks_init(void);
 KS_DECLARE(ks_status_t) ks_shutdown(void);
 KS_DECLARE(ks_pool_t *) ks_global_pool(void);
-KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_callback_t callback, void *arg);
 KS_DECLARE(int) ks_vasprintf(char **ret, const char *fmt, va_list ap);
 
 //KS_DECLARE_DATA extern ks_logger_t ks_logger;

@@ -35,7 +35,6 @@
 
 struct blade_session_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	volatile blade_session_state_t state;
 
@@ -63,7 +62,7 @@ ks_status_t blade_session_onstate_shutdown(blade_session_t *bs);
 ks_status_t blade_session_onstate_run(blade_session_t *bs);
 ks_status_t blade_session_process(blade_session_t *bs, cJSON *json);
 
-static void blade_session_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_session_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_session_t *bs = (blade_session_t *)ptr;
 
@@ -97,7 +96,6 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 
 	bs = ks_pool_alloc(pool, sizeof(blade_session_t));
 	bs->handle = bh;
-	bs->pool = pool;
 
 	if (id) bs->id = ks_pstrdup(pool, id);
 	else {
@@ -117,10 +115,10 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 	ks_q_create(&bs->receiving, pool, 0);
 	ks_assert(bs->receiving);
 
-	ks_hash_create(&bs->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bs->pool);
+	ks_hash_create(&bs->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bs->realms);
 
-	ks_hash_create(&bs->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bs->pool);
+	ks_hash_create(&bs->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bs->routes);
 
 	bs->properties = cJSON_CreateObject();
@@ -128,7 +126,7 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
     ks_rwl_create(&bs->properties_lock, pool);
 	ks_assert(bs->properties_lock);
 
-	ks_pool_set_cleanup(pool, bs, NULL, blade_session_cleanup);
+	ks_pool_set_cleanup(bs, NULL, blade_session_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created\n");
 
@@ -146,12 +144,11 @@ KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP)
 	ks_assert(*bsP);
 
 	bs = *bsP;
-
-	pool = bs->pool;
-	//ks_pool_free(bs->pool, bsP);
-	ks_pool_close(&pool);
-
 	*bsP = NULL;
+
+	pool = ks_pool_get(bs);
+
+	ks_pool_close(&pool);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -235,7 +232,7 @@ KS_DECLARE(ks_status_t) blade_session_realm_add(blade_session_t *bs, const char 
 	ks_assert(bs);
 	ks_assert(realm);
 
-	key = ks_pstrdup(bs->pool, realm);
+	key = ks_pstrdup(ks_pool_get(bs), realm);
 	ks_hash_insert(bs->realms, (void *)key, (void *)KS_TRUE);
 
 	return KS_STATUS_SUCCESS;
@@ -264,7 +261,7 @@ KS_DECLARE(ks_status_t) blade_session_route_add(blade_session_t *bs, const char 
 	ks_assert(bs);
 	ks_assert(nodeid);
 
-	key = ks_pstrdup(bs->pool, nodeid);
+	key = ks_pstrdup(ks_pool_get(bs), nodeid);
 	ks_hash_insert(bs->routes, (void *)key, (void *)KS_TRUE);
 
 	return KS_STATUS_SUCCESS;
@@ -404,9 +401,9 @@ KS_DECLARE(ks_status_t) blade_session_connection_set(blade_session_t *bs, const 
 	if (id) {
 		if (bs->connection) {
 			// @todo best that can be done in this situation is see if the connection is still available, and if so then disconnect it... this really shouldn't happen
-			ks_pool_free(bs->pool, &bs->connection);
+			ks_pool_free(&bs->connection);
 		}
-		bs->connection = ks_pstrdup(bs->pool, id);
+		bs->connection = ks_pstrdup(ks_pool_get(bs), id);
 		ks_assert(bs->connection);
 
 		bs->ttl = 0;
@@ -417,7 +414,7 @@ KS_DECLARE(ks_status_t) blade_session_connection_set(blade_session_t *bs, const 
 	} else if (bs->connection) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) cleared connection (%s)\n", bs->id, bs->connection);
 
-		ks_pool_free(bs->pool, &bs->connection);
+		ks_pool_free(&bs->connection);
 
 		bs->ttl = ks_time_now() + (5 * KS_USEC_PER_SEC);
 	}
@@ -601,7 +598,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 		// 1) Sending a request (client: method caller or consumer)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
 
-		blade_rpc_request_create(&brpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, callback, data);
+		blade_rpc_request_create(&brpcreq, bs->handle, ks_pool_get(bs->handle), bs->id, json, callback, data);
 		ks_assert(brpcreq);
 
 		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
@@ -727,7 +724,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		callback = blade_rpc_callback_get(brpc);
 		ks_assert(callback);
 
-		blade_rpc_request_create(&brpcreq, bs->handle, blade_handle_pool_get(bs->handle), bs->id, json, NULL, NULL);
+		blade_rpc_request_create(&brpcreq, bs->handle, ks_pool_get(bs->handle), bs->id, json, NULL, NULL);
 		ks_assert(brpcreq);
 
 		disconnect = callback(brpcreq, blade_rpc_data_get(brpc));
@@ -787,7 +784,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 
 		callback = blade_rpc_request_callback_get(brpcreq);
 
-		blade_rpc_response_create(&brpcres, bs->handle, bs->pool, bs->id, brpcreq, json);
+		blade_rpc_response_create(&brpcres, bs->handle, ks_pool_get(bs), bs->id, brpcreq, json);
 		ks_assert(brpcres);
 
 		if (callback) disconnect = callback(brpcres, blade_rpc_request_data_get(brpcreq));

@@ -184,9 +184,9 @@ static void *thread_test_function_atatched(ks_thread_t *thread, void *data)
 
 	for (i = 0; i < LOOP_COUNT; i++) {
 		if (last_mem) {
-			ks_pool_free(thread->pool, &last_mem);
+			ks_pool_free(&last_mem);
 		}
-		mem = ks_pool_alloc(thread->pool, 1024);
+		mem = ks_pool_alloc(ks_pool_get(thread), 1024);
 		last_mem = mem;
 	}
 	
@@ -245,7 +245,7 @@ static void check_thread_priority(void)
 	ok( ks_thread_priority(thread_p) == KS_PRI_IMPORTANT );
 	end_todo;
 
-	ks_pool_free(pool, &thread_p);
+	ks_pool_free(&thread_p);
 }
 
 static void join_threads(void)

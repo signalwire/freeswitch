@@ -49,7 +49,6 @@ typedef struct ks_network_node ks_network_node_t;
 struct ks_network_list {
 	struct ks_network_node *node_head;
 	ks_bool_t default_type;
-	ks_pool_t *pool;
 	char *name;
 };
 
@@ -64,9 +63,8 @@ KS_DECLARE(ks_status_t) ks_network_list_create(ks_network_list_t **list, const c
 	}
 
 	new_list = ks_pool_alloc(pool, sizeof(**list));
-	new_list->pool = pool;
 	new_list->default_type = default_type;
-	new_list->name = ks_pstrdup(new_list->pool, name);
+	new_list->name = ks_pstrdup(pool, name);
 
 	*list = new_list;
 
@@ -215,6 +213,7 @@ KS_DECLARE(int) ks_parse_cidr(const char *string, ks_ip_t *ip, ks_ip_t *mask, ui
 KS_DECLARE(ks_status_t) ks_network_list_perform_add_cidr_token(ks_network_list_t *list, const char *cidr_str, ks_bool_t ok,
 																		   const char *token)
 {
+	ks_pool_t *pool = NULL;
 	ks_ip_t ip, mask;
 	uint32_t bits;
 	ks_network_node_t *node;
@@ -231,13 +230,15 @@ KS_DECLARE(ks_status_t) ks_network_list_perform_add_cidr_token(ks_network_list_t
 		return KS_STATUS_GENERR;
 	}
 
-	node = ks_pool_alloc(list->pool, sizeof(*node));
+	pool = ks_pool_get(list);
+
+	node = ks_pool_alloc(pool, sizeof(*node));
 
 	node->ip = ip;
 	node->mask = mask;
 	node->ok = ok;
 	node->bits = bits;
-	node->str = ks_pstrdup(list->pool, cidr_str);
+	node->str = ks_pstrdup(pool, cidr_str);
 
 	if (strchr(cidr_str,':')) {
 		node->family = AF_INET6;
@@ -246,7 +247,7 @@ KS_DECLARE(ks_status_t) ks_network_list_perform_add_cidr_token(ks_network_list_t
 	}
 
 	if (!zstr(token)) {
-		node->token = ks_pstrdup(list->pool, token);
+		node->token = ks_pstrdup(pool, token);
 	}
 
 	node->next = list->node_head;
@@ -288,13 +289,16 @@ KS_DECLARE(ks_status_t) ks_network_list_add_cidr_token(ks_network_list_t *list, 
 
 KS_DECLARE(ks_status_t) ks_network_list_add_host_mask(ks_network_list_t *list, const char *host, const char *mask_str, ks_bool_t ok)
 {
+	ks_pool_t *pool = NULL;
 	ks_ip_t ip, mask;
 	ks_network_node_t *node;
 
 	ks_inet_pton(AF_INET, host, &ip);
 	ks_inet_pton(AF_INET, mask_str, &mask);
 
-	node = ks_pool_alloc(list->pool, sizeof(*node));
+	pool = ks_pool_get(list);
+
+	node = ks_pool_alloc(pool, sizeof(*node));
 
 	node->ip.v4 = ntohl(ip.v4);
 	node->mask.v4 = ntohl(mask.v4);
@@ -305,7 +309,7 @@ KS_DECLARE(ks_status_t) ks_network_list_add_host_mask(ks_network_list_t *list, c
 	mask.v4 = (mask.v4 & 0x33333333) + ((mask.v4 >> 2) & 0x33333333);
 	node->bits = (((mask.v4 + (mask.v4 >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 
-	node->str = ks_psprintf(list->pool, "%s:%s", host, mask_str);
+	node->str = ks_psprintf(pool, "%s:%s", host, mask_str);
 
 	node->next = list->node_head;
 	list->node_head = node;

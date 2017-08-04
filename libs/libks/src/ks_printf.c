@@ -913,7 +913,11 @@ KS_DECLARE(char *) ks_mprintf(const char *zFormat, ...)
 */
 static void *pool_realloc(void *old, int size, void *arg)
 {
-	return ks_pool_resize(arg, old, size);
+	void *addr = NULL;
+	ks_pool_t *pool = (ks_pool_t *)arg;
+	if (!old || !ks_pool_verify(old)) addr = ks_pool_alloc(pool, size);
+	else addr = ks_pool_resize(old, size);
+	return addr;
 }
 
 /*

@@ -35,22 +35,19 @@
 
 struct blade_sessionmgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	ks_hash_t *sessions; // id, blade_session_t*
 	ks_hash_t *callbacks; // id, blade_session_callback_data_t*
 };
 
 struct blade_session_callback_data_s {
-	ks_pool_t *pool;
-
 	const char *id;
 	void *data;
 	blade_session_callback_t callback;
 };
 
 
-static void blade_sessionmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_sessionmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_sessionmgr_t *bsmgr = (blade_sessionmgr_t *)ptr;
 
@@ -66,7 +63,7 @@ static void blade_sessionmgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_p
 	}
 }
 
-static void blade_session_callback_data_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_session_callback_data_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_session_callback_data_t *bscd = (blade_session_callback_data_t *)ptr;
 
@@ -76,7 +73,7 @@ static void blade_session_callback_data_cleanup(ks_pool_t *pool, void *ptr, void
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		ks_pool_free(bscd->pool, &bscd->id);
+		ks_pool_free(&bscd->id);
 		break;
 	case KS_MPCL_DESTROY:
 		break;
@@ -95,15 +92,14 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_create(blade_sessionmgr_t **bsmgrP, bla
 
 	bsmgr = ks_pool_alloc(pool, sizeof(blade_sessionmgr_t));
 	bsmgr->handle = bh;
-	bsmgr->pool = pool;
 
-	ks_hash_create(&bsmgr->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bsmgr->pool);
+	ks_hash_create(&bsmgr->sessions, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bsmgr->sessions);
 
-	ks_hash_create(&bsmgr->callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bsmgr->pool);
+	ks_hash_create(&bsmgr->callbacks, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	ks_assert(bsmgr->callbacks);
 
-	ks_pool_set_cleanup(pool, bsmgr, NULL, blade_sessionmgr_cleanup);
+	ks_pool_set_cleanup(bsmgr, NULL, blade_sessionmgr_cleanup);
 
 	*bsmgrP = bsmgr;
 
@@ -121,9 +117,7 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_destroy(blade_sessionmgr_t **bsmgrP)
 	bsmgr = *bsmgrP;
 	*bsmgrP = NULL;
 
-	ks_assert(bsmgr);
-
-	pool = bsmgr->pool;
+	pool = ks_pool_get(bsmgr);
 
 	ks_pool_close(&pool);
 
@@ -178,7 +172,7 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_add(blade_sessionmgr_t *bsmgr, 
 	ks_assert(bsmgr);
 	ks_assert(bs);
 
-	key = ks_pstrdup(bsmgr->pool, blade_session_id_get(bs));
+	key = ks_pstrdup(ks_pool_get(bsmgr), blade_session_id_get(bs));
 	ks_hash_insert(bsmgr->sessions, (void *)key, bs);
 
 	ks_log(KS_LOG_DEBUG, "Session Added: %s\n", key);
@@ -213,6 +207,7 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 
 KS_DECLARE(ks_status_t) blade_sessionmgr_callback_add(blade_sessionmgr_t *bsmgr, void *data, blade_session_callback_t callback, const char **id)
 {
+	ks_pool_t *pool = NULL;
 	blade_session_callback_data_t *bscd = NULL;
 	uuid_t uuid;
 
@@ -220,17 +215,18 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_callback_add(blade_sessionmgr_t *bsmgr,
 	ks_assert(callback);
 	ks_assert(id);
 
+	pool = ks_pool_get(bsmgr);
+
 	ks_uuid(&uuid);
 
-	bscd = ks_pool_alloc(bsmgr->pool, sizeof(blade_session_callback_data_t));
-	bscd->pool = bsmgr->pool;
-	bscd->id = ks_uuid_str(bsmgr->pool, &uuid);
+	bscd = ks_pool_alloc(pool, sizeof(blade_session_callback_data_t));
+	bscd->id = ks_uuid_str(pool, &uuid);
 	bscd->data = data;
 	bscd->callback = callback;
 
-	ks_pool_set_cleanup(bsmgr->pool, bscd, NULL, blade_session_callback_data_cleanup);
+	ks_pool_set_cleanup(bscd, NULL, blade_session_callback_data_cleanup);
 
-	ks_hash_insert(bsmgr->callbacks, (void *)ks_pstrdup(bscd->pool, bscd->id), bscd);
+	ks_hash_insert(bsmgr->callbacks, (void *)ks_pstrdup(pool, bscd->id), bscd);
 
 	*id = bscd->id;
 

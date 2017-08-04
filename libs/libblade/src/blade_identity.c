@@ -34,8 +34,6 @@
 #include "blade.h"
 
 struct blade_identity_s {
-	ks_pool_t *pool;
-
 	const char *uri;
 	
 	const char *components;
@@ -46,7 +44,7 @@ struct blade_identity_s {
 };
 
 // @todo missed a structure to use cleanup callbacks
-static void blade_identity_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_identity_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_identity_t *bi = (blade_identity_t *)ptr;
 
@@ -56,8 +54,8 @@ static void blade_identity_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_poo
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (bi->uri) ks_pool_free(bi->pool, &bi->uri);
-		if (bi->components) ks_pool_free(bi->pool, &bi->components);
+		if (bi->uri) ks_pool_free(&bi->uri);
+		if (bi->components) ks_pool_free(&bi->components);
 		if (bi->parameters) ks_hash_destroy(&bi->parameters);
 		break;
 	case KS_MPCL_DESTROY:
@@ -73,9 +71,8 @@ KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t 
 	ks_assert(pool);
 
 	bi = ks_pool_alloc(pool, sizeof(blade_identity_t));
-	bi->pool = pool;
 
-	ks_pool_set_cleanup(pool, bi, NULL, blade_identity_cleanup);
+	ks_pool_set_cleanup(bi, NULL, blade_identity_cleanup);
 
 	*biP = bi;
 
@@ -91,7 +88,7 @@ KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
 
 	bi = *biP;
 
-	ks_pool_free(bi->pool, biP);
+	ks_pool_free(biP);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -100,18 +97,21 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 {
 	char *tmp = NULL;
 	char *tmp2 = NULL;
+	ks_pool_t *pool = NULL;
 	
 	ks_assert(bi);
 	ks_assert(uri);
 
 	ks_log(KS_LOG_DEBUG, "Parsing URI: %s\n", uri);
 	
+	pool = ks_pool_get(bi);
+
 	if (bi->uri) {
-		ks_pool_free(bi->pool, &bi->uri);
-		ks_pool_free(bi->pool, &bi->components);
+		ks_pool_free(&bi->uri);
+		ks_pool_free(&bi->components);
 	}
-	bi->uri = ks_pstrdup(bi->pool, uri);
-	bi->components = tmp = ks_pstrdup(bi->pool, uri);
+	bi->uri = ks_pstrdup(pool, uri);
+	bi->components = tmp = ks_pstrdup(pool, uri);
 
 	bi->name = tmp;
 	if (!(tmp = strchr(tmp, '@'))) return KS_STATUS_FAIL;
@@ -137,7 +137,7 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 			}
 
 			if (!bi->parameters) {
-				ks_hash_create(&bi->parameters, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, bi->pool);
+				ks_hash_create(&bi->parameters, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
 				ks_assert(bi->parameters);
 			}
 			ks_hash_insert(bi->parameters, key, val);

@@ -54,7 +54,8 @@ struct ks_pool_prefix_s {
 	ks_pool_cleanup_callback_t cleanup_callback;
 	void *cleanup_arg;
 	ks_size_t magic4;
-	ks_size_t reserved[2]; // @todo use one of these to store the original pool address to validate that free_mem is not attempted against the wrong pool, which can corrupt the allocation linked list
+	ks_pool_t *pool;
+	ks_size_t magic5;
 };
 
 #define KS_POOL_PREFIX_SIZE sizeof(ks_pool_prefix_t)
@@ -85,21 +86,21 @@ static ks_status_t check_fence(const void *addr);
 static void write_fence(void *addr);
 static ks_status_t check_prefix(const ks_pool_prefix_t *prefix);
 
-static void perform_pool_cleanup_on_free(ks_pool_t *pool, ks_pool_prefix_t *prefix)
+static void perform_pool_cleanup_on_free(ks_pool_prefix_t *prefix)
 {
 	void *addr;
 
-	ks_assert(pool);
 	ks_assert(prefix);
+	ks_assert(prefix->pool);
 
-	if (pool->cleaning_up) return;
+	if (prefix->pool->cleaning_up) return;
 
 	addr = (void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE);
 
 	if (prefix->cleanup_callback) {
-		prefix->cleanup_callback(pool, addr, prefix->cleanup_arg, KS_MPCL_ANNOUNCE, KS_MPCL_FREE);
-		prefix->cleanup_callback(pool, addr, prefix->cleanup_arg, KS_MPCL_TEARDOWN, KS_MPCL_FREE);
-		prefix->cleanup_callback(pool, addr, prefix->cleanup_arg, KS_MPCL_DESTROY, KS_MPCL_FREE);
+		prefix->cleanup_callback(addr, prefix->cleanup_arg, KS_MPCL_ANNOUNCE, KS_MPCL_FREE);
+		prefix->cleanup_callback(addr, prefix->cleanup_arg, KS_MPCL_TEARDOWN, KS_MPCL_FREE);
+		prefix->cleanup_callback(addr, prefix->cleanup_arg, KS_MPCL_DESTROY, KS_MPCL_FREE);
 	}
 }
 
@@ -114,26 +115,25 @@ static void perform_pool_cleanup(ks_pool_t *pool)
 
 	for (prefix = pool->first; prefix; prefix = prefix->next) {
 		if (!prefix->cleanup_callback) continue;
-		prefix->cleanup_callback(pool, (void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_ANNOUNCE, KS_MPCL_GLOBAL_FREE);
+		prefix->cleanup_callback((void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_ANNOUNCE, KS_MPCL_GLOBAL_FREE);
 	}
 
 	for (prefix = pool->first; prefix; prefix = prefix->next) {
 		if (!prefix->cleanup_callback) continue;
-		prefix->cleanup_callback(pool, (void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_TEARDOWN, KS_MPCL_GLOBAL_FREE);
+		prefix->cleanup_callback((void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_TEARDOWN, KS_MPCL_GLOBAL_FREE);
 	}
 
 	for (prefix = pool->first; prefix; prefix = prefix->next) {
 		if (!prefix->cleanup_callback) continue;
-		prefix->cleanup_callback(pool, (void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_DESTROY, KS_MPCL_GLOBAL_FREE);
+		prefix->cleanup_callback((void *)((uintptr_t)prefix + KS_POOL_PREFIX_SIZE), prefix->cleanup_arg, KS_MPCL_DESTROY, KS_MPCL_GLOBAL_FREE);
 	}
 }
 
-KS_DECLARE(ks_status_t) ks_pool_set_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_callback_t callback)
+KS_DECLARE(ks_status_t) ks_pool_set_cleanup(void *ptr, void *arg, ks_pool_cleanup_callback_t callback)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_pool_prefix_t *prefix = NULL;
 
-	ks_assert(pool);
 	ks_assert(ptr);
 	ks_assert(callback);
 
@@ -247,7 +247,11 @@ static void write_fence(void *addr)
 */
 static ks_status_t check_prefix(const ks_pool_prefix_t *prefix)
 {
-	if (!(prefix->magic1 == KS_POOL_PREFIX_MAGIC && prefix->magic2 == KS_POOL_PREFIX_MAGIC && prefix->magic3 == KS_POOL_PREFIX_MAGIC && prefix->magic4 == KS_POOL_PREFIX_MAGIC)) return KS_STATUS_INVALID_POINTER;
+	if (!(prefix->magic1 == KS_POOL_PREFIX_MAGIC &&
+		  prefix->magic2 == KS_POOL_PREFIX_MAGIC &&
+		  prefix->magic3 == KS_POOL_PREFIX_MAGIC &&
+		  prefix->magic4 == KS_POOL_PREFIX_MAGIC &&
+		  prefix->magic5 == KS_POOL_PREFIX_MAGIC)) return KS_STATUS_INVALID_POINTER;
 	return KS_STATUS_SUCCESS;
 }
 
@@ -303,6 +307,8 @@ static void *alloc_mem(ks_pool_t *pool, const ks_size_t size, ks_status_t *error
 	if (!pool->last) pool->last = prefix;
 	prefix->magic3 = KS_POOL_PREFIX_MAGIC;
 	prefix->magic4 = KS_POOL_PREFIX_MAGIC;
+	prefix->pool = pool;
+	prefix->magic5 = KS_POOL_PREFIX_MAGIC;
 
 	write_fence(fence);
 
@@ -340,20 +346,22 @@ static void *alloc_mem(ks_pool_t *pool, const ks_size_t size, ks_status_t *error
  * addr -> Address to free.
  *
  */
-static ks_status_t free_mem(ks_pool_t *pool, void *addr)
+static ks_status_t free_mem(void *addr)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	void *start = NULL;
 	void *fence = NULL;
 	ks_pool_prefix_t *prefix = NULL;
+	ks_pool_t *pool = NULL;
 
-	ks_assert(pool);
 	ks_assert(addr);
 
 	start = (void *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
 	prefix = (ks_pool_prefix_t *)start;
 
 	if ((ret = check_prefix(prefix)) != KS_STATUS_SUCCESS) return ret;
+
+	pool = prefix->pool;
 
 	if (prefix->refs > 0) {
 		prefix->refs--;
@@ -370,7 +378,7 @@ static ks_status_t free_mem(ks_pool_t *pool, void *addr)
 	fence = (void *)((uintptr_t)addr + prefix->size);
 	ret = check_fence(fence);
 
-	perform_pool_cleanup_on_free(pool, prefix);
+	perform_pool_cleanup_on_free(prefix);
 
 	if (!prefix->prev && !prefix->next) pool->first = pool->last = NULL;
 	else if (!prefix->prev) {
@@ -419,7 +427,7 @@ static ks_status_t free_mem(ks_pool_t *pool, void *addr)
  */
 static ks_pool_t *ks_pool_raw_open(const ks_size_t flags, ks_status_t *error_p)
 {
-	ks_pool_t *pool;
+	ks_pool_t *pool = NULL;
 
 	pool = malloc(sizeof(ks_pool_t));
 	ks_assert(pool);
@@ -583,6 +591,36 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool)
 done:
 	ks_assert(ret == KS_STATUS_SUCCESS);
 	return ret;
+}
+
+// @todo fill in documentation
+KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr)
+{
+	ks_pool_prefix_t *prefix = NULL;
+	if (!addr) return KS_FALSE;
+	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
+	if (check_prefix(prefix) != KS_STATUS_SUCCESS) return KS_FALSE;
+	return KS_TRUE;
+}
+
+// @todo fill in documentation
+KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr)
+{
+	ks_pool_prefix_t *prefix = NULL;
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	ks_pool_t *pool = NULL;
+
+	if (!addr) goto done;
+
+	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
+	if (check_prefix(prefix) != KS_STATUS_SUCCESS) goto done;
+
+	if ((ret = check_pool(prefix->pool)) == KS_STATUS_SUCCESS) pool = prefix->pool;
+
+done:
+	ks_assert(ret == KS_STATUS_SUCCESS);
+
+	return pool;
 }
 
 /*
@@ -760,33 +798,35 @@ KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *pool, const ks_size_t ele_n, const 
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
  * addr <-> Pointer to pointer of Address to free.
  *
  */
-KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *pool, void **addrP)
+KS_DECLARE(ks_status_t) ks_pool_free_ex(void **addrP)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	void *addr;
+	void *addr = NULL;
+	ks_pool_prefix_t *prefix = NULL;
+	ks_pool_t *pool = NULL;
 
-	ks_assert(pool);
 	ks_assert(addrP);
 	ks_assert(*addrP);
 
 	addr = *addrP;
 
+	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
+	if ((ret = check_prefix(prefix)) != KS_STATUS_SUCCESS) goto done;
+
+	pool = prefix->pool;
 	if ((ret = check_pool(pool)) != KS_STATUS_SUCCESS) goto done;
 
 	ks_mutex_lock(pool->mutex);
 
 	if (pool->log_func != NULL) {
-		ks_pool_prefix_t *prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
 		// @todo check_prefix()?
 		pool->log_func(pool, prefix->refs == 1 ? KS_POOL_FUNC_FREE : KS_POOL_FUNC_DECREF, prefix->size, prefix->refs - 1, addr, NULL, 0);
 	}
 
-	ret = free_mem(pool, addr);
+	ret = free_mem(addr);
 	ks_mutex_unlock(pool->mutex);
 
 done:
@@ -813,26 +853,25 @@ done:
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
  * addr -> The addr to ref
  *
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_ref_ex(ks_pool_t *pool, void *addr, ks_status_t *error_p)
+KS_DECLARE(void *) ks_pool_ref_ex(void *addr, ks_status_t *error_p)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	ks_pool_prefix_t *prefix;
+	ks_pool_prefix_t *prefix = NULL;
+	ks_pool_t *pool = NULL;
 	ks_size_t refs;
 
-	ks_assert(pool);
 	ks_assert(addr);
-
-	if ((ret = check_pool(pool)) != KS_STATUS_SUCCESS) goto done;
 
 	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
 	if ((ret = check_prefix(prefix)) != KS_STATUS_SUCCESS) goto done;
+
+	pool = prefix->pool;
+	if ((ret = check_pool(pool)) != KS_STATUS_SUCCESS) goto done;
 
 	ks_mutex_lock(pool->mutex);
 	refs = ++prefix->refs;
@@ -863,9 +902,6 @@ done:
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
- *
  * old_addr -> Previously allocated address.
  *
  * new_size -> New size of the allocation.
@@ -873,28 +909,26 @@ done:
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a ks_pool error code.
  */
-KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *pool, void *old_addr, const ks_size_t new_size, ks_status_t *error_p)
+KS_DECLARE(void *) ks_pool_resize_ex(void *old_addr, const ks_size_t new_size, ks_status_t *error_p)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_size_t old_size;
-	ks_pool_prefix_t *prefix;
+	ks_pool_prefix_t *prefix = NULL;
+	ks_pool_t *pool = NULL;
 	void *new_addr = NULL;
 	ks_size_t required;
 
-	ks_assert(pool);
+	ks_assert(old_addr);
 	ks_assert(new_size);
 
-	if ((ret = check_pool(pool)) != KS_STATUS_SUCCESS) {
+	prefix = (ks_pool_prefix_t *)((uintptr_t)old_addr - KS_POOL_PREFIX_SIZE);
+	if ((ret = check_prefix(prefix)) != KS_STATUS_SUCCESS) {
 		SET_POINTER(error_p, ret);
 		return NULL;
 	}
 
-	if (!old_addr) {
-		return ks_pool_alloc_ex(pool, new_size, error_p);
-	}
-
-	prefix = (ks_pool_prefix_t *)((uintptr_t)old_addr - KS_POOL_PREFIX_SIZE);
-	if ((ret = check_prefix(prefix)) != KS_STATUS_SUCCESS) {
+	pool = prefix->pool;
+	if ((ret = check_pool(pool)) != KS_STATUS_SUCCESS) {
 		SET_POINTER(error_p, ret);
 		return NULL;
 	}
@@ -956,17 +990,14 @@ done:
  *
  * ARGUMENTS:
  *
- * pool -> Pointer to the memory pool.
- *
- *
  * old_addr -> Previously allocated address.
  *
  * new_size -> New size of the allocation.
  *
  */
-KS_DECLARE(void *) ks_pool_resize(ks_pool_t *pool, void *old_addr, const ks_size_t new_size)
+KS_DECLARE(void *) ks_pool_resize(void *old_addr, const ks_size_t new_size)
 {
-	return ks_pool_resize_ex(pool, old_addr, new_size, NULL);
+	return ks_pool_resize_ex(old_addr, new_size, NULL);
 }
 
 /*

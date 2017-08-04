@@ -56,11 +56,6 @@ KS_DECLARE(void) ks_random_string(char *buf, uint16_t len, char *set)
 }
 
 
-KS_DECLARE(ks_status_t) ks_global_set_cleanup(ks_pool_cleanup_callback_t callback, void *arg)
-{
-	return ks_pool_set_cleanup(ks_global_pool(), NULL, arg, callback);
-}
-	
 KS_DECLARE(ks_status_t) ks_init(void)
 {
 	unsigned int pid = 0;

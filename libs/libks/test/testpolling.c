@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
 	listener = start_listen(&addr);
 	listener_index = listeners_count++;
-	listeners_poll = (struct pollfd *)ks_pool_resize(pool, listeners_poll, sizeof(struct pollfd) * listeners_count);
+	listeners_poll = (struct pollfd *)ks_pool_alloc(pool, sizeof(struct pollfd) * listeners_count);
 	ok(listeners_poll != NULL);
 
 	listeners_poll[listener_index].fd = listener;
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		listener = listeners_poll[index].fd;
 		ks_socket_close(&listener);
 	}
-	ks_pool_free(pool, &listeners_poll);
+	ks_pool_free(&listeners_poll);
 
 	ks_pool_close(&pool);
 

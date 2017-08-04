@@ -40,7 +40,6 @@ typedef struct ks_qnode_s {
 } ks_qnode_t;
 
 struct ks_q_s {
-	ks_pool_t *pool;
 	ks_flush_fn_t flush_fn;
 	void *flush_data;
 	ks_size_t len;
@@ -56,7 +55,7 @@ struct ks_q_s {
 	uint8_t active;
 };
 
-static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void ks_q_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	ks_q_t *q = (ks_q_t *) ptr;
 	ks_qnode_t *np, *fp;
@@ -77,14 +76,14 @@ static void ks_q_cleanup(ks_pool_t *mpool, void *ptr, void *arg, ks_pool_cleanup
 		while(np) {
 			fp = np;
 			np = np->next;
-			ks_pool_free(q->pool, &fp);
+			ks_pool_free(&fp);
 		}
 		
 		np = q->empty;
 		while(np) {
 			fp = np;
 			np = np->next;
-			ks_pool_free(q->pool, &fp);
+			ks_pool_free(&fp);
 		}
 		break;
 	case KS_MPCL_DESTROY:
@@ -159,7 +158,6 @@ KS_DECLARE(ks_size_t) ks_q_size(ks_q_t *q)
 KS_DECLARE(ks_status_t) ks_q_destroy(ks_q_t **qP)
 {
 	ks_q_t *q;
-	ks_pool_t *pool;
 
 	ks_assert(qP);
 	
@@ -170,9 +168,7 @@ KS_DECLARE(ks_status_t) ks_q_destroy(ks_q_t **qP)
 		ks_q_flush(q);
 		ks_q_term(q);
 
-		pool = q->pool;
-		ks_pool_free(pool, &q);
-		pool = NULL;
+		ks_pool_free(&q);
 
 		return KS_STATUS_SUCCESS;
 	}
@@ -187,9 +183,6 @@ KS_DECLARE(ks_status_t) ks_q_create(ks_q_t **qP, ks_pool_t *pool, ks_size_t maxl
 	q = ks_pool_alloc(pool, sizeof(*q));
 	ks_assert(q);
 
-	q->pool = pool;
-
-
 	ks_mutex_create(&q->list_mutex, KS_MUTEX_FLAG_DEFAULT, pool);
 	ks_assert(q->list_mutex);
 
@@ -202,7 +195,7 @@ KS_DECLARE(ks_status_t) ks_q_create(ks_q_t **qP, ks_pool_t *pool, ks_size_t maxl
 	q->maxlen = maxlen;
 	q->active = 1;
 
-	ks_pool_set_cleanup(pool, q, NULL, ks_q_cleanup);	
+	ks_pool_set_cleanup(q, NULL, ks_q_cleanup);	
 
 	*qP = q;
 
@@ -217,7 +210,7 @@ static ks_qnode_t *new_node(ks_q_t *q)
 		np = q->empty;
 		q->empty = q->empty->next;
 	} else {
-		np = ks_pool_alloc(q->pool, sizeof(*np));
+		np = ks_pool_alloc(ks_pool_get(q), sizeof(*np));
 	}
 
 	np->prev = np->next = NULL;

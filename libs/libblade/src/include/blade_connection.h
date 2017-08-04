@@ -41,7 +41,6 @@ KS_DECLARE(ks_status_t) blade_connection_destroy(blade_connection_t **bcP);
 KS_DECLARE(ks_status_t) blade_connection_startup(blade_connection_t *bc, blade_connection_direction_t direction);
 KS_DECLARE(ks_status_t) blade_connection_shutdown(blade_connection_t *bc);
 KS_DECLARE(blade_handle_t *) blade_connection_handle_get(blade_connection_t *bc);
-KS_DECLARE(ks_pool_t *) blade_connection_pool_get(blade_connection_t *bc);
 KS_DECLARE(const char *) blade_connection_id_get(blade_connection_t *bc);
 KS_DECLARE(ks_status_t) blade_connection_read_lock(blade_connection_t *bc, ks_bool_t block);
 KS_DECLARE(ks_status_t) blade_connection_read_unlock(blade_connection_t *bc);

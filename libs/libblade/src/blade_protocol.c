@@ -34,8 +34,6 @@
 #include "blade.h"
 
 struct blade_protocol_s {
-	ks_pool_t *pool;
-
 	const char *name;
 	const char *realm;
 	ks_hash_t *controllers;
@@ -44,7 +42,7 @@ struct blade_protocol_s {
 };
 
 
-static void blade_protocol_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_protocol_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_protocol_t *bp = (blade_protocol_t *)ptr;
 
@@ -54,8 +52,8 @@ static void blade_protocol_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_poo
 	case KS_MPCL_ANNOUNCE:
 		break;
 	case KS_MPCL_TEARDOWN:
-		if (bp->name) ks_pool_free(bp->pool, &bp->name);
-		if (bp->realm) ks_pool_free(bp->pool, &bp->realm);
+		if (bp->name) ks_pool_free(&bp->name);
+		if (bp->realm) ks_pool_free(&bp->realm);
 		if (bp->controllers) ks_hash_destroy(&bp->controllers);
 		if (bp->channels) ks_hash_destroy(&bp->channels);
 		break;
@@ -74,17 +72,16 @@ KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t 
 	ks_assert(realm);
 
 	bp = ks_pool_alloc(pool, sizeof(blade_protocol_t));
-	bp->pool = pool;
 	bp->name = ks_pstrdup(pool, name);
 	bp->realm = ks_pstrdup(pool, realm);
 
-	ks_hash_create(&bp->controllers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bp->pool);
+	ks_hash_create(&bp->controllers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bp->controllers);
 
-	ks_hash_create(&bp->channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bp->pool);
+	ks_hash_create(&bp->channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bp->channels);
 
-	ks_pool_set_cleanup(pool, bp, NULL, blade_protocol_cleanup);
+	ks_pool_set_cleanup(bp, NULL, blade_protocol_cleanup);
 
 	*bpP = bp;
 
@@ -100,7 +97,7 @@ KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP)
 
 	bp = *bpP;
 
-	ks_pool_free(bp->pool, bpP);
+	ks_pool_free(bpP);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -161,7 +158,7 @@ KS_DECLARE(ks_status_t) blade_protocol_controllers_add(blade_protocol_t *bp, con
 	ks_assert(bp);
 	ks_assert(nodeid);
 
-	key = ks_pstrdup(bp->pool, nodeid);
+	key = ks_pstrdup(ks_pool_get(bp), nodeid);
 	ks_hash_insert(bp->controllers, (void *)key, (void *)KS_TRUE);
 
 	ks_log(KS_LOG_DEBUG, "Protocol Controller Added: %s to %s@%s\n", nodeid, bp->name, bp->realm);
@@ -172,11 +169,14 @@ KS_DECLARE(ks_status_t) blade_protocol_controllers_add(blade_protocol_t *bp, con
 KS_DECLARE(ks_status_t) blade_protocol_channel_add(blade_protocol_t *bp, const char *name)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
+	ks_pool_t *pool = NULL;
 	ks_hash_t *authorized = NULL;
 	char *key = NULL;
 
 	ks_assert(bp);
 	ks_assert(name);
+
+	pool = ks_pool_get(bp);
 
 	ks_hash_write_lock(bp->channels);
 
@@ -185,9 +185,9 @@ KS_DECLARE(ks_status_t) blade_protocol_channel_add(blade_protocol_t *bp, const c
 		goto done;
 	}
 
-	ks_hash_create(&authorized, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bp->pool);
+	ks_hash_create(&authorized, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 
-	key = ks_pstrdup(bp->pool, name);
+	key = ks_pstrdup(pool, name);
 	ks_hash_insert(bp->channels, (void *)key, (void *)authorized);
 
 	ks_log(KS_LOG_DEBUG, "Protocol Channel Added: %s to %s@%s\n", key, bp->name, bp->realm);
@@ -239,7 +239,7 @@ KS_DECLARE(ks_status_t) blade_protocol_channel_authorize(blade_protocol_t *bp, k
 			} else ret = KS_STATUS_NOT_FOUND;
 		}
 		else {
-			ks_hash_insert(authorizations, (void *)ks_pstrdup(bp->pool, target), (void *)KS_TRUE);
+			ks_hash_insert(authorizations, (void *)ks_pstrdup(ks_pool_get(bp), target), (void *)KS_TRUE);
 			ks_log(KS_LOG_DEBUG, "Protocol Channel Authorization Added: %s to %s@%s/%s\n", target, bp->name, bp->realm, channel);
 		}
 	}

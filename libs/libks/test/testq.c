@@ -10,7 +10,7 @@ static void *test1_thread(ks_thread_t *thread, void *data)
 	while(ks_q_pop(q, &pop) == KS_STATUS_SUCCESS) {
 		//int *i = (int *)pop;
 		//printf("POP %d\n", *i);
-		ks_pool_free(thread->pool, &pop);
+		ks_pool_free(&pop);
 	}
 	
 	return NULL;
@@ -18,8 +18,8 @@ static void *test1_thread(ks_thread_t *thread, void *data)
 
 static void do_flush(ks_q_t *q, void *ptr, void *flush_data)
 {
-	ks_pool_t *pool = (ks_pool_t *)flush_data;
-	ks_pool_free(pool, &ptr);
+	//ks_pool_t *pool = (ks_pool_t *)flush_data;
+	ks_pool_free(&ptr);
 
 }
 
@@ -104,7 +104,7 @@ static void *test2_thread(ks_thread_t *thread, void *data)
 			//int *i = (int *)pop;
 			//printf("%p POP %d\n", (void *)pthread_self(), *i);
 			popped++;
-			ks_pool_free(thread->pool, &pop);
+			ks_pool_free(&pop);
 		} else if (status == KS_STATUS_INACTIVE) {
 			break;
 		} else if (t2->try && ks_q_size(t2->q)) {

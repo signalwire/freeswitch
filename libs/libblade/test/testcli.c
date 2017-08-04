@@ -84,7 +84,7 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	blade_session_read_unlock(bs);
 
 	if (nodeid) {
-		g_testcon_nodeid = ks_pstrdup(blade_handle_pool_get(bh), nodeid);
+		g_testcon_nodeid = ks_pstrdup(ks_pool_get(bh), nodeid);
 	}
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, res_result_realm, g_testcon_nodeid);
 
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 		blade_identity_t *target = NULL;
 		ks_bool_t connected = KS_FALSE;
 
-		blade_identity_create(&target, blade_handle_pool_get(bh));
+		blade_identity_create(&target, ks_pool_get(bh));
 
 		if (blade_identity_parse(target, autoconnect) == KS_STATUS_SUCCESS) connected = blade_handle_connect(bh, &bc, target, NULL) == KS_STATUS_SUCCESS;
 

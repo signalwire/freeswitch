@@ -35,7 +35,6 @@
 
 struct blade_transport_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	const char *name;
 	void *data;
@@ -43,7 +42,7 @@ struct blade_transport_s {
 };
 
 
-static void blade_transport_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_transport_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_transport_t *bt = (blade_transport_t *)ptr;
 
@@ -71,12 +70,11 @@ KS_DECLARE(ks_status_t) blade_transport_create(blade_transport_t **btP, blade_ha
 
 	bt = ks_pool_alloc(pool, sizeof(blade_transport_t));
 	bt->handle = bh;
-	bt->pool = pool;
 	bt->name = ks_pstrdup(pool, name);
 	bt->data = data;
 	bt->callbacks = callbacks;
 
-	ks_pool_set_cleanup(pool, bt, NULL, blade_transport_cleanup);
+	ks_pool_set_cleanup(bt, NULL, blade_transport_cleanup);
 
 	ks_log(KS_LOG_DEBUG, "Created transport %s\n", name);
 
@@ -94,12 +92,11 @@ KS_DECLARE(ks_status_t) blade_transport_destroy(blade_transport_t **btP)
 	ks_assert(*btP);
 
 	bt = *btP;
+	*btP = NULL;
 
-	pool = bt->pool;
+	pool = ks_pool_get(bt);
 
 	ks_pool_close(&pool);
-
-	*btP = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

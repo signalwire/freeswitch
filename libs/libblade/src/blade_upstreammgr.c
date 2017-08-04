@@ -35,7 +35,6 @@
 
 struct blade_upstreammgr_s {
 	blade_handle_t *handle;
-	ks_pool_t *pool;
 
 	// local node id, can be used to get the upstream session, provided by upstream "blade.connect" response
 	const char *localid;
@@ -50,7 +49,7 @@ struct blade_upstreammgr_s {
 };
 
 
-static void blade_upstreammgr_cleanup(ks_pool_t *pool, void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+static void blade_upstreammgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	//blade_upstreammgr_t *bumgr = (blade_upstreammgr_t *)ptr;
 
@@ -78,20 +77,19 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_create(blade_upstreammgr_t **bumgrP, b
 
 	bumgr = ks_pool_alloc(pool, sizeof(blade_upstreammgr_t));
 	bumgr->handle = bh;
-	bumgr->pool = pool;
 
-	//ks_hash_create(&bumgr->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, bumgr->pool);
+	//ks_hash_create(&bumgr->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	//ks_assert(bumgr->routes);
-	ks_rwl_create(&bumgr->localid_rwl, bumgr->pool);
+	ks_rwl_create(&bumgr->localid_rwl, pool);
 	ks_assert(bumgr->localid_rwl);
 
-	ks_rwl_create(&bumgr->masterid_rwl, bumgr->pool);
+	ks_rwl_create(&bumgr->masterid_rwl, pool);
 	ks_assert(bumgr->masterid_rwl);
 
-	ks_hash_create(&bumgr->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, bumgr->pool);
+	ks_hash_create(&bumgr->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bumgr->realms);
 
-	ks_pool_set_cleanup(pool, bumgr, NULL, blade_upstreammgr_cleanup);
+	ks_pool_set_cleanup(bumgr, NULL, blade_upstreammgr_cleanup);
 
 	*bumgrP = bumgr;
 
@@ -109,9 +107,7 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_destroy(blade_upstreammgr_t **bumgrP)
 	bumgr = *bumgrP;
 	*bumgrP = NULL;
 
-	ks_assert(bumgr);
-
-	pool = bumgr->pool;
+	pool = ks_pool_get(bumgr);
 
 	ks_pool_close(&pool);
 
@@ -140,8 +136,8 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_localid_set(blade_upstreammgr_t *bumgr
 		goto done;
 	}
 
-	if (bumgr->localid) ks_pool_free(bumgr->pool, &bumgr->localid);
-	if (id) bumgr->localid = ks_pstrdup(bumgr->pool, id);
+	if (bumgr->localid) ks_pool_free(&bumgr->localid);
+	if (id) bumgr->localid = ks_pstrdup(ks_pool_get(bumgr), id);
 
 	ks_log(KS_LOG_DEBUG, "LocalID: %s\n", id);
 
@@ -212,8 +208,8 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_masterid_set(blade_upstreammgr_t *bumg
 	ks_assert(bumgr);
 
 	ks_rwl_write_lock(bumgr->masterid_rwl);
-	if (bumgr->masterid) ks_pool_free(bumgr->pool, &bumgr->masterid);
-	if (id) bumgr->masterid = ks_pstrdup(bumgr->pool, id);
+	if (bumgr->masterid) ks_pool_free(&bumgr->masterid);
+	if (id) bumgr->masterid = ks_pstrdup(ks_pool_get(bumgr), id);
 
 	ks_log(KS_LOG_DEBUG, "MasterID: %s\n", id);
 
@@ -272,7 +268,7 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_realm_add(blade_upstreammgr_t *bumgr, 
 	ks_assert(bumgr);
 	ks_assert(realm);
 
-	key = ks_pstrdup(bumgr->pool, realm);
+	key = ks_pstrdup(ks_pool_get(bumgr), realm);
 	ks_hash_insert(bumgr->realms, (void *)key, (void *)KS_TRUE);
 
 	ks_log(KS_LOG_DEBUG, "Realm Added: %s\n", key);
