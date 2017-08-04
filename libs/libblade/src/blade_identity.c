@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,7 +35,7 @@
 
 struct blade_identity_s {
 	const char *uri;
-	
+
 	const char *components;
 	const char *name;
 	const char *domain;
@@ -81,12 +81,8 @@ KS_DECLARE(ks_status_t) blade_identity_create(blade_identity_t **biP, ks_pool_t 
 
 KS_DECLARE(ks_status_t) blade_identity_destroy(blade_identity_t **biP)
 {
-	blade_identity_t *bi = NULL;
-	
 	ks_assert(biP);
 	ks_assert(*biP);
-
-	bi = *biP;
 
 	ks_pool_free(biP);
 
@@ -98,12 +94,12 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 	char *tmp = NULL;
 	char *tmp2 = NULL;
 	ks_pool_t *pool = NULL;
-	
+
 	ks_assert(bi);
 	ks_assert(uri);
 
 	ks_log(KS_LOG_DEBUG, "Parsing URI: %s\n", uri);
-	
+
 	pool = ks_pool_get(bi);
 
 	if (bi->uri) {
@@ -116,7 +112,7 @@ KS_DECLARE(ks_status_t) blade_identity_parse(blade_identity_t *bi, const char *u
 	bi->name = tmp;
 	if (!(tmp = strchr(tmp, '@'))) return KS_STATUS_FAIL;
 	*tmp++ = '\0';
-		
+
 	bi->domain = tmp2 = tmp;
 	if ((tmp = strchr(tmp, '/'))) {
 		*tmp++ = '\0';

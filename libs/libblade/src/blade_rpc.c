@@ -225,12 +225,8 @@ KS_DECLARE(ks_status_t) blade_rpc_request_create(blade_rpc_request_t **brpcreqP,
 
 KS_DECLARE(ks_status_t) blade_rpc_request_destroy(blade_rpc_request_t **brpcreqP)
 {
-	blade_rpc_request_t *brpcreq = NULL;
-
 	ks_assert(brpcreqP);
 	ks_assert(*brpcreqP);
-
-	brpcreq = *brpcreqP;
 
 	ks_pool_free(brpcreqP);
 
@@ -361,12 +357,8 @@ KS_DECLARE(ks_status_t) blade_rpc_response_create(blade_rpc_response_t **brpcres
 
 KS_DECLARE(ks_status_t) blade_rpc_response_destroy(blade_rpc_response_t **brpcresP)
 {
-	blade_rpc_response_t *brpcres = NULL;
-
 	ks_assert(brpcresP);
 	ks_assert(*brpcresP);
-
-	brpcres = *brpcresP;
 
 	ks_pool_free(brpcresP);
 

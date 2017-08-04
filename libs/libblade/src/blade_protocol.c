@@ -90,12 +90,8 @@ KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t 
 
 KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP)
 {
-	blade_protocol_t *bp = NULL;
-
 	ks_assert(bpP);
 	ks_assert(*bpP);
-
-	bp = *bpP;
 
 	ks_pool_free(bpP);
 
