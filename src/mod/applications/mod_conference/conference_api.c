@@ -2707,6 +2707,7 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 		
 		if (!strcmp(path_a, path_b)) {
 			stream->write_function(stream, "-ERR file [%s] is already being used for recording.\n", rec->path);
+			switch_mutex_unlock(conference->flag_mutex);
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
