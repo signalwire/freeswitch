@@ -127,7 +127,7 @@ var updateVideoSize = function(ms) {
         var w = videoElem.width();
         var h = videoElem.height();
         var new_w, new_h;
-        var aspect = 1920 / 1080;
+        var aspect = w / h;
         var videoContainer = jQuery('div.video-wrapper');
         if (w > h) {
             new_w = videoContainer.width();
@@ -264,10 +264,17 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           label: 'Screen'
         }];
         data.audioDevices = [{
-          id: 'none',
-          label: 'No Microphone'
+          id: 'any',
+          label: 'Default Microphone'
+	},
+	{
+	    id: 'none',
+	    label: 'No Microphone'
         }];
-        data.speakerDevices = [];
+        data.speakerDevices = [{
+	    id: 'any',
+	    label: 'Default Speaker'
+	}];
 
         if(!storage.data.selectedShare) {
           storage.data.selectedShare = data.shareDevices[0]['id'];

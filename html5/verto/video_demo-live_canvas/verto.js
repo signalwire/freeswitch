@@ -442,7 +442,7 @@ function real_size() {
 
 	var new_w;
 	var new_h;
-	var aspect = 1920 / 1080; /*temasys doesn't provide video width hack aspect to wide screen*/
+	var aspect = w / h;
 	
 	if (w > h) {
 	    new_w = window.innerWidth;
