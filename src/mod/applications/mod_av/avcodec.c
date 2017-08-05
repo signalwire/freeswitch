@@ -1025,7 +1025,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		if (threads > 4) threads = 4;
 		
 		context->decoder_ctx = avcodec_alloc_context3(context->decoder);
-		context->decoder_ctx->thread_count = threads;
+		//context->decoder_ctx->thread_count = threads;
 		if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
 			goto error;
