@@ -362,7 +362,7 @@ static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp
 		switch_mutex_lock(EVENT_QUEUE_MUTEX);
 
 		if (!PENDING && switch_queue_size(EVENT_DISPATCH_QUEUE) > (unsigned int)(DISPATCH_QUEUE_LEN * DISPATCH_THREAD_COUNT)) {
-			if (SOFT_MAX_DISPATCH + 1 > MAX_DISPATCH) {
+			if (SOFT_MAX_DISPATCH + 1 < MAX_DISPATCH) {
 				launch++;
 				PENDING++;
 			}
