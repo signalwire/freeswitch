@@ -37,6 +37,7 @@
 #define CC_AGENT_TYPE_CALLBACK "Callback"
 #define CC_AGENT_TYPE_UUID_STANDBY "uuid-standby"
 #define CC_SQLITE_DB_NAME "callcenter"
+#define CC_APP_KEY "mod_callcenter"
 
 
 /* Prototypes */
@@ -175,6 +176,10 @@ static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
 	{"EXIT_WITH_KEY", CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY},
 	{NULL, 0}
 };
+
+typedef enum {
+    CC_APP_AGENT_CONNECTING = (1 << 0)
+} cc_app_flag_t;
 
 static char members_sql[] =
 "CREATE TABLE members (\n"
@@ -1675,6 +1680,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		t_agent_called = local_epoch_time_now(NULL);
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
+		switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
 		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
 
 		/* Search for loopback agent */
@@ -1921,6 +1927,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_IN_A_QUEUE_CALL), h->agent_name);
 
 		}
+		switch_channel_clear_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
 		/* Wait until the agent hangup.  This will quit also if the agent transfer the call */
 		while(bridged && switch_channel_up(agent_channel) && globals.running) {
 			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
@@ -1999,6 +2006,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	} else {
 		/* Agent didn't answer or originate failed */
 		int delay_next_agent_call = 0;
+		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+		switch_channel_clear_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
 		sql = switch_mprintf("UPDATE members SET state = case state when '%q' then '%q' else state end, serving_agent = '', serving_system = ''"
 				" WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_TRYING),	/* Only switch to Waiting from Trying (state may be set to Abandoned in callcenter_function()) */
@@ -2738,9 +2747,21 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		}
 		/* Make the Caller Leave if he went over his max wait time */
 		if (queue->max_wait_time > 0 && queue->max_wait_time <=  time_now - m->t_member_called) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
-			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
-			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+			/* timeout reached, check if we're originating at this time and give caller a one more chance */
+			if (switch_channel_test_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_channel), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time and we're connecting, waiting for agent to be connected...\n", m->member_cid_name, m->member_cid_number, m->queue_name);
+				for (;;) {
+					if (!switch_channel_test_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING)) {
+						break;
+					}
+					switch_cond_next();
+				}
+			}
+			if (!switch_channel_test_flag(member_channel, CF_BRIDGED)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
+				m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
+				switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+			}
 		}
 
 		/* Check if max wait time no agent is Active AND if there is no Agent AND if the last agent check was after the member join */
