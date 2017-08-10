@@ -159,6 +159,9 @@ var callbacks = {
                 }
             }
             break;
+        case $.verto.enum.message.clientReady:
+//            console.error("clientReady", data);
+						break;
         case $.verto.enum.message.info:
 	    var body = data.body;
 

@@ -1232,6 +1232,11 @@ static void drop_detached(void)
 static void attach_calls(jsock_t *jsock)
 {
 	verto_pvt_t *tech_pvt;
+	cJSON *msg = NULL;
+	cJSON *params = NULL;
+	cJSON *reattached_sessions = NULL;
+
+	reattached_sessions = cJSON_CreateArray();
 
 	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
 	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
@@ -1241,9 +1246,14 @@ static void attach_calls(jsock_t *jsock)
 			}
 
 			tech_reattach(tech_pvt, jsock);
+			cJSON_AddItemToArray(reattached_sessions, cJSON_CreateString(jsock->uuid_str));
 		}
 	}
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
+
+	msg = jrpc_new_req("verto.clientReady", NULL, &params);
+	cJSON_AddItemToObject(params, "reattached_sessions", reattached_sessions);
+	jsock_queue_event(jsock, &msg, SWITCH_TRUE);
 }
 
 static void detach_calls(jsock_t *jsock)
