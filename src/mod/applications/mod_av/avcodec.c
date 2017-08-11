@@ -32,6 +32,7 @@
  */
 
 #include <switch.h>
+#include "mod_av.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
@@ -1534,18 +1535,9 @@ void show_codecs(switch_stream_handle_t *stream)
 	av_free(codecs);
 }
 
-
-SWITCH_STANDARD_API(av_codec_api_function)
-{
-	show_codecs(stream);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 {
 	switch_codec_interface_t *codec_interface;
-	switch_api_interface_t *api_interface;
 
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
@@ -1558,8 +1550,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 	SWITCH_ADD_CODEC(codec_interface, "H263+ Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 115, "H263-1998", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
-
-	SWITCH_ADD_API(api_interface, "av_codec", "av_codec information", av_codec_api_function, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

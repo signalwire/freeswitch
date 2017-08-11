@@ -2642,6 +2642,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			return SWITCH_STATUS_GENERR;
 		}
 
+		if (fh->params) {
+			if ((p = switch_event_get_header(fh->params,"record_write_only")) && switch_true(p)) {
+				flags &= ~SMBF_READ_STREAM;
+				flags |= SMBF_WRITE_STREAM;
+			}
+
+
+			if ((p = switch_event_get_header(fh->params, "record_read_only")) && switch_true(p)) {
+				flags &= ~SMBF_WRITE_STREAM;
+				flags |= SMBF_READ_STREAM;
+			}
+		}
+
 		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);

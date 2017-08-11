@@ -1663,6 +1663,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 	if (!e) {
 		switch_event_create_plain(&e, SWITCH_EVENT_CHANNEL_DATA);
+		e->flags |= EF_UNIQ_HEADERS;
 	}
 
 
@@ -1696,7 +1697,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 				if ((inner_var_count = switch_separate_string(var_array[x], '=',
 															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
 					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}
 			}
