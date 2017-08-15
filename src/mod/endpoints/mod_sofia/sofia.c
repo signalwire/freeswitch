@@ -10431,6 +10431,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
+		switch_channel_set_variable(channel, "sofia_profile_url", profile->url);
 		switch_channel_set_variable(channel, "recovery_profile_name", profile->name);
 		switch_channel_set_variable(channel, "sofia_profile_domain_name", profile->domain_name);
 
