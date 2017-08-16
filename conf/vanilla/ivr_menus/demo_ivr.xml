@@ -27,7 +27,7 @@
     <entry action="menu-sub" digits="6" param="demo_ivr_submenu"/>                  <!-- demo sub menu -->
     <!-- Using a regex in the digits tag lets you define a dial pattern for the caller
          You may define multiple regexes if you need a different pattern for some reason -->
-    <entry action="menu-exec-app" digits="/^(10[01][0-9])$/" param="transfer $1 XML features"/> 
+    <entry action="menu-exec-app" digits="/^(10[01][0-9])$/" param="transfer $1 XML features"/>
     <entry action="menu-top" digits="9"/>          <!-- Repeat this menu -->
   </menu>
 

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     NOTICE:
-    
-    This context is usually accessed via authenticated callers on the sip profile on port 5060 
+
+    This context is usually accessed via authenticated callers on the sip profile on port 5060
     or transfered callers from the public context which arrived via the sip profile on port 5080.
-    
+
     Authenticated users will use the user_context variable on the user to determine what context
     they can access.  You can also add a user in the directory with the cidr= attribute acl.conf.xml
     will build the domains ACL using this value.
@@ -20,7 +20,7 @@
       </condition>
     </extension>
 
-    <!-- Example of doing things based on time of day. 
+    <!-- Example of doing things based on time of day.
 
 	 year = 4 digit year. Example year="2009"
 	 yday = 1-365
@@ -32,7 +32,7 @@
 	 hour = 0-23
 	 minute = 0-59
 	 minute-of-day = 1-1440
-	 
+
 	 Example:
 	 <condition minute-of-day="540-1080"> (9am to 6pm EVERY day)
 	 do something ...
@@ -135,7 +135,7 @@
 	<action application="sleep" data="10000"/>
       </condition>
       <!--
-	  This is an example of how to auto detect if telephone-event is missing and activate inband detection 
+	  This is an example of how to auto detect if telephone-event is missing and activate inband detection
       -->
       <!--
       <condition field="${switch_r_sdp}" expression="a=rtpmap:(\d+)\stelephone-event/8000" break="never">
@@ -189,7 +189,7 @@
 	<action application="transfer" data="3000"/>
       </condition>
     </extension>
-    
+
     <extension name="snom-demo-1">
       <condition field="destination_number" expression="^9000$">
 	<!--<key> <light> <label> <user> <host> <profile> <action_name> <action>-->
@@ -257,10 +257,10 @@
       </condition>
     </extension>
 
-    <!-- 
-	 dial the extension (1000-1019) for 30 seconds and go to voicemail if the 
+    <!--
+	 dial the extension (1000-1019) for 30 seconds and go to voicemail if the
 	 call fails (continue_on_fail=true), otherwise hang up after a successful
-	 bridge (hangup_after_bridge=true) 
+	 bridge (hangup_after_bridge=true)
     -->
     <extension name="Local_Extension">
       <condition field="destination_number" expression="^(10[01][0-9])$">
@@ -336,11 +336,11 @@
       <condition field="destination_number" expression="^vmain$|^4000$|^\*98$">
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
-	<action application="voicemail" data="check default ${domain_name}"/>  
+	<action application="voicemail" data="check default ${domain_name}"/>
       </condition>
     </extension>
 
-    <!-- 
+    <!--
 	 This extension is used by mod_portaudio so you can pa call sip:someone@example.com
 	 mod_portaudio will pass the entire string to the dialplan for routing.
     -->
@@ -352,7 +352,7 @@
 
     <!--
 	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
-    -->                                                                                                                                                       
+    -->
     <extension name="nb_conferences">
       <condition field="destination_number" expression="^(30\d{2})$">
 	<action application="answer"/>
@@ -418,7 +418,7 @@
     <extension name="freeswitch_public_conf_via_sip">
       <condition field="destination_number" expression="^9(888|8888|1616|3232)$">
 	<action application="export" data="hold_music=silence"/>
-	<!-- 
+	<!--
 	     This will take the SAS from the b-leg and send it to the display on the a-leg phone.
 	     Known working with Polycom and Snom maybe others.
 	-->
@@ -432,7 +432,7 @@
 
     <!--
 	This extension will start a conference and invite a group.
-	At anytime the participant can dial *2 to bridge directly to the boss. 
+	At anytime the participant can dial *2 to bridge directly to the boss.
 	All other callers are then hung up on.
     -->
     <extension name="mad_boss_intercom">
@@ -450,7 +450,7 @@
 
     <!--
 	This extension will start a conference and invite a few of people.
-	At anytime the participant can dial *2 to bridge directly to the boss. 
+	At anytime the participant can dial *2 to bridge directly to the boss.
 	All other callers are then hung up on.
     -->
     <extension name="mad_boss_intercom">
@@ -490,7 +490,7 @@
       </condition>
     </extension>
 
-    <!-- Create a conference on the fly and pull someone in at the same time. --> 
+    <!-- Create a conference on the fly and pull someone in at the same time. -->
     <extension name="dynamic_conference">
       <condition field="destination_number" expression="^5001$">
 	<action application="conference" data="bridge:mydynaconf:sofia/${use_profile}/1234@conference.freeswitch.org"/>
@@ -504,7 +504,7 @@
       </condition>
     </extension>
 
-    <!-- 
+    <!--
 	 Parking extensions... transferring calls to 5900 will park them in a queue.
     -->
     <extension name="park">
@@ -514,7 +514,7 @@
       </condition>
     </extension>
 
-    <!-- 
+    <!--
 	 Parking pickup extension.  Calling 5901 will pickup the call.
     -->
     <extension name="unpark">
@@ -524,7 +524,7 @@
       </condition>
     </extension>
 
-    <!-- 
+    <!--
 	 Valet park retrieval, works with valet_park extension below.
 	 Retrieve a valet parked call by dialing 6000 + park number + #
     -->
@@ -535,7 +535,7 @@
       </condition>
     </extension>
 
-    <!-- 
+    <!--
 	 Valet park 6001-6099.  Blind x-fer to 6001, 6002, etc. to valet park the call.
 	 Dial 6001, 6002, etc. to retrieve a call that is already valet parked.
 	 After call is retrieved, park extension is free for another call.
@@ -549,10 +549,10 @@
 
 
     <!--
-	This extension is used with Snom phones.  
-	
+	This extension is used with Snom phones.
+
 	Set a function key to park+lot (lot being a number or name.)
-	Set type to Park+Orbit.  You can then park and pickup using 
+	Set type to Park+Orbit.  You can then park and pickup using
 	the softkey on the phone.  Should work with other phones.
     -->
     <extension name="park">
@@ -560,9 +560,9 @@
       <condition field="destination_number" expression="park\+(\d+)">
 	<action application="fifo" data="$1@${domain_name} in undef $${hold_music}"/>
       </condition>
-    </extension> 
+    </extension>
     <!--
-	The extension is parking pickup with a to param of the fifo we are calling 
+	The extension is parking pickup with a to param of the fifo we are calling
 	Some phones send things like orbit= and you can extract that info.
     -->
     <extension name="unpark">
@@ -590,7 +590,7 @@
 	<action application="fifo" data="$1@${domain_name} in undef $${hold_music}"/>
       </condition>
     </extension>
-    
+
     <!--
        This extension is used with Linksys phones.
 
@@ -610,7 +610,7 @@
     <!--
 	Here are some examples of how to override the ringback heard by the
 	far end.  You have two variables that you can use to override this.
-	
+
 	ringback          - used when a call isn't answered. (early media)
 	transfer_ringback - used when the call is already answered. (post answer)
     -->
@@ -626,7 +626,7 @@
 	<action application="hangup"/>
       </condition>
     </extension>
-    
+
     <extension name="fax_receive">
       <condition field="destination_number" expression="^9178$">
 	<action application="answer" />
@@ -786,7 +786,7 @@
 	You can place files in the default directory to get included.
     -->
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
-    
+
     <!--
     <extension name="refer">
       <condition field="${sip_refer_to}">
@@ -810,7 +810,7 @@
 	<action application="bridge" data="sofia/${ruri_profile}/${ruri_user}${regex(${sofia_contact(${ruri_contact})}|^[^\@]+(.*)|%1)}"/>
       </condition>
     </extension>
-    
+
     <extension name="7004">
       <condition field="destination_number" expression="^7004$">
 	<action application="set" data="ruri_profile=default"/>

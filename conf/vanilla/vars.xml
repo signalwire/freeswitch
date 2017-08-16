@@ -1,26 +1,26 @@
 <include>
   <!-- Preprocessor Variables
-       These are introduced when configuration strings must be consistent across modules. 
+       These are introduced when configuration strings must be consistent across modules.
        NOTICE: YOU CAN NOT COMMENT OUT AN X-PRE-PROCESS line, Remove the line instead.
-       
-       WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
-       
+
+       WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
        YOU SHOULD CHANGE THIS default_password value if you don't want to be subject to any
        toll fraud in the future.  It's your responsibility to secure your own system.
-       
+
        This default config is used to demonstrate the feature set of FreeSWITCH.
-       
-       WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+
+       WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
   -->
   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
   <!-- Did you change it yet? -->
   <!--
-      The following variables are set dynamically - calculated if possible by freeswitch - and 
+      The following variables are set dynamically - calculated if possible by freeswitch - and
       are available to the config as $${variable}.  You can see their calculated value via fs_cli
       by entering eval $${variable}
-      
+
       hostname
-      local_ip_v4 
+      local_ip_v4
       local_mask_v4
       local_ip_v6
       switch_serial
@@ -45,7 +45,7 @@
       nat_public_addr
       nat_private_addr
       nat_type
-      
+
   -->
 
 
@@ -54,8 +54,8 @@
 
   <!--
       This setting is what sets the default domain FreeSWITCH will use if all else fails.
-      
-      FreeSWICH will default to $${local_ip_v4} unless changed.  Changing this setting does 
+
+      FreeSWICH will default to $${local_ip_v4} unless changed.  Changing this setting does
       affect the sip authentication.  Please review conf/directory/default.xml for more
       information on this topic.
   -->
@@ -66,7 +66,7 @@
   <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
   <!--
       Enable ZRTP globally you can override this on a per channel basis
-      
+
       http://wiki.freeswitch.org/wiki/ZRTP (on how to enable zrtp)
   -->
   <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
@@ -169,13 +169,13 @@
       and only use rtp_secure_media=[optional|mandatory|false|true] without having
       to dictate the suite list with the rtp_secure_media* variables.
   -->
-  <!-- 
+  <!--
        Examples of codec options: (module must be compiled and loaded)
-       
+
        codecname[@8000h|16000h|32000h[@XXi]]
-       
+
        XX is the frame size must be multples allowed for the codec
-       FreeSWITCH can support 10-120ms on some codecs. 
+       FreeSWITCH can support 10-120ms on some codecs.
        We do not support exceeding the MTU of the RTP packet.
 
 
@@ -205,22 +205,22 @@
        AAL2-G726-40     - Same as G726-40 but using AAL2 packing. (multiples of 10)
        LPC              - LPC10 using 90ms ptime (only supports 90ms at this time in FreeSWITCH)
        L16              - L16 isn't recommended for VoIP but you can do it. L16 can exceed the MTU rather quickly.
-       
+
        These are the passthru audio codecs:
-       
+
        G729             - G729 in passthru mode. (mod_g729)
        G723             - G723.1 in passthru mode. (mod_g723_1)
        AMR              - AMR in passthru mode. (mod_amr)
-       
+
        These are the passthru video codecs: (mod_h26x)
-       
+
        H261             - H.261 Video
        H263             - H.263 Video
        H263-1998        - H.263-1998 Video
        H263-2000        - H.263-2000 Video
        H264             - H.264 Video
-       
-       RTP Dynamic Payload Numbers currently used in FreeSWITCH and what for.
+
+       RTP Dynamic Payload Numbers currently used in FreeSWITCH and their purpose.
 
        96  - AMR
        97  - iLBC (30)
@@ -229,9 +229,9 @@
        100 -
        101 - telephone-event
        102 -
-       103 - 
-       104 - 
-       105 - 
+       103 -
+       104 -
+       105 -
        106 - BV16
        107 - G722.1 (16kHz)
        108 -
@@ -251,7 +251,7 @@
        122 - AAL2-G726-32 && G726-32
        123 - AAL2-G726-24 && G726-24
        124 - AAL2-G726-16 && G726-16
-       125 - 
+       125 -
        126 -
        127 - BV32
 
@@ -261,20 +261,20 @@
 
   <!--
       xmpp_client_profile and xmpp_server_profile
-      xmpp_client_profile can be any string. 
+      xmpp_client_profile can be any string.
       xmpp_server_profile is appended to "dingaling_" to form the database name
       containing the "subscriptions" table.
-      used by: dingaling.conf.xml enum.conf.xml 
-  --> 
+      used by: dingaling.conf.xml enum.conf.xml
+  -->
 
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
-  <!-- 
+  <!--
        THIS IS ONLY USED FOR DINGALING
 
        bind_server_ip
 
-       Can be an ip address, a dns name, or "auto". 
+       Can be an ip address, a dns name, or "auto".
        This determines an ip address available on this host to bind.
        If you are separating RTP and SIP traffic, you will want to have
        use different addresses where this variable appears.
@@ -283,7 +283,7 @@
   <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
 
   <!-- NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE
-       
+
        If you're going to load test FreeSWITCH please input real IP addresses
        for external_rtp_ip and external_sip_ip
   -->
@@ -315,7 +315,7 @@
 
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
-  --> 
+  -->
   <X-PRE-PROCESS cmd="set" data="unroll_loops=true"/>
 
   <!-- outbound_caller_id and outbound_caller_name
@@ -370,11 +370,11 @@
 
   <!--
        Digits Dialed filter: (FS-6940)
-       
+
        The digits stream may contain valid credit card numbers or social security numbers, These digit
-       filters will allow you to make a valant effort to stamp out sensitive information for 
+       filters will allow you to make a valant effort to stamp out sensitive information for
        PCI/HIPPA compliance. (see xml_cdr dialed_digits)
-       
+
        df_us_ssn   = US Social Security Number pattern
        df_us_luhn  = Visa, MasterCard, American Express, Diners Club, Discover and JCB
   -->
@@ -386,7 +386,7 @@
   <!--
       Setting up your default sip provider is easy.
       Below are some values that should work in most cases.
-      
+
       These are for conf/directory/default/example.com.xml
   -->
   <X-PRE-PROCESS cmd="set" data="default_provider=example.com"/>
@@ -399,7 +399,7 @@
 
   <!--
      SIP and TLS settings. http://wiki.freeswitch.org/wiki/Tls
-     
+
      valid options: sslv2,sslv3,sslv23,tlsv1,tlsv1.1,tlsv1.2
 
      default: tlsv1,tlsv1.1,tlsv1.2
@@ -416,7 +416,7 @@
      Will show you what is available in your verion of openssl.
   -->
   <X-PRE-PROCESS cmd="set" data="sip_tls_ciphers=ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"/>
-  
+
   <!-- Internal SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
   <X-PRE-PROCESS cmd="set" data="internal_sip_port=5060"/>
