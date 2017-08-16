@@ -586,7 +586,6 @@ void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *can
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(conference->info_event_channel));
 	cJSON_AddItemToObject(data, "contentType", cJSON_CreateString("layout-info"));
 	
-	switch_mutex_lock(canvas->write_mutex);
 	switch_mutex_lock(canvas->mutex);
 	
 	if ((obj = get_canvas_info(canvas))) {
@@ -622,7 +621,6 @@ void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *can
 		cJSON_AddItemToObject(data, "canvasInfo", obj);
 	}
 
-	switch_mutex_unlock(canvas->write_mutex);	
 	switch_mutex_unlock(canvas->mutex);
 
 	switch_event_channel_broadcast(conference->info_event_channel, &msg, "mod_conference", conference_globals.event_channel_id);
