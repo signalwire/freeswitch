@@ -8,7 +8,7 @@
       <action application="hangup"/>
     </condition>
   </extension>
-  
+
   <extension name="Talking Clock Date" ><!--e.g. March 8, 2011-->
     <condition field="destination_number" expression="^9171$">
       <action application="answer"/>
@@ -18,7 +18,7 @@
       <action application="hangup"/>
     </condition>
   </extension>
-  
+
   <extension name="Talking Clock Date and Time" ><!--e.g. March 8, 2011
 						     10:56pm-->
     <condition field="destination_number" expression="^9172$">

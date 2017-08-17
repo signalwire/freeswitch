@@ -1,6 +1,6 @@
 <configuration name="acl.conf" description="Network Lists">
   <network-lists>
-    <!-- 
+    <!--
 	 These ACL's are automatically created on startup.
 
 	 rfc1918.auto  - RFC1918 Space
@@ -15,9 +15,9 @@
     </list>
 
     <!--
-	This will traverse the directory adding all users 
+	This will traverse the directory adding all users
 	with the cidr= tag to this ACL, when this ACL matches
-	the users variables and params apply as if they 
+	the users variables and params apply as if they
 	digest authenticated.
     -->
     <list name="domains" default="deny">
