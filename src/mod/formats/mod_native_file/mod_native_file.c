@@ -181,13 +181,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	uint32_t num_codecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
-	uint32_t x;
+	uint32_t x, y = 0;
 
 	for (x = 0; x < num_codecs; x++) {
-		if (codecs[x]->encoded_bytes_per_packet == 0) {
+		if (codecs[x]->encoded_bytes_per_packet == 0 || codecs[x]->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 			continue;
 		}
-		supported_formats[x] = switch_core_strdup(pool, codecs[x]->iananame);
+
+		supported_formats[y++] = switch_core_strdup(pool, codecs[x]->iananame);
 	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);

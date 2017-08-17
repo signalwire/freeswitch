@@ -394,7 +394,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 20000,	/* number of microseconds per frame */
 										 160,	/* number of samples per frame */
 										 320,	/* number of bytes per frame decompressed */
-										 320,	/* number of bytes per frame compressed */
+										 0,	/* number of bytes per frame compressed */
 										 1,	/* number of channels represented */
 										 1,	/* number of frames per network packet */
 										 switch_proxy_init,	/* function to initialize a codec handle using this implementation */
@@ -413,7 +413,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 20000, /* number of microseconds per frame */
 										 160, /* number of samples per frame */
 										 320 * 2, /* number of bytes per frame decompressed */
-										 320 * 2, /* number of bytes per frame compressed */
+										 0, /* number of bytes per frame compressed */
 										 2, /* number of channels represented */
 										 1, /* number of frames per network packet */
 										 switch_proxy_init, /* function to initialize a codec handle using this implementation */
