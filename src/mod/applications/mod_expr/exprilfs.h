@@ -946,3 +946,35 @@ case EXPR_NODEFUNC_MANY:
 
 	break;
 }
+
+/* logical and */
+case EXPR_NODEFUNC_LOGICAL_AND:
+{
+	err = exprEvalNode(obj, nodes->data.function.nodes, 0, &d1);
+
+	if (!err)
+		err = exprEvalNode(obj, nodes->data.function.nodes, 1, &d2);
+
+	if (!err) {
+		*val = (EXPRTYPE) (((unsigned int)d1) & ((unsigned int)d2));
+	} else
+		return err;
+
+	break;
+}
+
+/* or */
+case EXPR_NODEFUNC_LOGICAL_OR:
+{
+	err = exprEvalNode(obj, nodes->data.function.nodes, 0, &d1);
+
+	if (!err)
+		err = exprEvalNode(obj, nodes->data.function.nodes, 1, &d2);
+
+	if (!err) {
+		*val = (EXPRTYPE) (((unsigned int)d1) | ((unsigned int)d2));
+	} else
+		return err;
+
+	break;
+}
