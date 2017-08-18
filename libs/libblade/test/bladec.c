@@ -297,7 +297,7 @@ void command_subscribe(blade_handle_t *bh, char *args)
 
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("test"));
-	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", channels, NULL, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "test", "mydomain.com", channels, blade_subscribe_response_handler, NULL, test_event_request_handler, NULL);
 	cJSON_Delete(channels);
 }
 

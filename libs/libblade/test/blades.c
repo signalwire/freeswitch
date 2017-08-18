@@ -244,7 +244,7 @@ void command_publish(blade_handle_t *bh, char *args)
 	blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 	// @todo build up json-based method schema for each protocolrpc registered above, and pass into blade_handle_rpcpublish() to attach to the request, to be stored in the blade_protocol_t tracked by the master node
-	blade_handle_rpcpublish(bh, "test", "mydomain.com", NULL, blade_publish_response_handler, NULL);
+	blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD, "test", "mydomain.com", NULL, blade_publish_response_handler, NULL);
 }
 
 void command_broadcast(blade_handle_t *bh, char *args)

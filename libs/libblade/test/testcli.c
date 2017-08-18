@@ -70,22 +70,25 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	ks_assert(res_result_realm);
 
 	res_result_controllers = cJSON_GetObjectItem(res_result, "controllers");
-	ks_assert(res_result_controllers);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) response processing\n", blade_session_id_get(bs), res_result_protocol, res_result_realm);
 
-	for (int index = 0; index < cJSON_GetArraySize(res_result_controllers); ++index) {
-		cJSON *elem = cJSON_GetArrayItem(res_result_controllers, index);
-		if (elem->type == cJSON_String) {
-			nodeid = elem->valuestring;
+	if (res_result_controllers) {
+		for (int index = 0; index < cJSON_GetArraySize(res_result_controllers); ++index) {
+			cJSON *elem = cJSON_GetArrayItem(res_result_controllers, index);
+			if (elem->type == cJSON_String) {
+				nodeid = elem->valuestring;
+			}
 		}
 	}
 
 	blade_session_read_unlock(bs);
 
 	if (nodeid) {
+		if (g_testcon_nodeid) ks_pool_free(&g_testcon_nodeid);
 		g_testcon_nodeid = ks_pstrdup(ks_pool_get(bh), nodeid);
 	}
+
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, res_result_realm, g_testcon_nodeid);
 
 	return KS_FALSE;
@@ -384,7 +387,8 @@ void command_subscribe(blade_handle_t *bh, char *args)
 
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
-	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", channels, NULL, NULL, NULL, test_channel_handler, NULL);
+	if (args && args[0]) cJSON_AddItemToArray(channels, cJSON_CreateString(args));
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "test", "mydomain.com", channels, NULL, NULL, test_channel_handler, NULL);
 	cJSON_Delete(channels);
 }
 
@@ -399,7 +403,8 @@ void command_unsubscribe(blade_handle_t *bh, char *args)
 
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
-	blade_handle_rpcsubscribe(bh, "test", "mydomain.com", NULL, channels, test_subscribe_response_handler, NULL, test_channel_handler, NULL);
+	if (args && args[0]) cJSON_AddItemToArray(channels, cJSON_CreateString(args));
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_REMOVE, "test", "mydomain.com", channels, test_subscribe_response_handler, NULL, test_channel_handler, NULL);
 	cJSON_Delete(channels);
 }
 

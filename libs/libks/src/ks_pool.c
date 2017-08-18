@@ -596,31 +596,26 @@ done:
 // @todo fill in documentation
 KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr)
 {
-	ks_pool_prefix_t *prefix = NULL;
 	if (!addr) return KS_FALSE;
-	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
-	if (check_prefix(prefix) != KS_STATUS_SUCCESS) return KS_FALSE;
+	if (check_prefix((ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE)) != KS_STATUS_SUCCESS) return KS_FALSE;
 	return KS_TRUE;
 }
 
 // @todo fill in documentation
-KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr)
+inline KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr)
 {
-	ks_pool_prefix_t *prefix = NULL;
+	ks_assert(addr);
+#ifdef DEBUG
+	ks_pool_prefix_t *prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	ks_pool_t *pool = NULL;
 
-	if (!addr) goto done;
-
-	prefix = (ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE);
-	if (check_prefix(prefix) != KS_STATUS_SUCCESS) goto done;
-
-	if ((ret = check_pool(prefix->pool)) == KS_STATUS_SUCCESS) pool = prefix->pool;
-
-done:
+	ret = check_prefix(prefix);
 	ks_assert(ret == KS_STATUS_SUCCESS);
 
-	return pool;
+	ret = check_pool(prefix->pool);
+	ks_assert(ret == KS_STATUS_SUCCESS);
+#endif
+	return ((ks_pool_prefix_t *)((uintptr_t)addr - KS_POOL_PREFIX_SIZE))->pool;
 }
 
 /*

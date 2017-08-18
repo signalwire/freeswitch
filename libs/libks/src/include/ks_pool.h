@@ -151,7 +151,7 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool);
 KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr);
 
 // @todo fill in documentation
-KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr);
+inline KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr);
 
 /*
  * void *ks_pool_alloc

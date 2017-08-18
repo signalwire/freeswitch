@@ -134,6 +134,28 @@ struct blade_transport_callbacks_s {
 typedef void (*blade_session_callback_t)(blade_session_t *bs, blade_session_state_condition_t condition, void *data);
 
 
+typedef enum {
+	BLADE_RPCPUBLISH_COMMAND_NONE,
+	BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD,
+	BLADE_RPCPUBLISH_COMMAND_CONTROLLER_REMOVE,
+	BLADE_RPCPUBLISH_COMMAND_CHANNEL_ADD,
+	BLADE_RPCPUBLISH_COMMAND_CHANNEL_REMOVE,
+} blade_rpcpublish_command_t;
+
+typedef enum {
+	BLADE_RPCSUBSCRIBE_COMMAND_NONE,
+	BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD,
+	BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_REMOVE,
+} blade_rpcsubscribe_command_t;
+
+typedef enum {
+	BLADE_RPCBROADCAST_COMMAND_NONE,
+	BLADE_RPCBROADCAST_COMMAND_EVENT,
+	BLADE_RPCBROADCAST_COMMAND_PROTOCOL_REMOVE,
+	BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE,
+} blade_rpcbroadcast_command_t;
+
+
 KS_END_EXTERN_C
 
 #endif

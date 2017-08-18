@@ -16,9 +16,13 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
+void command_channeladd(blade_handle_t *bh, char *args);
+void command_channelremove(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
+	{ "channeladd", command_channeladd },
+	{ "channelremove", command_channelremove },
 
 	{ NULL, NULL }
 };
@@ -27,8 +31,11 @@ struct testproto_s {
 	blade_handle_t *handle;
 	ks_pool_t *pool;
 	ks_hash_t *participants;
+	ks_hash_t *channels;
 };
 typedef struct testproto_s testproto_t;
+
+testproto_t *g_test = NULL;
 
 static void testproto_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
@@ -62,6 +69,7 @@ ks_status_t testproto_create(testproto_t **testP, blade_handle_t *bh)
 	test->pool = pool;
 
 	ks_hash_create(&test->participants, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
+	ks_hash_create(&test->channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 
 	ks_pool_set_cleanup(test, NULL, testproto_cleanup);
 
@@ -157,6 +165,13 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	// authorize channels with the master for the requester
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
+	for (ks_hash_iterator_t *it = ks_hash_first(test->channels, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		void *value = NULL;
+
+		ks_hash_this(it, &key, NULL, &value);
+		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
+	}
 
 	blade_handle_rpcauthorize(bh, requester_nodeid, KS_FALSE, "test", "mydomain.com", channels, NULL, NULL);
 
@@ -220,6 +235,13 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	// deauthorize channels with the master for the requester
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
+	for (ks_hash_iterator_t *it = ks_hash_first(test->channels, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		void *value = NULL;
+
+		ks_hash_this(it, &key, NULL, &value);
+		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
+	}
 
 	blade_handle_rpcauthorize(bh, requester_nodeid, KS_TRUE, "test", "mydomain.com", channels, NULL, NULL);
 
@@ -310,7 +332,6 @@ int main(int argc, char **argv)
 	config_setting_t *config_blade = NULL;
 	const char *cfgpath = "testcon.cfg";
 	const char *autoconnect = NULL;
-	testproto_t *test = NULL;
 
 	ks_global_set_default_logger(KS_LOG_LEVEL_DEBUG);
 
@@ -346,7 +367,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	testproto_create(&test, bh);
+	testproto_create(&g_test, bh);
 
 	if (autoconnect) {
 		blade_connection_t *bc = NULL;
@@ -366,19 +387,19 @@ int main(int argc, char **argv)
 			// @todo use session state change callback to know when the session is ready and the realm(s) available from blade.connect, this hack temporarily ensures it's ready before trying to publish upstream
 			ks_sleep_ms(3000);
 
-			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, (void *)test);
+			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, (void *)test);
+			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, (void *)test);
+			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			channels = cJSON_CreateArray();
 			cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
 
-			blade_handle_rpcpublish(bh, "test", "mydomain.com", channels, test_publish_response_handler, (void *)test);
+			blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
 
 			cJSON_Delete(channels);
 		}
@@ -388,7 +409,7 @@ int main(int argc, char **argv)
 
 	blade_handle_destroy(&bh);
 
-	testproto_destroy(&test);
+	testproto_destroy(&g_test);
 
 	config_destroy(&config);
 
@@ -457,6 +478,51 @@ void command_quit(blade_handle_t *bh, char *args)
 	ks_assert(args);
 
 	g_shutdown = KS_TRUE;
+}
+
+void command_channeladd(blade_handle_t *bh, char *args)
+{
+	cJSON *channels = NULL;
+
+	ks_assert(bh);
+	ks_assert(args);
+
+	if (!args[0]) {
+		ks_log(KS_LOG_INFO, "Requires channel argument");
+		return;
+	}
+
+	ks_hash_insert(g_test->channels, (void *)ks_pstrdup(g_test->pool, args), (void *)KS_TRUE);
+
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString(args));
+
+	blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CHANNEL_ADD, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
+
+	cJSON_Delete(channels);
+}
+
+void command_channelremove(blade_handle_t *bh, char *args)
+{
+	cJSON *channels = NULL;
+
+	ks_assert(bh);
+	ks_assert(args);
+
+	if (!args[0]) {
+		ks_log(KS_LOG_INFO, "Requires channel argument");
+		return;
+	}
+
+
+	if (ks_hash_remove(g_test->channels, (void *)args)) {
+		channels = cJSON_CreateArray();
+		cJSON_AddItemToArray(channels, cJSON_CreateString(args));
+
+		blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CHANNEL_REMOVE, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
+
+		cJSON_Delete(channels);
+	}
 }
 
 /* For Emacs:

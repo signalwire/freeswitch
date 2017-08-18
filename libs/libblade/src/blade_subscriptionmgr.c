@@ -145,6 +145,56 @@ KS_DECLARE(blade_subscription_t *) blade_subscriptionmgr_subscription_lookup(bla
 	return bsub;
 }
 
+KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscriptionmgr_t *bsmgr, const char *protocol, const char *realm, const char *channel)
+{
+	ks_pool_t *pool = NULL;
+	char *bsub_key = NULL;
+	blade_subscription_t *bsub = NULL;
+	ks_hash_t *subscribers = NULL;
+	ks_hash_t *subscriptions = NULL;
+
+	ks_assert(bsmgr);
+	ks_assert(protocol);
+	ks_assert(realm);
+	ks_assert(channel);
+
+	pool = ks_pool_get(bsmgr);
+
+	bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+
+	ks_hash_write_lock(bsmgr->subscriptions);
+
+	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)bsub_key, KS_UNLOCKED);
+
+	subscribers = blade_subscription_subscribers_get(bsub);
+	ks_assert(subscribers);
+
+	for (ks_hash_iterator_t *it = ks_hash_first(subscribers, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		void *key = NULL;
+		void *value = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, &value);
+
+		subscriptions = (ks_hash_t *)ks_hash_search(bsmgr->subscriptions_cleanup, key, KS_UNLOCKED);
+
+		ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from %s\n", key, bsub_key);
+		ks_hash_remove(subscriptions, bsub_key);
+
+		if (ks_hash_count(subscriptions) == 0) {
+			ks_hash_remove(bsmgr->subscriptions_cleanup, key);
+		}
+	}
+
+	ks_log(KS_LOG_DEBUG, "Subscription Removed: %s\n", bsub_key);
+	ks_hash_remove(bsmgr->subscriptions, (void *)bsub_key);
+
+	ks_hash_write_unlock(bsmgr->subscriptions);
+
+	ks_pool_free(&bsub_key);
+
+	return KS_STATUS_SUCCESS;
+}
+
 KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *realm, const char *channel, const char *subscriber)
 {
 	ks_pool_t *pool = NULL;
@@ -295,7 +345,7 @@ KS_DECLARE(void) blade_subscriptionmgr_purge(blade_subscriptionmgr_t *bsmgr, con
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t *bsmgr, const char *excluded_nodeid, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t *bsmgr, blade_rpcbroadcast_command_t command, const char *excluded_nodeid, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_pool_t *pool = NULL;
 	const char *bsub_key = NULL;
@@ -303,67 +353,152 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 	blade_session_t *bs = NULL;
 	cJSON *req = NULL;
 	cJSON *req_params = NULL;
+	ks_hash_t *routers = NULL;
+	ks_hash_t *channels = NULL;
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
 	ks_assert(realm);
-	ks_assert(channel);
 
 	pool = ks_pool_get(bsmgr);
 
-	bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+	switch (command) {
+	case BLADE_RPCBROADCAST_COMMAND_EVENT:
+		ks_assert(event);
+	case BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE:
+		ks_assert(channel);
+		bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
 
-	blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.broadcast");
-	cJSON_AddStringToObject(req_params, "protocol", protocol);
-	cJSON_AddStringToObject(req_params, "realm", realm);
-	cJSON_AddStringToObject(req_params, "channel", channel);
-	cJSON_AddStringToObject(req_params, "event", event);
-	if (params) cJSON_AddItemToObject(req_params, "params", cJSON_Duplicate(params, 1));
+		ks_hash_read_lock(bsmgr->subscriptions);
 
-	ks_hash_read_lock(bsmgr->subscriptions);
+		bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)bsub_key, KS_UNLOCKED);
+		if (bsub) {
+			ks_hash_t *subscribers = blade_subscription_subscribers_get(bsub);
 
-	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)bsub_key, KS_UNLOCKED);
-	if (bsub) {
-		ks_hash_t *subscribers = blade_subscription_subscribers_get(bsub);
+			ks_assert(subscribers);
 
-		ks_assert(subscribers);
+			for (ks_hash_iterator_t *it = ks_hash_first(subscribers, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+				void *key = NULL;
+				void *value = NULL;
 
-		for (ks_hash_iterator_t *it = ks_hash_first(subscribers, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+				ks_hash_this(it, (const void **)&key, NULL, &value);
+
+				if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key)) continue;
+
+				// @todo broadcast producer is also a local subscriber... requires special consideration with no session to request through
+				if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), (const char *)key)) continue;
+
+				bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key);
+				if (bs) {
+					if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+					if (!ks_hash_search(routers, blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, blade_session_id_get(bs), bs);
+					else blade_session_read_unlock(bs);
+				}
+			}
+			if (command == BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE) {
+				if (!channels) ks_hash_create(&channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+				ks_hash_insert(channels, channel, (void *)KS_TRUE);
+			}
+		}
+
+		ks_hash_read_unlock(bsmgr->subscriptions);
+		break;
+	case BLADE_RPCBROADCAST_COMMAND_PROTOCOL_REMOVE:
+		bsub_key = ks_psprintf(pool, "%s@%s", protocol, realm);
+
+		ks_hash_read_lock(bsmgr->subscriptions);
+
+		for (ks_hash_iterator_t *it = ks_hash_first(bsmgr->subscriptions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 			void *key = NULL;
 			void *value = NULL;
 
 			ks_hash_this(it, (const void **)&key, NULL, &value);
 
-			if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key)) continue;
+			bsub = (blade_subscription_t *)value;
 
-			// @todo broadcast producer is also a local subscriber... requires special consideration with no session to request through
-			if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), (const char *)key)) continue;
+			if (ks_stristr(bsub_key, (const char *)key) == (const char *)key) {
+				ks_hash_t *subscribers = blade_subscription_subscribers_get(bsub);
 
-			bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key);
-			if (bs) {
-				ks_log(KS_LOG_DEBUG, "Broadcasting: %s through %s\n", bsub_key, blade_session_id_get(bs));
+				ks_assert(subscribers);
 
-				blade_session_send(bs, req, callback, data);
+				for (ks_hash_iterator_t *it2 = ks_hash_first(subscribers, KS_UNLOCKED); it2; it2 = ks_hash_next(&it2)) {
+					void *key2 = NULL;
+					void *value2 = NULL;
 
-				blade_session_read_unlock(bs);
+					ks_hash_this(it2, (const void **)&key2, NULL, &value2);
+
+					if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key2)) continue;
+
+					// @todo broadcast producer is also a local subscriber... requires special consideration with no session to request through
+					if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), (const char *)key2)) continue;
+
+					bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key2);
+					if (bs) {
+						if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+						if (!ks_hash_search(routers, blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, blade_session_id_get(bs), bs);
+						else blade_session_read_unlock(bs);
+					}
+				}
+
+				if (!channels) ks_hash_create(&channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+				ks_hash_insert(channels, blade_subscription_channel_get(bsub), (void *)KS_TRUE);
 			}
 		}
+
+		ks_hash_read_unlock(bsmgr->subscriptions);
+		break;
+	default: return KS_STATUS_ARG_INVALID;
 	}
 
-	ks_hash_read_unlock(bsmgr->subscriptions);
 
 	bs = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bsmgr->handle));
 	if (bs) {
 		if (!excluded_nodeid || ks_safe_strcasecmp(blade_session_id_get(bs), excluded_nodeid)) {
+			if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+			ks_hash_insert(routers, blade_session_id_get(bs), bs);
+		}
+		else blade_session_read_unlock(bs);
+	}
+
+	if (channels) {
+		for (ks_hash_iterator_t *it = ks_hash_first(channels, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			void *key = NULL;
+			void *value = NULL;
+
+			ks_hash_this(it, (const void **)&key, NULL, &value);
+
+			blade_subscriptionmgr_subscription_remove(bsmgr, protocol, realm, (const char *)key);
+		}
+		ks_hash_destroy(&channels);
+	}
+
+	if (routers) {
+		for (ks_hash_iterator_t *it = ks_hash_first(routers, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			void *key = NULL;
+			void *value = NULL;
+
+			ks_hash_this(it, (const void **)&key, NULL, &value);
+
+			bs = (blade_session_t *)value;
+
+			blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.broadcast");
+			cJSON_AddNumberToObject(req_params, "command", command);
+			cJSON_AddStringToObject(req_params, "protocol", protocol);
+			cJSON_AddStringToObject(req_params, "realm", realm);
+			if (channel) cJSON_AddStringToObject(req_params, "channel", channel);
+			if (event) cJSON_AddStringToObject(req_params, "event", event);
+			if (params) cJSON_AddItemToObject(req_params, "params", cJSON_Duplicate(params, 1));
+
 			ks_log(KS_LOG_DEBUG, "Broadcasting: %s through %s\n", bsub_key, blade_session_id_get(bs));
 
 			blade_session_send(bs, req, callback, data);
+
+			cJSON_Delete(req);
+
+			blade_session_read_unlock(bs);
 		}
-
-		blade_session_read_unlock(bs);
+		ks_hash_destroy(&routers);
 	}
-
-	cJSON_Delete(req);
 
 	ks_pool_free(&bsub_key);
 

@@ -122,8 +122,12 @@ KS_DECLARE(ks_status_t) blade_mastermgr_purge(blade_mastermgr_t *bmmgr, const ch
 		ks_hash_this(it, (const void **)&key, NULL, (void **)&bp);
 
 		if (blade_protocol_purge(bp, nodeid)) {
-			if (!cleanup) ks_hash_create(&cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-			ks_hash_insert(cleanup, (void *)key, bp);
+			if (!blade_protocol_controller_available(bp)) {
+				if (!cleanup) ks_hash_create(&cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
+				ks_hash_insert(cleanup, (void *)key, bp);
+			} else {
+				// @todo not the last controller, may need to propagate that the controller is no longer available?
+			}
 		}
 	}
 	if (cleanup) {
@@ -132,6 +136,8 @@ KS_DECLARE(ks_status_t) blade_mastermgr_purge(blade_mastermgr_t *bmmgr, const ch
 			blade_protocol_t *bp = NULL;
 
 			ks_hash_this(it, (const void **)&key, NULL, (void **)&bp);
+
+			blade_subscriptionmgr_broadcast(blade_handle_subscriptionmgr_get(bmmgr->handle), BLADE_RPCBROADCAST_COMMAND_PROTOCOL_REMOVE, NULL, blade_protocol_name_get(bp), blade_protocol_realm_get(bp), NULL, NULL, NULL, NULL, NULL);
 
 			ks_log(KS_LOG_DEBUG, "Protocol Removed: %s\n", key);
 			ks_hash_remove(bmmgr->protocols, (void *)key);
@@ -192,11 +198,48 @@ KS_DECLARE(ks_status_t) blade_mastermgr_controller_add(blade_mastermgr_t *bmmgr,
 		ks_hash_insert(bmmgr->protocols, (void *)ks_pstrdup(pool, key), bp);
 	}
 
-	blade_protocol_controllers_add(bp, controller);
+	blade_protocol_controller_add(bp, controller);
+
+	ks_hash_write_unlock(bmmgr->protocols);
 
 	ks_pool_free(&key);
 
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_mastermgr_controller_remove(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *controller)
+{
+	ks_pool_t *pool = NULL;
+	blade_protocol_t *bp = NULL;
+	char *key = NULL;
+
+	ks_assert(bmmgr);
+	ks_assert(protocol);
+	ks_assert(realm);
+	ks_assert(controller);
+
+	pool = ks_pool_get(bmmgr);
+
+	key = ks_psprintf(pool, "%s@%s", protocol, realm);
+
+	ks_hash_write_lock(bmmgr->protocols);
+
+	bp = (blade_protocol_t *)ks_hash_search(bmmgr->protocols, (void *)key, KS_UNLOCKED);
+	if (bp) {
+		if (blade_protocol_controller_remove(bp, controller)) {
+			if (!blade_protocol_controller_available(bp)) {
+				// @todo broadcast protocol removal to remove all channel subscriptions
+				ks_log(KS_LOG_DEBUG, "Protocol Removed: %s\n", key);
+				ks_hash_remove(bmmgr->protocols, (void *)key);
+			} else {
+				// @todo not the last controller, may need to propagate when a specific controller becomes unavailable though
+			}
+		}
+	}
+
 	ks_hash_write_unlock(bmmgr->protocols);
+
+	ks_pool_free(&key);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -249,7 +292,9 @@ KS_DECLARE(ks_status_t) blade_mastermgr_channel_remove(blade_mastermgr_t *bmmgr,
 		goto done;
 	}
 
-	blade_protocol_channel_remove(bp, channel);
+	if (blade_protocol_channel_remove(bp, channel)) {
+		blade_subscriptionmgr_broadcast(blade_handle_subscriptionmgr_get(bmmgr->handle), BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE, NULL, blade_protocol_name_get(bp), blade_protocol_realm_get(bp), channel, NULL, NULL, NULL, NULL);
+	}
 
 done:
 	ks_pool_free(&key);
