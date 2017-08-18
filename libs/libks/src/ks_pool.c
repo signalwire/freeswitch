@@ -602,7 +602,7 @@ KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr)
 }
 
 // @todo fill in documentation
-inline KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr)
+KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr)
 {
 	ks_assert(addr);
 #ifdef DEBUG

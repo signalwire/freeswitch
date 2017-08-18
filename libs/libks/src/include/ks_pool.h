@@ -151,7 +151,7 @@ KS_DECLARE(ks_status_t) ks_pool_clear(ks_pool_t *pool);
 KS_DECLARE(ks_bool_t) ks_pool_verify(void *addr);
 
 // @todo fill in documentation
-inline KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr);
+KS_DECLARE(ks_pool_t *) ks_pool_get(void *addr);
 
 /*
  * void *ks_pool_alloc
@@ -303,7 +303,7 @@ KS_DECLARE(void *) ks_pool_ref_ex(void *addr, ks_status_t *error_p);
  *
  * DESCRIPTION:
  *
- * Reallocate an address in a memory pool to a new size.  
+ * Reallocate an address in a memory pool to a new size.
  *
  * RETURNS:
  *
@@ -325,7 +325,7 @@ KS_DECLARE(void *) ks_pool_resize(void *old_addr, const ks_size_t new_size);
  *
  * DESCRIPTION:
  *
- * Reallocate an address in a memory pool to a new size.  
+ * Reallocate an address in a memory pool to a new size.
  *
  * RETURNS:
  *

@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -64,7 +64,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_create(blade_subscriptionmgr_t **b
 	blade_subscriptionmgr_t *bsmgr = NULL;
 
 	ks_assert(bsmgrP);
-	
+
 	ks_pool_open(&pool);
 	ks_assert(pool);
 
@@ -221,7 +221,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 		blade_subscription_create(&bsub, pool, protocol, realm, channel);
 		ks_assert(bsub);
 
-		ks_hash_insert(bsmgr->subscriptions, (void *)ks_pstrdup(pool, key), bsub);
+		ks_hash_insert(bsmgr->subscriptions, (void *)ks_pstrdup(pool, key), (void *)bsub);
 		propagate = KS_TRUE;
 	}
 
@@ -391,13 +391,13 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 				bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key);
 				if (bs) {
 					if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-					if (!ks_hash_search(routers, blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, blade_session_id_get(bs), bs);
+					if (!ks_hash_search(routers, (void *)blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, (void *)blade_session_id_get(bs), (void *)bs);
 					else blade_session_read_unlock(bs);
 				}
 			}
 			if (command == BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE) {
 				if (!channels) ks_hash_create(&channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-				ks_hash_insert(channels, channel, (void *)KS_TRUE);
+				ks_hash_insert(channels, (void *)channel, (void *)KS_TRUE);
 			}
 		}
 
@@ -435,13 +435,13 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 					bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key2);
 					if (bs) {
 						if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-						if (!ks_hash_search(routers, blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, blade_session_id_get(bs), bs);
+						if (!ks_hash_search(routers, (void *)blade_session_id_get(bs), KS_UNLOCKED)) ks_hash_insert(routers, (void *)blade_session_id_get(bs), (void *)bs);
 						else blade_session_read_unlock(bs);
 					}
 				}
 
 				if (!channels) ks_hash_create(&channels, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-				ks_hash_insert(channels, blade_subscription_channel_get(bsub), (void *)KS_TRUE);
+				ks_hash_insert(channels, (void *)blade_subscription_channel_get(bsub), (void *)KS_TRUE);
 			}
 		}
 
@@ -455,7 +455,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 	if (bs) {
 		if (!excluded_nodeid || ks_safe_strcasecmp(blade_session_id_get(bs), excluded_nodeid)) {
 			if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
-			ks_hash_insert(routers, blade_session_id_get(bs), bs);
+			ks_hash_insert(routers, (void *)blade_session_id_get(bs), (void *)bs);
 		}
 		else blade_session_read_unlock(bs);
 	}

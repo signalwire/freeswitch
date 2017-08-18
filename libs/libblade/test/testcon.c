@@ -169,7 +169,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 		void *key = NULL;
 		void *value = NULL;
 
-		ks_hash_this(it, &key, NULL, &value);
+		ks_hash_this(it, (const void **)&key, NULL, &value);
 		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
 	}
 
@@ -239,7 +239,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 		void *key = NULL;
 		void *value = NULL;
 
-		ks_hash_this(it, &key, NULL, &value);
+		ks_hash_this(it, (const void **)&key, NULL, &value);
 		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
 	}
 
