@@ -10991,6 +10991,24 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
+	if (sip && sip->sip_replaces) {
+		msg_common_t *rp_common = sip->sip_replaces->rp_common;
+		switch_channel_set_variable(channel, "sip_replaces_call_id", sip->sip_replaces->rp_call_id);
+		if (rp_common && rp_common->h_class->hc_params) {
+			int i, n;
+			msg_param_t const *params = * (msg_param_t const **) ((char *)rp_common + rp_common->h_class->hc_params);
+			for (i = 0; params[i]; i++) {
+				msg_param_t param = params[i];
+				if (strchr(param, '=')) {
+					n = strcspn(param, "=");
+					switch_channel_set_variable_name_printf(channel, param + n + 1, "sip_replaces_%.*s", n, param);
+				} else {
+					switch_channel_set_variable_name_printf(channel, "true", "sip_replaces_%s", param);
+				}
+			}
+		}
+	}
+
 	if (bnh) {
 		sofia_private_t *b_private = NULL;
 		if ((b_private = nua_handle_magic(bnh))) {
