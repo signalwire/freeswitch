@@ -1033,7 +1033,6 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	}
 
 	switch_mutex_lock(canvas->mutex);
-	switch_mutex_lock(canvas->write_mutex);
 
 	if (member->video_layer_id < 0) {
 		goto end;
@@ -1080,7 +1079,6 @@ void conference_video_detach_video_layer(conference_member_t *member)
 
  end:
 
-	switch_mutex_unlock(canvas->write_mutex);
 	switch_mutex_unlock(canvas->mutex);
 	conference_video_release_canvas(&canvas);
 
