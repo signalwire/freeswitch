@@ -93,7 +93,7 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 static int
 hashtable_expand(switch_hashtable_t *h)
 {
-	/* Double the size of the table to accomodate more entries */
+	/* Double the size of the table to accommodate more entries */
 	struct entry **newtable;
 	struct entry *e;
 	struct entry **pE;
