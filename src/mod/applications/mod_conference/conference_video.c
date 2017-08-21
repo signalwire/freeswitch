@@ -2697,10 +2697,18 @@ void conference_video_set_incoming_bitrate(conference_member_t *member, int kps,
 		member->auto_kps_debounce_ticks = member->conference->auto_kps_debounce / member->conference->video_fps.ms;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate debounce timer to %dms\n",
 						  switch_channel_get_name(member->channel), member->conference->auto_kps_debounce);
+
 		member->managed_kps = kps;
 		member->managed_kps_set = 0;
 		return;
 	}
+
+	if (member->managed_kps_set == kps) {
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s sending message to set bitrate to %dkps\n",
+					  switch_channel_get_name(member->channel), kps);
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 	msg.numeric_arg = kps * 1024;
@@ -2708,7 +2716,7 @@ void conference_video_set_incoming_bitrate(conference_member_t *member, int kps,
 
 	switch_core_session_receive_message(member->session, &msg);
 
-	member->managed_kps_set = 1;
+	member->managed_kps_set = kps;
 	member->managed_kps = kps;
 
 }
@@ -2807,8 +2815,8 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		kps = kps_in;
 	}
 
-	min_layer = kps / 2;
-	min = kps_in / 2;
+	min_layer = kps / 8;
+	min = kps_in / 8;
 
 	if (min_layer > min) min = min_layer;
 
