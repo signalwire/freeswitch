@@ -372,7 +372,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 		}
 
-		/* Resize values buffer to accomodate next var */
+		/* Resize values buffer to accommodate next var */
 		len = strlen(pq_var);
 		tmp = realloc(values, offset + len);
 		values = tmp;

@@ -2834,7 +2834,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 						  switch_channel_get_name(member->channel), kps);
 	} else {
 		if (layer && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accommodate %dx%d resolution\n",
 							  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
 		} else {
 			kps = min;
