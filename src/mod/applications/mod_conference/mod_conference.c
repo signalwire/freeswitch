@@ -2439,7 +2439,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_mute_banner = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
 	int conference_video_quality = 1;
-	int auto_kps_debounce = 30000;
+	int auto_kps_debounce = 5000;
 	float fps = 30.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
