@@ -1997,6 +1997,7 @@ SWITCH_STANDARD_APP(conference_function)
 		/* Start the conference thread for this conference */
 		conference_launch_thread(conference);
 
+		switch_channel_api_on(channel, "api_on_conference_create");
 	} else {
 		int enforce_security =  switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *pvar = switch_channel_get_variable(channel, "conference_enforce_security");
@@ -2131,6 +2132,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 			/* Start the conference thread for this conference */
 			conference_launch_thread(conference);
+
+			switch_channel_api_on(channel, "api_on_conference_create");
 		} else {				/* setup user variable */
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 			rl++;
