@@ -4095,7 +4095,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	char *cid_num_override = NULL;
 	char *domain = NULL, *dup_domain = NULL;
 	switch_channel_t *new_channel = NULL;
-	unsigned int timelimit = 60;
+	unsigned int timelimit = SWITCH_DEFAULT_TIMEOUT;
 	const char *skip, *var;
 
 	group = strdup(outbound_profile->destination_number);
@@ -4211,7 +4211,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	char *user = NULL, *domain = NULL, *dup_domain = NULL, *dialed_user = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
-	unsigned int timelimit = 60;
+	unsigned int timelimit = SWITCH_DEFAULT_TIMEOUT;
 	switch_channel_t *new_channel = NULL;
 	switch_event_t *params = NULL, *var_event_orig = var_event;
 	char stupid[128] = "";
@@ -5617,7 +5617,7 @@ void *SWITCH_THREAD_FUNC page_thread(switch_thread_t *thread, void *obj)
 	switch_memory_pool_t *pool = pd->pool;
 
 
-	if (switch_ivr_originate(NULL, &session, &cause, pd->dial_str, 60, NULL, NULL, NULL, NULL, pd->var_event, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &session, &cause, pd->dial_str, SWITCH_DEFAULT_TIMEOUT, NULL, NULL, NULL, NULL, pd->var_event, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		switch_channel_set_variable(channel, "page_file", pd->path);
