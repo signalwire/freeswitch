@@ -3383,7 +3383,14 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {
 				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-				char *send = switch_mprintf("~%s", dtmf);
+				char *send;
+
+				if (!tech_pvt) {
+					cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Invalid channel"));
+					err = 1; goto cleanup;
+				}
+
+				send = switch_mprintf("~%s", dtmf);
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 					switch_core_session_t *other_session = NULL;
