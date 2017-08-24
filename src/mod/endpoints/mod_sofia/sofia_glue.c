@@ -1228,6 +1228,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!switch_channel_get_variable(channel, "sofia_profile_name")) {
 		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
 		switch_channel_set_variable(channel, "recovery_profile_name", tech_pvt->profile->name);
+		switch_channel_set_variable(channel, "sofia_profile_url", tech_pvt->profile->url);
 	}
 
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
