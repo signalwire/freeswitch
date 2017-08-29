@@ -3682,6 +3682,18 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
+	if(cfg.profile) {
+		switch_xml_t xml_profile_variables;
+		if((xml_profile_variables = switch_xml_child(cfg.profile, "variables")) != NULL) {
+			for (xml_kvp = switch_xml_child(xml_profile_variables, "variable"); xml_kvp; xml_kvp = xml_kvp->next) {
+				char *var = (char *) switch_xml_attr_soft(xml_kvp, "name");
+				char *val = (char *) switch_xml_attr_soft(xml_kvp, "value");
+				if(var && val) {
+					conference_set_variable(conference, var, val);
+				}
+			}
+		}
+	}
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 	conference_event_add_data(conference, event);
