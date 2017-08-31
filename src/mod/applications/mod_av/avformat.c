@@ -1915,7 +1915,6 @@ GCC_DIAG_ON(deprecated-declarations)
 		switch_core_timer_init(&context->audio_timer, "soft", 1, handle->samplerate / 1000, context->pool);
 	}
 
-
 	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
 		AVPacket pkt[2] = { {0} };
 		int got_packet[2] = {0};
@@ -2024,10 +2023,6 @@ GCC_DIAG_ON(deprecated-declarations)
 					goto end;
 				}
 			}
-		}
-
-		if (data) {
-			break;
 		}
 	}
 
