@@ -1549,6 +1549,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	switch_set_string(file, path);
 
+	if (handle->stream_name) {
+		disable_write_buffer = 1;
+	}
+
 	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
