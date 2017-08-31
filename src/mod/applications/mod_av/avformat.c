@@ -1544,6 +1544,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	const char *format = NULL;
 	int ret;
 	char file[1024];
+	int disable_write_buffer = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_set_string(file, path);
@@ -1564,6 +1565,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtsp")) {
 		format = "rtsp";
 		switch_snprintf(file, sizeof(file), "rtsp://%s", path);
+		disable_write_buffer = 1;
 	}
 
 
@@ -1797,6 +1799,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	handle->seekable = 0;
 	handle->speed = 0;
 	handle->pos = 0;
+
+	if (disable_write_buffer) {
+		handle->pre_buffer_datalen = 0;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz %s\n",
 		file, handle->samplerate, context->has_video ? " with VIDEO" : "");
