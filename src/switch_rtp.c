@@ -5463,7 +5463,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 {
 	int ok = 1;
 
-	if (rtp_session->pmaps && *rtp_session->pmaps) {
+	if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && rtp_session->pmaps && *rtp_session->pmaps) {
 		payload_map_t *pmap;
 		ok = 0;
 
@@ -5474,7 +5474,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 				continue;
 			}
 
-			if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
+			if (rtp_session->last_rtp_hdr.pt == pmap->pt) {
 				ok = 1;
 			}
 		}
@@ -5639,7 +5639,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				int accept_packet = 1;
 
 
-				if (rtp_session->pmaps && *rtp_session->pmaps) {
+				if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && 
+					!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && rtp_session->pmaps && *rtp_session->pmaps) {
 					payload_map_t *pmap;
 					accept_packet = 0;
 
@@ -5655,7 +5656,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 							continue;
 						}
 
-						if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
+						if (rtp_session->last_rtp_hdr.pt == pmap->pt) {
 							accept_packet = 1;
 							if (pmapP) {
 								*pmapP = pmap;
@@ -5666,7 +5667,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					switch_mutex_unlock(rtp_session->flag_mutex);
 				}
 
-				if (!accept_packet && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
+				if (!accept_packet) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
 									  "Invalid Packet SEQ: %d TS: %d PT:%d ignored\n",
 									  ntohs(rtp_session->recv_msg.header.seq), ntohl(rtp_session->last_rtp_hdr.ts), rtp_session->last_rtp_hdr.pt);

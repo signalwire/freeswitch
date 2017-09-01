@@ -820,6 +820,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	switch_mutex_lock(smh->sdp_mutex);
 
+
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 
 		if (sdp_type == SDP_TYPE_RESPONSE) {
@@ -831,7 +832,16 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 				exists = (type == pmap->type && !strcasecmp(name, pmap->iananame) && pmap->pt == pt && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
 				break;
 			case SWITCH_MEDIA_TYPE_VIDEO:
-				exists = (type == pmap->type && !strcasecmp(name, pmap->iananame));
+				if (sdp_type == SDP_TYPE_RESPONSE) {
+					exists = (pmap->sdp_type == SDP_TYPE_REQUEST && type == pmap->type && !strcasecmp(name, pmap->iananame));
+				} else {
+					exists = (type == pmap->type && !strcasecmp(name, pmap->iananame));
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECK PMAP %s:%s %d %s:%s %d ... %d\n", 
+								  name, sdp_type == SDP_TYPE_REQUEST ? "REQ" : "RES", pt, 
+								  pmap->iananame, pmap->sdp_type == SDP_TYPE_REQUEST ? "REQ" : "RES", pmap->pt, exists);
+								  
+
 				break;
 			}
 
@@ -883,8 +893,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		pmap->channels = 1;
 	}
 
-	pmap->sdp_type = sdp_type;
-
 	if (ptime) {
 		pmap->ptime = ptime;
 	}
@@ -921,6 +929,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 	}
 
 	if (!exists) {
+		pmap->sdp_type = sdp_type;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ADD PMAP %s %s %d\n", sdp_type == SDP_TYPE_REQUEST ? "REQ" : "RES", name, pt);
+
 		if (pmap == engine->payload_map) {
 			engine->pmap_tail = pmap;
 		} else if (!engine->payload_map) {
@@ -5791,7 +5803,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			SWITCH_MEDIA_TYPE_VIDEO,
 																			matches[j].map->rm_encoding,
 																			matches[j].imp->modname,
-																			matches[j].map->rm_fmtp,
+																			consider_video_fmtp ? matches[j].map->rm_fmtp : NULL,
 																			sdp_type,
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
