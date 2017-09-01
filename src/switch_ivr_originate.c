@@ -1672,12 +1672,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		*bleg = hp->bleg;
 		if (*bleg) {
 			switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
-			switch_caller_profile_t *cloned_profile, *peer_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(*bleg));
-			if (peer_profile && (cloned_profile = switch_caller_profile_clone(session, peer_profile))) {
-				switch_channel_set_originatee_caller_profile(channel, cloned_profile);
-			}
-			if (bchan && cp && (cloned_profile = switch_caller_profile_clone(*bleg, cp))) {
+			switch_caller_profile_t *cloned_profile;
+
+			if (session) {
+				cloned_profile = switch_caller_profile_clone(*bleg, cp);
 				switch_channel_set_originator_caller_profile(bchan, cloned_profile);
+				
+				cloned_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(bchan));
+				switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 			}
 		}
 		switch_mutex_unlock(hp->mutex);
