@@ -2640,7 +2640,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 
 	if (conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) &&
 		!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_NOOP;
 	}
 
 	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
@@ -3539,8 +3539,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 
 			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || ((switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE)))) {
-				if (conference_video_find_layer(conference, canvas, imember, &layer) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t ret = conference_video_find_layer(conference, canvas, imember, &layer);
+
+				if ( ret == SWITCH_STATUS_SUCCESS) {
 					imember->layer_timeout = 0;
+				} else if (ret == SWITCH_STATUS_NOOP) {
 				} else {
 					if (--imember->layer_timeout <= 0) {
 
