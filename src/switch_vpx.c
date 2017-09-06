@@ -573,7 +573,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			// The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
 			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
 			//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -16);
+			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
 			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
 
 			// Enable noise reduction
