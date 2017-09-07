@@ -79,6 +79,9 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 KS_DECLARE(ks_ssize_t) kws_close(kws_t *kws, int16_t reason);
 KS_DECLARE(void) kws_destroy(kws_t **kwsP);
 KS_DECLARE(ks_status_t) kws_get_buffer(kws_t *kws, char **bufP, ks_size_t *buflen);
+KS_DECLARE(ks_size_t) kws_sans_count(kws_t *kws);
+KS_DECLARE(const char *) kws_sans_get(kws_t *kws, ks_size_t index);
+
 
 
 

@@ -44,11 +44,17 @@ struct blade_transport_wss_s {
 	blade_transport_t *transport;
 	blade_transport_callbacks_t *callbacks;
 
+	const char *ssl_key;
+	const char *ssl_cert;
+	const char *ssl_chain;
 	ks_sockaddr_t endpoints_ipv4[BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX];
 	ks_sockaddr_t endpoints_ipv6[BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX];
 	int32_t endpoints_ipv4_length;
 	int32_t endpoints_ipv6_length;
 	int32_t endpoints_backlog;
+	const char *endpoints_ssl_key;
+	const char *endpoints_ssl_cert;
+	const char *endpoints_ssl_chain;
 
 	volatile ks_bool_t shutdown;
 
@@ -62,6 +68,7 @@ struct blade_transport_wss_link_s {
 	const char *session_id;
 	ks_socket_t sock;
 	kws_t *kws;
+	SSL_CTX *ssl;
 };
 
 
@@ -162,6 +169,7 @@ static void blade_transport_wss_link_cleanup(void *ptr, void *arg, ks_pool_clean
 		if (btwssl->session_id) ks_pool_free(&btwssl->session_id);
 		if (btwssl->kws) kws_destroy(&btwssl->kws);
 		else ks_socket_close(&btwssl->sock);
+		if (btwssl->ssl) SSL_CTX_free(btwssl->ssl);
 		break;
 	case KS_MPCL_DESTROY:
 		break;
@@ -191,25 +199,93 @@ ks_status_t blade_transport_wss_link_create(blade_transport_wss_link_t **btwsslP
 	return KS_STATUS_SUCCESS;
 }
 
+ks_status_t blade_transport_wss_link_ssl_init(blade_transport_wss_link_t *btwssl, ks_bool_t server)
+{
+	const SSL_METHOD *method = NULL;
+	const char *key = NULL;
+	const char *cert = NULL;
+	const char *chain = NULL;
+
+	ks_assert(btwssl);
+
+	method = server ? TLSv1_2_server_method() : TLSv1_2_client_method();
+	key = server ? btwssl->transport->endpoints_ssl_key : btwssl->transport->ssl_key;
+	cert = server ? btwssl->transport->endpoints_ssl_cert : btwssl->transport->ssl_cert;
+	chain = server ? btwssl->transport->endpoints_ssl_chain : btwssl->transport->ssl_chain;
+
+	if (key && cert) {
+		btwssl->ssl = SSL_CTX_new(method);
+
+		// @todo probably manage this through configuration, but TLS 1.2 is preferred
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_SSLv2);
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_SSLv3);
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_TLSv1);
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_TLSv1_1);
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_DTLSv1);
+		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_COMPRESSION);
+		if (server) SSL_CTX_set_verify(btwssl->ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+		if (chain) {
+			if (!SSL_CTX_use_certificate_chain_file(btwssl->ssl, chain)) {
+				ks_log(KS_LOG_DEBUG, "SSL Chain File Error\n");
+				return KS_STATUS_FAIL;
+			}
+			if (!SSL_CTX_load_verify_locations(btwssl->ssl, chain, NULL)) {
+				ks_log(KS_LOG_DEBUG, "SSL Verify File Error\n");
+				return KS_STATUS_FAIL;
+			}
+		}
+
+		if (!SSL_CTX_use_certificate_file(btwssl->ssl, cert, SSL_FILETYPE_PEM)) {
+			ks_log(KS_LOG_DEBUG, "SSL Cert File Error\n");
+			return KS_STATUS_FAIL;
+		}
+
+		if (!SSL_CTX_use_PrivateKey_file(btwssl->ssl, key, SSL_FILETYPE_PEM)) {
+			ks_log(KS_LOG_DEBUG, "SSL Key File Error\n");
+			return KS_STATUS_FAIL;
+		}
+
+		if (!SSL_CTX_check_private_key(btwssl->ssl)) {
+			ks_log(KS_LOG_DEBUG, "SSL Key File Verification Error\n");
+			return KS_STATUS_FAIL;
+		}
+
+		SSL_CTX_set_cipher_list(btwssl->ssl, "HIGH:!DSS:!aNULL@STRENGTH");
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
 ks_status_t blade_transport_wss_config(blade_transport_wss_t *btwss, config_setting_t *config)
 {
+	ks_pool_t *pool = NULL;
 	config_setting_t *transport = NULL;
 	config_setting_t *transport_wss = NULL;
+	config_setting_t *transport_wss_ssl = NULL;
 	config_setting_t *transport_wss_endpoints = NULL;
 	config_setting_t *transport_wss_endpoints_ipv4 = NULL;
 	config_setting_t *transport_wss_endpoints_ipv6 = NULL;
-	config_setting_t *transport_wss_ssl = NULL;
-    config_setting_t *element;
+	config_setting_t *transport_wss_endpoints_ssl = NULL;
+	config_setting_t *element;
 	config_setting_t *tmp1;
 	config_setting_t *tmp2;
+	const char *ssl_key = NULL;
+	const char *ssl_cert = NULL;
+	const char *ssl_chain = NULL;
 	ks_sockaddr_t endpoints_ipv4[BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX];
 	ks_sockaddr_t endpoints_ipv6[BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX];
 	int32_t endpoints_ipv4_length = 0;
 	int32_t endpoints_ipv6_length = 0;
 	int32_t endpoints_backlog = 8;
+	const char *endpoints_ssl_key = NULL;
+	const char *endpoints_ssl_cert = NULL;
+	const char *endpoints_ssl_chain = NULL;
 
 	ks_assert(btwss);
 	ks_assert(config);
+
+	pool = ks_pool_get(btwss);
 
 	if (!config_setting_is_group(config)) {
 		ks_log(KS_LOG_DEBUG, "!config_setting_is_group(config)\n");
@@ -219,69 +295,94 @@ ks_status_t blade_transport_wss_config(blade_transport_wss_t *btwss, config_sett
 	if (transport) {
 		transport_wss = config_setting_get_member(transport, "wss");
 		if (transport_wss) {
-			transport_wss_endpoints = config_setting_get_member(transport_wss, "endpoints");
-			if (!transport_wss_endpoints) {
-				ks_log(KS_LOG_DEBUG, "!wss_endpoints\n");
-				return KS_STATUS_FAIL;
-			}
-			transport_wss_endpoints_ipv4 = config_lookup_from(transport_wss_endpoints, "ipv4");
-			transport_wss_endpoints_ipv6 = config_lookup_from(transport_wss_endpoints, "ipv6");
-			if (transport_wss_endpoints_ipv4) {
-				if (config_setting_type(transport_wss_endpoints_ipv4) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
-				if ((endpoints_ipv4_length = config_setting_length(transport_wss_endpoints_ipv4)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
-					return KS_STATUS_FAIL;
-
-				for (int32_t index = 0; index < endpoints_ipv4_length; ++index) {
-					element = config_setting_get_elem(transport_wss_endpoints_ipv4, index);
-					tmp1 = config_lookup_from(element, "address");
-					tmp2 = config_lookup_from(element, "port");
-					if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
-					if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-					if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-
-					if (ks_addr_set(&endpoints_ipv4[index],
-									config_setting_get_string(tmp1),
-									config_setting_get_int(tmp2),
-									AF_INET) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-					ks_log(KS_LOG_DEBUG,
-						  "Binding to IPV4 %s on port %d\n",
-						  ks_addr_get_host(&endpoints_ipv4[index]),
-						  ks_addr_get_port(&endpoints_ipv4[index]));
-				}
-			}
-			if (transport_wss_endpoints_ipv6) {
-				if (config_setting_type(transport_wss_endpoints_ipv6) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
-				if ((endpoints_ipv6_length = config_setting_length(transport_wss_endpoints_ipv6)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
-					return KS_STATUS_FAIL;
-
-				for (int32_t index = 0; index < endpoints_ipv6_length; ++index) {
-					element = config_setting_get_elem(transport_wss_endpoints_ipv6, index);
-					tmp1 = config_lookup_from(element, "address");
-					tmp2 = config_lookup_from(element, "port");
-					if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
-					if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-					if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-
-
-					if (ks_addr_set(&endpoints_ipv6[index],
-									config_setting_get_string(tmp1),
-									config_setting_get_int(tmp2),
-									AF_INET6) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-					ks_log(KS_LOG_DEBUG,
-						   "Binding to IPV6 %s on port %d\n",
-						   ks_addr_get_host(&endpoints_ipv6[index]),
-						   ks_addr_get_port(&endpoints_ipv6[index]));
-				}
-			}
-			if (endpoints_ipv4_length + endpoints_ipv6_length <= 0) return KS_STATUS_FAIL;
-			tmp1 = config_lookup_from(transport_wss_endpoints, "backlog");
-			if (tmp1) {
-				if (config_setting_type(tmp1) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
-				endpoints_backlog = config_setting_get_int(tmp1);
-			}
 			transport_wss_ssl = config_setting_get_member(transport_wss, "ssl");
 			if (transport_wss_ssl) {
-				// @todo: SSL stuffs from wss_ssl into config_wss_ssl envelope
+				tmp1 = config_setting_get_member(transport_wss_ssl, "key");
+				if (tmp1) ssl_key = config_setting_get_string(tmp1);
+				tmp1 = config_setting_get_member(transport_wss_ssl, "cert");
+				if (tmp1) ssl_cert = config_setting_get_string(tmp1);
+				tmp1 = config_setting_get_member(transport_wss_ssl, "chain");
+				if (tmp1) ssl_chain = config_setting_get_string(tmp1);
+				if (!ssl_key || !ssl_cert || !ssl_chain) return KS_STATUS_FAIL;
+				ks_log(KS_LOG_DEBUG,
+					"Using SSL: %s, %s, %s\n",
+					ssl_key,
+					ssl_cert,
+					ssl_chain);
+			}
+
+			transport_wss_endpoints = config_setting_get_member(transport_wss, "endpoints");
+			if (transport_wss_endpoints) {
+				transport_wss_endpoints_ipv4 = config_setting_get_member(transport_wss_endpoints, "ipv4");
+				transport_wss_endpoints_ipv6 = config_setting_get_member(transport_wss_endpoints, "ipv6");
+				if (transport_wss_endpoints_ipv4) {
+					if (config_setting_type(transport_wss_endpoints_ipv4) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
+					if ((endpoints_ipv4_length = config_setting_length(transport_wss_endpoints_ipv4)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
+						return KS_STATUS_FAIL;
+
+					for (int32_t index = 0; index < endpoints_ipv4_length; ++index) {
+						element = config_setting_get_elem(transport_wss_endpoints_ipv4, index);
+						tmp1 = config_setting_get_member(element, "address");
+						tmp2 = config_setting_get_member(element, "port");
+						if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
+						if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+						if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+
+						if (ks_addr_set(&endpoints_ipv4[index],
+							config_setting_get_string(tmp1),
+							config_setting_get_int(tmp2),
+							AF_INET) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+						ks_log(KS_LOG_DEBUG,
+							"Binding to IPV4 %s on port %d\n",
+							ks_addr_get_host(&endpoints_ipv4[index]),
+							ks_addr_get_port(&endpoints_ipv4[index]));
+					}
+				}
+				if (transport_wss_endpoints_ipv6) {
+					if (config_setting_type(transport_wss_endpoints_ipv6) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
+					if ((endpoints_ipv6_length = config_setting_length(transport_wss_endpoints_ipv6)) > BLADE_MODULE_WSS_ENDPOINTS_MULTIHOME_MAX)
+						return KS_STATUS_FAIL;
+
+					for (int32_t index = 0; index < endpoints_ipv6_length; ++index) {
+						element = config_setting_get_elem(transport_wss_endpoints_ipv6, index);
+						tmp1 = config_setting_get_member(element, "address");
+						tmp2 = config_setting_get_member(element, "port");
+						if (!tmp1 || !tmp2) return KS_STATUS_FAIL;
+						if (config_setting_type(tmp1) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
+						if (config_setting_type(tmp2) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+
+
+						if (ks_addr_set(&endpoints_ipv6[index],
+							config_setting_get_string(tmp1),
+							config_setting_get_int(tmp2),
+							AF_INET6) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+						ks_log(KS_LOG_DEBUG,
+							"Binding to IPV6 %s on port %d\n",
+							ks_addr_get_host(&endpoints_ipv6[index]),
+							ks_addr_get_port(&endpoints_ipv6[index]));
+					}
+				}
+				if (endpoints_ipv4_length + endpoints_ipv6_length <= 0) return KS_STATUS_FAIL;
+				tmp1 = config_setting_get_member(transport_wss_endpoints, "backlog");
+				if (tmp1) {
+					if (config_setting_type(tmp1) != CONFIG_TYPE_INT) return KS_STATUS_FAIL;
+					endpoints_backlog = config_setting_get_int(tmp1);
+				}
+				transport_wss_endpoints_ssl = config_setting_get_member(transport_wss_endpoints, "ssl");
+				if (transport_wss_endpoints_ssl) {
+					tmp1 = config_setting_get_member(transport_wss_endpoints_ssl, "key");
+					if (tmp1) endpoints_ssl_key = config_setting_get_string(tmp1);
+					tmp1 = config_setting_get_member(transport_wss_endpoints_ssl, "cert");
+					if (tmp1) endpoints_ssl_cert = config_setting_get_string(tmp1);
+					tmp1 = config_setting_get_member(transport_wss_endpoints_ssl, "chain");
+					if (tmp1) endpoints_ssl_chain = config_setting_get_string(tmp1);
+					if (!endpoints_ssl_key || !endpoints_ssl_cert || !endpoints_ssl_chain) return KS_STATUS_FAIL;
+					ks_log(KS_LOG_DEBUG,
+						"Using Endpoint SSL: %s, %s, %s\n",
+						endpoints_ssl_key,
+						endpoints_ssl_cert,
+						endpoints_ssl_chain);
+				}
 			}
 		}
 	}
@@ -289,6 +390,12 @@ ks_status_t blade_transport_wss_config(blade_transport_wss_t *btwss, config_sett
 
 	// Configuration is valid, now assign it to the variables that are used
 	// If the configuration was invalid, then this does not get changed
+	if (ssl_key) {
+		btwss->ssl_key = ks_pstrdup(pool, ssl_key);
+		btwss->ssl_cert = ks_pstrdup(pool, ssl_cert);
+		btwss->ssl_chain = ks_pstrdup(pool, ssl_chain);
+	}
+
 	for (int32_t index = 0; index < endpoints_ipv4_length; ++index)
 		btwss->endpoints_ipv4[index] = endpoints_ipv4[index];
 	for (int32_t index = 0; index < endpoints_ipv6_length; ++index)
@@ -296,7 +403,11 @@ ks_status_t blade_transport_wss_config(blade_transport_wss_t *btwss, config_sett
 	btwss->endpoints_ipv4_length = endpoints_ipv4_length;
 	btwss->endpoints_ipv6_length = endpoints_ipv6_length;
 	btwss->endpoints_backlog = endpoints_backlog;
-	//btwss->ssl = ssl;
+	if (endpoints_ssl_key) {
+		btwss->endpoints_ssl_key = ks_pstrdup(pool, endpoints_ssl_key);
+		btwss->endpoints_ssl_cert = ks_pstrdup(pool, endpoints_ssl_cert);
+		btwss->endpoints_ssl_chain = ks_pstrdup(pool, endpoints_ssl_chain);
+	}
 
 	ks_log(KS_LOG_DEBUG, "Configured\n");
 
@@ -739,8 +850,12 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	btwssl = (blade_transport_wss_link_t *)blade_connection_transport_get(bc);
 
-	// @todo: SSL init stuffs based on data from config to pass into kws_init
-	if (kws_init(&btwssl->kws, btwssl->sock, NULL, NULL, KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
+	if (blade_transport_wss_link_ssl_init(btwssl, KS_TRUE) != KS_STATUS_SUCCESS) {
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
+
+	if (kws_init(&btwssl->kws, btwssl->sock, btwssl->ssl, NULL, KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed websocket init\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
@@ -853,6 +968,8 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
+	// @todo process automatic identity registration from remote SANS entries
+
 	pool = ks_pool_get(bh);
 	blade_upstreammgr_masterid_copy(blade_handle_upstreammgr_get(bh), pool, &master_nodeid);
 	if (!master_nodeid) {
@@ -939,8 +1056,12 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 	btwssl = (blade_transport_wss_link_t *)blade_connection_transport_get(bc);
 	pool = ks_pool_get(bh);
 
-	// @todo: SSL init stuffs based on data from config to pass into kws_init
-	if (kws_init(&btwssl->kws, btwssl->sock, NULL, "/blade:blade.invalid:blade", KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
+	if (blade_transport_wss_link_ssl_init(btwssl, KS_FALSE) != KS_STATUS_SUCCESS) {
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
+
+	if (kws_init(&btwssl->kws, btwssl->sock, btwssl->ssl, "/blade:blade.invalid:blade", KWS_BLOCK, ks_pool_get(btwssl)) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Failed websocket init\n");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
@@ -1009,6 +1130,8 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
+
+	// @todo parse and process automatic identity registration coming from local SANS entries, but given back in the connect response in case there are any errors (IE: missing realm or duplicate identity)
 
 	master_nodeid = cJSON_GetObjectCstr(json_result, "master-nodeid");
 	if (!master_nodeid) {

@@ -85,6 +85,9 @@ struct kws_s {
 	char *req_uri;
 	char *req_host;
 	char *req_proto;
+
+	char **sans;
+	ks_size_t sans_count;
 };
 
 
@@ -619,7 +622,8 @@ static int establish_server_logical_layer(kws_t *kws)
 			}
 			
 			if (code < 0) {
-				if (code == -1 && SSL_get_error(kws->ssl, code) != SSL_ERROR_WANT_READ) {
+				int sslerr = SSL_get_error(kws->ssl, code);
+				if (code == -1 && sslerr != SSL_ERROR_WANT_READ) {
 					return -1;
 				}
 			}
@@ -731,6 +735,27 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 
 	if (kws->down) {
 		goto err;
+	}
+
+	if (kws->type == KWS_SERVER)
+	{
+		X509 *cert = SSL_get_peer_certificate(kws->ssl);
+
+		if (cert && SSL_get_verify_result(kws->ssl) == X509_V_OK) {
+			GENERAL_NAMES *sans = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+			if (sans) {
+				kws->sans_count = (ks_size_t)sk_GENERAL_NAME_num(sans);
+				if (kws->sans_count) kws->sans = ks_pool_calloc(pool, kws->sans_count, sizeof(char *));
+				for (ks_size_t i = 0; i < kws->sans_count; i++) {
+					const GENERAL_NAME *gname = sk_GENERAL_NAME_value(sans, (int)i);
+					char *name = (char *)ASN1_STRING_data(gname->d.dNSName);
+					kws->sans[i] = ks_pstrdup(pool, name);
+				}
+				sk_GENERAL_NAME_pop_free(sans, GENERAL_NAME_free);
+			}
+		}
+
+		if (cert) X509_free(cert);
 	}
 
 	*kwsP = kws;
@@ -864,6 +889,46 @@ uint64_t ntoh64(uint64_t val)
 #endif
 }
 
+KS_DECLARE(ks_status_t) kws_peer_sans(kws_t *kws, char *buf, ks_size_t buflen)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	X509 *cert = NULL;
+
+	ks_assert(kws);
+	ks_assert(buf);
+	ks_assert(buflen);
+
+	cert = SSL_get_peer_certificate(kws->ssl);
+	if (!cert) {
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	if (SSL_get_verify_result(kws->ssl) != X509_V_OK) {
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	//if (X509_NAME_get_text_by_NID(X509_get_subject_name(cert), NID_commonName, buf, (int)buflen) < 0) {
+	//	ret = KS_STATUS_FAIL;
+	//	goto done;
+	//}
+
+	GENERAL_NAMES *san_names = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+	if (san_names) {
+		int san_names_nb = sk_GENERAL_NAME_num(san_names);
+		for (int i = 0; i < san_names_nb; i++) {
+			const GENERAL_NAME *current_name = sk_GENERAL_NAME_value(san_names, i);
+			char *name = (char *)ASN1_STRING_data(current_name->d.dNSName);
+			if (name) continue;
+		}
+		sk_GENERAL_NAME_pop_free(san_names, GENERAL_NAME_free);
+	}
+done:
+	if (cert) X509_free(cert);
+
+	return ret;
+}
 
 KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **data)
 {
@@ -1181,4 +1246,18 @@ KS_DECLARE(ks_status_t) kws_get_buffer(kws_t *kws, char **bufP, ks_size_t *bufle
 	*buflen = kws->datalen;
 
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_size_t) kws_sans_count(kws_t *kws)
+{
+	ks_assert(kws);
+
+	return kws->sans_count;
+}
+
+KS_DECLARE(const char *) kws_sans_get(kws_t *kws, ks_size_t index)
+{
+	ks_assert(kws);
+	if (index >= kws->sans_count) return NULL;
+	return kws->sans[index];
 }

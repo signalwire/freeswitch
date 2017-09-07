@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testcli", "test\testcli.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testcon", "test\testcon.vcxproj", "{D67EEF66-B323-4BCF-9E3C-3A640B9949B7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "..\win32\openssl\openssl.2015.vcxproj", "{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -231,6 +233,22 @@ Global
 		{D67EEF66-B323-4BCF-9E3C-3A640B9949B7}.ReleaseDLL|x64.Build.0 = Release|x64
 		{D67EEF66-B323-4BCF-9E3C-3A640B9949B7}.ReleaseDLL|x86.ActiveCfg = Release|Win32
 		{D67EEF66-B323-4BCF-9E3C-3A640B9949B7}.ReleaseDLL|x86.Build.0 = Release|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Debug|x64.ActiveCfg = Debug|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Debug|x64.Build.0 = Debug|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Debug|x86.ActiveCfg = Debug|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Debug|x86.Build.0 = Debug|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.DebugDLL|x64.ActiveCfg = Debug|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.DebugDLL|x64.Build.0 = Debug|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.DebugDLL|x86.ActiveCfg = Debug|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.DebugDLL|x86.Build.0 = Debug|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|x64.ActiveCfg = Release|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|x64.Build.0 = Release|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|x86.ActiveCfg = Release|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|x86.Build.0 = Release|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x64.ActiveCfg = Release|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x64.Build.0 = Release|x64
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x86.ActiveCfg = Release|Win32
+		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

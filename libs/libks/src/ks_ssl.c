@@ -63,6 +63,7 @@ KS_DECLARE(void) ks_ssl_init_ssl_locks(void)
 	is_init = 1;
 
 	SSL_library_init();
+	SSL_load_error_strings();
 
 	if (ssl_count == 0) {
 		num = CRYPTO_num_locks();
