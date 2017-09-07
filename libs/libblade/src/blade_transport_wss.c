@@ -221,7 +221,8 @@ ks_status_t blade_transport_wss_link_ssl_init(blade_transport_wss_link_t *btwssl
 		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_SSLv3);
 		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_TLSv1);
 		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_TLSv1_1);
-		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_DTLSv1);
+		// @todo look into difference in debian vs windows OpenSSL, aparantly debian system package does not provide this definition
+		//SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_DTLSv1);
 		SSL_CTX_set_options(btwssl->ssl, SSL_OP_NO_COMPRESSION);
 		if (server) SSL_CTX_set_verify(btwssl->ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
