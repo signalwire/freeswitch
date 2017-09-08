@@ -226,7 +226,7 @@ int fs_switch_ivr_originate(switch_core_session_t *session, switch_core_session_
 
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session;
-	unsigned int timelimit = 60;
+	unsigned int timelimit = SWITCH_DEFAULT_TIMEOUT;
 	char *var;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 

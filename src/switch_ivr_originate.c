@@ -872,7 +872,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	ringback_t ringback = { 0 };
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int timelimit = 60;
+	int timelimit = SWITCH_DEFAULT_TIMEOUT;
 	const char *var;
 	switch_time_t start = 0;
 	const char *cancel_key = NULL;
@@ -898,7 +898,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	if (caller_channel && (var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 		timelimit = atoi(var);
 		if (timelimit < 0) {
-			timelimit = 60;
+			timelimit = SWITCH_DEFAULT_TIMEOUT;
 		}
 	}
 
@@ -2086,7 +2086,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (timelimit_sec <= 0) {
-		timelimit_sec = 60;
+		timelimit_sec = SWITCH_DEFAULT_TIMEOUT;
 	}
 
 
