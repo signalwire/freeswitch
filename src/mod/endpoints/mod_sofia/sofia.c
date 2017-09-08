@@ -9288,6 +9288,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							}
 						}
 
+						switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Refer-From", switch_core_session_get_uuid(session));
+						switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Refer-For", br_a);
+
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Good Luck, you'll need it......\n");
 						launch_nightmare_xfer(nightmare_xfer_helper);
 
@@ -11104,6 +11107,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					}
 				} else {
 					char const *a_leg = NULL;
+					char const *nightmare_xfer_uuid = NULL;
+
 				    switch_event_t *event = NULL;
 					if (sip->sip_replaces && sip->sip_replaces->rp_params && sip->sip_replaces->rp_call_id) {
 						a_leg = msg_header_find_param(sip->sip_replaces->rp_common, "a-leg");
@@ -11119,6 +11124,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 							switch_event_fire(&event);
 						}
 					} else {
+						if ((nightmare_xfer_uuid = sofia_glue_get_unknown_header(sip, "X-FS-Refer-For"))) {
+							switch_channel_set_variable(b_channel, "transfer_refer_for", nightmare_xfer_uuid);
+						}
+						if ((nightmare_xfer_uuid = sofia_glue_get_unknown_header(sip, "X-FS-Refer-From"))) {
+							switch_channel_set_variable(b_channel, "transfer_refer_from", nightmare_xfer_uuid);
+						}
+
 						if (!zstr(bridge_uuid)) {
 							if (sip->sip_replaces && sip->sip_replaces->rp_params && sip->sip_replaces->rp_call_id && switch_channel_test_flag(b_channel, CF_BRIDGED) &&
 								switch_true(switch_find_parameter(*(sip->sip_replaces->rp_params), "early-only", switch_core_session_get_pool(session)))) {
