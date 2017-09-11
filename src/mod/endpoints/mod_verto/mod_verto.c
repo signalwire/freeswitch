@@ -3115,13 +3115,11 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 				result = SWITCH_TRUE;
 				switch_channel_hangup(hup_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+				switch_core_session_rwunlock(t_session);
 			} else {
 				result = SWITCH_FALSE;
 			}
 		}
-	}
-	if (b_session) {
-		switch_core_session_rwunlock(b_session);
 	}
 
 	return result;
