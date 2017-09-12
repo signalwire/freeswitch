@@ -2441,6 +2441,17 @@
         }
     };
 
+    $.verto.dialog.prototype.replace = function(replaceCallID, params) {
+        var dialog = this;
+        if (replaceCallID) {
+            dialog.sendMethod("verto.modify", {
+                action: "replace",
+                replaceCallID: replaceCallID,
+                params: params
+            });
+        }
+    };
+
     $.verto.dialog.prototype.hold = function(params) {
         var dialog = this;
 
