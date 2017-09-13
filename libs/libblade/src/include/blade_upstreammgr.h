@@ -48,11 +48,6 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_masterid_set(blade_upstreammgr_t *bumg
 KS_DECLARE(ks_bool_t) blade_upstreammgr_masterid_compare(blade_upstreammgr_t *bumgr, const char *id);
 KS_DECLARE(ks_status_t) blade_upstreammgr_masterid_copy(blade_upstreammgr_t *bumgr, ks_pool_t *pool, const char **id);
 KS_DECLARE(ks_bool_t) blade_upstreammgr_masterlocal(blade_upstreammgr_t *bumgr);
-//KS_DECLARE(ks_hash_t *) blade_upstreammgr_realm_lookup(blade_handle_t *bh);
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_add(blade_upstreammgr_t *bumgr, const char *realm);
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_remove(blade_upstreammgr_t *bumgr, const char *realm);
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_clear(blade_upstreammgr_t *bumgr);
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_propagate(blade_upstreammgr_t *bumgr, blade_session_t *bs);
 
 KS_END_EXTERN_C
 

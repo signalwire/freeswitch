@@ -43,9 +43,6 @@ struct blade_upstreammgr_s {
 	// master node id, provided by upstream "blade.connect" response
 	const char *masterid;
 	ks_rwl_t *masterid_rwl;
-
-	// realms for new nodes, these originate from the master, and are provided by upstream session "blade.connect" response
-	ks_hash_t *realms;
 };
 
 
@@ -85,9 +82,6 @@ KS_DECLARE(ks_status_t) blade_upstreammgr_create(blade_upstreammgr_t **bumgrP, b
 
 	ks_rwl_create(&bumgr->masterid_rwl, pool);
 	ks_assert(bumgr->masterid_rwl);
-
-	ks_hash_create(&bumgr->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
-	ks_assert(bumgr->realms);
 
 	ks_pool_set_cleanup(bumgr, NULL, blade_upstreammgr_cleanup);
 
@@ -259,67 +253,6 @@ KS_DECLARE(ks_bool_t) blade_upstreammgr_masterlocal(blade_upstreammgr_t *bumgr)
 	ks_rwl_read_unlock(bumgr->masterid_rwl);
 
 	return ret;
-}
-
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_add(blade_upstreammgr_t *bumgr, const char *realm)
-{
-	char *key = NULL;
-
-	ks_assert(bumgr);
-	ks_assert(realm);
-
-	key = ks_pstrdup(ks_pool_get(bumgr), realm);
-	ks_hash_insert(bumgr->realms, (void *)key, (void *)KS_TRUE);
-
-	ks_log(KS_LOG_DEBUG, "Realm Added: %s\n", key);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_remove(blade_upstreammgr_t *bumgr, const char *realm)
-{
-	ks_assert(bumgr);
-	ks_assert(realm);
-
-	ks_hash_remove(bumgr->realms, (void *)realm);
-
-	ks_log(KS_LOG_DEBUG, "Realm Removed: %s\n", realm);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_clear(blade_upstreammgr_t *bumgr)
-{
-	ks_hash_iterator_t *it = NULL;
-
-	ks_assert(bumgr);
-
-	while ((it = ks_hash_first(bumgr->realms, KS_UNLOCKED))) {
-		void *key = NULL;
-		void *value = NULL;
-		ks_hash_this(it, (const void **)&key, NULL, &value);
-		ks_log(KS_LOG_DEBUG, "Realm Removed: %s\n", key);
-		ks_hash_remove(bumgr->realms, key);
-	}
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_upstreammgr_realm_propagate(blade_upstreammgr_t *bumgr, blade_session_t *bs)
-{
-	ks_assert(bumgr);
-	ks_assert(bs);
-
-	ks_hash_read_lock(bumgr->realms);
-	for (ks_hash_iterator_t *it = ks_hash_first(bumgr->realms, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-		void *key = NULL;
-		void *value = NULL;
-		ks_hash_this(it, (const void **)&key, NULL, &value);
-		blade_session_realm_add(bs, (const char *)key);
-	}
-	ks_hash_read_unlock(bumgr->realms);
-
-	return KS_STATUS_SUCCESS;
 }
 
 /* For Emacs:

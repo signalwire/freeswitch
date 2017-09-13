@@ -197,7 +197,6 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 	if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), id)) {
 		blade_upstreammgr_localid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);
 		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);
-		blade_upstreammgr_realm_clear(blade_handle_upstreammgr_get(bsmgr->handle));
 	}
 
 	blade_session_write_unlock(bs);

@@ -77,6 +77,10 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh, blade_rpcs
 
 KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data);
 KS_DECLARE(cJSON *) blade_rpcbroadcast_request_params_get(blade_rpc_request_t *brpcreq);
+KS_DECLARE(const char *) blade_rpcbroadcast_request_realm_get(blade_rpc_request_t *brpcreq);
+KS_DECLARE(const char *) blade_rpcbroadcast_request_protocol_get(blade_rpc_request_t *brpcreq);
+KS_DECLARE(const char *) blade_rpcbroadcast_request_channel_get(blade_rpc_request_t *brpcreq);
+KS_DECLARE(const char *) blade_rpcbroadcast_request_event_get(blade_rpc_request_t *brpcreq);
 
 KS_END_EXTERN_C
 

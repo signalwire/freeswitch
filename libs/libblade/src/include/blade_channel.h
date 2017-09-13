@@ -31,28 +31,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_PROTOCOL_H_
-#define _BLADE_PROTOCOL_H_
+#ifndef _BLADE_CHANNEL_H_
+#define _BLADE_CHANNEL_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, blade_realm_t *realm, const char *name);
-KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP);
-KS_DECLARE(blade_realm_t *) blade_protocol_realm_get(blade_protocol_t *bp);
-KS_DECLARE(const char *) blade_protocol_name_get(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_read_lock(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_read_unlock(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_write_lock(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_write_unlock(blade_protocol_t *bp);
-KS_DECLARE(ks_bool_t) blade_protocol_purge(blade_protocol_t *bp, const char *nodeid);
-KS_DECLARE(cJSON *) blade_protocol_controller_pack(blade_protocol_t *bp);
-KS_DECLARE(ks_status_t) blade_protocol_controller_add(blade_protocol_t *bp, const char *nodeid);
-KS_DECLARE(ks_bool_t) blade_protocol_controller_remove(blade_protocol_t *bp, const char *nodeid);
-KS_DECLARE(ks_bool_t) blade_protocol_controller_available(blade_protocol_t *bp);
-KS_DECLARE(blade_channel_t *) blade_protocol_channel_lookup(blade_protocol_t *bp, const char *channel, ks_bool_t writelocked);
-KS_DECLARE(ks_bool_t) blade_protocol_controller_verify(blade_protocol_t *bp, const char *controller);
-KS_DECLARE(ks_status_t) blade_protocol_channel_add(blade_protocol_t *bp, blade_channel_t *channel);
-KS_DECLARE(ks_bool_t) blade_protocol_channel_remove(blade_protocol_t *bp, const char *channel);
+KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *pool, const char *name);
+KS_DECLARE(ks_status_t) blade_channel_destroy(blade_channel_t **bcP);
+KS_DECLARE(const char *) blade_channel_name_get(blade_channel_t *bc);
+KS_DECLARE(ks_status_t) blade_channel_read_lock(blade_channel_t *bc);
+KS_DECLARE(ks_status_t) blade_channel_read_unlock(blade_channel_t *bc);
+KS_DECLARE(ks_status_t) blade_channel_write_lock(blade_channel_t *bc);
+KS_DECLARE(ks_status_t) blade_channel_write_unlock(blade_channel_t *bc);
+KS_DECLARE(ks_bool_t) blade_channel_authorization_verify(blade_channel_t *bc, const char *target);
+KS_DECLARE(ks_status_t) blade_channel_authorization_add(blade_channel_t *bc, const char *target);
+KS_DECLARE(ks_bool_t) blade_channel_authorization_remove(blade_channel_t *bc, const char *target);
 KS_END_EXTERN_C
 
 #endif

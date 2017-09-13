@@ -38,15 +38,19 @@
 KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) blade_mastermgr_create(blade_mastermgr_t **bmmgrP, blade_handle_t *bh);
 KS_DECLARE(ks_status_t) blade_mastermgr_destroy(blade_mastermgr_t **bmmgrP);
+KS_DECLARE(ks_status_t) blade_mastermgr_startup(blade_mastermgr_t *bmmgr, config_setting_t *config);
+KS_DECLARE(ks_status_t) blade_mastermgr_shutdown(blade_mastermgr_t *bmmgr);
 KS_DECLARE(blade_handle_t *) blade_mastermgr_handle_get(blade_mastermgr_t *bmmgr);
 KS_DECLARE(ks_status_t) blade_mastermgr_purge(blade_mastermgr_t *bmmgr, const char *nodeid);
-KS_DECLARE(blade_protocol_t *) blade_mastermgr_protocol_lookup(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm);
-KS_DECLARE(ks_status_t) blade_mastermgr_controller_add(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *controller);
-KS_DECLARE(ks_status_t) blade_mastermgr_controller_remove(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *controller);
-KS_DECLARE(ks_status_t) blade_mastermgr_channel_add(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *channel);
-KS_DECLARE(ks_status_t) blade_mastermgr_channel_remove(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *channel);
-KS_DECLARE(ks_status_t) blade_mastermgr_channel_authorize(blade_mastermgr_t *bmmgr, ks_bool_t remove, const char *protocol, const char *realm, const char *channel, const char *controller, const char *target);
-KS_DECLARE(ks_bool_t) blade_mastermgr_channel_verify(blade_mastermgr_t *bmmgr, const char *protocol, const char *realm, const char *channel, const char *target);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_add(blade_mastermgr_t *bmmgr, blade_realm_t *realm);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_remove(blade_mastermgr_t *bmmgr, const char *realm);
+KS_DECLARE(blade_protocol_t *) blade_mastermgr_realm_protocol_lookup(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, ks_bool_t writelocked);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_protocol_controller_add(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, const char *controller);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_protocol_controller_remove(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, const char *controller);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_protocol_channel_add(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, const char *channel);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_protocol_channel_remove(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, const char *channel);
+KS_DECLARE(ks_status_t) blade_mastermgr_realm_protocol_channel_authorize(blade_mastermgr_t *bmmgr, ks_bool_t remove, const char *realm, const char *protocol, const char *channel, const char *controller, const char *target);
+KS_DECLARE(ks_bool_t) blade_mastermgr_realm_protocol_channel_authorization_verify(blade_mastermgr_t *bmmgr, const char *realm, const char *protocol, const char *channel, const char *target);
 KS_END_EXTERN_C
 
 #endif

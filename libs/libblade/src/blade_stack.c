@@ -157,42 +157,12 @@ KS_DECLARE(ks_status_t) blade_handle_destroy(blade_handle_t **bhP)
 
 ks_status_t blade_handle_config(blade_handle_t *bh, config_setting_t *config)
 {
-	config_setting_t *master = NULL;
-	config_setting_t *master_nodeid = NULL;
-	config_setting_t *master_realms = NULL;
-	const char *nodeid = NULL;
-	int32_t realms_length = 0;
-
 	ks_assert(bh);
 
 	if (!config) return KS_STATUS_FAIL;
 	if (!config_setting_is_group(config)) {
 		ks_log(KS_LOG_DEBUG, "!config_setting_is_group(config)\n");
 		return KS_STATUS_FAIL;
-	}
-
-	master = config_setting_get_member(config, "master");
-	if (master) {
-		master_nodeid = config_lookup_from(master, "nodeid");
-		if (master_nodeid) {
-			if (config_setting_type(master_nodeid) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;
-			nodeid = config_setting_get_string(master_nodeid);
-
-			blade_upstreammgr_localid_set(bh->upstreammgr, nodeid);
-			blade_upstreammgr_masterid_set(bh->upstreammgr, nodeid);
-		}
-		master_realms = config_lookup_from(master, "realms");
-		if (master_realms) {
-			if (config_setting_type(master_realms) != CONFIG_TYPE_LIST) return KS_STATUS_FAIL;
-			realms_length = config_setting_length(master_realms);
-			if (realms_length > 0) {
-				for (int32_t index = 0; index < realms_length; ++index) {
-					const char *realm = config_setting_get_string_elem(master_realms, index);
-					if (!realm) return KS_STATUS_FAIL;
-					blade_upstreammgr_realm_add(bh->upstreammgr, realm);
-				}
-			}
-		}
 	}
 
 	return KS_STATUS_SUCCESS;
@@ -242,12 +212,16 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 
 	blade_transportmgr_startup(bh->transportmgr, config);
 
+	blade_mastermgr_startup(bh->mastermgr, config);
+
 	return KS_STATUS_SUCCESS;
 }
 
 KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 {
 	ks_assert(bh);
+
+	blade_mastermgr_shutdown(bh->mastermgr);
 
 	blade_transportmgr_shutdown(bh->transportmgr);
 
@@ -653,22 +627,22 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	// @todo switch on publish command, make the following code for add_protocol
 	switch (command) {
 	case BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD:
-		blade_mastermgr_controller_add(bh->mastermgr, req_params_protocol, req_params_realm, req_params_requester_nodeid);
+		blade_mastermgr_realm_protocol_controller_add(bh->mastermgr, req_params_realm, req_params_protocol, req_params_requester_nodeid);
 		if (req_params_channels) {
 			cJSON *element = NULL;
 			cJSON_ArrayForEach(element, req_params_channels) {
-				blade_mastermgr_channel_add(bh->mastermgr, req_params_protocol, req_params_realm, element->valuestring);
+				blade_mastermgr_realm_protocol_channel_add(bh->mastermgr, req_params_realm, req_params_protocol, element->valuestring);
 			}
 		}
 		break;
 	case BLADE_RPCPUBLISH_COMMAND_CONTROLLER_REMOVE:
-		blade_mastermgr_controller_remove(bh->mastermgr, req_params_protocol, req_params_realm, req_params_requester_nodeid);
+		blade_mastermgr_realm_protocol_controller_remove(bh->mastermgr, req_params_realm, req_params_protocol, req_params_requester_nodeid);
 		break;
 	case BLADE_RPCPUBLISH_COMMAND_CHANNEL_ADD:
 		if (req_params_channels) {
 			cJSON *element = NULL;
 			cJSON_ArrayForEach(element, req_params_channels) {
-				blade_mastermgr_channel_add(bh->mastermgr, req_params_protocol, req_params_realm, element->valuestring);
+				blade_mastermgr_realm_protocol_channel_add(bh->mastermgr, req_params_realm, req_params_protocol, element->valuestring);
 			}
 		}
 		break;
@@ -676,7 +650,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 		if (req_params_channels) {
 			cJSON *element = NULL;
 			cJSON_ArrayForEach(element, req_params_channels) {
-				blade_mastermgr_channel_remove(bh->mastermgr, req_params_protocol, req_params_realm, element->valuestring);
+				blade_mastermgr_realm_protocol_channel_remove(bh->mastermgr, req_params_realm, req_params_protocol, element->valuestring);
 			}
 		}
 		break;
@@ -889,7 +863,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
 
 	cJSON_ArrayForEach(channel, req_params_channels) {
-		if (blade_mastermgr_channel_authorize(bh->mastermgr, remove, req_params_protocol, req_params_realm, channel->valuestring, req_params_requester_nodeid, req_params_authorized_nodeid) == KS_STATUS_SUCCESS) {
+		if (blade_mastermgr_realm_protocol_channel_authorize(bh->mastermgr, remove, req_params_realm, req_params_protocol, channel->valuestring, req_params_requester_nodeid, req_params_authorized_nodeid) == KS_STATUS_SUCCESS) {
 			if (remove) {
 				if (!res_result_unauthorized_channels) res_result_unauthorized_channels = cJSON_CreateArray();
 				cJSON_AddItemToArray(res_result_unauthorized_channels, cJSON_CreateString(channel->valuestring));
@@ -1060,8 +1034,11 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate request (%s to %s) processing\n", blade_session_id_get(bs), req_params_requester_nodeid, req_params_responder_nodeid);
 
-	bp = blade_mastermgr_protocol_lookup(bh->mastermgr, req_params_protocol, req_params_realm);
-	if (bp) res_result_controllers = blade_protocol_controller_pack(bp);
+	bp = blade_mastermgr_realm_protocol_lookup(bh->mastermgr, req_params_realm, req_params_protocol, KS_FALSE);
+	if (bp) {
+		res_result_controllers = blade_protocol_controller_pack(bp);
+		blade_protocol_read_unlock(bp);
+	}
 
 
 	// build the actual response finally
@@ -1630,7 +1607,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 			cJSON *channel = NULL;
 
 			cJSON_ArrayForEach(channel, req_params_channels) {
-				if (blade_mastermgr_channel_verify(bh->mastermgr, req_params_protocol, req_params_realm, channel->valuestring, req_params_subscriber_nodeid)) {
+				if (blade_mastermgr_realm_protocol_channel_authorization_verify(bh->mastermgr, req_params_realm, req_params_protocol, channel->valuestring, req_params_subscriber_nodeid)) {
 					blade_subscriptionmgr_subscriber_add(bh->subscriptionmgr, NULL, req_params_protocol, req_params_realm, channel->valuestring, req_params_subscriber_nodeid);
 					if (!res_result_subscribe_channels) res_result_subscribe_channels = cJSON_CreateArray();
 					cJSON_AddItemToArray(res_result_subscribe_channels, cJSON_CreateString(channel->valuestring));
@@ -1926,6 +1903,66 @@ done:
 	return ret;
 }
 
+KS_DECLARE(const char *) blade_rpcbroadcast_request_realm_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	const char *req_realm = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_realm = cJSON_GetObjectCstr(req, "realm");
+
+	return req_realm;
+}
+
+KS_DECLARE(const char *) blade_rpcbroadcast_request_protocol_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	const char *req_protocol = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_protocol = cJSON_GetObjectCstr(req, "protocol");
+
+	return req_protocol;
+}
+
+KS_DECLARE(const char *) blade_rpcbroadcast_request_channel_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	const char *req_channel = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_channel = cJSON_GetObjectCstr(req, "channel");
+
+	return req_channel;
+}
+
+KS_DECLARE(const char *) blade_rpcbroadcast_request_event_get(blade_rpc_request_t *brpcreq)
+{
+	cJSON *req = NULL;
+	const char *req_event = NULL;
+
+	ks_assert(brpcreq);
+
+	req = blade_rpc_request_message_get(brpcreq);
+	ks_assert(req);
+
+	req_event = cJSON_GetObjectCstr(req, "event");
+
+	return req_event;
+}
+
 KS_DECLARE(cJSON *) blade_rpcbroadcast_request_params_get(blade_rpc_request_t *brpcreq)
 {
 	cJSON *req = NULL;
@@ -1942,6 +1979,7 @@ KS_DECLARE(cJSON *) blade_rpcbroadcast_request_params_get(blade_rpc_request_t *b
 
 	return req_params_params;
 }
+
 
 /* For Emacs:
  * Local Variables:

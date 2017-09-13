@@ -49,7 +49,6 @@ struct blade_session_s {
 	ks_q_t *sending;
 	ks_q_t *receiving;
 
-	ks_hash_t *realms;
 	ks_hash_t *routes;
 
 	cJSON *properties;
@@ -114,9 +113,6 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 	ks_assert(bs->sending);
 	ks_q_create(&bs->receiving, pool, 0);
 	ks_assert(bs->receiving);
-
-	ks_hash_create(&bs->realms, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
-	ks_assert(bs->realms);
 
 	ks_hash_create(&bs->routes, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(bs->routes);
@@ -223,35 +219,6 @@ KS_DECLARE(blade_session_state_t) blade_session_state_get(blade_session_t *bs)
 	ks_assert(bs);
 
 	return bs->state;
-}
-
-KS_DECLARE(ks_status_t) blade_session_realm_add(blade_session_t *bs, const char *realm)
-{
-	char *key = NULL;
-
-	ks_assert(bs);
-	ks_assert(realm);
-
-	key = ks_pstrdup(ks_pool_get(bs), realm);
-	ks_hash_insert(bs->realms, (void *)key, (void *)KS_TRUE);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_status_t) blade_session_realm_remove(blade_session_t *bs, const char *realm)
-{
-	ks_assert(bs);
-	ks_assert(realm);
-
-	ks_hash_remove(bs->realms, (void *)realm);
-
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(ks_hash_t *) blade_session_realms_get(blade_session_t *bs)
-{
-	ks_assert(bs);
-	return bs->realms;
 }
 
 KS_DECLARE(ks_status_t) blade_session_route_add(blade_session_t *bs, const char *nodeid)

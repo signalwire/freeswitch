@@ -75,6 +75,12 @@
     <ClCompile Include="src\blade_tuple.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\blade_realm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\blade_channel.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\unqlite.h">
@@ -138,6 +144,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\blade_tuple.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_realm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_channel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

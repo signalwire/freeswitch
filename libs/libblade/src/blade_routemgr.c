@@ -141,6 +141,13 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_add(blade_routemgr_t *brmgr, const 
 
 	blade_handle_rpcregister(brmgr->handle, target, KS_FALSE, NULL, NULL);
 
+	if (blade_upstreammgr_masterlocal(blade_handle_upstreammgr_get(brmgr->handle))) {
+		cJSON *params = cJSON_CreateObject();
+		cJSON_AddStringToObject(params, "nodeid", target);
+		blade_subscriptionmgr_broadcast(blade_handle_subscriptionmgr_get(brmgr->handle), BLADE_RPCBROADCAST_COMMAND_EVENT, NULL, "presence", "blade", "join", "joined", params, NULL, NULL);
+		cJSON_Delete(params);
+	}
+
 	return KS_STATUS_SUCCESS;
 
 }
@@ -164,6 +171,13 @@ KS_DECLARE(ks_status_t) blade_routemgr_route_remove(blade_routemgr_t *brmgr, con
 	// is a direct session being terminated
 
 	blade_mastermgr_purge(blade_handle_mastermgr_get(brmgr->handle), target);
+
+	if (blade_upstreammgr_masterlocal(blade_handle_upstreammgr_get(brmgr->handle))) {
+		cJSON *params = cJSON_CreateObject();
+		cJSON_AddStringToObject(params, "nodeid", target);
+		blade_subscriptionmgr_broadcast(blade_handle_subscriptionmgr_get(brmgr->handle), BLADE_RPCBROADCAST_COMMAND_EVENT, NULL, "presence", "blade", "leave", "left", params, NULL, NULL);
+		cJSON_Delete(params);
+	}
 
 	return KS_STATUS_SUCCESS;
 }

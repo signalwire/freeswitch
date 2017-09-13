@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- *
- *
+ * 
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,17 +31,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BLADE_MODULE_MASTER_H_
-#define _BLADE_MODULE_MASTER_H_
+#ifndef _BLADE_REALM_H_
+#define _BLADE_REALM_H_
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-
-KS_DECLARE(ks_status_t) blade_module_master_create(blade_module_t **bmP, blade_handle_t *bh);
-
-KS_DECLARE(ks_status_t) blade_module_master_on_startup(blade_module_t *bm, config_setting_t *config);
-KS_DECLARE(ks_status_t) blade_module_master_on_shutdown(blade_module_t *bm);
-
+KS_DECLARE(ks_status_t) blade_realm_create(blade_realm_t **brP, ks_pool_t *pool, const char *name);
+KS_DECLARE(ks_status_t) blade_realm_destroy(blade_realm_t **brP);
+KS_DECLARE(const char *) blade_realm_name_get(blade_realm_t *br);
+KS_DECLARE(ks_status_t) blade_realm_read_lock(blade_realm_t *br);
+KS_DECLARE(ks_status_t) blade_realm_read_unlock(blade_realm_t *br);
+KS_DECLARE(ks_status_t) blade_realm_write_lock(blade_realm_t *br);
+KS_DECLARE(ks_status_t) blade_realm_write_unlock(blade_realm_t *br);
+KS_DECLARE(ks_hash_iterator_t *) blade_realm_protocols_iterator(blade_realm_t *br, ks_locked_t locked);
+KS_DECLARE(blade_protocol_t *) blade_realm_protocol_lookup(blade_realm_t *br, const char *protocol, ks_bool_t writelocked);
+KS_DECLARE(ks_status_t) blade_realm_protocol_add(blade_realm_t *br, blade_protocol_t *protocol);
+KS_DECLARE(ks_status_t) blade_realm_protocol_remove(blade_realm_t *br, const char *protocol);
 KS_END_EXTERN_C
 
 #endif

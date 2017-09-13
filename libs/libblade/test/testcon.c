@@ -18,11 +18,13 @@ struct command_def_s {
 void command_quit(blade_handle_t *bh, char *args);
 void command_channeladd(blade_handle_t *bh, char *args);
 void command_channelremove(blade_handle_t *bh, char *args);
+void command_presence(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
 	{ "channeladd", command_channeladd },
 	{ "channelremove", command_channelremove },
+	{ "presence", command_presence },
 
 	{ NULL, NULL }
 };
@@ -323,6 +325,39 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	return KS_FALSE;
 }
 
+ks_bool_t test_presence_request_handler(blade_rpc_request_t *brpcreq, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+	const char *realm = NULL;
+	const char *protocol = NULL;
+	const char *channel = NULL;
+	const char *event = NULL;
+	cJSON *params = NULL;
+	const char *nodeid = NULL;
+
+	ks_assert(brpcreq);
+	ks_assert(data);
+
+	bh = blade_rpc_request_handle_get(brpcreq);
+	ks_assert(bh);
+
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
+	ks_assert(bs);
+
+	realm = blade_rpcbroadcast_request_realm_get(brpcreq);
+	protocol = blade_rpcbroadcast_request_protocol_get(brpcreq);
+	channel = blade_rpcbroadcast_request_channel_get(brpcreq);
+	event = blade_rpcbroadcast_request_event_get(brpcreq);
+
+	params = blade_rpcbroadcast_request_params_get(brpcreq);
+	nodeid = cJSON_GetObjectCstr(params, "nodeid");
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) presence (%s@%s/%s/%s for %s) request processing\n", blade_session_id_get(bs), protocol, realm, channel, event, nodeid);
+
+	return KS_FALSE;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -523,6 +558,20 @@ void command_channelremove(blade_handle_t *bh, char *args)
 
 		cJSON_Delete(channels);
 	}
+}
+
+void command_presence(blade_handle_t *bh, char *args)
+{
+	cJSON *channels = NULL;
+
+	ks_assert(bh);
+	ks_assert(args);
+
+	channels = cJSON_CreateArray();
+	cJSON_AddItemToArray(channels, cJSON_CreateString("join"));
+	cJSON_AddItemToArray(channels, cJSON_CreateString("leave"));
+
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "presence", "blade", channels, NULL, NULL, test_presence_request_handler, (void *)g_test);
 }
 
 /* For Emacs:

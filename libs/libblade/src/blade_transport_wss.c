@@ -213,6 +213,7 @@ ks_status_t blade_transport_wss_link_ssl_init(blade_transport_wss_link_t *btwssl
 	cert = server ? btwssl->transport->endpoints_ssl_cert : btwssl->transport->ssl_cert;
 	chain = server ? btwssl->transport->endpoints_ssl_chain : btwssl->transport->ssl_chain;
 
+	// @todo should actually error out if there is no key/cert/chain available, as SSL/TLS is meant to be mandatory
 	if (key && cert) {
 		btwssl->ssl = SSL_CTX_new(method);
 
@@ -426,7 +427,7 @@ ks_status_t blade_transport_wss_onstartup(blade_transport_t *bt, config_setting_
 	btwss = (blade_transport_wss_t *)blade_transport_data_get(bt);
 
     if (blade_transport_wss_config(btwss, config) != KS_STATUS_SUCCESS) {
-		ks_log(KS_LOG_DEBUG, "blade_module_wss_config failed\n");
+		ks_log(KS_LOG_DEBUG, "blade_transport_wss_config failed\n");
 		return KS_STATUS_FAIL;
 	}
 
@@ -826,7 +827,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	cJSON *json_res = NULL;
 	cJSON *json_params = NULL;
 	cJSON *json_result = NULL;
-	cJSON *json_result_realms = NULL;
 	//cJSON *error = NULL;
 	blade_session_t *bs = NULL;
 	blade_handle_t *bh = NULL;
@@ -837,8 +837,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	const char *nodeid = NULL;
 	const char *master_nodeid = NULL;
 	ks_time_t timeout;
-	ks_hash_iterator_t *it = NULL;
-	ks_hash_t *realms = NULL;
 
 	ks_assert(bc);
 
@@ -957,11 +955,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		// a "blade.register" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
 		// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
 		blade_routemgr_route_add(blade_handle_routemgr_get(bh), nodeid, nodeid);
-
-		// iterate and copy the realms ultimately provided by the master router node to the new downstream session, realms are obtained when establishing upstream sessions (see outbound handler), in
-		// the future this process can be adjusted based on authentication which is currently skipped, so for now if a master node provides more than a single realm then all provided realms will be
-		// acceptable for protocol publishing and passing to downstream sessions for their realms
-		blade_upstreammgr_realm_propagate(blade_handle_upstreammgr_get(bh), bs);
 	}
 
 	blade_rpc_response_raw_create(&json_res, &json_result, id);
@@ -981,26 +974,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	}
 	cJSON_AddStringToObject(json_result, "master-nodeid", master_nodeid);
 	ks_pool_free(&master_nodeid);
-
-
-	// add the list of actual realms the local node will permit the remote node to register or route, this is the same list that the remote side would be adding to the handle with blade_handle_realm_add()
-	// and may contain additional subrealms that are explicitly registered by the remote node, this ensures upon reconnect that the same list of realms gets provided to the remote node to refresh
-	// the remote nodes local realms on the edge case that the session times out on the remote end while reconnecting
-
-	json_result_realms = cJSON_CreateArray();
-	cJSON_AddItemToObject(json_result, "realms", json_result_realms);
-
-	realms = blade_session_realms_get(bs);
-	ks_hash_read_lock(realms);
-	for (it = ks_hash_first(realms, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-		void *key = NULL;
-		void *value = NULL;
-
-		ks_hash_this(it, (const void **)&key, NULL, &value);
-
-		cJSON_AddItemToArray(json_result_realms, cJSON_CreateString((const char *)key));
-	}
-	ks_hash_read_unlock(realms);
 
 	// This starts the final process for associating the connection to the session, including for reconnecting to an existing session, this simply
 	// associates the session to this connection, upon return the remainder of the association for the session to the connection is handled along
@@ -1041,8 +1014,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 	const char *id = NULL;
 	cJSON *json_error = NULL;
 	cJSON *json_result = NULL;
-	cJSON *json_result_realms = NULL;
-	int json_result_realms_size = 0;
 	const char *nodeid = NULL;
 	const char *master_nodeid = NULL;
 	blade_session_t *bs = NULL;
@@ -1141,13 +1112,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	json_result_realms = cJSON_GetObjectItem(json_result, "realms");
-	if (!json_result_realms || json_result_realms->type != cJSON_Array || (json_result_realms_size = cJSON_GetArraySize(json_result_realms)) <= 0) {
-		ks_log(KS_LOG_DEBUG, "Received message is missing 'realms'\n");
-		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
-		goto done;
-	}
-
 
 	// @todo validate uuid format by parsing, not currently available in uuid functions
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
@@ -1186,12 +1150,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
 		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bh), master_nodeid);
-
-		// iterate realms and register to handle as permitted realms for future registrations
-		for (int index = 0; index < json_result_realms_size; ++index) {
-			cJSON *elem = cJSON_GetArrayItem(json_result_realms, index);
-			blade_upstreammgr_realm_add(blade_handle_upstreammgr_get(bh), elem->valuestring);
-		}
 	}
 
 	blade_connection_session_set(bc, blade_session_id_get(bs));

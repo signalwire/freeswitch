@@ -44,7 +44,9 @@
 #include "blade_rpc.h"
 #include "blade_connection.h"
 #include "blade_session.h"
+#include "blade_realm.h"
 #include "blade_protocol.h"
+#include "blade_channel.h"
 #include "blade_subscription.h"
 #include "blade_tuple.h"
 
