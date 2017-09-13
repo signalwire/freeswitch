@@ -3532,24 +3532,28 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 #ifdef ENABLE_SRTP
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 		int x;
+
+		rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
+
 		for(x = 0; x < 2; x++) {
 			if (rtp_session->send_ctx[x]) {
 				srtp_dealloc(rtp_session->send_ctx[x]);
 				rtp_session->send_ctx[x] = NULL;
 			}
 		}
-		rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV]) {
 		int x;
+
+		rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
+
 		for (x = 0; x < 2; x++) {
 			if (rtp_session->recv_ctx[x]) {
 				srtp_dealloc(rtp_session->recv_ctx[x]);
 				rtp_session->recv_ctx[x] = NULL;
 			}
 		}
-		rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 	}
 #endif
 
@@ -5710,7 +5714,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-	switch_mutex_unlock(rtp_session->ice_mutex);
+
 
 	if (status == SWITCH_STATUS_SUCCESS && *bytes) {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
@@ -5734,12 +5738,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					*bytes = sbytes;
 				}
 #endif
+				switch_mutex_unlock(rtp_session->ice_mutex);
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
 	}
 
-
+	switch_mutex_unlock(rtp_session->ice_mutex);
 
 	if ((*bytes && (!rtp_write_ready(rtp_session, *bytes, __LINE__) || !rtp_session->has_rtp || rtp_session->has_rtcp)) || sync) {
 		rtp_session->hot_hits = 0;
@@ -5888,6 +5893,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #endif
 
 #ifdef ENABLE_SRTP
+			switch_mutex_lock(rtp_session->ice_mutex);
 			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp &&
 				(check_recv_payload(rtp_session) ||
 				 rtp_session->last_rtp_hdr.pt == rtp_session->recv_te ||
@@ -5906,6 +5912,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
 						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
+						switch_mutex_unlock(rtp_session->ice_mutex);
 						return SWITCH_STATUS_FALSE;
 					} else {
 
@@ -5914,7 +5921,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					}
 				}
 
-				if (!(*flags & SFF_PLC)) {
+				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
 					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == err_status_replay_fail) {
 						/* false alarm nack */
@@ -5922,6 +5929,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						stat = 0;
 						sbytes = 0;
 						*bytes = 0;
+						switch_mutex_unlock(rtp_session->ice_mutex);
 						goto more;
 					}
 				}
@@ -5954,6 +5962,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				*bytes = sbytes;
 			}
+			switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 		}
 
@@ -8123,6 +8132,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 #ifdef ENABLE_SRTP
+		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			int sbytes = (int) bytes;
 			err_status_t stat;
@@ -8139,6 +8149,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 									  "Error! RE-Activating %s Secure RTP SEND\n", rtp_type(rtp_session));
 					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 					ret = -1;
+					switch_mutex_unlock(rtp_session->ice_mutex);
 					goto end;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
@@ -8156,6 +8167,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 			bytes = sbytes;
 		}
+		switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 #ifdef ENABLE_ZRTP
 		/* ZRTP Send */
