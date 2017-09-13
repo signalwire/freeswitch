@@ -178,7 +178,8 @@ static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
 };
 
 typedef enum {
-    CC_APP_AGENT_CONNECTING = (1 << 0)
+    CC_APP_AGENT_CONNECTING = (1 << 0),
+	CC_APP_SHOULD_BREAK = (1 << 1)
 } cc_app_flag_t;
 
 static char members_sql[] =
@@ -1928,12 +1929,17 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		}
 		switch_channel_clear_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
-		/* Wait until the agent hangup.  This will quit also if the agent transfer the call */
+		/* Wait until the agent hangup.  This will quit also if the agent transfer the call or callcenter_break is used*/
 		while(bridged && switch_channel_up(agent_channel) && globals.running) {
 			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
 				if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
 					break;
 				}
+			}
+			if (switch_channel_test_app_flag_key(CC_APP_KEY, agent_channel, CC_APP_SHOULD_BREAK)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(agent_session), SWITCH_LOG_DEBUG, "callcenter_break requested at agent channel, releasing agent %s\n", h->agent_name);
+				switch_channel_clear_app_flag_key(CC_APP_KEY, agent_channel, CC_APP_SHOULD_BREAK);
+				break;
 			}
 			switch_yield(100000);
 		}
@@ -3893,6 +3899,43 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(cc_break_api_function)
+{
+	char *argv[2] = { 0 };
+	char *mydata = NULL;
+	const char *uuid = NULL;
+	switch_core_session_t *break_session = NULL;
+	switch_channel_t *channel = NULL;
+	switch_bool_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		stream->write_function(stream, "-ERR Usage: callcenter_break agent <uuid>\n");
+		goto end;
+	}
+
+	uuid = argv[1];
+	if (!uuid) {
+		stream->write_function(stream, "-ERR Usage: callcenter_break agent <uuid>\n");
+		goto end;
+	}
+	break_session = switch_core_session_locate(uuid);
+	if (!break_session) {
+		stream->write_function(stream, "-ERR Session not found for uuid %s\n", uuid);
+		goto end;
+	}
+	channel = switch_core_session_get_channel(break_session);
+	switch_channel_set_app_flag_key(CC_APP_KEY, channel, CC_APP_SHOULD_BREAK);
+
+end:
+	if (break_session) {
+		switch_core_session_rwunlock(break_session);
+	}
+	switch_safe_free(mydata);
+	return status;
+}
 
 SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
 {
@@ -4097,6 +4140,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_NONE);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
+	SWITCH_ADD_API(api_interface, "callcenter_break", "Stop watching an uuid and release agent", cc_break_api_function, "callcenter_break agent <uuid>");
 
 	SWITCH_ADD_JSON_API(json_api_interface, "callcenter_config", "JSON Callcenter API", json_callcenter_config_function, "");
 
@@ -4133,6 +4177,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config queue count agents");
 	switch_console_set_complete("add callcenter_config queue count members");
 	switch_console_set_complete("add callcenter_config queue count tiers");
+
+	switch_console_set_complete("add callcenter_break agent");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
