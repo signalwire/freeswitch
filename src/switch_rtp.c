@@ -914,10 +914,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		return;
 	}
 
-	switch_mutex_lock(rtp_session->ice_mutex);
-
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
+
+	switch_mutex_lock(rtp_session->ice_mutex);
 
 	if (!switch_rtp_ready(rtp_session)) {
 		goto end;
