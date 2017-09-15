@@ -1769,6 +1769,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		if (agent_session) {
 			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
 			const char *cc_warning_tone = switch_channel_get_variable(agent_channel, "cc_warning_tone");
+			switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+			const char *cc_export_vars = switch_channel_get_variable(member_channel, "cc_export_vars");
+			char *cc_export_vars_dup = switch_core_session_strdup(member_session, cc_export_vars);
+			int argc;
+			char *argv[256];
 
 			switch_channel_set_variable(agent_channel, "cc_side", "agent");
 			switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
@@ -1776,6 +1781,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
 			switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
 			switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
+
+			argc = switch_separate_string(cc_export_vars_dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (int i = 0; i < argc; ++i) {
+				switch_channel_set_variable(agent_channel, argv[i], switch_channel_get_variable(member_channel, argv[i]));
+			}
 
 			/* Playback this to the agent */
 			if (cc_warning_tone) {
