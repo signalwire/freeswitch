@@ -1779,6 +1779,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 			/* Playback this to the agent */
 			if (cc_warning_tone) {
+				switch_ivr_park_session(agent_session);
+				switch_channel_wait_for_flag(agent_channel, CF_PARK, SWITCH_TRUE, 5000, NULL);
 				playback_array(agent_session, cc_warning_tone);
 			}
 
