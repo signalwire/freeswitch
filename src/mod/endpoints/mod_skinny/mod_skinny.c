@@ -548,6 +548,7 @@ uint32_t skinny_line_count_active(listener_t *listener)
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 	int resetting = 0;
 
 	if (!tech_pvt->iananame) {
@@ -620,8 +621,6 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 					tech_pvt->read_impl.microseconds_per_packet,
 					tech_pvt->read_impl.samples_per_packet
 					) != SWITCH_STATUS_SUCCESS) {
-			switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -635,8 +634,10 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
+	switch_channel_set_flag(channel, CF_AUDIO);
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
-			"" /* TODO switch_channel_get_name(tech_pvt->channel)*/, tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
+					  switch_channel_get_name(channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
 			tech_pvt->read_impl.samples_per_packet);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
