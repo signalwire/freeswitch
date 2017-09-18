@@ -3575,36 +3575,37 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				if (fifo_consumer_wrapup_time) {
 					wrapup_time_started = switch_micro_time_now();
-				}
 
-				if (!zstr(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
-					while (switch_channel_ready(channel)) {
-						char terminator = 0;
+					if (!zstr(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
+						while (switch_channel_ready(channel)) {
+							char terminator = 0;
 
-						if (fifo_consumer_wrapup_time) {
+							if (fifo_consumer_wrapup_time) {
+								wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
+								if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
+									break;
+								} else {
+									wrapup_time_remaining = fifo_consumer_wrapup_time - wrapup_time_elapsed + 100;
+								}
+							}
+
+							switch_ivr_collect_digits_count(session, buf, sizeof(buf) - 1, 1, fifo_consumer_wrapup_key, &terminator, 0, 0,
+															(uint32_t) wrapup_time_remaining);
+							if ((terminator == *fifo_consumer_wrapup_key) || !(switch_channel_ready(channel))) {
+								break;
+							}
+						}
+					} else if ((zstr(fifo_consumer_wrapup_key) || !strcmp(buf, fifo_consumer_wrapup_key))) {
+						while (switch_channel_ready(channel)) {
 							wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
 							if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
 								break;
-							} else {
-								wrapup_time_remaining = fifo_consumer_wrapup_time - wrapup_time_elapsed + 100;
 							}
+							switch_yield(500);
 						}
-
-						switch_ivr_collect_digits_count(session, buf, sizeof(buf) - 1, 1, fifo_consumer_wrapup_key, &terminator, 0, 0,
-														(uint32_t) wrapup_time_remaining);
-						if ((terminator == *fifo_consumer_wrapup_key) || !(switch_channel_ready(channel))) {
-							break;
-						}
-					}
-				} else if (fifo_consumer_wrapup_time && (zstr(fifo_consumer_wrapup_key) || !strcmp(buf, fifo_consumer_wrapup_key))) {
-					while (switch_channel_ready(channel)) {
-						wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
-						if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
-							break;
-						}
-						switch_yield(500);
 					}
 				}
+
 				switch_channel_set_variable(channel, "fifo_status", "WAITING");
 			}
 
