@@ -242,6 +242,14 @@
     function onRemoteStream(self, stream) {
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'block';
+
+	    // Hacks for Mobile Safari
+	    self.options.useVideo.setAttribute("playsinline", true);
+	    self.options.useVideo.setAttribute("controls", true);
+	    setTimeout(() => {
+		self.options.useVideo.removeAttribute("controls");
+	    });
+
         }
 
         var element = self.options.useAudio;
@@ -249,7 +257,9 @@
 
 	FSRTCattachMediaStream(element, stream);
 	
-        self.options.useAudio.play();
+
+	
+        //self.options.useAudio.play();
         self.remoteStream = stream;
     }
 
