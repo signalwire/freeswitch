@@ -668,9 +668,20 @@
     function FSRTCPeerConnection(options) {
 	var gathering = false, done = false;
 	var config = {};
-        var default_ice = {
-	    urls: ['stun:stun.l.google.com:19302']
-	};
+	var default_ice;
+
+
+	if (navigator.appVersion.indexOf('Edge') > -1) {
+            default_ice = {
+		urls: ['turn:turn-testdrive.cloudapp.net:3478?transport=udp'],
+		username: "redmond",
+		credential: "redmond123"
+	    };
+	} else {
+            default_ice = {
+		urls: ['stun:stun.l.google.com:19302']
+	    }
+	}
 
         if (options.iceServers) {
             if (typeof(options.iceServers) === "boolean") {
