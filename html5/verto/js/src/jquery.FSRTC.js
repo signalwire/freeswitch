@@ -246,7 +246,7 @@
 	    // Hacks for Mobile Safari
 	    self.options.useVideo.setAttribute("playsinline", true);
 	    self.options.useVideo.setAttribute("controls", true);
-	    setTimeout(() => {
+	    setTimeout(function() {
 		self.options.useVideo.removeAttribute("controls");
 	    });
 
