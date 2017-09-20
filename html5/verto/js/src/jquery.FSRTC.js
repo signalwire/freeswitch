@@ -244,12 +244,12 @@
             self.options.useVideo.style.display = 'block';
 
 	    // Hacks for Mobile Safari
-	    self.options.useVideo.setAttribute("playsinline", true);
-	    self.options.useVideo.setAttribute("controls", true);
-	    setTimeout(function() {
-		self.options.useVideo.removeAttribute("controls");
-	    });
+	    var iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
+	    if (iOS) {
+		self.options.useVideo.setAttribute("playsinline", true);
+		self.options.useVideo.setAttribute("controls", true);
+	    }
         }
 
         var element = self.options.useAudio;
@@ -487,7 +487,7 @@
             }
 
 	    if (obj.options.useMic !== "any") {
-		//audio.optional = [{sourceId: obj.options.useMic}]
+		//audio.optional = [{sourceId: obj.options.useMic}];
 		audio.deviceId = {exact: obj.options.useMic};
 	    }
 	}
