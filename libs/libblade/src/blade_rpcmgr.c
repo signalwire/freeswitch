@@ -177,7 +177,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_corerpc_remove(blade_rpcmgr_t *brpcmgr, bla
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmgr, const char *method, const char *protocol, const char *realm)
+KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmgr, const char *method, const char *protocol)
 {
 	blade_rpc_t *brpc = NULL;
 	char *key = NULL;
@@ -185,9 +185,8 @@ KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmg
 	ks_assert(brpcmgr);
 	ks_assert(method);
 	ks_assert(protocol);
-	ks_assert(realm);
 
-	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s:%s", protocol, method);
 	brpc = ks_hash_search(brpcmgr->protocolrpcs, (void *)key, KS_READLOCKED);
 	// @todo if (brpc) blade_rpc_read_lock(brpc);
 	ks_hash_read_unlock(brpcmgr->protocolrpcs);
@@ -201,7 +200,6 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_add(blade_rpcmgr_t *brpcmgr, bl
 {
 	const char *method = NULL;
 	const char *protocol = NULL;
-	const char *realm = NULL;
 	char *key = NULL;
 
 	ks_assert(brpcmgr);
@@ -213,10 +211,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_add(blade_rpcmgr_t *brpcmgr, bl
 	protocol = blade_rpc_protocol_get(brpc);
 	ks_assert(protocol);
 
-	realm = blade_rpc_realm_get(brpc);
-	ks_assert(realm);
-
-	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s:%s", protocol, method);
 	ks_assert(key);
 
 	ks_hash_insert(brpcmgr->protocolrpcs, (void *)key, (void *)brpc);
@@ -231,7 +226,6 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_remove(blade_rpcmgr_t *brpcmgr,
 {
 	const char *method = NULL;
 	const char *protocol = NULL;
-	const char *realm = NULL;
 	char *key = NULL;
 
 	ks_assert(brpcmgr);
@@ -243,10 +237,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_remove(blade_rpcmgr_t *brpcmgr,
 	protocol = blade_rpc_protocol_get(brpc);
 	ks_assert(protocol);
 
-	realm = blade_rpc_realm_get(brpc);
-	ks_assert(realm);
-
-	key = ks_psprintf(ks_pool_get(brpcmgr), "%s@%s/%s", protocol, realm, method);
+	key = ks_psprintf(ks_pool_get(brpcmgr), "%s:%s", protocol, method);
 	ks_assert(key);
 
 	ks_hash_remove(brpcmgr->protocolrpcs, (void *)key);

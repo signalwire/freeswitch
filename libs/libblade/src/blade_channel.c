@@ -35,6 +35,7 @@
 
 struct blade_channel_s {
 	const char *name;
+	blade_channel_flags_t flags;
 	ks_rwl_t *lock;
 	ks_hash_t *authorizations;
 };
@@ -59,7 +60,7 @@ static void blade_channel_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *pool, const char *name)
+KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *pool, const char *name, blade_channel_flags_t flags)
 {
 	blade_channel_t *bc = NULL;
 
@@ -69,6 +70,7 @@ KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *p
 
 	bc = ks_pool_alloc(pool, sizeof(blade_channel_t));
 	bc->name = ks_pstrdup(pool, name);
+	bc->flags = flags;
 
 	ks_rwl_create(&bc->lock, pool);
 	ks_assert(bc->lock);
@@ -97,6 +99,12 @@ KS_DECLARE(const char *) blade_channel_name_get(blade_channel_t *bc)
 {
 	ks_assert(bc);
 	return bc->name;
+}
+
+KS_DECLARE(blade_channel_flags_t) blade_channel_flags_get(blade_channel_t *bc)
+{
+	ks_assert(bc);
+	return bc->flags;
 }
 
 KS_DECLARE(ks_status_t) blade_channel_read_lock(blade_channel_t *bc)

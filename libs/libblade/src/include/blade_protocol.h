@@ -36,9 +36,8 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, blade_realm_t *realm, const char *name);
+KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, const char *name);
 KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP);
-KS_DECLARE(blade_realm_t *) blade_protocol_realm_get(blade_protocol_t *bp);
 KS_DECLARE(const char *) blade_protocol_name_get(blade_protocol_t *bp);
 KS_DECLARE(ks_status_t) blade_protocol_read_lock(blade_protocol_t *bp);
 KS_DECLARE(ks_status_t) blade_protocol_read_unlock(blade_protocol_t *bp);

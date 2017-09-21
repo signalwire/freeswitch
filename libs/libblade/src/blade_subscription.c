@@ -35,7 +35,6 @@
 
 struct blade_subscription_s {
 	const char *protocol;
-	const char *realm;
 	const char *channel;
 	ks_hash_t *subscribers;
 
@@ -55,7 +54,6 @@ static void blade_subscription_cleanup(void *ptr, void *arg, ks_pool_cleanup_act
 		break;
 	case KS_MPCL_TEARDOWN:
 		if (bsub->protocol) ks_pool_free(&bsub->protocol);
-		if (bsub->realm) ks_pool_free(&bsub->subscribers);
 		if (bsub->channel) ks_pool_free(&bsub->channel);
 		if (bsub->subscribers) ks_hash_destroy(&bsub->subscribers);
 		break;
@@ -64,19 +62,17 @@ static void blade_subscription_cleanup(void *ptr, void *arg, ks_pool_cleanup_act
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *protocol, const char *realm, const char *channel)
+KS_DECLARE(ks_status_t) blade_subscription_create(blade_subscription_t **bsubP, ks_pool_t *pool, const char *protocol, const char *channel)
 {
 	blade_subscription_t *bsub = NULL;
 
 	ks_assert(bsubP);
 	ks_assert(pool);
 	ks_assert(protocol);
-	ks_assert(realm);
 	ks_assert(channel);
 
 	bsub = ks_pool_alloc(pool, sizeof(blade_subscription_t));
 	bsub->protocol = ks_pstrdup(pool, protocol);
-	bsub->realm = ks_pstrdup(pool, realm);
 	bsub->channel = ks_pstrdup(pool, channel);
 
 	ks_hash_create(&bsub->subscribers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
@@ -104,15 +100,6 @@ KS_DECLARE(const char *) blade_subscription_protocol_get(blade_subscription_t *b
 	ks_assert(bsub);
 
 	return bsub->protocol;
-
-}
-
-KS_DECLARE(const char *) blade_subscription_realm_get(blade_subscription_t *bsub)
-{
-	ks_assert(bsub);
-
-	return bsub->realm;
-
 }
 
 KS_DECLARE(const char *) blade_subscription_channel_get(blade_subscription_t *bsub)
@@ -120,7 +107,6 @@ KS_DECLARE(const char *) blade_subscription_channel_get(blade_subscription_t *bs
 	ks_assert(bsub);
 
 	return bsub->channel;
-
 }
 
 KS_DECLARE(ks_hash_t *) blade_subscription_subscribers_get(blade_subscription_t *bsub)
@@ -128,7 +114,6 @@ KS_DECLARE(ks_hash_t *) blade_subscription_subscribers_get(blade_subscription_t 
 	ks_assert(bsub);
 
 	return bsub->subscribers;
-
 }
 
 KS_DECLARE(ks_status_t) blade_subscription_subscribers_add(blade_subscription_t *bsub, const char *nodeid)

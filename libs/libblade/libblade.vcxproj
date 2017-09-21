@@ -193,7 +193,6 @@
     <ClCompile Include="src\blade_connectionmgr.c" />
     <ClCompile Include="src\blade_identity.c" />
     <ClCompile Include="src\blade_mastermgr.c" />
-    <ClCompile Include="src\blade_realm.c" />
     <ClCompile Include="src\blade_routemgr.c" />
     <ClCompile Include="src\blade_rpc.c" />
     <ClCompile Include="src\blade_protocol.c" />
@@ -207,7 +206,6 @@
     <ClCompile Include="src\blade_stack.c" />
     <ClCompile Include="src\blade_transport.c" />
     <ClCompile Include="src\blade_tuple.c" />
-    <ClCompile Include="src\blade_upstreammgr.c" />
     <ClCompile Include="src\unqlite.c" />
   </ItemGroup>
   <ItemGroup>
@@ -217,7 +215,6 @@
     <ClInclude Include="src\include\blade_connectionmgr.h" />
     <ClInclude Include="src\include\blade_identity.h" />
     <ClInclude Include="src\include\blade_mastermgr.h" />
-    <ClInclude Include="src\include\blade_realm.h" />
     <ClInclude Include="src\include\blade_routemgr.h" />
     <ClInclude Include="src\include\blade_rpc.h" />
     <ClInclude Include="src\include\blade_protocol.h" />
@@ -232,7 +229,6 @@
     <ClInclude Include="src\include\blade_transport.h" />
     <ClInclude Include="src\include\blade_tuple.h" />
     <ClInclude Include="src\include\blade_types.h" />
-    <ClInclude Include="src\include\blade_upstreammgr.h" />
     <ClInclude Include="src\include\unqlite.h" />
   </ItemGroup>
   <ItemGroup>

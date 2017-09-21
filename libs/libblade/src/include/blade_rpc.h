@@ -36,12 +36,11 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, void *data);
+KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, blade_rpc_request_callback_t callback, void *data);
 KS_DECLARE(ks_status_t) blade_rpc_destroy(blade_rpc_t **brpcP);
 KS_DECLARE(blade_handle_t *) blade_rpc_handle_get(blade_rpc_t *brpc);
 KS_DECLARE(const char *) blade_rpc_method_get(blade_rpc_t *brpc);
 KS_DECLARE(const char *) blade_rpc_protocol_get(blade_rpc_t *brpc);
-KS_DECLARE(const char *) blade_rpc_realm_get(blade_rpc_t *brpc);
 KS_DECLARE(blade_rpc_request_callback_t) blade_rpc_callback_get(blade_rpc_t *brpc);
 KS_DECLARE(void *) blade_rpc_data_get(blade_rpc_t *brpc);
 

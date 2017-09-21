@@ -609,7 +609,7 @@ ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_transp
 	int family = AF_INET;
 	const char *ip = NULL;
 	const char *portstr = NULL;
-	ks_port_t port = 1234;
+	ks_port_t port = 2100;
 	blade_transport_wss_link_t *btwssl = NULL;
 	blade_connection_t *bc = NULL;
 
@@ -621,19 +621,18 @@ ks_status_t blade_transport_wss_onconnect(blade_connection_t **bcP, blade_transp
 
 	*bcP = NULL;
 
-	ks_log(KS_LOG_DEBUG, "Connect Callback: %s\n", blade_identity_uri(target));
+	ks_log(KS_LOG_DEBUG, "Connect Callback: %s\n", blade_identity_uri_get(target));
 
 	// @todo completely rework all of this once more is known about connecting when an identity has no explicit transport details but this transport
 	// has been choosen anyway
-	ip = blade_identity_parameter_get(target, "host");
-	portstr = blade_identity_parameter_get(target, "port");
+	ip = blade_identity_host_get(target);
+	portstr = blade_identity_port_get(target);
 	if (!ip) {
-		// @todo: temporary, this should fall back on DNS SRV or whatever else can turn "a@b.com" into an ip (and port?) to connect to
-		// also need to deal with hostname lookup, so identities with wss transport need to have a host parameter that is an IP for the moment
 		ks_log(KS_LOG_DEBUG, "No host provided\n");
 		ret = KS_STATUS_FAIL;
 		goto done;
 	}
+	// @todo: this should detect IP's and fall back on DNS and/or SRV for hostname lookup, for the moment hosts must be IP's
 
 	// @todo wrap this code to get address family from string IP between IPV4 and IPV6, and put it in libks somewhere
 	{
@@ -830,12 +829,10 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	//cJSON *error = NULL;
 	blade_session_t *bs = NULL;
 	blade_handle_t *bh = NULL;
-	ks_pool_t *pool = NULL;
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
 	const char *nodeid = NULL;
-	const char *master_nodeid = NULL;
 	ks_time_t timeout;
 
 	ks_assert(bc);
@@ -951,9 +948,9 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		// from having long running write locks when a session cleans up
 		blade_session_route_add(bs, nodeid);
 		// This is the main routing entry to make an identity routable through a session when a message is received for a given identity in this table, these allow to efficiently determine which session
-		// a message should pass through when it does not match the local node id from blade_upstreammgr_t, and must be matched with a call to blade_session_route_add() for cleanup, additionally when
-		// a "blade.register" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.register" would also
-		// result in the new identities being added as routes however new entire wildcard subrealm registration would require a special process for matching any identities from those subrealms
+		// a message should pass through when it does not match the local node id from blade_routemgr_t, and must be matched with a call to blade_session_route_add() for cleanup, additionally when
+		// a "blade.route" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.route" would also
+		// result in the new identities being added as routes however federation registration would require a special process to maintain proper routing
 		blade_routemgr_route_add(blade_handle_routemgr_get(bh), nodeid, nodeid);
 	}
 
@@ -962,18 +959,12 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
-	// @todo process automatic identity registration from remote SANS entries
-
-	pool = ks_pool_get(bh);
-	blade_upstreammgr_masterid_copy(blade_handle_upstreammgr_get(bh), pool, &master_nodeid);
-	if (!master_nodeid) {
+	if (!blade_routemgr_master_pack(blade_handle_routemgr_get(bh), json_result, "master-nodeid")) {
 		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
 		blade_transport_wss_rpc_error_send(bc, id, -32602, "Master nodeid unavailable");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
 	}
-	cJSON_AddStringToObject(json_result, "master-nodeid", master_nodeid);
-	ks_pool_free(&master_nodeid);
 
 	// This starts the final process for associating the connection to the session, including for reconnecting to an existing session, this simply
 	// associates the session to this connection, upon return the remainder of the association for the session to the connection is handled along
@@ -994,7 +985,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	// behaviour to simply go as far as assigning a session to the connection and let the system handle the rest
 	if (json_req) cJSON_Delete(json_req);
 	if (json_res) cJSON_Delete(json_res);
-
 
 	return ret;
 }
@@ -1103,8 +1093,6 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-	// @todo parse and process automatic identity registration coming from local SANS entries, but given back in the connect response in case there are any errors (IE: missing realm or duplicate identity)
-
 	master_nodeid = cJSON_GetObjectCstr(json_result, "master-nodeid");
 	if (!master_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'master-nodeid'\n");
@@ -1137,7 +1125,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 		// This is an outbound connection, thus it is always creating an upstream session, defined by the sessionid matching the local_nodeid in the handle
 
-		if (blade_upstreammgr_localid_set(blade_handle_upstreammgr_get(bh), nodeid) != KS_STATUS_SUCCESS) {
+		if (blade_routemgr_local_set(blade_handle_routemgr_get(bh), nodeid) != KS_STATUS_SUCCESS) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) abandoned, upstream already available\n", blade_session_id_get(bs));
 			blade_session_read_unlock(bs);
 			blade_session_hangup(bs);
@@ -1149,7 +1137,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 
 		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
-		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bh), master_nodeid);
+		blade_routemgr_master_set(blade_handle_routemgr_get(bh), master_nodeid);
 	}
 
 	blade_connection_session_set(bc, blade_session_id_get(bs));

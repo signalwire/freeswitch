@@ -16,15 +16,13 @@ struct command_def_s {
 };
 
 void command_quit(blade_handle_t *bh, char *args);
-void command_channeladd(blade_handle_t *bh, char *args);
-void command_channelremove(blade_handle_t *bh, char *args);
 void command_presence(blade_handle_t *bh, char *args);
+void command_identity(blade_handle_t *bh, char *args);
 
 static const struct command_def_s command_defs[] = {
 	{ "quit", command_quit },
-	{ "channeladd", command_channeladd },
-	{ "channelremove", command_channelremove },
 	{ "presence", command_presence },
+	{ "identity", command_identity },
 
 	{ NULL, NULL }
 };
@@ -175,7 +173,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
 	}
 
-	blade_handle_rpcauthorize(bh, requester_nodeid, KS_FALSE, "test", "mydomain.com", channels, NULL, NULL);
+	blade_handle_rpcauthorize(bh, requester_nodeid, KS_FALSE, "test", channels, NULL, NULL);
 
 	cJSON_Delete(channels);
 
@@ -193,7 +191,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	cJSON_AddStringToObject(params, "joiner-nodeid", requester_nodeid);
 
-	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "join", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, "test", "channel", "join", params, NULL, NULL);
 
 	cJSON_Delete(params);
 
@@ -245,7 +243,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 		cJSON_AddItemToArray(channels, cJSON_CreateString((const char *)key));
 	}
 
-	blade_handle_rpcauthorize(bh, requester_nodeid, KS_TRUE, "test", "mydomain.com", channels, NULL, NULL);
+	blade_handle_rpcauthorize(bh, requester_nodeid, KS_TRUE, "test", channels, NULL, NULL);
 
 	cJSON_Delete(channels);
 
@@ -263,7 +261,7 @@ ks_bool_t test_leave_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	cJSON_AddStringToObject(params, "leaver-nodeid", requester_nodeid);
 
-	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "leave", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, "test", "channel", "leave", params, NULL, NULL);
 
 	cJSON_Delete(params);
 
@@ -318,7 +316,7 @@ ks_bool_t test_talk_request_handler(blade_rpc_request_t *brpcreq, void *data)
 
 	cJSON_AddStringToObject(params, "talker-nodeid", requester_nodeid);
 
-	blade_handle_rpcbroadcast(bh, "test", "mydomain.com", "channel", "talk", params, NULL, NULL);
+	blade_handle_rpcbroadcast(bh, "test", "channel", "talk", params, NULL, NULL);
 
 	cJSON_Delete(params);
 
@@ -329,7 +327,6 @@ ks_bool_t test_presence_request_handler(blade_rpc_request_t *brpcreq, void *data
 {
 	blade_handle_t *bh = NULL;
 	blade_session_t *bs = NULL;
-	const char *realm = NULL;
 	const char *protocol = NULL;
 	const char *channel = NULL;
 	const char *event = NULL;
@@ -345,7 +342,6 @@ ks_bool_t test_presence_request_handler(blade_rpc_request_t *brpcreq, void *data
 	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_request_sessionid_get(brpcreq));
 	ks_assert(bs);
 
-	realm = blade_rpcbroadcast_request_realm_get(brpcreq);
 	protocol = blade_rpcbroadcast_request_protocol_get(brpcreq);
 	channel = blade_rpcbroadcast_request_channel_get(brpcreq);
 	event = blade_rpcbroadcast_request_event_get(brpcreq);
@@ -353,7 +349,27 @@ ks_bool_t test_presence_request_handler(blade_rpc_request_t *brpcreq, void *data
 	params = blade_rpcbroadcast_request_params_get(brpcreq);
 	nodeid = cJSON_GetObjectCstr(params, "nodeid");
 
-	ks_log(KS_LOG_DEBUG, "Session (%s) presence (%s@%s/%s/%s for %s) request processing\n", blade_session_id_get(bs), protocol, realm, channel, event, nodeid);
+	ks_log(KS_LOG_DEBUG, "Session (%s) presence (protocol %s, channel %s, event %s for %s) request processing\n", blade_session_id_get(bs), protocol, channel, event, nodeid);
+
+	return KS_FALSE;
+}
+
+ks_bool_t test_register_response_handler(blade_rpc_response_t *brpcres, void *data)
+{
+	blade_handle_t *bh = NULL;
+	blade_session_t *bs = NULL;
+
+	ks_assert(brpcres);
+
+	bh = blade_rpc_response_handle_get(brpcres);
+	ks_assert(bh);
+
+	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), blade_rpc_response_sessionid_get(brpcres));
+	ks_assert(bs);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) register response processing\n", blade_session_id_get(bs));
+
+	blade_session_read_unlock(bs);
 
 	return KS_FALSE;
 }
@@ -418,23 +434,27 @@ int main(int argc, char **argv)
 
 		if (connected) {
 			cJSON *channels = NULL;
+			cJSON *entry = NULL;
 
-			// @todo use session state change callback to know when the session is ready and the realm(s) available from blade.connect, this hack temporarily ensures it's ready before trying to publish upstream
+			// @todo use session state change callback to know when the session is ready after blade.connect, this hack temporarily ensures it's ready before trying to publish upstream
 			ks_sleep_ms(3000);
 
-			blade_rpc_create(&brpc, bh, "test.join", "test", "mydomain.com", test_join_request_handler, (void *)g_test);
+			blade_rpc_create(&brpc, bh, "test.join", "test", test_join_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.leave", "test", "mydomain.com", test_leave_request_handler, (void *)g_test);
+			blade_rpc_create(&brpc, bh, "test.leave", "test", test_leave_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
-			blade_rpc_create(&brpc, bh, "test.talk", "test", "mydomain.com", test_talk_request_handler, (void *)g_test);
+			blade_rpc_create(&brpc, bh, "test.talk", "test", test_talk_request_handler, (void *)g_test);
 			blade_rpcmgr_protocolrpc_add(blade_handle_rpcmgr_get(bh), brpc);
 
 			channels = cJSON_CreateArray();
-			cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
+			entry = cJSON_CreateObject();
+			cJSON_AddStringToObject(entry, "name", "channel");
+			cJSON_AddNumberToObject(entry, "flags", BLADE_CHANNEL_FLAGS_NONE);
+			cJSON_AddItemToArray(channels, entry);
 
-			blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
+			blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CONTROLLER_ADD, "test", channels, test_publish_response_handler, (void *)g_test);
 
 			cJSON_Delete(channels);
 		}
@@ -515,51 +535,6 @@ void command_quit(blade_handle_t *bh, char *args)
 	g_shutdown = KS_TRUE;
 }
 
-void command_channeladd(blade_handle_t *bh, char *args)
-{
-	cJSON *channels = NULL;
-
-	ks_assert(bh);
-	ks_assert(args);
-
-	if (!args[0]) {
-		ks_log(KS_LOG_INFO, "Requires channel argument");
-		return;
-	}
-
-	ks_hash_insert(g_test->channels, (void *)ks_pstrdup(g_test->pool, args), (void *)KS_TRUE);
-
-	channels = cJSON_CreateArray();
-	cJSON_AddItemToArray(channels, cJSON_CreateString(args));
-
-	blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CHANNEL_ADD, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
-
-	cJSON_Delete(channels);
-}
-
-void command_channelremove(blade_handle_t *bh, char *args)
-{
-	cJSON *channels = NULL;
-
-	ks_assert(bh);
-	ks_assert(args);
-
-	if (!args[0]) {
-		ks_log(KS_LOG_INFO, "Requires channel argument");
-		return;
-	}
-
-
-	if (ks_hash_remove(g_test->channels, (void *)args)) {
-		channels = cJSON_CreateArray();
-		cJSON_AddItemToArray(channels, cJSON_CreateString(args));
-
-		blade_handle_rpcpublish(bh, BLADE_RPCPUBLISH_COMMAND_CHANNEL_REMOVE, "test", "mydomain.com", channels, test_publish_response_handler, (void *)g_test);
-
-		cJSON_Delete(channels);
-	}
-}
-
 void command_presence(blade_handle_t *bh, char *args)
 {
 	cJSON *channels = NULL;
@@ -571,7 +546,15 @@ void command_presence(blade_handle_t *bh, char *args)
 	cJSON_AddItemToArray(channels, cJSON_CreateString("join"));
 	cJSON_AddItemToArray(channels, cJSON_CreateString("leave"));
 
-	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "presence", "blade", channels, NULL, NULL, test_presence_request_handler, (void *)g_test);
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "blade.presence", channels, NULL, NULL, test_presence_request_handler, (void *)g_test);
+}
+
+void command_identity(blade_handle_t *bh, char *args)
+{
+	ks_assert(bh);
+	ks_assert(args);
+
+	blade_handle_rpcregister(bh, "blade:testcon@freeswitch.com", test_register_response_handler, NULL);
 }
 
 /* For Emacs:

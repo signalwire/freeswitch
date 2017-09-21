@@ -183,6 +183,7 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_add(blade_sessionmgr_t *bsmgr, 
 KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmgr, blade_session_t *bs)
 {
 	const char *id = NULL;
+	blade_routemgr_t *routemgr = NULL;
 
 	ks_assert(bsmgr);
 	ks_assert(bs);
@@ -194,9 +195,17 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 
 	ks_log(KS_LOG_DEBUG, "Session Removed: %s\n", id);
 
-	if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), id)) {
-		blade_upstreammgr_localid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);
-		blade_upstreammgr_masterid_set(blade_handle_upstreammgr_get(bsmgr->handle), NULL);
+	routemgr = blade_handle_routemgr_get(bsmgr->handle);
+	if (blade_routemgr_local_check(routemgr, id)) {
+		blade_routemgr_local_set(routemgr, NULL);
+		blade_routemgr_master_set(routemgr, NULL);
+
+		// @todo this is the upstream session that has actually terminated, any downstream connections should also be terminated
+		// properly, such that the downstream clients will not attempt to reconnect with the same session id, but will instead
+		// reestablish new sessions and likewise terminate downstream sessions
+		// @todo this also reflects that downstream connections should not be accepted in the transport implementation until an
+		// upstream connection has been established, unless it is the master node which has no upstream session, plumbing to
+		// support this does not yet exist
 	}
 
 	blade_session_write_unlock(bs);

@@ -124,17 +124,16 @@ KS_DECLARE(blade_handle_t *) blade_subscriptionmgr_handle_get(blade_subscription
 //	return bs;
 //}
 
-KS_DECLARE(blade_subscription_t *) blade_subscriptionmgr_subscription_lookup(blade_subscriptionmgr_t *bsmgr, const char *protocol, const char *realm, const char *channel)
+KS_DECLARE(blade_subscription_t *) blade_subscriptionmgr_subscription_lookup(blade_subscriptionmgr_t *bsmgr, const char *protocol, const char *channel)
 {
 	blade_subscription_t *bsub = NULL;
 	char *key = NULL;
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
-	ks_assert(realm);
 	ks_assert(channel);
 
-	key = ks_psprintf(ks_pool_get(bsmgr), "%s@%s/%s", protocol, realm, channel);
+	key = ks_psprintf(ks_pool_get(bsmgr), "%s:%s", protocol, channel);
 
 	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)key, KS_READLOCKED);
 	// @todo if (bsub) blade_subscription_read_lock(bsub);
@@ -145,7 +144,7 @@ KS_DECLARE(blade_subscription_t *) blade_subscriptionmgr_subscription_lookup(bla
 	return bsub;
 }
 
-KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscriptionmgr_t *bsmgr, const char *protocol, const char *realm, const char *channel)
+KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscriptionmgr_t *bsmgr, const char *protocol, const char *channel)
 {
 	ks_pool_t *pool = NULL;
 	char *bsub_key = NULL;
@@ -155,12 +154,11 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscrip
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
-	ks_assert(realm);
 	ks_assert(channel);
 
 	pool = ks_pool_get(bsmgr);
 
-	bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+	bsub_key = ks_psprintf(pool, "%s:%s", protocol, channel);
 
 	ks_hash_write_lock(bsmgr->subscriptions);
 
@@ -177,7 +175,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscrip
 
 		subscriptions = (ks_hash_t *)ks_hash_search(bsmgr->subscriptions_cleanup, key, KS_UNLOCKED);
 
-		ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from %s\n", key, bsub_key);
+		ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from protocol %s, channel %s\n", key, protocol, channel);
 		ks_hash_remove(subscriptions, bsub_key);
 
 		if (ks_hash_count(subscriptions) == 0) {
@@ -185,7 +183,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscrip
 		}
 	}
 
-	ks_log(KS_LOG_DEBUG, "Subscription Removed: %s\n", bsub_key);
+	ks_log(KS_LOG_DEBUG, "Subscription Removed: %s from %s\n", channel, protocol);
 	ks_hash_remove(bsmgr->subscriptions, (void *)bsub_key);
 
 	ks_hash_write_unlock(bsmgr->subscriptions);
@@ -195,7 +193,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_subscription_remove(blade_subscrip
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *realm, const char *channel, const char *subscriber)
+KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *channel, const char *subscriber)
 {
 	ks_pool_t *pool = NULL;
 	char *key = NULL;
@@ -205,20 +203,19 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
-	ks_assert(realm);
 	ks_assert(channel);
 	ks_assert(subscriber);
 
 	pool = ks_pool_get(bsmgr);
 
-	key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+	key = ks_psprintf(pool, "%s:%s", protocol, channel);
 
 	ks_hash_write_lock(bsmgr->subscriptions);
 
 	bsub = (blade_subscription_t *)ks_hash_search(bsmgr->subscriptions, (void *)key, KS_UNLOCKED);
 
 	if (!bsub) {
-		blade_subscription_create(&bsub, pool, protocol, realm, channel);
+		blade_subscription_create(&bsub, pool, protocol, channel);
 		ks_assert(bsub);
 
 		ks_hash_insert(bsmgr->subscriptions, (void *)ks_pstrdup(pool, key), (void *)bsub);
@@ -230,7 +227,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 		ks_hash_create(&bsub_cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 		ks_assert(bsub_cleanup);
 
-		ks_log(KS_LOG_DEBUG, "Subscription Added: %s\n", key);
+		ks_log(KS_LOG_DEBUG, "Subscription Added: %s to %s\n", channel, protocol);
 		ks_hash_insert(bsmgr->subscriptions_cleanup, (void *)ks_pstrdup(pool, subscriber), (void *)bsub_cleanup);
 	}
 	ks_hash_insert(bsub_cleanup, (void *)ks_pstrdup(pool, key), (void *)KS_TRUE);
@@ -239,7 +236,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 
 	ks_hash_write_unlock(bsmgr->subscriptions);
 
-	ks_log(KS_LOG_DEBUG, "Subscriber Added: %s to %s\n", subscriber, key);
+	ks_log(KS_LOG_DEBUG, "Subscriber Added: %s to protocol %s, channel %s\n", subscriber, protocol, channel);
 
 	ks_pool_free(&key);
 
@@ -248,7 +245,7 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_add(blade_subscriptionmgr
 	return propagate;
 }
 
-KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *realm, const char *channel, const char *subscriber)
+KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscriptionmgr_t *bsmgr, blade_subscription_t **bsubP, const char *protocol, const char *channel, const char *subscriber)
 {
 	char *key = NULL;
 	blade_subscription_t *bsub = NULL;
@@ -257,11 +254,10 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscription
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
-	ks_assert(realm);
 	ks_assert(channel);
 	ks_assert(subscriber);
 
-	key = ks_psprintf(ks_pool_get(bsmgr), "%s@%s/%s", protocol, realm, channel);
+	key = ks_psprintf(ks_pool_get(bsmgr), "%s:%s", protocol, channel);
 
 	ks_hash_write_lock(bsmgr->subscriptions);
 
@@ -276,11 +272,11 @@ KS_DECLARE(ks_bool_t) blade_subscriptionmgr_subscriber_remove(blade_subscription
 				ks_hash_remove(bsmgr->subscriptions_cleanup, (void *)subscriber);
 			}
 
-			ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from %s\n", subscriber, key);
+			ks_log(KS_LOG_DEBUG, "Subscriber Removed: %s from protocol %s, channel %s\n", subscriber, protocol, channel);
 			blade_subscription_subscribers_remove(bsub, subscriber);
 
 			if (ks_hash_count(blade_subscription_subscribers_get(bsub)) == 0) {
-				ks_log(KS_LOG_DEBUG, "Subscription Removed: %s\n", key);
+				ks_log(KS_LOG_DEBUG, "Subscription Removed: %s from %s\n", channel, protocol);
 				ks_hash_remove(bsmgr->subscriptions, (void *)key);
 				propagate = KS_TRUE;
 			}
@@ -309,7 +305,6 @@ KS_DECLARE(void) blade_subscriptionmgr_purge(blade_subscriptionmgr_t *bsmgr, con
 	while (!unsubbed) {
 		ks_hash_t *subscriptions = NULL;
 		const char *protocol = NULL;
-		const char *realm = NULL;
 		const char *channel = NULL;
 
 		ks_hash_read_lock(bsmgr->subscriptions);
@@ -330,22 +325,20 @@ KS_DECLARE(void) blade_subscriptionmgr_purge(blade_subscriptionmgr_t *bsmgr, con
 
 			// @note allocate these to avoid lifecycle issues when the last subscriber is removed causing the subscription to be removed
 			protocol = ks_pstrdup(pool, blade_subscription_protocol_get(bsub));
-			realm = ks_pstrdup(pool, blade_subscription_realm_get(bsub));
 			channel = ks_pstrdup(pool, blade_subscription_channel_get(bsub));
 		}
 		ks_hash_read_unlock(bsmgr->subscriptions);
 
 		if (!unsubbed) {
-			blade_subscriptionmgr_subscriber_remove(bsmgr, NULL, protocol, realm, channel, target);
+			blade_subscriptionmgr_subscriber_remove(bsmgr, NULL, protocol, channel, target);
 
 			ks_pool_free(&protocol);
-			ks_pool_free(&realm);
 			ks_pool_free(&channel);
 		}
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t *bsmgr, blade_rpcbroadcast_command_t command, const char *excluded_nodeid, const char *protocol, const char *realm, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t *bsmgr, blade_rpcbroadcast_command_t command, const char *excluded_nodeid, const char *protocol, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_pool_t *pool = NULL;
 	const char *bsub_key = NULL;
@@ -358,16 +351,16 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 
 	ks_assert(bsmgr);
 	ks_assert(protocol);
-	ks_assert(realm);
 
 	pool = ks_pool_get(bsmgr);
 
 	switch (command) {
 	case BLADE_RPCBROADCAST_COMMAND_EVENT:
+		ks_assert(channel);
 		ks_assert(event);
 	case BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE:
 		ks_assert(channel);
-		bsub_key = ks_psprintf(pool, "%s@%s/%s", protocol, realm, channel);
+		bsub_key = ks_psprintf(pool, "%s:%s", protocol, channel);
 
 		ks_hash_read_lock(bsmgr->subscriptions);
 
@@ -386,7 +379,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 				if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key)) continue;
 
 				// @todo broadcast producer is also a local subscriber... requires special consideration with no session to request through
-				if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), (const char *)key)) continue;
+				if (blade_routemgr_local_check(blade_handle_routemgr_get(bsmgr->handle), (const char *)key)) continue;
 
 				bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key);
 				if (bs) {
@@ -404,7 +397,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 		ks_hash_read_unlock(bsmgr->subscriptions);
 		break;
 	case BLADE_RPCBROADCAST_COMMAND_PROTOCOL_REMOVE:
-		bsub_key = ks_psprintf(pool, "%s@%s", protocol, realm);
+		bsub_key = ks_pstrdup(pool, protocol);
 
 		ks_hash_read_lock(bsmgr->subscriptions);
 
@@ -430,7 +423,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 					if (excluded_nodeid && !ks_safe_strcasecmp(excluded_nodeid, (const char *)key2)) continue;
 
 					// @todo broadcast producer is also a local subscriber... requires special consideration with no session to request through
-					if (blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bsmgr->handle), (const char *)key2)) continue;
+					if (blade_routemgr_local_check(blade_handle_routemgr_get(bsmgr->handle), (const char *)key2)) continue;
 
 					bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bsmgr->handle), (const char *)key2);
 					if (bs) {
@@ -451,7 +444,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 	}
 
 
-	bs = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bsmgr->handle));
+	bs = blade_routemgr_upstream_lookup(blade_handle_routemgr_get(bsmgr->handle));
 	if (bs) {
 		if (!excluded_nodeid || ks_safe_strcasecmp(blade_session_id_get(bs), excluded_nodeid)) {
 			if (!routers) ks_hash_create(&routers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
@@ -467,7 +460,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 
 			ks_hash_this(it, (const void **)&key, NULL, &value);
 
-			blade_subscriptionmgr_subscription_remove(bsmgr, protocol, realm, (const char *)key);
+			blade_subscriptionmgr_subscription_remove(bsmgr, protocol, (const char *)key);
 		}
 		ks_hash_destroy(&channels);
 	}
@@ -484,12 +477,11 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 			blade_rpc_request_raw_create(pool, &req, &req_params, NULL, "blade.broadcast");
 			cJSON_AddNumberToObject(req_params, "command", command);
 			cJSON_AddStringToObject(req_params, "protocol", protocol);
-			cJSON_AddStringToObject(req_params, "realm", realm);
 			if (channel) cJSON_AddStringToObject(req_params, "channel", channel);
 			if (event) cJSON_AddStringToObject(req_params, "event", event);
 			if (params) cJSON_AddItemToObject(req_params, "params", cJSON_Duplicate(params, 1));
 
-			ks_log(KS_LOG_DEBUG, "Broadcasting: %s through %s\n", bsub_key, blade_session_id_get(bs));
+			ks_log(KS_LOG_DEBUG, "Broadcasting: protocol %s, channel %s through %s\n", protocol, channel, blade_session_id_get(bs));
 
 			blade_session_send(bs, req, callback, data);
 

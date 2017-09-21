@@ -189,7 +189,7 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 	}
 	ks_hash_read_unlock(bs->routes);
 
-	// this will also clear the local id, master id and realms in the handle if this is the upstream session
+	// this will also clear the local id, and master id in the handle if this is the upstream session
 	blade_sessionmgr_session_remove(blade_handle_sessionmgr_get(bs->handle), bs);
 
 	while (ks_q_trypop(bs->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
@@ -641,15 +641,16 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		if (params) {
 			const char *params_requester_nodeid = cJSON_GetObjectCstr(params, "requester-nodeid");
 			const char *params_responder_nodeid = cJSON_GetObjectCstr(params, "responder-nodeid");
-			if (params_requester_nodeid && params_responder_nodeid && !blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bh), params_responder_nodeid)) {
+			if (params_requester_nodeid && params_responder_nodeid && !blade_routemgr_local_check(blade_handle_routemgr_get(bh), params_responder_nodeid)) {
 				// not meant for local processing, continue with standard unicast routing for requests
 				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), params_responder_nodeid);
 				if (!bs_router) {
-					bs_router = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bh));
+					bs_router = blade_routemgr_upstream_lookup(blade_handle_routemgr_get(bh));
 					if (!bs_router) {
 						cJSON *res = NULL;
 						cJSON *res_error = NULL;
 
+						// @todo adjust error when this is master to be route unavailable
 						ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) but upstream session unavailable\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid);
 						blade_rpc_error_raw_create(&res, &res_error, id, -32603, "Upstream session unavailable");
 
@@ -714,11 +715,11 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		if (object) {
 			const char *object_requester_nodeid = cJSON_GetObjectCstr(object, "requester-nodeid");
 			const char *object_responder_nodeid = cJSON_GetObjectCstr(object, "responder-nodeid");
-			if (object_requester_nodeid && object_responder_nodeid && !blade_upstreammgr_localid_compare(blade_handle_upstreammgr_get(bh), object_requester_nodeid)) {
+			if (object_requester_nodeid && object_responder_nodeid && !blade_routemgr_local_check(blade_handle_routemgr_get(bh), object_requester_nodeid)) {
 				// not meant for local processing, continue with standard unicast routing for responses
 				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), object_requester_nodeid);
 				if (!bs_router) {
-					bs_router = blade_upstreammgr_session_get(blade_handle_upstreammgr_get(bh));
+					bs_router = blade_routemgr_upstream_lookup(blade_handle_routemgr_get(bh));
 					if (!bs_router) {
 						ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) but upstream session unavailable\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid);
 						return KS_STATUS_DISCONNECTED;

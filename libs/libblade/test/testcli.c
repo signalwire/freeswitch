@@ -46,7 +46,6 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	cJSON *res_result = NULL;
 	cJSON *res_result_controllers = NULL;
 	const char *res_result_protocol = NULL;
-	const char *res_result_realm = NULL;
 	//cJSON *params = NULL;
 
 	ks_assert(brpcres);
@@ -66,12 +65,9 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 	res_result_protocol = cJSON_GetObjectCstr(res_result, "protocol");
 	ks_assert(res_result_protocol);
 
-	res_result_realm = cJSON_GetObjectCstr(res_result, "realm");
-	ks_assert(res_result_realm);
-
 	res_result_controllers = cJSON_GetObjectItem(res_result, "controllers");
 
-	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) response processing\n", blade_session_id_get(bs), res_result_protocol, res_result_realm);
+	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s) response processing\n", blade_session_id_get(bs), res_result_protocol);
 
 	if (res_result_controllers) {
 		for (int index = 0; index < cJSON_GetArraySize(res_result_controllers); ++index) {
@@ -89,7 +85,7 @@ ks_bool_t test_locate_response_handler(blade_rpc_response_t *brpcres, void *data
 		g_testcon_nodeid = ks_pstrdup(ks_pool_get(bh), nodeid);
 	}
 
-	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s@%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, res_result_realm, g_testcon_nodeid);
+	ks_log(KS_LOG_DEBUG, "Session (%s) locate (%s) provider (%s)\n", blade_session_id_get(bs), res_result_protocol, g_testcon_nodeid);
 
 	return KS_FALSE;
 }
@@ -273,7 +269,7 @@ int main(int argc, char **argv)
 
 
 		if (connected) {
-			// @todo use session state change callback to know when the session is ready and the realm(s) available from blade.connect
+			// @todo use session state change callback to know when the session is ready after blade.connect
 			ks_sleep_ms(3000);
 		}
 	}
@@ -356,7 +352,7 @@ void command_locate(blade_handle_t *bh, char *args)
 	ks_assert(bh);
 	ks_assert(args);
 
-	blade_handle_rpclocate(bh, "test", "mydomain.com", test_locate_response_handler, NULL);
+	blade_handle_rpclocate(bh, "test", test_locate_response_handler, NULL);
 }
 
 void command_join(blade_handle_t *bh, char *args)
@@ -372,7 +368,7 @@ void command_join(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", "mydomain.com", params, test_join_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", params, test_join_response_handler, NULL);
 	cJSON_Delete(params);
 }
 
@@ -388,7 +384,7 @@ void command_subscribe(blade_handle_t *bh, char *args)
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
 	if (args && args[0]) cJSON_AddItemToArray(channels, cJSON_CreateString(args));
-	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "test", "mydomain.com", channels, NULL, NULL, test_channel_handler, NULL);
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_ADD, "test", channels, NULL, NULL, test_channel_handler, NULL);
 	cJSON_Delete(channels);
 }
 
@@ -404,7 +400,7 @@ void command_unsubscribe(blade_handle_t *bh, char *args)
 	channels = cJSON_CreateArray();
 	cJSON_AddItemToArray(channels, cJSON_CreateString("channel"));
 	if (args && args[0]) cJSON_AddItemToArray(channels, cJSON_CreateString(args));
-	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_REMOVE, "test", "mydomain.com", channels, test_subscribe_response_handler, NULL, test_channel_handler, NULL);
+	blade_handle_rpcsubscribe(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_REMOVE, "test", channels, test_subscribe_response_handler, NULL, test_channel_handler, NULL);
 	cJSON_Delete(channels);
 }
 
@@ -421,7 +417,7 @@ void command_leave(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", "mydomain.com", params, test_leave_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", params, test_leave_response_handler, NULL);
 	cJSON_Delete(params);
 }
 
@@ -443,7 +439,8 @@ void command_talk(blade_handle_t *bh, char *args)
 
 	params = cJSON_CreateObject();
 	cJSON_AddStringToObject(params, "text", args);
-	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.talk", "test", "mydomain.com", params, test_talk_response_handler, NULL);
+	//blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.talk", "test", params, test_talk_response_handler, NULL);
+	blade_handle_rpcexecute(bh, "blade:testcon@freeswitch.com", "test.talk", "test", params, test_talk_response_handler, NULL);
 	cJSON_Delete(params);
 }
 

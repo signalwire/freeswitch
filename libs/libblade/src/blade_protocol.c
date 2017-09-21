@@ -34,7 +34,6 @@
 #include "blade.h"
 
 struct blade_protocol_s {
-	blade_realm_t *realm;
 	const char *name;
 	ks_rwl_t *lock;
 	ks_hash_t *controllers;
@@ -63,17 +62,15 @@ static void blade_protocol_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, blade_realm_t *realm, const char *name)
+KS_DECLARE(ks_status_t) blade_protocol_create(blade_protocol_t **bpP, ks_pool_t *pool, const char *name)
 {
 	blade_protocol_t *bp = NULL;
 
 	ks_assert(bpP);
 	ks_assert(pool);
-	ks_assert(realm);
 	ks_assert(name);
 
 	bp = ks_pool_alloc(pool, sizeof(blade_protocol_t));
-	bp->realm = realm;
 	bp->name = ks_pstrdup(pool, name);
 
 	ks_rwl_create(&bp->lock, pool);
@@ -100,12 +97,6 @@ KS_DECLARE(ks_status_t) blade_protocol_destroy(blade_protocol_t **bpP)
 	ks_pool_free(bpP);
 
 	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(blade_realm_t *) blade_protocol_realm_get(blade_protocol_t *bp)
-{
-	ks_assert(bp);
-	return bp->realm;
 }
 
 KS_DECLARE(const char *) blade_protocol_name_get(blade_protocol_t *bp)
@@ -140,6 +131,7 @@ KS_DECLARE(ks_status_t) blade_protocol_write_unlock(blade_protocol_t *bp)
 
 KS_DECLARE(ks_bool_t) blade_protocol_purge(blade_protocol_t *bp, const char *nodeid)
 {
+	ks_bool_t ret = KS_FALSE;
 	ks_assert(bp);
 	ks_assert(nodeid);
 
@@ -147,17 +139,21 @@ KS_DECLARE(ks_bool_t) blade_protocol_purge(blade_protocol_t *bp, const char *nod
 	ks_hash_write_lock(bp->channels);
 	for (ks_hash_iterator_t *it = ks_hash_first(bp->channels, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		const char *key = NULL;
-		ks_hash_t *authorizations = NULL;
+		blade_channel_t *channel = NULL;
 
-		ks_hash_this(it, (const void **)&key, NULL, (void **)&authorizations);
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&channel);
 
-		if (ks_hash_remove(authorizations, (void *)nodeid)) {
-			ks_log(KS_LOG_DEBUG, "Protocol Channel Authorization Removed: %s from %s@%s/%s\n", nodeid, bp->name, blade_realm_name_get(bp->realm), key);
+		if (blade_channel_authorization_remove(channel, nodeid)) {
+			ks_log(KS_LOG_DEBUG, "Protocol Channel Authorization Removed: %s from protocol %s, channel %s\n", nodeid, bp->name, key);
 		}
 	}
 	ks_hash_write_unlock(bp->channels);
 
-	return blade_protocol_controller_remove(bp, nodeid);
+	if ((ret = blade_protocol_controller_remove(bp, nodeid))) {
+		ks_log(KS_LOG_DEBUG, "Protocol Controller Removed: %s from %s\n", nodeid, bp->name);
+	}
+
+	return ret;
 }
 
 KS_DECLARE(cJSON *) blade_protocol_controller_pack(blade_protocol_t *bp)
@@ -203,8 +199,6 @@ KS_DECLARE(ks_status_t) blade_protocol_controller_add(blade_protocol_t *bp, cons
 	key = ks_pstrdup(ks_pool_get(bp), nodeid);
 	ks_hash_insert(bp->controllers, (void *)key, (void *)KS_TRUE);
 
-	ks_log(KS_LOG_DEBUG, "Protocol Controller Added: %s to %s@%s\n", nodeid, bp->name, blade_realm_name_get(bp->realm));
-
 	return KS_STATUS_SUCCESS;
 }
 
@@ -218,7 +212,6 @@ KS_DECLARE(ks_bool_t) blade_protocol_controller_remove(blade_protocol_t *bp, con
 	ks_hash_write_lock(bp->controllers);
 	if (ks_hash_remove(bp->controllers, (void *)nodeid)) {
 		ret = KS_TRUE;
-		ks_log(KS_LOG_DEBUG, "Protocol Controller Removed: %s from %s@%s\n", nodeid, bp->name, blade_realm_name_get(bp->realm));
 	}
 	ks_hash_write_unlock(bp->controllers);
 

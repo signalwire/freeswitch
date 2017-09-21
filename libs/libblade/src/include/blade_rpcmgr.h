@@ -42,7 +42,7 @@ KS_DECLARE(blade_handle_t *) blade_rpcmgr_handle_get(blade_rpcmgr_t *brpcmgr);
 KS_DECLARE(blade_rpc_t *) blade_rpcmgr_corerpc_lookup(blade_rpcmgr_t *brpcmgr, const char *method);
 KS_DECLARE(ks_status_t) blade_rpcmgr_corerpc_add(blade_rpcmgr_t *brpcmgr, blade_rpc_t *brpc);
 KS_DECLARE(ks_status_t) blade_rpcmgr_corerpc_remove(blade_rpcmgr_t *brpcmgr, blade_rpc_t *brpc);
-KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmgr, const char *method, const char *protocol, const char *realm);
+KS_DECLARE(blade_rpc_t *) blade_rpcmgr_protocolrpc_lookup(blade_rpcmgr_t *brpcmgr, const char *method, const char *protocol);
 KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_add(blade_rpcmgr_t *brpcmgr, blade_rpc_t *brpc);
 KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_remove(blade_rpcmgr_t *brpcmgr, blade_rpc_t *brpc);
 KS_DECLARE(blade_rpc_request_t *) blade_rpcmgr_request_lookup(blade_rpcmgr_t *brpcmgr, const char *id);

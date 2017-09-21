@@ -48,7 +48,6 @@ typedef struct blade_rpc_response_s blade_rpc_response_t;
 typedef struct blade_connection_s blade_connection_t;
 typedef struct blade_session_s blade_session_t;
 typedef struct blade_session_callbacks_s blade_session_callbacks_t;
-typedef struct blade_realm_s blade_realm_t;
 typedef struct blade_protocol_s blade_protocol_t;
 typedef struct blade_channel_s blade_channel_t;
 typedef struct blade_subscription_s blade_subscription_t;
@@ -58,7 +57,6 @@ typedef struct blade_transportmgr_s blade_transportmgr_t;
 typedef struct blade_rpcmgr_s blade_rpcmgr_t;
 typedef struct blade_routemgr_s blade_routemgr_t;
 typedef struct blade_subscriptionmgr_s blade_subscriptionmgr_t;
-typedef struct blade_upstreammgr_s blade_upstreammgr_t;
 typedef struct blade_mastermgr_s blade_mastermgr_t;
 typedef struct blade_connectionmgr_s blade_connectionmgr_t;
 typedef struct blade_sessionmgr_s blade_sessionmgr_t;
@@ -106,7 +104,10 @@ typedef enum {
 	BLADE_SESSION_STATE_RUN,
 } blade_session_state_t;
 
-
+typedef enum {
+	BLADE_CHANNEL_FLAGS_NONE = 0 << 0,
+	BLADE_CHANNEL_FLAGS_PUBLIC = 1 << 0,
+} blade_channel_flags_t;
 
 
 typedef ks_status_t (*blade_transport_startup_callback_t)(blade_transport_t *bt, config_setting_t *config);

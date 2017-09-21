@@ -36,9 +36,10 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *pool, const char *name);
+KS_DECLARE(ks_status_t) blade_channel_create(blade_channel_t **bcP, ks_pool_t *pool, const char *name, blade_channel_flags_t flags);
 KS_DECLARE(ks_status_t) blade_channel_destroy(blade_channel_t **bcP);
 KS_DECLARE(const char *) blade_channel_name_get(blade_channel_t *bc);
+KS_DECLARE(blade_channel_flags_t) blade_channel_flags_get(blade_channel_t *bc);
 KS_DECLARE(ks_status_t) blade_channel_read_lock(blade_channel_t *bc);
 KS_DECLARE(ks_status_t) blade_channel_read_unlock(blade_channel_t *bc);
 KS_DECLARE(ks_status_t) blade_channel_write_lock(blade_channel_t *bc);

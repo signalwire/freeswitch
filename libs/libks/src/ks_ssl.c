@@ -109,6 +109,7 @@ KS_DECLARE(void) ks_ssl_destroy_ssl_locks(void)
 #ifdef _WINDOWS
 	SSL_COMP_free_compression_methods();
 #endif
+	ERR_free_strings();
 	EVP_cleanup();
 }
 

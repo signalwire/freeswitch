@@ -38,7 +38,6 @@ struct blade_rpc_s {
 
 	const char *method;
 	const char *protocol;
-	const char *realm;
 
 	blade_rpc_request_callback_t callback;
 	void *data;
@@ -84,7 +83,7 @@ static void blade_rpc_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t act
 	}
 }
 
-KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, const char *realm, blade_rpc_request_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh, const char *method, const char *protocol, blade_rpc_request_callback_t callback, void *data)
 {
 	blade_rpc_t *brpc = NULL;
 	ks_pool_t *pool = NULL;
@@ -101,7 +100,6 @@ KS_DECLARE(ks_status_t) blade_rpc_create(blade_rpc_t **brpcP, blade_handle_t *bh
 	brpc->handle = bh;
 	brpc->method = ks_pstrdup(pool, method);
 	if (protocol) brpc->protocol = ks_pstrdup(pool, protocol);
-	if (realm) brpc->realm = ks_pstrdup(pool, realm);
 	brpc->callback = callback;
 	brpc->data = data;
 
@@ -149,13 +147,6 @@ KS_DECLARE(const char *) blade_rpc_protocol_get(blade_rpc_t *brpc)
 	ks_assert(brpc);
 
 	return brpc->protocol;
-}
-
-KS_DECLARE(const char *) blade_rpc_realm_get(blade_rpc_t *brpc)
-{
-	ks_assert(brpc);
-
-	return brpc->realm;
 }
 
 KS_DECLARE(blade_rpc_request_callback_t) blade_rpc_callback_get(blade_rpc_t *brpc)

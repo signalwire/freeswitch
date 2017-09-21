@@ -1,9 +1,28 @@
 #include "blade.h"
 
+#define CONSOLE_INPUT_MAX 512
+
 // @todo switch to wait condition once something is being done with the main thread during runtime
 ks_bool_t g_shutdown = KS_FALSE;
 
-void idle(blade_handle_t *bh);
+void loop(blade_handle_t *bh);
+void process_console_input(blade_handle_t *bh, char *line);
+
+typedef void(*command_callback)(blade_handle_t *bh, char *args);
+
+struct command_def_s {
+	const char *cmd;
+	command_callback callback;
+};
+
+void command_quit(blade_handle_t *bh, char *args);
+
+static const struct command_def_s command_defs[] = {
+	{ "quit", command_quit },
+
+	{ NULL, NULL }
+};
+
 
 int main(int argc, char **argv)
 {
@@ -40,7 +59,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	idle(bh);
+	loop(bh);
 
 	blade_handle_destroy(&bh);
 
@@ -51,11 +70,68 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void idle(blade_handle_t *bh)
+void loop(blade_handle_t *bh)
 {
+	char buf[CONSOLE_INPUT_MAX];
 	while (!g_shutdown) {
-		ks_sleep_ms(1000);
+		if (!fgets(buf, CONSOLE_INPUT_MAX, stdin)) break;
+
+		for (int index = 0; buf[index]; ++index) {
+			if (buf[index] == '\r' || buf[index] == '\n') {
+				buf[index] = '\0';
+				break;
+			}
+		}
+		process_console_input(bh, buf);
+
+		ks_sleep_ms(100);
 	}
+}
+
+void parse_argument(char **input, char **arg, char terminator)
+{
+	char *tmp;
+
+	ks_assert(input);
+	ks_assert(*input);
+	ks_assert(arg);
+
+	tmp = *input;
+	*arg = tmp;
+
+	while (*tmp && *tmp != terminator) ++tmp;
+	if (*tmp == terminator) {
+		*tmp = '\0';
+		++tmp;
+	}
+	*input = tmp;
+}
+
+void process_console_input(blade_handle_t *bh, char *line)
+{
+	char *args = line;
+	char *cmd = NULL;
+	ks_bool_t found = KS_FALSE;
+
+	parse_argument(&args, &cmd, ' ');
+
+	ks_log(KS_LOG_DEBUG, "Command: %s, Args: %s\n", cmd, args);
+
+	for (int32_t index = 0; command_defs[index].cmd; ++index) {
+		if (!strcmp(command_defs[index].cmd, cmd)) {
+			found = KS_TRUE;
+			command_defs[index].callback(bh, args);
+		}
+	}
+	if (!found) ks_log(KS_LOG_INFO, "Command '%s' unknown.\n", cmd);
+}
+
+void command_quit(blade_handle_t *bh, char *args)
+{
+	//ks_assert(bh);
+	//ks_assert(args);
+
+	g_shutdown = KS_TRUE;
 }
 
 
