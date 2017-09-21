@@ -143,11 +143,7 @@ ks_status_t blade_mastermgr_config(blade_mastermgr_t *bmmgr, config_setting_t *c
 
 KS_DECLARE(ks_status_t) blade_mastermgr_startup(blade_mastermgr_t *bmmgr, config_setting_t *config)
 {
-	ks_pool_t *pool = NULL;
-
 	ks_assert(bmmgr);
-
-	pool = ks_pool_get(bmmgr);
 
 	if (blade_mastermgr_config(bmmgr, config) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "blade_mastermgr_config failed\n");
@@ -286,15 +282,12 @@ KS_DECLARE(ks_status_t) blade_mastermgr_protocol_controller_add(blade_mastermgr_
 KS_DECLARE(ks_status_t) blade_mastermgr_protocol_controller_remove(blade_mastermgr_t *bmmgr, const char *protocol, const char *controller)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
-	ks_pool_t *pool = NULL;
 	blade_protocol_t *bp = NULL;
 	ks_bool_t remove = KS_FALSE;
 
 	ks_assert(bmmgr);
 	ks_assert(protocol);
 	ks_assert(controller);
-
-	pool = ks_pool_get(bmmgr);
 
 	ks_hash_write_lock(bmmgr->protocols);
 

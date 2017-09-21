@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -69,7 +69,7 @@ KS_DECLARE(ks_status_t) blade_routemgr_create(blade_routemgr_t **brmgrP, blade_h
 	blade_routemgr_t *brmgr = NULL;
 
 	ks_assert(brmgrP);
-	
+
 	ks_pool_open(&pool);
 	ks_assert(pool);
 
@@ -229,7 +229,7 @@ KS_DECLARE(blade_session_t *) blade_routemgr_upstream_lookup(blade_routemgr_t *b
 	ks_rwl_read_lock(brmgr->local_lock);
 
 	if (brmgr->local_nodeid) bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(brmgr->handle), brmgr->local_nodeid);
-	
+
 	ks_rwl_read_unlock(brmgr->local_lock);
 
 	return bs;
@@ -289,7 +289,7 @@ KS_DECLARE(ks_bool_t) blade_routemgr_master_pack(blade_routemgr_t *brmgr, cJSON 
 	ks_assert(key);
 
 	ks_rwl_read_lock(brmgr->master_lock);
-	
+
 	if (brmgr->master_nodeid) {
 		ret = KS_TRUE;
 		cJSON_AddStringToObject(json, key, brmgr->master_nodeid);
@@ -298,7 +298,7 @@ KS_DECLARE(ks_bool_t) blade_routemgr_master_pack(blade_routemgr_t *brmgr, cJSON 
 		// blade CoreRPC's to route to the known master node, but is also used to pass to downstream nodes
 		// when they connect
 	}
-	
+
 	ks_rwl_read_unlock(brmgr->master_lock);
 
 	return ret;
@@ -374,7 +374,7 @@ ks_status_t blade_routemgr_purge(blade_routemgr_t *brmgr, const char *target)
 
 		if (value && !ks_safe_strcasecmp(value, target)) {
 			if (!cleanup) ks_hash_create(&cleanup, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, ks_pool_get(brmgr));
-			ks_hash_insert(cleanup, (const void *)key, (void *)value);
+			ks_hash_insert(cleanup, (void *)key, (void *)value);
 		}
 	}
 

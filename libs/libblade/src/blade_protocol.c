@@ -183,7 +183,7 @@ KS_DECLARE(ks_bool_t) blade_protocol_controller_verify(blade_protocol_t *bp, con
 	ks_assert(bp);
 	ks_assert(controller);
 
-	ret = (ks_bool_t)(uintptr_t)ks_hash_search(bp->controllers, controller, KS_READLOCKED);
+	ret = (ks_bool_t)(uintptr_t)ks_hash_search(bp->controllers, (void *)controller, KS_READLOCKED);
 	ks_hash_read_unlock(bp->controllers);
 
 	return ret;
