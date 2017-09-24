@@ -370,10 +370,10 @@ gnu)
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_sse4_2" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
+        COMP_VENDOR_CFLAGS="-msse4.2 $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_sse4_1" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse41 $COMP_VENDOR_CFLAGS"
+        COMP_VENDOR_CFLAGS="-msse4.1 $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_ssse3" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mssse3 $COMP_VENDOR_CFLAGS"
@@ -431,10 +431,10 @@ intel)
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_sse4_2" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
+        COMP_VENDOR_CFLAGS="-msse4.2 $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_sse4_1" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse41 $COMP_VENDOR_CFLAGS"
+        COMP_VENDOR_CFLAGS="-msse4.1 $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_ssse3" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mssse3 $COMP_VENDOR_CFLAGS"
