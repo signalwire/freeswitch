@@ -29,6 +29,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testcon", "test\testcon.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "..\win32\openssl\openssl.2015.vcxproj", "{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "civetweb", "..\win32\civetweb\civetweb.2015.vcxproj", "{1FAAE8B0-C134-436D-9B13-74C16517FC03}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -249,6 +251,22 @@ Global
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x64.Build.0 = Release|x64
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x86.ActiveCfg = Release|Win32
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.ReleaseDLL|x86.Build.0 = Release|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Debug|x64.ActiveCfg = Debug|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Debug|x64.Build.0 = Debug|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Debug|x86.ActiveCfg = Debug|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Debug|x86.Build.0 = Debug|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.DebugDLL|x64.ActiveCfg = Debug|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.DebugDLL|x64.Build.0 = Debug|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.DebugDLL|x86.ActiveCfg = Debug|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.DebugDLL|x86.Build.0 = Debug|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Release|x64.ActiveCfg = Release|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Release|x64.Build.0 = Release|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Release|x86.ActiveCfg = Release|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.Release|x86.Build.0 = Release|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.ReleaseDLL|x64.ActiveCfg = Release|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.ReleaseDLL|x64.Build.0 = Release|x64
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.ReleaseDLL|x86.ActiveCfg = Release|Win32
+		{1FAAE8B0-C134-436D-9B13-74C16517FC03}.ReleaseDLL|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

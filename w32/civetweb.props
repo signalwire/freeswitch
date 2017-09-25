@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="civetweb-version.props" Condition=" '$(civetweb_VersionImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <civetwebLibDir>$(SolutionDir)..\civetweb-$(civetweb_Version)\</civetwebLibDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(civetwebLibDir)\src\third_party\lua-5.2.4\src\;$(civetwebLibDir)\src\third_party\duktape-1.5.2\src\;$(civetwebLibDir)\src\third_party;$(civetwebLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>
