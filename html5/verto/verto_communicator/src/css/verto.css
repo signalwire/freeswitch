@@ -102,6 +102,30 @@ button.btn i {
     margin: 5px 0px;
 }
 
+@media (max-width: 1024px) {
+  .navbar-nav {
+    margin: 7.5px -15px;
+  }
+}
+
+@media (max-width: 767px) {
+  .navbar .navbar-nav {
+    background-color: #0d47a1;
+  }
+
+  .navbar .drop-net-info .title {
+    background: #0d47a1;
+    color: #fafafa;
+    border-bottom: 0px;
+  }
+}
+
+.navbar .navbar-header {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .navbar .navbar-nav > li.navbar-item-icon > a {
   padding: 18px;
   height: 60px;

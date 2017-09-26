@@ -457,6 +457,10 @@
             return;
         }
 
+        if (args["useCamera"]) {
+            verto.options.deviceParams["useCamera"] = args["useCamera"];
+        }
+
         var dialog = new $.verto.dialog($.verto.enum.direction.outbound, this, args);
 
         dialog.invite();
