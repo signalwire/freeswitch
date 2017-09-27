@@ -107,28 +107,28 @@ Sub GetCompressionTools(DestFolder)
 	tries = 0
 	max_tries = 10
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
-	If Not FSO.FileExists(DestFolder & "7za.exe") Then
+	If Not FSO.FileExists(DestFolder & "7za1701.exe") Then
 		On Error Resume Next
 		Set MyFile = FSO.CreateTextFile(DestFolder & "7za.tag", False)
 		If Err <> 0 Then Wscript.echo("Downloading 7za: " & DestFolder & "7za.tag - " & Err.Description) End If
 		On Error Goto 0
 		If Not IsEmpty(MyFile) Then
-			MyFile.WriteLine("This file marks a pending download for 7za.exe so we don't download it twice at the same time")
+			MyFile.WriteLine("This file marks a pending download for 7za1701.exe so we don't download it twice at the same time")
 			MyFile.Close
-			Wget ToolsBase & "7za.exe", DestFolder
+			Wget ToolsBase & "7za1701.exe", DestFolder
 			FSO.DeleteFile DestFolder & "7za.tag", true
-			Wscript.echo("Downloaded 7za.exe")
+			Wscript.echo("Downloaded 7za1701.exe")
 		End If
 		Set MyFile = Nothing
 		WScript.Sleep(500)
 	End If
 	Do While FSO.FileExists(DestFolder & "7za.tag") And tries < max_tries
-		Wscript.echo("Waiting for 7za.exe to be downloaded")
+		Wscript.echo("Waiting for 7za1701.exe to be downloaded")
 		WScript.Sleep(1000)
 		tries = tries + 1
 	Loop
 	If tries = max_tries Then
-		Wscript.echo("ERROR: Download of 7za.exe takes too much time")
+		Wscript.echo("ERROR: Download of 7za1701.exe takes too much time")
 		Wscript.quit 99
 	End If
 End Sub
@@ -189,15 +189,15 @@ Sub UnCompress(Archive, DestFolder)
 	batname = "tmp" & Strip(Archive) & CStr(Int(10000*Rnd)) & ".bat"
 	wscript.echo("Extracting: " & Archive & " - using: " & batname)
 	Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
-	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
+	MyFile.WriteLine("@" & quote & UtilsDir & "7za1701.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
 	MyFile.Close
 	Set MyFile = Nothing
 	ExecPrintOutput(UtilsDir & batname)
 	wscript.echo("Ready extracting: " & Archive)
-	Fn = Left(Archive, Len(Archive)-3)
+	Fn = fso.GetParentFolderName(Archive) & "\" & FSO.getbasename(Archive)
 	If FSO.FileExists(Fn) Then
 		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
-		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
+		MyFile.WriteLine("@" & quote & UtilsDir & "7za1701.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set MyFile = Nothing
 		ExecPrintOutput(UtilsDir & batname)
@@ -205,10 +205,9 @@ Sub UnCompress(Archive, DestFolder)
 		wscript.echo("Deleting: " & Fn)
 		FSO.DeleteFile Fn,true
 	End If
-	Fn = Fn & tar
 	If FSO.FileExists(Fn) Then
 		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
-		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
+		MyFile.WriteLine("@" & quote & UtilsDir & "7za1701.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set MyFile = Nothing
 		ExecPrintOutput(UtilsDir & batname)
