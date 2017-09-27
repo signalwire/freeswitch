@@ -139,6 +139,11 @@
   <ItemGroup>
     <ClCompile Include="$(civetwebLibDir)\src\civetweb.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download civetweb.2015.vcxproj">
+      <Project>{b9b7455d-f109-42bd-ad0a-98489b53fcf3}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
