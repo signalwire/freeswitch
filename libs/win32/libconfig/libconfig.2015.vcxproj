@@ -339,6 +339,11 @@
     <ClInclude Include="..\..\libconfig-$(ConfigVersion)\lib\scanner.h" />
     <ClInclude Include="..\..\libconfig-$(ConfigVersion)\lib\wincompat.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download libconfig.2015.vcxproj">
+      <Project>{4ab0a14f-f65f-4c18-aaec-ac76e2be07da}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

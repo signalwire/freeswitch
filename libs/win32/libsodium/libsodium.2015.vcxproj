@@ -553,6 +553,11 @@
     <ClInclude Include="..\..\libsodium-$(SodiumVersion)\src\libsodium\include\sodium\private\mutex.h" />
     <ClInclude Include="..\..\libsodium-$(SodiumVersion)\src\libsodium\include\sodium\private\sse2_64_32.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download libsodium.2015.vcxproj">
+      <Project>{96848dd5-1451-4a88-87fa-fc6b7c7d1e1d}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
