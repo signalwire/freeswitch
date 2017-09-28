@@ -20,6 +20,24 @@ blade_builddir=`pwd`
 AC_SUBST(blade_srcdir)
 AC_SUBST(blade_builddir)
 
+case $host in
+   *-openbsd*)
+       # OpenBSD's gunzip and friends don't like -d because its redundant, only gzip does
+       AC_PATH_PROGS(ZCAT, gzip)
+       ;;
+    *)
+       AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
+       ;;
+esac
+
+AC_PATH_PROGS(BZIP, bzip2)
+AC_PATH_PROGS(XZ, xz)
+AC_PATH_PROGS(TAR, gtar tar)
+AC_PATH_PROGS(WGET, wget)
+AC_PATH_PROGS(CURL, curl)
+GETLIB="cd $blade_builddir/.. && ${SHELL} $blade_builddir/../../build/getlib.sh"
+AC_SUBST(GETLIB)
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
@@ -277,6 +295,7 @@ AC_CONFIG_FILES([Makefile
 	test/Makefile
 	switchblade/Makefile
 	libblade.pc
+	../../build/getlib.sh
 ])
 
 AC_OUTPUT

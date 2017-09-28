@@ -3,8 +3,12 @@ EXTRA_DIST =
 SUBDIRS = . test switchblade
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(top_srcdir)/../civetweb-1.9.1/include
-AM_LDFLAGS   += -L$(top_srcdir)/../civetweb-1.9.1
+CIVETWEB_VERSION=1.9.1
+CIVETWEB=civetweb-$(CIVETWEB_VERSION)
+CIVETWEB_DIR=$(top_srcdir)/../$(CIVETWEB)
+
+AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(CIVETWEB_DIR)/include
+AM_LDFLAGS   += -L$(CIVETWEB_DIR)
 
 noinst_LTLIBRARIES      = libunqlite.la
 libunqlite_la_SOURCES   = src/unqlite.c
@@ -31,6 +35,11 @@ library_include_HEADERS += src/include/blade_identity.h src/include/blade_rpc.h 
 library_include_HEADERS += src/include/blade_protocol.h src/include/blade_subscription.h src/include/blade_channel.h
 library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h
 library_include_HEADERS += src/include/unqlite.h test/tap.h
+
+BUILT_SOURCES=$(CIVETWEB_DIR)
+
+$(CIVETWEB_DIR):
+	$(GETLIB) $(CIVETWEB).tar.gz
 
 tests: libblade.la
 	$(MAKE) -C test tests
