@@ -33,6 +33,17 @@
 
 #ifndef _BLADE_H_
 #define _BLADE_H_
+
+#define USE_STACK_SIZE 102400
+#define MAX_REQUEST_SIZE 16384
+#define USE_DUKTAPE 1
+#define USE_IPV6 1
+#define LUA_COMPAT_ALL 1
+#define USE_LUA 1
+#define USE_LUA_SQLITE3 1
+#define USE_LUA_FILE_SYSTEM 1
+#define USE_WEBSOCKET 1
+
 #include <ks.h>
 #include <sodium.h>
 #include <libconfig.h>

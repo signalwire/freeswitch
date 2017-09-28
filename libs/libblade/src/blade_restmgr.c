@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2017, Shane Bryldt
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -85,7 +85,7 @@ KS_DECLARE(ks_status_t) blade_restmgr_create(blade_restmgr_t **brestmgrP, blade_
 	blade_restmgr_t *brestmgr = NULL;
 
 	ks_assert(brestmgrP);
-	
+
 	ks_pool_open(&pool);
 	ks_assert(pool);
 
@@ -123,7 +123,7 @@ KS_DECLARE(ks_status_t) blade_restmgr_destroy(blade_restmgr_t **brestmgrP)
 #define CONFIG_LOADSTR(k) \
 tmp = config_lookup_from(rest, k); \
 if (tmp && config_setting_type(tmp) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL; \
-if (tmp) ks_hash_insert(brestmgr->config.options, (const void *)k, (void *)ks_pstrdup(pool, config_setting_get_string(tmp)));
+if (tmp) ks_hash_insert(brestmgr->config.options, (void *)k, (void *)ks_pstrdup(pool, config_setting_get_string(tmp)));
 
 ks_status_t blade_restmgr_config(blade_restmgr_t *brestmgr, config_setting_t *config)
 {
@@ -298,7 +298,7 @@ int blade_restmgr_handle_begin_request(struct mg_connection *conn)
 
 void blade_restmgr_handle_end_request(const struct mg_connection *conn, int reply_status_code)
 {
-	
+
 }
 
 int blade_restmgr_handle_log_message(const struct mg_connection *conn, const char *message)
