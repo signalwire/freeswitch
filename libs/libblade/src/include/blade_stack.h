@@ -54,6 +54,7 @@ KS_DECLARE(blade_subscriptionmgr_t *) blade_handle_subscriptionmgr_get(blade_han
 KS_DECLARE(blade_mastermgr_t *) blade_handle_mastermgr_get(blade_handle_t *bh);
 KS_DECLARE(blade_connectionmgr_t *) blade_handle_connectionmgr_get(blade_handle_t *bh);
 KS_DECLARE(blade_sessionmgr_t *) blade_handle_sessionmgr_get(blade_handle_t *bh);
+KS_DECLARE(blade_restmgr_t *) blade_handle_restmgr_get(blade_handle_t *bh);
 
 KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connection_t **bcP, blade_identity_t *target, const char *session_id);
 

@@ -59,6 +59,7 @@
     <Import Project="..\..\w32\openssl-version.props" />
     <Import Project="..\..\w32\sodium.props" />
     <Import Project="..\..\w32\config.props" />
+    <Import Project="..\..\w32\civetweb.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -66,6 +67,7 @@
     <Import Project="..\..\w32\openssl-version.props" />
     <Import Project="..\..\w32\sodium.props" />
     <Import Project="..\..\w32\config.props" />
+    <Import Project="..\..\w32\civetweb.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -73,6 +75,7 @@
     <Import Project="..\..\w32\openssl-version.props" />
     <Import Project="..\..\w32\sodium.props" />
     <Import Project="..\..\w32\config.props" />
+    <Import Project="..\..\w32\civetweb.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -80,6 +83,7 @@
     <Import Project="..\..\w32\openssl-version.props" />
     <Import Project="..\..\w32\sodium.props" />
     <Import Project="..\..\w32\config.props" />
+    <Import Project="..\..\w32\civetweb.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -193,6 +197,7 @@
     <ClCompile Include="src\blade_connectionmgr.c" />
     <ClCompile Include="src\blade_identity.c" />
     <ClCompile Include="src\blade_mastermgr.c" />
+    <ClCompile Include="src\blade_restmgr.c" />
     <ClCompile Include="src\blade_routemgr.c" />
     <ClCompile Include="src\blade_rpc.c" />
     <ClCompile Include="src\blade_protocol.c" />
@@ -215,6 +220,7 @@
     <ClInclude Include="src\include\blade_connectionmgr.h" />
     <ClInclude Include="src\include\blade_identity.h" />
     <ClInclude Include="src\include\blade_mastermgr.h" />
+    <ClInclude Include="src\include\blade_restmgr.h" />
     <ClInclude Include="src\include\blade_routemgr.h" />
     <ClInclude Include="src\include\blade_rpc.h" />
     <ClInclude Include="src\include\blade_protocol.h" />
@@ -232,8 +238,17 @@
     <ClInclude Include="src\include\unqlite.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\civetweb-1.9.1\VisualStudio\duktape_lib\duktape_lib.vcxproj">
+      <Project>{0a11689c-db6a-4bf6-97b2-ad32db863fbd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\civetweb-1.9.1\VisualStudio\lua_lib\lua_lib.vcxproj">
+      <Project>{8f5e5d77-d269-4665-9e27-1045da6cf0d8}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\libks\libks.vcxproj">
       <Project>{70d178d8-1100-4152-86c0-809a91cff832}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\win32\civetweb\civetweb.2015.vcxproj">
+      <Project>{1faae8b0-c134-436d-9b13-74c16517fc03}</Project>
     </ProjectReference>
     <ProjectReference Include="..\win32\libconfig\libconfig.2015.vcxproj">
       <Project>{1a234565-926d-49b2-83e4-d56e0c38c9f2}</Project>

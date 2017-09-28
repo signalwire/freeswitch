@@ -43,6 +43,7 @@ struct blade_handle_s {
 	blade_mastermgr_t *mastermgr;
 	blade_connectionmgr_t *connectionmgr;
 	blade_sessionmgr_t *sessionmgr;
+	blade_restmgr_t *restmgr;
 };
 
 ks_bool_t blade_rpcroute_request_handler(blade_rpc_request_t *brpcreq, void *data);
@@ -74,6 +75,7 @@ static void blade_handle_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t 
 		blade_mastermgr_destroy(&bh->mastermgr);
 		blade_connectionmgr_destroy(&bh->connectionmgr);
 		blade_sessionmgr_destroy(&bh->sessionmgr);
+		blade_restmgr_destroy(&bh->restmgr);
 
 		ks_thread_pool_destroy(&bh->tpool);
 		break;
@@ -120,6 +122,8 @@ KS_DECLARE(ks_status_t) blade_handle_create(blade_handle_t **bhP)
 	blade_sessionmgr_create(&bh->sessionmgr, bh);
 	ks_assert(bh->sessionmgr);
 
+	blade_restmgr_create(&bh->restmgr, bh);
+	ks_assert(bh->restmgr);
 
 	ks_pool_set_cleanup(bh, NULL, blade_handle_cleanup);
 
@@ -214,6 +218,8 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 
 	blade_mastermgr_startup(bh->mastermgr, config);
 
+	blade_restmgr_startup(bh->restmgr, config);
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -228,6 +234,8 @@ KS_DECLARE(ks_status_t) blade_handle_shutdown(blade_handle_t *bh)
 	blade_connectionmgr_shutdown(bh->connectionmgr);
 
 	blade_sessionmgr_shutdown(bh->sessionmgr);
+
+	blade_restmgr_shutdown(bh->restmgr);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -278,6 +286,12 @@ KS_DECLARE(blade_sessionmgr_t *) blade_handle_sessionmgr_get(blade_handle_t *bh)
 {
 	ks_assert(bh);
 	return bh->sessionmgr;
+}
+
+KS_DECLARE(blade_restmgr_t *) blade_handle_restmgr_get(blade_handle_t *bh)
+{
+	ks_assert(bh);
+	return bh->restmgr;
 }
 
 

@@ -35,12 +35,17 @@
 
 KS_DECLARE(ks_status_t) blade_init(void)
 {
-	return ks_init();
+	ks_status_t ret = ks_init();
+
+	if (ret == KS_STATUS_SUCCESS && mg_init_library(0xFFu) == 0) ret = KS_STATUS_FAIL;
+
+	return ret;
 }
 
 KS_DECLARE(ks_status_t) blade_shutdown(void)
 {
 	ks_status_t ret = ks_shutdown();
+	mg_exit_library();
 #ifdef _WINDOWS_
 	_CrtDumpMemoryLeaks();
 #endif

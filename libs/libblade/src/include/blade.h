@@ -36,6 +36,7 @@
 #include <ks.h>
 #include <sodium.h>
 #include <libconfig.h>
+#include <civetweb.h>
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"
@@ -56,6 +57,7 @@
 #include "blade_mastermgr.h"
 #include "blade_connectionmgr.h"
 #include "blade_sessionmgr.h"
+#include "blade_restmgr.h"
 
 #include "blade_transport_wss.h"
 
