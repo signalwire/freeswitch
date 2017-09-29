@@ -280,7 +280,7 @@ if test "${LIBKS_CFLAGS}" = ""; then
 		AC_MSG_WARN([local development version of libks is being used. This is probably not portable.])
 		LIBKS_CFLAGS="-I`pwd`/../libks/src/include"
 		LIBKS_LIBS="-L`pwd`/../libks/.libs/ -lks",
-		AC_MSG_ERROR([libks cannot be found. Fatal Error]))
+		AC_MSG_WARN([libks cannot be found.]))
 fi
 
 AM_CPPFLAGS="-I./src -I./src/include ${LIBKS_CFLAGS} ${openssl_CFLAGS} ${SODIUM_CFLAGS}"
