@@ -7,8 +7,10 @@ CIVETWEB_VERSION=1.9.1
 CIVETWEB=civetweb-$(CIVETWEB_VERSION)
 CIVETWEB_DIR=$(top_srcdir)/../$(CIVETWEB)
 CIVETWEB_LIB=$(top_srcdir)/../$(CIVETWEB)/libcivetweb.a
+LIBKS_DIR=$(top_srcdir)/../libks
+LIBKS=$(LIBKS_DIR)/libks.la
 
-AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(CIVETWEB_DIR)/include
+AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(CIVETWEB_DIR)/include -I$(LIBKS_DIR)/src/include
 AM_LDFLAGS   += -L$(CIVETWEB_DIR)
 
 noinst_LTLIBRARIES      = libunqlite.la
@@ -37,7 +39,7 @@ library_include_HEADERS += src/include/blade_protocol.h src/include/blade_subscr
 library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h
 library_include_HEADERS += src/include/unqlite.h test/tap.h
 
-BUILT_SOURCES=$(CIVETWEB_LIB)
+BUILT_SOURCES=$(CIVETWEB_LIB) $(LIBKS)
 
 $(CIVETWEB_LIB): $(CIVETWEB_DIR)
 	cd $(CIVETWEB_DIR) && $(MAKE) lib USE_STACK_SIZE=102400 MAX_REQUEST_SIZE=16384 WITH_LUA=1 LUA_COMPAT_ALL=1 USE_LUA_SQLITE3=1 USE_LUA_FILE_SYSTEM=1 WITH_IPV6=1 WITH_WEBSOCKET=1	&& $(MAKE) lib USE_STACK_SIZE=102400 MAX_REQUEST_SIZE=16384 WITH_LUA=1 LUA_COMPAT_ALL=1 USE_LUA_SQLITE3=1 USE_LUA_FILE_SYSTEM=1 WITH_IPV6=1 WITH_WEBSOCKET=1 WITH_DUKTAPE=1
@@ -45,6 +47,9 @@ $(CIVETWEB_LIB): $(CIVETWEB_DIR)
 $(CIVETWEB_DIR):
 	$(GETLIB) $(CIVETWEB).tar.gz     
 
+$(LIBKS):
+	cd $(top_srcdir)/../libks && /bin/sh ./bootstrap.sh && /bin/sh ./configure && $(MAKE)
+        
 tests: libblade.la
 	$(MAKE) -C test tests
 
