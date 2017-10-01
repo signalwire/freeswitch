@@ -2417,6 +2417,10 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 	}
 
+	if (!mflags[MFLAG_CAN_BE_SEEN]) {
+		switch_channel_set_flag(channel, CF_VIDEO_PAUSE_READ);
+	}
+
 	if (mpin_matched) {
 		mflags[MFLAG_MOD] = 1;
 	}
