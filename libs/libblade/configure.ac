@@ -251,6 +251,7 @@ fi
 
 PKG_CHECK_MODULES([SODIUM], [libsodium >= 1.0.0],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([libsodium is required])])
 PKG_CHECK_MODULES([LIBKS], [libks >= 0.1],[AC_MSG_RESULT([yes])],[AC_MSG_WARN([libks is required, but not found.])])
+PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 
 #  Enable clang address sanitizer bit build
 AC_ARG_ENABLE(address_sanitizer,

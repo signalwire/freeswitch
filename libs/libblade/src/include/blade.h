@@ -38,6 +38,7 @@
 #include <sodium.h>
 #include <libconfig.h>
 #include <civetweb.h>
+#include <pcre.h>
 #include "unqlite.h"
 #include "blade_types.h"
 #include "blade_stack.h"

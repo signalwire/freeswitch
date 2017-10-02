@@ -26,9 +26,9 @@ libblade_la_SOURCES	+= src/blade_identity.c src/blade_rpc.c src/blade_connection
 libblade_la_SOURCES	+= src/blade_protocol.c src/blade_subscription.c src/blade_channel.c
 libblade_la_SOURCES	+= src/blade_transport.c src/blade_transport_wss.c
 
-libblade_la_CFLAGS	= $(AM_CFLAGS) $(AM_CPPFLAGS)
+libblade_la_CFLAGS	= $(AM_CFLAGS) $(AM_CPPFLAGS) $(PCRE_CFLAGS)
 libblade_la_LDFLAGS     = -version-info 0:1:0 -lncurses -lpthread -lm -lconfig -lcivetweb $(AM_LDFLAGS)
-libblade_la_LIBADD      = libunqlite.la
+libblade_la_LIBADD      = libunqlite.la $(PCRE_LIBS)
 
 library_includedir	= $(prefix)/include
 library_include_HEADERS = src/include/blade.h src/include/blade_types.h src/include/blade_stack.h
@@ -45,11 +45,11 @@ $(CIVETWEB_LIB): $(CIVETWEB_DIR)
 	cd $(CIVETWEB_DIR) && $(MAKE) lib USE_STACK_SIZE=102400 MAX_REQUEST_SIZE=16384 WITH_LUA=1 LUA_COMPAT_ALL=1 USE_LUA_SQLITE3=1 USE_LUA_FILE_SYSTEM=1 WITH_IPV6=1 WITH_WEBSOCKET=1	&& $(MAKE) lib USE_STACK_SIZE=102400 MAX_REQUEST_SIZE=16384 WITH_LUA=1 LUA_COMPAT_ALL=1 USE_LUA_SQLITE3=1 USE_LUA_FILE_SYSTEM=1 WITH_IPV6=1 WITH_WEBSOCKET=1 WITH_DUKTAPE=1
 
 $(CIVETWEB_DIR):
-	$(GETLIB) $(CIVETWEB).tar.gz     
+	$(GETLIB) $(CIVETWEB).tar.gz
 
 $(LIBKS):
 	cd $(top_srcdir)/../libks && /bin/sh ./bootstrap.sh && /bin/sh ./configure && $(MAKE)
-        
+
 tests: libblade.la
 	$(MAKE) -C test tests
 
