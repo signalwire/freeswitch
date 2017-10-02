@@ -293,6 +293,10 @@ KS_DECLARE(ks_status_t) blade_restmgr_data_set(blade_restmgr_t *brestmgr, void *
 
 int blade_restmgr_handle_begin_request(struct mg_connection *conn)
 {
+	struct mg_request_info *info = mg_get_request_info(conn);
+
+	ks_log(KS_LOG_DEBUG, "Request for: %s on %s\n", info->request_uri, info->request_method);
+
 	return 0;
 }
 

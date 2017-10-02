@@ -262,6 +262,9 @@
     <ProjectReference Include="..\win32\openssl\ssleay32.2015.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\win32\pcre\libpcre.2015.vcxproj">
+      <Project>{8d04b550-d240-4a44-8a18-35da3f7038d9}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
