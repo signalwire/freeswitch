@@ -40,6 +40,9 @@
 #include <string.h>
 #include <assert.h>
 #include <sndfile.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 
@@ -118,15 +121,18 @@ static void decode_20digit_msg(const uint8_t *pkt, int len)
         msg[0] = '\0';
         return;
     }
+    /*endif*/
     pkt += 2;
     p = len - 2;
     /* Strip trailing spaces */
     while (p > 1  &&  pkt[p - 1] == ' ')
         p--;
+    /*endwhile*/
     /* The string is actually backwards in the message */
     k = 0;
     while (p > 1)
         msg[k++] = pkt[--p];
+    /*endwhile*/
     msg[k] = '\0';
     fprintf(stderr, "%s is: \"%s\"\n", t30_frametype(pkt[0]), msg);
 }
@@ -140,27 +146,44 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     const char *vendor;
     const char *model;
 
+    if (frlen == 0)
+    {
+        return;
+    }
+    /*endif*/
     fprintf(stderr, "%s %s:", io, t30_frametype(fr[2]));
     for (i = 2;  i < frlen;  i++)
         fprintf(stderr, " %02x", fr[i]);
+    /*endfor*/
     fprintf(stderr, "\n");
     type = fr[2] & 0xFE;
     if (type == T30_DIS  ||  type == T30_DTC  ||  type == T30_DCS)
+    {
         t30_decode_dis_dtc_dcs(&t30_dummy, fr, frlen);
+    }
+    /*endif*/
     if (type == T30_CSI  ||  type == T30_TSI  ||  type == T30_PWD  ||  type == T30_SEP  ||  type == T30_SUB  ||  type == T30_SID)
+    {
         decode_20digit_msg(fr, frlen);
+    }
+    /*endif*/
     if (type == T30_NSF  ||  type == T30_NSS  ||  type == T30_NSC)
     {
         if (t35_decode(&fr[3], frlen - 3, &country, &vendor, &model))
         {
             if (country)
                 fprintf(stderr, "The remote was made in '%s'\n", country);
+            /*endif*/
             if (vendor)
                 fprintf(stderr, "The remote was made by '%s'\n", vendor);
+            /*endif*/
             if (model)
                 fprintf(stderr, "The remote is a '%s'\n", model);
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -173,9 +196,12 @@ static int find_fallback_entry(int dcs_code)
     {
         if (fallback_sequence[i].dcs_code == dcs_code)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (fallback_sequence[i].bit_rate == 0)
         return -1;
+    /*endif*/
     return i;
 }
 /*- End of function --------------------------------------------------------*/
@@ -196,6 +222,7 @@ static int check_rx_dcs(const uint8_t *msg, int len)
         printf("Short DCS frame\n");
         return -1;
     }
+    /*endif*/
 
     /* Make a local copy of the message, padded to the maximum possible length with zeros. This allows
        us to simply pick out the bits, without worrying about whether they were set from the remote side. */
@@ -208,7 +235,9 @@ static int check_rx_dcs(const uint8_t *msg, int len)
         memcpy(dcs_frame, msg, len);
         if (len < T30_MAX_DIS_DTC_DCS_LEN)
             memset(dcs_frame + len, 0, T30_MAX_DIS_DTC_DCS_LEN - len);
+        /*endif*/
     }
+    /*endif*/
 
     octets_per_ecm_frame = (dcs_frame[6] & DISBIT4)  ?  256  :  64;
 
@@ -218,6 +247,7 @@ static int check_rx_dcs(const uint8_t *msg, int len)
         y_resolution = T4_Y_RESOLUTION_FINE;
     else
         y_resolution = T4_Y_RESOLUTION_STANDARD;
+    /*endif*/
 
     if ((dcs_frame[8] & DISBIT3))
     {
@@ -228,6 +258,7 @@ static int check_rx_dcs(const uint8_t *msg, int len)
     {
         x_resolution = T4_X_RESOLUTION_R8;
     }
+    /*endif*/
 
     image_width = widths[(dcs_frame[8] & DISBIT3)  ?  2  :  1][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
@@ -242,10 +273,12 @@ static int check_rx_dcs(const uint8_t *msg, int len)
         line_encoding = T4_COMPRESSION_T4_2D;
     else
         line_encoding = T4_COMPRESSION_T4_1D;
+    /*endif*/
     fprintf(stderr, "Selected compression %d\n", line_encoding);
 
     if ((current_fallback = find_fallback_entry(dcs_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))) < 0)
         printf("Remote asked for a modem standard we do not support\n");
+    /*endif*/
     error_correcting_mode = ((dcs_frame[6] & DISBIT3) != 0);
     return 0;
 }
@@ -263,6 +296,7 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
         fprintf(stderr, "HDLC status is %s (%d)\n", signal_status_to_str(len), len);
         return;
     }
+    /*endif*/
 
     if (ok)
     {
@@ -271,6 +305,7 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
             fprintf(stderr, "Bad frame header - %02x %02x\n", msg[0], msg[1]);
             return;
         }
+        /*endif*/
         print_frame("HDLC: ", msg, len);
         type = msg[2] & 0xFE;
         switch (type)
@@ -283,19 +318,23 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
                 memcpy(&ecm_data[frame_no][0], &msg[4], len - 4);
                 ecm_len[frame_no] = (int16_t) (len - 4);
             }
+            /*endif*/
             break;
         case T30_DCS:
             check_rx_dcs(msg, len);
             break;
         }
+        /*endswitch*/
     }
     else
     {
         fprintf(stderr, "Bad HDLC frame ");
         for (i = 0;  i < len;  i++)
             fprintf(stderr, " %02x", msg[i]);
+        /*endfor*/
         fprintf(stderr, "\n");
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -315,6 +354,7 @@ static void t4_begin(void)
 
     for (i = 0;  i < 256;  i++)
         ecm_len[i] = -1;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -325,16 +365,20 @@ static void t4_end(void)
 
     if (!t4_up)
         return;
+    /*endif*/
     if (error_correcting_mode)
     {
         for (i = 0;  i < 256;  i++)
         {
             if (ecm_len[i] > 0)
                 t4_rx_put(&t4_rx_state, ecm_data[i], ecm_len[i]);
+            /*endif*/
             fprintf(stderr, "%d", (ecm_len[i] <= 0)  ?  0  :  1);
         }
+        /*endfor*/
         fprintf(stderr, "\n");
     }
+    /*endif*/
     t4_rx_end_page(&t4_rx_state);
     t4_rx_get_transfer_statistics(&t4_rx_state, &stats);
     fprintf(stderr, "Pages = %d\n", stats.pages_transferred);
@@ -358,11 +402,14 @@ static void v21_put_bit(void *user_data, int bit)
             //t4_end();
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     //fprintf(stderr, "V.21 Rx bit %d - %d\n", rx_bits++, bit);
     if (fast_trained == FAX_NONE)
         hdlc_rx_put_bit(&hdlcrx, bit);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -384,8 +431,10 @@ static void v17_put_bit(void *user_data, int bit)
                 fast_trained = FAX_NONE;
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     if (error_correcting_mode)
     {
         hdlc_rx_put_bit(&hdlcrx, bit);
@@ -397,9 +446,12 @@ static void v17_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
+            /*endif*/
             end_of_page_detected = true;
         }
+        /*endif*/
     }
+    /*endif*/
     //printf("V.17 Rx bit %d - %d\n", rx_bits++, bit);
 }
 /*- End of function --------------------------------------------------------*/
@@ -422,8 +474,10 @@ static void v29_put_bit(void *user_data, int bit)
                 fast_trained = FAX_NONE;
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     if (error_correcting_mode)
     {
         hdlc_rx_put_bit(&hdlcrx, bit);
@@ -437,7 +491,9 @@ static void v29_put_bit(void *user_data, int bit)
                 fprintf(stderr, "End of page detected\n");
             end_of_page_detected = true;
         }
+        /*endif*/
     }
+    /*endif*/
     //printf("V.29 Rx bit %d - %d\n", rx_bits++, bit);
 }
 /*- End of function --------------------------------------------------------*/
@@ -460,8 +516,10 @@ static void v27ter_put_bit(void *user_data, int bit)
                 fast_trained = FAX_NONE;
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     if (error_correcting_mode)
     {
         hdlc_rx_put_bit(&hdlcrx, bit);
@@ -475,7 +533,9 @@ static void v27ter_put_bit(void *user_data, int bit)
                 fprintf(stderr, "End of page detected\n");
             end_of_page_detected = true;
         }
+        /*endif*/
     }
+    /*endif*/
     //printf("V.27ter Rx bit %d - %d\n", rx_bits++, bit);
 }
 /*- End of function --------------------------------------------------------*/
@@ -493,34 +553,181 @@ int main(int argc, char *argv[])
     int len;
     const char *filename;
     logging_state_t *logging;
+    int opt;
+    bool t30_decode_reversed;
+    bool t30_decode;
+    int i;
+    unsigned int hex;
+    char buf[1024];
+    uint8_t bytes[1024];
 
     filename = "fax_samp.wav";
+    t30_decode_reversed = false;
+    t30_decode = false;
+    while ((opt = getopt(argc, argv, "c:ertw:x:y:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'c':
+            /* Force, for when there is no DCS to set this properly */
+            if (strcmp(optarg, "T41D") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T4_1D;
+            }
+            else if (strcmp(optarg, "T42D") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T4_2D;
+            }
+            else if (strcmp(optarg, "T6") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T6;
+            }
+            else if (strcmp(optarg, "T85") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T85;
+            }
+#if defined(SPANDSP_SUPPORT_T88)
+            else if (strcmp(optarg, "T88") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T88;
+            }
+#endif
+            else if (strcmp(optarg, "T81") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T42_T81;
+            }
+            else if (strcmp(optarg, "T43") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T43;
+            }
+#if defined(SPANDSP_SUPPORT_T45)
+            else if (strcmp(optarg, "T45") == 0)
+            {
+                line_encoding = T4_COMPRESSION_T45;
+            }
+#endif
+            else
+            {
+                printf("Unrecognised line compression.\n");
+                exit(2);
+            }
+            /*endif*/
+            break;
+        case 'e':
+            /* Force, for when there is no DCS to set this properly */
+            error_correcting_mode = true;
+            break;
+        case 'r':
+            t30_decode_reversed = true;
+            break;
+        case 't':
+            t30_decode = true;
+            break;
+        case 'w':
+            /* Force, for when there is no DCS to set this properly */
+            image_width = 1728;
+            break;
+        case 'x':
+            /* Force, for when there is no DCS to set this properly */
+            if (strcmp(optarg, "R4") == 0)
+            {
+                x_resolution = T4_X_RESOLUTION_R4;
+            }
+            else if (strcmp(optarg, "R8") == 0)
+            {
+                x_resolution = T4_X_RESOLUTION_R8;
+            }
+            else if (strcmp(optarg, "R16") == 0)
+            {
+                x_resolution = T4_X_RESOLUTION_R16;
+            }
+            else
+            {
+                printf("Unrecognised X-resolution.\n");
+                exit(2);
+            }
+            /*endif*/
+            break;
+        case 'y':
+            /* Force, for when there is no DCS to set this properly */
+            if (strcmp(optarg, "standard") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_STANDARD;
+            }
+            else if (strcmp(optarg, "fine") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_FINE;
+            }
+            else if (strcmp(optarg, "superfine") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+            }
+            else
+            {
+                printf("Unrecognised Y-resolution.\n");
+                exit(2);
+            }
+            /*endif*/
+            break;
+        }
+        /*endswitch*/
+    }
+    /*endwhile*/
+    argc -= optind;
+    argv += optind;
 
-    if (argc > 1)
-        filename = argv[1];
-
-    memset(&info, 0, sizeof(info));
-    if ((inhandle = sf_open(filename, SFM_READ, &info)) == NULL)
-    {
-        fprintf(stderr, "    Cannot open audio file '%s' for reading\n", filename);
-        exit(2);
-    }
-    if (info.samplerate != SAMPLE_RATE)
-    {
-        fprintf(stderr, "    Unexpected sample rate in audio file '%s'\n", filename);
-        exit(2);
-    }
-    if (info.channels != 1)
-    {
-        fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", filename);
-        exit(2);
-    }
+    if (argc > 0)
+        filename = argv[0];
+    /*endif*/
 
     memset(&t30_dummy, 0, sizeof(t30_dummy));
     logging = t30_get_logging_state(&t30_dummy);
     span_log_init(logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(logging, "T.30");
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+
+    if (t30_decode)
+    {
+        /* Decode T.30 messages entered as a string of hex byte values in the form xx xx xx */
+        while (fgets(buf, 1024, stdin))
+        {
+            for (i = 0;  i < 256;  i++)
+            {
+                if (sscanf(&buf[3*i], "%x", &hex) != 1)
+                    break;
+                /*endif*/
+                if (t30_decode_reversed)
+                    hex = bit_reverse8(hex);
+                /*endif*/
+                bytes[i] = hex;
+            }
+            /*endfor*/
+            print_frame("", bytes, i);
+        }
+        /*endwhile*/
+        exit(0);
+    }
+    /*endif*/
+    
+    memset(&info, 0, sizeof(info));
+    if ((inhandle = sf_open(filename, SFM_READ, &info)) == NULL)
+    {
+        fprintf(stderr, "    Cannot open audio file '%s' for reading\n", filename);
+        exit(2);
+    }
+    /*endif*/
+    if (info.samplerate != SAMPLE_RATE)
+    {
+        fprintf(stderr, "    Unexpected sample rate in audio file '%s'\n", filename);
+        exit(2);
+    }
+    /*endif*/
+    if (info.channels != 1)
+    {
+        fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", filename);
+        exit(2);
+    }
+    /*endif*/
 
     hdlc_rx_init(&hdlcrx, false, true, 5, hdlc_accept, NULL);
     fsk = fsk_rx_init(NULL, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, NULL);
@@ -559,12 +766,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to init\n");
         exit(0);
     }
+    /*endif*/
 
     for (;;)
     {
         len = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK);
         if (len < SAMPLES_PER_CHUNK)
             break;
+        /*endif*/
         fsk_rx(fsk, amp, len);
         v17_rx(v17, amp, len);
         v29_rx(v29, amp, len);
@@ -582,6 +791,7 @@ int main(int argc, char *argv[])
         logging = v27ter_rx_get_logging_state(v27ter_2400);
         span_log_bump_samples(logging, len);
     }
+    /*endfor*/
     t4_rx_release(&t4_rx_state);
 
     if (sf_close(inhandle))
@@ -589,6 +799,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", filename);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
