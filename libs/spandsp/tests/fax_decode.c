@@ -153,7 +153,9 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     /*endif*/
     fprintf(stderr, "%s %s:", io, t30_frametype(fr[2]));
     for (i = 2;  i < frlen;  i++)
+    {
         fprintf(stderr, " %02x", fr[i]);
+    }
     /*endfor*/
     fprintf(stderr, "\n");
     type = fr[2] & 0xFE;
@@ -180,6 +182,11 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
             if (model)
                 fprintf(stderr, "The remote is a '%s'\n", model);
             /*endif*/
+        }
+        /*endif*/
+        if (type == T30_NSS  ||  type == T30_NSC)
+        {
+            fprintf(stderr, "WARNING: The FAX machines may be switching into a proprietary mode, which this software cannot decode\n");
         }
         /*endif*/
     }
