@@ -2765,7 +2765,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
-		switch_channel_set_variable(channel, "app_uuid", NULL);
 	} else {
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
 	}
@@ -2880,6 +2879,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
 		switch_event_fire(&event);
 	}
+
+	if(app_uuid != uuid_str) {
+		switch_channel_set_variable(channel, "app_uuid", NULL);
+	};
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE;
 	switch_core_session_receive_message(session, &msg);
