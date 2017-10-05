@@ -1041,7 +1041,7 @@ KS_DECLARE(ks_ssize_t) kws_read_frame(kws_t *kws, kws_opcode_t *oc, uint8_t **da
 				
 				u64 = (uint64_t *) kws->payload;
 				kws->payload += 8;
-				kws->plen = ntoh64(*u64);
+				kws->plen = (ks_ssize_t)ntoh64(*u64);
 			} else if (kws->plen == 126) {
 				uint16_t *u16;
 

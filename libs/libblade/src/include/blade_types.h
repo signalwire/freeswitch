@@ -67,6 +67,7 @@ typedef struct blade_restmgr_s blade_restmgr_t;
 typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, void *data);
 typedef ks_bool_t (*blade_rpc_response_callback_t)(blade_rpc_response_t *brpcres, void *data);
 
+typedef int (*blade_restmgr_service_callback_t)(blade_restmgr_t *brestmgr, struct mg_connection *conn, const char **captures);
 
 typedef enum {
 	BLADE_CONNECTION_STATE_NONE,

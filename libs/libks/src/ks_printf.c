@@ -185,16 +185,6 @@ static int et_getdigit(LONGDOUBLE_TYPE * val, int *cnt)
 #endif /* KS_OMIT_FLOATING_POINT */
 
 /*
-** On machines with a small stack size, you can redefine the
-** KS_PRINT_BUF_SIZE to be less than 350.  But beware - for
-** smaller values some %f conversions may go into an infinite loop.
-*/
-#ifndef KS_PRINT_BUF_SIZE
-# define KS_PRINT_BUF_SIZE 350
-#endif
-#define etBUFSIZE KS_PRINT_BUF_SIZE	/* Size of the output buffer */
-
-/*
 ** The root program.  All variations call this core.
 **
 ** INPUTS:

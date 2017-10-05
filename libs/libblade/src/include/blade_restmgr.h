@@ -41,7 +41,10 @@ KS_DECLARE(ks_status_t) blade_restmgr_destroy(blade_restmgr_t **brestmgrP);
 KS_DECLARE(ks_status_t) blade_restmgr_startup(blade_restmgr_t *brestmgr, config_setting_t *config);
 KS_DECLARE(ks_status_t) blade_restmgr_shutdown(blade_restmgr_t *brestmgr);
 KS_DECLARE(blade_handle_t *) blade_restmgr_handle_get(blade_restmgr_t *brestmgr);
-KS_DECLARE(ks_status_t) blade_restmgr_data_set(blade_restmgr_t *brestmgr, void *data); // @note must use before calling startup
+KS_DECLARE(void *) blade_restmgr_data_get(blade_restmgr_t *brestmgr);
+KS_DECLARE(ks_status_t) blade_restmgr_data_set(blade_restmgr_t *brestmgr, void *data);
+KS_DECLARE(ks_status_t) blade_restmgr_service_add(blade_restmgr_t *brestmgr, const char *action, const char *route, blade_restmgr_service_callback_t callback);
+KS_DECLARE(ks_status_t) blade_restmgr_service_remove(blade_restmgr_t *brestmgr, const char *action, const char *route);
 KS_END_EXTERN_C
 
 #endif

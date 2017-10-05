@@ -48,6 +48,16 @@ typedef enum {
 #define KS_POOL_FUNC_INCREF 7	/* reference count incremented */
 #define KS_POOL_FUNC_DECREF 8	/* reference count decremented */
 
+ /*
+ ** On machines with a small stack size, you can redefine the
+ ** KS_PRINT_BUF_SIZE to be less than 350.  But beware - for
+ ** smaller values some %f conversions may go into an infinite loop.
+ */
+#ifndef KS_PRINT_BUF_SIZE
+# define KS_PRINT_BUF_SIZE 350
+#endif
+#define etBUFSIZE KS_PRINT_BUF_SIZE	/* Size of the output buffer */
+
 /*
  * void ks_pool_log_func_t
  *

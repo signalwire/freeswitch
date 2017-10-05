@@ -23,6 +23,22 @@
 #ifndef cJSON__h
 #define cJSON__h
 
+#ifdef KS_EXPORTS
+#ifndef CJSON_EXPORT_SYMBOLS
+#define CJSON_EXPORT_SYMBOLS 1
+#endif
+#else
+#ifndef CJSON_HIDE_SYMBOLS
+#define CJSON_HIDE_SYMBOLS 1
+#endif
+#endif
+
+#ifdef KS_API_VISIBILITY
+#ifndef CJSON_API_VISIBILITY
+#define CJSON_API_VISIBILITY 1
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {

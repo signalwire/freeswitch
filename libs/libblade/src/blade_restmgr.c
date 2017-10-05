@@ -33,6 +33,9 @@
 
 #include "blade.h"
 
+#define BLADE_RESTMGR_SERVICE_CAPTURE_MAX 10
+#define BLADE_RESTMGR_SERVICE_CAPTURE_VECTORS (BLADE_RESTMGR_SERVICE_CAPTURE_MAX * 3) // @note Last third of this is workspace
+
 typedef struct blade_restmgr_config_s {
 	ks_bool_t enabled;
 
@@ -47,7 +50,45 @@ struct blade_restmgr_s {
 	void *data;
 
 	struct mg_context *context;
+
+	ks_hash_t *services;
 };
+
+typedef struct blade_restmgr_service_s {
+	pcre *compiled;
+	pcre_extra *extra;
+	const char *action;
+	blade_restmgr_service_callback_t callback;
+} blade_restmgr_service_t;
+
+static void blade_restmgr_service_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
+{
+	blade_restmgr_service_t *brestmgrs = (blade_restmgr_service_t *)ptr;
+
+	ks_assert(brestmgrs);
+
+	switch (action) {
+	case KS_MPCL_ANNOUNCE:
+		break;
+	case KS_MPCL_TEARDOWN:
+		if (brestmgrs->compiled) {
+			pcre_free(brestmgrs->compiled);
+			brestmgrs->compiled = NULL;
+		}
+		if (brestmgrs->extra) {
+#ifdef PCRE_CONFIG_JIT
+			pcre_free_study(brestmgrs->extra);
+#else
+			pcre_free(brestmgrs->extra);
+#endif
+			brestmgrs->extra = NULL;
+		}
+		if (brestmgrs->action) ks_pool_free(&brestmgrs->action);
+		break;
+	case KS_MPCL_DESTROY:
+		break;
+	}
+}
 
 int blade_restmgr_handle_begin_request(struct mg_connection *conn);
 void blade_restmgr_handle_end_request(const struct mg_connection *conn, int reply_status_code);
@@ -94,6 +135,9 @@ KS_DECLARE(ks_status_t) blade_restmgr_create(blade_restmgr_t **brestmgrP, blade_
 
 	ks_hash_create(&brestmgr->config.options, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, pool);
 	ks_assert(brestmgr->config.options);
+
+	ks_hash_create(&brestmgr->services, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
+	ks_assert(brestmgr->services);
 
 	ks_pool_set_cleanup(brestmgr, NULL, blade_restmgr_cleanup);
 
@@ -254,7 +298,7 @@ KS_DECLARE(ks_status_t) blade_restmgr_startup(blade_restmgr_t *brestmgr, config_
 		}
 		options[index++] = NULL;
 
-		brestmgr->context = mg_start(&callbacks, brestmgr->data, options);
+		brestmgr->context = mg_start(&callbacks, brestmgr, options);
 
 		ks_pool_free(&options);
 
@@ -281,6 +325,13 @@ KS_DECLARE(blade_handle_t *) blade_restmgr_handle_get(blade_restmgr_t *brestmgr)
 	return brestmgr->handle;
 }
 
+KS_DECLARE(void *) blade_restmgr_data_get(blade_restmgr_t *brestmgr)
+{
+	ks_assert(brestmgr);
+
+	return brestmgr->data;
+}
+
 KS_DECLARE(ks_status_t) blade_restmgr_data_set(blade_restmgr_t *brestmgr, void *data)
 {
 	ks_assert(brestmgr);
@@ -290,14 +341,157 @@ KS_DECLARE(ks_status_t) blade_restmgr_data_set(blade_restmgr_t *brestmgr, void *
 	return KS_STATUS_SUCCESS;
 }
 
+KS_DECLARE(ks_status_t) blade_restmgr_service_add(blade_restmgr_t *brestmgr, const char *action, const char *route, blade_restmgr_service_callback_t callback)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	ks_pool_t *pool = NULL;
+	char *key = NULL;
+	blade_restmgr_service_t *service = NULL;
+	const char *errString = NULL;
+	int errOffset = 0;
+
+	ks_assert(brestmgr);
+	ks_assert(route);
+	ks_assert(callback);
+
+	pool = ks_pool_get(brestmgr);
+
+	key = ks_psprintf(pool, "%s:%s", action, route);
+
+	ks_hash_write_lock(brestmgr->services);
+
+	if ((service = (blade_restmgr_service_t *)ks_hash_remove(brestmgr->services, (void *)key)) != NULL) {
+		ks_log(KS_LOG_DEBUG, "Service Removed: %s\n", key);
+		ks_pool_free(&service);
+	}
+
+	service = ks_pool_alloc(pool, sizeof(blade_restmgr_service_t));
+	ks_pool_set_cleanup(service, NULL, blade_restmgr_service_cleanup);
+
+	service->callback = callback;
+	service->action = ks_pstrdup(pool, action);
+
+	service->compiled = pcre_compile(route, 0, &errString, &errOffset, NULL);
+	if (service->compiled == NULL) {
+		ks_log(KS_LOG_DEBUG, "Could not compile '%s': %s\n", route, errString);
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	service->extra = pcre_study(service->compiled, 0, &errString);
+	if (errString != NULL) {
+		ks_log(KS_LOG_DEBUG, "Could not study '%s': %s\n", route, errString);
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	ks_hash_insert(brestmgr->services, (void *)key, (void *)service);
+
+	ks_log(KS_LOG_DEBUG, "Service Added: %s\n", key);
+
+done:
+	ks_hash_write_unlock(brestmgr->services);
+
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) blade_restmgr_service_remove(blade_restmgr_t *brestmgr, const char *action, const char *route)
+{
+	ks_pool_t *pool = NULL;
+	const char *key = NULL;
+	blade_restmgr_service_t *service = NULL;
+
+	ks_assert(brestmgr);
+	ks_assert(route);
+
+	pool = ks_pool_get(brestmgr);
+
+	key = ks_psprintf(pool, "%s:%s", action, route);
+
+	if ((service = (blade_restmgr_service_t *)ks_hash_remove(brestmgr->services, (void *)key)) != NULL) {
+		ks_log(KS_LOG_DEBUG, "Service Removed: %s\n", key);
+		ks_pool_free(&service);
+	}
+
+	ks_pool_free(&key);
+
+	return KS_STATUS_SUCCESS;
+}
+
 
 int blade_restmgr_handle_begin_request(struct mg_connection *conn)
 {
-	const struct mg_request_info *info = mg_get_request_info(conn);
+	int ret = 0;
+	blade_restmgr_t *brestmgr = NULL;
+	const struct mg_request_info *info = NULL;
+	int execRet = 0;
+	int captureVectors[BLADE_RESTMGR_SERVICE_CAPTURE_VECTORS];
+
+	info = mg_get_request_info(conn);
 
 	ks_log(KS_LOG_DEBUG, "Request for: %s on %s\n", info->request_uri, info->request_method);
 
-	return 0;
+	brestmgr = (blade_restmgr_t *)info->user_data;
+
+	ks_hash_read_lock(brestmgr->services);
+
+	for (ks_hash_iterator_t *it = ks_hash_first(brestmgr->services, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		const char *key = NULL;
+		blade_restmgr_service_t *value = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+
+		// @todo could optimize this to provide a separate hash for each action typed, keyed in a top level hash by the request_method/action string
+		if (ks_safe_strcasecmp(value->action, info->request_method)) continue;
+
+		execRet = pcre_exec(value->compiled,
+							value->extra,
+							info->request_uri,
+							strlen(info->request_uri),
+							0, // Offset
+							0, // Options
+							captureVectors,
+							BLADE_RESTMGR_SERVICE_CAPTURE_VECTORS);
+
+		if (execRet < 0) {
+			switch (execRet) {
+			case PCRE_ERROR_NOMATCH: continue;
+			case PCRE_ERROR_NULL: ks_log(KS_LOG_DEBUG, "Something was null\n"); break;
+			case PCRE_ERROR_BADOPTION: ks_log(KS_LOG_DEBUG, "A bad option was passed\n"); break;
+			case PCRE_ERROR_BADMAGIC: ks_log(KS_LOG_DEBUG, "Magic number bad (compile corrupt?)\n"); break;
+			case PCRE_ERROR_UNKNOWN_NODE: ks_log(KS_LOG_DEBUG, "Something kooky in the compile\n"); break;
+			case PCRE_ERROR_NOMEMORY: ks_log(KS_LOG_DEBUG, "Ran out of memory\n"); break;
+			default: ks_log(KS_LOG_DEBUG, "Unknown error\n"); break;
+			}
+			ret = 500;
+			goto done;
+		} else {
+			const char **captures = NULL;
+
+			if (execRet == 0) {
+				ks_log(KS_LOG_DEBUG, "Too many substrings were found to fit in capture vectors!\n");
+				ret = 500;
+				goto done;
+			}
+
+			if (pcre_get_substring_list(info->request_uri, captureVectors, execRet, &captures) != 0) {
+				ks_log(KS_LOG_DEBUG, "Cannot get substring list!\n");
+				ret = 500;
+				goto done;
+			}
+
+			ret = value->callback(brestmgr, conn, captures);
+
+			pcre_free_substring_list(captures);
+			//ret = 200;
+			goto done;
+		}
+	}
+	
+done:
+	ks_hash_read_unlock(brestmgr->services);
+
+	return ret;
 }
 
 void blade_restmgr_handle_end_request(const struct mg_connection *conn, int reply_status_code)

@@ -7,6 +7,7 @@ ks_bool_t g_shutdown = KS_FALSE;
 
 void loop(blade_handle_t *bh);
 void process_console_input(blade_handle_t *bh, char *line);
+int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, const char **captures);
 
 typedef void(*command_callback)(blade_handle_t *bh, char *args);
 
@@ -53,6 +54,8 @@ int main(int argc, char **argv)
 		ks_log(KS_LOG_ERROR, "The 'blade' config setting is not a group\n");
 		return EXIT_FAILURE;
 	}
+
+	blade_restmgr_service_add(blade_handle_restmgr_get(bh), "GET", "/test/(\\d+)", rest_service_test);
 
 	if (blade_handle_startup(bh, config_blade) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_ERROR, "Blade startup failed\n");
@@ -132,6 +135,33 @@ void command_quit(blade_handle_t *bh, char *args)
 	//ks_assert(args);
 
 	g_shutdown = KS_TRUE;
+}
+
+int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, const char **captures)
+{
+	const struct mg_request_info *info = NULL;
+	ks_sb_t *sb = NULL;
+
+	ks_sb_create(&sb, NULL, 0);
+
+	info = mg_get_request_info(conn);
+
+	ks_sb_printf(sb, "Method: %s\n", info->request_method);
+
+	for (int i = 0; captures[i]; ++i) ks_sb_printf(sb, "Capture #%d: %s\n", i, captures[i]);
+
+	mg_printf(conn,
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: %lu\r\n"
+		"Content-Type: text/plain\r\n"
+		"Connection: close\r\n\r\n",
+		ks_sb_length(sb));
+	
+	mg_write(conn, ks_sb_cstr(sb), ks_sb_length(sb));
+
+	ks_sb_destroy(&sb);
+
+	return 200;
 }
 
 

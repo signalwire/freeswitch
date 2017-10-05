@@ -102,6 +102,9 @@
     <ClCompile Include="src\ks_thread_pool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ks_sb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\ks.h">
@@ -195,6 +198,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\kws.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\ks_sb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
