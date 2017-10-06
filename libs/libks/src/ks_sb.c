@@ -191,6 +191,28 @@ done:
 	return ret;
 }
 
+KS_DECLARE(ks_status_t) ks_sb_json(ks_sb_t *sb, const cJSON *json)
+{
+	ks_status_t ret = KS_STATUS_SUCCESS;
+	char *str = NULL;
+
+	ks_assert(sb);
+	ks_assert(json);
+
+	str = cJSON_Print(json);
+	if (!str) {
+		ret = KS_STATUS_FAIL;
+		goto done;
+	}
+
+	ks_sb_append(sb, str);
+
+done:
+	if (str) free(str);
+
+	return ret;
+}
+
 
 /* For Emacs:
  * Local Variables:

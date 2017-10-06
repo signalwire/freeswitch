@@ -106,9 +106,9 @@ void blade_restmgr_handle_exit_context(const struct mg_context *ctx);
 
 static void blade_restmgr_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
-	blade_restmgr_t *brestmgr = (blade_restmgr_t *)ptr;
+	//blade_restmgr_t *brestmgr = (blade_restmgr_t *)ptr;
 
-	ks_assert(brestmgr);
+	//ks_assert(brestmgr);
 
 	switch (action) {
 	case KS_MPCL_ANNOUNCE:

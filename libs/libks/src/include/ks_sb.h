@@ -48,6 +48,7 @@ KS_DECLARE(ks_status_t) ks_sb_accommodate(ks_sb_t *sb, ks_size_t len);
 KS_DECLARE(ks_status_t) ks_sb_append(ks_sb_t *sb, const char *str);
 KS_DECLARE(ks_status_t) ks_sb_append_ex(ks_sb_t *sb, const char *str, ks_size_t len);
 KS_DECLARE(ks_status_t) ks_sb_printf(ks_sb_t *sb, const char *fmt, ...);
+KS_DECLARE(ks_status_t) ks_sb_json(ks_sb_t *sb, const cJSON *json);
 
 KS_END_EXTERN_C
 

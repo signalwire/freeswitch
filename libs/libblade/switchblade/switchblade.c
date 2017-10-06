@@ -140,15 +140,23 @@ void command_quit(blade_handle_t *bh, char *args)
 int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, const char **captures)
 {
 	const struct mg_request_info *info = NULL;
+	cJSON *json = NULL;
+	cJSON *json_captures = NULL;
 	ks_sb_t *sb = NULL;
+
+	json = cJSON_CreateObject();
 
 	ks_sb_create(&sb, NULL, 0);
 
 	info = mg_get_request_info(conn);
 
-	ks_sb_printf(sb, "Method: %s\n", info->request_method);
+	cJSON_AddStringToObject(json, "method", info->request_method);
 
-	for (int i = 0; captures[i]; ++i) ks_sb_printf(sb, "Capture #%d: %s\n", i, captures[i]);
+	cJSON_AddItemToObject(json, "captures", (json_captures = cJSON_CreateArray()));
+
+	for (int i = 0; captures[i]; ++i) cJSON_AddItemToArray(json_captures, cJSON_CreateString(captures[i]));
+
+	ks_sb_json(sb, json);
 
 	mg_printf(conn,
 		"HTTP/1.1 200 OK\r\n"
@@ -160,6 +168,8 @@ int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, con
 	mg_write(conn, ks_sb_cstr(sb), ks_sb_length(sb));
 
 	ks_sb_destroy(&sb);
+
+	cJSON_Delete(json);
 
 	return 200;
 }
