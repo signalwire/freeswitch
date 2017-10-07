@@ -3,4 +3,7 @@
   <PropertyGroup Label="UserMacros" Condition=" '$(BaseDir)' == ''">
       <BaseDir>$(MSBuildThisFileDirectory)..\</BaseDir>
   </PropertyGroup>
+  <PropertyGroup>
+    <BaseDirImported>true</BaseDirImported>
+  </PropertyGroup>
 </Project>
