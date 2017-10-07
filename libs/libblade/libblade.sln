@@ -27,9 +27,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "..\win32\openssl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "civetweb", "..\win32\civetweb\civetweb.2015.vcxproj", "{1FAAE8B0-C134-436D-9B13-74C16517FC03}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "duktape_lib", "..\civetweb-1.9.1\VisualStudio\duktape_lib\duktape_lib.vcxproj", "{0A11689C-DB6A-4BF6-97B2-AD32DB863FBD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "duktape_lib", "..\win32\civetweb\duktape_lib.vcxproj", "{0A11689C-DB6A-4BF6-97B2-AD32DB863FBD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B9B7455D-F109-42BD-AD0A-98489B53FCF3} = {B9B7455D-F109-42BD-AD0A-98489B53FCF3}
+	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua_lib", "..\civetweb-1.9.1\VisualStudio\lua_lib\lua_lib.vcxproj", "{8F5E5D77-D269-4665-9E27-1045DA6CF0D8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua_lib", "..\win32\civetweb\lua_lib.vcxproj", "{8F5E5D77-D269-4665-9E27-1045DA6CF0D8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B9B7455D-F109-42BD-AD0A-98489B53FCF3} = {B9B7455D-F109-42BD-AD0A-98489B53FCF3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download libconfig", "..\win32\Download libconfig.2015.vcxproj", "{4AB0A14F-F65F-4C18-AAEC-AC76E2BE07DA}"
 EndProject
