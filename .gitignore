@@ -254,3 +254,16 @@ libs/ilbc-*/
 libs/broadvoice-*/
 libs/libcodec2-*/
 libs/libsilk-*/
+
+libs/libconfig-*
+libs/libsodium-*
+libs/civetweb-*
+libs/libblade/libblade.VC.db
+libs/libblade/libblade.VC.VC.opendb
+libs/libblade/Win32/
+libs/libblade/x64/
+libs/pax_global_header
+libs/win32/libconfig/Win32
+libs/win32/libconfig/x64
+libs/win32/libsodium/Win32
+libs/win32/libsodium/x64
