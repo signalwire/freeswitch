@@ -140,10 +140,10 @@
     <ClCompile Include="$(civetwebLibDir)\src\civetweb.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\civetweb-1.9.1\VisualStudio\duktape_lib\duktape_lib.vcxproj">
+    <ProjectReference Include="duktape_lib.vcxproj">
       <Project>{0a11689c-db6a-4bf6-97b2-ad32db863fbd}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\civetweb-1.9.1\VisualStudio\lua_lib\lua_lib.vcxproj">
+    <ProjectReference Include="lua_lib.vcxproj">
       <Project>{8f5e5d77-d269-4665-9e27-1045da6cf0d8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Download civetweb.2015.vcxproj">
