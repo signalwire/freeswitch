@@ -570,6 +570,7 @@ typedef struct mcu_canvas_s {
 	int overlay_video_file;
 	codec_set_t *write_codecs[MAX_MUX_CODECS];
 	int write_codecs_count;
+	switch_bool_t disable_auto_clear;
 } mcu_canvas_t;
 
 /* Record Node */
@@ -1173,6 +1174,7 @@ void conference_event_chat_channel_handler(const char *event_channel, cJSON *jso
 void conference_member_itterator(conference_obj_t *conference, switch_stream_handle_t *stream, uint8_t non_mod, conference_api_member_cmd_t pfncallback, void *data);
 int conference_video_flush_queue(switch_queue_t *q, int min);
 
+switch_status_t conference_api_sub_canvas_auto_clear(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_tmute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_unmute(conference_member_t *member, switch_stream_handle_t *stream, void *data);

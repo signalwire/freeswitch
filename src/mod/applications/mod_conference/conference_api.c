@@ -43,6 +43,7 @@
 
 
 api_command_t conference_api_sub_commands[] = {
+	{"canvas-auto-clear", (void_fn_t) & conference_api_sub_canvas_auto_clear, CONF_API_SUB_ARGS_SPLIT, "canvas-auto-clear", "<canvas_id> <true|false>"},
 	{"count", (void_fn_t) & conference_api_sub_count, CONF_API_SUB_ARGS_SPLIT, "count", ""},
 	{"list", (void_fn_t) & conference_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "list", "[delim <string>]|[count]"},
 	{"xml_list", (void_fn_t) & conference_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "xml_list", ""},
@@ -530,6 +531,48 @@ switch_status_t conference_api_sub_conference_video_vmute_snap(conference_member
 	}
 
 	conference_video_vmute_snap(member, clear);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_canvas_auto_clear(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	int canvas_id_start = 0;
+	int canvas_id_end   = 0;
+	int i = 0;
+
+	if (argc < 3) {
+		stream->write_function(stream, "+OK");
+
+		for (i = 0; i < conference->canvas_count; i++) {
+			stream->write_function(stream, " canvas %d auto_clear=%s", i + 1, conference->canvases[i]->disable_auto_clear ? "false" : "true");
+		}
+
+		stream->write_function(stream, "\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", argv[1]);
+
+	canvas_id_start = atoi(argv[2]);
+
+	if (canvas_id_start == 0) {
+		canvas_id_end = conference->canvas_count - 1;
+	} else {
+		canvas_id_start--;
+		canvas_id_end = canvas_id_start;
+	}
+
+	stream->write_function(stream, "+OK");
+	switch_mutex_lock(conference->canvas_mutex);
+
+	for (i = canvas_id_start; i<= canvas_id_end; i++) {
+		conference->canvases[i]->disable_auto_clear = !switch_true(argv[3]);
+		stream->write_function(stream, " canvas %d auto_clear=%s", i + 1, argv[3]);
+	}
+
+	switch_mutex_unlock(conference->canvas_mutex);
+	stream->write_function(stream, "\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }

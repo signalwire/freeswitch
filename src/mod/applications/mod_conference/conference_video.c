@@ -431,7 +431,10 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 		switch_assert(layer->img);
 	}
 
-	conference_video_clear_layer(layer);
+	if (layer->canvas && !layer->canvas->disable_auto_clear) {
+		conference_video_clear_layer(layer);
+	}
+
 	switch_img_free(&layer->cur_img);
 
 	switch_img_free(&layer->overlay_img);
@@ -1084,7 +1087,7 @@ void conference_video_detach_video_layer(conference_member_t *member)
 		conference_member_update_status_field(member);
 	}
 
-	if (canvas->bgimg) {
+	if (canvas->bgimg && !canvas->disable_auto_clear) {
 		conference_video_set_canvas_bgimg(canvas, NULL);
 	}
 
@@ -1521,7 +1524,10 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		conference_api_sub_position(member, NULL, layer->geometry.audio_position);
 	}
 
-	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->letterbox_bgcolor);
+	if (!canvas->disable_auto_clear) {
+		switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->letterbox_bgcolor);
+	}
+
 	conference_video_reset_video_bitrate_counters(member);
 	conference_video_clear_managed_kps(member);
 
