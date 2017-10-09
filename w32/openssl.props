@@ -1,13 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="openssl-version.props" Condition=" '$(OpenSSLVersionImported)' == ''"/>
+  </ImportGroup>
   <PropertyGroup>
     <OpensslPropsImported>true</OpensslPropsImported>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(SolutionDir)libs\win32\openssl\include_x86;$(SolutionDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(SolutionDir)libs\win32\openssl\include_x64;$(SolutionDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(BaseDir)libs\win32\openssl\include_x86;$(BaseDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(BaseDir)libs\win32\openssl\include_x64;$(BaseDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
+  <ItemGroup>
+      <ProjectReference Include="$(BaseDir)\libs\win32\openssl\libeay32.2015.vcxproj">
+          <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
+      </ProjectReference>
+      <ProjectReference Include="$(BaseDir)\libs\win32\openssl\ssleay32.2015.vcxproj">
+        <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
+      </ProjectReference>
+  </ItemGroup>
 </Project>
