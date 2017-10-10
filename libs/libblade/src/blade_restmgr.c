@@ -165,7 +165,7 @@ KS_DECLARE(ks_status_t) blade_restmgr_destroy(blade_restmgr_t **brestmgrP)
 }
 
 #define CONFIG_LOADSTR(k) \
-tmp = config_lookup_from(rest, k); \
+tmp = config_setting_lookup(rest, k); \
 if (tmp && config_setting_type(tmp) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL; \
 if (tmp) ks_hash_insert(brestmgr->config.options, (void *)k, (void *)ks_pstrdup(pool, config_setting_get_string(tmp)));
 
@@ -186,7 +186,7 @@ ks_status_t blade_restmgr_config(blade_restmgr_t *brestmgr, config_setting_t *co
 
 	rest = config_setting_get_member(config, "rest");
 	if (rest) {
-		tmp = config_lookup_from(rest, "enabled");
+		tmp = config_setting_lookup(rest, "enabled");
 		if (!tmp) return KS_STATUS_FAIL;
 
 		if (config_setting_type(tmp) != CONFIG_TYPE_BOOL) return KS_STATUS_FAIL;

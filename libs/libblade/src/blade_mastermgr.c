@@ -126,7 +126,7 @@ ks_status_t blade_mastermgr_config(blade_mastermgr_t *bmmgr, config_setting_t *c
 
 	master = config_setting_get_member(config, "master");
 	if (master) {
-		master_nodeid = config_lookup_from(master, "nodeid");
+		master_nodeid = config_setting_lookup(master, "nodeid");
 		if (!master_nodeid) return KS_STATUS_FAIL;
 
 		if (config_setting_type(master_nodeid) != CONFIG_TYPE_STRING) return KS_STATUS_FAIL;

@@ -65,9 +65,9 @@
 
 KS_BEGIN_EXTERN_C
 
-#ifdef _WIN32
-// @todo look into why the tarball build has a different function name from the debian package
-#define config_lookup_from config_setting_lookup
+// legacy for libconfig pre 1.5.0
+#if (LIBCONFIG_VER_MAJOR <= 1) && (LIBCONFIG_VER_MINOR <= 4)
+#define config_setting_lookup config_lookup_from
 #endif
 
 #ifdef __APPLE__
