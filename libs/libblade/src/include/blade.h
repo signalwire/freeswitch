@@ -70,6 +70,11 @@ KS_BEGIN_EXTERN_C
 #define config_lookup_from config_setting_lookup
 #endif
 
+#ifdef __APPLE__
+// @todo temp support for Mac comes with 1.6
+#define config_lookup_from config_setting_lookup
+#endif
+
 KS_DECLARE(ks_status_t) blade_init(void);
 KS_DECLARE(ks_status_t) blade_shutdown(void);
 
