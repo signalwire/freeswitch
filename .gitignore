@@ -262,6 +262,8 @@ libs/libblade/libblade.VC.db
 libs/libblade/libblade.VC.VC.opendb
 libs/libblade/Win32/
 libs/libblade/x64/
+libs/libks/libks.VC.db
+libs/libks/libks.VC.VC.opendb
 libs/pax_global_header
 libs/win32/libconfig/Win32
 libs/win32/libconfig/x64
