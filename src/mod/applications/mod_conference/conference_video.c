@@ -2442,6 +2442,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	const char *avatar = NULL, *var = NULL;
 	mcu_canvas_t *canvas;
 	int novid = 0;
+    switch_event_t *event;
 
 	if (member->canvas_id < 0) {
 		return;
@@ -2504,6 +2505,14 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	}
 
 	if (force && !member->avatar_png_img && member->video_mute_img) {
+        switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+        if (member->conference) {
+            conference_event_add_data(member->conference, event);
+        }       
+        conference_member_add_event_data(member, event);
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vfi-triggered-member");
+        switch_event_fire(&event);
+
 		switch_img_copy(member->video_mute_img, &member->avatar_png_img);
 	}
 
