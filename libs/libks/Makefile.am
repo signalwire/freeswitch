@@ -12,7 +12,7 @@ libks_la_SOURCES += src/ks_log.c src/ks_socket.c src/ks_buffer.c src/ks_pool.c s
 libks_la_SOURCES += src/ks_time.c src/ks_printf.c src/ks_hash.c src/ks_q.c src/ks_dso.c
 libks_la_SOURCES += src/ks_ssl.c src/kws.c src/ks_rng.c src/ks_base64.c
 libks_la_SOURCES += crypt/aeskey.c crypt/aestab.c crypt/sha2.c crypt/aes_modes.c crypt/aescrypt.c
-libks_la_SOURCES += src/ks_acl.c
+libks_la_SOURCES += src/ks_acl.c src/ks_sb.c
 
 libks_la_CFLAGS	  = $(AM_CFLAGS)
 libks_la_CPPFLAGS = -DPOSIX
@@ -25,7 +25,7 @@ library_include_HEADERS += src/include/ks_pool.h src/include/simclist.h src/incl
 library_include_HEADERS += src/include/ks_dso.h src/include/ks_platform.h src/include/ks_types.h src/include/ks_rng.h
 library_include_HEADERS += src/include/ks_printf.h src/include/ks_hash.h src/include/ks_ssl.h src/include/kws.h
 library_include_HEADERS += src/include/ks_base64.h
-library_include_HEADERS += src/include/ks_acl.h
+library_include_HEADERS += src/include/ks_acl.h src/include/ks_sb.h
 
 tests: libks.la
 	$(MAKE) -C test tests

@@ -8,16 +8,6 @@ testbuild_SOURCES = testbuild.c tap.c
 testbuild_CFLAGS = $(AM_CFLAGS)
 testbuild_LDADD = $(TEST_LDADD)
 
-check_PROGRAMS += bladec
-bladec_SOURCES = bladec.c tap.c
-bladec_CFLAGS = $(AM_CFLAGS)
-bladec_LDADD = $(TEST_LDADD)
-
-check_PROGRAMS += blades
-blades_SOURCES = blades.c tap.c
-blades_CFLAGS = $(AM_CFLAGS)
-blades_LDADD = $(TEST_LDADD)
-
 check_PROGRAMS += testcli
 testcli_SOURCES = testcli.c tap.c
 testcli_CFLAGS = $(AM_CFLAGS)

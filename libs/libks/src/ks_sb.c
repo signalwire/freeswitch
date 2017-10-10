@@ -129,7 +129,7 @@ KS_DECLARE(ks_status_t) ks_sb_accommodate(ks_sb_t *sb, ks_size_t len)
 	}
 
 done:
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
 KS_DECLARE(ks_status_t) ks_sb_append(ks_sb_t *sb, const char *str)
@@ -224,4 +224,3 @@ done:
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-
