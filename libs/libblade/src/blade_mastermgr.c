@@ -470,7 +470,7 @@ KS_DECLARE(ks_bool_t) blade_mastermgr_protocol_channel_authorization_verify(blad
 
 	bp = (blade_protocol_t *)ks_hash_search(bmmgr->protocols, (void *)protocol, KS_UNLOCKED);
 	if (!bp) {
-		ret = KS_STATUS_NOT_FOUND;
+		ret = KS_FALSE;
 		goto done;
 	}
 
@@ -478,7 +478,7 @@ KS_DECLARE(ks_bool_t) blade_mastermgr_protocol_channel_authorization_verify(blad
 
 	bc = blade_protocol_channel_lookup(bp, channel, KS_FALSE);
 	if (!bc) {
-		ret = KS_STATUS_NOT_FOUND;
+		ret = KS_FALSE;
 		goto done;
 	}
 
