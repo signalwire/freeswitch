@@ -88,6 +88,7 @@ KS_DECLARE(ks_status_t) ks_sb_destroy(ks_sb_t **sbP)
 	ks_assert(*sbP);
 
 	sb = *sbP;
+	*sbP = NULL;
 
 	if (sb->pool_owner) {
 		ks_pool_t *pool = ks_pool_get(sb);

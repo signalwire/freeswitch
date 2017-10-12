@@ -61,6 +61,7 @@ typedef struct blade_restmgr_service_s {
 	blade_restmgr_service_callback_t callback;
 } blade_restmgr_service_t;
 
+
 static void blade_restmgr_service_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t action, ks_pool_cleanup_type_t type)
 {
 	blade_restmgr_service_t *brestmgrs = (blade_restmgr_service_t *)ptr;

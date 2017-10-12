@@ -78,6 +78,9 @@
     <ClCompile Include="src\blade_restmgr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\blade_web.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\unqlite.h">
@@ -144,6 +147,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\blade_restmgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\blade_web.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

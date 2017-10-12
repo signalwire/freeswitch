@@ -51,6 +51,7 @@
 #include "blade_channel.h"
 #include "blade_subscription.h"
 #include "blade_tuple.h"
+#include "blade_web.h"
 
 #include "blade_transportmgr.h"
 #include "blade_rpcmgr.h"

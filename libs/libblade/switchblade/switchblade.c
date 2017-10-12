@@ -139,37 +139,31 @@ void command_quit(blade_handle_t *bh, char *args)
 
 int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, const char **captures)
 {
-	const struct mg_request_info *info = NULL;
+	blade_webrequest_t *request = NULL;
+	blade_webresponse_t *response = NULL;
 	cJSON *json = NULL;
 	cJSON *json_captures = NULL;
-	ks_sb_t *sb = NULL;
+	const char *token = NULL;
 
+	blade_webrequest_load(&request, conn);
+
+	// make a json object to send back
 	json = cJSON_CreateObject();
-
-	ks_sb_create(&sb, NULL, 0);
-
-	info = mg_get_request_info(conn);
-
-	cJSON_AddStringToObject(json, "method", info->request_method);
-
+	cJSON_AddStringToObject(json, "method", blade_webrequest_action_get(request));
 	cJSON_AddItemToObject(json, "captures", (json_captures = cJSON_CreateArray()));
-
 	for (int i = 0; captures[i]; ++i) cJSON_AddItemToArray(json_captures, cJSON_CreateString(captures[i]));
 
-	ks_sb_json(sb, json);
-
-	mg_printf(conn,
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Length: %lu\r\n"
-		"Content-Type: text/plain\r\n"
-		"Connection: close\r\n\r\n",
-		ks_sb_length(sb));
-	
-	mg_write(conn, ks_sb_cstr(sb), ks_sb_length(sb));
-
-	ks_sb_destroy(&sb);
+	blade_webresponse_create(&response, "200");
+	blade_webresponse_content_json_append(response, json);
+	blade_webresponse_send(response, conn);
+	blade_webresponse_destroy(&response);
 
 	cJSON_Delete(json);
+	blade_webrequest_destroy(&request);
+
+	//blade_webrequest_oauth2_token_by_credentials_send(KS_FALSE, "192.168.1.99", 80, "/oauth2/token.php", "testclient", "testpass", &token);
+	//
+	//ks_pool_free(&token);
 
 	return 200;
 }

@@ -62,6 +62,8 @@ typedef struct blade_connectionmgr_s blade_connectionmgr_t;
 typedef struct blade_sessionmgr_s blade_sessionmgr_t;
 typedef struct blade_session_callback_data_s blade_session_callback_data_t;
 
+typedef struct blade_webrequest_s blade_webrequest_t;
+typedef struct blade_webresponse_s blade_webresponse_t;
 typedef struct blade_restmgr_s blade_restmgr_t;
 
 typedef ks_bool_t (*blade_rpc_request_callback_t)(blade_rpc_request_t *brpcreq, void *data);
