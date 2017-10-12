@@ -24,7 +24,7 @@ libblade_la_SOURCES     += src/blade_transportmgr.c src/blade_rpcmgr.c src/blade
 libblade_la_SOURCES     += src/blade_mastermgr.c src/blade_connectionmgr.c src/blade_sessionmgr.c src/blade_restmgr.c
 libblade_la_SOURCES	+= src/blade_identity.c src/blade_rpc.c src/blade_connection.c src/blade_session.c
 libblade_la_SOURCES	+= src/blade_protocol.c src/blade_subscription.c src/blade_channel.c
-libblade_la_SOURCES	+= src/blade_transport.c src/blade_transport_wss.c
+libblade_la_SOURCES	+= src/blade_transport.c src/blade_transport_wss.c src/blade_web.c
 
 libblade_la_CFLAGS	= $(AM_CFLAGS) $(AM_CPPFLAGS) $(PCRE_CFLAGS)
 libblade_la_LDFLAGS     = -version-info 0:1:0 -lncurses -lpthread -lm -lconfig -lcivetweb $(AM_LDFLAGS)
@@ -36,7 +36,7 @@ library_include_HEADERS += src/include/blade_transportmgr.h src/include/blade_rp
 library_include_HEADERS += src/include/blade_mastermgr.h src/include/blade_connectionmgr.h src/include/blade_sessionmgr.h src/include/blade_restmgr.h
 library_include_HEADERS += src/include/blade_identity.h src/include/blade_rpc.h src/include/blade_connection.h src/include/blade_session.h
 library_include_HEADERS += src/include/blade_protocol.h src/include/blade_subscription.h src/include/blade_channel.h
-library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h
+library_include_HEADERS += src/include/blade_transport.h src/include/blade_transport_wss.h src/include/blade_web.h
 library_include_HEADERS += src/include/unqlite.h test/tap.h
 
 BUILT_SOURCES=$(CIVETWEB_LIB) $(LIBKS)

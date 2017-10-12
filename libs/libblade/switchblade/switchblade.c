@@ -143,7 +143,7 @@ int rest_service_test(blade_restmgr_t *brestmgr, struct mg_connection *conn, con
 	blade_webresponse_t *response = NULL;
 	cJSON *json = NULL;
 	cJSON *json_captures = NULL;
-	const char *token = NULL;
+	//const char *token = NULL;
 
 	blade_webrequest_load(&request, conn);
 

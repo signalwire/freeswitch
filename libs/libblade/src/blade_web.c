@@ -124,7 +124,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_load(blade_webrequest_t **bwreqP, struc
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_pool_t *pool = NULL;
 	blade_webrequest_t *bwreq = NULL;
-	struct mg_request_info *info = NULL;
+	const struct mg_request_info *info = NULL;
 	char buf[1024];
 	int bytes = 0;
 
@@ -182,7 +182,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_load(blade_webrequest_t **bwreqP, struc
 	}
 
 	for (int index = 0; index < info->num_headers; ++index) {
-		struct mg_header *header = &info->http_headers[index];
+		const struct mg_header *header = &info->http_headers[index];
 		ks_hash_insert(bwreq->headers, (void *)ks_pstrdup(pool, header->name), (void *)ks_pstrdup(pool, header->value));
 	}
 
@@ -252,7 +252,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_header_add(blade_webrequest_t *bwreq, c
 	ks_assert(value);
 
 	ks_hash_insert(bwreq->headers, (void *)ks_pstrdup(ks_pool_get(bwreq), header), (void *)ks_pstrdup(ks_pool_get(bwreq), value));
-	
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -339,7 +339,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_send(blade_webrequest_t *bwreq, ks_bool
 			// @todo make sure key and value are URL encoded
 			mg_url_encode(key, buf, sizeof(buf));
 			ks_sb_printf(pathAndQuery, "%c%s=", firstQuery ? '?' : '&', buf);
-			
+
 			mg_url_encode(value, buf, sizeof(buf));
 			ks_sb_append(pathAndQuery, buf);
 
@@ -393,7 +393,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_oauth2_token_by_credentials_send(ks_boo
 	char *auth = NULL;
 	char encoded[1024];
 	ks_pool_t *pool = NULL;
-	char *tok = NULL;
+	const char *tok = NULL;
 
 	ks_assert(host);
 	ks_assert(path);
@@ -415,7 +415,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_oauth2_token_by_credentials_send(ks_boo
 	cJSON_Delete(json);
 
 	if ((ret = blade_webrequest_send(bwreq, secure, host, port, &bwres)) != KS_STATUS_SUCCESS) goto done;
-	
+
 	if ((ret = blade_webresponse_content_json_get(bwres, &json)) != KS_STATUS_SUCCESS) goto done;
 
 	if ((tok = cJSON_GetObjectCstr(json, "access_token")) == NULL) {
@@ -443,7 +443,7 @@ KS_DECLARE(ks_status_t) blade_webrequest_oauth2_token_by_code_send(ks_bool_t sec
 	char *auth = NULL;
 	char encoded[1024];
 	ks_pool_t *pool = NULL;
-	char *tok = NULL;
+	const char *tok = NULL;
 
 	ks_assert(host);
 	ks_assert(path);
@@ -502,7 +502,7 @@ KS_DECLARE(ks_status_t) blade_webresponse_create(blade_webresponse_t **bwresP, c
 
 	bwres->status_code = ks_pstrdup(pool, status);
 	bwres->status_message = ks_pstrdup(pool, mg_get_response_code_text(NULL, atoi(status)));
-	
+
 	ks_hash_create(&bwres->headers, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE, pool);
 	ks_assert(bwres->headers);
 
@@ -523,7 +523,7 @@ KS_DECLARE(ks_status_t) blade_webresponse_load(blade_webresponse_t **bwresP, str
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	ks_pool_t *pool = NULL;
 	blade_webresponse_t *bwres = NULL;
-	struct mg_request_info *info = NULL;
+	const struct mg_request_info *info = NULL;
 	char buf[1024];
 	int bytes = 0;
 
@@ -549,7 +549,7 @@ KS_DECLARE(ks_status_t) blade_webresponse_load(blade_webresponse_t **bwresP, str
 	ks_pool_set_cleanup(bwres, NULL, blade_webresponse_cleanup);
 
 	for (int index = 0; index < info->num_headers; ++index) {
-		struct mg_header *header = &info->http_headers[index];
+		const struct mg_header *header = &info->http_headers[index];
 		ks_hash_insert(bwres->headers, (void *)ks_pstrdup(pool, header->name), (void *)ks_pstrdup(pool, header->value));
 	}
 
