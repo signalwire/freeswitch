@@ -2033,7 +2033,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				h->agent_name, h->agent_system, h->member_uuid, globals.core_uuid);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
-
+		bridged = 0;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n", h->agent_name, switch_channel_cause2str(cause));
 
 		switch (cause) {
@@ -2123,7 +2123,7 @@ done:
 	switch_safe_free(sql);
 
 	/* If we are in Status Available On Demand, set state to Idle so we do not receive another call until state manually changed to Waiting */
-	if (!strcasecmp(cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND), h->agent_status)) {
+	if (!strcasecmp(cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND), h->agent_status) && bridged) {
 		cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_IDLE), h->agent_name);
 	} else {
 		cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_WAITING), h->agent_name);
