@@ -3,7 +3,53 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="curl.props" Condition=" '$(CurlPropsImported)' == '' "/>
     <Import Project="v8-version.props" Condition=" '$(V8VersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <V8libDir>$(BaseDir)libs\v8-$(V8Version)</V8libDir>
+  </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="v8libTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/downloads/libs/v8-$(V8Version).tar.bz2"
+           expectfileordirectory="$(V8libDir)\include\v8.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
+  <Target Name="v8libwinTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-win.tar.bz2"
+           expectfileordirectory="$(V8libDir)\third_party\cygwin" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
   <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
