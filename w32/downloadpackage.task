@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+
+  <UsingTask TaskName="DownloadPackageTask" 
+             TaskFactory="CodeTaskFactory"  
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >  
+             <ParameterGroup>  
+                <package Required="true" />   
+                <expectfileordirectory Required="true" />   
+                <outputfolder />   
+                <outputfilename />   
+                <extractto />   
+             </ParameterGroup>  
+             <Task>  
+                <Reference Include="Microsoft.Build" />
+                <Reference Include="Microsoft.Build.Framework" />
+                <Reference Include="Microsoft.Build.Utilities.Core" />
+                <Code Type="Class" Language="cs">
+<![CDATA[  
+using System;
+using System.IO;
+using System.Threading;
+using Microsoft.Build.Framework;
+using System.Reflection;
+using Microsoft.Build.Execution;
+using System.Net;
+using System.ComponentModel;
+using System.Diagnostics;
+
+    public class DownloadPackageTask : Microsoft.Build.Utilities.Task, Microsoft.Build.Framework.ICancelableTask
+    {
+        public class State
+        {
+            public string filename;
+            public int progress;
+        }
+
+        protected ManualResetEvent TaskCanceled { get; private set; }
+        public void Cancel()
+        {
+            TaskCanceled.Set();
+        }
+
+        private string basedir;
+
+        [Required]
+        public string package { get; set; }
+        [Required]
+        public string expectfileordirectory { get; set; }
+
+        public string outputfolder { get; set; }
+        public string outputfilename { get; set; }
+        public string extractto { get; set; }
+
+        internal static bool FileOrDirectoryExists(string name)
+        {
+            return (Directory.Exists(name) || File.Exists(name));
+        }
+
+        public override bool Execute()
+        {
+            basedir = Path.GetFullPath(@"$(BaseDir)");
+
+            TaskCanceled = new ManualResetEvent(false);
+
+            Log.LogMessage(MessageImportance.High,
+                 "Checking for package \"" + package + "\".");          
+
+            //Log.LogMessage(MessageImportance.High,
+            //    "BaseDir \"" + basedir + "\"");
+
+            //Log.LogMessage(MessageImportance.High,
+            //    "expectfileordirectory \"" + expectfileordirectory + "\"");
+            
+            string librarypath = Path.Combine(basedir, "libs");
+
+            Mutex m = new Mutex(false, Path.Combine(librarypath, package).Replace(":", "/").Replace("\\","/"));
+
+            m.WaitOne();
+
+            if (FileOrDirectoryExists(expectfileordirectory))
+            {
+                Log.LogMessage(MessageImportance.High,
+                    "Package \"" + package + "\" exists. Do nothing.");
+            }
+            else
+            {               
+                Log.LogMessage(MessageImportance.High,
+                    "Start downloading package \"" + package + "\".");
+
+                using (var client = new System.Net.WebClient())
+                {
+                    Uri uri = new Uri(package);
+                    string urifilename = Path.GetFileName(uri.LocalPath);
+                    string output = Path.Combine(outputfolder ?? librarypath, (outputfilename ?? urifilename));
+
+                    //if (!File.Exists(output)) // Uncomment to skip download if exists
+                    {
+                        var syncObject = new State
+                        {
+                            filename = urifilename,
+                            progress = -1
+                        };
+                        lock (syncObject)
+                        {
+                            client.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadFileCompleted);
+                            client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
+                            client.DownloadFileAsync(uri, output, syncObject);
+
+                            while (!Monitor.Wait(syncObject, 1000))
+                            {
+                                if (TaskCanceled.WaitOne(0))
+                                {
+                                    client.CancelAsync();
+                                    Monitor.Wait(syncObject);
+
+                                    if (File.Exists(output))
+                                    {
+                                        Log.LogMessage(MessageImportance.High,
+                                            "Deleting incomplete file " + output + " for package \"" + package + "\".");
+                                        File.Delete(output);
+                                    }
+
+                                    Log.LogMessage(MessageImportance.High,
+                                            "Downloading canceled for package \"" + package + "\".");
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (File.Exists(output))
+                    {
+                        // Successful download.
+                        if (Path.GetExtension(output) != ".exe")
+                        {
+                            Extract(output);
+                            string filename = Path.Combine(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output));
+                            Log.LogMessage(MessageImportance.High,
+                                "Filename \"" + filename + "\".");
+
+                            if (File.Exists(filename))
+                            {
+                                Extract(filename);
+                                File.Delete(filename);
+                            }
+                        }
+                    }
+                }
+
+                if (!TaskCanceled.WaitOne(0))
+                {
+                    Log.LogMessage(MessageImportance.High,
+                        "Downloading finished for package \"" + package + "\".");
+                }
+            }
+
+            m.ReleaseMutex();
+
+            return true;
+        }
+
+        private void Extract(string filename)
+        {
+            string extracttofolder = Path.GetFullPath((extractto ?? Path.GetDirectoryName(filename)) + "/");
+
+            string arctool = Path.Combine(new string[] { basedir, "libs", "win32", "7za1701.exe" });
+            string args = " x \"" + filename + "\" -y -o\"" + extracttofolder + "\"";
+
+            Log.LogMessage(MessageImportance.High,
+                  "arctool : " + arctool);
+            Log.LogMessage(MessageImportance.High,
+                  "args : " + args);
+            Log.LogMessage(MessageImportance.High,
+                  "WorkingDirectory : " + Path.GetDirectoryName(arctool));                    
+
+            var proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = arctool,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Path.GetDirectoryName(arctool)
+                }
+            };
+
+            proc.Start();
+
+            while (!proc.StandardOutput.EndOfStream)
+            {
+                string line = proc.StandardOutput.ReadLine();
+
+                Log.LogMessage(MessageImportance.High,
+                    Path.GetFileName(filename) + " : " + line);
+
+                if (TaskCanceled.WaitOne(0))
+                {
+                    proc.Kill();
+                    break;
+                }
+            }
+
+            proc.WaitForExit();
+        }
+
+        private void DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            lock (e.UserState)
+            {
+                //releases blocked thread
+                Monitor.Pulse(e.UserState);
+            }
+        }
+
+        private string humanSize(double len)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            int order = 0;
+
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+
+            return String.Format("{0:0.##} {1}", len, sizes[order]);
+        }
+
+        private void DownloadProgressCallback(object sender, DownloadProgressChangedEventArgs e)
+        {
+            if (((State)e.UserState).progress < e.ProgressPercentage)
+            {
+                ((State)e.UserState).progress = e.ProgressPercentage;
+
+                // Displays the transfer progress.
+                Log.LogMessage(MessageImportance.High, ((State)e.UserState).filename + " : downloaded " + humanSize(e.BytesReceived) + " of " + humanSize(e.TotalBytesToReceive) + " " + e.ProgressPercentage + " % complete...");
+            }
+        }
+    }
+]]>  
+                </Code>  
+             </Task>  
+  </UsingTask>  
+
+  <Target Name="7za" BeforeTargets="Build">  
+      <DownloadPackageTask 
+          package="http://files.freeswitch.org/downloads/win32/7za1701.exe" 
+          expectfileordirectory="$(BaseDir)libs/win32/7za1701.exe" 
+          outputfolder="$(BaseDir)libs/win32/" 
+          outputfilename="7za1701.exe"
+          extractto=""
+      />
+  </Target> 
+
+  <PropertyGroup>
+    <downloadpackagetask_Imported>true</downloadpackagetask_Imported>
+  </PropertyGroup>
+
+</Project>
