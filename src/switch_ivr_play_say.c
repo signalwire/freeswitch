@@ -1683,9 +1683,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
 				if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
 					if (eof) {
-						continue;
-					} else {
 						break;
+					} else {
+						continue;
 					}
 				}
 
