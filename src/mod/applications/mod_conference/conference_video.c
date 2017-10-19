@@ -3149,7 +3149,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					write_frame.packetlen = 0;
 
 					if (imember->mux_out_queue && switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-						switch_queue_push(imember->mux_out_queue, dupframe);
+						if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
+							switch_frame_buffer_free(imember->fb, &dupframe);
+						}
 						dupframe = NULL;
 					}
 				}
