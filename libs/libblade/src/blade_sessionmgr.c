@@ -36,6 +36,8 @@
 struct blade_sessionmgr_s {
 	blade_handle_t *handle;
 
+	blade_session_t *loopback;
+	blade_session_t *upstream;
 	ks_hash_t *sessions; // id, blade_session_t*
 	ks_hash_t *callbacks; // id, blade_session_callback_data_t*
 };
@@ -130,11 +132,36 @@ KS_DECLARE(blade_handle_t *) blade_sessionmgr_handle_get(blade_sessionmgr_t *bsm
 	return bsmgr->handle;
 }
 
+KS_DECLARE(ks_status_t) blade_sessionmgr_startup(blade_sessionmgr_t *bsmgr, config_setting_t *config)
+{
+	ks_assert(bsmgr);
+
+	blade_session_create(&bsmgr->loopback, bsmgr->handle, BLADE_SESSION_FLAGS_LOOPBACK, NULL);
+	ks_assert(bsmgr->loopback);
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) created\n", blade_session_id_get(bsmgr->loopback));
+
+	if (blade_session_startup(bsmgr->loopback) != KS_STATUS_SUCCESS) {
+		ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", blade_session_id_get(bsmgr->loopback));
+		blade_session_destroy(&bsmgr->loopback);
+		return KS_STATUS_FAIL;
+	}
+
+	ks_log(KS_LOG_DEBUG, "Session (%s) started\n", blade_session_id_get(bsmgr->loopback));
+
+	return KS_STATUS_SUCCESS;
+}
+
 KS_DECLARE(ks_status_t) blade_sessionmgr_shutdown(blade_sessionmgr_t *bsmgr)
 {
 	ks_hash_iterator_t *it = NULL;
 
 	ks_assert(bsmgr);
+
+	if (bsmgr->loopback) {
+		blade_session_hangup(bsmgr->loopback);
+		ks_sleep_ms(100);
+	}
 
 	ks_hash_read_lock(bsmgr->sessions);
 	for (it = ks_hash_first(bsmgr->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
@@ -149,6 +176,22 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_shutdown(blade_sessionmgr_t *bsmgr)
 	while (ks_hash_count(bsmgr->sessions) > 0) ks_sleep_ms(100);
 
 	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(blade_session_t *) blade_sessionmgr_loopback_lookup(blade_sessionmgr_t *bsmgr)
+{
+	ks_assert(bsmgr);
+
+	blade_session_read_lock(bsmgr->loopback, KS_TRUE);
+	return bsmgr->loopback;
+}
+
+KS_DECLARE(blade_session_t *) blade_sessionmgr_upstream_lookup(blade_sessionmgr_t *bsmgr)
+{
+	ks_assert(bsmgr);
+
+	if (bsmgr->upstream) blade_session_read_lock(bsmgr->upstream, KS_TRUE);
+	return bsmgr->upstream;
 }
 
 KS_DECLARE(blade_session_t *) blade_sessionmgr_session_lookup(blade_sessionmgr_t *bsmgr, const char *id)
@@ -177,6 +220,8 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_add(blade_sessionmgr_t *bsmgr, 
 
 	ks_log(KS_LOG_DEBUG, "Session Added: %s\n", key);
 
+	if (blade_session_upstream(bs)) bsmgr->upstream = bs;
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -196,7 +241,7 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 	ks_log(KS_LOG_DEBUG, "Session Removed: %s\n", id);
 
 	routemgr = blade_handle_routemgr_get(bsmgr->handle);
-	if (blade_routemgr_local_check(routemgr, id)) {
+	if (blade_session_upstream(bs)) {
 		blade_routemgr_local_set(routemgr, NULL);
 		blade_routemgr_master_set(routemgr, NULL);
 

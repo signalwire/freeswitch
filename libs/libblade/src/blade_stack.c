@@ -216,6 +216,8 @@ KS_DECLARE(ks_status_t) blade_handle_startup(blade_handle_t *bh, config_setting_
 
 	blade_transportmgr_startup(bh->transportmgr, config);
 
+	blade_sessionmgr_startup(bh->sessionmgr, config);
+
 	blade_mastermgr_startup(bh->mastermgr, config);
 
 	blade_restmgr_startup(bh->restmgr, config);
@@ -306,7 +308,7 @@ KS_DECLARE(ks_status_t) blade_handle_connect(blade_handle_t *bh, blade_connectio
 	ks_assert(target);
 
 	// @todo mini state machine to deal with upstream establishment to avoid attempting multiple upstream connects at the same time?
-	if ((bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if ((bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		blade_session_read_unlock(bs);
 		return KS_STATUS_DUPLICATE_OPERATION;
 	}
@@ -362,7 +364,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcroute(blade_handle_t *bh, const char *no
 	ks_assert(nodeid);
 
 
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -479,7 +481,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcregister(blade_handle_t *bh, const char 
 	ks_assert(bh);
 	ks_assert(identity);
 
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -514,7 +516,7 @@ ks_status_t blade_handle_rpcregister_raw(blade_handle_t *bh, const char *identit
 	ks_assert(bh);
 	ks_assert(identity);
 
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -720,7 +722,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, blade_rpcpub
 	ks_assert(protocol);
 
 	// @todo consideration for the Master trying to publish a protocol, with no upstream
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -969,7 +971,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcauthorize(blade_handle_t *bh, const char
 	ks_assert(channels);
 
 	// @todo consideration for the Master trying to publish a protocol, with no upstream
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -1167,7 +1169,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *p
 	ks_assert(bh);
 	ks_assert(protocol);
 
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -1303,7 +1305,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 	ks_assert(protocol);
 
 	if (!(bs = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), nodeid))) {
-		if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+		if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 			ret = KS_STATUS_DISCONNECTED;
 			goto done;
 		}
@@ -1582,7 +1584,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcsubscribe(blade_handle_t *bh,
 	ks_assert(channels);
 
 	// @note this is always produced by a subscriber, and sent upstream, master will only use the internal raw call
-	if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -1640,7 +1642,7 @@ ks_status_t blade_handle_rpcsubscribe_raw(blade_handle_t *bh,
 			goto done;
 		}
 	}
-	else if (!(bs = blade_routemgr_upstream_lookup(bh->routemgr))) {
+	else if (!(bs = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 		ret = KS_STATUS_DISCONNECTED;
 		goto done;
 	}
@@ -1895,7 +1897,7 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 	if (temp_data && temp_data->original_requestid) {
 		blade_session_t *relay = NULL;
 		if (downstream) {
-			if (!(relay = blade_routemgr_upstream_lookup(bh->routemgr))) {
+			if (!(relay = blade_sessionmgr_upstream_lookup(bh->sessionmgr))) {
 				goto done;
 			}
 		} else {
@@ -1929,18 +1931,10 @@ done:
 // blade.broadcast request generator
 KS_DECLARE(ks_status_t) blade_handle_rpcbroadcast(blade_handle_t *bh, const char *protocol, const char *channel, const char *event, cJSON *params, blade_rpc_response_callback_t callback, void *data)
 {
-	ks_status_t ret = KS_STATUS_SUCCESS;
-
 	ks_assert(bh);
 	ks_assert(protocol);
 
-	ret = blade_subscriptionmgr_broadcast(bh->subscriptionmgr, BLADE_RPCBROADCAST_COMMAND_EVENT, NULL,  protocol, channel, event, params, callback, data);
-
-	// @todo must check if the local node is also subscribed to receive the event, this is a special edge case which has some extra considerations
-	// if the local node is subscribed to receive the event, it should be received here as a special case, otherwise the broadcast request handler
-	// is where this normally occurs, however this is not a simple case as the callback expects a blade_rpc_request_t parameter containing context
-
-	return ret;
+	return blade_subscriptionmgr_broadcast(bh->subscriptionmgr, BLADE_RPCBROADCAST_COMMAND_EVENT, NULL,  protocol, channel, event, params, callback, data);
 }
 
 // @todo blade_handle_rpcbroadcast_raw() to encapsulate adding subcommands to broadcast to support protocol removal, protocol channel removal, and normal event broadcast
@@ -2023,21 +2017,12 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 
 	req_params_params = cJSON_GetObjectItem(req_params, "params");
 
-	blade_subscriptionmgr_broadcast(bh->subscriptionmgr, command, blade_session_id_get(bs), req_params_protocol, req_params_channel, req_params_event, req_params_params, NULL, NULL);
-
-	if (command == BLADE_RPCBROADCAST_COMMAND_EVENT) {
+	if (!blade_session_loopback(bs)) blade_subscriptionmgr_broadcast(bh->subscriptionmgr, command, blade_session_id_get(bs), req_params_protocol, req_params_channel, req_params_event, req_params_params, NULL, NULL);
+	else if (command == BLADE_RPCBROADCAST_COMMAND_EVENT) {
 		bsub = blade_subscriptionmgr_subscription_lookup(bh->subscriptionmgr, req_params_protocol, req_params_channel);
 		if (bsub) {
-			const char *localid = NULL;
-
-			blade_routemgr_local_copy(bh->routemgr, &localid);
-			ks_assert(localid);
-
-			if (ks_hash_search(blade_subscription_subscribers_get(bsub), (void *)localid, KS_UNLOCKED)) {
-				callback = blade_subscription_callback_get(bsub);
-				if (callback) ret = callback(brpcreq, blade_subscription_callback_data_get(bsub));
-			}
-			ks_pool_free(&localid);
+			callback = blade_subscription_callback_get(bsub);
+			if (callback) ret = callback(brpcreq, blade_subscription_callback_data_get(bsub));
 		}
 	}
 

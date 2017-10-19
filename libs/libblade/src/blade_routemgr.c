@@ -129,15 +129,11 @@ KS_DECLARE(ks_status_t) blade_routemgr_local_set(blade_routemgr_t *brmgr, const 
 
 	ks_rwl_write_lock(brmgr->local_lock);
 
-	if (brmgr->local_nodeid) {
-		ret = KS_STATUS_DUPLICATE_OPERATION;
-		goto done;
-	}
+	if (brmgr->local_nodeid) ks_pool_free(&brmgr->local_nodeid);
 	if (nodeid) brmgr->local_nodeid = ks_pstrdup(ks_pool_get(brmgr), nodeid);
 
 	ks_log(KS_LOG_DEBUG, "Local NodeID: %s\n", nodeid);
 
-done:
 	ks_rwl_write_unlock(brmgr->local_lock);
 
 	return ret;
@@ -218,21 +214,6 @@ KS_DECLARE(ks_bool_t) blade_routemgr_local_pack(blade_routemgr_t *brmgr, cJSON *
 	ks_rwl_read_unlock(brmgr->local_lock);
 
 	return ret;
-}
-
-KS_DECLARE(blade_session_t *) blade_routemgr_upstream_lookup(blade_routemgr_t *brmgr)
-{
-	blade_session_t *bs = NULL;
-
-	ks_assert(brmgr);
-
-	ks_rwl_read_lock(brmgr->local_lock);
-
-	if (brmgr->local_nodeid) bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(brmgr->handle), brmgr->local_nodeid);
-
-	ks_rwl_read_unlock(brmgr->local_lock);
-
-	return bs;
 }
 
 KS_DECLARE(ks_status_t) blade_routemgr_master_set(blade_routemgr_t *brmgr, const char *nodeid)
@@ -329,26 +310,35 @@ KS_DECLARE(blade_session_t *) blade_routemgr_route_lookup(blade_routemgr_t *brmg
 	ks_assert(brmgr);
 	ks_assert(target);
 
-	router = (const char *)ks_hash_search(brmgr->routes, (void *)target, KS_READLOCKED);
-	if (!router) {
-		// @todo this is all really inefficient, but we need the string to be parsed and recombined to ensure correctness for key matching
-		blade_identity_t *identity = NULL;
-		ks_pool_t *pool = ks_pool_get(brmgr);
+	// Short circuit any nodeid or identity that matches the local node by returning the loopback session explicitly
+	// @todo this could be potentially be avoided if the local nodeid and all local identities are added as routes to the loopback sessionid
+	if (blade_routemgr_local_check(brmgr, target)) bs = blade_sessionmgr_loopback_lookup(blade_handle_sessionmgr_get(brmgr->handle));
+	else {
+		// If the target is a downstream nodeid then it will be found in the route table immediately and return the sessionid of the downstream session to route through
+		router = (const char *)ks_hash_search(brmgr->routes, (void *)target, KS_READLOCKED);
+		if (!router) {
+			// If the target is a downstream node identity then it will be found in the identity table and return the nodeid which can then be used to lookup the route
+			blade_identity_t *identity = NULL;
+			ks_pool_t *pool = ks_pool_get(brmgr);
 
-		blade_identity_create(&identity, pool);
-		if (blade_identity_parse(identity, target) == KS_STATUS_SUCCESS) {
-			char *key = ks_psprintf(pool, "%s@%s/%s", blade_identity_user_get(identity), blade_identity_host_get(identity), blade_identity_path_get(identity));
+			blade_identity_create(&identity, pool);
+			if (blade_identity_parse(identity, target) == KS_STATUS_SUCCESS) {
+				char *key = ks_psprintf(pool, "%s@%s/%s", blade_identity_user_get(identity), blade_identity_host_get(identity), blade_identity_path_get(identity));
 
-			router = (const char *)ks_hash_search(brmgr->identities, (void *)key, KS_READLOCKED);
-			ks_hash_read_unlock(brmgr->identities);
+				router = (const char *)ks_hash_search(brmgr->identities, (void *)key, KS_READLOCKED);
+				ks_hash_read_unlock(brmgr->identities);
 
-			ks_pool_free(&key);
+				ks_pool_free(&key);
+
+				if (router) router = (const char *)ks_hash_search(brmgr->routes, (void *)router, KS_UNLOCKED);
+			}
+
+			blade_identity_destroy(&identity);
 		}
-
-		blade_identity_destroy(&identity);
+		// When a router is found it is the sessionid of the downstream session, lookup the session to route through
+		if (router) bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(brmgr->handle), router);
+		ks_hash_read_unlock(brmgr->routes);
 	}
-	if (router) bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(brmgr->handle), router);
-	ks_hash_read_unlock(brmgr->routes);
 
 	return bs;
 }

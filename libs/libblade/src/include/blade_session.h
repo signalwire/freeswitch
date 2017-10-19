@@ -36,11 +36,13 @@
 #include <blade.h>
 
 KS_BEGIN_EXTERN_C
-KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh, const char *id);
+KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh, blade_session_flags_t flags, const char *sessionid);
 KS_DECLARE(ks_status_t) blade_session_destroy(blade_session_t **bsP);
 KS_DECLARE(ks_status_t) blade_session_startup(blade_session_t *bs);
 KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs);
 KS_DECLARE(blade_handle_t *) blade_session_handle_get(blade_session_t *bs);
+KS_DECLARE(ks_bool_t) blade_session_loopback(blade_session_t *bs);
+KS_DECLARE(ks_bool_t) blade_session_upstream(blade_session_t *bs);
 KS_DECLARE(const char *) blade_session_id_get(blade_session_t *bs);
 KS_DECLARE(blade_session_state_t) blade_session_state_get(blade_session_t *bs);
 KS_DECLARE(ks_status_t) blade_session_route_add(blade_session_t *bs, const char *nodeid);

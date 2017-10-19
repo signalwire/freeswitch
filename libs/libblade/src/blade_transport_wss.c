@@ -832,6 +832,8 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	const char *jsonrpc = NULL;
 	const char *id = NULL;
 	const char *method = NULL;
+	const char *sessionid = NULL;
+	uuid_t uuid;
 	const char *nodeid = NULL;
 	ks_time_t timeout;
 
@@ -901,15 +903,17 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 	json_params = cJSON_GetObjectItem(json_req, "params");
 	if (json_params) {
-		nodeid = cJSON_GetObjectCstr(json_params, "session-id");
-		if (nodeid) {
-			// @todo validate uuid format by parsing, not currently available in uuid functions, send -32602 (invalid params) if invalid
-			ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", nodeid);
+		sessionid = cJSON_GetObjectCstr(json_params, "sessionid");
+		if (sessionid) {
+			ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", sessionid);
 		}
 	}
 
-	if (nodeid) {
-		bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+	ks_uuid(&uuid);
+	nodeid = ks_uuid_str(ks_pool_get(bc), &uuid);
+
+	if (sessionid) {
+		bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), sessionid);
 		if (bs) {
 			if (blade_session_terminating(bs)) {
 				blade_session_read_unlock(bs);
@@ -917,21 +921,22 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 				bs = NULL;
 			} else {
 				ks_log(KS_LOG_DEBUG, "Session (%s) located\n", blade_session_id_get(bs));
+				// @todo validate against IP address or something to ensure reconnects are acceptable
 			}
 		}
 	}
 
 	if (!bs) {
-		blade_session_create(&bs, bh, NULL);
+		blade_session_create(&bs, bh, BLADE_SESSION_FLAGS_NONE, NULL);
 		ks_assert(bs);
 
-		nodeid = blade_session_id_get(bs);
-		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", nodeid);
+		sessionid = blade_session_id_get(bs);
+		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", sessionid);
 
 		blade_session_read_lock(bs, KS_TRUE); // this will be done by blade_handle_sessions_get() otherwise
 
 		if (blade_session_startup(bs) != KS_STATUS_SUCCESS) {
-			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", nodeid);
+			ks_log(KS_LOG_DEBUG, "Session (%s) startup failed\n", sessionid);
 			blade_transport_wss_rpc_error_send(bc, id, -32603, "Internal error, session could not be started");
 			blade_session_read_unlock(bs);
 			blade_session_destroy(&bs);
@@ -941,7 +946,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 
 		// This is an inbound connection, thus it is always creating a downstream session
 
-		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", nodeid);
+		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", sessionid);
 		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
 		// This is primarily to cleanup the routes added to the blade_handle for main routing when a session terminates, these don't have a lot of use otherwise but it will keep the main route table
@@ -951,16 +956,17 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 		// a message should pass through when it does not match the local node id from blade_routemgr_t, and must be matched with a call to blade_session_route_add() for cleanup, additionally when
 		// a "blade.route" is received the identity it carries affects these routes along with the sessionid of the downstream session it came through, and "blade.route" would also
 		// result in the new identities being added as routes however federation registration would require a special process to maintain proper routing
-		blade_routemgr_route_add(blade_handle_routemgr_get(bh), nodeid, nodeid);
+		blade_routemgr_route_add(blade_handle_routemgr_get(bh), nodeid, sessionid);
 	}
 
 	blade_rpc_response_raw_create(&json_res, &json_result, id);
 	ks_assert(json_res);
 
+	cJSON_AddStringToObject(json_result, "sessionid", sessionid);
 	cJSON_AddStringToObject(json_result, "nodeid", nodeid);
 
 	if (!blade_routemgr_master_pack(blade_handle_routemgr_get(bh), json_result, "master-nodeid")) {
-		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable\n");
+		ks_log(KS_LOG_DEBUG, "Master nodeid unavailable, upstream is not established\n");
 		blade_transport_wss_rpc_error_send(bc, id, -32602, "Master nodeid unavailable");
 		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
 		goto done;
@@ -969,7 +975,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_inbound(blade_
 	// This starts the final process for associating the connection to the session, including for reconnecting to an existing session, this simply
 	// associates the session to this connection, upon return the remainder of the association for the session to the connection is handled along
 	// with making sure both this connection and the session state machines are in running states
-	blade_connection_session_set(bc, nodeid);
+	blade_connection_session_set(bc, sessionid);
 
 	// @todo end of reusable handler for "blade.connect" request
 
@@ -1004,6 +1010,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 	const char *id = NULL;
 	cJSON *json_error = NULL;
 	cJSON *json_result = NULL;
+	const char *sessionid = NULL;
 	const char *nodeid = NULL;
 	const char *master_nodeid = NULL;
 	blade_session_t *bs = NULL;
@@ -1032,7 +1039,7 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 	blade_rpc_request_raw_create(pool, &json_req, &json_params, &mid, "blade.connect");
 	ks_assert(json_req);
 
-	if (btwssl->session_id) cJSON_AddStringToObject(json_params, "session-id", btwssl->session_id);
+	if (btwssl->session_id) cJSON_AddStringToObject(json_params, "sessionid", btwssl->session_id);
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) requested\n", (btwssl->session_id ? btwssl->session_id : "none"));
 
@@ -1086,6 +1093,13 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
+	sessionid = cJSON_GetObjectCstr(json_result, "sessionid");
+	if (!sessionid) {
+		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'sessionid'\n");
+		ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+		goto done;
+	}
+
 	nodeid = cJSON_GetObjectCstr(json_result, "nodeid");
 	if (!nodeid) {
 		ks_log(KS_LOG_DEBUG, "Received message 'result' is missing 'nodeid'\n");
@@ -1100,15 +1114,19 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 		goto done;
 	}
 
-
-	// @todo validate uuid format by parsing, not currently available in uuid functions
-	bs = blade_sessionmgr_session_lookup(blade_handle_sessionmgr_get(bh), nodeid); // bs comes out read locked if not null to prevent it being cleaned up before we are done
+	bs = blade_sessionmgr_upstream_lookup(blade_handle_sessionmgr_get(bh));
 	if (bs) {
-		ks_log(KS_LOG_DEBUG, "Session (%s) located\n", blade_session_id_get(bs));
+		if (ks_safe_strcasecmp(blade_session_id_get(bs), sessionid)) {
+			ks_log(KS_LOG_DEBUG, "Already have upstream session with different sessionid, could not establish session\n");
+			blade_session_read_unlock(bs);
+			ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
+			goto done;
+		}
+		ks_log(KS_LOG_DEBUG, "Session (%s) reestablishing\n", blade_session_id_get(bs));
 	}
 
 	if (!bs) {
-		blade_session_create(&bs, bh, nodeid);
+		blade_session_create(&bs, bh, BLADE_SESSION_FLAGS_UPSTREAM, sessionid);
 		ks_assert(bs);
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) created\n", blade_session_id_get(bs));
@@ -1123,20 +1141,11 @@ blade_connection_state_hook_t blade_transport_wss_onstate_startup_outbound(blade
 			goto done;
 		}
 
-		// This is an outbound connection, thus it is always creating an upstream session, defined by the sessionid matching the local_nodeid in the handle
-
-		if (blade_routemgr_local_set(blade_handle_routemgr_get(bh), nodeid) != KS_STATUS_SUCCESS) {
-			ks_log(KS_LOG_DEBUG, "Session (%s) abandoned, upstream already available\n", blade_session_id_get(bs));
-			blade_session_read_unlock(bs);
-			blade_session_hangup(bs);
-			ret = BLADE_CONNECTION_STATE_HOOK_DISCONNECT;
-			goto done;
-		}
-
+		// This is an outbound connection, thus it is always creating an upstream session
 		ks_log(KS_LOG_DEBUG, "Session (%s) started\n", blade_session_id_get(bs));
-
 		blade_sessionmgr_session_add(blade_handle_sessionmgr_get(bh), bs);
 
+		blade_routemgr_local_set(blade_handle_routemgr_get(bh), nodeid);
 		blade_routemgr_master_set(blade_handle_routemgr_get(bh), master_nodeid);
 	}
 

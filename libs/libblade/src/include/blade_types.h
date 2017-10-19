@@ -95,6 +95,11 @@ typedef enum {
 	BLADE_CONNECTION_STATE_HOOK_BYPASS,
 } blade_connection_state_hook_t;
 
+typedef enum {
+	BLADE_SESSION_FLAGS_NONE = 0 << 0,
+	BLADE_SESSION_FLAGS_LOOPBACK = 1 << 0,
+	BLADE_SESSION_FLAGS_UPSTREAM = 1 << 1,
+} blade_session_flags_t;
 
 typedef enum {
 	BLADE_SESSION_STATE_CONDITION_PRE,

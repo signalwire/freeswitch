@@ -36,10 +36,12 @@
 struct blade_session_s {
 	blade_handle_t *handle;
 
-	volatile blade_session_state_t state;
+	blade_session_flags_t flags;
 
 	const char *id;
 	ks_rwl_t *lock;
+
+	volatile blade_session_state_t state;
 
 	ks_cond_t *cond;
 
@@ -82,7 +84,7 @@ static void blade_session_cleanup(void *ptr, void *arg, ks_pool_cleanup_action_t
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh, const char *id)
+KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle_t *bh, blade_session_flags_t flags, const char *sessionid)
 {
 	blade_session_t *bs = NULL;
 	ks_pool_t *pool = NULL;
@@ -95,8 +97,9 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 
 	bs = ks_pool_alloc(pool, sizeof(blade_session_t));
 	bs->handle = bh;
+	bs->flags = flags;
 
-	if (id) bs->id = ks_pstrdup(pool, id);
+	if (sessionid) bs->id = ks_pstrdup(pool, sessionid);
 	else {
 		uuid_t id;
 		ks_uuid(&id);
@@ -105,6 +108,8 @@ KS_DECLARE(ks_status_t) blade_session_create(blade_session_t **bsP, blade_handle
 
     ks_rwl_create(&bs->lock, pool);
 	ks_assert(bs->lock);
+
+	bs->state = BLADE_SESSION_STATE_NONE;
 
 	ks_cond_create(&bs->cond, pool);
 	ks_assert(bs->cond);
@@ -158,8 +163,6 @@ KS_DECLARE(ks_status_t) blade_session_startup(blade_session_t *bs)
 	tpool = blade_handle_tpool_get(bs->handle);
 	ks_assert(tpool);
 
-	blade_session_state_set(bs, BLADE_SESSION_STATE_NONE);
-
 	if (ks_thread_pool_add_job(tpool, blade_session_state_thread, bs) != KS_STATUS_SUCCESS) {
 		// @todo error logging
 		return KS_STATUS_FAIL;
@@ -205,6 +208,18 @@ KS_DECLARE(blade_handle_t *) blade_session_handle_get(blade_session_t *bs)
 	ks_assert(bs);
 
 	return bs->handle;
+}
+
+KS_DECLARE(ks_bool_t) blade_session_loopback(blade_session_t *bs)
+{
+	ks_assert(bs);
+	return (bs->flags & BLADE_SESSION_FLAGS_LOOPBACK) == BLADE_SESSION_FLAGS_LOOPBACK;
+}
+
+KS_DECLARE(ks_bool_t) blade_session_upstream(blade_session_t *bs)
+{
+	ks_assert(bs);
+	return (bs->flags & BLADE_SESSION_FLAGS_UPSTREAM) == BLADE_SESSION_FLAGS_UPSTREAM;
 }
 
 KS_DECLARE(const char *) blade_session_id_get(blade_session_t *bs)
@@ -397,8 +412,11 @@ KS_DECLARE(ks_status_t) blade_session_sending_push(blade_session_t *bs, cJSON *j
     ks_assert(bs);
     ks_assert(json);
 
-    json_copy = cJSON_Duplicate(json, 1);
-	if ((ret = ks_q_push(bs->sending, json_copy)) == KS_STATUS_SUCCESS) ks_cond_try_signal(bs->cond);
+	if ((bs->flags & BLADE_SESSION_FLAGS_LOOPBACK) == BLADE_SESSION_FLAGS_LOOPBACK) ret = blade_session_receiving_push(bs, json);
+	else {
+		json_copy = cJSON_Duplicate(json, 1);
+		if ((ret = ks_q_push(bs->sending, json_copy)) == KS_STATUS_SUCCESS) ks_cond_try_signal(bs->cond);
+	}
 	return ret;
 }
 
@@ -485,7 +503,8 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 		default: break;
 		}
 
-		if (!bs->connection &&
+		if ((bs->flags & BLADE_SESSION_FLAGS_LOOPBACK) != BLADE_SESSION_FLAGS_LOOPBACK &&
+			!bs->connection &&
 			bs->ttl > 0 &&
 			!blade_session_terminating(bs) &&
 			ks_time_now() >= bs->ttl) {
@@ -537,7 +556,7 @@ ks_status_t blade_session_onstate_run(blade_session_t *bs)
 
 	ks_assert(bs);
 
-	while (bs->connection && blade_session_receiving_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
+	while (blade_session_receiving_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
 		blade_session_process(bs, json);
 		cJSON_Delete(json);
 	}
@@ -645,7 +664,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				// not meant for local processing, continue with standard unicast routing for requests
 				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), params_responder_nodeid);
 				if (!bs_router) {
-					bs_router = blade_routemgr_upstream_lookup(blade_handle_routemgr_get(bh));
+					bs_router = blade_sessionmgr_upstream_lookup(blade_handle_sessionmgr_get(bh));
 					if (!bs_router) {
 						cJSON *res = NULL;
 						cJSON *res_error = NULL;
@@ -719,7 +738,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				// not meant for local processing, continue with standard unicast routing for responses
 				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), object_requester_nodeid);
 				if (!bs_router) {
-					bs_router = blade_routemgr_upstream_lookup(blade_handle_routemgr_get(bh));
+					bs_router = blade_sessionmgr_upstream_lookup(blade_handle_sessionmgr_get(bh));
 					if (!bs_router) {
 						ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) but upstream session unavailable\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid);
 						return KS_STATUS_DISCONNECTED;
