@@ -380,7 +380,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcroute(blade_handle_t *bh, const char *no
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) route request (%s %s) started\n", blade_session_id_get(bs), remove ? "removing" : "adding", nodeid);
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -417,7 +417,7 @@ ks_bool_t blade_rpcroute_request_handler(blade_rpc_request_t *brpcreq, void *dat
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) route request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -425,7 +425,7 @@ ks_bool_t blade_rpcroute_request_handler(blade_rpc_request_t *brpcreq, void *dat
 	if (!req_params_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) route request missing 'nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 	req_params_remove = cJSON_GetObjectItem(req_params, "remove");
@@ -442,7 +442,7 @@ ks_bool_t blade_rpcroute_request_handler(blade_rpc_request_t *brpcreq, void *dat
 	}
 
 	blade_rpc_response_raw_create(&res, &res_result, blade_rpc_request_messageid_get(brpcreq));
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 done:
 
@@ -530,7 +530,7 @@ ks_status_t blade_handle_rpcregister_raw(blade_handle_t *bh, const char *identit
 	cJSON_AddStringToObject(req_params, "identity", identity);
 	cJSON_AddStringToObject(req_params, "nodeid", nodeid);
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -571,7 +571,7 @@ ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) register request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -579,7 +579,7 @@ ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *
 	if (!req_params_identity) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) register request missing 'identity'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params identity");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -587,7 +587,7 @@ ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *
 	if (blade_identity_parse(identity, req_params_identity) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) register request invalid 'identity'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params identity");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -595,7 +595,7 @@ ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *
 	if (!req_params_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) register request missing 'nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -612,7 +612,7 @@ ks_bool_t blade_rpcregister_request_handler(blade_rpc_request_t *brpcreq, void *
 		cJSON_AddStringToObject(res_result, "nodeid", req_params_nodeid);
 
 		// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 	} else {
 		blade_rpcregister_data_t *temp_data = (blade_rpcregister_data_t *)ks_pool_alloc(pool, sizeof(blade_rpcregister_data_t));
 		temp_data->original_requestid = ks_pstrdup(pool, blade_rpc_request_messageid_get(brpcreq));
@@ -696,7 +696,7 @@ ks_bool_t blade_rpcregister_response_handler(blade_rpc_response_t *brpcres, void
 		cJSON_AddStringToObject(res_result, "identity", res_result_identity);
 		cJSON_AddStringToObject(res_result, "nodeid", res_result_nodeid);
 
-		blade_session_send(relay, res, NULL, NULL);
+		blade_session_send(relay, res, 0, NULL, NULL);
 
 		cJSON_Delete(res);
 
@@ -765,7 +765,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcpublish(blade_handle_t *bh, blade_rpcpub
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) publish request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -804,11 +804,14 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	req = blade_rpc_request_message_get(brpcreq);
 	ks_assert(req);
 
+	// @todo error messages in here SHOULD include requester-nodeid and responder-nodeid in the error responses to ensure
+	// proper return routing of the error message
+
 	req_params = cJSON_GetObjectItem(req, "params");
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -816,7 +819,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_command) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'command'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params command");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 	command = (blade_rpcpublish_command_t)req_params_command->valueint;
@@ -832,7 +835,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -840,7 +843,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_requester_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'requester-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params requester-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -848,14 +851,14 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_responder_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'responder-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
 	if (!blade_routemgr_master_check(bh->routemgr, req_params_responder_nodeid)) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'responder-nodeid' (%s)\n", blade_session_id_get(bs), req_params_responder_nodeid);
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -867,7 +870,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 		if (req_params_channels->type != cJSON_Array) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'channels' type, expected array\n", blade_session_id_get(bs));
 			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
-			blade_session_send(bs, res, NULL, NULL);
+			blade_session_send(bs, res, 0, NULL, NULL);
 			goto done;
 		}
 
@@ -875,7 +878,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 			if (req_params_channels_element->type != cJSON_Object) {
 				ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'channels' element type, expected object\n", blade_session_id_get(bs));
 				blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
-				blade_session_send(bs, res, NULL, NULL);
+				blade_session_send(bs, res, 0, NULL, NULL);
 				goto done;
 			}
 
@@ -883,7 +886,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 			if (!req_params_channels_element_name) {
 				ks_log(KS_LOG_DEBUG, "Session (%s) publish request missing 'channels' element name\n", blade_session_id_get(bs));
 				blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channels element name");
-				blade_session_send(bs, res, NULL, NULL);
+				blade_session_send(bs, res, 0, NULL, NULL);
 				goto done;
 			}
 
@@ -891,7 +894,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 			if (req_params_channels_element_flags && req_params_channels_element_flags->type != cJSON_Number) {
 				ks_log(KS_LOG_DEBUG, "Session (%s) publish request invalid 'channels' element flags type, expected number\n", blade_session_id_get(bs));
 				blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels element flags type");
-				blade_session_send(bs, res, NULL, NULL);
+				blade_session_send(bs, res, 0, NULL, NULL);
 				goto done;
 			}
 		}
@@ -946,7 +949,7 @@ ks_bool_t blade_rpcpublish_request_handler(blade_rpc_request_t *brpcreq, void *d
 	// @todo include a list of channels that failed to be added or removed if applicable?
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 done:
 
@@ -996,7 +999,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcauthorize(blade_handle_t *bh, const char
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) authorize request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -1037,11 +1040,14 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	req = blade_rpc_request_message_get(brpcreq);
 	ks_assert(req);
 
+	// @todo error messages in here need to include requester-nodeid and responder-nodeid in the error responses to ensure
+	// proper return routing of the error message
+
 	req_params = cJSON_GetObjectItem(req, "params");
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1049,7 +1055,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1060,7 +1066,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_authorized_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'authorized-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params authorized-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1068,7 +1074,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_requester_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'requester-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params requester-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1076,7 +1082,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_responder_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'responder-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1084,14 +1090,14 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_channels) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request missing 'channels'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channels");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
 	if (req_params_channels->type != cJSON_Array) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'channels' type, expected array\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1099,7 +1105,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 		if (channel->type != cJSON_String) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'channels' element type, expected string\n", blade_session_id_get(bs));
 			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params channels");
-			blade_session_send(bs, res, NULL, NULL);
+			blade_session_send(bs, res, 0, NULL, NULL);
 			goto done;
 		}
 	}
@@ -1107,7 +1113,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!blade_routemgr_master_check(bh->routemgr, req_params_responder_nodeid)) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) authorize request invalid 'responder-nodeid' (%s)\n", blade_session_id_get(bs), req_params_responder_nodeid);
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1140,7 +1146,7 @@ ks_bool_t blade_rpcauthorize_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (res_result_failed_channels)  cJSON_AddItemToObject(res_result, "failed-channels", res_result_failed_channels);
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 	if (res_result_unauthorized_channels) {
 		blade_handle_rpcsubscribe_raw(bh, BLADE_RPCSUBSCRIBE_COMMAND_SUBSCRIBER_REMOVE, req_params_protocol, res_result_unauthorized_channels, req_params_authorized_nodeid, KS_TRUE, NULL, NULL);
@@ -1188,7 +1194,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpclocate(blade_handle_t *bh, const char *p
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) locate request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -1223,11 +1229,14 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	req = blade_rpc_request_message_get(brpcreq);
 	ks_assert(req);
 
+	// @todo error messages in here need to include requester-nodeid and responder-nodeid in the error responses to ensure
+	// proper return routing of the error message
+
 	req_params = cJSON_GetObjectItem(req, "params");
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) locate request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1235,7 +1244,7 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) locate request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1243,7 +1252,7 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	if (!req_params_requester_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) locate request missing 'requester-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params requester-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1251,14 +1260,14 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	if (!req_params_responder_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) locate request missing 'responder-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
 	if (!blade_routemgr_master_check(bh->routemgr, req_params_responder_nodeid)) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) locate request invalid 'responder-nodeid' (%s)\n", blade_session_id_get(bs), req_params_responder_nodeid);
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Invalid params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1280,7 +1289,7 @@ ks_bool_t blade_rpclocate_request_handler(blade_rpc_request_t *brpcreq, void *da
 	if (res_result_controllers) cJSON_AddItemToObject(res_result, "controllers", res_result_controllers);
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 done:
 
@@ -1292,7 +1301,7 @@ done:
 
 
 // blade.execute request generator
-KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, cJSON *params, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *nodeid, const char *method, const char *protocol, cJSON *params, ks_time_t ttl, blade_rpc_response_callback_t callback, void *data)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 	blade_session_t *bs = NULL;
@@ -1324,7 +1333,7 @@ KS_DECLARE(ks_status_t) blade_handle_rpcexecute(blade_handle_t *bh, const char *
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) execute request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, callback, data);
+	ret = blade_session_send(bs, req, 0, callback, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -1360,11 +1369,14 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	req = blade_rpc_request_message_get(brpcreq);
 	ks_assert(req);
 
+	// @todo error messages in here need to include requester-nodeid and responder-nodeid in the error responses to ensure
+	// proper return routing of the error message
+
 	req_params = cJSON_GetObjectItem(req, "params");
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1372,7 +1384,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_method) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request missing 'method'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params method");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1380,7 +1392,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1388,7 +1400,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_requester_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request missing 'requester-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params requester-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1396,7 +1408,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!req_params_responder_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request missing 'responder-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params responder-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1408,7 +1420,7 @@ ks_bool_t blade_rpcexecute_request_handler(blade_rpc_request_t *brpcreq, void *d
 	if (!brpc) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) execute request unknown method\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Unknown params method");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1539,7 +1551,7 @@ KS_DECLARE(void) blade_rpcexecute_response_send(blade_rpc_request_t *brpcreq, cJ
 	if (result) cJSON_AddItemToObject(res_result, "result", cJSON_Duplicate(result, 1));
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 	cJSON_Delete(res);
 
@@ -1667,7 +1679,7 @@ ks_status_t blade_handle_rpcsubscribe_raw(blade_handle_t *bh,
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request started\n", blade_session_id_get(bs));
 
-	ret = blade_session_send(bs, req, blade_rpcsubscribe_response_handler, data);
+	ret = blade_session_send(bs, req, 0, blade_rpcsubscribe_response_handler, data);
 
 done:
 	if (req) cJSON_Delete(req);
@@ -1715,7 +1727,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1723,7 +1735,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_command) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'command'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params command");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 	command = (blade_rpcsubscribe_command_t)req_params_command->valueint;
@@ -1737,7 +1749,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1745,7 +1757,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_subscriber_nodeid) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'subscriber-nodeid'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params subscriber-nodeid");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1759,7 +1771,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_channels) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) subscribe request missing 'channels'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channels");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1805,7 +1817,7 @@ ks_bool_t blade_rpcsubscribe_request_handler(blade_rpc_request_t *brpcreq, void 
 		// could be pulled from the original request associated to the response
 
 		// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 	} else {
 		blade_rpcsubscribe_data_t *temp_data = (blade_rpcsubscribe_data_t *)ks_pool_alloc(pool, sizeof(blade_rpcsubscribe_data_t));
 		temp_data->original_requestid = ks_pstrdup(pool, blade_rpc_request_messageid_get(brpcreq));
@@ -1914,7 +1926,7 @@ ks_bool_t blade_rpcsubscribe_response_handler(blade_rpc_response_t *brpcres, voi
 		if (res_result_subscribe_channels) cJSON_AddItemToObject(res_result, "subscribe-channels", cJSON_Duplicate(res_result_subscribe_channels, 1));
 		if (res_result_failed_channels) cJSON_AddItemToObject(res_result, "failed-channels", cJSON_Duplicate(res_result_failed_channels, 1));
 
-		blade_session_send(relay, res, NULL, NULL);
+		blade_session_send(relay, res, 0, NULL, NULL);
 
 		cJSON_Delete(res);
 
@@ -1973,7 +1985,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'params' object\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params object");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1981,7 +1993,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_protocol) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'protocol'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params protocol");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 
@@ -1989,7 +2001,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (!req_params_command) {
 		ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'command'\n", blade_session_id_get(bs));
 		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params command");
-		blade_session_send(bs, res, NULL, NULL);
+		blade_session_send(bs, res, 0, NULL, NULL);
 		goto done;
 	}
 	command = (blade_rpcbroadcast_command_t)req_params_command->valueint;
@@ -1999,7 +2011,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 		if (!req_params_event) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'event'\n", blade_session_id_get(bs));
 			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params event");
-			blade_session_send(bs, res, NULL, NULL);
+			blade_session_send(bs, res, 0, NULL, NULL);
 			goto done;
 		}
 	case BLADE_RPCBROADCAST_COMMAND_CHANNEL_REMOVE:
@@ -2007,7 +2019,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 		if (!req_params_channel) {
 			ks_log(KS_LOG_DEBUG, "Session (%s) broadcast request missing 'channel'\n", blade_session_id_get(bs));
 			blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(brpcreq), -32602, "Missing params channel");
-			blade_session_send(bs, res, NULL, NULL);
+			blade_session_send(bs, res, 0, NULL, NULL);
 			goto done;
 		}
 		break;
@@ -2035,7 +2047,7 @@ ks_bool_t blade_rpcbroadcast_request_handler(blade_rpc_request_t *brpcreq, void 
 	if (req_params_event) cJSON_AddStringToObject(res_result, "event", req_params_event);
 
 	// request was just received on a session that is already read locked, so we can assume the response goes back on the same session without further lookup
-	blade_session_send(bs, res, NULL, NULL);
+	blade_session_send(bs, res, 0, NULL, NULL);
 
 done:
 

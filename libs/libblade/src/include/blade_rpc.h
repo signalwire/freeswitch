@@ -57,6 +57,8 @@ KS_DECLARE(blade_handle_t *) blade_rpc_request_handle_get(blade_rpc_request_t *b
 KS_DECLARE(const char *) blade_rpc_request_sessionid_get(blade_rpc_request_t *brpcreq);
 KS_DECLARE(cJSON *) blade_rpc_request_message_get(blade_rpc_request_t *brpcreq);
 KS_DECLARE(const char *) blade_rpc_request_messageid_get(blade_rpc_request_t *brpcreq);
+KS_DECLARE(ks_status_t) blade_rpc_request_ttl_set(blade_rpc_request_t *brpcreq, ks_time_t ttl);
+KS_DECLARE(ks_bool_t) blade_rpc_request_expired(blade_rpc_request_t *brpcreq);
 KS_DECLARE(blade_rpc_response_callback_t) blade_rpc_request_callback_get(blade_rpc_request_t *brpcreq);
 KS_DECLARE(void *) blade_rpc_request_data_get(blade_rpc_request_t *brpcreq);
 

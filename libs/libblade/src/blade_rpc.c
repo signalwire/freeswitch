@@ -50,9 +50,11 @@ struct blade_rpc_request_s {
 
 	cJSON *message;
 	const char *message_id; // pulled from message for easier keying
+
+	ks_time_t ttl;
+
 	blade_rpc_response_callback_t callback;
 	void *data;
-	// @todo ttl to wait for response before injecting an error response locally
 };
 
 struct blade_rpc_response_s {
@@ -251,6 +253,22 @@ KS_DECLARE(const char *) blade_rpc_request_messageid_get(blade_rpc_request_t *br
 {
 	ks_assert(brpcreq);
 	return brpcreq->message_id;
+}
+
+KS_DECLARE(ks_status_t) blade_rpc_request_ttl_set(blade_rpc_request_t *brpcreq, ks_time_t ttl)
+{
+	ks_assert(brpcreq);
+
+	brpcreq->ttl = ks_time_now() + (ttl * KS_USEC_PER_SEC);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_bool_t) blade_rpc_request_expired(blade_rpc_request_t *brpcreq)
+{
+	ks_assert(brpcreq);
+
+	return brpcreq->ttl <= ks_time_now();
 }
 
 KS_DECLARE(blade_rpc_response_callback_t) blade_rpc_request_callback_get(blade_rpc_request_t *brpcreq)

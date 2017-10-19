@@ -368,7 +368,7 @@ void command_join(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", params, test_join_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.join", "test", params, 0, test_join_response_handler, NULL);
 	cJSON_Delete(params);
 }
 
@@ -417,7 +417,7 @@ void command_leave(blade_handle_t *bh, char *args)
 	}
 
 	params = cJSON_CreateObject();
-	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", params, test_leave_response_handler, NULL);
+	blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.leave", "test", params, 0, test_leave_response_handler, NULL);
 	cJSON_Delete(params);
 }
 
@@ -440,7 +440,7 @@ void command_talk(blade_handle_t *bh, char *args)
 	params = cJSON_CreateObject();
 	cJSON_AddStringToObject(params, "text", args);
 	//blade_handle_rpcexecute(bh, g_testcon_nodeid, "test.talk", "test", params, test_talk_response_handler, NULL);
-	blade_handle_rpcexecute(bh, "blade:testcon@freeswitch.com", "test.talk", "test", params, test_talk_response_handler, NULL);
+	blade_handle_rpcexecute(bh, "blade:testcon@freeswitch.com", "test.talk", "test", params, 0, test_talk_response_handler, NULL);
 	cJSON_Delete(params);
 }
 

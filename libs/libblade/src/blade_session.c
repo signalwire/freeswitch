@@ -412,7 +412,8 @@ KS_DECLARE(ks_status_t) blade_session_sending_push(blade_session_t *bs, cJSON *j
     ks_assert(bs);
     ks_assert(json);
 
-	if ((bs->flags & BLADE_SESSION_FLAGS_LOOPBACK) == BLADE_SESSION_FLAGS_LOOPBACK) ret = blade_session_receiving_push(bs, json);
+	if ((bs->flags & BLADE_SESSION_FLAGS_LOOPBACK) == BLADE_SESSION_FLAGS_LOOPBACK)
+		ret = blade_session_receiving_push(bs, json);
 	else {
 		json_copy = cJSON_Duplicate(json, 1);
 		if ((ret = ks_q_push(bs->sending, json_copy)) == KS_STATUS_SUCCESS) ks_cond_try_signal(bs->cond);
@@ -477,8 +478,6 @@ void *blade_session_state_thread(ks_thread_t *thread, void *data)
 				// we can start stuffing any messages queued for output on the session straight to the connection right away, may need to only
 				// do this when in session ready state but there may be implications of other states sending messages through the session
 				while (blade_session_sending_pop(bs, &json) == KS_STATUS_SUCCESS && json) {
-					// @todo short-circuit with blade_session_receiving_push on the same session if the message has responder-nodeid == requester-nodeid == local_nodeid
-					// which would allow a system to send messages to itself, such as calling a protocolrpc immediately without bouncing upstream first
 					blade_connection_sending_push(bc, json);
 					cJSON_Delete(json);
 				}
@@ -561,11 +560,13 @@ ks_status_t blade_session_onstate_run(blade_session_t *bs)
 		cJSON_Delete(json);
 	}
 
+	blade_rpcmgr_request_timeouts(blade_handle_rpcmgr_get(blade_session_handle_get(bs)));
+
 	return KS_STATUS_SUCCESS;
 }
 
 
-KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, blade_rpc_response_callback_t callback, void *data)
+KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, ks_time_t ttl, blade_rpc_response_callback_t callback, void *data)
 {
 	blade_rpc_request_t *brpcreq = NULL;
 	const char *method = NULL;
@@ -580,22 +581,19 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, bla
 	ks_assert(id);
 
 	if (method) {
-		// @note This is scenario 1
-		// 1) Sending a request (client: method caller or consumer)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending request (%s) for %s\n", bs->id, id, method);
 
 		blade_rpc_request_create(&brpcreq, bs->handle, ks_pool_get(bs->handle), bs->id, json, callback, data);
 		ks_assert(brpcreq);
 
-		// @todo set request TTL and figure out when requests are checked for expiration (separate thread in the handle?)
+		if (ttl <= 0) ttl = 10;
+		blade_rpc_request_ttl_set(brpcreq, ttl);
+
 		blade_rpcmgr_request_add(blade_handle_rpcmgr_get(bs->handle), brpcreq);
 	} else {
-		// @note This is scenario 3
-		// 3) Sending a response or error (server: method callee or provider)
 		ks_log(KS_LOG_DEBUG, "Session (%s) sending response (%s)\n", bs->id, id);
 	}
 
-	//blade_session_sending_push(bs, json);
 	if (!bs->connection) {
 		blade_session_sending_push(bs, json);
 	} else {
@@ -653,13 +651,15 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		blade_rpc_t *brpc = NULL;
 		blade_rpc_request_callback_t callback = NULL;
 		cJSON *params = NULL;
+		const char *params_requester_nodeid = NULL;
+		const char *params_responder_nodeid = NULL;
 
 		ks_log(KS_LOG_DEBUG, "Session (%s) receiving request (%s) for %s\n", bs->id, id, method);
 
 		params = cJSON_GetObjectItem(json, "params");
 		if (params) {
-			const char *params_requester_nodeid = cJSON_GetObjectCstr(params, "requester-nodeid");
-			const char *params_responder_nodeid = cJSON_GetObjectCstr(params, "responder-nodeid");
+			params_requester_nodeid = cJSON_GetObjectCstr(params, "requester-nodeid");
+			params_responder_nodeid = cJSON_GetObjectCstr(params, "responder-nodeid");
 			if (params_requester_nodeid && params_responder_nodeid && !blade_routemgr_local_check(blade_handle_routemgr_get(bh), params_responder_nodeid)) {
 				// not meant for local processing, continue with standard unicast routing for requests
 				blade_session_t *bs_router = blade_routemgr_route_lookup(blade_handle_routemgr_get(bh), params_responder_nodeid);
@@ -677,7 +677,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 						cJSON_AddStringToObject(res_error, "requester-nodeid", params_requester_nodeid);
 						cJSON_AddStringToObject(res_error, "responder-nodeid", params_responder_nodeid); // @todo responder-nodeid should become the local_nodeid to inform of which node actually responded
 
-						blade_session_send(bs, res, NULL, NULL);
+						blade_session_send(bs, res, 0, NULL, NULL);
 						return KS_STATUS_DISCONNECTED;
 					}
 				}
@@ -687,7 +687,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				}
 				
 				ks_log(KS_LOG_DEBUG, "Session (%s) request (%s => %s) routing (%s)\n", blade_session_id_get(bs), params_requester_nodeid, params_responder_nodeid, blade_session_id_get(bs_router));
-				blade_session_send(bs_router, json, NULL, NULL);
+				blade_session_send(bs_router, json, 0, NULL, NULL);
 				blade_session_read_unlock(bs_router);
 
 				// @todo if this is a subscribe request to remove subscriptions, it must carry a field unsubscribed-channels for which
@@ -704,8 +704,18 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 		brpc = blade_rpcmgr_corerpc_lookup(blade_handle_rpcmgr_get(bs->handle), method);
 
 		if (!brpc) {
+			cJSON *res = NULL;
+			cJSON *res_error = NULL;
+
 			ks_log(KS_LOG_DEBUG, "Received unknown rpc method %s\n", method);
-			// @todo send error response, code = -32601 (method not found)
+			blade_rpc_error_raw_create(&res, &res_error, id, -32601, "RPC method not found");
+
+			// needed in case this error must propagate further than the session which sent it
+			if (params_requester_nodeid) cJSON_AddStringToObject(res_error, "requester-nodeid", params_requester_nodeid);
+			if (params_responder_nodeid) cJSON_AddStringToObject(res_error, "responder-nodeid", params_responder_nodeid);
+
+			blade_session_send(bs, res, 0, NULL, NULL);
+
 			return KS_STATUS_FAIL;
 		}
 		callback = blade_rpc_callback_get(brpc);
@@ -750,7 +760,7 @@ ks_status_t blade_session_process(blade_session_t *bs, cJSON *json)
 				}
 
 				ks_log(KS_LOG_DEBUG, "Session (%s) response (%s <= %s) routing (%s)\n", blade_session_id_get(bs), object_requester_nodeid, object_responder_nodeid, blade_session_id_get(bs_router));
-				blade_session_send(bs_router, json, NULL, NULL);
+				blade_session_send(bs_router, json, 0, NULL, NULL);
 				blade_session_read_unlock(bs_router);
 
 				// @todo if this is a subscribe response to add a subscriber with the master as the responder-nodeid, it must have a

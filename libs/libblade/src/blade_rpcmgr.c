@@ -39,7 +39,9 @@ struct blade_rpcmgr_s {
 	ks_hash_t *corerpcs; // method, blade_rpc_t*
 	ks_hash_t *protocolrpcs; // method, blade_rpc_t*
 
-	ks_hash_t *requests; // id, KS_TRUE
+	ks_hash_t *requests; // id, blade_rpc_request_t*
+	ks_time_t requests_ttlcheck;
+	ks_mutex_t* requests_ttlcheck_lock;
 };
 
 
@@ -99,6 +101,9 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_create(blade_rpcmgr_t **brpcmgrP, blade_han
 
 	ks_hash_create(&brpcmgr->requests, KS_HASH_MODE_CASE_INSENSITIVE, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_FREE_KEY, pool);
 	ks_assert(brpcmgr->requests);
+
+	ks_mutex_create(&brpcmgr->requests_ttlcheck_lock, KS_MUTEX_FLAG_NON_RECURSIVE, pool);
+	ks_assert(brpcmgr->requests_ttlcheck_lock);
 
 	ks_pool_set_cleanup(brpcmgr, NULL, blade_rpcmgr_cleanup);
 
@@ -218,7 +223,7 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_protocolrpc_add(blade_rpcmgr_t *brpcmgr, bl
 
 	ks_log(KS_LOG_DEBUG, "ProtocolRPC Added: %s\n", key);
 
-	return KS_STATUS_SUCCESS;
+return KS_STATUS_SUCCESS;
 
 }
 
@@ -290,6 +295,59 @@ KS_DECLARE(ks_status_t) blade_rpcmgr_request_remove(blade_rpcmgr_t *brpcmgr, bla
 	ks_hash_remove(brpcmgr->requests, (void *)id);
 
 	ks_log(KS_LOG_DEBUG, "Request Removed: %s\n", id);
+
+	return KS_STATUS_SUCCESS;
+}
+
+KS_DECLARE(ks_status_t) blade_rpcmgr_request_timeouts(blade_rpcmgr_t *brpcmgr)
+{
+	blade_session_t *loopback = NULL;
+
+	ks_assert(brpcmgr);
+
+	// All this stuff is to ensure that the requests hash is not locked up when it does not need to be,
+	// and this will also ensure that sessions will not lock up if any other session is trying to deal
+	// with timeouts already
+	if (ks_mutex_trylock(brpcmgr->requests_ttlcheck_lock) != KS_STATUS_SUCCESS) return KS_STATUS_SUCCESS;
+
+	if (brpcmgr->requests_ttlcheck > ks_time_now()) {
+		ks_mutex_unlock(brpcmgr->requests_ttlcheck_lock);
+		return KS_STATUS_SUCCESS;
+	}
+
+	ks_hash_write_lock(brpcmgr->requests);
+
+	// Give a one second delay between timeout checking
+	brpcmgr->requests_ttlcheck = ks_time_now() + KS_USEC_PER_SEC;
+
+	ks_mutex_unlock(brpcmgr->requests_ttlcheck_lock);
+
+	// Now find all the expired requests and send out loopback error responses, which will invoke request removal when received and processed
+	for (ks_hash_iterator_t *it = ks_hash_first(brpcmgr->requests, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+		const char *key = NULL;
+		blade_rpc_request_t *value = NULL;
+		cJSON *res = NULL;
+
+		ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+
+		if (!blade_rpc_request_expired(value)) continue;
+
+		if (!loopback) loopback = blade_sessionmgr_loopback_lookup(blade_handle_sessionmgr_get(brpcmgr->handle));
+
+		ks_log(KS_LOG_DEBUG, "Request (%s) TTL timeout\n", key);
+
+		blade_rpc_error_raw_create(&res, NULL, blade_rpc_request_messageid_get(value), -32000, "Request timed out");
+		// @todo may want to include requester-nodeid and responder-nodeid into the error block when they are present in the original request
+		// even though a response or error without them is treated as locally processed, it may be useful to know who the request was attempted with
+		// when multiple options are available such as a blade.execute where the protocol has multiple possible controllers to pick from
+		blade_session_send(loopback, res, 0, NULL, NULL);
+
+		cJSON_Delete(res);
+	}
+
+	if (loopback) blade_session_read_unlock(loopback);
+
+	ks_hash_write_unlock(brpcmgr->requests);
 
 	return KS_STATUS_SUCCESS;
 }

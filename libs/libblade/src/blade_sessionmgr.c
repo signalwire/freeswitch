@@ -149,6 +149,10 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_startup(blade_sessionmgr_t *bsmgr, conf
 
 	ks_log(KS_LOG_DEBUG, "Session (%s) started\n", blade_session_id_get(bsmgr->loopback));
 
+	blade_sessionmgr_session_add(bsmgr, bsmgr->loopback);
+
+	blade_session_state_set(bsmgr->loopback, BLADE_SESSION_STATE_STARTUP);
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -158,10 +162,10 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_shutdown(blade_sessionmgr_t *bsmgr)
 
 	ks_assert(bsmgr);
 
-	if (bsmgr->loopback) {
-		blade_session_hangup(bsmgr->loopback);
-		ks_sleep_ms(100);
-	}
+	//if (bsmgr->loopback) {
+	//	blade_session_hangup(bsmgr->loopback);
+	//	ks_sleep_ms(100);
+	//}
 
 	ks_hash_read_lock(bsmgr->sessions);
 	for (it = ks_hash_first(bsmgr->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {

@@ -483,7 +483,7 @@ KS_DECLARE(ks_status_t) blade_subscriptionmgr_broadcast(blade_subscriptionmgr_t 
 
 			ks_log(KS_LOG_DEBUG, "Broadcasting: protocol %s, channel %s through %s\n", protocol, channel, blade_session_id_get(bs));
 
-			blade_session_send(bs, req, callback, data);
+			blade_session_send(bs, req, 0, callback, data);
 
 			cJSON_Delete(req);
 
