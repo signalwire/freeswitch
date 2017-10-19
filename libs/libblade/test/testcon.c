@@ -180,7 +180,7 @@ ks_bool_t test_join_request_handler(blade_rpc_request_t *brpcreq, void *data)
 	// send rpcexecute response to the requester
 	result = cJSON_CreateObject();
 
-	//blade_rpcexecute_response_send(brpcreq, result);
+	blade_rpcexecute_response_send(brpcreq, result);
 
 	cJSON_Delete(result);
 
