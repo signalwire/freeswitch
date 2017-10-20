@@ -75,6 +75,7 @@ void conference_member_bind_controls(conference_member_t *member, const char *co
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Name", member->conference->name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Controls", controls);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(member->session));
 
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", mod_conference_cf_name);

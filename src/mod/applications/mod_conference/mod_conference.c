@@ -1936,6 +1936,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conference_name", conference_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
