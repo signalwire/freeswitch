@@ -824,6 +824,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	int sane = 0;
 	int threads = switch_core_cpu_count();
 
+#ifdef NVENC_SUPPORT
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
 			if (context->codec_settings.video.try_hardware_encoder && (context->encoder = avcodec_find_encoder_by_name("nvenc_h264"))) {
@@ -833,12 +834,15 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NVENC HW CODEC NOT PRESENT\n");
 			}
 		}
+	}
+#endif
 
-		if (!context->encoder) {
-			context->encoder = avcodec_find_encoder(context->av_codec_id);
-		}
+	
+	if (!context->encoder) {
+		context->encoder = avcodec_find_encoder(context->av_codec_id);
 	}
 
+	
 	if (!context->encoder) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
 		return SWITCH_STATUS_FALSE;
