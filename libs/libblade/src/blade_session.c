@@ -180,6 +180,9 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 
 	ks_assert(bs);
 
+	// make sure this is done first to remove the upstream session before it is attempted to be used for sending route updates
+	blade_sessionmgr_session_remove(blade_handle_sessionmgr_get(bs->handle), bs);
+
 	// if this is an upstream session there will be no routes, so this is harmless to always run regardless
 	ks_hash_read_lock(bs->routes);
 	for (it = ks_hash_first(bs->routes, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
@@ -191,9 +194,6 @@ KS_DECLARE(ks_status_t) blade_session_shutdown(blade_session_t *bs)
 		blade_routemgr_route_remove(blade_handle_routemgr_get(bs->handle), (const char *)key);
 	}
 	ks_hash_read_unlock(bs->routes);
-
-	// this will also clear the local id, and master id in the handle if this is the upstream session
-	blade_sessionmgr_session_remove(blade_handle_sessionmgr_get(bs->handle), bs);
 
 	while (ks_q_trypop(bs->sending, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
 	while (ks_q_trypop(bs->receiving, (void **)&json) == KS_STATUS_SUCCESS && json) cJSON_Delete(json);
@@ -586,6 +586,7 @@ KS_DECLARE(ks_status_t) blade_session_send(blade_session_t *bs, cJSON *json, ks_
 		blade_rpc_request_create(&brpcreq, bs->handle, ks_pool_get(bs->handle), bs->id, json, callback, data);
 		ks_assert(brpcreq);
 
+		// @todo update to get default ttl from configuration
 		if (ttl <= 0) ttl = 10;
 		blade_rpc_request_ttl_set(brpcreq, ttl);
 

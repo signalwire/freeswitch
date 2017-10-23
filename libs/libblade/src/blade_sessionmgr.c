@@ -246,15 +246,22 @@ KS_DECLARE(ks_status_t) blade_sessionmgr_session_remove(blade_sessionmgr_t *bsmg
 
 	routemgr = blade_handle_routemgr_get(bsmgr->handle);
 	if (blade_session_upstream(bs)) {
+		bsmgr->upstream = NULL;
 		blade_routemgr_local_set(routemgr, NULL);
 		blade_routemgr_master_set(routemgr, NULL);
 
-		// @todo this is the upstream session that has actually terminated, any downstream connections should also be terminated
-		// properly, such that the downstream clients will not attempt to reconnect with the same session id, but will instead
-		// reestablish new sessions and likewise terminate downstream sessions
-		// @todo this also reflects that downstream connections should not be accepted in the transport implementation until an
-		// upstream connection has been established, unless it is the master node which has no upstream session, plumbing to
-		// support this does not yet exist
+		ks_hash_read_lock(bsmgr->sessions);
+		for (ks_hash_iterator_t *it = ks_hash_first(bsmgr->sessions, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			void *key = NULL;
+			blade_session_t *value = NULL;
+
+			ks_hash_this(it, (const void **)&key, NULL, (void **)&value);
+
+			if (blade_session_loopback(value)) continue;
+
+			blade_session_hangup(value);
+		}
+		ks_hash_read_unlock(bsmgr->sessions);
 	}
 
 	blade_session_write_unlock(bs);
