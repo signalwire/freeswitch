@@ -2559,7 +2559,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 
 				}
 
-				new_len = (strlen((char *) var) * 3) + 1;
+				new_len = (strlen((char *) val) * 3) + 1;
 				if (encode_len < new_len) {
 					char *tmp;
 
