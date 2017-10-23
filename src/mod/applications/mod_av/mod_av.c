@@ -98,7 +98,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
  
 	/* naggy messages */
-	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING) && !mod_av_globals.debug) return;
+	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING || level == AV_LOG_TRACE) && !mod_av_globals.debug) return;
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
@@ -109,6 +109,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
 		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
 		case AV_LOG_DEBUG:   switch_level = SWITCH_LOG_DEBUG;   break;
+	    case AV_LOG_TRACE:   switch_level = SWITCH_LOG_DEBUG;   break;
 		default: break;
 	}
 
