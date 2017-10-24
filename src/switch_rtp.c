@@ -3224,7 +3224,6 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	int pending;
 
 	if (!dtls->bytes && !ready) {
-		switch_mutex_unlock(rtp_session->ice_mutex);
 		return 0;
 	}
 
