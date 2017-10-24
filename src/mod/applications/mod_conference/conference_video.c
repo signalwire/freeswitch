@@ -2081,11 +2081,8 @@ void *SWITCH_THREAD_FUNC conference_video_layer_thread_run(switch_thread_t *thre
 		mcu_layer_t *layer = NULL;
 		mcu_canvas_t *canvas = NULL;
 		
-		if (!member->layer_thread_wake_up) {
-			switch_thread_cond_wait(member->layer_cond, member->layer_cond_mutex);
-		}
 
-		member->layer_thread_wake_up = 0;
+		switch_thread_cond_wait(member->layer_cond, member->layer_cond_mutex);
 
 		if (!conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
 			break;
@@ -2117,10 +2114,9 @@ void *SWITCH_THREAD_FUNC conference_video_layer_thread_run(switch_thread_t *thre
 void conference_video_wake_layer_thread(conference_member_t *member)
 {
 	if (member->layer_cond) {
-		if (!member->layer_thread_wake_up && switch_mutex_trylock(member->layer_cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		if (switch_mutex_trylock(member->layer_cond_mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_signal(member->layer_cond);
 			switch_mutex_unlock(member->layer_cond_mutex);
-			member->layer_thread_wake_up = 1;
 		}
 		
 	}
@@ -3807,7 +3803,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 
 						if (layer->cur_img) {
-							if (layer->member && switch_core_cpu_count() > 200) {
+							if (layer->member && switch_core_cpu_count() > 2) {
 								layer->need_patch = 1;
 								conference_video_wake_layer_thread(layer->member);
 							} else {
