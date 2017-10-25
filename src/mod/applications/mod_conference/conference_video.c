@@ -1861,7 +1861,9 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 		avatar = var;
 	}
 
+	switch_mutex_lock(member->flag_mutex);
 	switch_img_free(&member->avatar_png_img);
+
 
 	if (avatar) {
 		member->avatar_png_img = switch_img_read_png(avatar, SWITCH_IMG_FMT_I420);
@@ -1874,6 +1876,8 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	if (member->avatar_png_img && novid) {
 		member->auto_avatar = 1;
 	}
+
+	switch_mutex_unlock(member->flag_mutex);
 
 	if (canvas) {
 		switch_mutex_unlock(canvas->mutex);
@@ -1894,7 +1898,9 @@ void conference_video_check_flush(conference_member_t *member, switch_bool_t for
 	if ((flushed || force) && member->auto_avatar) {
 		switch_channel_video_sync(member->channel);
 
+		switch_mutex_lock(member->flag_mutex);
 		switch_img_free(&member->avatar_png_img);
+		switch_mutex_unlock(member->flag_mutex);
 		member->avatar_patched = 0;
 		conference_video_reset_video_bitrate_counters(member);
 		member->blanks = 0;
@@ -2723,6 +2729,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 
+			switch_mutex_lock(imember->flag_mutex);
 			if (imember->avatar_png_img) {
 				if (layer) {
 					if (!imember->avatar_patched || !layer->cur_img) {
@@ -2736,6 +2743,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 				switch_img_free(&img);
 			}
+			switch_mutex_unlock(imember->flag_mutex);
 
 			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || ((switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE)))) {
 				if (conference_video_find_layer(conference, canvas, imember, &layer) == SWITCH_STATUS_SUCCESS) {
