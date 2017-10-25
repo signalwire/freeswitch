@@ -93,6 +93,10 @@ int mod_av_lockmgr_cb(void **m, enum AVLockOp op)
 	return 0;
 }
 
+#ifndef AV_LOG_TRACE
+#define AV_LOG_TRACE 96
+#endif
+
 static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
