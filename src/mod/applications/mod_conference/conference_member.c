@@ -1191,9 +1191,11 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 		last = imember;
 	}
 
+	switch_mutex_lock(member->flag_mutex);
 	switch_img_free(&member->avatar_png_img);
 	switch_img_free(&member->video_mute_img);
 	switch_img_free(&member->pcanvas_img);
+	switch_mutex_unlock(member->flag_mutex);
 
 	switch_thread_rwlock_unlock(member->rwlock);
 
