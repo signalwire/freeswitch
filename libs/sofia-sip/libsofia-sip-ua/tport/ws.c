@@ -25,7 +25,7 @@
 #define WS_NOBLOCK 0
 
 #define WS_INIT_SANITY 5000
-#define WS_WRITE_SANITY 2000
+#define WS_WRITE_SANITY 200
 
 #define SHA1_HASH_SIZE 20
 static struct ws_globals_s ws_globals;
@@ -424,6 +424,11 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		do {
 			r = SSL_write(wsh->ssl, (void *)((unsigned char *)data + wrote), bytes - wrote);
 
+			if (r == 0) {
+				ssl_err = 42;
+				break;
+			}
+			
 			if (r > 0) {
 				wrote += r;
 			}
@@ -433,9 +438,9 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 
 				if (wsh->block) {
 					if (sanity < WS_WRITE_SANITY * 3 / 4) {
-						ms = 60;
+						ms = 50;
 					} else if (sanity < WS_WRITE_SANITY / 2) {
-						ms = 10;
+						ms = 25;
 					}
 				}
 				ms_sleep(ms);
@@ -456,6 +461,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		
 		if (ssl_err) {
 			r = ssl_err * -1;
+			wsh->down = 1;
 		}
 
 		return r;
