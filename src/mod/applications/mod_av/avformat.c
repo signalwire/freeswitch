@@ -100,8 +100,6 @@ struct av_file_context {
 	switch_buffer_t *buf;
 	switch_buffer_t *audio_buffer;
 	switch_timer_t video_timer;
-	switch_timer_t audio_timer;
-	int use_audio_timer;
 	int offset;
 	int audio_start;
 	int aud_ready;
@@ -381,9 +379,9 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 	int buffer_bytes = 2097152; /* 2 mb */
 	int fps = 15;
 
-	if (mm->try_hardware_encoder && codec_id == AV_CODEC_ID_H264) {
-		*codec = avcodec_find_encoder_by_name("nvenc_h264");
-	}
+	//if (mm->try_hardware_encoder && codec_id == AV_CODEC_ID_H264) {
+	//	*codec = avcodec_find_encoder_by_name("nvenc_h264");
+	//}
 
 	if (!*codec) {
 		/* find the encoder */
@@ -842,7 +840,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 				delta = 33;
 			}
 
-			context->eh.video_st->frame->pts += delta;
+			context->eh.video_st->frame->pts += delta * 90;
 		} else {
 			uint64_t delta_tmp;
 
@@ -863,9 +861,9 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 					delta_avg = (int)(double)(delta_sum / delta_i);
 				}
 				
-				context->eh.video_st->frame->pts = context->eh.video_timer->samplecount;
+				context->eh.video_st->frame->pts = context->eh.video_timer->samplecount * 90;
 			} else {
-				context->eh.video_st->frame->pts = (context->eh.video_timer->samplecount) + 1;
+				context->eh.video_st->frame->pts = ((context->eh.video_timer->samplecount) * 90) + 1;
 			}
 		}
 
@@ -1590,10 +1588,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 			context->offset = atoi(tmp);
 		}
-
-		if (switch_true(switch_event_get_header(handle->params, "av_audio_use_timer"))) {
-			context->use_audio_timer = 1;
-		}
 	}
 
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
@@ -1827,10 +1821,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		switch_core_timer_destroy(&context->video_timer);
 	}
 
-	if (context->audio_timer.interval) {
-		switch_core_timer_destroy(&context->audio_timer);
-	}
-
 	if (context->audio_buffer) {
 		switch_buffer_destroy(&context->audio_buffer);
 	}
@@ -1855,7 +1845,8 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	// uint32_t size = 0;
 	uint32_t bytes;
 	int inuse;
-
+	int sample_start;
+	
 	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1910,11 +1901,6 @@ GCC_DIAG_ON(deprecated-declarations)
 		}
 	}
 
-	if (context->use_audio_timer) {
-		// timer only needed with record video
-		switch_core_timer_init(&context->audio_timer, "soft", 1, handle->samplerate / 1000, context->pool);
-	}
-
 	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
 		AVPacket pkt[2] = { {0} };
 		int got_packet[2] = {0};
@@ -1950,10 +1936,16 @@ GCC_DIAG_ON(deprecated-declarations)
  			switch_buffer_read(context->audio_buffer, context->audio_st[0].frame->data[0], bytes);
 		}
 
-		if (context->audio_timer.interval) {
-			switch_core_timer_sync(&context->audio_timer);
-		}
+		/* Sync all audio stream timestamps to video timer */
+		if (context->video_timer.interval) {
+			switch_core_timer_sync(&context->video_timer);
+			sample_start = context->video_timer.samplecount * (handle->samplerate / 1000);
 
+			for (j = 0; j < audio_stream_count; j++) {
+				context->audio_st[j].next_pts = sample_start;
+			}
+		}
+		
 		for (j = 0; j < audio_stream_count; j++) {
 			
 			av_frame_make_writable(context->audio_st[j].frame);
@@ -1979,12 +1971,7 @@ GCC_DIAG_ON(deprecated-declarations)
 				use_frame = context->audio_st[j].tmp_frame;
 			}
 
-			if (context->audio_timer.interval) {
-				use_frame->pts = context->audio_timer.samplecount;
-			} else {
-				context->audio_st[j].next_pts += use_frame->nb_samples;
-				use_frame->pts = context->audio_st[j].next_pts;
-			}
+			use_frame->pts = context->audio_st[j].next_pts;
 
 			// context->audio_st[j].next_pts = use_frame->pts + use_frame->nb_samples;
 
@@ -1992,6 +1979,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 			ret = avcodec_encode_audio2(context->audio_st[j].st->codec, &pkt[j], use_frame, &got_packet[j]);
 GCC_DIAG_ON(deprecated-declarations)
 
+			context->audio_st[j].next_pts += use_frame->nb_samples;
      	}
 		
 		if (ret < 0) {
@@ -2062,10 +2050,6 @@ static switch_status_t av_file_command(switch_file_handle_t *handle, switch_file
 			offset = (uint32_t)(switch_micro_time_now() - context->eh.record_timer_paused);
 			context->video_timer.start += offset;
 			switch_core_timer_sync(&context->video_timer);
-			if (context->audio_timer.interval) {
-				context->audio_timer.start += offset;
-				switch_core_timer_sync(&context->audio_timer);
-			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s resume write\n", handle->file_path);
 			context->eh.record_timer_paused = 0;
 		}
@@ -2126,10 +2110,6 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 
 	if (context->video_timer.interval) {
 		switch_core_timer_destroy(&context->video_timer);
-	}
-
-	if (context->audio_timer.interval) {
-		switch_core_timer_destroy(&context->audio_timer);
 	}
 
 	switch_img_free(&context->last_img);
@@ -2542,7 +2522,7 @@ GCC_DIAG_ON(deprecated-declarations)
 			switch_threadattr_create(&thd_attr, handle->memory_pool);
 			//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_core_timer_init(&context->video_timer, "soft", 1, 90, context->pool);
+			switch_core_timer_init(&context->video_timer, "soft", 1, 1, context->pool);
 			context->eh.video_timer = &context->video_timer;
 			context->audio_st[0].frame->pts = 0;
 			context->audio_st[0].next_pts = 0;
