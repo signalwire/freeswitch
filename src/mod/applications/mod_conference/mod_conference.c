@@ -3410,7 +3410,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		int mute_ms = atoi(max_energy_level_mute_ms);
 
 		if (mute_ms > 0) {
-			conference->burst_mute_count = mute_ms / conference->interval;
+			conference->burst_mute_count = mute_ms / interval;
 		}
 	}
 
