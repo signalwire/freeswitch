@@ -2767,7 +2767,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		if (queue->max_wait_time > 0 && queue->max_wait_time <=  time_now - m->t_member_called) {
 			/* timeout reached, check if we're originating at this time and give caller a one more chance */
 			if (switch_channel_test_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_channel), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time and we're connecting, waiting for agent to be connected...\n", m->member_cid_name, m->member_cid_number, m->queue_name);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time and we're connecting, waiting for agent to be connected...\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 				for (;;) {
 					if (!switch_channel_test_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING)) {
 						break;
