@@ -386,7 +386,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 		*result_out = res;
 		res->status = PQresultStatus(res->result);
 		switch(res->status) {
-#if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
+#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 2) || POSTGRESQL_MAJOR_VERSION > 9
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
 #endif
@@ -397,7 +397,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 				res->cols = PQnfields(res->result);
 			}
 			break;
-#if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 1
+#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 1) || POSTGRESQL_MAJOR_VERSION > 9
 		case PGRES_COPY_BOTH:
 			/* Added in PostgreSQL 9.1 */
 #endif
