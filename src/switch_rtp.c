@@ -424,7 +424,6 @@ struct switch_rtp {
 	switch_payload_t recv_te;
 	switch_payload_t cng_pt;
 	switch_mutex_t *flag_mutex;
-	switch_mutex_t *nack_mutex;
 	switch_mutex_t *read_mutex;
 	switch_mutex_t *write_mutex;
 	switch_mutex_t *ice_mutex;
@@ -4212,7 +4211,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->session = session;
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_mutex_init(&rtp_session->nack_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->write_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->ice_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -6478,13 +6476,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
-				//handle_nack(rtp_session, *nack);
-				switch_mutex_lock(rtp_session->nack_mutex);
-				if (rtp_session->nack_idx < MAX_NACKS) {
-					rtp_session->nack_buf[rtp_session->nack_idx++] = *nack;
-				}
-				switch_mutex_unlock(rtp_session->nack_mutex);
-				nack++;
+				handle_nack(rtp_session, *nack);
 			}
 
 			//switch_core_media_gen_key_frame(rtp_session->session);
@@ -8611,17 +8603,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		return 0;
 	}
 
-	switch_mutex_lock(rtp_session->nack_mutex);
-	if (rtp_session->nack_idx) {
-		int i = 0;
-		
-		for(i = 0; i < rtp_session->nack_idx; i++) {
-			handle_nack(rtp_session, rtp_session->nack_buf[i]); 
-		}
-		rtp_session->nack_idx = 0;
-	}
-	switch_mutex_unlock(rtp_session->nack_mutex);
-	
 	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 	//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
 	//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]++;
