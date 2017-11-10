@@ -955,12 +955,13 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
+SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switch_size_t olen)
 {
 
 	char l64[256];
 	int b = 0, c, l = 0, i;
-	char *ip, *op = out;
+	const char *ip;
+	char *op = out;
 	size_t ol = 0;
 
 	for (i = 0; i < 256; i++) {

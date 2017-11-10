@@ -2320,8 +2320,14 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 #ifdef ENABLE_SRTP
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
+			int stat = 0;
 			int sbytes = (int) rtcp_bytes;
-			int stat = srtp_protect_rtcp(rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_send_msg.header, &sbytes);
+
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
+				stat = srtp_protect_rtcp(rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_send_msg.header, &sbytes);
+			} else {
+				stat = srtp_protect_rtcp_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_send_msg.header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+			}
 
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
@@ -3067,17 +3073,26 @@ static const char *dtls_state_names(dtls_state_t s)
 	return dtls_state_names_t[s];
 }
 
-
 #define dtls_set_state(_dtls, _state) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Changing %s DTLS state from %s to %s\n", rtp_type(rtp_session), dtls_state_names(_dtls->state), dtls_state_names(_state)); _dtls->new_state = 1; _dtls->last_state = _dtls->state; _dtls->state = _state
-
-#define cr_keylen 16
-#define cr_saltlen 14
-#define cr_kslen 30
 
 static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	X509 *cert;
+	switch_secure_settings_t	ssec;	/* Used just to wrap over params in a call to switch_rtp_add_crypto_key. */
 	int r = 0;
+
+	const switch_size_t cr_kslen = SUITES[AES_CM_128_HMAC_SHA1_80].keysalt_len;
+	const switch_size_t cr_saltlen = SUITES[AES_CM_128_HMAC_SHA1_80].salt_len;
+	const switch_size_t cr_keylen = cr_kslen - cr_saltlen;
+
+	uint8_t raw_key_data[cr_kslen * 2];
+	unsigned char local_key_buf[cr_kslen];
+	unsigned char remote_key_buf[cr_kslen];
+
+	memset(&ssec, 0, sizeof(ssec));
+	memset(&raw_key_data, 0, cr_kslen * 2 * sizeof(uint8_t));
+	memset(&local_key_buf, 0, cr_kslen * sizeof(unsigned char));
+	memset(&remote_key_buf, 0, cr_kslen * sizeof(unsigned char));
 
 	if ((dtls->type & DTLS_TYPE_SERVER)) {
 		r = 1;
@@ -3092,9 +3107,7 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		dtls_set_state(dtls, DS_FAIL);
 		return -1;
 	} else {
-		uint8_t raw_key_data[cr_kslen*2] = { 0 };
 		unsigned char *local_key, *remote_key, *local_salt, *remote_salt;
-		unsigned char local_key_buf[cr_kslen] = {0}, remote_key_buf[cr_kslen] = {0};
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "%s Fingerprint Verified.\n", rtp_type(rtp_session));
 
@@ -3121,18 +3134,20 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 			local_salt = remote_salt + cr_saltlen;
 		}
 
-		memcpy(local_key_buf, local_key, cr_keylen);
-		memcpy(local_key_buf + cr_keylen, local_salt, cr_saltlen);
+		memcpy(&ssec.local_raw_key, local_key, cr_keylen);
+		memcpy(&ssec.local_raw_key + cr_keylen, local_salt, cr_saltlen);
 
-		memcpy(remote_key_buf, remote_key, cr_keylen);
-		memcpy(remote_key_buf + cr_keylen, remote_salt, cr_saltlen);
+		memcpy(&ssec.remote_raw_key, remote_key, cr_keylen);
+		memcpy(&ssec.remote_raw_key + cr_keylen, remote_salt, cr_saltlen);
+
+		ssec.crypto_type = AES_CM_128_HMAC_SHA1_80;
 
 		if (dtls == rtp_session->rtcp_dtls && rtp_session->rtcp_dtls != rtp_session->dtls) {
-			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_SEND_RTCP, 0, AES_CM_128_HMAC_SHA1_80, local_key_buf, cr_kslen);
-			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_RECV_RTCP, 0, AES_CM_128_HMAC_SHA1_80, remote_key_buf, cr_kslen);
+			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_SEND_RTCP, 0, &ssec);
+			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_RECV_RTCP, 0, &ssec);
 		} else {
-			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_SEND, 0, AES_CM_128_HMAC_SHA1_80, local_key_buf, cr_kslen);
-			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_RECV, 0, AES_CM_128_HMAC_SHA1_80, remote_key_buf, cr_kslen);
+			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_SEND, 0, &ssec);
+			switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_RECV, 0, &ssec);
 		}
 	}
 
@@ -3814,15 +3829,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 }
 
-
-SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
-														  switch_rtp_crypto_direction_t direction,
-														  uint32_t index, switch_rtp_crypto_key_type_t type, unsigned char *key, switch_size_t keylen)
+SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec)
 {
 #ifndef ENABLE_SRTP
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "SRTP NOT SUPPORTED IN THIS BUILD!\n");
 	return SWITCH_STATUS_FALSE;
 #else
+
 	switch_rtp_crypto_key_t *crypto_key;
 	srtp_policy_t *policy;
 	srtp_err_status_t stat;
@@ -3833,12 +3846,43 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	int idx = 0;
 	const char *var;
 	unsigned char b64_key[512] = "";
+	
+	unsigned char	*keysalt = NULL;
+	switch_size_t	keysalt_len = 0;
+	
+	switch_crypto_key_material_t	*key_material = NULL;
+	unsigned long					*key_material_n = NULL;
+	srtp_master_key_t		**mkis = NULL;
+	srtp_master_key_t		*mki = NULL;
+	int mki_idx = 0;
 
-	if (direction >= SWITCH_RTP_CRYPTO_MAX || keylen > SWITCH_RTP_MAX_CRYPTO_LEN) {
+	keysalt_len = SUITES[ssec->crypto_type].keysalt_len;
+
+	if (direction >= SWITCH_RTP_CRYPTO_MAX || keysalt_len > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_b64_encode(key, keylen, b64_key, sizeof(b64_key));
+	if (direction == SWITCH_RTP_CRYPTO_RECV_RTCP) {
+		direction = SWITCH_RTP_CRYPTO_RECV;
+		rtp_session->srtp_idx_rtcp = idx = 1;
+	} else if (direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
+		direction = SWITCH_RTP_CRYPTO_SEND;
+		rtp_session->srtp_idx_rtcp = idx = 1;
+	}
+
+	if (direction == SWITCH_RTP_CRYPTO_RECV) {
+		policy = &rtp_session->recv_policy[idx];
+		keysalt = ssec->remote_raw_key;
+		key_material = ssec->remote_key_material_next;
+		key_material_n = &ssec->remote_key_material_n;
+	} else {
+		policy = &rtp_session->send_policy[idx];
+		keysalt = ssec->local_raw_key;
+		key_material = ssec->local_key_material_next;
+		key_material_n = &ssec->local_key_material_n;
+	}
+
+	switch_b64_encode(keysalt, keysalt_len, b64_key, sizeof(b64_key));
 
 	if (switch_true(switch_core_get_variable("rtp_retain_crypto_keys"))) {
 		switch(direction) {
@@ -3861,23 +3905,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	crypto_key = switch_core_alloc(rtp_session->pool, sizeof(*crypto_key));
 
-	if (direction == SWITCH_RTP_CRYPTO_RECV_RTCP) {
-		direction = SWITCH_RTP_CRYPTO_RECV;
-		rtp_session->srtp_idx_rtcp = idx = 1;
-	} else if (direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
-		direction = SWITCH_RTP_CRYPTO_SEND;
-		rtp_session->srtp_idx_rtcp = idx = 1;
-	}
-
-	if (direction == SWITCH_RTP_CRYPTO_RECV) {
-		policy = &rtp_session->recv_policy[idx];
-	} else {
-		policy = &rtp_session->send_policy[idx];
-	}
-
-	crypto_key->type = type;
+	crypto_key->type = ssec->crypto_type;
 	crypto_key->index = index;
-	memcpy(crypto_key->key, key, keylen);
+	memcpy(crypto_key->keysalt, keysalt, keysalt_len);
 	crypto_key->next = rtp_session->crypto_keys[direction];
 	rtp_session->crypto_keys[direction] = crypto_key;
 
@@ -3947,7 +3977,68 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		break;
 	}
 
-	policy->key = (uint8_t *) crypto_key->key;
+	/* Setup the policy with MKI if they are used. Number of key materials must be positive to use MKI. */
+	if (key_material && (*key_material_n > 0)) {
+
+		if (direction == SWITCH_RTP_CRYPTO_RECV) {
+			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI] = 1;
+		} else {
+			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI] = 1;
+		}
+
+		/* key must be NULL for libsrtp to work correctly with MKI. */
+		policy->key = NULL;
+
+		/* Allocate array for MKIs. */
+		mkis = switch_core_alloc(rtp_session->pool, *key_material_n * sizeof(srtp_master_key_t*));
+		if (!mkis) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		/* Build array of MKIs. */
+		mki_idx = 0;
+
+		while (key_material && (mki_idx < *key_material_n)) {
+
+			if (key_material->mki_size < 1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MKI bad key size at MKI %d\n", mki_idx);
+				return SWITCH_STATUS_FALSE;
+			}
+
+			mki = switch_core_alloc(rtp_session->pool, sizeof(srtp_master_key_t));
+			if (!mki) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			/* Setup MKI. */
+			mki->mki_id = switch_core_alloc(rtp_session->pool, sizeof(key_material->mki_size));
+			if (!mki->mki_id) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			mki->key = switch_core_alloc(rtp_session->pool, keysalt_len);
+			if (!mki->key) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			memcpy(mki->mki_id, &key_material->mki_id, key_material->mki_size);
+			mki->mki_size = key_material->mki_size;
+			memcpy(mki->key, key_material->raw_key, keysalt_len);
+
+			mkis[mki_idx] = mki;
+
+			key_material = key_material->next;
+			++mki_idx;
+		}
+
+		/* And pass the array of MKIs to libsrtp. */
+		policy->keys = mkis;
+		policy->num_master_keys = mki_idx;
+
+	} else {
+		policy->key = (uint8_t *) crypto_key->keysalt;
+	}
+
 	policy->next = NULL;
 
 	policy->window_size = 1024;
@@ -3968,8 +4059,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s RECV\n",
-								  rtp_type(rtp_session), idx ? "RTCP" : "RTP");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s RECV%s\n",
+								  rtp_type(rtp_session), idx ? "RTCP" : "RTP", rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI] ? " (with MKI)" : "");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
@@ -3990,8 +4081,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s SEND\n",
-								  rtp_type(rtp_session), idx ? "RTCP" : "RTP");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s SEND%s\n",
+								  rtp_type(rtp_session), idx ? "RTCP" : "RTP", rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI] ? " (with MKI)" : "");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error allocating SRTP [%d]\n", stat);
@@ -5779,8 +5870,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					int sbytes = (int) *bytes;
 					srtp_err_status_t stat = 0;
 
+					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+						stat = srtp_unprotect_rtcp(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes);
+					} else {
+						stat = srtp_unprotect_rtcp_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes, 1);
+					}
 
-					if ((stat = srtp_unprotect_rtcp(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes))) {
+					if (stat) {
 						//++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp]++;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "RTCP UNPROTECT ERR\n");
 					} else {
@@ -5974,7 +6070,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 
 				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
-					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+					stat = 0;
+					
+					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+						stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+					} else {
+						stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
+					}
+
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == srtp_err_status_replay_fail) {
 						/* false alarm nack */
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "REPLAY ERR, FALSE NACK\n");
@@ -6742,7 +6845,13 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		srtp_err_status_t stat = 0;
 
 
-		if ((stat = srtp_unprotect_rtcp(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes))) {
+		if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+			stat = srtp_unprotect_rtcp(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes);
+		} else {
+			stat = srtp_unprotect_rtcp_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_recv_msg_p->header, &sbytes, 1);
+		}
+
+		if (stat) {
 			//++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp]++;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "RTCP UNPROTECT ERR\n");
 		} else {
@@ -7191,8 +7300,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 #ifdef ENABLE_SRTP
 									if (switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
+										int stat = 0;
 										int sbytes = (int) rtcp_bytes;
-										int stat = srtp_protect_rtcp(other_rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &other_rtp_session->rtcp_send_msg.header, &sbytes);
+										
+										if (!other_rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
+											stat = srtp_protect_rtcp(other_rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &other_rtp_session->rtcp_send_msg.header, &sbytes);
+										} else {
+											stat = srtp_protect_rtcp_mki(other_rtp_session->send_ctx[other_rtp_session->srtp_idx_rtcp], &other_rtp_session->rtcp_send_msg.header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+										}
+
 										if (stat) {
 											switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 										}
@@ -8234,8 +8350,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				}
 			}
 
-
-			stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes);
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes);
+			} else {
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+			}
 
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
@@ -8820,7 +8939,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 				}
 			}
 
-			stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes);
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes);
+			} else {
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+			}
+
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 			}

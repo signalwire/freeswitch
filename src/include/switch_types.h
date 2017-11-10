@@ -779,6 +779,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_TEXT,
 	SWITCH_RTP_FLAG_OLD_FIR,
 	SWITCH_RTP_FLAG_PASSTHRU,
+	SWITCH_RTP_FLAG_SECURE_SEND_MKI,
+	SWITCH_RTP_FLAG_SECURE_RECV_MKI,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -2566,6 +2568,12 @@ typedef enum {
 	CRYPTO_INVALID
 } switch_rtp_crypto_key_type_t;
 
+/* Keep in sync with CRYPTO_KEY_PARAM_METHOD table. */
+typedef enum {
+	CRYPTO_KEY_PARAM_METHOD_INLINE,											/* identified by "inline" chars in SRTP key parameter */
+	CRYPTO_KEY_PARAM_METHOD_INVALID
+} switch_rtp_crypto_key_param_method_type_t;
+
 typedef struct payload_map_s {
 	switch_media_type_t type;
 	switch_sdp_type_t sdp_type;
@@ -2709,6 +2717,56 @@ typedef struct switch_mm_s {
 	char *auth_password;
 } switch_mm_t;
 
+#define SWITCH_RTP_MAX_CRYPTO_LEN 64
+
+/* If MKI is used, then one or more key-materials are present in the <key-params> section of the crypto attribute.
+ * This struct describes the single MKI entry (key-material) within <key-params> section of crypto attribute.
+ * Key-material follows the format:
+ *		"inline:" <key||salt> ["|" lifetime] ["|" MKI ":" length]
+ * which translates to
+ *		"inline: KEYSALT|MKI_ID:MKI_SZ" or "inline: KEYSALT|LIFETIME|MKI_ID:MKI_SZ" */
+typedef struct switch_crypto_key_material_s {
+	switch_rtp_crypto_key_param_method_type_t	method;
+	unsigned char								raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];	/* Key-salt. Master key appended with salt. Sizes determined by crypto suite. */
+	char										*crypto_key;						/* Complete key material string ("method:keysalt[|lifetime]|mki"). */
+	uint64_t									lifetime;	/* OPTIONAL. The lifetime value MAY be written as a non-zero, positive decimal integer or as a power of 2. Must be less than max lifetime of RTP and RTCP packets in given crypto suite. */
+	unsigned int								mki_id;		/* OPTIONAL. */
+	unsigned int								mki_size;	/* OPTIONAL. Byte length of the master key field in the RTP packet. */
+	struct switch_crypto_key_material_s			*next;		/* NULL if this is the last master key in crypto attribute set. */
+} switch_crypto_key_material_t;
+
+typedef struct secure_settings_s {
+	int crypto_tag;
+	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_rtp_crypto_key_type_t crypto_type;
+	char *local_crypto_key;
+	char *remote_crypto_key;
+
+	/* 
+	 * MKI support (as per rfc4568).
+	 * Normally single crypto attribute contains one key-material in a <key-params> section, e.g. "inline: KEYSALT" or "inline: KEYSALT|2^LIFETIME_BITS".
+	 * But if MKI is used, then one or more key-materials are present in the <key-params> section of the crypto attribute. Each key-material follows the format:
+	 *
+	 * "inline:" <key||salt> ["|" lifetime] ["|" MKI ":" length]
+	 *
+	 *		"inline: KEYSALT|MKI_ID:MKI_SZ"
+	 * or
+	 *		"inline: KEYSALT|2^LIFETIME_BITS|MKI_ID:MKI_SZ"
+	 *
+	 * This points to singly linked list of key-material descriptions if there is more than one key-material present in this crypto attribute (this key is inserted as the head of the list in that case), or to NULL otherwise.
+	 */
+	struct switch_crypto_key_material_s	*local_key_material_next;		/* NULL if MKI not used for crypto set on outbound SRTP. */
+	unsigned long						local_key_material_n;			/* number of key_materials in the linked list for outbound SRTP */
+	struct switch_crypto_key_material_s	*remote_key_material_next;		/* NULL if MKI not used for crypto set on inbound SRTP. */
+	unsigned long						remote_key_material_n;			/* number of key_materials in the linked list for inbound SRTP */
+} switch_secure_settings_t;
+
+/* Default MKI index used for packets send from FS. We always use first key if multiple master keys are present in the crypto attribute. */ 
+#define SWITCH_CRYPTO_MKI_INDEX 0
+
+/* max number of MKI in a single crypto line supported */
+#define SWITCH_CRYPTO_MKI_MAX	20
 
 SWITCH_END_EXTERN_C
 #endif
