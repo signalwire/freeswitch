@@ -312,8 +312,6 @@ typedef struct ts_normalize_s {
 	int last_external;
 } ts_normalize_t;
 
-#define MAX_NACKS 25
-
 struct switch_rtp {
 	/*
 	 * Two sockets are needed because we might be transcoding protocol families
@@ -479,10 +477,6 @@ struct switch_rtp {
 	uint8_t punts;
 	uint8_t clean;
 	uint32_t last_max_vb_frames;
-
-	uint32_t nack_buf[MAX_NACKS];
-	int nack_idx;
-
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -6260,21 +6254,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	return status;
 }
 
-char* pBin(long int x,char *so, int width)
-{
-	char s[width+1];
-	int    i=width;
-	s[i--]=0x00;   // terminate string
- do
-	 { // fill in array from right to left
-		 s[i--]=(x & 1) ? '1':'0';  // determine bit
-		 x>>=1;  // shift right 1 bit
-	 } while( x > 0);
- i++;   // point to last valid character
- sprintf(so,"%s",s+i); // stick it in the temp string string
- return so;
-}
-
 static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 {
 	switch_size_t bytes = 0;
@@ -6286,8 +6265,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	const char *old_host = NULL;
 	const char *my_host = NULL;
 	char bufa[50], bufb[50], bufc[50];
-	char foo[64] = "";
-	
+
 	if (!(rtp_session->flags[SWITCH_RTP_FLAG_NACK] && rtp_session->vbw)) {
 		return;  /* not enabled */
 	}
@@ -6298,8 +6276,8 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u bits [%s]\n", 
-					  switch_core_session_get_name(rtp_session->session), nack, nack, ntohs(seq), pBin(nack, foo, sizeof(foo)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u\n", 
+					  switch_core_session_get_name(rtp_session->session), nack, nack, ntohs(seq));
 
 	if (switch_jb_get_packet_by_seq(rtp_session->vbw, seq, (switch_rtp_packet_t *) send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 
@@ -6402,12 +6380,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
-				//handle_nack(rtp_session, *nack);
-				switch_mutex_lock(rtp_session->flag_mutex);
-				if (rtp_session->nack_idx < MAX_NACKS) {
-					rtp_session->nack_buf[rtp_session->nack_idx++] = *nack;
-				}
-				switch_mutex_unlock(rtp_session->flag_mutex);
+				handle_nack(rtp_session, *nack);
 				nack++;
 			}
 
@@ -8340,7 +8313,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
 			if (!rtp_session->vbw) {
-				int nack_size = 1000;
+				int nack_size = 100;
 				const char *var;
 				
 				if ((var = switch_channel_get_variable(channel, "rtp_nack_buffer_size"))) {
@@ -8519,17 +8492,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		return 0;
 	}
 
-	switch_mutex_lock(rtp_session->flag_mutex);
-	if (rtp_session->nack_idx) {
-		int i = 0;
-		
-		for(i = 0; i < rtp_session->nack_idx; i++) {
-			handle_nack(rtp_session, rtp_session->nack_buf[i]); 
-		}
-		rtp_session->nack_idx = 0;
-	}
-	switch_mutex_unlock(rtp_session->flag_mutex);
-	
 	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 	//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
 	//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]++;
@@ -8574,7 +8536,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
 			my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
+			printf(
 							  "W %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u seq=%u m=%d\n",
 							  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName",
 							  (long) bytes,
