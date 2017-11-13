@@ -461,7 +461,6 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		
 		if (ssl_err) {
 			r = ssl_err * -1;
-			wsh->down = 1;
 		}
 
 		return r;
