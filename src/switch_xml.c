@@ -1853,6 +1853,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *use
 				}
 			}
 		}
+	} else {
+		if ((users = switch_xml_child(domain, "users"))) {
+			status = find_user_in_tag(users, NULL, user_name, "id", NULL, user);
+		} else {
+			status = find_user_in_tag(domain, NULL, user_name, "id", NULL, user);
+		}
 	}
 
 	return status;
@@ -2145,7 +2151,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		status = find_user_in_tag(*domain, ip, user_name, key, params, user);
+		if ((users = switch_xml_child(*domain, "users"))) {
+			status = find_user_in_tag(users, ip, user_name, key, params, user);
+		} else {
+			status = find_user_in_tag(*domain, ip, user_name, key, params, user);
+		}
 	}
 
   end:
