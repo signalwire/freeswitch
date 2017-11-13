@@ -448,8 +448,10 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 				ssl_err = 0;
 			}
 
-		} while (--sanity > 0 && wsh->block && wrote < bytes);
+		} while (--sanity > 0 && wrote < bytes);
 
+		if (!sanity) ssl_err = 56;
+		
 		if (ssl_err) {
 			r = ssl_err * -1;
 		}
@@ -469,9 +471,9 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 
 			if (wsh->block) {
 				if (sanity < WS_WRITE_SANITY * 3 / 4) {
-					ms = 60;
+					ms = 50;
 				} else if (sanity < WS_WRITE_SANITY / 2) {
-					ms = 10;
+					ms = 25;
 				}
 			}
 			ms_sleep(ms);
@@ -483,7 +485,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 			}
 		}
 
-	} while (--sanity > 0 && wsh->block && wrote < bytes);
+	} while (--sanity > 0 && wrote < bytes);
 
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
