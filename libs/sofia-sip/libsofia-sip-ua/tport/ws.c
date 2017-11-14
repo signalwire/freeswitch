@@ -442,7 +442,9 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 			}
 
 			if (r == -1) {
-				if ((ssl_err = SSL_get_error(wsh->ssl, r)) != SSL_ERROR_WANT_WRITE) {
+				ssl_err = SSL_get_error(wsh->ssl, r);
+
+				if (ssl_err != SSL_ERROR_WANT_WRITE && ssl_err != SSL_ERROR_WANT_READ) {
 					break;
 				}
 				ssl_err = 0;
