@@ -554,6 +554,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
     switch_codec_t          *write_codec;
     switch_frame_t          *frame;
     switch_core_session_t   *fs_session;
+    switch_channel_t        *channel = NULL;
 
 
     avmd_session = (avmd_session_t *) user_data;
@@ -573,10 +574,16 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
         return SWITCH_FALSE;
     }
 
+    channel = switch_core_session_get_channel(fs_session);
+    if (channel == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
+        return SWITCH_FALSE;
+    }
+
     switch (type) {
 
         case SWITCH_ABC_TYPE_INIT:
-            if (avmd_session->settings.outbound_channnel == 1) {
+            if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
                 read_codec = switch_core_session_get_read_codec(fs_session);
                 if (read_codec == NULL) {
                     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No read codec assigned, default session rate to 8000 samples/s\n");
@@ -590,7 +597,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
                     }
                 }
             }
-            if (avmd_session->settings.inbound_channnel == 1) {
+            if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
                 write_codec = switch_core_session_get_write_codec(fs_session);
                 if (write_codec == NULL) {
                     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No write codec assigned, default session rate to 8000 samples/s\n");
@@ -1357,28 +1364,18 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     if (avmd_session->settings.report_status == 1) { /* dump dynamic parameters */
         avmd_config_dump(avmd_session);
     }
-    if (avmd_session->settings.outbound_channnel == 1) {
-        if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
-            goto end_unlock;
-        } else {
+    if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
             flags |= SMBF_READ_REPLACE;
-        }
     }
-    if (avmd_session->settings.inbound_channnel == 1) {
-        if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
-            goto end_unlock;
-        } else {
+    if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
             flags |= SMBF_WRITE_REPLACE;
-        }
     }
     if (flags == 0) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
         status = SWITCH_STATUS_FALSE;
         goto end_unlock;
     }
-    if (avmd_session->settings.outbound_channnel == 1) {
+    if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
         if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] has no codec assigned yet. Please try again\n", switch_channel_get_name(channel));
             status = SWITCH_STATUS_FALSE;
@@ -1704,23 +1701,11 @@ SWITCH_STANDARD_API(avmd_api_main) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Stop failed - avmd has not yet been started on channel [%s]!\n", switch_channel_get_name(channel));
         goto end;
     }
-    if (avmd_globals.settings.outbound_channnel == 1) {
-        if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
-            stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]\n is not outbound\n\n", uuid);
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
-            goto end;
-        } else {
+    if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_globals.settings.outbound_channnel == 1)) {
             flags |= SMBF_READ_REPLACE;
-        }
     }
-    if (avmd_globals.settings.inbound_channnel == 1) {
-        if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
-            stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]\n is not inbound\n\n", uuid);
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
-            goto end;
-        } else {
+    if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_globals.settings.inbound_channnel == 1)) {
             flags |= SMBF_WRITE_REPLACE;
-        }
     }
     if (flags == 0) {
         stream->write_function(stream, "-ERR, can't set direction for channel [%s]\n for FreeSWITCH session [%s]. Please check avmd configuration\n\n", switch_channel_get_name(channel), uuid);
@@ -1728,7 +1713,7 @@ SWITCH_STANDARD_API(avmd_api_main) {
         status = SWITCH_STATUS_FALSE;
         goto end;
     }
-    if (avmd_globals.settings.outbound_channnel == 1) {
+    if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_globals.settings.outbound_channnel == 1)) {
         if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
             stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]\n has no read codec assigned yet. Please try again.\n\n", switch_channel_get_name(channel), uuid);
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Channel [%s] has no codec assigned yet. Please try again\n", switch_channel_get_name(channel));
