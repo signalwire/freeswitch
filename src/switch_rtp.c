@@ -6187,9 +6187,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					status = SWITCH_STATUS_SUCCESS;
 					*bytes = switch_jb_get_last_read_len(rtp_session->jb);
 					rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
-					if (pt > -1) {
-						rtp_session->last_rtp_hdr.pt = pt;
-					}
+					rtp_session->last_rtp_hdr.pt = pt;
 				}
 				break;
 			case SWITCH_STATUS_BREAK:

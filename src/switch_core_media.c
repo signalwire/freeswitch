@@ -2889,6 +2889,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					(!smh->mparams->recv_te || engine->read_frame.payload != smh->mparams->recv_te) &&
 					(!smh->mparams->te || engine->read_frame.payload != smh->mparams->te) &&
 					!switch_test_flag((&engine->read_frame), SFF_CNG) &&
+					!switch_test_flag((&engine->read_frame), SFF_PLC) &&
 					engine->read_frame.payload != engine->cur_payload_map->recv_pt &&
 					engine->read_frame.payload != engine->cur_payload_map->pt) {
 
