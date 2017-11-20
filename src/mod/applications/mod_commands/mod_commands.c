@@ -1688,6 +1688,52 @@ SWITCH_STANDARD_API(url_encode_function)
 
 }
 
+SWITCH_STANDARD_API(toupper_function)
+{
+	char *reply = "";
+	char *data = NULL;
+
+	if (!zstr(cmd)) {
+		int i;
+
+		data = strdup(cmd);
+		for(i = 0; i < strlen(data); i++) {
+			data[i] = toupper(data[i]);
+		}
+		
+		reply = data;
+	}
+
+	stream->write_function(stream, "%s", reply);
+
+	switch_safe_free(data);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+SWITCH_STANDARD_API(tolower_function)
+{
+	char *reply = "";
+	char *data = NULL;
+
+	if (!zstr(cmd)) {
+		int i;
+
+		data = strdup(cmd);
+		for(i = 0; i < strlen(data); i++) {
+			data[i] = tolower(data[i]);
+		}
+		
+		reply = data;
+	}
+
+	stream->write_function(stream, "%s", reply);
+
+	switch_safe_free(data);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_STANDARD_API(user_exists_function)
 {
 	return _find_user(cmd, session, stream, SWITCH_TRUE);
@@ -7328,6 +7374,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "reg_url", "", reg_url_function, "<user>@<realm>");
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "Url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "Url encode a string", url_encode_function, "<string>");
+	SWITCH_ADD_API(commands_api_interface, "toupper", "Upper Case a string", toupper_function, "<string>");
+	SWITCH_ADD_API(commands_api_interface, "tolower", "Lower Case a string", tolower_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "Find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_early_ok", "stop ignoring early media", uuid_early_ok_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "Find a user", user_exists_function, "<key> <user> <domain>");
