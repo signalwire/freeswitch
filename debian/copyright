@@ -1725,24 +1725,6 @@ Files: src/switch_dso.c
 Copyright: 2008 Michael Jerris
 License: BSD-like
 
-Files: libs/libks/*
- libs/libscgi/src/include/scgi_oop.h
- libs/libscgi/src/scgi.c
-Copyright: 2007-2013, Anthony Minessale II
- 2007 Michael Jerris
- 1996-2000 Gray Watson
-License: BSD-3-clause
-
-Files: libs/libks/*/ks_json.[ch]
- src/include/switch_json.h
- src/switch_json.c
-Copyright: 2009 Dave Gamble
-License: MIT/X11 (BSD like)
-
-Files: libs/libks/*/simclist.[ch]
-Copyright: 2007-2011 Mij <mij@bitchx.it>
-License: ISC
-
 Files: libs/libtpl-1.5/src/tpl.[ch]
 Copyright: 2005-2010, Troy D. Hanson
 License: BSD-2-clause
