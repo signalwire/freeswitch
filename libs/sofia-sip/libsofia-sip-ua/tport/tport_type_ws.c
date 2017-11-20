@@ -635,8 +635,6 @@ int tport_ws_next_timer(tport_t *self,
 		SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
 					__func__, (void *)self,
 					(punt == 2 ? "Timeout establishing SSL" : "Error establishing SSL"), TPN_ARGS(self->tp_name), ""));
-
-		return -1;
 	}
 
 
