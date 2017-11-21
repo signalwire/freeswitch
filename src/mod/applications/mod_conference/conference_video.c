@@ -4481,7 +4481,7 @@ void conference_video_find_floor(conference_member_t *member, switch_bool_t ente
 			continue;
 		}
 
-		if (conference->floor_holder && imember == conference->floor_holder) {
+		if (conference->floor_holder && imember->id == conference->floor_holder) {
 			conference_video_set_floor_holder(conference, imember, 0);
 			continue;
 		}
