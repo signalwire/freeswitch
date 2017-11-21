@@ -6494,9 +6494,9 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			double rtt_now = 0;
 			int rtt_increase = 0, packet_loss_increase=0;
 
-			if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
-				rtp_session->send_rr = 1;
-			}
+			//if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
+			//	rtp_session->send_rr = 1;
+			//}
 
 			now = switch_micro_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
 			sec = (uint32_t)(now/1000000);              /* converted to second (NTP most significant bits) */
