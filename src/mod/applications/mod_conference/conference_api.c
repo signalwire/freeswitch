@@ -321,7 +321,7 @@ switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stre
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		conference_utils_member_set_flag(member, MFLAG_INDICATE_MUTE);
 	}
-	member->score_iir = 0;
+	conference_member_set_score_iir(member, 0);
 
 	if (stream != NULL) {
 		stream->write_function(stream, "+OK mute %u\n", member->id);
@@ -2046,25 +2046,21 @@ switch_status_t conference_api_sub_floor(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	switch_mutex_lock(member->conference->mutex);
-
-	if (member->conference->floor_holder == member) {
-		conference_member_set_floor_holder(member->conference, NULL);
+	if (member->conference->floor_holder == member->id) {
+		conference_member_set_floor_holder(member->conference, NULL, 0);
 		if (stream != NULL) {
 			stream->write_function(stream, "+OK floor none\n");
 		}
-	} else if (member->conference->floor_holder == NULL) {
-		conference_member_set_floor_holder(member->conference, member);
+	} else if (member->conference->floor_holder == 0) {
+		conference_member_set_floor_holder(member->conference, member, 0);
 		if (stream != NULL) {
 			stream->write_function(stream, "+OK floor %u\n", member->id);
 		}
 	} else {
 		if (stream != NULL) {
-			stream->write_function(stream, "-ERR floor is held by %u\n", member->conference->floor_holder->id);
+			stream->write_function(stream, "-ERR floor is held by %u\n", member->conference->floor_holder);
 		}
 	}
-
-	switch_mutex_unlock(member->conference->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2356,8 +2352,6 @@ switch_status_t conference_api_sub_vid_floor(conference_member_t *member, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(member->conference->mutex);
-
 	if (data && switch_stristr("force", (char *) data)) {
 		force = 1;
 	}
@@ -2365,7 +2359,7 @@ switch_status_t conference_api_sub_vid_floor(conference_member_t *member, switch
 	if (member->conference->video_floor_holder == member->id && conference_utils_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK)) {
 		conference_utils_clear_flag(member->conference, CFLAG_VID_FLOOR_LOCK);
 
-		conference_member_set_floor_holder(member->conference, member);
+		conference_member_set_floor_holder(member->conference, member, 0);
 		if (stream == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "conference %s OK video floor auto\n", member->conference->name);
 		} else {
@@ -2391,8 +2385,6 @@ switch_status_t conference_api_sub_vid_floor(conference_member_t *member, switch
 			stream->write_function(stream, "-ERR floor is held by %u\n", member->conference->video_floor_holder);
 		}
 	}
-
-	switch_mutex_unlock(member->conference->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2911,7 +2903,12 @@ void _conference_api_sub_relate_clear_member_relationship(conference_obj_t *conf
 			if (conference_utils_member_test_flag(other_member, MFLAG_RECEIVING_VIDEO)) {
 				conference_utils_member_clear_flag(other_member, MFLAG_RECEIVING_VIDEO);
 				if (conference->floor_holder) {
-					switch_core_session_request_video_refresh(conference->floor_holder->session);
+					conference_member_t *omember = NULL;
+		
+					if ((omember = conference_member_get(member->conference, conference->floor_holder))) {
+						switch_core_session_request_video_refresh(omember->session);
+						switch_thread_rwlock_unlock(omember->rwlock);
+					}
 				}
 			}
 			switch_thread_rwlock_unlock(other_member->rwlock);

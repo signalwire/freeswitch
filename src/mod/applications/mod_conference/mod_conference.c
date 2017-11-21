@@ -117,7 +117,7 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 			count++;
 		}
 
-		if (member == member->conference->floor_holder) {
+		if (member->id == member->conference->floor_holder) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "floor");
 			count++;
 		}
@@ -242,7 +242,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0, members_seeing_video = 0;
 		int nomoh = 0;
-		conference_member_t *floor_holder;
+		uint32_t floor_holder;
 		switch_status_t moh_status = SWITCH_STATUS_SUCCESS;
 
 		/* Sync the conference to a single timing source */
@@ -301,10 +301,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			if (conference_utils_member_test_flag(imember, MFLAG_RUNNING) && imember->session) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				switch_media_flow_t video_media_flow;
-
-				if ((!floor_holder || (imember->score_iir > SCORE_IIR_SPEAKING_MAX && (floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
+				
+				if ((!floor_holder || (imember->id != conference->floor_holder && imember->score_iir > SCORE_IIR_SPEAKING_MAX && (conference->floor_holder_score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
-					floor_holder = imember;
+
+					conference_member_set_floor_holder(conference, imember, 0);
+					floor_holder = imember->id;
 				}
 
 				video_media_flow = switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO);
@@ -364,7 +366,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		conference->members_with_avatar = members_with_avatar;
 
 		if (floor_holder != conference->floor_holder) {
-			conference_member_set_floor_holder(conference, floor_holder);
+			conference_member_set_floor_holder(conference, NULL, floor_holder);
 		}
 
 		if (conference->moh_wait > 0) {
@@ -1271,7 +1273,7 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_VIDEO_BRIDGE) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "has_floor", count++);
-		switch_xml_set_txt_d(x_tag, (member == member->conference->floor_holder) ? "true" : "false");
+		switch_xml_set_txt_d(x_tag, (member->id == member->conference->floor_holder) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "is_moderator", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_MOD) ? "true" : "false");
@@ -1376,7 +1378,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		ADDBOOL(json_conference_member_flags, "talking", conference_utils_member_test_flag(member, MFLAG_TALKING));
 		ADDBOOL(json_conference_member_flags, "has_video", switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO));
 		ADDBOOL(json_conference_member_flags, "video_bridge", conference_utils_member_test_flag(member, MFLAG_VIDEO_BRIDGE));
-		ADDBOOL(json_conference_member_flags, "has_floor", member == member->conference->floor_holder);
+		ADDBOOL(json_conference_member_flags, "has_floor", member->id == member->conference->floor_holder);
 		ADDBOOL(json_conference_member_flags, "is_moderator", conference_utils_member_test_flag(member, MFLAG_MOD));
 		ADDBOOL(json_conference_member_flags, "end_conference", conference_utils_member_test_flag(member, MFLAG_ENDCONF));
 	}

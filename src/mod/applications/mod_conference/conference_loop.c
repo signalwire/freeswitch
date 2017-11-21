@@ -910,9 +910,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 					}
 					conference_utils_member_clear_flag_locked(member, MFLAG_TALKING);
 					conference_member_update_status_field(member);
-					member->score_iir = 0;
+					conference_member_set_score_iir(member, 0);
 					member->floor_packets = 0;
-
 					stop_talking_handler(member);
 				}
 			}
@@ -926,7 +925,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int gate_check = 0;
-
+			int score_iir = 0;
+			
 			data = read_frame->data;
 			member->score = 0;
 
@@ -953,11 +953,13 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 				switch_agc_feed(member->agc, (int16_t *)read_frame->data, (read_frame->datalen / 2) * member->conference->channels, 1);
 			}
 
-			member->score_iir = (int) (((1.0 - SCORE_DECAY) * (float) member->score) + (SCORE_DECAY * (float) member->score_iir));
+			score_iir = (int) (((1.0 - SCORE_DECAY) * (float) member->score) + (SCORE_DECAY * (float) member->score_iir));
 
-			if (member->score_iir > SCORE_MAX_IIR) {
-				member->score_iir = SCORE_MAX_IIR;
+			if (score_iir > SCORE_MAX_IIR) {
+				score_iir = SCORE_MAX_IIR;
 			}
+
+			conference_member_set_score_iir(member, score_iir);
 			
 			if (member->auto_energy_level && !conference_utils_member_test_flag(member, MFLAG_TALKING)) {
 				if (++member->auto_energy_track >= (1000 / member->conference->interval * member->conference->auto_energy_sec)) {
@@ -1091,7 +1093,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 					hangover_hits--;
 				}
 
-				if (member == member->conference->floor_holder) {
+				if (member->id == member->conference->floor_holder) {
 					member->floor_packets++;
 				}
 
@@ -1164,7 +1166,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 			member->last_score = member->score;
 
-			if (member == member->conference->floor_holder) {
+			if (member->id == member->conference->floor_holder) {
 				if (member->id != member->conference->video_floor_holder &&
 					(member->floor_packets > member->conference->video_floor_packets || member->energy_level == 0)) {
 					conference_video_set_floor_holder(member->conference, member, SWITCH_FALSE);

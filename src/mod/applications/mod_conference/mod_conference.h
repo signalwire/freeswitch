@@ -673,7 +673,7 @@ typedef struct conference_obj {
 	uint32_t channels;
 	switch_mutex_t *mutex;
 	conference_member_t *members;
-	conference_member_t *floor_holder;
+	uint32_t floor_holder;
 	uint32_t video_floor_holder;
 	uint32_t last_video_floor_holder;
 	switch_mutex_t *member_mutex;
@@ -754,6 +754,7 @@ typedef struct conference_obj {
 	int scale_h264_canvas_fps_divisor;
 	char *scale_h264_canvas_bandwidth;
 	uint32_t moh_wait;
+	uint32_t floor_holder_score_iir;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -1025,7 +1026,7 @@ al_handle_t *conference_al_create(switch_memory_pool_t *pool);
 switch_status_t conference_member_parse_position(conference_member_t *member, const char *data);
 video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count, uint32_t file_count);
 void conference_list_count_only(conference_obj_t *conference, switch_stream_handle_t *stream);
-void conference_member_set_floor_holder(conference_obj_t *conference, conference_member_t *member);
+void conference_member_set_floor_holder(conference_obj_t *conference, conference_member_t *member, uint32_t id);
 void conference_utils_member_clear_flag(conference_member_t *member, member_flag_t flag);
 void conference_utils_member_clear_flag_locked(conference_member_t *member, member_flag_t flag);
 switch_status_t conference_video_attach_video_layer(conference_member_t *member, mcu_canvas_t *canvas, int idx);
@@ -1084,7 +1085,7 @@ void conference_member_check_channels(switch_frame_t *frame, conference_member_t
 
 void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream);
 void conference_fnode_check_status(conference_file_node_t *fnode, switch_stream_handle_t *stream);
-
+void conference_member_set_score_iir(conference_member_t *member, uint32_t score);
 // static conference_relationship_t *conference_member_get_relationship(conference_member_t *member, conference_member_t *other_member);
 // static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 
