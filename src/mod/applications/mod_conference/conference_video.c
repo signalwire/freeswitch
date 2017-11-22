@@ -85,8 +85,8 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
 
-	if (!(cxml = switch_xml_open_cfg("conference_layouts.conf", &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", "conference_layouts.conf");
+	if (!(cxml = switch_xml_open_cfg(conference->video_layout_conf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", conference->video_layout_conf);
 		goto done;
 	}
 
@@ -272,6 +272,9 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					vlayout->layers++;
 				}
 
+				if (!conference->default_layout_name) {
+					conference->default_layout_name = switch_core_strdup(conference->pool, name);
+				}
 				switch_core_hash_insert(conference->layout_hash, name, vlayout);
 				
 				if (!COMPLETE_INIT) {
@@ -4526,7 +4529,14 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 	}
 
 	if (member && member->video_reservation_id) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting floor not allowed on a member with a res id\n");
 		/* no video floor when a reservation id is set */
+		return;
+	}
+
+	if (member && member->video_role_id) {
+		/* no video floor when a role id is set */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting floor not allowed on a member with a role id\n");
 		return;
 	}
 

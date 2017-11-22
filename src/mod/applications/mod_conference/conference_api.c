@@ -2269,7 +2269,8 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	char *text = (char *) data;
-
+	int force = 0;
+	
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
@@ -2281,8 +2282,13 @@ switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, swit
 		stream->write_function(stream, "-ERR conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	if (zstr(text) || !strcasecmp(text, "clear") || (member->video_role_id && !strcasecmp(text, member->video_role_id))) {
+	
+	if (!zstr(text) && *text == '=') {
+		text++;
+		force = 1;
+	}
+	
+	if (zstr(text) || !strcasecmp(text, "clear") || (!force && member->video_role_id && !strcasecmp(text, member->video_role_id))) {
 		member->video_role_id = NULL;
 		stream->write_function(stream, "+OK role_id cleared\n");
 	} else {

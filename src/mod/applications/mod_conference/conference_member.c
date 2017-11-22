@@ -1065,7 +1065,7 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 	conference_member_t *lmember = NULL;
 
 	conference->floor_holder_score_iir = 0;
-	
+
 	if (conference->floor_holder) {
 		if ((member && conference->floor_holder == member->id) || (id && conference->floor_holder == id)) {
 			goto end;
@@ -1079,7 +1079,6 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 		member = lmember = conference_member_get(conference, id);
 	}
 	
-
 	if (member) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding floor %s\n",
 						  switch_channel_get_name(member->channel));
