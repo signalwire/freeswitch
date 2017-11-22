@@ -628,6 +628,7 @@ typedef struct conference_obj {
 	int auto_record_canvas;
 	char *record_filename;
 	char *outcall_templ;
+	char *video_layout_conf;
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
@@ -755,6 +756,7 @@ typedef struct conference_obj {
 	char *scale_h264_canvas_bandwidth;
 	uint32_t moh_wait;
 	uint32_t floor_holder_score_iir;
+	char *default_layout_name;
 } conference_obj_t;
 
 /* Relationship with another member */

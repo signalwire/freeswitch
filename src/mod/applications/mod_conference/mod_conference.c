@@ -306,7 +306,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 
 					conference_member_set_floor_holder(conference, imember, 0);
-					floor_holder = imember->id;
+					floor_holder = conference->floor_holder;
 				}
 
 				video_media_flow = switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO);
@@ -2642,6 +2642,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *perpetual_sound = NULL;
 	char *moh_sound = NULL;
 	char *outcall_templ = NULL;
+	char *video_layout_conf = NULL;
 	char *video_layout_name = NULL;
 	char *video_layout_group = NULL;
 	char *video_canvas_size = NULL;
@@ -2825,6 +2826,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				outcall_templ = val;
 			} else if (!strcasecmp(var, "video-layout-name") && !zstr(val)) {
 				video_layout_name = val;
+			} else if (!strcasecmp(var, "video-layout-conf") && !zstr(val)) {
+				video_layout_conf = val;
 			} else if (!strcasecmp(var, "video-canvas-count") && !zstr(val)) {
 				video_canvas_count = atoi(val);
 			} else if (!strcasecmp(var, "video-super-canvas-label-layers") && !zstr(val)) {
@@ -3064,6 +3067,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	/* Set defaults and various paramaters */
 
+	if (zstr(video_layout_conf)) {
+		video_layout_conf = "conference_layouts.conf";
+	}
+
 	/* Timer module to use */
 	if (zstr(timer_name)) {
 		timer_name = "soft";
@@ -3110,6 +3117,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->tts_voice = switch_core_strdup(conference->pool, tts_voice);
 	}
 
+	conference->video_layout_conf = switch_core_strdup(conference->pool, video_layout_conf);
 	conference->comfort_noise_level = comfort_noise_level;
 	conference->pin_retries = pin_retries;
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
@@ -3242,6 +3250,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			conference->video_layout_group = switch_core_strdup(conference->pool, video_layout_group);
 		}
 
+		if (!conference_video_get_layout(conference, video_layout_name, video_layout_group)) {
+			conference->video_layout_name = conference->video_layout_group = video_layout_group = video_layout_name = NULL;
+			if (conference_video_get_layout(conference, conference->default_layout_name, NULL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Defaulting to layout %s\n", conference->default_layout_name);
+				video_layout_name = conference->video_layout_name = conference->default_layout_name;
+			}
+		}
+		
 		if (!conference_video_get_layout(conference, video_layout_name, video_layout_group)) {
 			conference->video_layout_name = conference->video_layout_group = video_layout_group = video_layout_name = NULL;
 			conference->conference_video_mode = CONF_VIDEO_MODE_TRANSCODE;
