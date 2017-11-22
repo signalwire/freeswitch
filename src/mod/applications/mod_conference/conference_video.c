@@ -4534,12 +4534,6 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		return;
 	}
 
-	if (member && member->video_role_id) {
-		/* no video floor when a role id is set */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting floor not allowed on a member with a role id\n");
-		return;
-	}
-
 	if ((!force && conference_utils_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
 		return;
 	}
