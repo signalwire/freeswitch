@@ -1064,8 +1064,17 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 	uint32_t old_id = 0;
 	conference_member_t *lmember = NULL;
 
-	conference->floor_holder_score_iir = 0;
 
+	if (!member && id) {
+		member = lmember = conference_member_get(conference, id);
+	}
+
+	if (member && conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+		return;
+	}
+	
+	conference->floor_holder_score_iir = 0;
+	
 	if (conference->floor_holder) {
 		if ((member && conference->floor_holder == member->id) || (id && conference->floor_holder == id)) {
 			goto end;
@@ -1073,10 +1082,6 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 			old_member = conference->floor_holder;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping floor %d\n", old_member);
 		}
-	}
-
-	if (!member && id) {
-		member = lmember = conference_member_get(conference, id);
 	}
 	
 	if (member) {

@@ -305,8 +305,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				if ((!floor_holder || (imember->id != conference->floor_holder && imember->score_iir > SCORE_IIR_SPEAKING_MAX && (conference->floor_holder_score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 
-					conference_member_set_floor_holder(conference, imember, 0);
-					floor_holder = conference->floor_holder;
+		
+					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER)) {
+						conference_member_set_floor_holder(conference, imember, 0);
+						floor_holder = conference->floor_holder;
+					}
 				}
 
 				video_media_flow = switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO);

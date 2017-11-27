@@ -1080,6 +1080,8 @@ void conference_video_detach_video_layer(conference_member_t *member)
 		conference_video_set_canvas_bgimg(canvas, NULL);
 	}
 
+	conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
+	
  end:
 
 	switch_mutex_unlock(canvas->mutex);
@@ -1336,18 +1338,27 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) &&
 		!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
+		conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
 		return SWITCH_STATUS_FALSE;
 	}
 
 
 	if (!switch_channel_test_flag(channel, CF_VIDEO_READY) && !member->avatar_png_img) {
+		conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY || switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) && !member->avatar_png_img) {
+		conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+		if (member->id == member->conference->floor_holder) {
+			conference_member_set_floor_holder(member->conference, NULL, 0);
+		}
+	}
+	
 	switch_mutex_lock(canvas->mutex);
 
 	layer = &canvas->layers[idx];
@@ -2540,6 +2551,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 			if (xlayer->geometry.res_id) {
 				if (member->video_reservation_id && !strcmp(xlayer->geometry.res_id, member->video_reservation_id)) {
 					layer = xlayer;
+					conference_utils_member_set_flag(member, MFLAG_DED_VID_LAYER);
 					conference_video_attach_video_layer(member, canvas, i);
 					break;
 				}
@@ -2571,7 +2583,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 					!xlayer->fnode && !xlayer->geometry.fileonly && !xlayer->geometry.res_id && !xlayer->geometry.flooronly) {
 					switch_status_t lstatus = conference_video_attach_video_layer(member, canvas, i);
 
-					if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
+					if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {						
 						layer = xlayer;
 						break;
 					}
@@ -3322,6 +3334,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						mcu_layer_t *xlayer = &canvas->layers[i];
 						
 						if (!zstr(imember->video_role_id) && !zstr(xlayer->geometry.role_id) && !strcmp(xlayer->geometry.role_id, imember->video_role_id)) {
+							conference_utils_member_set_flag(imember, MFLAG_DED_VID_LAYER);
 							conference_video_attach_video_layer(imember, canvas, i);
 						}
 					}
@@ -4468,6 +4481,10 @@ void conference_video_find_floor(conference_member_t *member, switch_bool_t ente
 	switch_mutex_lock(conference->member_mutex);
 	for (imember = conference->members; imember; imember = imember->next) {
 
+		if (conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER)) {
+			continue;
+		}
+		
 		if (!(imember->session)) {
 			continue;
 		}
@@ -4528,12 +4545,10 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		return;
 	}
 
-	if (member && member->video_reservation_id) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting floor not allowed on a member with a res id\n");
-		/* no video floor when a reservation id is set */
-		return;
+	if (member && conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting floor not allowed on a member in a dedicated layer\n");
 	}
-
+	
 	if ((!force && conference_utils_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
 		return;
 	}

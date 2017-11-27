@@ -2046,6 +2046,14 @@ switch_status_t conference_api_sub_floor(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
+	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+		if (stream != NULL) {
+			stream->write_function(stream, "-ERR cannot set floor on a member in an active video role\n");
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	if (member->conference->floor_holder == member->id) {
 		conference_member_set_floor_holder(member->conference, NULL, 0);
 		if (stream != NULL) {
@@ -2358,6 +2366,14 @@ switch_status_t conference_api_sub_vid_floor(conference_member_t *member, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+		if (stream != NULL) {
+			stream->write_function(stream, "-ERR cannot set floor on a member in an active video role\n");
+		}
+		
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	if (data && switch_stristr("force", (char *) data)) {
 		force = 1;
 	}
