@@ -218,6 +218,7 @@ typedef enum {
 	MFLAG_TALK_DATA_EVENTS,
 	MFLAG_NO_VIDEO_BLANKS,
 	MFLAG_VIDEO_JOIN,
+	MFLAG_DED_VID_LAYER,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
