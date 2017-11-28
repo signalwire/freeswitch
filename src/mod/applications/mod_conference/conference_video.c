@@ -1353,6 +1353,10 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!zstr(member->video_role_id) && !zstr(layer->geometry.role_id) && !strcmp(layer->geometry.role_id, member->video_role_id)) {
+		conference_utils_member_set_flag(member, MFLAG_DED_VID_LAYER);
+	}
+
 	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
 		if (member->id == member->conference->floor_holder) {
 			conference_member_set_floor_holder(member->conference, NULL, 0);
