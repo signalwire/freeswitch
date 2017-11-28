@@ -1031,6 +1031,8 @@ void conference_video_detach_video_layer(conference_member_t *member)
 
 	if (member->canvas_id < 0) return;
 
+	conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
+	
 	if (!(canvas = conference_video_get_canvas_locked(member))) {
 		return;
 	}
@@ -1080,8 +1082,6 @@ void conference_video_detach_video_layer(conference_member_t *member)
 		conference_video_set_canvas_bgimg(canvas, NULL);
 	}
 
-	conference_utils_member_clear_flag(member, MFLAG_DED_VID_LAYER);
-	
  end:
 
 	switch_mutex_unlock(canvas->mutex);
@@ -1545,9 +1545,11 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		mcu_layer_t *layer = &canvas->layers[i];
 
 		if (layer->member) {
-			//conference_video_detach_video_layer(layer->member);
 			conference_video_clear_managed_kps(layer->member);
 			layer->member->video_layer_id = -1;
+
+			conference_video_detach_video_layer(layer->member);
+			
 			layer->member = NULL;
 		}
 		layer->member_id = 0;
