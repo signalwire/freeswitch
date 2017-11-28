@@ -427,6 +427,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           }
 
           updateResolutions(resolutions['validRes']);
+          /* Do not touch video device resolution if autoBand is off and we have selected a vidQual */
+          if (!storage.data.autoBand && storage.data.vidQual) {
+            w = videoResolution[storage.data.vidQual].width;
+            h = videoResolution[storage.data.vidQual].height;
+          }
           data.instance.videoParams({
             minWidth: w,
             minHeight: h,
