@@ -2625,11 +2625,15 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	switch_image_t *img = *imgP;
 	int size = 0;
 	void *pop;
-
+	int half;
 	//if (member->avatar_png_img && switch_channel_test_flag(member->channel, CF_VIDEO_READY) && conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO)) {
 	//	switch_img_free(&member->avatar_png_img);
 	//}
 
+	if ((half = switch_queue_size(member->video_queue) / 2) < 1) {
+		half = 1;
+	}
+	
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_READY)) {
 		do {
 			pop = NULL;
@@ -2641,7 +2645,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				break;
 			}
 			size = switch_queue_size(member->video_queue);
-		} while(size > 0);
+		} while(size > half);
 
 		if (conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			member->video_layer_id > -1 &&
@@ -3849,7 +3853,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				switch_core_timer_next(&canvas->timer);
 				wait_for_canvas(canvas);
-
+				
 				for (i = 0; i < canvas->total_layers; i++) {
 					mcu_layer_t *layer = &canvas->layers[i];
 					
@@ -4809,7 +4813,7 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 
 		if (frame->img && (((member->video_layer_id > -1) && canvas_id > -1) || member->canvas) &&
 			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
-			switch_queue_size(member->video_queue) < 2 && //member->conference->video_fps.fps * 2 &&
+			switch_queue_size(member->video_queue) < member->conference->video_fps.fps &&
 			!member->conference->canvases[canvas_id]->playing_video_file) {
 
 			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) || conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
