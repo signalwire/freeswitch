@@ -130,6 +130,8 @@ struct av_file_context {
 	switch_file_handle_t *handle;
 	int16_t *mux_buf;
 	switch_size_t mux_buf_len;
+
+	switch_time_t last_vid_write;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1845,8 +1847,8 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	// uint32_t size = 0;
 	uint32_t bytes;
 	int inuse;
-	int sample_start;
-	
+	int sample_start = 0;
+
 	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1901,12 +1903,38 @@ GCC_DIAG_ON(deprecated-declarations)
 		}
 	}
 
+
+	 if (context->video_timer.interval) {
+		 int delta;
+		 switch_core_timer_sync(&context->video_timer);
+
+		 delta = context->video_timer.samplecount - context->last_vid_write;
+
+		 if (delta >= 60) {
+			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Video timer sync: %ld/%d %ld\n", context->audio_st[0].next_pts, context->video_timer.samplecount, context->audio_st[0].next_pts- context->video_timer.samplecount);
+			 sample_start = context->video_timer.samplecount * (handle->samplerate / 1000);
+		 }
+		 
+		 context->last_vid_write = context->video_timer.samplecount;		 
+	 }
+
+	 
+	 if (sample_start) {
+		 int j = 0;
+		 
+		 for (j = 0; j < 2; j++) {
+			 if (context->audio_st[j].active) {
+				 context->audio_st[j].next_pts = sample_start;
+			 }
+		 }
+	 }
+ 
 	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
 		AVPacket pkt[2] = { {0} };
 		int got_packet[2] = {0};
 		int j = 0, ret = -1, audio_stream_count = 1;
 		AVFrame *use_frame = NULL;
-		
+
 		av_init_packet(&pkt[0]);
 		av_init_packet(&pkt[1]);
 
@@ -1936,16 +1964,6 @@ GCC_DIAG_ON(deprecated-declarations)
  			switch_buffer_read(context->audio_buffer, context->audio_st[0].frame->data[0], bytes);
 		}
 
-		/* Sync all audio stream timestamps to video timer */
-		if (context->video_timer.interval) {
-			switch_core_timer_sync(&context->video_timer);
-			sample_start = context->video_timer.samplecount * (handle->samplerate / 1000);
-
-			for (j = 0; j < audio_stream_count; j++) {
-				context->audio_st[j].next_pts = sample_start;
-			}
-		}
-		
 		for (j = 0; j < audio_stream_count; j++) {
 			
 			av_frame_make_writable(context->audio_st[j].frame);
