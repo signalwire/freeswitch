@@ -8534,7 +8534,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
 			my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 
-			printf(
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
 							  "W %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u seq=%u m=%d\n",
 							  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName",
 							  (long) bytes,
