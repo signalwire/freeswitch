@@ -132,6 +132,7 @@ struct av_file_context {
 	switch_size_t mux_buf_len;
 
 	switch_time_t last_vid_write;
+	int audio_timer;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1585,10 +1586,16 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	context->seek_ts = -1;
 	context->offset = DFT_RECORD_OFFSET;
 	context->handle = handle;
-
+	context->audio_timer = 1;
+	
 	if (handle->params) {
 		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 			context->offset = atoi(tmp);
+		}
+		if ((tmp = switch_event_get_header(handle->params, "video_time_audio"))) {
+			if (tmp && switch_false(tmp)) {
+				context->audio_timer = 0;
+			}
 		}
 	}
 
@@ -1910,9 +1917,12 @@ GCC_DIAG_ON(deprecated-declarations)
 
 		 delta = context->video_timer.samplecount - context->last_vid_write;
 
-		 if (delta >= 60) {
-			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Video timer sync: %ld/%d %ld\n", context->audio_st[0].next_pts, context->video_timer.samplecount, context->audio_st[0].next_pts- context->video_timer.samplecount);
-			 sample_start = context->video_timer.samplecount * (handle->samplerate / 1000);
+		 if (context->audio_timer || delta >= 60) {
+			 uint32_t new_pts = context->video_timer.samplecount * (handle->samplerate / 1000);
+			 if (!context->audio_timer) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Delta of %d detected.  Video timer sync: %ld/%d %ld\n", delta, context->audio_st[0].next_pts, context->video_timer.samplecount, new_pts - context->audio_st[0].next_pts);
+			 }
+			 sample_start = new_pts;
 		 }
 		 
 		 context->last_vid_write = context->video_timer.samplecount;		 

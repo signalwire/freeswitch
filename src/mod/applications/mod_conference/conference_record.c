@@ -233,7 +233,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 
 		if (canvas) {
-			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
+			rec->path = switch_core_sprintf(rec->pool, "{video_time_audio=false,channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
 											conference->channels,
 											conference->rate,
 											canvas->width,
@@ -241,7 +241,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 											conference->video_fps.fps,
 											orig_path);
 		} else {
-			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
+			rec->path = switch_core_sprintf(rec->pool, "{video_time_audio=false,channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
 											conference->channels,
 											conference->rate,
 											conference->canvas_width,

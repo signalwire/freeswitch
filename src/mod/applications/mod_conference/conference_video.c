@@ -1353,6 +1353,12 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_mutex_lock(canvas->mutex);
+
+	layer = &canvas->layers[idx];
+
+	layer->tagged = 0;
+
 	if (!zstr(member->video_role_id) && !zstr(layer->geometry.role_id) && !strcmp(layer->geometry.role_id, member->video_role_id)) {
 		conference_utils_member_set_flag(member, MFLAG_DED_VID_LAYER);
 	}
@@ -1363,12 +1369,6 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		}
 	}
 	
-	switch_mutex_lock(canvas->mutex);
-
-	layer = &canvas->layers[idx];
-
-	layer->tagged = 0;
-
 	if (layer->fnode || layer->geometry.fileonly) {
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
