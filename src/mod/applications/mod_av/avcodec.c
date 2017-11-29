@@ -761,7 +761,7 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 		frame->datalen = nalu->len;
 		context->nalu_current_index++;
 
-		if (nalu_type == 6 || nalu_type == 7 || nalu_type == 8 || context->nalus[context->nalu_current_index].len) {
+		if (context->nalus[context->nalu_current_index].len) {
 			frame->m = 0;
 			return SWITCH_STATUS_MORE_DATA;
 		}
@@ -780,10 +780,15 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 		memcpy(p+2, nalu->eat, left);
 		nalu->eat += left;
 		frame->datalen = left + 2;
-		frame->m = 1;
 		context->nalu_current_index++;
-		if (pkt->size > 0) av_packet_unref(pkt);
-		return SWITCH_STATUS_SUCCESS;
+
+		if (!context->nalus[context->nalu_current_index].len) {
+			if (pkt->size > 0) av_packet_unref(pkt);
+			frame->m = 1;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		return SWITCH_STATUS_MORE_DATA;
 	}
 
 	p[0] = nri | 28; // FU-A
@@ -792,6 +797,7 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
 	nalu->eat += (SLICE_SIZE - 2);
 	frame->datalen = SLICE_SIZE;
+	frame->m = 0;
 	return SWITCH_STATUS_MORE_DATA;
 }
 
@@ -1238,7 +1244,10 @@ GCC_DIAG_ON(deprecated-declarations)
 				context->nalus[i].start = p;
 				context->nalus[i].eat = p;
 			}
-			if (i >= MAX_NALUS - 2) break;
+			if (i >= MAX_NALUS - 2) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TOO MANY SLICES!\n");
+				break;
+			}
 		}
 
 		context->nalus[i].len = p - context->nalus[i].start;
