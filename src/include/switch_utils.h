@@ -391,7 +391,7 @@ static inline int switch_string_has_escaped_data(const char *in)
 #endif
 
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
-SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
+SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switch_size_t olen);
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 
 

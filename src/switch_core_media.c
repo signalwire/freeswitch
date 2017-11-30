@@ -64,16 +64,6 @@ typedef enum {
 	SMF_VB_PAUSED = (1 << 3)
 } smh_flag_t;
 
-
-typedef struct secure_settings_s {
-	int crypto_tag;
-	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	switch_rtp_crypto_key_type_t crypto_type;
-	char *local_crypto_key;
-	char *remote_crypto_key;
-} switch_secure_settings_t;
-
 typedef struct core_video_globals_s {
 	int cpu_count;
 	int cur_cpu;
@@ -282,16 +272,16 @@ struct switch_media_handle_s {
 
 };
 
-static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
-	{ "AEAD_AES_256_GCM_8", AEAD_AES_256_GCM_8, 44},
-	{ "AEAD_AES_128_GCM_8", AEAD_AES_128_GCM_8, 28},
-	{ "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46},
-	{ "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38},
-	{ "AES_CM_128_HMAC_SHA1_80", AES_CM_128_HMAC_SHA1_80, 30},
-	{ "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46},
-	{ "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38},
-	{ "AES_CM_128_HMAC_SHA1_32", AES_CM_128_HMAC_SHA1_32, 30},
-	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30}
+switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
+	{ "AEAD_AES_256_GCM_8", AEAD_AES_256_GCM_8, 44, 12},
+	{ "AEAD_AES_128_GCM_8", AEAD_AES_128_GCM_8, 28, 12},
+	{ "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
+	{ "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
+	{ "AES_CM_128_HMAC_SHA1_80", AES_CM_128_HMAC_SHA1_80, 30, 14},
+	{ "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46, 14},
+	{ "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38, 14},
+	{ "AES_CM_128_HMAC_SHA1_32", AES_CM_128_HMAC_SHA1_32, 30, 14},
+	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30, 14}
 };
 
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
@@ -315,11 +305,15 @@ SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto
 }
 
 
-SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type)
+SWITCH_DECLARE(int) switch_core_media_crypto_keysalt_len(switch_rtp_crypto_key_type_t type)
 {
 	switch_assert(type < CRYPTO_INVALID);
-	return SUITES[type].keylen;
+	return SUITES[type].keysalt_len;
 }
+
+static const char* CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INVALID] = {
+	[CRYPTO_KEY_PARAM_METHOD_INLINE] = "inline",
+};
 
 static inline switch_media_flow_t sdp_media_flow(unsigned in)
 {
@@ -1161,16 +1155,14 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
-
 //#define SAME_KEY
 #ifdef SAME_KEY
 	if (switch_channel_test_flag(channel, CF_AVPF) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
-			memcpy(engine->ssec[ctype].local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keylen);
+			memcpy(engine->ssec[ctype].local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keysalt_len);
 			key = engine->ssec[ctype].local_raw_key;
 		} else {
-			memcpy(engine->ssec[ctype].remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SUITES[ctype].keylen);
+			memcpy(engine->ssec[ctype].remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SUITES[ctype].keysalt_len);
 			key = engine->ssec[ctype].remote_raw_key;
 		}
 	} else {
@@ -1181,12 +1173,12 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 			key = engine->ssec[ctype].remote_raw_key;
 		}
 
-		switch_rtp_get_random(key, SUITES[ctype].keylen);
+		switch_rtp_get_random(key, SUITES[ctype].keysalt_len);
 #ifdef SAME_KEY
 	}
 #endif
 
-	switch_b64_encode(key, SUITES[ctype].keylen, b64_key, sizeof(b64_key));
+	switch_b64_encode(key, SUITES[ctype].keysalt_len, b64_key, sizeof(b64_key));
 	if (!switch_channel_var_true(channel, "rtp_pad_srtp_keys")) {
 		p = strrchr((char *) b64_key, '=');
 
@@ -1197,7 +1189,12 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	if (index == SWITCH_NO_CRYPTO_TAG) index = ctype + 1;
 
-	engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
+	if (switch_channel_get_variable(channel, "rtp_secure_media_mki")) {	
+		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s|2^31|1:1", index, SUITES[ctype].name, b64_key);
+	} else {
+		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
+	}
+
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
 	switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
@@ -1216,17 +1213,180 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 }
 
 
+#define CRYPTO_KEY_MATERIAL_LIFETIME_MKI_ERR	0x0u
+#define CRYPTO_KEY_MATERIAL_MKI					0x1u
+#define CRYPTO_KEY_MATERIAL_LIFETIME			0x2u
 
+#define RAW_BITS_PER_64_ENCODED_CHAR 6
 
+/* Return uint32_t which contains all the info about the field found:
+ * XXXXXXXa | YYYYYYYY | YYYYYYYY | ZZZZZZZZ
+ * where:
+ * a - CRYPTO_KEY_MATERIAL_LIFETIME if LIFETIME, CRYPTO_KEY_MATERIAL_MKI if MKI
+ * YYYYYYYY and ZZZZZZZZ - depend on 'a':
+ *				if a is LIFETIME then YYYYYYYY is decimal Base, ZZZZZZZZ is decimal Exponent
+ *				if a is MKI, then YYYYYYYY is decimal MKI_ID, ZZZZZZZZ is decimal MKI_SIZE
+ */
+static uint32_t parse_lifetime_mki(const char **p, const char *end)
+{
+	const char *field_begin;
+	const char *field_end;
+	const char *sep, *space;
+	uint32_t res = 0;
 
-switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, const char *key_str, switch_rtp_crypto_direction_t direction)
+	uint32_t val = 0;
+	int i;
+
+	switch_assert(*p != NULL);
+	switch_assert(end != NULL);
+
+	field_begin = strchr(*p, '|');
+
+	if (field_begin && (field_begin + 1 < end)) {
+		space = strchr(field_begin, ' ');
+		field_end = strchr(field_begin + 2, '|');
+
+		if (!field_end) {
+				field_end = end;
+		}
+
+		if (space) {
+			if ((field_end == NULL) || (space < field_end)) {
+				field_end = space;
+			}
+		}
+
+		if (field_end) {
+			/* Closing '|' found. */
+			sep = strchr(field_begin, ':');		/* The lifetime field never includes a colon, whereas the third field always does. (RFC 4568) */
+			if (sep && (sep + 1 < field_end) && isdigit(*(sep + 1))) {
+				res |= (CRYPTO_KEY_MATERIAL_MKI << 24);
+
+				for (i = 1, *p = sep - 1; *p != field_begin; --(*p), i *= 10) {
+					val += ((**p) - '0') * i;
+				}
+
+				res |= ((val << 8) & 0x00ffff00);			/* MKI_ID */
+
+				val = 0;
+				for (i = 1, *p = field_end - 1; *p != sep; --(*p), i *= 10) {
+					val += ((**p) - '0') * i;
+				}
+				res |= (val & 0x000000ff);					/* MKI_SIZE */
+			} else if (isdigit(*(field_begin + 1)) && (field_begin + 2) && (*(field_begin + 2) == '^') && (field_begin + 3) && isdigit(*(field_begin + 3))) {
+				res |= (CRYPTO_KEY_MATERIAL_LIFETIME << 24);
+				val = ((uint32_t) (*(field_begin + 1) - '0')) << 8;
+				res |= val;									/* LIFETIME base. */
+
+				val = 0;
+				for (i = 1, *p = field_end - 1; *p != (field_begin + 2); --(*p), i *= 10) {
+					val += ((**p) - '0') * i;
+				}
+
+				res |= (val & 0x000000ff);					/* LIFETIME exponent. */
+			}
+		}
+
+		*p = field_end;
+	}
+
+	return res;
+}
+
+static switch_crypto_key_material_t* switch_core_media_crypto_append_key_material(
+		switch_core_session_t *session,
+		switch_crypto_key_material_t *tail,
+		switch_rtp_crypto_key_param_method_type_t method,
+		unsigned char raw_key[SWITCH_RTP_MAX_CRYPTO_LEN],
+		int raw_key_len,
+		const char *key_material,
+		int key_material_len,
+		uint64_t lifetime,
+		unsigned int mki_id,
+		unsigned int mki_size)
+{
+	struct switch_crypto_key_material_s *new_key_material;
+
+	new_key_material = switch_core_session_alloc(session, (sizeof(*new_key_material)));
+	if (new_key_material == NULL) {
+		return NULL;
+	}
+
+	new_key_material->method = method;
+	memcpy(new_key_material->raw_key, raw_key, raw_key_len);
+	new_key_material->crypto_key = switch_core_session_strdup(session, key_material);
+	new_key_material->lifetime = lifetime;
+	new_key_material->mki_id = mki_id;
+	new_key_material->mki_size = mki_size;
+
+	new_key_material->next = tail;
+
+	return new_key_material;
+}
+
+/* 
+ * Skip all space and return pointer to the '\0' terminator of the char string candidate to be a key-material
+ * or pointer to first ' ' in the candidate string.
+ */
+static const char* switch_core_media_crypto_find_key_material_candidate_end(const char *p)
+{
+	const char *end;
+
+	switch_assert(p != NULL);
+
+	if (p) {
+		end = strchr(p, ' ');	/* find the end of the continuous string of characters in the candidate string */
+		if (end == NULL)
+			end = p + strlen(p);
+	}
+
+	return end;
+}
+
+switch_status_t switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction)
 {
 	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	switch_rtp_crypto_key_type_t type;
-	char *p;
+
+	const char *p, *delimit;
+	const char *key_material_begin;
+	const char *key_material_end; /* begin and end of the current key material candidate */
+	int method_len;
+	int keysalt_len;
+
+	const char		*opts;
+	uint32_t	opt_field;		/* LIFETIME or MKI */
+	switch_rtp_crypto_key_param_method_type_t	method = CRYPTO_KEY_PARAM_METHOD_INLINE;
+	uint64_t		lifetime = 0;
+	uint16_t		lifetime_base = 0;
+	uint16_t		lifetime_exp = 0;
+	uint16_t		mki_id = 0;
+	uint16_t		mki_size = 0;
+	switch_crypto_key_material_t *key_material = NULL;
+	unsigned long	*key_material_n = NULL;
+
+	bool multiple_keys = false;
+
+	const char *key_param;
 
 
-	p = strchr(key_str, ' ');
+	if (direction == SWITCH_RTP_CRYPTO_SEND || direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
+		key_param = ssec->local_crypto_key;
+		key_material = ssec->local_key_material_next;
+		key_material_n = &ssec->local_key_material_n;
+	} else {
+		key_param = ssec->remote_crypto_key;
+		key_material = ssec->remote_key_material_next;
+		key_material_n = &ssec->remote_key_material_n;
+	}
+
+	if (zstr(key_param)) {
+		goto no_crypto_found;
+	}
+
+	*key_material_n = 0;
+
+	p = strchr(key_param, ' ');
 
 	if (p && *p && *(p + 1)) {
 		p++;
@@ -1234,36 +1394,192 @@ switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, con
 		type = switch_core_media_crypto_str2type(p);
 
 		if (type == CRYPTO_INVALID) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
-			goto bad;
+			goto bad_crypto;
 		}
 
-		p = strchr(p, ' ');
-		if (p && *p && *(p + 1)) {
-			p++;
-			if (strncasecmp(p, "inline:", 7)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
-				goto bad;
-			}
-
-			p += 7;
-			switch_b64_decode(p, (char *) key, sizeof(key));
-
-			if (direction == SWITCH_RTP_CRYPTO_SEND) {
-				memcpy(ssec->local_raw_key, key, SUITES[type].keylen);
-			} else {
-				memcpy(ssec->remote_raw_key, key, SUITES[type].keylen);
-			}
-			return SWITCH_STATUS_SUCCESS;
+		p = strchr(p, ' '); /* skip the crypto suite description */
+		if (p == NULL) {
+			goto bad_crypto;
 		}
 
+		do {
+			if (*key_material_n == SWITCH_CRYPTO_MKI_MAX) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping excess of MKIs due to max number of suppoerted MKIs %d exceeded\n", SWITCH_CRYPTO_MKI_MAX);
+				break;
+			}
+
+			p = switch_strip_spaces((char*) p, 0);
+			if (p) {
+				key_material_begin = p;
+				key_material_end = switch_core_media_crypto_find_key_material_candidate_end(p);
+
+				/* Parsing the key material candidate within [begin, end). */
+
+				if ((delimit = strchr(p, ':')) == NULL) {
+					goto bad_error_parsing_near;
+				}
+
+				method_len = delimit - p;
+
+				if (strncasecmp(p, CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INLINE], method_len)) {
+					goto bad_key_param_method;
+				}
+				
+				method = CRYPTO_KEY_PARAM_METHOD_INLINE;
+
+				/* Valid key-material found. Save as default key in secure_settings_s. */
+
+				p = delimit + 1;				/* skip ':' */
+				if (!(p && *p && *(p + 1))) {
+					goto bad_keysalt;
+				}
+
+				/* Check if '|' is present in currently considered key-material. */
+				if ((opts = strchr(p, '|')) && (opts < key_material_end)) {
+					keysalt_len = opts - p;
+				} else {
+					keysalt_len = key_material_end - p;
+				}
+
+				if (keysalt_len > sizeof(key)) {
+					goto bad_keysalt_len;
+				}
+
+				switch_b64_decode(p, (char *) key, keysalt_len);
+
+				if (!multiple_keys) { /* First key becomes default (used in case no MKI is found). */
+					if (direction == SWITCH_RTP_CRYPTO_SEND) {
+						memcpy(ssec->local_raw_key, key, SUITES[type].keysalt_len);
+					} else {
+						memcpy(ssec->remote_raw_key, key, SUITES[type].keysalt_len);
+					}
+					multiple_keys = true;
+				}
+
+				p += keysalt_len;
+
+				if (p < key_material_end) {	/* Parse LIFETIME or MKI. */
+
+					if (opts) {	/* if opts != NULL then opts points to first '|' in current key-material cadidate */
+
+						lifetime = 0;
+						mki_id = 0;
+						mki_size = 0;
+
+						for (int i = 0; i < 2 && (*opts == '|'); ++i) {
+
+							opt_field = parse_lifetime_mki(&opts, key_material_end);
+
+							switch ((opt_field  >> 24) & 0x3) {
+
+								case CRYPTO_KEY_MATERIAL_LIFETIME:
+
+									lifetime_base = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
+									lifetime_exp = (opt_field & 0x000000ff) & 0xffff;
+									lifetime = pow(lifetime_base, lifetime_exp);
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LIFETIME found in %s, base %u exp %u\n", p, lifetime_base, lifetime_exp);
+									break;
+
+								case CRYPTO_KEY_MATERIAL_MKI:
+
+									mki_id = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
+									mki_size = (opt_field & 0x000000ff) & 0xffff;
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MKI found in %s, id %u size %u\n", p, mki_id, mki_size);
+									break;
+
+								default:
+									goto bad_key_lifetime_or_mki;
+							}
+						}
+
+						if (mki_id == 0 && lifetime == 0) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Bad MKI found in %s, (parsed as: id %u size %u lifetime base %u exp %u\n", p, mki_id, mki_size, lifetime_base, lifetime_exp);
+							return SWITCH_STATUS_FALSE;
+						} else if (mki_id == 0 || lifetime == 0) {
+							if (mki_id == 0) {
+								if (key_material)
+									goto bad_key_no_mki_index;
+
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty index\n");
+							} else {
+								if (mki_size == 0)
+									goto bad_key_no_mki_size;
+
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty lifetime\n");
+							}
+							continue;
+						}
+					}
+
+					if (key_material) {
+						if (mki_id == 0) {
+							goto bad_key_no_mki_index;
+						}
+
+						if (mki_size != key_material->mki_size) {
+							goto bad_key_mki_size;
+						}
+					}
+
+					key_material = switch_core_media_crypto_append_key_material(session, key_material, method, (unsigned char*) key,
+							SUITES[type].keysalt_len, (char*) key_material_begin, key_material_end - key_material_begin, lifetime, mki_id, mki_size);
+					*key_material_n = *key_material_n + 1;
+				}
+			}
+		} while ((p = switch_strip_spaces((char*) key_material_end, 0)) && (*p != '\0'));
+
+		if (direction == SWITCH_RTP_CRYPTO_SEND || direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
+			ssec->local_key_material_next = key_material;
+		} else {
+			ssec->remote_key_material_next = key_material;
+		}
+
+		return SWITCH_STATUS_SUCCESS;
 	}
 
- bad:
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+no_crypto_found:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! No crypto to parse\n");
 	return SWITCH_STATUS_FALSE;
 
+bad_error_parsing_near:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! Parsing near %s\n", p);
+	return SWITCH_STATUS_FALSE;
+
+bad_crypto:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! SRTP: Invalid format of crypto attribute %s\n", key_param);
+	return SWITCH_STATUS_FALSE;
+
+bad_keysalt:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! SRTP: Invalid keysalt in the crypto attribute %s\n", key_param);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! Parsing near %s\n", p);
+	return SWITCH_STATUS_FALSE;
+
+bad_keysalt_len:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! SRTP: Invalid keysalt length in the crypto attribute %s\n", key_param);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! Parsing near %s\n", p);
+	return SWITCH_STATUS_FALSE;
+
+bad_key_lifetime_or_mki:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! SRTP: Invalid key param MKI or LIFETIME in the crypto attribute %s\n", key_param);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! Parsing near %s\n", p);
+	return SWITCH_STATUS_FALSE;
+
+bad_key_no_mki_index:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Crypto invalid: multiple keys in a single crypto MUST all have MKI indices, %s\n", key_param);
+	return SWITCH_STATUS_FALSE;
+
+bad_key_no_mki_size:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Crypto invalid: MKI index with no MKI size in %s\n", key_param);
+	return SWITCH_STATUS_FALSE;
+
+bad_key_mki_size:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Crypto invalid: MKI sizes differ in %s\n", key_param);
+	return SWITCH_STATUS_FALSE;
+
+bad_key_param_method:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! SRTP: Invalid key param method type in %s\n", key_param);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! Parsing near %s\n", p);
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session)
@@ -1342,19 +1658,16 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 	}
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE)) {
-		switch_core_media_add_crypto(&engine->ssec[engine->crypto_type], engine->ssec[engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+		
+		if (switch_channel_get_variable(session->channel, "rtp_secure_media_mki"))
+			switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_SEND);
+
+		switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_RECV);
 
 
-		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1,
-								  engine->ssec[engine->crypto_type].crypto_type,
-								  engine->ssec[engine->crypto_type].local_raw_key,
-								  SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
+		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1, &engine->ssec[engine->crypto_type]);
 
-		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV,
-								  engine->ssec[engine->crypto_type].crypto_tag,
-								  engine->ssec[engine->crypto_type].crypto_type,
-								  engine->ssec[engine->crypto_type].remote_raw_key,
-								  SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
+		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec[engine->crypto_type].crypto_tag, &engine->ssec[engine->crypto_type]);
 
 		switch_channel_set_variable(session->channel, varname, "true");
 
@@ -1476,7 +1789,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"looking for crypto suite [%s] in [%s]\n", SUITES[j].name, crypto);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s] in [%s]\n", SUITES[j].name, crypto);
 
 		if (switch_stristr(SUITES[j].name, crypto)) {
 			ctype = SUITES[j].type;
@@ -1504,8 +1817,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				switch_channel_set_variable(session->channel, varname, vval);
 
 				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
-				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec[engine->crypto_type].crypto_type,
-										  engine->ssec[engine->crypto_type].local_raw_key, SUITES[ctype].keylen);
+				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), &engine->ssec[engine->crypto_type]);
 			}
 
 			if (a && b && !strncasecmp(a, b, 23)) {
@@ -1532,9 +1844,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 
 				if (switch_rtp_ready(engine->rtp_session) && switch_channel_test_flag(session->channel, CF_SECURE)) {
-					switch_core_media_add_crypto(&engine->ssec[engine->crypto_type], engine->ssec[engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec[engine->crypto_type].crypto_tag,
-											  engine->ssec[engine->crypto_type].crypto_type, engine->ssec[engine->crypto_type].remote_raw_key, SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
+					switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_RECV);
+					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec[engine->crypto_type].crypto_tag, &engine->ssec[engine->crypto_type]);
 				}
 				got_crypto++;
 
@@ -13414,20 +13725,13 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		int idx = atoi(tmp);
 
 		a_engine->ssec[a_engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, tmp);
-		switch_core_media_add_crypto(&a_engine->ssec[a_engine->crypto_type], a_engine->ssec[a_engine->crypto_type].local_crypto_key, SWITCH_RTP_CRYPTO_SEND);
-		switch_core_media_add_crypto(&a_engine->ssec[a_engine->crypto_type], a_engine->ssec[a_engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_SEND);
+		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_RECV);
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
-		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, idx,
-								  a_engine->crypto_type,
-								  a_engine->ssec[a_engine->crypto_type].local_raw_key,
-								  SUITES[a_engine->crypto_type].keylen);
+		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, idx, &a_engine->ssec[a_engine->crypto_type]);
 
-		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_RECV,
-								  a_engine->ssec[a_engine->crypto_type].crypto_tag,
-								  a_engine->crypto_type,
-								  a_engine->ssec[a_engine->crypto_type].remote_raw_key,
-								  SUITES[a_engine->crypto_type].keylen);
+		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, a_engine->ssec[a_engine->crypto_type].crypto_tag, &a_engine->ssec[a_engine->crypto_type]);
 	}
 
 
