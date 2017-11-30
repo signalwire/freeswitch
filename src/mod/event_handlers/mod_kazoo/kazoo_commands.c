@@ -31,6 +31,7 @@
  *
  */
 #include "mod_kazoo.h"
+#include <curl/curl.h>
 #include <switch_curl.h>
 
 #define UUID_SET_DESC "Set a variable"
@@ -158,6 +159,11 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static size_t body_callback(char *buffer, size_t size, size_t nitems, void *userdata)
+{
+	return size * nitems;
+}
+
 static size_t header_callback(char *buffer, size_t size, size_t nitems, void *userdata)
 {
 	switch_event_t* event = (switch_event_t*)userdata;
@@ -182,6 +188,7 @@ SWITCH_STANDARD_API(kz_http_put)
 	switch_event_t *params = NULL;
 	char *url = NULL;
 	char *filename = NULL;
+	int delete = 0;
 
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
 	char *ext;  /* file extension, used for MIME type identification */
@@ -279,6 +286,8 @@ SWITCH_STANDARD_API(kz_http_put)
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, stream->param_event);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, body_callback);
+
 	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
@@ -286,22 +295,24 @@ SWITCH_STANDARD_API(kz_http_put)
 
 	if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
-		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Output", "%s saved to %s\n", filename, url);
-		stream->write_function(stream, "+OK\n");
+		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Output", "%s saved to %s", filename, url);
+		stream->write_function(stream, "+OK %s saved to %s", filename, url);
+		delete = 1;
 	} else {
 		error = switch_mprintf("Received HTTP error %ld trying to save %s to %s", httpRes, filename, url);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", error);
 		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Error", "%s", error);
 		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-HTTP-Error", "%ld", httpRes);
-		stream->write_function(stream, "-ERR ");
-		stream->write_function(stream, error);
-		stream->write_function(stream, "\n");
+		stream->write_function(stream, "-ERR %s", error);
 		status = SWITCH_STATUS_GENERR;
 	}
 
 done:
 	if (file_to_put) {
 		fclose(file_to_put);
+		if(delete && kazoo_globals.delete_file_after_put) {
+			remove(filename);
+		}
 	}
 
 	if (headers) {
