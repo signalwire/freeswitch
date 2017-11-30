@@ -3551,7 +3551,7 @@ switch_status_t conference_api_sub_file_vol(conference_obj_t *conference, switch
 		int vol = 0;
 		int ok = 0;
 
-		if (argc < 2) {
+		if (argc < 3) {
 			stream->write_function(stream, "-ERR missing args\n");
 			return SWITCH_STATUS_GENERR;
 		}
