@@ -1350,7 +1350,7 @@ switch_status_t switch_core_media_add_crypto(switch_core_session_t *session, swi
 
 	const char *p, *delimit;
 	const char *key_material_begin;
-	const char *key_material_end; /* begin and end of the current key material candidate */
+	const char *key_material_end = NULL; /* begin and end of the current key material candidate */
 	int method_len;
 	int keysalt_len;
 
