@@ -856,7 +856,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 
-				if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+				if (zstr(r_sdp) || sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 					//switch_mutex_lock(tech_pvt->sofia_mutex);
 					//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
