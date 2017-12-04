@@ -1350,7 +1350,7 @@ switch_status_t switch_core_media_add_crypto(switch_core_session_t *session, swi
 
 	const char *p, *delimit;
 	const char *key_material_begin;
-	const char *key_material_end; /* begin and end of the current key material candidate */
+	const char *key_material_end = NULL; /* begin and end of the current key material candidate */
 	int method_len;
 	int keysalt_len;
 
@@ -1388,154 +1388,160 @@ switch_status_t switch_core_media_add_crypto(switch_core_session_t *session, swi
 
 	p = strchr(key_param, ' ');
 
-	if (p && *p && *(p + 1)) {
-		p++;
-
-		type = switch_core_media_crypto_str2type(p);
-
-		if (type == CRYPTO_INVALID) {
-			goto bad_crypto;
-		}
-
-		p = strchr(p, ' '); /* skip the crypto suite description */
-		if (p == NULL) {
-			goto bad_crypto;
-		}
-
-		do {
-			if (*key_material_n == SWITCH_CRYPTO_MKI_MAX) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping excess of MKIs due to max number of suppoerted MKIs %d exceeded\n", SWITCH_CRYPTO_MKI_MAX);
-				break;
-			}
-
-			p = switch_strip_spaces((char*) p, 0);
-			if (p) {
-				key_material_begin = p;
-				key_material_end = switch_core_media_crypto_find_key_material_candidate_end(p);
-
-				/* Parsing the key material candidate within [begin, end). */
-
-				if ((delimit = strchr(p, ':')) == NULL) {
-					goto bad_error_parsing_near;
-				}
-
-				method_len = delimit - p;
-
-				if (strncasecmp(p, CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INLINE], method_len)) {
-					goto bad_key_param_method;
-				}
-				
-				method = CRYPTO_KEY_PARAM_METHOD_INLINE;
-
-				/* Valid key-material found. Save as default key in secure_settings_s. */
-
-				p = delimit + 1;				/* skip ':' */
-				if (!(p && *p && *(p + 1))) {
-					goto bad_keysalt;
-				}
-
-				/* Check if '|' is present in currently considered key-material. */
-				if ((opts = strchr(p, '|')) && (opts < key_material_end)) {
-					keysalt_len = opts - p;
-				} else {
-					keysalt_len = key_material_end - p;
-				}
-
-				if (keysalt_len > sizeof(key)) {
-					goto bad_keysalt_len;
-				}
-
-				switch_b64_decode(p, (char *) key, keysalt_len);
-
-				if (!multiple_keys) { /* First key becomes default (used in case no MKI is found). */
-					if (direction == SWITCH_RTP_CRYPTO_SEND) {
-						memcpy(ssec->local_raw_key, key, SUITES[type].keysalt_len);
-					} else {
-						memcpy(ssec->remote_raw_key, key, SUITES[type].keysalt_len);
-					}
-					multiple_keys = true;
-				}
-
-				p += keysalt_len;
-
-				if (p < key_material_end) {	/* Parse LIFETIME or MKI. */
-
-					if (opts) {	/* if opts != NULL then opts points to first '|' in current key-material cadidate */
-
-						lifetime = 0;
-						mki_id = 0;
-						mki_size = 0;
-
-						for (int i = 0; i < 2 && (*opts == '|'); ++i) {
-
-							opt_field = parse_lifetime_mki(&opts, key_material_end);
-
-							switch ((opt_field  >> 24) & 0x3) {
-
-								case CRYPTO_KEY_MATERIAL_LIFETIME:
-
-									lifetime_base = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
-									lifetime_exp = (opt_field & 0x000000ff) & 0xffff;
-									lifetime = pow(lifetime_base, lifetime_exp);
-									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LIFETIME found in %s, base %u exp %u\n", p, lifetime_base, lifetime_exp);
-									break;
-
-								case CRYPTO_KEY_MATERIAL_MKI:
-
-									mki_id = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
-									mki_size = (opt_field & 0x000000ff) & 0xffff;
-									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MKI found in %s, id %u size %u\n", p, mki_id, mki_size);
-									break;
-
-								default:
-									goto bad_key_lifetime_or_mki;
-							}
-						}
-
-						if (mki_id == 0 && lifetime == 0) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Bad MKI found in %s, (parsed as: id %u size %u lifetime base %u exp %u\n", p, mki_id, mki_size, lifetime_base, lifetime_exp);
-							return SWITCH_STATUS_FALSE;
-						} else if (mki_id == 0 || lifetime == 0) {
-							if (mki_id == 0) {
-								if (key_material)
-									goto bad_key_no_mki_index;
-
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty index\n");
-							} else {
-								if (mki_size == 0)
-									goto bad_key_no_mki_size;
-
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty lifetime\n");
-							}
-							continue;
-						}
-					}
-
-					if (key_material) {
-						if (mki_id == 0) {
-							goto bad_key_no_mki_index;
-						}
-
-						if (mki_size != key_material->mki_size) {
-							goto bad_key_mki_size;
-						}
-					}
-
-					key_material = switch_core_media_crypto_append_key_material(session, key_material, method, (unsigned char*) key,
-							SUITES[type].keysalt_len, (char*) key_material_begin, key_material_end - key_material_begin, lifetime, mki_id, mki_size);
-					*key_material_n = *key_material_n + 1;
-				}
-			}
-		} while ((p = switch_strip_spaces((char*) key_material_end, 0)) && (*p != '\0'));
-
-		if (direction == SWITCH_RTP_CRYPTO_SEND || direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
-			ssec->local_key_material_next = key_material;
-		} else {
-			ssec->remote_key_material_next = key_material;
-		}
-
-		return SWITCH_STATUS_SUCCESS;
+	if (!(p && *p && *(p + 1))) {
+		goto no_crypto_found;
 	}
+
+	p++;
+
+	type = switch_core_media_crypto_str2type(p);
+
+	if (type == CRYPTO_INVALID) {
+		goto bad_crypto;
+	}
+
+	p = strchr(p, ' '); /* skip the crypto suite description */
+	if (p == NULL) {
+		goto bad_crypto;
+	}
+
+	do {
+		if (*key_material_n == SWITCH_CRYPTO_MKI_MAX) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping excess of MKIs due to max number of suppoerted MKIs %d exceeded\n", SWITCH_CRYPTO_MKI_MAX);
+			break;
+		}
+
+		p = switch_strip_spaces((char*) p, 0);
+		if (!p) {
+			break;
+		}
+
+		key_material_begin = p;
+		key_material_end = switch_core_media_crypto_find_key_material_candidate_end(p);
+
+		/* Parsing the key material candidate within [begin, end). */
+
+		if ((delimit = strchr(p, ':')) == NULL) {
+			goto bad_error_parsing_near;
+		}
+
+		method_len = delimit - p;
+
+		if (strncasecmp(p, CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INLINE], method_len)) {
+			goto bad_key_param_method;
+		}
+
+		method = CRYPTO_KEY_PARAM_METHOD_INLINE;
+
+		/* Valid key-material found. Save as default key in secure_settings_s. */
+
+		p = delimit + 1;				/* skip ':' */
+		if (!(p && *p && *(p + 1))) {
+			goto bad_keysalt;
+		}
+
+		/* Check if '|' is present in currently considered key-material. */
+		if ((opts = strchr(p, '|')) && (opts < key_material_end)) {
+			keysalt_len = opts - p;
+		} else {
+			keysalt_len = key_material_end - p;
+		}
+
+		if (keysalt_len > sizeof(key)) {
+			goto bad_keysalt_len;
+		}
+
+		switch_b64_decode(p, (char *) key, keysalt_len);
+
+		if (!multiple_keys) { /* First key becomes default (used in case no MKI is found). */
+			if (direction == SWITCH_RTP_CRYPTO_SEND) {
+				memcpy(ssec->local_raw_key, key, SUITES[type].keysalt_len);
+			} else {
+				memcpy(ssec->remote_raw_key, key, SUITES[type].keysalt_len);
+			}
+			multiple_keys = true;
+		}
+
+		p += keysalt_len;
+
+		if (!(p < key_material_end)) {
+			continue;
+		}
+
+		if (opts) {	/* if opts != NULL then opts points to first '|' in current key-material cadidate, parse it as LIFETIME or MKI */
+
+			lifetime = 0;
+			mki_id = 0;
+			mki_size = 0;
+
+			for (int i = 0; i < 2 && (*opts == '|'); ++i) {
+
+				opt_field = parse_lifetime_mki(&opts, key_material_end);
+
+				switch ((opt_field  >> 24) & 0x3) {
+
+					case CRYPTO_KEY_MATERIAL_LIFETIME:
+
+						lifetime_base = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
+						lifetime_exp = (opt_field & 0x000000ff) & 0xffff;
+						lifetime = pow(lifetime_base, lifetime_exp);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LIFETIME found in %s, base %u exp %u\n", p, lifetime_base, lifetime_exp);
+						break;
+
+					case CRYPTO_KEY_MATERIAL_MKI:
+
+						mki_id = ((opt_field & 0x00ffff00) >> 8) & 0xffff;
+						mki_size = (opt_field & 0x000000ff) & 0xffff;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MKI found in %s, id %u size %u\n", p, mki_id, mki_size);
+						break;
+
+					default:
+						goto bad_key_lifetime_or_mki;
+				}
+			}
+
+			if (mki_id == 0 && lifetime == 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Bad MKI found in %s, (parsed as: id %u size %u lifetime base %u exp %u\n", p, mki_id, mki_size, lifetime_base, lifetime_exp);
+				return SWITCH_STATUS_FALSE;
+			} else if (mki_id == 0 || lifetime == 0) {
+				if (mki_id == 0) {
+					if (key_material)
+						goto bad_key_no_mki_index;
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty index\n");
+				} else {
+					if (mki_size == 0)
+						goto bad_key_no_mki_size;
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Skipping MKI due to empty lifetime\n");
+				}
+				continue;
+			}
+		}
+
+		if (key_material) {
+			if (mki_id == 0) {
+				goto bad_key_no_mki_index;
+			}
+
+			if (mki_size != key_material->mki_size) {
+				goto bad_key_mki_size;
+			}
+		}
+
+		key_material = switch_core_media_crypto_append_key_material(session, key_material, method, (unsigned char*) key,
+				SUITES[type].keysalt_len, (char*) key_material_begin, key_material_end - key_material_begin, lifetime, mki_id, mki_size);
+		*key_material_n = *key_material_n + 1;
+	} while ((p = switch_strip_spaces((char*) key_material_end, 0)) && (*p != '\0'));
+
+	if (direction == SWITCH_RTP_CRYPTO_SEND || direction == SWITCH_RTP_CRYPTO_SEND_RTCP) {
+		ssec->local_key_material_next = key_material;
+	} else {
+		ssec->remote_key_material_next = key_material;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
 
 no_crypto_found:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! No crypto to parse\n");
