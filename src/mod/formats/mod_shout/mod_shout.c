@@ -1683,6 +1683,17 @@ static switch_status_t switch_mp3_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (flag && *flag == 0xFFFFFFFF) { // query frame_size
+		*(uint32_t *)encoded_data = lame_get_framesize(context->gfp);
+		*encoded_data_len = sizeof(uint32_t);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (decoded_data_len == 0) { // flush encoder buffer
+		*encoded_data_len = lame_encode_flush(context->gfp, encoded_data, *encoded_data_len);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (codec->implementation->number_of_channels == 2) {
 		len = lame_encode_buffer_interleaved(context->gfp, decoded_data, decoded_data_len / 4, encoded_data, *encoded_data_len);
 	} else {
