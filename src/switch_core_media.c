@@ -1189,7 +1189,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	if (index == SWITCH_NO_CRYPTO_TAG) index = ctype + 1;
 
-	if (switch_channel_get_variable(channel, "rtp_secure_media_mki")) {	
+	if (switch_channel_var_true(channel, "rtp_secure_media_mki")) {	
 		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s|2^31|1:1", index, SUITES[ctype].name, b64_key);
 	} else {
 		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
@@ -1665,7 +1665,7 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE)) {
 		
-		if (switch_channel_get_variable(session->channel, "rtp_secure_media_mki"))
+		if (switch_channel_var_true(session->channel, "rtp_secure_media_mki"))
 			switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_SEND);
 
 		switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_RECV);

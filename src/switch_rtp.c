@@ -3981,9 +3981,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	if (key_material && (*key_material_n > 0)) {
 
 		if (direction == SWITCH_RTP_CRYPTO_RECV) {
-			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI] = 1;
+			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI] = 1;	/* tell the rest of the environment MKI is used */
 		} else {
-			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI] = 1;
+			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI] = 1;	/* tell the rest of the environment MKI is used */
 		}
 
 		/* key must be NULL for libsrtp to work correctly with MKI. */
