@@ -158,7 +158,11 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 		v8::Local<v8::Context> context = isolate->GetCurrentContext();
 		v8::Local<v8::String> key = String::NewFromUtf8(isolate, "constructor_method");
 		v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, key);
-		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetPrivate(context, privateKey).ToLocalChecked());
+		Handle<External> ex;
+		v8::MaybeLocal<v8::Value> hiddenValue = args.Callee()->GetPrivate(context, privateKey);
+		if (!hiddenValue.IsEmpty()) {
+			ex = Handle<External>::Cast(hiddenValue.ToLocalChecked());
+		}
 #else
 		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetHiddenValue(String::NewFromUtf8(args.GetIsolate(), "constructor_method")));
 #endif

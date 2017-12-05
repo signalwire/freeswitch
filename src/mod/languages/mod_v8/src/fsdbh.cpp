@@ -253,7 +253,7 @@ JS_DBH_FUNCTION_IMPL(query)
 
 		if (err) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
-			switch_core_db_free(err);
+			switch_safe_free(err);
 			info.GetReturnValue().Set(false);
 		}
 	}
