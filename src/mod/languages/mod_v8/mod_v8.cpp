@@ -665,7 +665,12 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						// Compile the source code.
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 						v8::ScriptCompiler::CompileOptions options = v8::ScriptCompiler::kNoCompileOptions;
-						Handle<v8::Script> v8_script = v8::ScriptCompiler::Compile(context, &source, options).ToLocalChecked();
+						Handle<v8::Script> v8_script;
+						v8::MaybeLocal<v8::Script> v8_script_check = v8::ScriptCompiler::Compile(context, &source, options);
+						
+						if (!v8_script_check.IsEmpty()) {
+							v8_script = v8_script_check.ToLocalChecked();
+						}
 						//Handle<v8::Script> v8_script = v8::ScriptCompiler::Compile(context, source,/* String::NewFromUtf8(isolate, script_file),*/ v8::ScriptCompiler::kProduceCodeCache).ToLocalChecked();
 						//source->GetCachedData();
 #else
