@@ -5279,6 +5279,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	return SWITCH_STATUS_SUCCESS;
 
  error:
+	switch_event_free_subclass("rayo::cpa");
 	do_shutdown();
 	return SWITCH_STATUS_TERM;
 
