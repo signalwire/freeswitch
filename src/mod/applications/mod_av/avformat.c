@@ -848,7 +848,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			uint64_t delta_tmp;
 
 			switch_core_timer_sync(context->eh.video_timer);
-			delta_tmp = context->eh.video_timer->samplecount - context->eh.last_ts;
+			delta_tmp = (context->eh.video_timer->samplecount * 90) - context->eh.last_ts;
 			
 			if (delta_tmp != 0) {
 				delta_sum += delta_tmp;
