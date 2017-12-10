@@ -621,6 +621,7 @@ struct switch_video_codec_settings {
 	int32_t width;
 	int32_t height;
 	uint8_t try_hardware_encoder;
+	uint8_t fps;
 };
 
 union switch_codec_settings {
