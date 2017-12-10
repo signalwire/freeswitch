@@ -470,7 +470,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		mst->st->time_base.num = 1;
 		c->time_base.den = 90000;
 		c->time_base.num = 1;
-		c->gop_size      = 25; /* emit one intra frame every x frames at mmst */
+		c->gop_size      = fps * 10; /* emit one intra frame every 10 frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
 		//c->thread_count  = threads;
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
@@ -523,25 +523,19 @@ GCC_DIAG_ON(deprecated-declarations)
 			}
 		}
 
-		if (mm) {
-			if (mm->vb) {
-				c->bit_rate = mm->vb * 1024;
-			}
-			if (mm->keyint) {
-				c->gop_size = mm->keyint;
-			}
-		}
+
+		switch_assert(mm);
 
 		if (mm->cbr) {
 			c->rc_min_rate = c->bit_rate;
 			c->rc_max_rate = c->bit_rate;
 			c->rc_buffer_size = c->bit_rate;
 			c->qcompress = 0;
-			c->gop_size = mm->fps * 2;
-			c->keyint_min = mm->fps * 2;
+			c->gop_size = fps * 2;
+			c->keyint_min = fps * 2;
 		} else {
-			c->gop_size = 250;  // g=250
-			c->keyint_min = 25; // keyint_min=25
+			c->gop_size = fps * 10;
+			c->keyint_min = fps;
 			c->i_quant_factor = 0.71; // i_qfactor=0.71
 			c->qcompress = 0.6; // qcomp=0.6
 			c->qmin = 10;   // qmin=10
@@ -550,16 +544,22 @@ GCC_DIAG_ON(deprecated-declarations)
 			av_opt_set_int(c->priv_data, "crf", 18, 0);
 		}
 
+		if (mm->vb) {
+			c->bit_rate = mm->vb * 1024;
+		}
+
+		if (mm->keyint) {
+			c->gop_size = mm->keyint;
+		}
 
 		if (codec_id == AV_CODEC_ID_VP8) {
 			av_set_options_string(c, "quality=realtime", "=", ":");
 		}
 
-		av_opt_set_int(c->priv_data, "slice-max-size", SWITCH_DEFAULT_VIDEO_SIZE, 0);
+		// av_opt_set_int(c->priv_data, "slice-max-size", SWITCH_DEFAULT_VIDEO_SIZE, 0);
 
 		c->colorspace = AVCOL_SPC_RGB;
 		c->color_range = AVCOL_RANGE_JPEG;
-
 
 		break;
 	default:
@@ -750,6 +750,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	int d_w = context->eh.video_st->width, d_h = context->eh.video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
 	uint64_t delta_avg = 0, delta_sum = 0, delta_i = 0, delta = 0;
+	int first = 1;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 		switch_assert(context->eh.video_queue);
@@ -828,7 +829,9 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		fill_avframe(context->eh.video_st->frame, img);
 
-		if (context->eh.finalize) {
+		if (first) {
+			first = 0; // pts = 0;
+		} else if (context->eh.finalize) {
 			if (delta_i && !delta_avg) {
 				delta_avg = (int)(double)(delta_sum / delta_i);
 				delta_i = 1;
@@ -849,17 +852,16 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 			switch_core_timer_sync(context->eh.video_timer);
 			delta_tmp = (context->eh.video_timer->samplecount * 90) - context->eh.last_ts;
-			
+
 			if (delta_tmp != 0) {
 				delta_sum += delta_tmp;
 				delta_i++;
-				
+
 				if (delta_i == UINT64_MAX) {
 					delta_i = 1;
 					delta_sum = delta_avg;
 				}
-				
-				
+
 				if ((delta_i % 10) == 0) {
 					delta_avg = (int)(double)(delta_sum / delta_i);
 				}
@@ -1920,7 +1922,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		 if (context->audio_timer || delta >= 60) {
 			 uint32_t new_pts = context->video_timer.samplecount * (handle->samplerate / 1000);
 			 if (!context->audio_timer) {
-				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Delta of %d detected.  Video timer sync: %ld/%d %ld\n", delta, context->audio_st[0].next_pts, context->video_timer.samplecount, new_pts - context->audio_st[0].next_pts);
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Delta of %d detected.  Video timer sync: %" SWITCH_UINT64_T_FMT "/%d %" SWITCH_UINT64_T_FMT "\n", delta, context->audio_st[0].next_pts, context->video_timer.samplecount, new_pts - context->audio_st[0].next_pts);
 			 }
 			 sample_start = new_pts;
 		 }
