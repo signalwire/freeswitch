@@ -377,6 +377,7 @@ struct switch_rtp {
 	switch_rtp_invalid_handler_t invalid_handler;
 	void *private_data;
 	uint32_t ts;
+	//uint32_t last_clock_ts;
 	uint32_t last_write_ts;
 	uint32_t last_read_ts;
 	uint32_t last_cng_ts;
@@ -1518,16 +1519,8 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 		if (timestamp) {
 			rtp_session->ts = (uint32_t) timestamp;
 			changed++;
-			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-			if (abs((int32_t)(rtp_session->ts - rtp_session->last_write_ts)) > rtp_session->samples_per_interval 
-				&& !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
-				m++;
-			}
 		} else if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			switch_core_timer_sync(&rtp_session->write_timer);
-			if (rtp_session->last_write_ts == rtp_session->write_timer.samplecount) {
-				switch_core_timer_step(&rtp_session->write_timer);
-			}
+			switch_core_timer_next(&rtp_session->write_timer);
 			rtp_session->ts = rtp_session->write_timer.samplecount;
 			changed++;
 		}
@@ -1535,6 +1528,12 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 
 	if (!changed) {
 		rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+	} else {
+		/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
+		if (abs((int32_t)(rtp_session->ts - rtp_session->last_write_ts)) > rtp_session->samples_per_interval 
+			&& !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
+			m++;
+		}
 	}
 
 	return m;
@@ -2019,10 +2018,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
-
-	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-		switch_core_timer_sync(&rtp_session->write_timer);
-	}
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 		rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] &&
@@ -4154,7 +4149,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_ses
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
 							  "RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet / 1000);
-			switch_core_timer_init(&rtp_session->write_timer, rtp_session->timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool);
+			switch_core_timer_init(&rtp_session->write_timer, rtp_session->timer_name, (ms_per_packet / 1000), samples_per_interval, rtp_session->pool);
 		} else {
 
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
@@ -4279,7 +4274,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
 							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet / 1000);
-			switch_core_timer_init(&rtp_session->write_timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool);
+			switch_core_timer_init(&rtp_session->write_timer, timer_name, (ms_per_packet / 1000), samples_per_interval, pool);
 #ifdef DEBUG_TS_ROLLOVER
 			rtp_session->timer.tick = TS_ROLLOVER_START / samples_per_interval;
 #endif
@@ -5261,7 +5256,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (!rtp_session->last_write_ts) {
 			if (rtp_session->timer.timer_interface) {
-				switch_core_timer_sync(&rtp_session->write_timer);
+				//switch_core_timer_sync(&rtp_session->write_timer);
 				rtp_session->last_write_ts = rtp_session->write_timer.samplecount;
 			} else {
 				rtp_session->last_write_ts = rtp_session->samples_per_interval;
@@ -5312,7 +5307,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->need_mark = 1;
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-				switch_core_timer_sync(&rtp_session->write_timer);
+				//switch_core_timer_sync(&rtp_session->write_timer);
 				rtp_session->last_write_samplecount = rtp_session->write_timer.samplecount;
 			}
 
@@ -5330,7 +5325,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 		void *pop;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-			switch_core_timer_sync(&rtp_session->write_timer);
+			//switch_core_timer_sync(&rtp_session->write_timer);
 			if (rtp_session->write_timer.samplecount < rtp_session->next_write_samplecount) {
 				return;
 			}
@@ -8002,7 +7997,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	WRITE_INC(rtp_session);
 	
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-		switch_core_timer_sync(&rtp_session->write_timer);
+		//switch_core_timer_sync(&rtp_session->write_timer);
 	}
 
 	if (send_msg) {
@@ -8056,7 +8051,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-				switch_core_timer_sync(&rtp_session->write_timer);
+				//switch_core_timer_sync(&rtp_session->write_timer);
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] &&
@@ -8502,7 +8497,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-			switch_core_timer_sync(&rtp_session->write_timer);
+			//switch_core_timer_sync(&rtp_session->write_timer);
 			rtp_session->last_write_samplecount = rtp_session->write_timer.samplecount;
 		}
 
