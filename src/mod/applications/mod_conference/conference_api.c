@@ -1415,8 +1415,11 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	int x = 0, id = -1;
 	char *group = NULL;
 	char *array[4] = {0};
-	int sdiv = 0, fdiv = 0;
-	
+	float sdiv = 0;
+	int fdiv = 0;
+	int force_w = 0, force_h = 0;
+
+			
 	if (!conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 		stream->write_function(stream, "-ERR Bandwidth control not available.\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -1430,9 +1433,25 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	switch_split(argv[2], ':', array);
 
 	if (array[1]) {
-		sdiv = atoi(array[1]);
-		if (sdiv < 2 || sdiv > 8) {
-			sdiv = 0;
+		if (*array[1] == '=') {
+			char *p = array[1];
+			
+			force_w = atoi((p+1));
+			if ((p = strchr(p+1, 'x'))) {
+				p++;
+				if (*p) {
+					force_h = atoi(p);
+				}
+			}
+
+			if (!(force_w > 100 && force_w < 1920 && force_h > 100 && force_h < 1080)) {
+				force_w = force_h = 0;
+			}
+		} else {
+			sdiv = atof(array[1]);
+			if (sdiv < 1.5 || sdiv > 8.0) {
+				sdiv = 0;
+			}
 		}
 	}
 	
@@ -1476,28 +1495,39 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 			int j;
 
 			for (j = 0; j < canvas->write_codecs_count; j++) {
+				int w = canvas->width, h = canvas->height;
+				
 				if ((zstr(group) || !strcmp(group, switch_str_nil(canvas->write_codecs[j]->video_codec_group)))) {
 					switch_core_codec_control(&canvas->write_codecs[j]->codec, SCC_VIDEO_BANDWIDTH,
 											  SCCT_INT, &video_write_bandwidth, SCCT_NONE, NULL, NULL, NULL);
-					stream->write_function(stream, "+OK Set Bandwidth for canvas %d index %d group[%s] to %d\n", i + 1, j, 
-										   switch_str_nil(canvas->write_codecs[j]->video_codec_group), video_write_bandwidth);
 					
 					if (fdiv) {
 						canvas->write_codecs[j]->fps_divisor = fdiv;
 					}
-					
-					if (sdiv) {
-						int w = 0, h = 0;
 
-						w = canvas->width;
-						h = canvas->width;
-						
-						w /= sdiv;
-						h /= sdiv;
-
-						switch_img_free(&canvas->write_codecs[j]->scaled_img);
-						canvas->write_codecs[j]->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 16);
+					if (force_w && force_h) {
+						w = force_w;
+						h = force_h;
+					} else if (sdiv) {
+						w = (int)((float) w / sdiv);
+						h = (int)((float) h / sdiv);
 					}
+
+					if (w && h) {
+						switch_img_free(&canvas->write_codecs[j]->scaled_img);
+						if (w != canvas->img->d_w || h != canvas->img->d_h) {
+							canvas->write_codecs[j]->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 16);
+						}
+					}
+
+					if (!sdiv && w) {
+						sdiv = (float)canvas->img->d_w / w;
+					}
+
+					
+					stream->write_function(stream, "+OK Set Bandwidth for canvas %d index %d group[%s] to %d sdiv %.2f %dx%d fdiv %d\n", i + 1, j, 
+										   switch_str_nil(canvas->write_codecs[j]->video_codec_group), video_write_bandwidth, sdiv, w,h, fdiv);
+
 					
 					x++;
 				}
