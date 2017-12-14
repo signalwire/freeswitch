@@ -3074,7 +3074,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		call_id = sip->sip_call_id->i_id;
 		switch_assert(call_id);
 
-		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q' AND call_id <> '%q'", username, call_id);
+		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q' AND call_id <> '%q' AND sip_host='%q'",
+							 username, call_id, domain_name);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_regcount_callback, &count);
 		free(sql);
