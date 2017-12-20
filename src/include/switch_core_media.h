@@ -210,6 +210,7 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *se
 
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
+SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction);
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session);
 SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local);
@@ -309,7 +310,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_session_t *session);
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str);
 SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type);
-SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);
+SWITCH_DECLARE(int) switch_core_media_crypto_keysalt_len(switch_rtp_crypto_key_type_t type);
+SWITCH_DECLARE(int) switch_core_media_crypto_salt_len(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp, const char *cmd, const char *arg);
 SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session);
 
