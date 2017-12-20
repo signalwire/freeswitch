@@ -3978,12 +3978,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				wait_for_canvas(canvas);
 			}
 
-			if (canvas->recording) {
-				conference_video_check_recording(conference, canvas, &write_frame);
-			}
-
 			if (canvas->fgimg) {
 				conference_video_set_canvas_fgimg(canvas, NULL);
+			}
+
+			if (canvas->recording) {
+				conference_video_check_recording(conference, canvas, &write_frame);
 			}
 
 			if (conference->canvas_count > 1) {
