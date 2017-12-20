@@ -311,6 +311,12 @@ SWITCH_DECLARE(int) switch_core_media_crypto_keysalt_len(switch_rtp_crypto_key_t
 	return SUITES[type].keysalt_len;
 }
 
+SWITCH_DECLARE(int) switch_core_media_crypto_salt_len(switch_rtp_crypto_key_type_t type)
+{
+	switch_assert(type < CRYPTO_INVALID);
+	return SUITES[type].salt_len;
+}
+
 static const char* CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INVALID] = {
 	[CRYPTO_KEY_PARAM_METHOD_INLINE] = "inline",
 };
@@ -1343,7 +1349,7 @@ static const char* switch_core_media_crypto_find_key_material_candidate_end(cons
 	return end;
 }
 
-switch_status_t switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction)
+SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction)
 {
 	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	switch_rtp_crypto_key_type_t type;

@@ -255,7 +255,6 @@ struct rfc2833_digit {
 	int duration;
 };
 
-
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
@@ -1102,35 +1101,35 @@ static switch_status_t mdl_add_crypto(struct private_object *tech_pvt,
 
 static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t ttype)
 {
+	switch_secure_settings_t	ssec;	/* Used just to wrap over params in a call to switch_rtp_add_crypto_key. */
 
 	if (!switch_test_flag(tech_pvt, TFLAG_SECURE)) {
 		return;
 	}
 
+	memset(&ssec, 0, sizeof(ssec));
 
 	if (tech_pvt->transports[ttype].crypto_recv_type) {
 		tech_pvt->transports[ttype].crypto_type = tech_pvt->transports[ttype].crypto_recv_type;
 	}
 
-
 	if (tech_pvt->transports[ttype].crypto_type) {
-		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session,
-								  SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->transports[ttype].crypto_type,
-								  tech_pvt->transports[ttype].local_raw_key, SWITCH_RTP_KEY_LEN);
 
+		memcpy(ssec.local_raw_key, tech_pvt->transports[ttype].local_raw_key, switch_core_media_crypto_keysalt_len(tech_pvt->transports[ttype].crypto_type));
+		ssec.local_crypto_key = switch_core_session_strdup(tech_pvt->session, tech_pvt->transports[ttype].local_crypto_key);
+		switch_core_media_add_crypto(tech_pvt->session, &ssec, SWITCH_RTP_CRYPTO_SEND);
+		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, SWITCH_RTP_CRYPTO_SEND_RTCP, tech_pvt->transports[ttype].crypto_type, &ssec);
 
-		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session,
-								  SWITCH_RTP_CRYPTO_RECV, tech_pvt->transports[ttype].crypto_tag,
-								  tech_pvt->transports[ttype].crypto_type,
-								  tech_pvt->transports[ttype].remote_raw_key, SWITCH_RTP_KEY_LEN);
+		memcpy(ssec.remote_raw_key, tech_pvt->transports[ttype].remote_raw_key, switch_core_media_crypto_keysalt_len(tech_pvt->transports[ttype].crypto_type));
+		ssec.remote_crypto_key = switch_core_session_strdup(tech_pvt->session, tech_pvt->transports[ttype].local_crypto_key);
+		switch_core_media_add_crypto(tech_pvt->session, &ssec, SWITCH_RTP_CRYPTO_RECV);
+		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->transports[ttype].crypto_type, &ssec);
 
 		switch_channel_set_variable(tech_pvt->channel, "jingle_secure_audio_confirmed", "true");
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_NOTICE,
-						  "%s %s crypto confirmed\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
-
-		}
-
+				"%s %s crypto confirmed\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
+	}
 }
 
 
