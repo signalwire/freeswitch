@@ -98,7 +98,7 @@
             }
 
             if (redirect && storage.data.preview) {
-              $location.path('/preview');
+              $location.path('/loading');
             } else if (redirect) {
               $location.path('/dialpad');
             }

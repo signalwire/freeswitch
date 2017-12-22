@@ -156,5 +156,6 @@
   "LANGUAGE": "Language:",
   "BROWSER_LANGUAGE": "Browser Language",
   "FACTORY_RESET_SETTINGS": "Factory Reset Settings",
-  "AUTOGAIN_CONTROL": "Auto Gain Control"
+  "AUTOGAIN_CONTROL": "Auto Gain Control",
+  "WAITING_DEVICES": "Waiting for devices..."
 }

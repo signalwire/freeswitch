@@ -94,6 +94,11 @@
           templateUrl: 'partials/incall.html',
           controller: 'InCallController'
         }).
+      when('/loading', {
+        title: 'Loading Verto Communicator',
+        templateUrl: 'partials/loading.html',
+        controller: 'LoadingController'
+      }).
       when('/preview', {
         title: 'Preview Video',
         templateUrl: 'partials/preview.html',
