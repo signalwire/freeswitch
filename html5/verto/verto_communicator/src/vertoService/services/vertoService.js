@@ -448,6 +448,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             }
 
           });
+          $rootScope.$emit('res_check_done');
 
         } else {
           console.debug('There is no instance of verto.');

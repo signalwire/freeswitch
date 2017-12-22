@@ -154,5 +154,6 @@
   "CHAT_DEAF": "Ligar Áudio",
   "CHAT_UNDEAF": "Desligar Áudio",
   "FACTORY_RESET_SETTINGS": "Redefinir configurações",
-  "AUTOGAIN_CONTROL": "Controle de Ganho Automático (AGC)"
+  "AUTOGAIN_CONTROL": "Controle de Ganho Automático (AGC)",
+  "WAITING_DEVICES": "Aguardando dispositivos..."
 }
