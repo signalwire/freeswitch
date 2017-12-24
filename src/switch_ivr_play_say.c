@@ -3005,7 +3005,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	if (need_create) {
 		memset(sh, 0, sizeof(*sh));
 		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, read_impl.number_of_channels, &flags, NULL)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module %s[%s]!\n", tts_name, voice_name);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			switch_ivr_clear_speech_cache(session);
 			arg_recursion_check_stop(args);
