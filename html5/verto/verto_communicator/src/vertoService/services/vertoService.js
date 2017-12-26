@@ -174,7 +174,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       login: $cookieStore.get('verto_demo_login') || "1008",
       password: $cookieStore.get('verto_demo_passwd') || "1234",
       hostname: window.location.hostname,
-      wsURL: ("wss://" + window.location.hostname + ":8082")
+      wsURL: ("wss://" + window.location.hostname + ":8082"),
+      resCheckEnded: false
     };
 
     function cleanShareCall(that) {
@@ -448,7 +449,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             }
 
           });
-          $rootScope.$emit('res_check_done');
+          data.resCheckEnded = true;
 
         } else {
           console.debug('There is no instance of verto.');

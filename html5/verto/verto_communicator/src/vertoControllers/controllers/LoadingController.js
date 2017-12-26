@@ -3,12 +3,14 @@
 
     angular
         .module('vertoControllers')
-        .controller('LoadingController', ['$rootScope', '$scope', '$location',
-            function($rootScope, $scope, $location) {
+        .controller('LoadingController', ['$rootScope', '$scope', '$location', '$interval', 'verto',
+            function($rootScope, $scope, $location, $interval, verto) {
                 console.log('Loading controller');
-                $rootScope.$on('res_check_done', function() {
-                    $location.path('/preview');
-                });
+                $interval(function() {
+                    if (verto.data.resCheckEnded) {
+                      $location.path('/preview');
+                    }
+                }, 1000);
             }
         ]);
 })();
