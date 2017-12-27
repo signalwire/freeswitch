@@ -3435,8 +3435,8 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static switch_status_t _switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session session, int force, string file, string func, int line) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE._switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session.getCPtr(session), force, file, func, line);
     return ret;
   }
 
@@ -5242,6 +5242,12 @@ else
     return ret;
   }
 
+  public static string switch_channel_get_partner_uuid_copy(SWIGTYPE_p_switch_channel channel, string buf, SWIGTYPE_p_switch_size_t blen) {
+    string ret = freeswitchPINVOKE.switch_channel_get_partner_uuid_copy(SWIGTYPE_p_switch_channel.getCPtr(channel), buf, SWIGTYPE_p_switch_size_t.getCPtr(blen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static switch_hold_record_t switch_channel_get_hold_record(SWIGTYPE_p_switch_channel channel) {
     IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_hold_record(SWIGTYPE_p_switch_channel.getCPtr(channel));
     switch_hold_record_t ret = (cPtr == IntPtr.Zero) ? null : new switch_hold_record_t(cPtr, false);
@@ -6642,9 +6648,19 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_crypto_direction_t direction, uint index, switch_rtp_crypto_key_type_t type, SWIGTYPE_p_unsigned_char key, SWIGTYPE_p_switch_size_t keylen) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)direction, index, (int)type, SWIGTYPE_p_unsigned_char.getCPtr(key), SWIGTYPE_p_switch_size_t.getCPtr(keylen));
-    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+  public static switch_srtp_crypto_suite_t SUITES {
+    set {
+      freeswitchPINVOKE.SUITES_set(switch_srtp_crypto_suite_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.SUITES_get();
+      switch_srtp_crypto_suite_t ret = (cPtr == IntPtr.Zero) ? null : new switch_srtp_crypto_suite_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public static switch_status_t switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_crypto_direction_t direction, uint index, switch_secure_settings_t ssec) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)direction, index, switch_secure_settings_t.getCPtr(ssec));
     return ret;
   }
 
@@ -7722,6 +7738,7 @@ else
   public static readonly string SWITCH_DEFAULT_CLID_NAME = freeswitchPINVOKE.SWITCH_DEFAULT_CLID_NAME_get();
   public static readonly string SWITCH_DEFAULT_CLID_NUMBER = freeswitchPINVOKE.SWITCH_DEFAULT_CLID_NUMBER_get();
   public static readonly int SWITCH_DEFAULT_DTMF_DURATION = freeswitchPINVOKE.SWITCH_DEFAULT_DTMF_DURATION_get();
+  public static readonly int SWITCH_DEFAULT_TIMEOUT = freeswitchPINVOKE.SWITCH_DEFAULT_TIMEOUT_get();
   public static readonly int SWITCH_MIN_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MIN_DTMF_DURATION_get();
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
@@ -7857,6 +7874,9 @@ else
   public static readonly int DMACHINE_MAX_DIGIT_LEN = freeswitchPINVOKE.DMACHINE_MAX_DIGIT_LEN_get();
   public static readonly int MAX_ARG_RECURSION = freeswitchPINVOKE.MAX_ARG_RECURSION_get();
   public static readonly int SWITCH_API_VERSION = freeswitchPINVOKE.SWITCH_API_VERSION_get();
+  public static readonly int SWITCH_RTP_MAX_CRYPTO_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_CRYPTO_LEN_get();
+  public static readonly int SWITCH_CRYPTO_MKI_INDEX = freeswitchPINVOKE.SWITCH_CRYPTO_MKI_INDEX_get();
+  public static readonly int SWITCH_CRYPTO_MKI_MAX = freeswitchPINVOKE.SWITCH_CRYPTO_MKI_MAX_get();
   public static readonly int SWITCH_CORE_DB_OK = freeswitchPINVOKE.SWITCH_CORE_DB_OK_get();
   public static readonly int SWITCH_CORE_DB_ERROR = freeswitchPINVOKE.SWITCH_CORE_DB_ERROR_get();
   public static readonly int SWITCH_CORE_DB_INTERNAL = freeswitchPINVOKE.SWITCH_CORE_DB_INTERNAL_get();
@@ -7903,7 +7923,6 @@ else
   public static readonly int SWITCH_RTP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTCP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTCP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN_WORDS = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_WORDS_get();
-  public static readonly int SWITCH_RTP_MAX_CRYPTO_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_CRYPTO_LEN_get();
   public static readonly string SWITCH_RTP_CRYPTO_KEY_80 = freeswitchPINVOKE.SWITCH_RTP_CRYPTO_KEY_80_get();
   public static readonly int MAX_CAND = freeswitchPINVOKE.MAX_CAND_get();
   public static readonly int SWITCH_XML_BUFSIZE = freeswitchPINVOKE.SWITCH_XML_BUFSIZE_get();
@@ -8278,6 +8297,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_DTMF_DURATION_get")]
   public static extern int SWITCH_DEFAULT_DTMF_DURATION_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_TIMEOUT_get")]
+  public static extern int SWITCH_DEFAULT_TIMEOUT_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_MIN_DTMF_DURATION_get")]
   public static extern int SWITCH_MIN_DTMF_DURATION_get();
@@ -10099,6 +10121,129 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_mm_t")]
   public static extern void delete_switch_mm_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get")]
+  public static extern int SWITCH_RTP_MAX_CRYPTO_LEN_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_method_set")]
+  public static extern void switch_crypto_key_material_t_method_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_method_get")]
+  public static extern int switch_crypto_key_material_t_method_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_raw_key_set")]
+  public static extern void switch_crypto_key_material_t_raw_key_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_raw_key_get")]
+  public static extern IntPtr switch_crypto_key_material_t_raw_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_crypto_key_set")]
+  public static extern void switch_crypto_key_material_t_crypto_key_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_crypto_key_get")]
+  public static extern string switch_crypto_key_material_t_crypto_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_lifetime_set")]
+  public static extern void switch_crypto_key_material_t_lifetime_set(HandleRef jarg1, ulong jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_lifetime_get")]
+  public static extern ulong switch_crypto_key_material_t_lifetime_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_mki_id_set")]
+  public static extern void switch_crypto_key_material_t_mki_id_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_mki_id_get")]
+  public static extern uint switch_crypto_key_material_t_mki_id_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_mki_size_set")]
+  public static extern void switch_crypto_key_material_t_mki_size_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_mki_size_get")]
+  public static extern uint switch_crypto_key_material_t_mki_size_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_next_set")]
+  public static extern void switch_crypto_key_material_t_next_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_crypto_key_material_t_next_get")]
+  public static extern IntPtr switch_crypto_key_material_t_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_crypto_key_material_t")]
+  public static extern IntPtr new_switch_crypto_key_material_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_crypto_key_material_t")]
+  public static extern void delete_switch_crypto_key_material_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_crypto_tag_set")]
+  public static extern void switch_secure_settings_t_crypto_tag_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_crypto_tag_get")]
+  public static extern int switch_secure_settings_t_crypto_tag_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_raw_key_set")]
+  public static extern void switch_secure_settings_t_local_raw_key_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_raw_key_get")]
+  public static extern IntPtr switch_secure_settings_t_local_raw_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_raw_key_set")]
+  public static extern void switch_secure_settings_t_remote_raw_key_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_raw_key_get")]
+  public static extern IntPtr switch_secure_settings_t_remote_raw_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_crypto_type_set")]
+  public static extern void switch_secure_settings_t_crypto_type_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_crypto_type_get")]
+  public static extern int switch_secure_settings_t_crypto_type_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_crypto_key_set")]
+  public static extern void switch_secure_settings_t_local_crypto_key_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_crypto_key_get")]
+  public static extern string switch_secure_settings_t_local_crypto_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_crypto_key_set")]
+  public static extern void switch_secure_settings_t_remote_crypto_key_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_crypto_key_get")]
+  public static extern string switch_secure_settings_t_remote_crypto_key_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_key_material_next_set")]
+  public static extern void switch_secure_settings_t_local_key_material_next_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_key_material_next_get")]
+  public static extern IntPtr switch_secure_settings_t_local_key_material_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_key_material_n_set")]
+  public static extern void switch_secure_settings_t_local_key_material_n_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_local_key_material_n_get")]
+  public static extern uint switch_secure_settings_t_local_key_material_n_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_key_material_next_set")]
+  public static extern void switch_secure_settings_t_remote_key_material_next_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_key_material_next_get")]
+  public static extern IntPtr switch_secure_settings_t_remote_key_material_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_key_material_n_set")]
+  public static extern void switch_secure_settings_t_remote_key_material_n_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_secure_settings_t_remote_key_material_n_get")]
+  public static extern uint switch_secure_settings_t_remote_key_material_n_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_secure_settings_t")]
+  public static extern IntPtr new_switch_secure_settings_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_secure_settings_t")]
+  public static extern void delete_switch_secure_settings_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CRYPTO_MKI_INDEX_get")]
+  public static extern int SWITCH_CRYPTO_MKI_INDEX_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CRYPTO_MKI_MAX_get")]
+  public static extern int SWITCH_CRYPTO_MKI_MAX_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_db_close")]
   public static extern int switch_core_db_close(HandleRef jarg1);
@@ -12383,8 +12528,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_cert_verify")]
   public static extern int switch_core_cert_verify(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_video_refresh")]
-  public static extern int switch_core_session_request_video_refresh(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp__switch_core_session_request_video_refresh")]
+  public static extern int _switch_core_session_request_video_refresh(HandleRef jarg1, int jarg2, string jarg3, string jarg4, int jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_send_and_request_video_refresh")]
   public static extern int switch_core_session_send_and_request_video_refresh(HandleRef jarg1);
@@ -14810,6 +14955,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_vpos_get")]
   public static extern long switch_file_handle_vpos_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_muxbuf_set")]
+  public static extern void switch_file_handle_muxbuf_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_muxbuf_get")]
+  public static extern IntPtr switch_file_handle_muxbuf_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_muxlen_set")]
+  public static extern void switch_file_handle_muxlen_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_muxlen_get")]
+  public static extern IntPtr switch_file_handle_muxlen_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_file_handle")]
   public static extern IntPtr new_switch_file_handle();
 
@@ -16805,6 +16962,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_partner_uuid")]
   public static extern string switch_channel_get_partner_uuid(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_partner_uuid_copy")]
+  public static extern string switch_channel_get_partner_uuid_copy(HandleRef jarg1, string jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_hold_record")]
   public static extern IntPtr switch_channel_get_hold_record(HandleRef jarg1);
 
@@ -18023,9 +18183,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_WORDS_get")]
   public static extern int SWITCH_RTP_MAX_BUF_LEN_WORDS_get();
 
-  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get")]
-  public static extern int SWITCH_RTP_MAX_CRYPTO_LEN_get();
-
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_CRYPTO_KEY_80_get")]
   public static extern string SWITCH_RTP_CRYPTO_KEY_80_get();
 
@@ -18071,17 +18228,29 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_type_get")]
   public static extern int switch_srtp_crypto_suite_t_type_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_keylen_set")]
-  public static extern void switch_srtp_crypto_suite_t_keylen_set(HandleRef jarg1, int jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_keysalt_len_set")]
+  public static extern void switch_srtp_crypto_suite_t_keysalt_len_set(HandleRef jarg1, int jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_keylen_get")]
-  public static extern int switch_srtp_crypto_suite_t_keylen_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_keysalt_len_get")]
+  public static extern int switch_srtp_crypto_suite_t_keysalt_len_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_salt_len_set")]
+  public static extern void switch_srtp_crypto_suite_t_salt_len_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_salt_len_get")]
+  public static extern int switch_srtp_crypto_suite_t_salt_len_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_srtp_crypto_suite_t")]
   public static extern IntPtr new_switch_srtp_crypto_suite_t();
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_srtp_crypto_suite_t")]
   public static extern void delete_switch_srtp_crypto_suite_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SUITES_set")]
+  public static extern void SUITES_set(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SUITES_get")]
+  public static extern IntPtr SUITES_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_index_set")]
   public static extern void switch_rtp_crypto_key_index_set(HandleRef jarg1, uint jarg2);
@@ -18095,11 +18264,11 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_type_get")]
   public static extern int switch_rtp_crypto_key_type_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_key_set")]
-  public static extern void switch_rtp_crypto_key_key_set(HandleRef jarg1, HandleRef jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_keysalt_set")]
+  public static extern void switch_rtp_crypto_key_keysalt_set(HandleRef jarg1, HandleRef jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_key_get")]
-  public static extern IntPtr switch_rtp_crypto_key_key_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_keysalt_get")]
+  public static extern IntPtr switch_rtp_crypto_key_keysalt_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_keylen_set")]
   public static extern void switch_rtp_crypto_key_keylen_set(HandleRef jarg1, HandleRef jarg2);
@@ -18243,7 +18412,7 @@ class freeswitchPINVOKE {
   public static extern void delete_ice_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_add_crypto_key")]
-  public static extern int switch_rtp_add_crypto_key(HandleRef jarg1, int jarg2, uint jarg3, int jarg4, HandleRef jarg5, HandleRef jarg6);
+  public static extern int switch_rtp_add_crypto_key(HandleRef jarg1, int jarg2, uint jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_random")]
   public static extern void switch_rtp_get_random(HandleRef jarg1, uint jarg2);
@@ -30144,6 +30313,7 @@ public enum switch_channel_flag_t {
   CF_INTERCEPT,
   CF_INTERCEPTED,
   CF_VIDEO_REFRESH_REQ,
+  CF_MANUAL_VID_REFRESH,
   CF_SERVICE_AUDIO,
   CF_SERVICE_VIDEO,
   CF_ZRTP_PASSTHRU_REQ,
@@ -32638,6 +32808,127 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class switch_crypto_key_material_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_crypto_key_material_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_crypto_key_material_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_crypto_key_material_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_crypto_key_material_t(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public switch_rtp_crypto_key_param_method_type_t method {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_method_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_rtp_crypto_key_param_method_type_t ret = (switch_rtp_crypto_key_param_method_type_t)freeswitchPINVOKE.switch_crypto_key_material_t_method_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_unsigned_char raw_key {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_raw_key_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_crypto_key_material_t_raw_key_get(swigCPtr);
+      SWIGTYPE_p_unsigned_char ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_unsigned_char(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public string crypto_key {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_crypto_key_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_crypto_key_material_t_crypto_key_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public ulong lifetime {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_lifetime_set(swigCPtr, value);
+    } 
+    get {
+      ulong ret = freeswitchPINVOKE.switch_crypto_key_material_t_lifetime_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint mki_id {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_mki_id_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_crypto_key_material_t_mki_id_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint mki_size {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_mki_size_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_crypto_key_material_t_mki_size_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_crypto_key_material_t next {
+    set {
+      freeswitchPINVOKE.switch_crypto_key_material_t_next_set(swigCPtr, switch_crypto_key_material_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_crypto_key_material_t_next_get(swigCPtr);
+      switch_crypto_key_material_t ret = (cPtr == IntPtr.Zero) ? null : new switch_crypto_key_material_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_crypto_key_material_t() : this(freeswitchPINVOKE.new_switch_crypto_key_material_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.12
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class switch_device_node_t : IDisposable {
   private HandleRef swigCPtr;
   protected bool swigCMemOwn;
@@ -34846,7 +35137,9 @@ namespace FreeSWITCH.Native {
 
 public enum switch_file_command_t {
   SCFC_FLUSH_AUDIO,
-  SCFC_PAUSE_READ
+  SCFC_PAUSE_READ,
+  SCFC_PAUSE_WRITE,
+  SCFC_RESUME_WRITE
 }
 
 }
@@ -35448,6 +35741,29 @@ public class switch_file_handle : IDisposable {
     } 
     get {
       long ret = freeswitchPINVOKE.switch_file_handle_vpos_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_void muxbuf {
+    set {
+      freeswitchPINVOKE.switch_file_handle_muxbuf_set(swigCPtr, SWIGTYPE_p_void.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_file_handle_muxbuf_get(swigCPtr);
+      SWIGTYPE_p_void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_void(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t muxlen {
+    set {
+      freeswitchPINVOKE.switch_file_handle_muxlen_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_file_handle_muxlen_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }
@@ -40401,12 +40717,12 @@ public class switch_rtp_crypto_key : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_unsigned_char key {
+  public SWIGTYPE_p_unsigned_char keysalt {
     set {
-      freeswitchPINVOKE.switch_rtp_crypto_key_key_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
+      freeswitchPINVOKE.switch_rtp_crypto_key_keysalt_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
     } 
     get {
-      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_crypto_key_key_get(swigCPtr);
+      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_crypto_key_keysalt_get(swigCPtr);
       SWIGTYPE_p_unsigned_char ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_unsigned_char(cPtr, false);
       return ret;
     } 
@@ -40438,6 +40754,22 @@ public class switch_rtp_crypto_key : IDisposable {
   public switch_rtp_crypto_key() : this(freeswitchPINVOKE.new_switch_rtp_crypto_key(), true) {
   }
 
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.12
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+public enum switch_rtp_crypto_key_param_method_type_t {
+  CRYPTO_KEY_PARAM_METHOD_INLINE,
+  CRYPTO_KEY_PARAM_METHOD_INVALID
 }
 
 }
@@ -40525,6 +40857,8 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_TEXT,
   SWITCH_RTP_FLAG_OLD_FIR,
   SWITCH_RTP_FLAG_PASSTHRU,
+  SWITCH_RTP_FLAG_SECURE_SEND_MKI,
+  SWITCH_RTP_FLAG_SECURE_RECV_MKI,
   SWITCH_RTP_FLAG_INVALID
 }
 
@@ -41811,6 +42145,159 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class switch_secure_settings_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_secure_settings_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_secure_settings_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_secure_settings_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_secure_settings_t(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public int crypto_tag {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_crypto_tag_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_secure_settings_t_crypto_tag_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_unsigned_char local_raw_key {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_local_raw_key_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_secure_settings_t_local_raw_key_get(swigCPtr);
+      SWIGTYPE_p_unsigned_char ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_unsigned_char(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_unsigned_char remote_raw_key {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_remote_raw_key_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_secure_settings_t_remote_raw_key_get(swigCPtr);
+      SWIGTYPE_p_unsigned_char ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_unsigned_char(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_rtp_crypto_key_type_t crypto_type {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_crypto_type_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_rtp_crypto_key_type_t ret = (switch_rtp_crypto_key_type_t)freeswitchPINVOKE.switch_secure_settings_t_crypto_type_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string local_crypto_key {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_local_crypto_key_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_secure_settings_t_local_crypto_key_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string remote_crypto_key {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_remote_crypto_key_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_secure_settings_t_remote_crypto_key_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_crypto_key_material_t local_key_material_next {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_local_key_material_next_set(swigCPtr, switch_crypto_key_material_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_secure_settings_t_local_key_material_next_get(swigCPtr);
+      switch_crypto_key_material_t ret = (cPtr == IntPtr.Zero) ? null : new switch_crypto_key_material_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public uint local_key_material_n {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_local_key_material_n_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_secure_settings_t_local_key_material_n_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_crypto_key_material_t remote_key_material_next {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_remote_key_material_next_set(swigCPtr, switch_crypto_key_material_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_secure_settings_t_remote_key_material_next_get(swigCPtr);
+      switch_crypto_key_material_t ret = (cPtr == IntPtr.Zero) ? null : new switch_crypto_key_material_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public uint remote_key_material_n {
+    set {
+      freeswitchPINVOKE.switch_secure_settings_t_remote_key_material_n_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_secure_settings_t_remote_key_material_n_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_secure_settings_t() : this(freeswitchPINVOKE.new_switch_secure_settings_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.12
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class switch_serial_event_header_t : IDisposable {
   private HandleRef swigCPtr;
   protected bool swigCMemOwn;
@@ -42676,12 +43163,22 @@ public class switch_srtp_crypto_suite_t : IDisposable {
     } 
   }
 
-  public int keylen {
+  public int keysalt_len {
     set {
-      freeswitchPINVOKE.switch_srtp_crypto_suite_t_keylen_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_srtp_crypto_suite_t_keysalt_len_set(swigCPtr, value);
     } 
     get {
-      int ret = freeswitchPINVOKE.switch_srtp_crypto_suite_t_keylen_get(swigCPtr);
+      int ret = freeswitchPINVOKE.switch_srtp_crypto_suite_t_keysalt_len_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int salt_len {
+    set {
+      freeswitchPINVOKE.switch_srtp_crypto_suite_t_salt_len_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_srtp_crypto_suite_t_salt_len_get(swigCPtr);
       return ret;
     } 
   }
