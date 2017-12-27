@@ -57,7 +57,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	fh->samples_in = 0;
-
+	fh->samplerate = 0;
+	fh->native_rate = 0;
+	fh->channels = 0;
+	fh->real_channels = 0;
+	
 	if (!fh->samplerate) {
 		if (!(fh->samplerate = rate)) {
 			fh->samplerate = 8000;
@@ -867,7 +871,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	fh->samples_in = 0;
 	fh->max_samples = 0;
-
+	
 	if (fh->buffer) {
 		switch_buffer_destroy(&fh->buffer);
 	}
