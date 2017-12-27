@@ -900,6 +900,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_DEFAULT_DTMF_DURATION_get() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_DEFAULT_TIMEOUT_get() {
+  int jresult ;
+  int result;
+  
+  result = (int)(60);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MIN_DTMF_DURATION_get() {
   int jresult ;
   int result;
@@ -7723,6 +7733,482 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_mm_t(void * jarg1) {
   
   arg1 = (switch_mm_s *)jarg1; 
   delete arg1;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get() {
+  int jresult ;
+  int result;
+  
+  result = (int)(64);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_method_set(void * jarg1, int jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  switch_rtp_crypto_key_param_method_type_t arg2 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (switch_rtp_crypto_key_param_method_type_t)jarg2; 
+  if (arg1) (arg1)->method = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_crypto_key_material_t_method_get(void * jarg1) {
+  int jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  switch_rtp_crypto_key_param_method_type_t result;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (switch_rtp_crypto_key_param_method_type_t) ((arg1)->method);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_raw_key_set(void * jarg1, void * jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned char *arg2 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (unsigned char *)jarg2; 
+  {
+    size_t ii;
+    unsigned char *b = (unsigned char *) arg1->raw_key;
+    for (ii = 0; ii < (size_t)64; ii++) b[ii] = *((unsigned char *) arg2 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_crypto_key_material_t_raw_key_get(void * jarg1) {
+  void * jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned char *result = 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (unsigned char *)(unsigned char *) ((arg1)->raw_key);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_crypto_key_set(void * jarg1, char * jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    delete [] arg1->crypto_key;
+    if (arg2) {
+      arg1->crypto_key = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->crypto_key, (const char *)arg2);
+    } else {
+      arg1->crypto_key = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_crypto_key_material_t_crypto_key_get(void * jarg1) {
+  char * jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (char *) ((arg1)->crypto_key);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_lifetime_set(void * jarg1, unsigned long long jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  uint64_t arg2 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (uint64_t)jarg2; 
+  if (arg1) (arg1)->lifetime = arg2;
+}
+
+
+SWIGEXPORT unsigned long long SWIGSTDCALL CSharp_switch_crypto_key_material_t_lifetime_get(void * jarg1) {
+  unsigned long long jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  uint64_t result;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (uint64_t) ((arg1)->lifetime);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_mki_id_set(void * jarg1, unsigned int jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->mki_id = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_crypto_key_material_t_mki_id_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (unsigned int) ((arg1)->mki_id);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_mki_size_set(void * jarg1, unsigned int jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->mki_size = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_crypto_key_material_t_mki_size_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (unsigned int) ((arg1)->mki_size);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_crypto_key_material_t_next_set(void * jarg1, void * jarg2) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  switch_crypto_key_material_s *arg2 = (switch_crypto_key_material_s *) 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  arg2 = (switch_crypto_key_material_s *)jarg2; 
+  if (arg1) (arg1)->next = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_crypto_key_material_t_next_get(void * jarg1) {
+  void * jresult ;
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  switch_crypto_key_material_s *result = 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  result = (switch_crypto_key_material_s *) ((arg1)->next);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_crypto_key_material_t() {
+  void * jresult ;
+  switch_crypto_key_material_s *result = 0 ;
+  
+  result = (switch_crypto_key_material_s *)new switch_crypto_key_material_s();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_crypto_key_material_t(void * jarg1) {
+  switch_crypto_key_material_s *arg1 = (switch_crypto_key_material_s *) 0 ;
+  
+  arg1 = (switch_crypto_key_material_s *)jarg1; 
+  delete arg1;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_crypto_tag_set(void * jarg1, int jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  int arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->crypto_tag = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_secure_settings_t_crypto_tag_get(void * jarg1) {
+  int jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  int result;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (int) ((arg1)->crypto_tag);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_local_raw_key_set(void * jarg1, void * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned char *arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (unsigned char *)jarg2; 
+  {
+    size_t ii;
+    unsigned char *b = (unsigned char *) arg1->local_raw_key;
+    for (ii = 0; ii < (size_t)64; ii++) b[ii] = *((unsigned char *) arg2 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_secure_settings_t_local_raw_key_get(void * jarg1) {
+  void * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned char *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (unsigned char *)(unsigned char *) ((arg1)->local_raw_key);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_remote_raw_key_set(void * jarg1, void * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned char *arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (unsigned char *)jarg2; 
+  {
+    size_t ii;
+    unsigned char *b = (unsigned char *) arg1->remote_raw_key;
+    for (ii = 0; ii < (size_t)64; ii++) b[ii] = *((unsigned char *) arg2 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_secure_settings_t_remote_raw_key_get(void * jarg1) {
+  void * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned char *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (unsigned char *)(unsigned char *) ((arg1)->remote_raw_key);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_crypto_type_set(void * jarg1, int jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_rtp_crypto_key_type_t arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (switch_rtp_crypto_key_type_t)jarg2; 
+  if (arg1) (arg1)->crypto_type = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_secure_settings_t_crypto_type_get(void * jarg1) {
+  int jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_rtp_crypto_key_type_t result;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (switch_rtp_crypto_key_type_t) ((arg1)->crypto_type);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_local_crypto_key_set(void * jarg1, char * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    delete [] arg1->local_crypto_key;
+    if (arg2) {
+      arg1->local_crypto_key = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->local_crypto_key, (const char *)arg2);
+    } else {
+      arg1->local_crypto_key = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_secure_settings_t_local_crypto_key_get(void * jarg1) {
+  char * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (char *) ((arg1)->local_crypto_key);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_remote_crypto_key_set(void * jarg1, char * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    delete [] arg1->remote_crypto_key;
+    if (arg2) {
+      arg1->remote_crypto_key = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->remote_crypto_key, (const char *)arg2);
+    } else {
+      arg1->remote_crypto_key = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_secure_settings_t_remote_crypto_key_get(void * jarg1) {
+  char * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (char *) ((arg1)->remote_crypto_key);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_local_key_material_next_set(void * jarg1, void * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_crypto_key_material_s *arg2 = (switch_crypto_key_material_s *) 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (switch_crypto_key_material_s *)jarg2; 
+  if (arg1) (arg1)->local_key_material_next = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_secure_settings_t_local_key_material_next_get(void * jarg1) {
+  void * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_crypto_key_material_s *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (switch_crypto_key_material_s *) ((arg1)->local_key_material_next);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_local_key_material_n_set(void * jarg1, unsigned long jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned long arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (unsigned long)jarg2; 
+  if (arg1) (arg1)->local_key_material_n = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_secure_settings_t_local_key_material_n_get(void * jarg1) {
+  unsigned long jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned long result;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (unsigned long) ((arg1)->local_key_material_n);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_remote_key_material_next_set(void * jarg1, void * jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_crypto_key_material_s *arg2 = (switch_crypto_key_material_s *) 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (switch_crypto_key_material_s *)jarg2; 
+  if (arg1) (arg1)->remote_key_material_next = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_secure_settings_t_remote_key_material_next_get(void * jarg1) {
+  void * jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  switch_crypto_key_material_s *result = 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (switch_crypto_key_material_s *) ((arg1)->remote_key_material_next);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_secure_settings_t_remote_key_material_n_set(void * jarg1, unsigned long jarg2) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned long arg2 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  arg2 = (unsigned long)jarg2; 
+  if (arg1) (arg1)->remote_key_material_n = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_secure_settings_t_remote_key_material_n_get(void * jarg1) {
+  unsigned long jresult ;
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  unsigned long result;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  result = (unsigned long) ((arg1)->remote_key_material_n);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_secure_settings_t() {
+  void * jresult ;
+  secure_settings_s *result = 0 ;
+  
+  result = (secure_settings_s *)new secure_settings_s();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_secure_settings_t(void * jarg1) {
+  secure_settings_s *arg1 = (secure_settings_s *) 0 ;
+  
+  arg1 = (secure_settings_s *)jarg1; 
+  delete arg1;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CRYPTO_MKI_INDEX_get() {
+  int jresult ;
+  int result;
+  
+  result = (int)(0);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CRYPTO_MKI_MAX_get() {
+  int jresult ;
+  int result;
+  
+  result = (int)(20);
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -17403,13 +17889,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_cert_verify(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_request_video_refresh(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp__switch_core_session_request_video_refresh(void * jarg1, int jarg2, char * jarg3, char * jarg4, int jarg5) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_core_session_request_video_refresh(arg1);
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (int)jarg5; 
+  result = (switch_status_t)_switch_core_session_request_video_refresh(arg1,arg2,(char const *)arg3,(char const *)arg4,arg5);
   jresult = result; 
   return jresult;
 }
@@ -19274,7 +19768,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_b64_decode(char * jarg1, char * jarg
     return 0;
   }
   arg3 = *argp3; 
-  result = switch_b64_decode(arg1,arg2,arg3);
+  result = switch_b64_decode((char const *)arg1,arg2,arg3);
   jresult = new switch_size_t((const switch_size_t &)result); 
   return jresult;
 }
@@ -27478,6 +27972,56 @@ SWIGEXPORT long long SWIGSTDCALL CSharp_switch_file_handle_vpos_get(void * jarg1
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_muxbuf_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  void *arg2 = (void *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (void *)jarg2; 
+  if (arg1) (arg1)->muxbuf = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_muxbuf_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  void *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (void *) ((arg1)->muxbuf);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_muxlen_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->muxlen = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_muxlen_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result =  ((arg1)->muxlen);
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_file_handle() {
   void * jresult ;
   switch_file_handle *result = 0 ;
@@ -35345,6 +35889,28 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_partner_uuid(void * jarg
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_partner_uuid_copy(void * jarg1, char * jarg2, void * jarg3) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_size_t arg3 ;
+  switch_size_t *argp3 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  result = (char *)switch_channel_get_partner_uuid_copy(arg1,arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_hold_record(void * jarg1) {
   void * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -41172,16 +41738,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_BUF_LEN_WORDS_get() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get() {
-  int jresult ;
-  int result;
-  
-  result = (int)(64);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_RTP_CRYPTO_KEY_80_get() {
   char * jresult ;
   char *result = 0 ;
@@ -41365,23 +41921,45 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_type_get(void * jar
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_keylen_set(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_keysalt_len_set(void * jarg1, int jarg2) {
   switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
   int arg2 ;
   
   arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
   arg2 = (int)jarg2; 
-  if (arg1) (arg1)->keylen = arg2;
+  if (arg1) (arg1)->keysalt_len = arg2;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_keylen_get(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_keysalt_len_get(void * jarg1) {
   int jresult ;
   switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
   int result;
   
   arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
-  result = (int) ((arg1)->keylen);
+  result = (int) ((arg1)->keysalt_len);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_salt_len_set(void * jarg1, int jarg2) {
+  switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->salt_len = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_salt_len_get(void * jarg1) {
+  int jresult ;
+  switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
+  int result;
+  
+  arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
+  result = (int) ((arg1)->salt_len);
   jresult = result; 
   return jresult;
 }
@@ -41402,6 +41980,28 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_srtp_crypto_suite_t(void * jarg
   
   arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
   delete arg1;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_SUITES_set(void * jarg1) {
+  switch_srtp_crypto_suite_t *arg1 ;
+  
+  arg1 = (switch_srtp_crypto_suite_t *)jarg1; 
+  {
+    size_t ii;
+    switch_srtp_crypto_suite_t *b = (switch_srtp_crypto_suite_t *) SUITES;
+    for (ii = 0; ii < (size_t)CRYPTO_INVALID; ii++) b[ii] = *((switch_srtp_crypto_suite_t *) arg1 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_SUITES_get() {
+  void * jresult ;
+  switch_srtp_crypto_suite_t *result = 0 ;
+  
+  result = (switch_srtp_crypto_suite_t *)(switch_srtp_crypto_suite_t *)SUITES;
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -41449,7 +42049,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_crypto_key_type_get(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_crypto_key_key_set(void * jarg1, void * jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_crypto_key_keysalt_set(void * jarg1, void * jarg2) {
   switch_rtp_crypto_key *arg1 = (switch_rtp_crypto_key *) 0 ;
   unsigned char *arg2 ;
   
@@ -41457,19 +42057,19 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_crypto_key_key_set(void * jarg1, v
   arg2 = (unsigned char *)jarg2; 
   {
     size_t ii;
-    unsigned char *b = (unsigned char *) arg1->key;
+    unsigned char *b = (unsigned char *) arg1->keysalt;
     for (ii = 0; ii < (size_t)64; ii++) b[ii] = *((unsigned char *) arg2 + ii);
   }
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_crypto_key_key_get(void * jarg1) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_crypto_key_keysalt_get(void * jarg1) {
   void * jresult ;
   switch_rtp_crypto_key *arg1 = (switch_rtp_crypto_key *) 0 ;
   unsigned char *result = 0 ;
   
   arg1 = (switch_rtp_crypto_key *)jarg1; 
-  result = (unsigned char *)(unsigned char *) ((arg1)->key);
+  result = (unsigned char *)(unsigned char *) ((arg1)->keysalt);
   jresult = result; 
   return jresult;
 }
@@ -42079,29 +42679,19 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_ice_t(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_add_crypto_key(void * jarg1, int jarg2, unsigned long jarg3, int jarg4, void * jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_add_crypto_key(void * jarg1, int jarg2, unsigned long jarg3, void * jarg4) {
   int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   switch_rtp_crypto_direction_t arg2 ;
   uint32_t arg3 ;
-  switch_rtp_crypto_key_type_t arg4 ;
-  unsigned char *arg5 = (unsigned char *) 0 ;
-  switch_size_t arg6 ;
-  switch_size_t *argp6 ;
+  switch_secure_settings_t *arg4 = (switch_secure_settings_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_rtp_crypto_direction_t)jarg2; 
   arg3 = (uint32_t)jarg3; 
-  arg4 = (switch_rtp_crypto_key_type_t)jarg4; 
-  arg5 = (unsigned char *)jarg5; 
-  argp6 = (switch_size_t *)jarg6; 
-  if (!argp6) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
-    return 0;
-  }
-  arg6 = *argp6; 
-  result = (switch_status_t)switch_rtp_add_crypto_key(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg4 = (switch_secure_settings_t *)jarg4; 
+  result = (switch_status_t)switch_rtp_add_crypto_key(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
