@@ -680,6 +680,8 @@
 	    }
         }
 
+	config.bundlePolicy = "max-compat";
+
         var peer = new window.RTCPeerConnection(config);
 
         openOffererChannel();
