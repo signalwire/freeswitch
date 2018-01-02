@@ -3129,11 +3129,11 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 			local_salt = remote_salt + cr_saltlen;
 		}
 
-		memcpy(&ssec.local_raw_key, local_key, cr_keylen);
-		memcpy(&ssec.local_raw_key + cr_keylen, local_salt, cr_saltlen);
+		memcpy(ssec.local_raw_key, local_key, cr_keylen);
+		memcpy(ssec.local_raw_key + cr_keylen, local_salt, cr_saltlen);
 
-		memcpy(&ssec.remote_raw_key, remote_key, cr_keylen);
-		memcpy(&ssec.remote_raw_key + cr_keylen, remote_salt, cr_saltlen);
+		memcpy(ssec.remote_raw_key, remote_key, cr_keylen);
+		memcpy(ssec.remote_raw_key + cr_keylen, remote_salt, cr_saltlen);
 
 		ssec.crypto_type = AES_CM_128_HMAC_SHA1_80;
 
