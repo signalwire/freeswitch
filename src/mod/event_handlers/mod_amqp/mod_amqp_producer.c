@@ -249,6 +249,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 			} else if (!strncmp(var, "content-type", 12)) {
 				content_type = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "format_fields", 13)) {
+				char *tmp;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "amqp format fields : %s\n", val);
 				if ((format_fields_size = mod_amqp_count_chars(val, ',')) >= MAX_ROUTING_KEY_FORMAT_FIELDS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "You can have only %d routing fields in the routing key.\n",
@@ -257,9 +258,11 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 				}
 
 				/* increment size because the count returned the number of separators, not number of fields */
+				tmp = strdup(val);
 				format_fields_size++;
-				switch_separate_string(val, ',', format_fields, MAX_ROUTING_KEY_FORMAT_FIELDS);
+				switch_separate_string(tmp, ',', format_fields, MAX_ROUTING_KEY_FORMAT_FIELDS);
 				format_fields[format_fields_size] = NULL;
+				free(tmp);
 			} else if (!strncmp(var, "event_filter", 12)) {
 				/* Parse new events */
 				profile->event_subscriptions = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -343,7 +346,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 						  amqp_empty_table);
 #endif
 
-	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange")) {
+	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange\n")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] failed to create exchange\n", profile->name);
 		goto err;
 	}
