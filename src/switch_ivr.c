@@ -898,6 +898,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 	int x = 0;
 	switch_channel_t *channel;
 
+	if (switch_core_session_stack_count(session, 0) > SWITCH_MAX_STACKS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n",
+						  switch_core_session_get_name(session));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_session_stack_count(session, 1);
+	
 	switch_ivr_parse_all_messages(session);
 
 	channel = switch_core_session_get_channel(session);
@@ -914,6 +922,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 		x++;
 	}
 
+	switch_core_session_stack_count(session, -1);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
