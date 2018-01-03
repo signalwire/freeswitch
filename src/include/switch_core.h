@@ -1117,6 +1117,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *ap
 */
 #define switch_core_session_execute_application(_a, _b, _c) switch_core_session_execute_application_get_flags(_a, _b, _c, NULL)
 
+SWITCH_DECLARE(uint32_t) switch_core_session_stack_count(switch_core_session_t *session, int x);
+
 /*!
   \brief Run a dialplan and execute an extension
   \param session the current session

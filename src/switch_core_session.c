@@ -2895,6 +2895,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_stack_count(switch_core_session_t *session, int x)
+{
+	if (x > 0) session->stack_count++;
+	else if (x < 0) session->stack_count--;
+
+	return session->stack_count;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, const char *exten, const char *dialplan,
 																  const char *context)
 {
