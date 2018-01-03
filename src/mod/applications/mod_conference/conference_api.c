@@ -3356,7 +3356,7 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_member_add_event_data(member, event);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[2]);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
 			}
