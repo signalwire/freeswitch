@@ -86,7 +86,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amqp_load)
 */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amqp_shutdown)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	mod_amqp_producer_profile_t *producer;
 	mod_amqp_command_profile_t *command;
 	mod_amqp_logging_profile_t *logging;
@@ -94,21 +94,25 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amqp_shutdown)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mod starting shutting down\n");
 	switch_event_unbind_callback(mod_amqp_producer_event_handler);
 
-	while ((hi = switch_core_hash_first(mod_amqp_globals.producer_hash))) {
+	while ((hi = switch_core_hash_first_iter(mod_amqp_globals.producer_hash, hi))) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&producer);
 		mod_amqp_producer_destroy(&producer);
 	}
 
-	while ((hi = switch_core_hash_first(mod_amqp_globals.command_hash))) {
+	while ((hi = switch_core_hash_first_iter(mod_amqp_globals.command_hash, hi))) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&command);
 		mod_amqp_command_destroy(&command);
 	}
 
 	switch_log_unbind_logger(mod_amqp_logging_recv);
-	while ((hi = switch_core_hash_first(mod_amqp_globals.logging_hash))) {
+	while ((hi = switch_core_hash_first_iter(mod_amqp_globals.logging_hash, hi))) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
 		mod_amqp_logging_destroy(&logging);
 	}
+
+	switch_core_hash_destroy(&(mod_amqp_globals.producer_hash));
+	switch_core_hash_destroy(&(mod_amqp_globals.command_hash));
+	switch_core_hash_destroy(&(mod_amqp_globals.logging_hash));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mod finished shutting down\n");
 	return SWITCH_STATUS_SUCCESS;
