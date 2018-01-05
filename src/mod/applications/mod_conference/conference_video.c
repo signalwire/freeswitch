@@ -743,7 +743,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 					} else {
 						crop_x = use_geometry->x;
 					}
-				} else if (screen_aspect > img_aspect) {
+				} else if (screen_aspect < img_aspect) {
 					crop_x = img->d_w / 4;
 				}
 
@@ -753,7 +753,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 					} else {
 						crop_y = use_geometry->y;
 					}
-				} else if (screen_aspect < img_aspect) {
+				} else if (screen_aspect > img_aspect) {
 					crop_y = img->d_h / 4;
 				}
 
