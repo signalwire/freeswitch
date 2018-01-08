@@ -37,6 +37,7 @@
 
 #if defined(HAVE_PCAP_H)
 #include <pcap.h>
+#include <pcap/sll.h>
 #endif
 #include <netinet/in.h>
 #include <netinet/udp.h>
@@ -95,15 +96,6 @@ typedef struct _ether_hdr
     uint16_t ether_type;
 } ether_hdr;
 
-typedef struct _linux_sll_hdr
-{
-    uint16_t packet_type;
-    uint16_t arphrd;
-    uint16_t slink_length;
-    uint8_t bytes[8];
-    uint16_t ether_type;
-} linux_sll_hdr;
-
 typedef struct _null_hdr
 {
     uint32_t pf_type;
@@ -132,12 +124,13 @@ int pcap_scan_pkts(const char *file,
     pcap_t *pcap;
     struct pcap_pkthdr *pkthdr;
     uint8_t *pktdata;
+    uint8_t *pktptr;
     const uint8_t *body;
     int body_len;
     int total_pkts;
     uint32_t pktlen;
     ether_hdr *ethhdr;
-    linux_sll_hdr *sllhdr;
+    struct sll_header *sllhdr;
     null_hdr *nullhdr;
     struct iphdr *iphdr;
 #if !defined(__CYGWIN__)
@@ -150,9 +143,10 @@ int pcap_scan_pkts(const char *file,
     total_pkts = 0;
     if ((pcap = pcap_open_offline(file, errbuf)) == NULL)
     {
-        fprintf(stderr, "Can't open PCAP file '%s'\n", file);
+        fprintf(stderr, "Can't open PCAP file: %s\n", errbuf);
         return -1;
     }
+    //printf("PCAP file version %d.%d\n", pcap_major_version(pcap), pcap_minor_version(pcap));
     datalink = pcap_datalink(pcap);
     /* DLT_EN10MB seems to apply to all forms of ethernet, not just the 10MB kind. */
     switch (datalink)
@@ -185,11 +179,21 @@ int pcap_scan_pkts(const char *file,
     while ((pktdata = (uint8_t *) pcap_next(pcap, pkthdr)) != NULL)
     {
 #endif
+        pktptr = pktdata;
         switch (datalink)
         {
         case DLT_EN10MB:
-            ethhdr = (ether_hdr *) pktdata;
+            ethhdr = (ether_hdr *) pktptr;
             packet_type = ntohs(ethhdr->ether_type);
+            pktptr += sizeof(*ethhdr);
+            /* Check for a 802.1Q Virtual LAN entry we might need to step over */
+            if (packet_type == 0x8100)
+            {
+                /* Step over the 802.1Q stuff, to get to the next packet type */
+                pktptr += sizeof(uint16_t);
+                packet_type = ntohs(*((uint16_t *) pktptr));
+                pktptr += sizeof(uint16_t);
+            }
 #if !defined(__CYGWIN__)
             if (packet_type != 0x0800     /* IPv4 */
                 &&
@@ -200,11 +204,12 @@ int pcap_scan_pkts(const char *file,
             {
                 continue;
             }
-            iphdr = (struct iphdr *) ((uint8_t *) ethhdr + sizeof(*ethhdr));
+            iphdr = (struct iphdr *) pktptr;
             break;
         case DLT_LINUX_SLL:
-            sllhdr = (linux_sll_hdr *) pktdata;
-            packet_type = ntohs(sllhdr->ether_type);
+            sllhdr = (struct sll_header *) pktptr;
+            packet_type = ntohs(sllhdr->sll_protocol);
+            pktptr += sizeof(*sllhdr);
 #if !defined(__CYGWIN__)
             if (packet_type != 0x0800     /* IPv4 */
                 &&
@@ -215,13 +220,14 @@ int pcap_scan_pkts(const char *file,
             {
                 continue;
             }
-            iphdr = (struct iphdr *) ((uint8_t *) sllhdr + sizeof(*sllhdr));
+            iphdr = (struct iphdr *) pktptr;
             break;
         case DLT_NULL:
-            nullhdr = (null_hdr *) pktdata;
+            nullhdr = (null_hdr *) pktptr;
+            pktptr += sizeof(*nullhdr);
             if (nullhdr->pf_type != PF_INET  &&  nullhdr->pf_type != PF_INET6)
                 continue;
-            iphdr = (struct iphdr *) ((uint8_t *) nullhdr + sizeof(*nullhdr));
+            iphdr = (struct iphdr *) pktptr;
             break;
         default:
             continue;
@@ -239,10 +245,10 @@ int pcap_scan_pkts(const char *file,
         if (iphdr  &&  iphdr->version == 6)
         {
             /* ipv6 */
-            pktlen = (uint32_t) pkthdr->len - sizeof(*ethhdr) - sizeof(*ip6hdr);
             ip6hdr = (ipv6_hdr *) (void *) iphdr;
             if (ip6hdr->nxt_header != IPPROTO_UDP)
                 continue;
+            pktlen = (uint32_t) pkthdr->len - (pktptr - pktdata) - sizeof(*ip6hdr);
             udphdr = (struct udphdr *) ((uint8_t *) ip6hdr + sizeof(*ip6hdr));
         }
         else
@@ -256,7 +262,7 @@ int pcap_scan_pkts(const char *file,
             pktlen = (uint32_t) ntohs(udphdr->uh_ulen);
 #elif defined ( __HPUX)
             udphdr = (struct udphdr *) ((uint8_t *) iphdr + (iphdr->ihl << 2));
-            pktlen = (uint32_t) pkthdr->len - sizeof(*ethhdr) - sizeof(*iphdr);
+            pktlen = (uint32_t) pkthdr->len - (pktptr - pktdata) - sizeof(*iphdr);
 #else
             udphdr = (struct udphdr *) ((uint8_t *) iphdr + (iphdr->ihl << 2));
             pktlen = (uint32_t) ntohs(udphdr->len);
