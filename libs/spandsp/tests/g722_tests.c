@@ -593,6 +593,7 @@ int main(int argc, char *argv[])
                 exit(2);
             }
         }
+        dec_state = NULL;
         if (decode)
         {
             memset(&info, 0, sizeof(info));
