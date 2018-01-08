@@ -255,12 +255,13 @@ EOF
 
 get_sources () {
   local tgt_distro="$1"
-  while read type path distro components; do
+  while read type args path distro components; do
     test "$type" = deb || continue
+    if echo "$args" | grep -qv "\[" ; then components=$distro;distro=$path;path=$args;args=""; fi
     prefix=`echo $distro | awk -F/ '{print $1}'`
     suffix="`echo $distro | awk -F/ '{print $2}'`"
     if test -n "$suffix" ; then full="$tgt_distro/$suffix" ; else full="$tgt_distro" ; fi
-    printf "$type $path $full $components\n"
+    printf "$type $args $path $full $components\n"
   done < "$2"
 }
 
