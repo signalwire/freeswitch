@@ -1506,7 +1506,7 @@ if test "$with_ldap" = "yes"; then
    OPENLDAP_LIBS="${OPENLDAP_LIBS} -lldap"
 fi
 
-AM_CONDITIONAL([HAVE_LDAP],[test "x$with_ldap" == "xyes"])
+AM_CONDITIONAL([HAVE_LDAP],[test "x$with_ldap" = "xyes"])
 
 AC_SUBST(OPENLDAP_LIBS)
 
