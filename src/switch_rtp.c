@@ -48,7 +48,6 @@
 #include <srtp_priv.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
-#include <switch_estimators.h>
 
 //#define DEBUG_TS_ROLLOVER
 //#define TS_ROLLOVER_START 4294951295

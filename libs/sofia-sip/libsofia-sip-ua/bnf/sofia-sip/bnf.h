@@ -52,15 +52,16 @@ SOFIA_BEGIN_DECLS
 /** Horizontal tab */
 #define HT      "\t"
 /** Carriage return */
-#define CR      "\r"
+/*  CR conflicts with Windows SDK 10, so it is now _CR */
+#define _CR      "\r"
 /** Line feed */
 #define LF      "\n"
 /** Line-ending characters */
-#define CRLF     CR LF
+#define CRLF     _CR LF
 /** Whitespace */
 #define WS       SP HT
 /** Linear whitespace */
-#define LWS      SP HT CR LF
+#define LWS      SP HT _CR LF
 /** Lower-case alphabetic characters */
 #define LOALPHA "abcdefghijklmnopqrstuvwxyz"
 /** Upper-case alphabetic characters */
@@ -160,7 +161,7 @@ enum {
 SOFIAPUBVAR unsigned char const _bnf_table[256];
 
 /** Get number of characters before CRLF */
-#define span_non_crlf(s) strcspn(s, CR LF)
+#define span_non_crlf(s) strcspn(s, _CR LF)
 
 /** Get number of characters before whitespace */
 #define span_non_ws(s) strcspn(s, WS)

@@ -59,6 +59,14 @@
 #include <apr_fnmatch.h>
 #include <apr_tables.h>
 
+#ifdef WIN32
+#include "apr_arch_networkio.h"
+/* Missing socket symbols */
+#ifndef SOL_TCP
+#define SOL_TCP IPPROTO_TCP
+#endif
+#endif
+
 /* apr_vformatter_buff_t definition*/
 #include <apr_lib.h>
 
@@ -832,7 +840,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 		int r = -10;
 
 #if defined(TCP_KEEPIDLE)
-		r = setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPIDLE, (void *)&on, sizeof(on));
+		r = setsockopt(sock->socketdes, SOL_TCP, TCP_KEEPIDLE, (void *)&on, sizeof(on));
 #endif
 		if (r == -10) {
 			return SWITCH_STATUS_NOTIMPL;
@@ -846,7 +854,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 		int r = -10;
 
 #if defined(TCP_KEEPINTVL)
-		r = setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPINTVL, (void *)&on, sizeof(on));
+		r = setsockopt(sock->socketdes, SOL_TCP, TCP_KEEPINTVL, (void *)&on, sizeof(on));
 #endif
 
 		if (r == -10) {

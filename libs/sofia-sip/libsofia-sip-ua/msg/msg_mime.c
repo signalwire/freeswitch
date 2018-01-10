@@ -272,7 +272,7 @@ msg_multipart_boundary(su_home_t *home, char const *b)
   if (!b || !(boundary = su_alloc(home, 2 + 2 + strlen(b) + 2 + 1)))
     return NULL;
 
-  strcpy(boundary, CR LF "--");
+  strcpy(boundary, _CR LF "--");
 
   if (b[0] == '"') /* " See http://bugzilla.gnome.org/show_bug.cgi?id=134216 */
 
@@ -281,7 +281,7 @@ msg_multipart_boundary(su_home_t *home, char const *b)
     strcpy(boundary + 4, b);
 
 
-  strcat(boundary + 4, CR LF);
+  strcat(boundary + 4, _CR LF);
 
   return boundary;
 }
@@ -321,9 +321,9 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
     if (m > 2 && crlf) {
       boundary = su_alloc(home, 2 + m + 2 + 1);
       if (boundary) {
-	memcpy(boundary, CR LF, 2);
+	memcpy(boundary, _CR LF, 2);
 	memcpy(boundary + 2, p, m);
-	strcpy(boundary + m + 2, CR LF);
+	strcpy(boundary + m + 2, _CR LF);
       }
       return boundary;
     }
@@ -342,9 +342,9 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
     if (m > 2 && crlf) {
       boundary = su_alloc(home, 2 + m + 2 + 1);
       if (boundary) {
-	memcpy(boundary, CR LF, 2);
+	memcpy(boundary, _CR LF, 2);
 	memcpy(boundary + 2, p + 1, m);
-	strcpy(boundary + 2 + m, CR LF);
+	strcpy(boundary + 2 + m, _CR LF);
       }
       return boundary;
     }
@@ -589,7 +589,7 @@ int msg_multipart_complete(su_home_t *home,
       b = mp->mp_data;
       m = mp->mp_len;
 
-      if (strncmp(b, CR LF "--", 4) == 0)
+      if (strncmp(b, _CR LF "--", 4) == 0)
 	b += 4, m -= 4;
       else if (strncmp(b, "--", 2) == 0)
 	b += 2, m -= 2;
@@ -638,7 +638,7 @@ int msg_multipart_complete(su_home_t *home,
 
     if (mp->mp_next == NULL) {
       if (!mp->mp_close_delim)
-	mp->mp_close_delim = msg_payload_format(home, "%.*s--" CR LF,
+	mp->mp_close_delim = msg_payload_format(home, "%.*s--" _CR LF,
 						(int)m, boundary);
       if (!mp->mp_close_delim)
 	return -1;
@@ -658,7 +658,7 @@ int msg_multipart_complete(su_home_t *home,
     mp->mp_common->h_len = mp->mp_len;
 
     if (!mp->mp_separator)
-      if (!(mp->mp_separator = msg_separator_make(home, CR LF)))
+      if (!(mp->mp_separator = msg_separator_make(home, _CR LF)))
 	return -1;
 
     if (mp->mp_multipart) {
