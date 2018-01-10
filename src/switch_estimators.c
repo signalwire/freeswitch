@@ -29,9 +29,8 @@
  *
  */
 
-#include <switch_estimators.h>
-
 #include <switch.h>
+
 #ifndef _MSC_VER
 #include <switch_private.h>
 #endif

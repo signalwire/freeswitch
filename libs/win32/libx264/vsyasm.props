@@ -16,6 +16,7 @@
     <YASM>
       <Debug>False</Debug>
       <ObjectFile>$(IntDir)</ObjectFile>
+      <ObjectFileName>$(IntDir)\$(Filename).asm.obj</ObjectFileName>
       <PreProc>0</PreProc>
       <Parser>0</Parser>
       <CommandLineTemplate>$(YasmPath)libs\vsyasm.exe -Xvc -f $(Platform) [AllOptions] [AdditionalOptions] [Inputs]</CommandLineTemplate>

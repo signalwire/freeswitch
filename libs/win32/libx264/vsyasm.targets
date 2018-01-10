@@ -20,7 +20,7 @@
     AfterTargets="$(YASMAfterTargets)"
     Condition="'@(YASM)' != ''"
     DependsOnTargets="$(YASMDependsOn);ComputeYASMOutput"
-    Outputs="@(YASM->'%(ObjectFile)')"
+    Outputs="@(YASM->'%(ObjectFileName)')"
     Inputs="@(YASM);%(YASM.AdditionalDependencies);$(MSBuildProjectFile)">
     <ItemGroup
       Condition="'@(SelectedFiles)' != ''">
@@ -30,8 +30,8 @@
     </ItemGroup>
     <ItemGroup>
       <YASM_tlog
-        Include="%(YASM.ObjectFile)"
-        Condition="'%(YASM.ObjectFile)' != '' and '%(YASM.ExcludedFromBuild)' != 'true'">
+        Include="%(YASM.ObjectFileName)"
+        Condition="'%(YASM.ObjectFileName)' != '' and '%(YASM.ExcludedFromBuild)' != 'true'">
         <Source>@(YASM, '|')</Source>
       </YASM_tlog>
     </ItemGroup>
@@ -50,7 +50,7 @@
       IncludePaths="%(YASM.IncludePaths)"
       Defines="%(YASM.Defines)"
       UnDefines="%(YASM.UnDefines)"
-      ObjectFile="%(YASM.ObjectFile)"
+      ObjectFile="%(YASM.ObjectFileName)"
       ListFile="%(YASM.ListFile)"
       MapFile="%(YASM.MapFile)"
       ErrorFile="%(YASM.ErrorFile)"
