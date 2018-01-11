@@ -1168,75 +1168,19 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 			if (params && (var = switch_event_get_header(params, "text"))) {
 				switch_image_t *img = NULL;
 				const char *tmp;
-				int x = 0, y = 0, center = 0, center_off = 0;
+				int x = 0, y = 0;
 
-				if ((tmp = switch_event_get_header(params, "center_offset"))) {
-					center_off = atoi(tmp);
-					if (center_off < 0) {
-						center_off = 0;
-					}
-				}
-				
 				if ((tmp = switch_event_get_header(params, "text_x"))) {
-					if (!strcasecmp(tmp, "center")) {
-						center = 1;
-					} else {
-						x = atoi(tmp);
-						if (x < 0) x = 0;
-					}
+					x = atoi(tmp);
 				}
 
 				if ((tmp = switch_event_get_header(params, "text_y"))) {
 					y = atoi(tmp);
-					if (y < 0) y = 0;
 				}
 
 				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
 				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
 				switch_img_attenuate(member->video_logo);
-
-				if (center) {
-					x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
-				}
-
-				switch_img_patch(member->video_logo, img, x, y);
-				switch_img_free(&img);
-			}
-
-			if (params && (var = switch_event_get_header(params, "alt_text"))) {
-				switch_image_t *img = NULL;
-				const char *tmp;
-				int x = 0, y = 0, center = 0, center_off = 0;
-
-				if ((tmp = switch_event_get_header(params, "alt_center_offset"))) {
-					center_off = atoi(tmp);
-					if (center_off < 0) {
-						center_off = 0;
-					}
-				}
-				
-				if ((tmp = switch_event_get_header(params, "alt_text_x"))) {
-					if (!strcasecmp(tmp, "center")) {
-						center = 1;
-					} else {
-						x = atoi(tmp);
-						if (x < 0) x = 0;
-					}
-				}
-
-				if ((tmp = switch_event_get_header(params, "alt_text_y"))) {
-					y = atoi(tmp);
-					if (y < 0) y = 0;
-				}
-
-				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
-				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
-				switch_img_attenuate(member->video_logo);
-
-				if (center) {
-					x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
-				}
-
 				switch_img_patch(member->video_logo, img, x, y);
 				switch_img_free(&img);
 			}
