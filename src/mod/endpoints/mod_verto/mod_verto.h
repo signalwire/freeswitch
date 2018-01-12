@@ -169,7 +169,8 @@ typedef struct ips {
 
 typedef enum {
 	TFLAG_SENT_MEDIA = (1 << 0),
-	TFLAG_ATTACH_REQ = (1 << 1)
+	TFLAG_ATTACH_REQ = (1 << 1),
+	TFLAG_TRACKED = (1 << 2)
 } tflag_t;
 
 typedef struct verto_pvt_s {
