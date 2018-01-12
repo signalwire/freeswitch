@@ -2628,7 +2628,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			p = pipe_names[r];
 
 			while (p && *p) {
-				if (*p == '[') {
+				if (!end && *p == '[') {
 					end = switch_find_end_paren(p, '[', ']');
 					if (*(p+1) == '^' && *(p + 2) == '^') {
 						alt = 1;
@@ -2652,7 +2652,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (p == end) {
-					end = switch_strchr_strict(p, '[', " ");
+					end = NULL;
 				}
 
 				p++;
