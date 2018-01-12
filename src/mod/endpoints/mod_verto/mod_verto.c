@@ -2118,6 +2118,7 @@ static void track_pvt(verto_pvt_t *tech_pvt)
 	switch_thread_rwlock_wrlock(verto_globals.tech_rwlock);
 	tech_pvt->next = verto_globals.tech_head;
 	verto_globals.tech_head = tech_pvt;
+	switch_set_flag(tech_pvt, TFLAG_TRACKED);
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
@@ -2125,26 +2126,31 @@ static void untrack_pvt(verto_pvt_t *tech_pvt)
 {
 	verto_pvt_t *p, *last = NULL;
 	int wake = 0;
-
+	
 	switch_thread_rwlock_wrlock(verto_globals.tech_rwlock);
+
 	if (tech_pvt->detach_time) {
 		verto_globals.detached--;
 		tech_pvt->detach_time = 0;
 		wake = 1;
 	}
 
-	for(p = verto_globals.tech_head; p; p = p->next) {
-		if (p == tech_pvt) {
-			if (last) {
-				last->next = p->next;
-			} else {
-				verto_globals.tech_head = p->next;
+	if (switch_test_flag(tech_pvt, TFLAG_TRACKED)) {
+		switch_clear_flag(tech_pvt, TFLAG_TRACKED);
+		for(p = verto_globals.tech_head; p; p = p->next) {
+			if (p == tech_pvt) {
+				if (last) {
+					last->next = p->next;
+				} else {
+					verto_globals.tech_head = p->next;
+				}
+				break;
 			}
-			break;
-		}
 
-		last = p;
+			last = p;
+		}
 	}
+		
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 
 	if (wake) attach_wake();
@@ -2187,7 +2193,7 @@ static switch_status_t verto_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *profile);
+static switch_status_t verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *profile);
 
 static switch_status_t verto_connect(switch_core_session_t *session, const char *method)
 {
@@ -2230,7 +2236,11 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 			switch_channel_set_variable(tech_pvt->channel, "media_webrtc", "true");
 			switch_core_session_set_ice(tech_pvt->session);
 
-			verto_set_media_options(tech_pvt, jsock->profile);
+			if (verto_set_media_options(tech_pvt, jsock->profile) != SWITCH_STATUS_SUCCESS) {
+				status = SWITCH_STATUS_FALSE;
+				switch_thread_rwlock_unlock(jsock->rwlock);
+				return status;
+			}
 
 
 			switch_channel_set_variable(tech_pvt->channel, "verto_profile_name", jsock->profile->name);
@@ -2240,7 +2250,6 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
 				if ((status = switch_core_media_choose_ports(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE)) != SWITCH_STATUS_SUCCESS) {
 					//if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_thread_rwlock_unlock(jsock->rwlock);
 					return status;
 				}
@@ -2345,7 +2354,7 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
         switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-		return status;
+		goto end;
 	}
 
 	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -2356,6 +2365,12 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 		}
 	}
 
+ end:
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		track_pvt(tech_pvt);
+	}
+	
 	return status;
 }
 
@@ -2379,10 +2394,12 @@ static switch_state_handler_table_t verto_state_handlers = {
 
 
 
-static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *profile)
+static switch_status_t verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *profile)
 {
 	uint32_t i;
 
+
+	switch_mutex_lock(profile->mutex);
 	if (!zstr(profile->rtpip[profile->rtpip_cur])) {
 		tech_pvt->mparams->rtpip4 = switch_core_session_strdup(tech_pvt->session, profile->rtpip[profile->rtpip_cur++]);
 		tech_pvt->mparams->rtpip = tech_pvt->mparams->rtpip4;
@@ -2402,11 +2419,13 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 			profile->rtpip_cur6 = 0;
 		}
 	}
+	switch_mutex_unlock(profile->mutex);
 
 	if (zstr(tech_pvt->mparams->rtpip)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "%s has no media ip, check your configuration\n",
 						  switch_channel_get_name(tech_pvt->channel));
-		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+		//switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+		return SWITCH_STATUS_FALSE;
 	}
 
 	tech_pvt->mparams->extrtpip = tech_pvt->mparams->extsipip = profile->extrtpip;
@@ -2458,6 +2477,8 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	if (profile->enable_text && !tech_pvt->text_read_buffer) {
 		set_text_funcs(tech_pvt->session);
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t verto_media(switch_core_session_t *session)
@@ -2637,13 +2658,16 @@ static int verto_recover_callback(switch_core_session_t *session)
 
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
 		tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
-		verto_set_media_options(tech_pvt, profile);
+		if (verto_set_media_options(tech_pvt, profile) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(verto_endpoint_interface);
+			return 0;
+		}
 	}
 
 	switch_channel_add_state_handler(channel, &verto_state_handlers);
 	switch_core_event_hook_add_receive_message(session, messagehook);
 
-	track_pvt(tech_pvt);
+	//track_pvt(tech_pvt);
 
 	//switch_channel_clear_flag(tech_pvt->channel, CF_ANSWERED);
 	//switch_channel_clear_flag(tech_pvt->channel, CF_EARLY_MEDIA);
@@ -3611,7 +3635,10 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
 		tech_pvt->mparams = switch_core_media_get_mparams(tech_pvt->smh);
-		verto_set_media_options(tech_pvt, jsock->profile);
+		if (verto_set_media_options(tech_pvt, jsock->profile) != SWITCH_STATUS_SUCCESS) {
+			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot set media options"));
+			err = 1; goto cleanup;
+		}
 	} else {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot create media handle"));
 		err = 1; goto cleanup;
@@ -3766,7 +3793,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	switch_channel_add_state_handler(channel, &verto_state_handlers);
 	switch_core_event_hook_add_receive_message(session, messagehook);
 	switch_channel_set_state(channel, CS_INIT);
-	track_pvt(tech_pvt);
+	//track_pvt(tech_pvt);
 	switch_core_session_thread_launch(session);
 
  cleanup:
@@ -5521,7 +5548,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		switch_channel_add_state_handler(channel, &verto_state_handlers);
 		switch_core_event_hook_add_receive_message(*new_session, messagehook);
 		switch_channel_set_state(channel, CS_INIT);
-		track_pvt(tech_pvt);
+		//track_pvt(tech_pvt);
 	}
 
  end:
