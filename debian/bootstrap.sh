@@ -301,7 +301,7 @@ print_source_control () {
 Source: freeswitch
 Section: comm
 Priority: optional
-Maintainer: Travis Cross <tc@traviscross.com>
+Maintainer: FreeSWITCH Solutions, LLC <support@freeswitch.com>
 Build-Depends:
 # for debian
  ${debhelper_dep},
