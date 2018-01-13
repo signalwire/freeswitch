@@ -766,7 +766,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				switch_channel_set_flag(channel, CF_3PCC);
 			}
 
-			if (b_sdp && !switch_channel_var_true(channel, "3pcc_always_gen_sdp")) {
+			if (b_sdp && is_proxy && !switch_channel_var_true(channel, "3pcc_always_gen_sdp")) {
 				switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 			} else {
 				switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
