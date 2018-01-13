@@ -4366,6 +4366,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "sub-call-id", call_id);
 				switch_event_fire(&sevent);
 
 			}
