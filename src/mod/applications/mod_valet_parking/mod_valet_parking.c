@@ -786,6 +786,7 @@ static void pres_event_handler(switch_event_t *event)
 	char *dup_to = NULL, *lot_name, *dup_lot_name = NULL, *domain_name;
 	valet_lot_t *lot;
 	int found = 0;
+	const char *call_id;
 
 	if (!to || strncasecmp(to, "park+", 5) || !strchr(to, '@')) {
 		return;
@@ -801,6 +802,8 @@ static void pres_event_handler(switch_event_t *event)
 		*domain_name++ = '\0';
 	}
 
+	call_id = switch_event_get_header(event, "sub-call-id");
+	
 	dup_lot_name = switch_mprintf("%q@%q", lot_name, domain_name);
 
 	if ((lot = valet_find_lot(lot_name, SWITCH_FALSE)) || (dup_lot_name && (lot = valet_find_lot(dup_lot_name, SWITCH_FALSE)))) {
@@ -821,6 +824,9 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+				if (call_id) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+				}
 				switch_event_fire(&event);
 			}
 			found++;
@@ -838,6 +844,9 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+				if (call_id) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+				}
 				switch_event_fire(&event);
 			}
 		}
@@ -883,6 +892,9 @@ static void pres_event_handler(switch_event_t *event)
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
+						if (call_id) {
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+						}
 						switch_event_fire(&event);
 					}
 				}
@@ -908,6 +920,9 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+		if (call_id) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+		}
 		switch_event_fire(&event);
 	}
 
