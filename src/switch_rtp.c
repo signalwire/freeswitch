@@ -5238,8 +5238,8 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_
 	rtp_session->queue_delay = upsamp;
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-		rtp_session->max_next_write_samplecount = rtp_session->write_timer.samplecount + max_upsamp;
-		rtp_session->next_write_samplecount = rtp_session->write_timer.samplecount + upsamp;
+		rtp_session->max_next_write_samplecount = rtp_session->timer.samplecount + max_upsamp;
+		rtp_session->next_write_samplecount = rtp_session->timer.samplecount + upsamp;
 		rtp_session->last_write_ts += upsamp;
 	}
 
@@ -5326,7 +5326,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
 			//switch_core_timer_sync(&rtp_session->write_timer);
-			if (rtp_session->write_timer.samplecount < rtp_session->next_write_samplecount) {
+			if (rtp_session->timer.samplecount < rtp_session->next_write_samplecount) {
 				return;
 			}
 
