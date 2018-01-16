@@ -249,23 +249,22 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 			} else if (!strncmp(var, "content-type", 12)) {
 				content_type = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "format_fields", 13)) {
-				char *tmp;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "amqp format fields : %s\n", val);
-				if ((format_fields_size = mod_amqp_count_chars(val, ',')) >= MAX_ROUTING_KEY_FORMAT_FIELDS) {
+				char *tmp = switch_core_strdup(profile->pool, val);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "amqp format fields : %s\n", tmp);
+				if ((format_fields_size = mod_amqp_count_chars(tmp, ',')) >= MAX_ROUTING_KEY_FORMAT_FIELDS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "You can have only %d routing fields in the routing key.\n",
 									  MAX_ROUTING_KEY_FORMAT_FIELDS);
 					goto err;
 				}
 
 				/* increment size because the count returned the number of separators, not number of fields */
-				tmp = strdup(val);
 				format_fields_size++;
 				switch_separate_string(tmp, ',', format_fields, MAX_ROUTING_KEY_FORMAT_FIELDS);
 				format_fields[format_fields_size] = NULL;
-				free(tmp);
 			} else if (!strncmp(var, "event_filter", 12)) {
+				char *tmp = switch_core_strdup(profile->pool, val);
 				/* Parse new events */
-				profile->event_subscriptions = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+				profile->event_subscriptions = switch_separate_string(tmp, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found %d subscriptions\n", profile->event_subscriptions);
 
@@ -274,6 +273,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The switch event %s was not recognised.\n", argv[arg]);
 					}
 				}
+
 			}
 		} /* params for loop */
 	}
@@ -290,10 +290,12 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 	for(i = 0; i < format_fields_size; i++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "amqp routing key %d : %s\n", i, format_fields[i]);
 		if(profile->enable_fallback_format_fields) {
-			profile->format_fields[i].size = switch_separate_string(format_fields[i], '|', profile->format_fields[i].name, MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS);
+			profile->format_fields[i].size = switch_separate_string(format_fields[i], '|',
+																	profile->format_fields[i].name, MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS);
 			if(profile->format_fields[i].size > 1) {
 				for(arg = 0; arg < profile->format_fields[i].size; arg++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "amqp routing key %d : sub key %d : %s\n", i, arg, profile->format_fields[i].name[arg]);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+									  "amqp routing key %d : sub key %d : %s\n", i, arg, profile->format_fields[i].name[arg]);
 				}
 			}
 		} else {
