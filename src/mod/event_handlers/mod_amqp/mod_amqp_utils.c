@@ -98,25 +98,25 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 	}
 
 	if (reload) {
-		switch_hash_index_t *hi;
+		switch_hash_index_t *hi = NULL;
 		mod_amqp_producer_profile_t *producer;
 		mod_amqp_command_profile_t *command;
 		mod_amqp_logging_profile_t *logging;
 
 		switch_event_unbind_callback(mod_amqp_producer_event_handler);
 
-		while ((hi = switch_core_hash_first(mod_amqp_globals.producer_hash))) {
+		while ((hi = switch_core_hash_first_iter(mod_amqp_globals.producer_hash, hi))) {
 			switch_core_hash_this(hi, NULL, NULL, (void **)&producer);
 			mod_amqp_producer_destroy(&producer);
 		}
-		while ((hi = switch_core_hash_first(mod_amqp_globals.command_hash))) {
+		while ((hi = switch_core_hash_first_iter(mod_amqp_globals.command_hash, hi))) {
 			switch_core_hash_this(hi, NULL, NULL, (void **)&command);
 			mod_amqp_command_destroy(&command);
 		}
 
 		switch_log_unbind_logger(mod_amqp_logging_recv);
 
-		while ((hi = switch_core_hash_first(mod_amqp_globals.logging_hash))) {
+		while ((hi = switch_core_hash_first_iter(mod_amqp_globals.logging_hash, hi))) {
 			switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
 			mod_amqp_logging_destroy(&logging);
 		}
