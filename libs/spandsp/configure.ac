@@ -231,7 +231,7 @@ case "$host" in
     ;;
 esac
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     AC_CHECK_HEADERS([X11/X.h])
 fi
@@ -275,7 +275,7 @@ AC_CHECK_HEADERS([FL/Fl_Audio_Meter.H])
 
 AC_LANG([C])
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)

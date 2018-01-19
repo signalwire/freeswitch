@@ -92,7 +92,7 @@ AC_ARG_ENABLE(interlib-deps,
     [enable_interlib_deps="yes"])
 
 AC_MSG_NOTICE([enable inter-library dependencies: $enable_interlib_deps])
-if test "${enable_interlib_deps}" == "yes"; then
+if test "${enable_interlib_deps}" = "yes"; then
     link_all_deplibs=yes
     link_all_deplibs_CXX=yes
 else
