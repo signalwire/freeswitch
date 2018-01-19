@@ -29,6 +29,9 @@
  */
 
 #include "javascript.hpp"
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+#include "mod_v8.h"
+#endif
 
 #ifdef V8_ENABLE_DEBUGGING
 #include <v8-debug.h>
@@ -228,15 +231,21 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 		string js_file = LoadFileToString(js_safe_str(*str));
 
 		if (js_file.length() > 0) {
-			Handle<String> source = String::NewFromUtf8(args.GetIsolate(), js_file.c_str());
-
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-			Handle<Script> script = Script::Compile(source, args[i]->ToString());
-#else
-			Handle<Script> script = Script::Compile(source, args[i]);
-#endif
+			MaybeLocal<v8::Script> script;
+			LoadScript(&script, args.GetIsolate(), js_file.c_str(), js_safe_str(*str));
 
+			if (script.IsEmpty()) {
+				args.GetReturnValue().Set(false);
+			}
+			else {
+				args.GetReturnValue().Set(script.ToLocalChecked()->Run());
+			}
+#else
+			Handle<String> source = String::NewFromUtf8(args.GetIsolate(), js_file.c_str());
+			Handle<Script> script = Script::Compile(source, args[i]);
 			args.GetReturnValue().Set(script->Run());
+#endif
 
 			return;
 		}
@@ -314,15 +323,16 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 				inst->obj->RegisterInstance(isolate, inst->name, inst->auto_destroy);
 			}
 
-			// Create a string containing the JavaScript source code.
-			Handle<String> source = String::NewFromUtf8(isolate, scriptData.c_str());
-
 			TryCatch try_catch;
 
 			// Compile the source code.
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-			Handle<Script> script = Script::Compile(source, String::NewFromUtf8(isolate, fileName.c_str()));
+			// Compile the source code.
+			MaybeLocal<v8::Script> script;
+			LoadScript(&script, isolate, scriptData.c_str(), fileName.c_str());
 #else
+			// Create a string containing the JavaScript source code.
+			Handle<String> source = String::NewFromUtf8(isolate, scriptData.c_str());
 			Handle<Script> script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, fileName.c_str())));
 #endif
 
@@ -330,8 +340,17 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 				res = JSMain::GetExceptionInfo(isolate, &try_catch);
 				isError = true;
 			} else {
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
+				// Run the script
+				Handle<Value> result;
+
+				if (!script.IsEmpty()) {
+				    result = script.ToLocalChecked()->Run();
+				}
+#else
 				// Run the script
 				Handle<Value> result = script->Run();
+#endif
 				if (try_catch.HasCaught()) {
 					res = JSMain::GetExceptionInfo(isolate, &try_catch);
 					isError = true;
