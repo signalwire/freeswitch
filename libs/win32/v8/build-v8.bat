@@ -29,6 +29,8 @@ SET GYPFLAGS="-Dv8_use_external_startup_data=0"
 
 CALL .\third_party\python_26\setup_env.bat
 
+SET GYP_MSVS_VERSION=2015
+
 IF "%VisualStudioVersion%" == "11.0" (
 	REM SET VS_VERSION=-Gmsvs_version=2012
         SET GYP_MSVS_VERSION=2012
