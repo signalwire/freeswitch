@@ -1216,6 +1216,76 @@ SWITCH_STANDARD_API(in_group_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(domain_data_function)
+{
+	switch_xml_t x_domain = NULL, xml_root = NULL, x_param, x_params;
+	int argc;
+	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *domain, *dup_domain = NULL;
+	char delim = ' ';
+	const char *container = "params", *elem = "param";
+	const char *result = NULL;
+	switch_event_t *params = NULL;
+
+	if (zstr(cmd) || !(mydata = strdup(cmd))) {
+		goto end;
+	}
+
+	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+		goto end;
+	}
+
+	domain = argv[0];
+	type = argv[1];
+	key = argv[2];
+
+	if (!domain) {
+		if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
+			domain = dup_domain;
+		} else {
+			domain = "cluecon.com";
+		}
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
+
+	if (key && type && switch_xml_locate_domain(domain, params, &xml_root, &x_domain) == SWITCH_STATUS_SUCCESS) {
+		if (!strcmp(type, "attr")) {
+			const char *attr = switch_xml_attr_soft(x_domain, key);
+			result = attr;
+			goto end;
+		}
+
+		if (!strcmp(type, "var")) {
+			container = "variables";
+			elem = "variable";
+		}
+
+		if ((x_params = switch_xml_child(x_domain, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					result = val;
+				}
+			}
+		}
+	}
+
+end:
+	if (result) {
+		stream->write_function(stream, "%s", result);
+	}
+
+	switch_safe_free(mydata);
+	switch_safe_free(dup_domain);
+	switch_event_destroy(&params);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_user = NULL, x_param, x_params;
@@ -7264,6 +7334,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "console_complete_xml", "", console_complete_xml_function, "<line>");
 	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "db_cache", "Manage db cache", db_cache_function, "status");
+	SWITCH_ADD_API(commands_api_interface, "domain_data", "Find domain data", domain_data_function, "<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "Check if a domain exists", domain_exists_function, "<domain>");
 	SWITCH_ADD_API(commands_api_interface, "echo", "Echo", echo_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "event_channel_broadcast", "Broadcast", event_channel_broadcast_api_function, "<channel> <json>");
