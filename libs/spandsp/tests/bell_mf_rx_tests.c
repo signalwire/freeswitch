@@ -45,12 +45,14 @@ a fair test of performance in a real PSTN channel.
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 #include <sndfile.h>
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 
 #include "spandsp.h"
+#include "spandsp-sim.h"
 
 /* Basic Bell MF specs:
  *
@@ -74,6 +76,8 @@ a fair test of performance in a real PSTN channel.
 #define MF_DURATION                 (68*8)
 #define MF_PAUSE                    (68*8)
 #define MF_CYCLE                    (MF_DURATION + MF_PAUSE)
+
+#define SAMPLES_PER_CHUNK           160
 
 /*!
     MF tone descriptor for tests.
@@ -114,6 +118,10 @@ static char bell_mf_tone_codes[] = "1234567890CA*B#";
 
 bool callback_ok;
 int callback_roll;
+
+codec_munge_state_t *munge = NULL;
+
+char *decode_test_file = NULL;
 
 static void my_mf_gen_init(float low_fudge,
                            int low_level,
@@ -164,19 +172,6 @@ static int my_mf_generate(int16_t amp[], const char *digits)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void codec_munge(int16_t amp[], int len)
-{
-    int i;
-    uint8_t alaw;
-
-    for (i = 0;  i < len;  i++)
-    {
-        alaw = linear_to_alaw (amp[i]);
-        amp[i] = alaw_to_linear (alaw);
-    }
-}
-/*- End of function --------------------------------------------------------*/
-
 #define ALL_POSSIBLE_DIGITS     "1234567890CA*B#"
 
 static void digit_delivery(void *data, const char *digits, int len)
@@ -212,9 +207,8 @@ static void digit_delivery(void *data, const char *digits, int len)
 
 static int16_t amp[1000000];
 
-int main(int argc, char *argv[])
+static int test_tone_set(void)
 {
-    int duration;
     int i;
     int j;
     int len;
@@ -227,11 +221,9 @@ int main(int argc, char *argv[])
     int nminus;
     float rrb;
     float rcfo;
-    time_t now;
     bell_mf_rx_state_t *mf_state;
     awgn_state_t noise_source;
 
-    time(&now);
     mf_state = bell_mf_rx_init(NULL, NULL, NULL);
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
@@ -253,7 +245,7 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 10;  i++)
         {
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             actual = bell_mf_rx_get(mf_state, buf, 128);
             if (actual != 1  ||  buf[0] != digit[0])
@@ -306,7 +298,7 @@ int main(int argc, char *argv[])
         {
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -314,7 +306,7 @@ int main(int argc, char *argv[])
         {
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -337,7 +329,7 @@ int main(int argc, char *argv[])
         {
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -345,7 +337,7 @@ int main(int argc, char *argv[])
         {
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -382,7 +374,7 @@ int main(int argc, char *argv[])
             my_mf_gen_init(0.0, -5, 0.0, i/10, 68, 68);
 
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -397,7 +389,7 @@ int main(int argc, char *argv[])
             my_mf_gen_init(0.0, i/10, 0.0, -5, 68, 68);
 
             len = my_mf_generate(amp, digit);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
@@ -423,7 +415,7 @@ int main(int argc, char *argv[])
         for (j = 0;  j < 100;  j++)
         {
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
@@ -464,7 +456,7 @@ int main(int argc, char *argv[])
         for (j = 0;  j < 500;  j++)
         {
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
@@ -496,7 +488,7 @@ int main(int argc, char *argv[])
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
             for (sample = 0;  sample < len;  sample++)
                 amp[sample] = sat_add16(amp[sample], awgn(&noise_source));
-            codec_munge(amp, len);
+            codec_munge(munge, amp, len);
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
@@ -543,9 +535,82 @@ int main(int argc, char *argv[])
     }
     bell_mf_rx_free(mf_state);
     printf("    Passed\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
 
-    duration = time (NULL) - now;
-    printf("Tests passed in %ds\n", duration);
+static void digit_delivery_decode(void *data, const char *digits, int len)
+{
+    int i;
+
+    if (data != (void *) 0x12345678)
+    {
+        return;
+    }
+    for (i = 0;  i < len;  i++)
+    {
+        printf("Digit '%c'\n", digits[i]);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void decode_test(const char *test_file)
+{
+    int16_t amp[SAMPLES_PER_CHUNK];
+    SNDFILE *inhandle;
+    bell_mf_rx_state_t *mf_state;
+    int samples;
+
+    mf_state = bell_mf_rx_init(NULL, digit_delivery_decode, (void *) 0x12345678);
+
+    /* We will decode the audio from a file. */
+    if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
+    {
+        fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
+        exit(2);
+    }
+
+    while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
+    {
+        codec_munge(munge, amp, samples);
+        bell_mf_rx(mf_state, amp, samples);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+int main(int argc, char *argv[])
+{
+    time_t now;
+    time_t duration;
+    decode_test_file = NULL;
+    int opt;
+
+    while ((opt = getopt(argc, argv, "d:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'd':
+            decode_test_file = optarg;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
+    munge = codec_munge_init(MUNGE_CODEC_ULAW, 0);
+    if (decode_test_file)
+    {
+        decode_test(decode_test_file);
+    }
+    else
+    {
+        now = time(NULL);
+        test_tone_set();
+        duration = time (NULL) - now;
+        printf("Tests passed in %lds\n", duration);
+    }
+    codec_munge_free(munge);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -110,7 +110,7 @@ int pseudo_terminal_create(modem_t *modem)
     modem->stty = ttyname(modem->slave);
 #else
 #if defined(WIN32)
-    modem->slot = 4 + next_id++; /* need work here we start at COM4 for now*/
+    modem->slot = 4 + next_id++; /* Need work here. We start at COM4 for now */
     snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
     modem->master = CreateFile(modem->devlink,
