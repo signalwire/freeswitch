@@ -210,6 +210,8 @@ int main(int argc, char *argv[])
     int end_marks;
     int res;
     int compression;
+    int x_resolution;
+    int y_resolution;
     int compression_step;
     int min_row_bits;
     int block_size;
@@ -224,6 +226,7 @@ int main(int argc, char *argv[])
     int i;
     int bit_error_rate;
     int tests_failed;
+    int match_pos;
     bool restart_pages;
     bool add_page_headers;
     bool overlay_page_headers;
@@ -236,6 +239,8 @@ int main(int argc, char *argv[])
     tests_failed = 0;
     compression = -1;
     compression_step = 0;
+    x_resolution = -1;
+    y_resolution = -1;
     add_page_headers = false;
     overlay_page_headers = false;
     restart_pages = false;
@@ -248,7 +253,7 @@ int main(int argc, char *argv[])
     block_size = 1;
     bit_error_rate = 0;
     dump_as_xxx = false;
-    while ((opt = getopt(argc, argv, "b:c:d:ehHri:m:t:x")) != -1)
+    while ((opt = getopt(argc, argv, "b:c:d:ehHrR:i:m:t:x")) != -1)
     {
         switch (opt)
         {
@@ -328,6 +333,20 @@ int main(int argc, char *argv[])
         case 'r':
             restart_pages = true;
             break;
+        case 'R':
+            if (strcmp(optarg, "standard") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_STANDARD;
+            }
+            else if (strcmp(optarg, "fine") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_FINE;
+            }
+            else if (strcmp(optarg, "superfine") == 0)
+            {
+                y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+            }
+            break;
         case 'i':
             in_file_name = optarg;
             break;
@@ -352,6 +371,10 @@ int main(int argc, char *argv[])
     {
         if (compression < 0)
             compression = T4_COMPRESSION_T4_1D;
+        if (x_resolution < 0)
+            x_resolution = T4_X_RESOLUTION_R8;
+        if (y_resolution < 0)
+            y_resolution = T4_Y_RESOLUTION_STANDARD;
         /* Receive end puts TIFF to a new file. We assume the receive width here. */
         if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_T4_2D)) == NULL)
         {
@@ -360,9 +383,8 @@ int main(int argc, char *argv[])
         }
         span_log_set_level(t4_rx_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
         t4_rx_set_rx_encoding(receive_state, compression);
-        t4_rx_set_x_resolution(receive_state, T4_X_RESOLUTION_R8);
-        //t4_rx_set_y_resolution(receive_state, T4_Y_RESOLUTION_FINE);
-        t4_rx_set_y_resolution(receive_state, T4_Y_RESOLUTION_STANDARD);
+        t4_rx_set_x_resolution(receive_state, x_resolution);
+        t4_rx_set_y_resolution(receive_state, y_resolution);
         t4_rx_set_image_width(receive_state, XSIZE);
 
         t4_rx_start_page(receive_state);
@@ -392,7 +414,7 @@ int main(int argc, char *argv[])
                 }
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
-            else if (sscanf(buf, "%*d:%*d:%*d.%*d T.38 Rx %d: IFP %x %x", &pkt_no, (unsigned int *) &bit, (unsigned int *) &bit) == 3)
+            else if (sscanf(buf, "%*d:%*d:%*d.%*d T.38 Rx %d: IFP %x %x %x %x %x %n", &pkt_no, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, &match_pos) == 6)
             {
                 /* Useful for breaking up T.38 non-ECM logs */
                 if (pkt_no != last_pkt_no + 1)
@@ -400,7 +422,7 @@ int main(int argc, char *argv[])
                 last_pkt_no = pkt_no;
                 for (i = 0;  i < 256;  i++)
                 {
-                    if (sscanf(&buf[47 + 3*i], "%x", (unsigned int *) &bit) != 1)
+                    if (sscanf(&buf[match_pos + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
                     block[i] = bit_reverse8(bit);
                 }

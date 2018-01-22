@@ -175,7 +175,7 @@ awgn_tests_SOURCES = awgn_tests.c
 awgn_tests_LDADD = $(LIBDIR) -lspandsp
 
 bell_mf_rx_tests_SOURCES = bell_mf_rx_tests.c
-bell_mf_rx_tests_LDADD = $(LIBDIR) -lspandsp
+bell_mf_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 bell_mf_tx_tests_SOURCES = bell_mf_tx_tests.c
 bell_mf_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
@@ -301,7 +301,7 @@ queue_tests_SOURCES = queue_tests.c
 queue_tests_LDADD = $(LIBDIR) -lspandsp
 
 r2_mf_rx_tests_SOURCES = r2_mf_rx_tests.c
-r2_mf_rx_tests_LDADD = $(LIBDIR) -lspandsp
+r2_mf_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 r2_mf_tx_tests_SOURCES = r2_mf_tx_tests.c
 r2_mf_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

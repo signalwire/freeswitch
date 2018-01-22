@@ -150,7 +150,7 @@ static void terminal_callback(void *user_data, const uint8_t msg[], int len)
         printf("0x%x ", msg[i]);
     }
     printf("\n");
-    at_interpreter(&s->at_state, msg, len);
+    at_interpreter(&s->at_state, (const char *) msg, len);
 }
 /*- End of function --------------------------------------------------------*/
 
