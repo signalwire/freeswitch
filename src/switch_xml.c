@@ -141,6 +141,24 @@ static void preprocess_exec_set(char *keyval)
 	}
 }
 
+static void preprocess_env_set(char *keyval)
+{
+	char *key = keyval;
+	char *val = strchr(key, '=');
+
+	if (key && val) {
+		*val++ = '\0';
+
+		if (*val++ == '$') {
+			char *data = getenv(val);
+
+			if (data) {
+				switch_core_set_variable(key, data);
+			}
+		}
+	}
+}
+
 static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
@@ -1469,6 +1487,8 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 
 			} else if (!strcasecmp(tcmd, "exec-set")) {
 				preprocess_exec_set(targ);
+			} else if (!strcasecmp(tcmd, "env-set")) {
+				preprocess_env_set(targ);
 			} else if (!strcasecmp(tcmd, "include")) {
 				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
 			} else if (!strcasecmp(tcmd, "exec")) {
