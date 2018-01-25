@@ -3102,11 +3102,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		if (moh_valid && moh_expanded) {
 			switch_status_t status = switch_ivr_play_file(member_session, NULL, moh_expanded, &args);
+			switch_bool_t exiting_with_key = ht.exit_keys && *(ht.exit_keys) && !zstr(&ht.dtmf) && strchr(ht.exit_keys, ht.dtmf);
 			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) {
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
-			} else if (status == SWITCH_STATUS_BREAK) {
+			} else if ((status == SWITCH_STATUS_BREAK) && exiting_with_key) {
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
@@ -3115,7 +3116,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 				break;
 			}
 		} else {
-			if ((switch_ivr_collect_digits_callback(member_session, &args, 0, 0)) == SWITCH_STATUS_BREAK) {
+			switch_status_t status = switch_ivr_collect_digits_callback(member_session, &args, 0, 0);
+			switch_bool_t exiting_with_key = ht.exit_keys && *(ht.exit_keys) && !zstr(&ht.dtmf) && strchr(ht.exit_keys, ht.dtmf);
+			if ((status == SWITCH_STATUS_BREAK) && exiting_with_key) {
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
