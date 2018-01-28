@@ -358,12 +358,6 @@ static void load_configuration(void)
 				}
 			}
 
-#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-			if (zstr(globals.script_caching)) {
-				globals.script_caching = switch_core_strdup(globals.pool, "disabled");
-			}
-#endif
-
 			for (hook = switch_xml_child(settings, "hook"); hook; hook = hook->next) {
 				char *event = (char *)switch_xml_attr_soft(hook, "event");
 				char *subclass = (char *)switch_xml_attr_soft(hook, "subclass");
@@ -533,7 +527,7 @@ void LoadScript(MaybeLocal<v8::Script> *v8_script, Isolate *isolate, const char 
 		Do not cache if the caching is disabled
 		Do not cache inline scripts
 	*/
-	if (!strcasecmp(globals.script_caching, "disabled") || !strcasecmp(globals.script_caching, "false") || !strcasecmp(globals.script_caching, "no") ||	!strcasecmp(script_file, "inline") || zstr(script_file)) {
+	if (!switch_true(globals.script_caching) || !strcasecmp(script_file, "inline") || zstr(script_file)) {
 		options = ScriptCompiler::kNoCompileOptions;
 		perf_log("Javascript caching is disabled.\n", script_file);
 	} else {
@@ -1212,6 +1206,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	globals.v8platform = NULL;
 	globals.cache_expires_seconds = 0;
 	globals.performance_monitor = false;
+	globals.script_caching = switch_core_strdup(globals.pool, "disabled");
+
 	JSMain::Initialize(&globals.v8platform);
 
 	switch_core_hash_init(&globals.compiled_script_hash);
