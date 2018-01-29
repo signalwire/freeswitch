@@ -4251,7 +4251,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device", device->txt);
 				}
 
-				if (!strcmp(xml->name, "SetDoNotDisturb")) {
+				if (xml->name && !strcmp(xml->name, "SetDoNotDisturb")) {
 					switch_xml_t action = NULL;
 
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Feature-Action", "SetDoNotDisturb");
@@ -4261,7 +4261,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					}
 				}
 
-				if (!strcmp(xml->name, "SetForwarding")) {
+				if (xml->name && !strcmp(xml->name, "SetForwarding")) {
 					switch_xml_t cfwd_type, cfwd_enable, cfwd_target;
 
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Feature-Action", "SetCallForward");
