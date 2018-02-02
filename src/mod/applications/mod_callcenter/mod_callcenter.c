@@ -429,6 +429,7 @@ static struct {
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
+	switch_bool_t global_database_lock;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -605,10 +606,12 @@ char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, ch
 
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	} else {
-		switch_mutex_lock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_lock(mutex);
+		} else {
+			switch_mutex_lock(globals.mutex);
+		}
 	}
 
 	if (!(dbh = cc_get_db_handle())) {
@@ -621,10 +624,12 @@ char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, ch
 end:
 	switch_cache_db_release_db_handle(&dbh);
 
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	} else {
-		switch_mutex_unlock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		} else {
+			switch_mutex_unlock(globals.mutex);
+		}
 	}
 
 	return ret;
@@ -635,10 +640,12 @@ static switch_status_t cc_execute_sql(cc_queue_t *queue, char *sql, switch_mutex
 	switch_cache_db_handle_t *dbh = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	} else {
-		switch_mutex_lock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_lock(mutex);
+		} else {
+			switch_mutex_lock(globals.mutex);
+		}
 	}
 
 	if (!(dbh = cc_get_db_handle())) {
@@ -652,10 +659,12 @@ end:
 
 	switch_cache_db_release_db_handle(&dbh);
 
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	} else {
-		switch_mutex_unlock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		} else {
+			switch_mutex_unlock(globals.mutex);
+		}
 	}
 
 	return status;
@@ -667,10 +676,12 @@ static switch_bool_t cc_execute_sql_callback(cc_queue_t *queue, switch_mutex_t *
 	char *errmsg = NULL;
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	} else {
-		switch_mutex_lock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_lock(mutex);
+		} else {
+			switch_mutex_lock(globals.mutex);
+		}
 	}
 
 	if (!(dbh = cc_get_db_handle())) {
@@ -689,10 +700,12 @@ end:
 
 	switch_cache_db_release_db_handle(&dbh);
 
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	} else {
-		switch_mutex_unlock(globals.mutex);
+	if (globals.global_database_lock) {
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		} else {
+			switch_mutex_unlock(globals.mutex);
+		}
 	}
 
 	return ret;
@@ -1461,6 +1474,7 @@ static switch_status_t load_config(void)
 
 	switch_mutex_lock(globals.mutex);
 	globals.core_uuid = switch_core_get_uuid();
+	globals.global_database_lock = SWITCH_TRUE;
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1478,6 +1492,8 @@ static switch_status_t load_config(void)
 				globals.truncate_tiers = switch_true(val);
 			} else if (!strcasecmp(var, "truncate-agents-on-load")) {
 				globals.truncate_agents = switch_true(val);
+			} else if (!strcasecmp(var, "global-database-lock")) {
+				globals.global_database_lock = switch_true(val);
 			}
 		}
 	}
@@ -1489,6 +1505,11 @@ static switch_status_t load_config(void)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reserving Agents before offering calls.\n");
 	}
+
+	if (!globals.global_database_lock) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disabling global database lock\n");
+	}
+
 	/* Initialize database */
 	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
