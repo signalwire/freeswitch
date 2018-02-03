@@ -141,7 +141,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	bson cdr;
 	int is_b;
 	int bson_idx, callflow_idx;
-	char idx_buffer[4];
+	char idx_buffer[12];
 	char *tmp;
 
 	if (globals.shutdown) {
