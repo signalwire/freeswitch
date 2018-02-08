@@ -3118,12 +3118,6 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
 				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
 	}
-	if (time_match && xweek) {
-		int test = (int) (tm.tm_yday / 7 + 1);
-		time_match = switch_number_cmp(xweek, test);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
-	}
 
 	if (time_match && xmweek) {
 		/* calculate the day of the week of the first of the month (0-6) */
