@@ -6600,10 +6600,10 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	switch_color_set_rgb(&bgcolor, "#000000");
 	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 
+	if (fps < 15) fps = 15;
 	frame_ms = (uint32_t) 1000 / fps;
+	if (frame_ms <= 0) frame_ms = 66;
 	frames = (uint32_t) ms / frame_ms;
-
-
 
 	switch_core_media_gen_key_frame(session);
 	for (i = 0; i < frames; i++) {
