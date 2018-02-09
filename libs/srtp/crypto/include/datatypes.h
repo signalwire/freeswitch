@@ -342,7 +342,7 @@ octet_string_set_to_zero(void *s, size_t len);
 /* Fall back. */
 static inline uint32_t be32_to_cpu(uint32_t v) {
    /* optimized for x86. */
-   asm("bswap %0" : "=r" (v) : "0" (v));
+   __asm__("bswap %0" : "=r" (v) : "0" (v));
    return v;
 }
 # else /* HAVE_X86 */
