@@ -865,7 +865,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				conference_file_stop(conference, FILE_STOP_ASYNC);
 			}
 
-			if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) && !zstr(conference->enter_sound)) {
+			if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
 				const char * enter_sound = switch_channel_get_variable(channel, "conference_enter_sound");
 				if (conference_utils_test_flag(conference, CFLAG_ENTER_SOUND) && !conference_utils_member_test_flag(member, MFLAG_SILENT)) {
 					if (!zstr(enter_sound)) {
