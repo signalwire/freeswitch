@@ -1146,6 +1146,7 @@ struct record_helper {
 	uint32_t vwrites;
 	const char *completion_cause;
 	int start_event_sent;
+	switch_event_t *variables;
 };
 
 /**
@@ -1185,6 +1186,24 @@ static switch_bool_t is_silence_frame(switch_frame_t *frame, int silence_thresho
 	return is_silence;
 }
 
+static void merge_recording_variables(struct record_helper *rh, switch_event_t *event)
+{
+	switch_event_header_t *hi;
+	if (rh->variables) {
+		for (hi = rh->variables->headers; hi; hi = hi->next) {
+			char buf[1024];
+			char *vvar = NULL, *vval = NULL;
+
+			vvar = (char *) hi->name;
+			vval = (char *) hi->value;
+
+			switch_assert(vvar && vval);
+			switch_snprintf(buf, sizeof(buf), "Recording-Variable-%s", vvar);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+		}
+	}
+}
+
 static void send_record_stop_event(switch_channel_t *channel, switch_codec_implementation_t *read_impl, struct record_helper *rh)
 {
 	switch_event_t *event;
@@ -1205,10 +1224,12 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+		merge_recording_variables(rh, event);
 		if (!zstr(rh->completion_cause)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Completion-Cause", rh->completion_cause);
 		}
 		switch_event_fire(&event);
+		switch_event_safe_destroy(rh->variables);
 	}
 }
 
@@ -1311,6 +1332,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+					merge_recording_variables(rh, event);
 					switch_event_fire(&event);
 				}
 			}
@@ -1760,6 +1782,11 @@ static void* switch_ivr_record_user_data_dup(switch_core_session_t *session, voi
 	dup->file = switch_core_session_strdup(session, rh->file);
 	dup->fh = switch_core_session_alloc(session, sizeof(switch_file_handle_t));
 	memcpy(dup->fh, rh->fh, sizeof(switch_file_handle_t));
+	dup->variables = NULL;
+	if (rh->variables) {
+		switch_event_dup(&dup->variables, rh->variables);
+		switch_event_safe_destroy(rh->variables);
+	}
 
 	return dup;
 }
@@ -2538,7 +2565,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, const char *file, uint32_t limit, switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_session_t *session, const char *file, uint32_t limit, switch_file_handle_t *fh, switch_event_t *vars)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *p;
@@ -2904,6 +2931,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		}
 	}
 
+	if(vars) {
+		switch_event_dup(&rh->variables, vars);
+	}
+
 	rh->hangup_on_error = hangup_on_error;
 
 	if ((status = switch_core_media_bug_add(session, "session_record", file,
@@ -2942,6 +2973,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, const char *file, uint32_t limit, switch_file_handle_t *fh)
+{
+	return switch_ivr_record_session_event(session, file, limit, fh, NULL);
+}
 
 typedef struct {
 	SpeexPreprocessState *read_st;

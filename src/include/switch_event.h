@@ -215,7 +215,7 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
   \param event pointer to the pointer to event to destroy
 */
 SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event);
-#define switch_event_safe_destroy(_event) if (_event) switch_event_destroy(_event)
+#define switch_event_safe_destroy(_event) if (_event) switch_event_destroy(&_event)
 
 /*!
   \brief Duplicate an event
