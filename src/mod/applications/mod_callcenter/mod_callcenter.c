@@ -425,7 +425,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
-	char *core_uuid;
+	char *cc_instance_id;
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
@@ -1473,7 +1473,6 @@ static switch_status_t load_config(void)
 	}
 
 	switch_mutex_lock(globals.mutex);
-	globals.core_uuid = switch_core_get_uuid();
 	globals.global_database_lock = SWITCH_TRUE;
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -1494,11 +1493,16 @@ static switch_status_t load_config(void)
 				globals.truncate_agents = switch_true(val);
 			} else if (!strcasecmp(var, "global-database-lock")) {
 				globals.global_database_lock = switch_true(val);
+			} else if (!strcasecmp(var, "cc-instance-id")) {
+				globals.cc_instance_id = strdup(val);
 			}
 		}
 	}
-	if (!globals.dbname) {
+	if (zstr(globals.dbname)) {
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
+	}
+	if (zstr(globals.cc_instance_id)) {
+		globals.cc_instance_id = strdup("single_box");
 	}
 	if (!globals.reserve_agents) {
 		globals.reserve_agents = SWITCH_FALSE;
@@ -1532,7 +1536,7 @@ static switch_status_t load_config(void)
 						 "update tiers set state = 'Ready' where agent IN (select name from agents where system = 'single_box');"
 						 "update members set state = '%q', session_uuid = '' where system = '%q';"
 						 "update agents set external_calls_count = 0 where system = 'single_box';",
-						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.core_uuid);
+						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.cc_instance_id);
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
 
@@ -1638,7 +1642,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		bridged = 0;
 
 		 sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND system = '%q' AND state != '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), h->member_uuid, globals.core_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), h->member_uuid, globals.cc_instance_id, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -1841,7 +1845,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = 'single_box', state = '%q'"
 					" WHERE state = '%q' AND uuid = '%q' AND system = '%q' AND serving_agent = '%q'",
 					h->agent_name, cc_member_state2str(CC_MEMBER_STATE_TRYING),
-					cc_member_state2str(CC_MEMBER_STATE_TRYING), h->member_uuid, globals.core_uuid, h->queue_strategy);
+					cc_member_state2str(CC_MEMBER_STATE_TRYING), h->member_uuid, globals.cc_instance_id, h->queue_strategy);
 			cc_execute_sql(NULL, sql, NULL);
 
 			switch_safe_free(sql);
@@ -1849,7 +1853,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			/* Check if we won the race to get the member to our selected agent (Used for Multi system purposes) */
 			sql = switch_mprintf("SELECT count(*) FROM members"
 					" WHERE serving_agent = '%q' AND serving_system = 'single_box' AND uuid = '%q' AND system = '%q'",
-					h->agent_name, h->member_uuid, globals.core_uuid);
+					h->agent_name, h->member_uuid, globals.cc_instance_id);
 			cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 			switch_safe_free(sql);
 
@@ -1933,7 +1937,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		} else if (!bridged && !switch_channel_up(agent_channel)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to bridge, agent %s has no session\n", h->agent_name);
 			/* Put back member on Waiting state, previous Trying */
-			sql = switch_mprintf("UPDATE members SET state = 'Waiting' WHERE uuid = '%q' AND system = '%q'", h->member_uuid, globals.core_uuid);
+			sql = switch_mprintf("UPDATE members SET state = 'Waiting' WHERE uuid = '%q' AND system = '%q'", h->member_uuid, globals.cc_instance_id);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
 		} else {
@@ -2009,7 +2013,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_safe_free(sql);
 
 			/* Remove the member entry from the db (Could become optional to support latter processing) */
-			sql = switch_mprintf("DELETE FROM members WHERE uuid = '%q' AND system = '%q'", h->member_uuid, globals.core_uuid);
+			sql = switch_mprintf("DELETE FROM members WHERE uuid = '%q' AND system = '%q'", h->member_uuid, globals.cc_instance_id);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
 
@@ -2051,7 +2055,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				" WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_TRYING),	/* Only switch to Waiting from Trying (state may be set to Abandoned in callcenter_function()) */
 				cc_member_state2str(CC_MEMBER_STATE_WAITING),
-				h->agent_name, h->agent_system, h->member_uuid, globals.core_uuid);
+				h->agent_name, h->agent_system, h->member_uuid, globals.cc_instance_id);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 		bridged = 0;
@@ -2288,7 +2292,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	if (!strcasecmp(cbt->strategy,"ring-all") || !strcasecmp(cbt->strategy,"ring-progressively")) {
 		/* Check if member is a ring-all mode */
-		sql = switch_mprintf("SELECT count(*) FROM members WHERE serving_agent = '%q' AND uuid = '%q' AND system = '%q'", cbt->strategy, cbt->member_uuid, globals.core_uuid);
+		sql = switch_mprintf("SELECT count(*) FROM members WHERE serving_agent = '%q' AND uuid = '%q' AND system = '%q'", cbt->strategy, cbt->member_uuid, globals.cc_instance_id);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 
 		switch_safe_free(sql);
@@ -2297,13 +2301,13 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = '%q', state = '%q'"
 				" WHERE state = '%q' AND uuid = '%q' AND system = '%q'",
 				agent_name, agent_system, cc_member_state2str(CC_MEMBER_STATE_TRYING),
-				cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt->member_uuid, globals.core_uuid);
+				cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt->member_uuid, globals.cc_instance_id);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		/* Check if we won the race to get the member to our selected agent (Used for Multi system purposes) */
 		sql = switch_mprintf("SELECT count(*) FROM members WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = '%q'",
-				agent_name, agent_system, cbt->member_uuid, globals.core_uuid);
+				agent_name, agent_system, cbt->member_uuid, globals.cc_instance_id);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 	}
@@ -2700,7 +2704,7 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent, system FROM members"
 				" WHERE (state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') OR (serving_agent = 'ring-progressively' AND state = '%q')) AND system = '%q' ORDER BY score DESC",
 				local_epoch_time_now(NULL),
-				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_TRYING), globals.core_uuid);
+				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_TRYING), globals.cc_instance_id);
 
 		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, members_callback, NULL /* Call back variables */);
 		switch_safe_free(sql);
@@ -3005,7 +3009,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		/* Update abandoned member */
 		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" SWITCH_TIME_T_FMT "', system = '%q' WHERE uuid = '%q' AND state = '%q'",
-				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), globals.core_uuid, member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), globals.cc_instance_id, member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
 
@@ -3053,7 +3057,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 				" (queue,system,uuid,session_uuid,system_epoch,joined_epoch,base_score,skill_score,cid_number,cid_name,serving_agent,serving_system,state)"
 				" VALUES('%q','%q','%q','%q','%q','%" SWITCH_TIME_T_FMT "','%d','%d','%q','%q','%q','','%q')",
 				queue_name,
-				globals.core_uuid,
+				globals.cc_instance_id,
 				member_uuid,
 				member_session_uuid,
 				start_epoch,
@@ -3174,7 +3178,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND system = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), member_uuid, globals.core_uuid);
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), member_uuid, globals.cc_instance_id);
 				cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -3216,7 +3220,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND system = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), member_uuid, globals.core_uuid);
+				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), member_uuid, globals.cc_instance_id);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -4267,6 +4271,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
+	switch_safe_free(globals.cc_instance_id);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
