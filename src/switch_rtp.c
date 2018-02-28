@@ -1821,9 +1821,11 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	} else {
 		rtcp_report_block->fraction = 0;
 	}
-#if SWITCH_BYTE_ORDER != __BIG_ENDIAN
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+	rtcp_report_block->lost = stats->cum_lost;
+#else
 	/* Reversing byte order for 24bits */
-	rtcp_report_block->lost = (((stats->cum_lost&0x0000FF)<<16) | ((stats->cum_lost&0x00FF00)) | ((stats->cum_lost&0xFF0000)>>16));
+	rtcp_report_block->lost = htonl(stats->cum_lost) >> 8;
 #endif
 
 #ifdef DEBUG_RTCP
@@ -6569,7 +6571,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 				rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
 				rtp_session->rtcp_frame.reports[i].fraction = (uint8_t)report->fraction;
-				rtp_session->rtcp_frame.reports[i].lost = ntohl(report->lost);
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+				rtp_session->rtcp_frame.reports[i].lost = report->lost; // signed 24bit will extended signess to int32_t automatically
+#else
+				rtp_session->rtcp_frame.reports[i].lost = ntohl(report->lost)>>8; // signed 24bit casted to uint32_t need >>8 after ntohl()...
+				rtp_session->rtcp_frame.reports[i].lost = rtp_session->rtcp_frame.reports[i].lost | ((rtp_session->rtcp_frame.reports[i].lost & 0x00800000) ? 0xff000000 : 0x00000000); // ...and signess compensation
+#endif
 				rtp_session->rtcp_frame.reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
 				rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
 				rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
