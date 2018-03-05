@@ -1173,6 +1173,10 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 		if (zstr(number)) {
 			name = number = "UNKNOWN";
 		}
+
+		if (!zstr(name) && !strcmp(name,"_undef_")) {
+			name = "";
+		}
 	} else {
 		if (zstr(name)) {
 			name = caller_profile->callee_id_name;
@@ -1188,6 +1192,10 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 
 		if (zstr(number)) {
 			number = caller_profile->destination_number;
+		}
+
+		if (!zstr(name) && !strcmp(name,"_undef_")) {
+			name = "";
 		}
 	}
 
