@@ -91,7 +91,6 @@ switch_status_t conference_record_stop(conference_obj_t *conference, switch_stre
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
 		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path))) {
-			conference->record_count--;
 			if (!conference_utils_test_flag(conference, CFLAG_CONF_RESTART_AUTO_RECORD) && member->rec && member->rec->autorec) {
 				stream->write_function(stream, "Stopped AUTO recording file %s (Auto Recording Now Disabled)\n", member->rec_path);
 				conference->auto_record = 0;
@@ -155,7 +154,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 {
 	int16_t *data_buf;
 	conference_member_t smember = { 0 }, *member;
-	conference_record_t *rp, *last = NULL, *rec = (conference_record_t *) obj;
+	conference_record_t *rp, *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
 	uint32_t samples = switch_samples_per_packet(conference->rate, conference->interval);
 	uint32_t mux_used;
@@ -422,6 +421,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		switch_core_file_close(&member->rec->fh);
 	}
 
+	conference->record_count--;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recording of %s Stopped\n", rec->path);
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -455,11 +455,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	switch_mutex_lock(conference->flag_mutex);
 	for (rp = conference->rec_node_head; rp; rp = rp->next) {
 		if (rec == rp) {
-			if (last) {
-				last->next = rp->next;
-			} else {
-				conference->rec_node_head = rp->next;
-			}
+			conference->rec_node_head = rp->next;
 		}
 	}
 	switch_mutex_unlock(conference->flag_mutex);
