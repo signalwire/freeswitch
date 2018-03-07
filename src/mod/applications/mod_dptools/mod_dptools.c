@@ -6128,6 +6128,73 @@ SWITCH_STANDARD_APP(deduplicate_dtmf_app_function)
 	}
 }
 
+SWITCH_STANDARD_APP(vad_test_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_codec_implementation_t imp = { 0 };
+	switch_vad_t *vad;
+	switch_frame_t *frame = { 0 };
+	switch_vad_state_t vad_state;
+	int mode = -1;
+	const char *var = NULL;
+	int tmp;
+
+	if (!zstr(data)) {
+		mode = atoi(data);
+
+		if (mode > 3) mode = 3;
+	}
+
+	switch_core_session_raw_read(session);
+	switch_core_session_get_read_impl(session, &imp);
+
+	vad = switch_vad_init(imp.samples_per_second, imp.number_of_channels);
+	switch_assert(vad);
+	switch_vad_set_mode(vad, mode);
+
+	if ((var = switch_channel_get_variable(channel, "vad_hangover_len"))) {
+		tmp = atoi(var);
+
+		if (tmp > 0) switch_vad_set_param(vad, "hangover_len", tmp);
+	}
+
+	if ((var = switch_channel_get_variable(channel, "vad_thresh"))) {
+		tmp = atoi(var);
+
+		if (tmp > 0) switch_vad_set_param(vad, "thresh", tmp);
+	}
+
+	if ((var = switch_channel_get_variable(channel, "vad_timeout_len"))) {
+		tmp = atoi(var);
+
+		if (tmp > 0) switch_vad_set_param(vad, "timeout_len", tmp);
+	}
+
+	while(switch_channel_ready(channel)) {
+		switch_core_session_read_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (switch_test_flag(frame, SFF_CNG)) {
+			continue;
+		}
+
+		vad_state = switch_vad_process(vad, frame->data, frame->datalen / 2);
+
+		if (vad_state == SWITCH_VAD_STATE_START_TALKING) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "START TALKING\n");
+			switch_core_session_write_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
+		} else if (vad_state == SWITCH_VAD_STATE_STOP_TALKING) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STOP TALKING\n");
+		} else if (vad_state == SWITCH_VAD_STATE_TALKING) {
+			switch_core_session_write_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "vad_state: %d\n", vad_state);
+		}
+	}
+
+	switch_vad_destroy(&vad);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -6462,6 +6529,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "pickup", "Pickup", "Pickup a call", pickup_function, PICKUP_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deduplicate_dtmf", "Prevent duplicate inband + 2833 dtmf", "", deduplicate_dtmf_app_function, "[only_rtp]", SAF_SUPPORT_NOMEDIA);
 
+	SWITCH_ADD_APP(app_interface, "vad_test", "VAD test", "VAD test, mode = -1(default), 0, 1, 2, 3", vad_test_function, "[mode]", SAF_NONE);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 

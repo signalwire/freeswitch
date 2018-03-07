@@ -179,6 +179,10 @@ if HAVE_GUMBO
 CORE_CFLAGS += -DSWITCH_HAVE_GUMBO $(LIBGUMBO_CFLAGS)
 endif
 
+if HAVE_FVAD
+CORE_CFLAGS += -DSWITCH_HAVE_FVAD $(LIBFVAD_CFLAGS)
+endif
+
 ##
 ## libfreeswitch
 ##
@@ -241,9 +245,9 @@ CORE_LIBS+=libfreeswitch_libyuv.la
 endif
 
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -312,6 +316,7 @@ library_include_HEADERS = \
 	src/include/switch_utf8.h \
 	src/include/switch_msrp.h \
 	src/include/switch_vpx.h \
+	src/include/switch_vad.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
@@ -395,6 +400,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_hashtable.c\
 	src/switch_utf8.c \
 	src/switch_msrp.c \
+	src/switch_vad.c \
 	src/switch_vpx.c \
 	libs/libtpl-1.5/src/tpl.c \
 	libs/libteletone/src/libteletone_detect.c \
