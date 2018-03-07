@@ -145,6 +145,7 @@
 #include "switch_core_video.h"
 #include "switch_jitterbuffer.h"
 #include "switch_estimators.h"
+#include "switch_vad.h"
 #include <libteletone.h>
 
 

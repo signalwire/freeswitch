@@ -1310,6 +1310,10 @@ PKG_CHECK_MODULES([GUMBO], [gumbo >= 0.10.1],[
   AM_CONDITIONAL([HAVE_GUMBO],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_GUMBO],[false])])
 
+PKG_CHECK_MODULES([FVAD], [libfvad >= 1.0],[
+  AM_CONDITIONAL([HAVE_FVAD],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FVAD],[false])])
+
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
