@@ -2324,14 +2324,14 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 				context->last_img = (switch_image_t *)pop;
 				switch_img_copy(context->last_img, &frame->img);
 				context->vid_ready = 1;
-				return SWITCH_STATUS_SUCCESS;
+				goto resize_check;
 			}
 
 			if (context->last_img) { // repeat the last img
 				switch_img_copy(context->last_img, &frame->img);
 				context->vid_ready = 1;
 				context->seek_ts = -1;
-				return SWITCH_STATUS_SUCCESS;
+				goto resize_check;
 			}
 
 			if ((flags & SVR_BLOCK) && sanity-- > 0) {
@@ -2346,7 +2346,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			if ((flags & SVR_BLOCK)) switch_yield(100000);
 			switch_img_copy(context->last_img, &frame->img);
 			context->vid_ready = 1;
-			return SWITCH_STATUS_SUCCESS;
+			goto resize_check;
 		}
 
 		if ((flags & SVR_BLOCK)) {
@@ -2359,7 +2359,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			context->last_img = (switch_image_t *)pop;
 			switch_img_copy(context->last_img, &frame->img);
 			context->vid_ready = 1;
-			return SWITCH_STATUS_SUCCESS;
+			goto resize_check;
 		}
 
 		return SWITCH_STATUS_BREAK;
@@ -2475,6 +2475,8 @@ GCC_DIAG_ON(deprecated-declarations)
 		return SWITCH_STATUS_BREAK;
 	}
 
+ resize_check:
+	
 	if (frame->img) {
 		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
 			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
