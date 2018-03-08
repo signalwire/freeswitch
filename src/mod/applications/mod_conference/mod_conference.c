@@ -372,15 +372,25 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			conference_member_set_floor_holder(conference, NULL, floor_holder);
 		}
 
+		if (conference_utils_test_flag(conference, CFLAG_NO_MOH)) {
+			nomoh++;
+		}
+		
 		if (conference->moh_wait > 0) {
 			conference->moh_wait--;
 		} else {
+			char *moh_sound = conference->tmp_moh_sound;
+
+			if (!moh_sound) {
+				moh_sound = conference->moh_sound;
+			}
+			
 			if (conference->perpetual_sound && !conference->async_fnode) {
 				moh_status = conference_file_play(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-			} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1)
+			} else if (moh_sound && ((nomoh == 0 && conference->count == 1)
 												 || conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) &&
 					   !conference->async_fnode && !conference->fnode) {
-				moh_status = conference_file_play(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+				moh_status = conference_file_play(conference, moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 			}
 		}
 

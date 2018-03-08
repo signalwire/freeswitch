@@ -45,6 +45,7 @@ struct _mapping control_mappings[] = {
 	{"mute", conference_loop_mute_toggle},
 	{"mute on", conference_loop_mute_on},
 	{"mute off", conference_loop_mute_off},
+	{"moh toggle", conference_loop_moh_toggle},
 	{"vmute", conference_loop_vmute_toggle},
 	{"vmute on", conference_loop_vmute_on},
 	{"vmute off", conference_loop_vmute_off},
@@ -165,6 +166,11 @@ void conference_loop_conference_video_vmute_snap(conference_member_t *member, ca
 void conference_loop_conference_video_vmute_snapoff(conference_member_t *member, caller_control_action_t *action)
 {
 	conference_video_vmute_snap(member, SWITCH_TRUE);
+}
+
+void conference_loop_moh_toggle(conference_member_t *member, caller_control_action_t *action)
+{
+	conference_api_set_moh(member->conference, "toggle");
 }
 
 void conference_loop_vmute_toggle(conference_member_t *member, caller_control_action_t *action)
