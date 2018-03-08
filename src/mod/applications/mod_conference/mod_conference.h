@@ -258,6 +258,7 @@ typedef enum {
 	CFLAG_PERSONAL_CANVAS,
 	CFLAG_REFRESH_LAYOUT,
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
+	CFLAG_NO_MOH,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -609,6 +610,7 @@ typedef struct conference_obj {
 	char *alone_sound;
 	char *perpetual_sound;
 	char *moh_sound;
+	char *tmp_moh_sound;
 	char *muted_sound;
 	char *mute_detect_sound;
 	char *unmuted_sound;
@@ -1191,6 +1193,7 @@ switch_status_t conference_api_sub_dtmf(conference_member_t *member, switch_stre
 switch_status_t conference_api_sub_pause_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_play_status(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_moh(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_say(conference_obj_t *conference, switch_stream_handle_t *stream, const char *text);
 switch_status_t conference_api_sub_dial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_bgdial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
@@ -1249,7 +1252,7 @@ switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, sw
 switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn);
 switch_status_t conference_api_sub_syntax(char **syntax);
 switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream);
-
+switch_status_t conference_api_set_moh(conference_obj_t *conference, const char *what);
 
 void conference_loop_mute_on(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_mute_toggle(conference_member_t *member, caller_control_action_t *action);
@@ -1273,6 +1276,7 @@ void conference_loop_conference_video_vmute_snap(conference_member_t *member, ca
 void conference_loop_conference_video_vmute_snapoff(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_vmute_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_vmute_on(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_moh_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_deafmute_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_hangup(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_transfer(conference_member_t *member, caller_control_action_t *action);

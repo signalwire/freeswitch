@@ -59,6 +59,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"position", (void_fn_t) & conference_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>:<y>:<z>"},
 	{"auto-3d-position", (void_fn_t) & conference_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conference_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
+	{"moh", (void_fn_t) & conference_api_sub_moh, CONF_API_SUB_ARGS_SPLIT, "moh", "<file_path>|toggle|[on|off]"},
 	{"pause_play", (void_fn_t) & conference_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", "[<member_id>]"},
 	{"play_status", (void_fn_t) & conference_api_sub_play_status, CONF_API_SUB_ARGS_SPLIT, "play_status", "[<member_id>]"},
 	{"file_seek", (void_fn_t) & conference_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val> [<member_id>]"},
@@ -2469,6 +2470,41 @@ switch_status_t conference_api_sub_file_seek(conference_obj_t *conference, switc
 	}
 
 	return SWITCH_STATUS_GENERR;
+}
+
+switch_status_t conference_api_set_moh(conference_obj_t *conference, const char *what)
+{
+
+	if (!strcasecmp(what, "toggle")) {
+		if (conference_utils_test_flag(conference, CFLAG_NO_MOH)) {
+			conference_utils_clear_flag(conference, CFLAG_NO_MOH);
+		} else {
+			conference_utils_set_flag(conference, CFLAG_NO_MOH);
+		}
+	} else if (!strcasecmp(what, "on")) {
+		conference_utils_clear_flag(conference, CFLAG_NO_MOH);
+	} else if (!strcasecmp(what, "off")) {
+		conference_utils_set_flag(conference, CFLAG_NO_MOH);
+	} else if (!strcasecmp(what, "reset")) {
+		conference->tmp_moh_sound = NULL;
+	} else {
+		conference->tmp_moh_sound = switch_core_strdup(conference->pool, what);
+	}
+
+	if (conference_utils_test_flag(conference, CFLAG_NO_MOH) || conference->tmp_moh_sound) {
+		conference_file_stop(conference, FILE_STOP_ASYNC);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_moh(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+
+	conference_api_set_moh(conference, argv[2]);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)

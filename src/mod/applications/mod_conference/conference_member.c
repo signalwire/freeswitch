@@ -860,10 +860,11 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if (conference->count > 1) {
-			if ((conference->moh_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) ||
+			if (((conference->moh_sound || conference->tmp_moh_sound) && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) ||
 				(conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")))) {
 				/* stop MoH if any */
 				conference_file_stop(conference, FILE_STOP_ASYNC);
+				conference_utils_clear_flag(conference, CFLAG_NO_MOH);
 			}
 
 			if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
