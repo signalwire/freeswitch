@@ -64,6 +64,7 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 	char msgbuf[2048];
 	char *s;
 	int index = 0;
+	int status = SWITCH_STATUS_SUCCESS;
 	switch_socket_t *sock = NULL;
 	switch_os_sock_put(&sock, &listener->sockdes, listener->pool);
 
@@ -81,7 +82,8 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 	/* sum:  542 */
 
 	switch_mutex_lock(listener->sock_mutex);
-	if (switch_socket_send(sock, msgbuf, (switch_size_t *) &index)) {
+	status = switch_socket_send(sock, msgbuf, (switch_size_t *) &index);
+	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", listener->peer_nodename);
 	}
 	switch_mutex_unlock(listener->sock_mutex);
