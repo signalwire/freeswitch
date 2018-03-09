@@ -747,24 +747,34 @@ switch_status_t conference_api_sub_vid_flip(conference_member_t *member, switch_
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) && !arg) {
+	if ((conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) || conference_utils_member_test_flag(member, MFLAG_MIRROR_VIDEO)) && !arg) {
 		conference_utils_member_clear_flag_locked(member, MFLAG_FLIP_VIDEO);
 		conference_utils_member_clear_flag_locked(member, MFLAG_ROTATE_VIDEO);
+		conference_utils_member_clear_flag_locked(member, MFLAG_MIRROR_VIDEO);
 	} else {
-		conference_utils_member_set_flag_locked(member, MFLAG_FLIP_VIDEO);
 
-		if (arg) {
-			if (!strcasecmp(arg, "rotate")) {
-				conference_utils_member_set_flag_locked(member, MFLAG_ROTATE_VIDEO);
-			} else if (switch_is_number(arg)) {
-				int num = atoi(arg);
-
-				if (num == 0 || num == 90 || num == 180 || num == 270) {
-					member->flip = num;
-				}
+		if (arg && !strcasecmp(arg, "mirror")) {
+			if (conference_utils_member_test_flag(member, MFLAG_MIRROR_VIDEO)) {
+				conference_utils_member_clear_flag_locked(member, MFLAG_MIRROR_VIDEO);
+			} else {
+				conference_utils_member_set_flag_locked(member, MFLAG_MIRROR_VIDEO);
 			}
 		} else {
-			member->flip = 180;
+			conference_utils_member_set_flag_locked(member, MFLAG_FLIP_VIDEO);
+
+			if (arg) {
+				if (!strcasecmp(arg, "rotate")) {
+					conference_utils_member_set_flag_locked(member, MFLAG_ROTATE_VIDEO);
+				} else if (switch_is_number(arg)) {
+					int num = atoi(arg);
+				
+					if (num == 0 || num == 90 || num == 180 || num == 270) {
+						member->flip = num;
+					}
+				}
+			} else {
+				member->flip = 180;
+			}
 		}
 	}
 

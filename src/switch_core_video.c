@@ -3191,6 +3191,51 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 #endif
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_image_t **destP)
+{
+#ifdef SWITCH_HAVE_YUV
+	switch_image_t *dest = NULL;
+	int ret = 0;
+
+	if (destP) {
+		dest = *destP;
+	}
+
+	if (dest && src->fmt != dest->fmt) switch_img_free(&dest);
+
+	if (!dest) dest = switch_img_alloc(NULL, src->fmt, src->d_w, src->d_h, 1);
+
+	if (src->fmt == SWITCH_IMG_FMT_I420) {
+		ret = I420Mirror(src->planes[0], src->stride[0],
+						 src->planes[1], src->stride[1],
+						 src->planes[2], src->stride[2],
+						 dest->planes[0], dest->stride[0],
+						 dest->planes[1], dest->stride[1],
+						 dest->planes[2], dest->stride[2],
+						 src->d_w, src->d_h);
+	} else if (src->fmt == SWITCH_IMG_FMT_ARGB) {
+		ret = ARGBMirror(src->planes[SWITCH_PLANE_PACKED], src->d_w * 4,
+						 dest->planes[SWITCH_PLANE_PACKED], src->d_w * 4,
+						 src->d_w, src->d_h);
+		
+	}
+
+	if (ret != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Mirror Error: ret: %d\n", ret);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (destP) {
+		*destP = dest;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP)
 {
 	switch(pos) {

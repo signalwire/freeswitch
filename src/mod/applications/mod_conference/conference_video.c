@@ -4872,7 +4872,8 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 			switch_queue_size(member->video_queue) < member->conference->video_fps.fps &&
 			!member->conference->canvases[canvas_id]->playing_video_file) {
 
-			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) || conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
+			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) ||
+				conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO) || conference_utils_member_test_flag(member, MFLAG_MIRROR_VIDEO)) {
 				if (conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
 					if (member->flip_count++ > (int)(member->conference->video_fps.fps / 2)) {
 						member->flip += 90;
@@ -4883,6 +4884,8 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 					}
 
 					switch_img_rotate_copy(frame->img, &img_copy, member->flip);
+				} else if (conference_utils_member_test_flag(member, MFLAG_MIRROR_VIDEO)) {
+					switch_img_mirror(frame->img, &img_copy);
 				} else {
 					switch_img_rotate_copy(frame->img, &img_copy, member->flip);
 				}

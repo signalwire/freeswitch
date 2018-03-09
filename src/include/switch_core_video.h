@@ -406,6 +406,7 @@ SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
 */
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t percent);
 
+SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_image_t **destP);
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
 SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit);
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
