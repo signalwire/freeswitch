@@ -3039,6 +3039,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					snprintf(header, sizeof(header), "Source%u-DLSR", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].dlsr);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					snprintf(header, sizeof(header), "Rtt%u-Avg", i);
+					snprintf(value, sizeof(value), "%f", rtcp_frame.reports[i].rtt_avg);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 				}
 
 				switch_event_fire(&event);
