@@ -369,7 +369,7 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 	}
 
 	if (!zstr(dsn) && switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DBH handle %p Connected.\n", (void *) dbh);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "DBH handle %p Connected.\n", (void *) dbh);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Connection failed.  DBH NOT Connected.\n");
 	}
@@ -398,7 +398,7 @@ char *Dbh::last_error()
 bool Dbh::release()
 {
   if (dbh) {
-	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DBH handle %p released.\n", (void *) dbh);
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "DBH handle %p released.\n", (void *) dbh);
 	  switch_cache_db_release_db_handle(&dbh);
 	  return true;
   }
