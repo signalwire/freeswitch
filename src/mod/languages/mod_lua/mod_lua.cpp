@@ -459,7 +459,7 @@ static void lua_event_handler(switch_event_t *event)
 	}
 
 	mod_lua_conjure_event(L, event, "event", 1);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "lua event hook: execute '%s'\n", (char *)script);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "lua event hook: execute '%s'\n", (char *)script);
 	lua_parse_and_execute(L, (char *)script, NULL);
 	lua_uninit(L);
 
