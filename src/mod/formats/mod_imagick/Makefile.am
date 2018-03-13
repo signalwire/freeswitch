@@ -6,6 +6,11 @@ if HAVE_MAGICK
 mod_LTLIBRARIES = mod_imagick.la
 mod_imagick_la_SOURCES  = mod_imagick.c
 mod_imagick_la_CFLAGS   = $(AM_CFLAGS) $(MAGICK_CFLAGS)
+
+if HAVE_MAGICK7
+mod_imagick_la_CFLAGS  += -DHAVE_MAGIC7
+endif
+
 mod_imagick_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(MAGICK_LIBS)
 mod_imagick_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
