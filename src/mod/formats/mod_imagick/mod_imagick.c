@@ -49,8 +49,11 @@
 #define MAGICKCORE_HDRI_ENABLE   0
 #endif
 
+#ifdef HAVE_MAGIC7
+#include <MagickCore/MagickCore.h>
+#else
 #include <magick/MagickCore.h>
-
+#endif
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.
@@ -101,7 +104,13 @@ static void *SWITCH_THREAD_FUNC open_pdf_thread_run(switch_thread_t *thread, voi
 		Image *tmp_images;
 		switch_snprintf(path, sizeof(path), "%s[%d]", context->path, pagenumber);
 		switch_set_string(context->image_info->filename, path);
+
+#ifdef HAVE_MAGIC7
+		if ((tmp_images = ReadImages(context->image_info, path, context->exception))) {
+#else
 		if ((tmp_images = ReadImages(context->image_info, context->exception))) {
+#endif
+
 			pagenumber++;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s page %d loaded\n", context->path, pagenumber);
 			AppendImageToList(&context->images, tmp_images);
@@ -229,7 +238,12 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 		switch_set_string(context->image_info->filename, path);
 	}
 
+#ifdef HAVE_MAGIC7
+	context->images = ReadImages(context->image_info, context->lazy ? range_path : path, context->exception);
+#else
 	context->images = ReadImages(context->image_info, context->exception);
+#endif
+
 	if (context->exception->severity != UndefinedException) {
 		CatchException(context->exception);
 	}
