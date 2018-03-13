@@ -465,6 +465,7 @@ static switch_status_t imagick_file_seek(switch_file_handle_t *handle, unsigned 
 		context->same_page = 0;
 		*cur_sample = page;
 		handle->vpos = page;
+		handle->pos = page * (handle->samplerate / 1000);
 	}
 
 	return status;
