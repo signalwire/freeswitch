@@ -310,6 +310,8 @@ typedef enum {
 	PFLAG_AUTO_INVITE_100,
 	PFLAG_UPDATE_REFRESHER,
 	PFLAG_AUTH_REQUIRE_USER,
+	PFLAG_AUTH_CALLS_ACL_ONLY,
+	PFLAG_USE_PORT_FOR_ACL_CHECK,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -787,6 +789,8 @@ struct sofia_profile {
 	int bind_attempt_interval;
 	char *proxy_notify_events;
 	char *proxy_info_content_types;
+	char *acl_inbound_x_token_header;
+	char *acl_proxy_x_token_header;
 };
 
 
