@@ -415,7 +415,8 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 	layer->banner_patched = 0;
 	layer->is_avatar = 0;
 	layer->need_patch = 0;
-
+	layer->manual_border = 0;
+	
 	conference_video_reset_layer_cam(layer);
 
 	if (layer->geometry.overlap) {
@@ -504,7 +505,7 @@ static void set_bounds(int *x, int *y, int img_w, int img_h, int crop_w, int cro
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
-	int img_changed = 0, want_w = 0, want_h = 0;
+	int img_changed = 0, want_w = 0, want_h = 0, border = 0;
 
 	switch_mutex_lock(layer->canvas->mutex);
 
@@ -817,6 +818,12 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
+		if (layer->manual_border) {
+			border = layer->manual_border;
+		} if (layer->geometry.border) {
+			border = layer->geometry.border;
+		}
+		
 		if (layer->img) {
 			if (layer->banner_img) {
 				want_h = img_h - layer->banner_img->d_h;
@@ -824,8 +831,9 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				want_h = img_h;
 			}
 			
-			want_w = img_w;
-
+			want_w = img_w - (border * 2);
+			want_h -= (border * 2);
+				
 			if (layer->img->d_w != img_w || layer->img->d_h != img_h) {
 				switch_img_free(&layer->img);
 				conference_video_clear_layer(layer);
@@ -840,28 +848,28 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		switch_assert(layer->img);
 
-		if (layer->geometry.border) {
+		if (border) {
 			switch_img_fill(IMG, x_pos, y_pos, img_w, img_h, &layer->canvas->border_color);
 		}
 
-		img_w -= (layer->geometry.border * 2);
-		img_h -= (layer->geometry.border * 2);
+		//img_w -= (border * 2);
+		//img_h -= (border * 2);
 
 		//printf("SCALE %d,%d %dx%d\n", x_pos, y_pos, img_w, img_h);
 
 		switch_img_scale(img, &layer->img, img_w, img_h);
 		
 		if (layer->logo_img) {
-			//int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
-			int ew = layer->img->d_w, eh = layer->img->d_h;
+			//int ew = layer->screen_w - (border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (border * 2);
+			int ew = layer->img->d_w - (border * 2), eh = layer->img->d_h - (border * 2);
 			int ex = 0, ey = 0;
 
 			switch_img_fit(&layer->logo_img, ew, eh, layer->logo_fit);
 
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
 			
-			switch_img_patch(layer->img, layer->logo_img, ex, ey);
-			//switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
+			switch_img_patch(layer->img, layer->logo_img, ex + border, ey + border);
+			//switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + border, layer->y_pos + ey + border);
 		}
 
 
@@ -871,8 +879,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 			switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
 			switch_img_find_position(POS_LEFT_BOT, ew, eh, layer->banner_img->d_w, layer->banner_img->d_h, &ex, &ey);
-			switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border,
-							 layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
+			switch_img_patch(IMG, layer->banner_img, layer->x_pos + border,
+							 layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + border);
 			layer->banner_patched = 1;
 		}
 
@@ -905,8 +913,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						 
 			}
 			switch_mutex_unlock(layer->overlay_mutex);
-
-			switch_img_patch_rect(IMG, x_pos + layer->geometry.border, y_pos + layer->geometry.border, layer->img, 0, 0, want_w, want_h);
+			
+			switch_img_patch_rect(IMG, x_pos + border, y_pos + border, layer->img, 0, 0, want_w, want_h);
 
 		}
 
@@ -1477,7 +1485,7 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 	conference_utils_member_set_flag_locked(member, MFLAG_VIDEO_JOIN);
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
-
+	layer->manual_border = member->video_manual_border;
 	canvas->send_keyframe = 30;
 
 	//member->watching_canvas_id = canvas->canvas_id;

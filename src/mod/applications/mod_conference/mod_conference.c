@@ -3196,7 +3196,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 
 		if (!video_border_color) {
-			video_border_color = "#000000";
+			video_border_color = "#00ff00";
 		}
 
 		if (!video_super_canvas_bgcolor) {
