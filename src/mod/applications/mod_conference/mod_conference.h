@@ -505,6 +505,7 @@ typedef struct mcu_layer_s {
 	mcu_layer_cam_opts_t cam_opts;
 	switch_mutex_t *overlay_mutex;
 	switch_core_video_filter_t overlay_filters;
+	int manual_border;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -904,6 +905,7 @@ struct conference_member {
 
 	mcu_layer_cam_opts_t cam_opts;
 	switch_core_video_filter_t video_filters;
+	int video_manual_border;
 };
 
 typedef enum {
@@ -1245,6 +1247,7 @@ switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_st
 switch_status_t conference_api_sub_layer(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_kick(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_flip(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_vid_border(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
@@ -1278,6 +1281,7 @@ void conference_loop_conference_video_vmute_snapoff(conference_member_t *member,
 void conference_loop_vmute_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_vmute_on(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_moh_toggle(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_border(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_deafmute_toggle(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_hangup(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_transfer(conference_member_t *member, caller_control_action_t *action);
