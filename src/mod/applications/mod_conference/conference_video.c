@@ -2667,10 +2667,25 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 
 void conference_video_next_canvas(conference_member_t *imember)
 {
-	if (imember->canvas_id == (int)imember->conference->canvas_count - 1) {
-		imember->canvas_id = 0;
-	} else {
-		imember->canvas_id++;
+	int x = 0, y = 0;
+
+	if (imember->conference->canvas_count < 2) {
+		return;
+	}
+	
+	y = imember->canvas_id;
+
+	for (x = 0; x < imember->conference->canvas_count; x++) {
+		if (y == (int)imember->conference->canvas_count - 1) {
+			y = 0;
+		} else {
+			y++;
+		}
+
+		if (imember->conference->canvases[y]->video_count < imember->conference->canvases[y]->total_layers) {
+			imember->canvas_id = y;
+			break;
+		}
 	}
 
 	imember->layer_timeout = DEFAULT_LAYER_TIMEOUT;
