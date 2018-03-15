@@ -1693,7 +1693,6 @@ void sofia_glue_del_every_gateway(sofia_profile_t *profile)
 void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up)
 {
 	sofia_gateway_t *gp = NULL;
-	char *r = (char *) stream->data;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (gp = profile->gateways; gp; gp = gp->next) {
@@ -1702,10 +1701,6 @@ void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *s
 		if (up ? reged : !reged) {
 			stream->write_function(stream, "%s ", gp->name);
 		}
-	}
-
-	if (r) {
-		end_of(r) = '\0';
 	}
 
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
