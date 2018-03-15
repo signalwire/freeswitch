@@ -176,6 +176,8 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 		on_rtmp_tech_init(session, tech_pvt);
 	}
 
+	switch_channel_set_flag(tech_pvt->channel, CF_AUDIO);
+	
 	switch_core_session_set_private(session, tech_pvt);
 
 	// switch_core_session_start_video_thread(session);
