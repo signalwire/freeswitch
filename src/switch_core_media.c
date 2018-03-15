@@ -1336,7 +1336,7 @@ static switch_crypto_key_material_t* switch_core_media_crypto_append_key_materia
  */
 static const char* switch_core_media_crypto_find_key_material_candidate_end(const char *p)
 {
-	const char *end;
+	const char *end = NULL;
 
 	switch_assert(p != NULL);
 
