@@ -572,7 +572,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 			switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
 
-			if (!switch_channel_test_flag(channel, CF_BRIDGED) || switch_channel_test_flag(channel, CF_BROADCAST)) {
+			if (!switch_channel_test_flag(channel, CF_BRIDGED) || switch_channel_test_flag(channel, CF_HOLD_BLEG)) {
 				inner++;
 				hold_bleg = NULL;
 			}
@@ -597,6 +597,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 						if ((b_session = switch_core_session_locate(b_uuid))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 							switch_status_t st;
+							switch_channel_set_flag(channel, CF_HOLD_BLEG);
 
 							switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 							st = switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
@@ -649,6 +650,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			if (b_uuid) {
 				if ((b_session = switch_core_session_locate(b_uuid))) {
 					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+					switch_channel_clear_flag(channel, CF_HOLD_BLEG);
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 					switch_core_session_rwunlock(b_session);
