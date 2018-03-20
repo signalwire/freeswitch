@@ -657,9 +657,14 @@ SWITCH_STANDARD_APP(rename_function)
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& switch_split(lbuf, ' ', argv) == 2) {
-		switch_file_rename(argv[0], argv[1], switch_core_session_get_pool(session));
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s RENAME: %s %s\n",
 						  switch_channel_get_name(switch_core_session_get_channel(session)), argv[0], argv[1]);
+
+		if (switch_file_rename(argv[0], argv[1], switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Can't rename %s to %s\n",
+							switch_channel_get_name(switch_core_session_get_channel(session)), argv[0], argv[1]);
+		}
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
