@@ -863,7 +863,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 		if (switch_true(switch_channel_get_variable(channel, "flip_record_on_hold"))) {
 			switch_core_session_t *other_session;
 			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				switch_core_media_bug_transfer_recordings(channel->session, other_session);
+				switch_ivr_transfer_recordings(channel->session, other_session);
 				switch_core_session_rwunlock(other_session);
 			}
 		}

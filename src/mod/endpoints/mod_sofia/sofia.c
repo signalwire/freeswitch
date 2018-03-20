@@ -6748,7 +6748,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 											  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 
 							if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-								switch_core_media_bug_transfer_recordings(session, a_session);
+								switch_ivr_transfer_recordings(session, a_session);
 							}
 
 							switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
@@ -6765,7 +6765,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										  p_contact->m_url->url_user);
 
 						if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-							switch_core_media_bug_transfer_recordings(session, a_session);
+							switch_ivr_transfer_recordings(session, a_session);
 						}
 
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
@@ -7738,7 +7738,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 										if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer")) &&
 											(tmp = switch_core_session_locate(br_a))) {
-											switch_core_media_bug_transfer_recordings(session, tmp);
+											switch_ivr_transfer_recordings(session, tmp);
 											switch_core_session_rwunlock(tmp);
 										}
 
@@ -8543,7 +8543,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 				if (switch_channel_up(channel_a)) {
 
 					if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
-						switch_core_media_bug_transfer_recordings(session, a_session);
+						switch_ivr_transfer_recordings(session, a_session);
 					}
 
 
@@ -8931,12 +8931,12 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_ivr_session_transfer(a_session, "park", "inline", NULL);
 							}
 							if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
-								switch_core_media_bug_transfer_recordings(session, a_session);
+								switch_ivr_transfer_recordings(session, a_session);
 							}
 							if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) && (tmpsess = switch_core_session_locate(br_a))) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
 										  "Early transfer detected with no media, moving recording bug to other leg\n");
-								switch_core_media_bug_transfer_recordings(b_session, tmpsess);
+								switch_ivr_transfer_recordings(b_session, tmpsess);
 								switch_core_session_rwunlock(tmpsess);
 							}
 
@@ -8997,14 +8997,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer")) &&
 							(tmp = switch_core_session_locate(br_a))) {
 							switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
-							switch_core_media_bug_transfer_recordings(session, tmp);
+							switch_ivr_transfer_recordings(session, tmp);
 							switch_core_session_rwunlock(tmp);
 						}
 
 
 						if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) &&
 							(tmp = switch_core_session_locate(br_b))) {
-							switch_core_media_bug_transfer_recordings(b_session, tmp);
+							switch_ivr_transfer_recordings(b_session, tmp);
 							switch_core_session_rwunlock(tmp);
 						}
 
@@ -9093,7 +9093,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 
 								if (switch_true(switch_channel_get_variable(hup_channel, "recording_follow_transfer"))) {
-									switch_core_media_bug_transfer_recordings(hup_session, t_session);
+									switch_ivr_transfer_recordings(hup_session, t_session);
 								}
 
 								if(sofia_test_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS)) {
@@ -9348,7 +9348,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			}
 
 			if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-				switch_core_media_bug_transfer_recordings(session, b_session);
+				switch_ivr_transfer_recordings(session, b_session);
 			}
 
 			switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "BLIND_TRANSFER");

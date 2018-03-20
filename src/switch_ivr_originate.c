@@ -3610,11 +3610,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_channel_set_variable(holding_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 
 								if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "recording_follow_transfer"))) {
-									switch_core_media_bug_transfer_recordings(session, originate_status[i].peer_session);
+									switch_ivr_transfer_recordings(session, originate_status[i].peer_session);
 								}
 
 								if (switch_true(switch_channel_get_variable(holding_channel, "recording_follow_transfer"))) {
-									switch_core_media_bug_transfer_recordings(holding_session, originate_status[i].peer_session);
+									switch_ivr_transfer_recordings(holding_session, originate_status[i].peer_session);
 								}
 
 								switch_core_session_rwunlock(holding_session);
