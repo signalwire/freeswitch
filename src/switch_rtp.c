@@ -3932,7 +3932,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		break;
 	case AES_CM_128_HMAC_SHA1_32:
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy->rtp);
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy->rtcp);
+		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy->rtcp);
 
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -3963,6 +3963,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy->rtcp);
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_80");
+		}
+		break;
+	case AES_CM_256_HMAC_SHA1_32:
+		srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32(&policy->rtp);
+		srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_32");
 		}
 		break;
 	case AES_CM_128_NULL_AUTH:
