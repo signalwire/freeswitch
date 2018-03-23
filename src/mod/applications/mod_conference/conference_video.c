@@ -3783,8 +3783,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 
 						if (layer && use_img) {
-							switch_img_copy(use_img, &layer->cur_img);
-							conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
+							//switch_img_copy(use_img, &layer->cur_img);
+							conference_video_scale_and_patch(layer, use_img, SWITCH_FALSE);
 						}
 						
 					}					
@@ -3806,8 +3806,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						switch_img_free(&layer->banner_img);
 						switch_img_free(&layer->logo_img);
 						layer->member_id = -1;
-						switch_img_copy(img, &layer->cur_img);
-						conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
+						//switch_img_copy(img, &layer->cur_img);
+						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					}
 				}
 
