@@ -1418,13 +1418,8 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	float sdiv = 0;
 	int fdiv = 0;
 	int force_w = 0, force_h = 0;
-
-			
-	if (!conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
-		stream->write_function(stream, "-ERR Bandwidth control not available.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
+	conference_member_t *imember;
+	
 	if (!argv[2]) {
 		stream->write_function(stream, "-ERR Invalid input\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -1485,6 +1480,18 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	}
 
 	switch_mutex_lock(conference->member_mutex);
+
+	for (imember = conference->members; imember; imember = imember->next) {
+		
+		if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY)) {
+			continue;
+		}
+
+		switch_core_media_set_outgoing_bitrate(imember->session, SWITCH_MEDIA_TYPE_VIDEO, video_write_bandwidth);
+		
+		stream->write_function(stream, "+OK Set Bandwidth %d kps for member %s\n", video_write_bandwidth, switch_channel_get_name(imember->channel));
+	}
+
 	for (i = 0; i <= conference->canvas_count; i++) {
 		if (i > -1 && i != id - 1) {
 			continue;
