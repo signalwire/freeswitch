@@ -57,6 +57,7 @@ avoid_mods=(
   endpoints/mod_unicall
   event_handlers/mod_smpp
   formats/mod_webm
+  languages/mod_v8
   sdk/autotools
   xml_int/mod_xml_ldap
   xml_int/mod_xml_radius
