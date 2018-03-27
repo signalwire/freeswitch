@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <V8Version>5.6.326</V8Version>
+    <V8Version>6.1.298</V8Version>
   </PropertyGroup>
   <PropertyGroup>
     <V8VersionImported>true</V8VersionImported>
