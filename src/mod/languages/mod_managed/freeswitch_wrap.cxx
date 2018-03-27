@@ -13644,6 +13644,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_get_app_flags(char * jarg1
 }
 
 
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_stack_count(void * jarg1, int jarg2) {
+  unsigned long jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  int arg2 ;
+  uint32_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (uint32_t)switch_core_session_stack_count(arg1,arg2);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_execute_exten(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
@@ -31134,6 +31148,28 @@ SWIGEXPORT unsigned char SWIGSTDCALL CSharp_switch_video_codec_settings_try_hard
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_video_codec_settings_fps_set(void * jarg1, unsigned char jarg2) {
+  switch_video_codec_settings *arg1 = (switch_video_codec_settings *) 0 ;
+  uint8_t arg2 ;
+  
+  arg1 = (switch_video_codec_settings *)jarg1; 
+  arg2 = (uint8_t)jarg2; 
+  if (arg1) (arg1)->fps = arg2;
+}
+
+
+SWIGEXPORT unsigned char SWIGSTDCALL CSharp_switch_video_codec_settings_fps_get(void * jarg1) {
+  unsigned char jresult ;
+  switch_video_codec_settings *arg1 = (switch_video_codec_settings *) 0 ;
+  uint8_t result;
+  
+  arg1 = (switch_video_codec_settings *)jarg1; 
+  result = (uint8_t) ((arg1)->fps);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_video_codec_settings() {
   void * jresult ;
   switch_video_codec_settings *result = 0 ;
@@ -41980,28 +42016,6 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_srtp_crypto_suite_t(void * jarg
   
   arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
   delete arg1;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_SUITES_set(void * jarg1) {
-  switch_srtp_crypto_suite_t *arg1 ;
-  
-  arg1 = (switch_srtp_crypto_suite_t *)jarg1; 
-  {
-    size_t ii;
-    switch_srtp_crypto_suite_t *b = (switch_srtp_crypto_suite_t *) SUITES;
-    for (ii = 0; ii < (size_t)CRYPTO_INVALID; ii++) b[ii] = *((switch_srtp_crypto_suite_t *) arg1 + ii);
-  }
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_SUITES_get() {
-  void * jresult ;
-  switch_srtp_crypto_suite_t *result = 0 ;
-  
-  result = (switch_srtp_crypto_suite_t *)(switch_srtp_crypto_suite_t *)SUITES;
-  jresult = result; 
-  return jresult;
 }
 
 

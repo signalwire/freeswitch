@@ -2021,6 +2021,11 @@ else
     return ret;
   }
 
+  public static uint switch_core_session_stack_count(SWIGTYPE_p_switch_core_session session, int x) {
+    uint ret = freeswitchPINVOKE.switch_core_session_stack_count(SWIGTYPE_p_switch_core_session.getCPtr(session), x);
+    return ret;
+  }
+
   public static switch_status_t switch_core_session_execute_exten(SWIGTYPE_p_switch_core_session session, string exten, string dialplan, string context) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_execute_exten(SWIGTYPE_p_switch_core_session.getCPtr(session), exten, dialplan, context);
     return ret;
@@ -6646,17 +6651,6 @@ else
   public static switch_status_t switch_ivr_capture_text(SWIGTYPE_p_switch_core_session session, switch_bool_t on) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_capture_text(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)on);
     return ret;
-  }
-
-  public static switch_srtp_crypto_suite_t SUITES {
-    set {
-      freeswitchPINVOKE.SUITES_set(switch_srtp_crypto_suite_t.getCPtr(value));
-    } 
-    get {
-      IntPtr cPtr = freeswitchPINVOKE.SUITES_get();
-      switch_srtp_crypto_suite_t ret = (cPtr == IntPtr.Zero) ? null : new switch_srtp_crypto_suite_t(cPtr, false);
-      return ret;
-    } 
   }
 
   public static switch_status_t switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_crypto_direction_t direction, uint index, switch_secure_settings_t ssec) {
@@ -11571,6 +11565,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_app_flags")]
   public static extern int switch_core_session_get_app_flags(string jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_stack_count")]
+  public static extern uint switch_core_session_stack_count(HandleRef jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_exten")]
   public static extern int switch_core_session_execute_exten(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
@@ -15795,6 +15792,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_video_codec_settings_try_hardware_encoder_get")]
   public static extern byte switch_video_codec_settings_try_hardware_encoder_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_video_codec_settings_fps_set")]
+  public static extern void switch_video_codec_settings_fps_set(HandleRef jarg1, byte jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_video_codec_settings_fps_get")]
+  public static extern byte switch_video_codec_settings_fps_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_video_codec_settings")]
   public static extern IntPtr new_switch_video_codec_settings();
 
@@ -18245,12 +18248,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_srtp_crypto_suite_t")]
   public static extern void delete_switch_srtp_crypto_suite_t(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_SUITES_set")]
-  public static extern void SUITES_set(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_SUITES_get")]
-  public static extern IntPtr SUITES_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_crypto_key_index_set")]
   public static extern void switch_rtp_crypto_key_index_set(HandleRef jarg1, uint jarg2);
@@ -44723,6 +44720,16 @@ public class switch_video_codec_settings : IDisposable {
     } 
     get {
       byte ret = freeswitchPINVOKE.switch_video_codec_settings_try_hardware_encoder_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public byte fps {
+    set {
+      freeswitchPINVOKE.switch_video_codec_settings_fps_set(swigCPtr, value);
+    } 
+    get {
+      byte ret = freeswitchPINVOKE.switch_video_codec_settings_fps_get(swigCPtr);
       return ret;
     } 
   }
