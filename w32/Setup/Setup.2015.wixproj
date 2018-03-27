@@ -249,6 +249,30 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_redis\mod_redis.2015.vcxproj">
+      <Name>mod_redis</Name>
+      <Project>{886b5e9d-f2c2-4af2-98c8-ef98c4c770e6}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_rss\mod_rss.2015.vcxproj">
+      <Name>mod_rss</Name>
+      <Project>{b69247fa-ecd6-40ed-8e44-5ca6c3baf9a4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_sms\mod_sms.2015.vcxproj">
+      <Name>mod_sms</Name>
+      <Project>{2469b306-b027-4ff2-8815-c9c1ea2cae79}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_snom\mod_snom.2015.vcxproj">
       <Name>mod_snom</Name>
       <Project>{2a3d00c6-588d-4e86-81ac-9ef5ede86e03}</Project>
@@ -260,6 +284,22 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_spandsp\mod_spandsp.2015.vcxproj">
       <Name>mod_spandsp</Name>
       <Project>{1e21afe0-6fdb-41d2-942d-863607c24b91}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_spy\mod_spy.2015.vcxproj">
+      <Name>mod_spy</Name>
+      <Project>{a61d7cb4-75a5-4a55-8ca1-be5af615d921}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_valet_parking\mod_valet_parking.2015.vcxproj">
+      <Name>mod_valet_parking</Name>
+      <Project>{432db165-1eb2-4781-a9c0-71e62610b20a}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -297,6 +337,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\asr_tts\mod_unimrcp\mod_unimrcp.2015.vcxproj">
+      <Name>mod_unimrcp</Name>
+      <Project>{d07c378a-f5f7-438f-adf3-4ac4fb1883cd}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2015.vcxproj">
       <Name>mod_amr</Name>
       <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
@@ -308,6 +356,14 @@
     <ProjectReference Include="..\..\src\mod\codecs\mod_bv\mod_bv.2015.vcxproj">
       <Name>mod_bv</Name>
       <Project>{d5c87b19-150d-4ef3-a671-96589bd2d14a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_codec2\mod_codec2.vcxproj">
+      <Name>mod_codec2</Name>
+      <Project>{cb4e68a1-8d19-4b5e-87b9-97a895e1ba17}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -361,6 +417,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_silk\mod_silk.2015.vcxproj">
+      <Name>mod_silk</Name>
+      <Project>{afa983d6-4569-4f88-ba94-555ed00fd9a8}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_siren\mod_siren.2015.vcxproj">
       <Name>mod_siren</Name>
       <Project>{0b6c905b-142e-4999-b39d-92ff7951e921}</Project>
@@ -409,9 +473,25 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_gsmopen\mod_gsmopen.2015.vcxproj">
+      <Name>mod_gsmopen</Name>
+      <Project>{74b120ff-6935-4dfe-a142-cdb6bea99c90}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\endpoints\mod_loopback\mod_loopback.2015.vcxproj">
       <Name>mod_loopback</Name>
       <Project>{b3f424ec-3d8f-417c-b244-3919d5e1a577}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2015.vcxproj">
+      <Name>mod_PortAudio</Name>
+      <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -436,14 +516,6 @@
     <ProjectReference Include="..\..\src\mod\endpoints\mod_skinny\mod_skinny.2015.vcxproj">
       <Name>mod_skinny</Name>
       <Project>{cc1dd008-9406-448d-a0ad-33c3186cfadb}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_skypopen\mod_skypopen.2015.vcxproj">
-      <Name>mod_skypopen</Name>
-      <Project>{c6e78a4c-db1e-47f4-9b63-4dc27d86343f}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>

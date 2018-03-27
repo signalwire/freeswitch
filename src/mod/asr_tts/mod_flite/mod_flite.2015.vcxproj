@@ -260,10 +260,6 @@
     <ClCompile Include="mod_flite.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\Download FLITE.2015.vcxproj">
-      <Project>{d5d2bf72-29fe-4982-a9fa-82fdd086db1b}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\flite\flite.2015.vcxproj">
       <Project>{0ad1177e-1fd8-4643-9391-431467a11084}</Project>
     </ProjectReference>
