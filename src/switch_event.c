@@ -93,6 +93,7 @@ static uint8_t EVENT_DISPATCH_QUEUE_RUNNING[MAX_DISPATCH_VAL] = { 0 };
 static switch_queue_t *EVENT_DISPATCH_QUEUE = NULL;
 static switch_queue_t *EVENT_CHANNEL_DISPATCH_QUEUE = NULL;
 static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
+static switch_mutex_t *CUSTOM_HASH_MUTEX = NULL;
 static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_COUNT = 0;
 static int DISPATCH_THREAD_COUNT = 0;
@@ -449,6 +450,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
 	switch_event_subclass_t *subclass;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_mutex_lock(CUSTOM_HASH_MUTEX);
+
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(CUSTOM_HASH != NULL);
 
@@ -468,12 +471,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
 		}
 	}
 
+	switch_mutex_unlock(CUSTOM_HASH_MUTEX);
+
 	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_event_subclass_t *subclass;
+
+	switch_mutex_lock(CUSTOM_HASH_MUTEX);
 
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(CUSTOM_HASH != NULL);
@@ -482,9 +490,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 		/* a listener reserved it for us, now we can lock it so nobody else can have it */
 		if (subclass->bind) {
 			subclass->bind = 0;
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
-		return SWITCH_STATUS_INUSE;
+		switch_goto_status(SWITCH_STATUS_INUSE, end);
 	}
 
 	switch_zmalloc(subclass, sizeof(*subclass));
@@ -494,7 +502,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 
 	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
 
-	return SWITCH_STATUS_SUCCESS;
+end:
+
+	switch_mutex_unlock(CUSTOM_HASH_MUTEX);
+
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
@@ -677,6 +689,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&CUSTOM_HASH_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_core_hash_init(&CUSTOM_HASH);
 
 	if (switch_core_test_flag(SCF_MINIMAL)) {
@@ -2003,11 +2016,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_get_custom_events(switch_console_ca
 	void *val;
 	int x = 0;
 
+	switch_mutex_lock(CUSTOM_HASH_MUTEX);
+
 	for (hi = switch_core_hash_first(CUSTOM_HASH); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		switch_console_push_match(matches, (const char *) var);
 		x++;
 	}
+
+	switch_mutex_unlock(CUSTOM_HASH_MUTEX);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
@@ -2026,11 +2043,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 	}
 
 	if (subclass_name) {
+		switch_mutex_lock(CUSTOM_HASH_MUTEX);
+
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
 			switch_event_reserve_subclass_detailed(id, subclass_name);
 			subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
 			subclass->bind = 1;
 		}
+
+		switch_mutex_unlock(CUSTOM_HASH_MUTEX);
+
 		if (!subclass) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not reserve subclass. '%s'\n", subclass_name);
 			return SWITCH_STATUS_FALSE;
