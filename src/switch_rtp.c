@@ -3072,15 +3072,15 @@ static const char *dtls_state_names(dtls_state_t s)
 
 #define dtls_set_state(_dtls, _state) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Changing %s DTLS state from %s to %s\n", rtp_type(rtp_session), dtls_state_names(_dtls->state), dtls_state_names(_state)); _dtls->new_state = 1; _dtls->last_state = _dtls->state; _dtls->state = _state
 
+#define cr_keylen 16
+#define cr_saltlen 14
+#define cr_kslen 30
+
 static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	X509 *cert;
 	switch_secure_settings_t	ssec;	/* Used just to wrap over params in a call to switch_rtp_add_crypto_key. */
 	int r = 0;
-
-	const switch_size_t cr_kslen = SUITES[AES_CM_128_HMAC_SHA1_80].keysalt_len;
-	const switch_size_t cr_saltlen = SUITES[AES_CM_128_HMAC_SHA1_80].salt_len;
-	const switch_size_t cr_keylen = cr_kslen - cr_saltlen;
 
 	uint8_t raw_key_data[cr_kslen * 2];
 	unsigned char local_key_buf[cr_kslen];
