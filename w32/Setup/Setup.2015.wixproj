@@ -1,5 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" InitialTargets="LoadDynamicVariables" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" InitialTargets="GitVersion;LoadDynamicVariables" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <GitSkipCache>true</GitSkipCache>
+  </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="GitInfo\GitInfo.targets"/>
+  </ImportGroup>
   <PropertyGroup>
     <ProjectGuid>{47213370-b933-487d-9f45-bca26d7e2b6f}</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
@@ -780,7 +786,13 @@
     <Exec Command="$(SolutionDir)w32\Setup\FullVersion.cmd" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="FullVersion" />
     </Exec>
-    <CreateProperty Condition="$(FullVersion) != ''" Value="ProductVersion=$(FullVersion);$(DefineConstants)">
+    <CreateProperty Condition="'$(GitCommits)' != '0'" Value="-snapshot-$(GitCommit)-$([System.DateTime]::Now.ToString(yyyyMMddHHmmss))">
+      <Output TaskParameter="Value" PropertyName="SnapshotName" />
+    </CreateProperty>
+    <CreateProperty Condition="'$(GitCommits)' != '0'" Value=".$(GitCommits)">
+      <Output TaskParameter="Value" PropertyName="Revision" />
+    </CreateProperty>
+    <CreateProperty Condition="$(FullVersion) != ''" Value="ProductVersion=$(FullVersion)$(Revision);$(DefineConstants)">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
     <CreateProperty Condition="'$(Platform)'=='x86'" Value="win32">
@@ -789,7 +801,7 @@
     <CreateProperty Condition="'$(Platform)'=='x64'" Value="x64">
       <Output TaskParameter="Value" PropertyName="UserFriendlyPlatform" />
     </CreateProperty>
-    <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)-$(UserFriendlyPlatform)-$(Configuration).msi">
+    <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)$(Revision)$(SnapshotName)-$(UserFriendlyPlatform)-$(Configuration).msi">
       <Output TaskParameter="Value" PropertyName="DestinationFileName" />
     </CreateProperty>
   </Target>
@@ -798,6 +810,10 @@
       Other similar extension points exist, see Wix.targets.
   -->
   <Target Name="BeforeBuild">
+    <Message Importance="High" Text="GitExe: $(GitExe)" />
+    <Message Importance="High" Text="GitCommits: $(GitCommits)" />
+    <Message Importance="High" Text="SnapshotName: $(SnapshotName)" />
+    <Message Importance="High" Text="Revision: $(Revision)" />
     <Message Importance="High" Text="Deleting previously created MSI files." />
     <Delete Files="$(OutputPath)$(OutputName).msi" />
     <Delete Files="$(DestinationFileName)" />
