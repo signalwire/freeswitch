@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="curl.props" Condition=" '$(CurlPropsImported)' == '' "/>
     <Import Project="v8-version.props" Condition=" '$(V8VersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
@@ -30,25 +29,35 @@
        extractto: Folder to extract an archive to
    -->
 
-  <Target Name="v8libTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+  <Target Name="v8BinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/downloads/libs/v8-$(V8Version).tar.bz2"
+           package="http://files.freeswitch.org/windows/packages/v8/$(V8Version)/v8-$(V8Version)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(V8libDir)\binaries\$(Platform)\$(Configuration)\v8.dll" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+  <Target Name="v8HeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/v8/$(V8Version)/v8-$(V8Version)-headers.zip"
            expectfileordirectory="$(V8libDir)\include\v8.h" 
            outputfolder=""
            outputfilename="" 
-           extractto="$(BaseDir)libs"
+           extractto="$(BaseDir)libs\"
       />
   </Target> 
 
-  <Target Name="v8libwinTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
-      <DownloadPackageTask 
-           package="http://files.freeswitch.org/downloads/libs/v8-$(V8Version)-win.tar.bz2"
-           expectfileordirectory="$(V8libDir)\third_party\cygwin" 
-           outputfolder=""
-           outputfilename="" 
-           extractto="$(BaseDir)libs"
-      />
-  </Target> 
+  <Target Name="v8copyTarget" BeforeTargets="CustomBuild" DependsOnTargets="v8BinariesDownloadTarget">  
+        <Message Text="Copying v8 libraries to the freeswitch output folder." Importance="High" />
+        <ItemGroup>  
+             <v8Files Include="$(V8libDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>  
+        </ItemGroup>  
+        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\v8.dll')"
+            SourceFiles="@(v8Files)"  
+            DestinationFiles="@(v8Files->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
+        />  
+  </Target>   
 
   <ItemDefinitionGroup>
     <ClCompile>
@@ -58,8 +67,8 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\v8-$(V8Version)\build\$(Configuration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>icui18n.lib;icuuc.lib;v8.lib;v8_libplatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\v8-$(V8Version)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>v8.dll.lib;v8_libbase.dll.lib;v8_libplatform.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

@@ -794,6 +794,7 @@ opal
 /zeromq-*/
 /jpeg-8d/
 /v8-*/
+/v8-*.zip
 
 # build products we should remove
 !/apr-util/xml/expat/conftools/config.guess
