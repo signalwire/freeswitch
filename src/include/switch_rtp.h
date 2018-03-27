@@ -71,8 +71,6 @@ typedef struct switch_srtp_crypto_suite_s {
 	int salt_len;
 } switch_srtp_crypto_suite_t;
 
-extern switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID];
-
 struct switch_rtp_crypto_key {
 	uint32_t index;
 	switch_rtp_crypto_key_type_t type;

@@ -3853,7 +3853,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	srtp_master_key_t		*mki = NULL;
 	int mki_idx = 0;
 
-	keysalt_len = SUITES[ssec->crypto_type].keysalt_len;
+	keysalt_len = switch_core_media_crypto_keysalt_len(ssec->crypto_type);
 
 	if (direction >= SWITCH_RTP_CRYPTO_MAX || keysalt_len > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
