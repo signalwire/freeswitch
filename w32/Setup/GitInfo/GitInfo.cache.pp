@@ -1,0 +1,17 @@
+GitBranch=$GitBranch$;
+GitCommit=$GitCommit$;
+GitSha=$GitSha$;
+GitBaseVersion=$GitBaseVersion$;
+GitBaseVersionSource=$GitBaseVersionSource$;
+GitBaseVersionMajor=$GitBaseVersionMajor$;
+GitBaseVersionMinor=$GitBaseVersionMinor$;
+GitBaseVersionPatch=$GitBaseVersionPatch$;
+GitCommits=$GitCommits$;
+GitTag=$GitTag$;
+GitBaseTag=$GitBaseTag$;
+GitSemVerMajor=$GitSemVerMajor$;
+GitSemVerMinor=$GitSemVerMinor$;
+GitSemVerPatch=$GitSemVerPatch$;
+GitSemVerLabel=$GitSemVerLabel$;
+GitSemVerDashLabel=$GitSemVerDashLabel$;
+GitSemVerSource=$GitSemVerSource$
