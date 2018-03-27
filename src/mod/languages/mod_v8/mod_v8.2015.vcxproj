@@ -210,10 +210,6 @@
     <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2015.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\v8\libv8.2015.vcxproj">
-      <Project>{AB03E82B-48B1-4374-B32A-A1AF83DDC6C2}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2015.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
