@@ -343,8 +343,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					members_seeing_video++;
 				}
 
-				if (imember->avatar_png_img && !switch_channel_test_flag(channel, CF_VIDEO)) {
-					members_with_avatar++;
+				if (!conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
+					if (imember->avatar_png_img && !switch_channel_test_flag(channel, CF_VIDEO)) {
+						members_with_avatar++;
+					}
+				} else {
+					members_with_avatar = 0;
 				}
 
 				if (conference_utils_member_test_flag(imember, MFLAG_NOMOH)) {
