@@ -328,6 +328,7 @@ opal
 /libmpg123/
 /openldap-*/
 /openssl-*/
+/openssl-*
 /opus-*/
 /pocketsphinx-*/
 /pthreads-w32-2-7-0-release/
