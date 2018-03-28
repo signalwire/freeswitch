@@ -2,23 +2,73 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="openssl-version.props" Condition=" '$(OpenSSLVersionImported)' == ''"/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup>
     <OpensslPropsImported>true</OpensslPropsImported>
   </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="opensslbinariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\openssl.exe" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
+  <Target Name="opensslheadersTarget" BeforeTargets="CustomBuild" DependsOnTargets="opensslbinariesTarget">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-headers.zip"
+           expectfileordirectory="$(OpenSSLLibDir)\include\openssl\ssl.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
+  <Target Name="opensslcopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="opensslbinariesTarget">  
+      <ItemGroup>  
+          <opensslFiles Include="$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\*.*"/>  
+      </ItemGroup>  
+      <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\openssl.exe')"
+          SourceFiles="@(opensslFiles)"  
+          DestinationFiles="@(opensslFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
+      />  
+  </Target>   
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(BaseDir)libs\win32\openssl\include_x86;$(BaseDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(BaseDir)libs\win32\openssl\include_x64;$(BaseDir)libs\win32\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenSSLLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(OpenSSLLibDir)\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(OpenSSLLibDir)\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Platform)'=='Win32'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Platform)'=='x64'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-      <ProjectReference Include="$(BaseDir)\libs\win32\openssl\libeay32.2015.vcxproj">
-          <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
-      </ProjectReference>
-      <ProjectReference Include="$(BaseDir)\libs\win32\openssl\ssleay32.2015.vcxproj">
-        <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
-      </ProjectReference>
-  </ItemGroup>
 </Project>
