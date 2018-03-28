@@ -806,6 +806,8 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		conference_video_reset_member_codec_index(member);
 
 		if (has_video) {
+			int bitrate = conference->video_codec_settings.video.bandwidth;
+			
 			if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_png", SWITCH_FALSE, -1))) {
 				member->video_mute_png = switch_core_strdup(member->pool, var);
 				member->video_mute_img = switch_img_read_png(member->video_mute_png, SWITCH_IMG_FMT_I420);
@@ -829,17 +831,19 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 			if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_out"))) {
 				member->max_bw_out = switch_parse_bandwidth_string(var);
-				
+
 				if (member->max_bw_out < conference->video_codec_settings.video.bandwidth) {
 					conference_utils_member_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
-					//switch_core_media_set_outgoing_bitrate(member->session, SWITCH_MEDIA_TYPE_VIDEO, member->max_bw_out);
+					bitrate = member->max_bw_out;
 				}
 			}
+			
+			if (bitrate) {
+				switch_core_media_set_outgoing_bitrate(member->session, SWITCH_MEDIA_TYPE_VIDEO, bitrate);
+			}
+		
 		}
 
-		if (conference->video_codec_settings.video.bandwidth) {
-			switch_core_media_set_outgoing_bitrate(member->session, SWITCH_MEDIA_TYPE_VIDEO, conference->video_codec_settings.video.bandwidth);
-		}
 		
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", conference_utils_member_test_flag(member, MFLAG_MOD) ? "true" : "false");
