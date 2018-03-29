@@ -695,9 +695,49 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_es_ar\mod_say_es_ar.2015.vcxproj">
+      <Name>mod_say_es_ar</Name>
+      <Project>{ceee31e6-8a08-42c7-bebd-5ec12072c136}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_fa\mod_say_fa.2015.vcxproj">
+      <Name>mod_say_fa</Name>
+      <Project>{0e469f3a-ddd0-43ba-a94f-7d93c02219f3}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\say\mod_say_fr\mod_say_fr.2015.vcxproj">
       <Name>mod_say_fr</Name>
       <Project>{06e3a538-ab32-44f2-b477-755ff9cb5d37}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_he\mod_say_he.2015.vcxproj">
+      <Name>mod_say_he</Name>
+      <Project>{a3d7c6cf-aeb1-4159-b741-160eb4b37345}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_hr\mod_say_hr.2015.vcxproj">
+      <Name>mod_say_hr</Name>
+      <Project>{da7addf1-da33-4194-83a5-b48db714d35b}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_hu\mod_say_hu.2015.vcxproj">
+      <Name>mod_say_hu</Name>
+      <Project>{af675478-995a-4115-90c4-b2b0d6470688}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -711,9 +751,25 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_ja\mod_say_ja.2015.vcxproj">
+      <Name>mod_say_ja</Name>
+      <Project>{07ea6e5a-d181-4abb-becf-67a906867d04}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\say\mod_say_nl\mod_say_nl.2015.vcxproj">
       <Name>mod_say_nl</Name>
       <Project>{a4b122cf-5196-476b-8c0e-d8bd59ac3c14}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_pl\mod_say_pl.2015.vcxproj">
+      <Name>mod_say_pl</Name>
+      <Project>{20b15650-f910-4211-8729-aab0f520c805}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -738,6 +794,14 @@
     <ProjectReference Include="..\..\src\mod\say\mod_say_sv\mod_say_sv.2015.vcxproj">
       <Name>mod_say_sv</Name>
       <Project>{8cda2b34-fa44-49cc-9ec2-b8f35856cd15}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_th\mod_say_th.2015.vcxproj">
+      <Name>mod_say_th</Name>
+      <Project>{c955e1a9-c12c-4bad-ac32-8d53d9268af7}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
