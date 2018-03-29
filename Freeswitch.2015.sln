@@ -636,6 +636,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download libsilk", "libs\wi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_amqp", "src\mod\event_handlers\mod_amqp\mod_amqp.2015.vcxproj", "{7AC7AB4F-5EF3-40A0-AD2B-CF4D9720FAC3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cdr_pg_csv", "src\mod\event_handlers\mod_cdr_pg_csv\mod_cdr_pg_csv.2015.vcxproj", "{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2920,6 +2922,18 @@ Global
 		{7AC7AB4F-5EF3-40A0-AD2B-CF4D9720FAC3}.Release|Win32.Build.0 = Release|Win32
 		{7AC7AB4F-5EF3-40A0-AD2B-CF4D9720FAC3}.Release|x64.ActiveCfg = Release|x64
 		{7AC7AB4F-5EF3-40A0-AD2B-CF4D9720FAC3}.Release|x64.Build.0 = Release|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.All|Win32.ActiveCfg = Release|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.All|Win32.Build.0 = Release|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.All|x64.ActiveCfg = Release|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.All|x64.Build.0 = Release|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Debug|Win32.Build.0 = Debug|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Debug|x64.ActiveCfg = Debug|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Debug|x64.Build.0 = Debug|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Release|Win32.ActiveCfg = Release|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Release|Win32.Build.0 = Release|Win32
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Release|x64.ActiveCfg = Release|x64
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3151,5 +3165,6 @@ Global
 		{9CFA562C-C611-48A7-90A2-BB031B47FE6D} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{08782D64-E775-4E96-B707-CC633A226F32} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{7AC7AB4F-5EF3-40A0-AD2B-CF4D9720FAC3} = {9ADF1E48-2F5C-4ED7-A893-596259FABFE0}
+		{411F6D43-9F09-47D0-8B04-E1EB6B67C5BF} = {9ADF1E48-2F5C-4ED7-A893-596259FABFE0}
 	EndGlobalSection
 EndGlobal
