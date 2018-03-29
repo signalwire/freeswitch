@@ -1,64 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
- * zlib.props - location of zlib source
- *
- * libpng version 1.6.28 - January 5, 2017
- *
- * Copyright (c) 1998-2011 Glenn Randers-Pehrson
- *
- * This code is released under the libpng license.
- * For conditions of distribution and use, see the disclaimer
- * and license in png.h
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="zlib-version.props" Condition=" '$(zlibVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
 
- * You must edit this file to record the location of the zlib
- * source code.
- -->
-
-<Project ToolsVersion="4.0"
-   xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Label="Globals">
-    <!-- Place the name of the directory containing the source of zlib used for
-	 debugging in this property.
-
-         The directory need only contain the '.c' and '.h' files from the
-	 source.
-
-	 If you use a relative directory name (as below) then it must be
-	 relative to the project directories; these are one level deeper than
-	 the directories containing this file.
-
-	 If the version of zlib you use does not match that used when the
-	 distribution was built you will get warnings from pngtest that the zlib
-	 versions do not match.  The zlib version used in this build is recorded
-	 below:
-     -->
-    <ZLibSrcDir>$(SolutionDir)libs\zlib</ZLibSrcDir>
-
-    <!-- The following line allows compilation for an ARM target with Visual
-         Studio 2012.  Notice that this is not supported by the Visual Studio
-         2012 IDE and that the programs that result cannot be run unless they
-         signed by Microsoft.  This is therefore untested; only Microsoft can
-         test it:
-     -->
-    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
-
-    <!-- The following lines provide a global (solution level) control of the
-         warnings issued by the compiler, these are used in the individual
-         project files (*/*.vcxproj) with, for zlib, some extra disables.
-
-         Different versions of Visual Studio may require different settings,
-         these settings work with Visual Studio 2013.  Just set
-         TreatWarningAsError to false to check the build without failing on
-         errors.
-     -->
-   <WarningLevel>EnableAllWarnings</WarningLevel>
-   <TreatWarningAsError>true</TreatWarningAsError>
-   <DisableSpecificWarnings>4255;4668;4710;4711;4746;4820;4996</DisableSpecificWarnings>
+  <PropertyGroup Label="UserMacros">
+    <zliblibDir>$(BaseDir)libs\zlib-$(zlibVersion)</zliblibDir>
   </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="zlibBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(zliblibDir)\binaries\$(Platform)\$(Configuration)\zlib.lib" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+  <Target Name="zlibHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-headers.zip"
+           expectfileordirectory="$(zliblibDir)\include\zlib.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_ZLIB;ZLIB_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>
