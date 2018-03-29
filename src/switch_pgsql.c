@@ -39,7 +39,12 @@
 
 #ifdef SWITCH_HAVE_PGSQL
 #include <libpq-fe.h>
+
+#ifndef _WIN32
 #include <poll.h>
+#else
+#include <winsock2.h>
+#endif
 
 
 struct switch_pgsql_handle {
@@ -253,6 +258,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_send_query(switch_pgsql_handl
 	if (!PQsendQuery(handle->con, sql)) {
 		err_str = switch_pgsql_handle_get_error(handle);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to send query (%s) to database: %s\n", sql, err_str);
+		switch_safe_free(err_str);
 		switch_pgsql_finish_results(handle);
 		goto error;
 	}
@@ -292,7 +298,11 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 	switch_time_t ctime;
 	unsigned int usec = msec * 1000;
 	char *err_str;
-	struct pollfd fds[2] = { {0} };
+#ifndef _WIN32
+	struct pollfd fds[2] = { { 0 } };
+#else
+	fd_set rs, es;
+#endif
 	int poll_res = 0;
 
 	if(!handle) {
@@ -309,6 +319,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 			start = switch_micro_time_now();
 			while((ctime = switch_micro_time_now()) - start <= usec) {
 				int wait_time = (usec - (ctime - start)) / 1000;
+				/* Wait for the PostgreSQL socket to be ready for data reads. */
+#ifndef _WIN32
 				fds[0].fd = handle->sock;
 				fds[0].events |= POLLIN;
 				fds[0].events |= POLLERR;
@@ -318,8 +330,17 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 				fds[0].events |= POLLRDNORM;
 				fds[0].events |= POLLRDBAND;
 
-				/* Wait for the PostgreSQL socket to be ready for data reads. */
-				if ((poll_res = poll(&fds[0], 1, wait_time)) > 0 ) {
+				poll_res = poll(&fds[0], 1, wait_time);
+#else
+				struct timeval wait = { wait_time * 1000, 0};	
+				FD_ZERO(&rs);
+				FD_SET(handle->sock, &rs);
+				FD_ZERO(&es);
+				FD_SET(handle->sock, &es);
+				poll_res = select(0, &rs, 0, &es, &wait);
+#endif
+				if (poll_res > 0 ) {
+#ifndef _WIN32
 					if (fds[0].revents & POLLHUP || fds[0].revents & POLLNVAL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PGSQL socket closed or invalid while waiting for result for query (%s)\n", handle->sql);
 						goto error;
@@ -327,6 +348,9 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll error trying to read PGSQL socket for query (%s)\n", handle->sql);
 						goto error;
 					} else if (fds[0].revents & POLLIN || fds[0].revents & POLLPRI || fds[0].revents & POLLRDNORM || fds[0].revents & POLLRDBAND) {
+#else
+					if (FD_ISSET(handle->sock, &rs)) {
+#endif						
 						/* Then try to consume any input waiting. */
 						if (PQconsumeInput(handle->con)) {
 							if (PQstatus(handle->con) == CONNECTION_BAD) {

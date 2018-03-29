@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libpq-version.props" Condition=" '$(libpqVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <libpqlibDir>$(BaseDir)libs\libpq-$(libpqVersion)</libpqlibDir>
+  </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libpqBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)/libpq-$(libpqVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(libpqlibDir)\binaries\$(Platform)\$(Configuration)\libpq.dll" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+  <Target Name="libpqHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)/libpq-$(libpqVersion)-headers.zip"
+           expectfileordirectory="$(libpqlibDir)\include\libpq-fe.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+
+  <Target Name="libpqcopyTarget" AfterTargets="Build" DependsOnTargets="Build">  
+      <ItemGroup>  
+          <libpqFiles Include="$(libpqlibDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>  
+      </ItemGroup>  
+      <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\libpq.dll')"
+          SourceFiles="@(libpqFiles)"  
+          DestinationFiles="@(libpqFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
+      />  
+  </Target>   
+
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(libpqlibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWITCH_HAVE_PGSQL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libpqlibDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libpq.lib;Secur32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
