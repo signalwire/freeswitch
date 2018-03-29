@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="rabbitmq-c-version.props" Condition=" '$(rabbitmq_cVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <rabbitmq_c_libDir>$(BaseDir)libs\rabbitmq-c-$(rabbitmq_cVersion)</rabbitmq_c_libDir>
+  </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="rabbitmq-c-binariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)/rabbitmq-c-$(rabbitmq_cVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(rabbitmq_c_libDir)\binaries\$(Platform.ToLower())\$(Configuration.ToLower())\librabbitmq.4.lib" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
+  <Target Name="rabbitmq-c-headersTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)/rabbitmq-c-$(rabbitmq_cVersion)-headers.zip"
+           expectfileordirectory="$(rabbitmq_c_libDir)\include\amqp.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs"
+      />
+  </Target> 
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(rabbitmq_c_libDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(rabbitmq_c_libDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>librabbitmq.4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>
