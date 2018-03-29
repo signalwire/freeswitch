@@ -758,6 +758,7 @@ typedef struct conference_obj {
 	uint32_t moh_wait;
 	uint32_t floor_holder_score_iir;
 	char *default_layout_name;
+	int mux_paused;
 } conference_obj_t;
 
 /* Relationship with another member */
