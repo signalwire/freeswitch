@@ -3106,6 +3106,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			check_async_file = 1;
 			file_count++;
 			video_count++;
+			if (!files_playing) {
+				send_keyframe = 1;
+			}
 			files_playing = 1;
 		}
 
@@ -3113,9 +3116,23 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			check_file = 1;
 			file_count++;
 			video_count++;
+			if (!files_playing) {
+				send_keyframe = 1;
+			}
 			files_playing = 1;
 		}
 		switch_mutex_unlock(conference->file_mutex);
+
+		if (conference_utils_test_flag(conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
+			if (conference->members_seeing_video < 3 && !file_count) {
+				conference->mux_paused = 1;
+				files_playing = 0;
+				switch_yield(20000);
+				continue;
+			} else {
+				conference->mux_paused = 0;
+			}
+		}
 
 		switch_mutex_lock(conference->member_mutex);
 		watchers = 0;
@@ -4848,7 +4865,8 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	//char *name = switch_channel_get_name(channel);
 	conference_member_t *member = (conference_member_t *)user_data;
 	conference_relationship_t *rel = NULL, *last = NULL;
-
+	int files_playing = 0;
+	
 	switch_assert(member);
 
 	if (switch_test_flag(frame, SFF_CNG) || !frame->packet) {
@@ -4864,8 +4882,18 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	}
 
 
+	switch_mutex_lock(member->conference->file_mutex);
+	if (member->conference->async_fnode && switch_core_file_has_video(&member->conference->async_fnode->fh, SWITCH_TRUE)) {
+		files_playing = 1;
+	}
+	
+	if (member->conference->fnode && switch_core_file_has_video(&member->conference->fnode->fh, SWITCH_TRUE)) {
+		files_playing = 1;
+	}
+	switch_mutex_unlock(member->conference->file_mutex);
+
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
-		if (member->conference->members_seeing_video < 3) {
+		if (member->conference->members_seeing_video < 3 && !files_playing && member->conference->mux_paused) {
 			conference_video_write_frame(member->conference, member, frame);
 			conference_video_check_recording(member->conference, NULL, frame);
 			switch_thread_rwlock_unlock(member->conference->rwlock);
