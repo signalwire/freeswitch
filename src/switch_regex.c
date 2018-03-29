@@ -37,7 +37,7 @@ SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern,
 													  int options, const char **errorptr, int *erroroffset, const unsigned char *tables)
 {
 
-	return pcre_compile(pattern, options, errorptr, erroroffset, tables);
+	return (switch_regex_t *)pcre_compile(pattern, options, errorptr, erroroffset, tables);
 
 }
 
