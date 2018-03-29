@@ -866,7 +866,8 @@ SWITCH_STANDARD_API(enum_function)
 	} else {
 		stream->write_function(stream, "Invalid Input!\n");
 	}
-
+	switch_safe_free(mydata);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
