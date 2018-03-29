@@ -4,7 +4,7 @@
     <GitSkipCache>true</GitSkipCache>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
-    <Import Project="GitInfo\GitInfo.targets"/>
+    <Import Project="GitInfo\GitInfo.targets" />
   </ImportGroup>
   <PropertyGroup>
     <ProjectGuid>{47213370-b933-487d-9f45-bca26d7e2b6f}</ProjectGuid>
@@ -554,6 +554,14 @@
     <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_csv\mod_cdr_csv.2015.vcxproj">
       <Name>mod_cdr_csv</Name>
       <Project>{44d7deaf-fda5-495e-8b9d-1439e4f4c21e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_pg_csv\mod_cdr_pg_csv.2015.vcxproj">
+      <Name>mod_cdr_pg_csv</Name>
+      <Project>{411f6d43-9f09-47d0-8b04-e1eb6b67c5bf}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
