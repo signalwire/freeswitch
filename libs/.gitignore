@@ -844,3 +844,5 @@ tiff-4.0.2/configure
 unimrcp/configure
 zlib-*/
 zlib-*
+libpq-*/
+libpq-*
