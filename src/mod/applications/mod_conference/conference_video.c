@@ -3107,6 +3107,14 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			canvas->send_keyframe = 1;
 		}
 
+
+		if (conference_utils_test_flag(conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
+			if (conference->members_seeing_video < 3) {
+				switch_yield(20000);
+				continue;
+			}
+		}
+
 		video_count = 0;
 
 		switch_mutex_lock(conference->file_mutex);
@@ -3238,13 +3246,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 		members_with_video = conference->members_with_video;
 		members_with_avatar = conference->members_with_avatar;
-
-		if (conference_utils_test_flag(conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
-			if (conference->members_seeing_video < 3) {
-				switch_yield(20000);
-				continue;
-			}
-		}
 
 		switch_mutex_lock(conference->member_mutex);
 
@@ -4761,11 +4762,13 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 		int x,y;
 
 		switch_img_copy(vid_frame->img, &tmp_img);
-		switch_img_fit(&tmp_img, conference->canvases[0]->width, conference->canvases[0]->height, SWITCH_FIT_SIZE);
+		switch_img_fit(&tmp_img, conference->canvases[0]->width, conference->canvases[0]->height, SWITCH_FIT_SIZE_AND_SCALE);
+
 		frame_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, conference->canvases[0]->width, conference->canvases[0]->height, 1);
 		conference_video_reset_image(frame_img, &conference->canvases[0]->bgcolor);
 		switch_img_find_position(POS_CENTER_MID, frame_img->d_w, frame_img->d_h, tmp_img->d_w, tmp_img->d_h, &x, &y);
 		switch_img_patch(frame_img, tmp_img, x, y);
+
 		tmp_frame.packet = buf;
 		tmp_frame.data = buf + 12;
 		tmp_frame.img = frame_img;
@@ -4802,14 +4805,27 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 						!(imember->id == imember->conference->video_floor_holder && imember->conference->last_video_floor_holder))) {
 				send_frame = 1;
 			}
-
+			
 			if (send_frame) {
 				if (vid_frame->img) {
 					if (conference->canvases[0]) {
+						switch_frame_t *dupframe;
+						
 						tmp_frame.packet = buf;
-						tmp_frame.packetlen = sizeof(buf) - 12;
+						tmp_frame.packetlen = 0;
+						tmp_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
 						tmp_frame.data = buf + 12;
-						switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
+						
+						if (imember->fb) {
+							if (switch_frame_buffer_dup(imember->fb, &tmp_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+								if (switch_frame_buffer_trypush(imember->fb, dupframe) != SWITCH_STATUS_SUCCESS) {
+									switch_frame_buffer_free(imember->fb, &dupframe);
+								}
+								dupframe = NULL;
+							}
+						} else {
+							switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
+						}
 					} else {
 						switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 					}
