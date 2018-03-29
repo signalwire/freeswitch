@@ -43,7 +43,10 @@
 #include <amqp.h>
 #include <amqp_framing.h>
 #include <amqp_tcp_socket.h>
+
+#ifndef _MSC_VER
 #include <strings.h>
+#endif
 
 #define MAX_LOG_MESSAGE_SIZE 1024
 #define AMQP_MAX_HOSTS 4
