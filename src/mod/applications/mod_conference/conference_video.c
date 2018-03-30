@@ -2696,11 +2696,15 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	switch_image_t *img = *imgP;
 	int size = 0;
 	void *pop;
+	int half;
 	//if (member->avatar_png_img && switch_channel_test_flag(member->channel, CF_VIDEO_READY) && conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO)) {
 	//	switch_img_free(&member->avatar_png_img);
 	//}
 
-
+	if ((half = switch_queue_size(member->video_queue) / 2) < 1) {
+		half = 1;
+	}
+	
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_READY)) {
 		do {
 			pop = NULL;
@@ -2712,7 +2716,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				break;
 			}
 			size = switch_queue_size(member->video_queue);
-		} while(size > 1);
+		} while(size > half);
 
 		if (conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			member->video_layer_id > -1 &&
@@ -3543,14 +3547,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			layout_group_t *lg = NULL;
 			video_layout_t *vlayout = NULL;
 			conference_member_t *omember;
-			
+
 			if (video_key_freq && (now - last_key_time) > video_key_freq) {
 				send_keyframe = SWITCH_TRUE;
 				last_key_time = now;
 			}
 
-			switch_core_timer_next(&canvas->timer);
-			
 			switch_mutex_lock(conference->member_mutex);
 
 			for (imember = conference->members; imember; imember = imember->next) {
@@ -3695,7 +3697,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						switch_thread_rwlock_unlock(omember->rwlock);
 					}
 				}
-				
+
+
 				for (omember = conference->members; omember; omember = omember->next) {
 					mcu_layer_t *layer = NULL;
 					switch_image_t *use_img = NULL;
