@@ -1069,7 +1069,7 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 	}
 
 	if (member && conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
-		goto end;
+		return;
 	}
 	
 	conference->floor_holder_score_iir = 0;
