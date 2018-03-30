@@ -38,7 +38,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_video_filter_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_video_filter_shutdown);
 SWITCH_MODULE_DEFINITION(mod_video_filter, mod_video_filter_load, mod_video_filter_shutdown, NULL);
 
-
 typedef struct chromakey_context_s {
 	int threshold;
 	switch_image_t *bgimg;
@@ -60,8 +59,18 @@ typedef struct chromakey_context_s {
 	int mod;
 	switch_chromakey_t *ck;
 	switch_core_video_filter_t video_filters;
+	switch_queue_t *child_queue;
+	char *child_uuid;
+	switch_media_bug_t *child_bug;
 } chromakey_context_t;
 
+typedef struct chromakey_child_context_s {
+	chromakey_context_t *parent;
+	char *master_uuid;
+} chromakey_child_context_t;
+
+
+	
 static void init_context(chromakey_context_t *context)
 {
 	switch_color_set_rgb(&context->bgcolor, "#000000");
@@ -79,6 +88,11 @@ static void uninit_context(chromakey_context_t *context)
 	switch_img_free(&context->imgbg);
 	switch_img_free(&context->imgfg);
 
+	if (context->child_bug) {
+		switch_core_media_bug_close(&context->child_bug, SWITCH_TRUE);
+		context->child_uuid = NULL;
+	}
+	
 	if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->vfh);
 		memset(&context->vfh, 0, sizeof(context->vfh));
@@ -93,6 +107,61 @@ static void uninit_context(chromakey_context_t *context)
 	switch_safe_free(context->patch_data);
 	switch_chromakey_destroy(&context->ck);
 }
+
+static int flush_video_queue(switch_queue_t *q, int min)
+{
+	void *pop;
+
+	if (switch_queue_size(q) > min) {
+		while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+			if (min && switch_queue_size(q) <= min) {
+				break;
+			}
+		}
+	}
+
+	return switch_queue_size(q);
+}
+
+static switch_bool_t chromakey_child_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	chromakey_child_context_t *child_context = (chromakey_child_context_t *)user_data;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		{
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+	case SWITCH_ABC_TYPE_VIDEO_PATCH:
+		{
+			switch_image_t *img = NULL;
+			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+
+			if (frame && frame->img) {
+				switch_img_copy(frame->img, &img);
+				if (switch_queue_trypush(child_context->parent->child_queue, img) != SWITCH_STATUS_SUCCESS) {
+					switch_img_free(&img);
+				}
+				img = NULL;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+
+
 
 static void parse_params(chromakey_context_t *context, int start, int argc, char **argv, const char **function, switch_media_bug_flag_t *flags)
 {
@@ -151,6 +220,12 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 
 	if (n > 2 && argv[i]) {
 
+		if (context->child_bug) {
+			printf("WTF CLOSE IT\n");
+			switch_core_media_bug_close(&context->child_bug, SWITCH_TRUE);
+			context->child_uuid = NULL;
+		}
+		
 		if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
 			switch_core_file_close(&context->vfh);
 			memset(&context->vfh, 0, sizeof(context->vfh));
@@ -175,6 +250,37 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 		
 		if (argv[i][0] == '#') { // bgcolor
 			switch_color_set_rgb(&context->bgcolor, argv[i]);
+		} else if (!strncasecmp(argv[i], "uuid:", 5)) {
+			char *uuid = argv[i] + 5;
+			switch_core_session_t *bsession;
+			switch_status_t status;
+
+			
+			if (!zstr(uuid) && (bsession = switch_core_session_locate(uuid))) {
+				switch_channel_t *channel = switch_core_session_get_channel(bsession);
+				chromakey_child_context_t *child_context;
+				switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING|SMBF_READ_VIDEO_PATCH;
+	
+				switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+				
+				child_context = (chromakey_child_context_t *) switch_core_session_alloc(bsession, sizeof(*child_context));
+				child_context->master_uuid = switch_core_session_strdup(bsession, switch_core_session_get_uuid(context->session));
+				
+				
+				if ((status = switch_core_media_bug_add(bsession, "chromakey_child", NULL,
+														chromakey_child_bug_callback, child_context, 0, flags,
+														&context->child_bug)) == SWITCH_STATUS_SUCCESS) {
+
+					switch_queue_create(&context->child_queue, 200, switch_core_session_get_pool(context->session));
+					child_context->parent = context;
+					context->child_uuid = switch_core_session_strdup(context->session, switch_core_session_get_uuid(bsession));
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(bsession), SWITCH_LOG_ERROR, "Failure! %d\n", status);
+				}
+
+				switch_core_session_rwunlock(bsession);
+			}
+			
 		} else if (switch_stristr(".png", argv[i])) {
 			if (!(context->bgimg_orig = switch_img_read_png(argv[i], SWITCH_IMG_FMT_ARGB))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening png\n");
@@ -382,7 +488,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 			}
 		}
 
-	} else if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
+	} else if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN) || !zstr(context->child_uuid)) {
 		switch_image_t *use_img = NULL;
 		switch_frame_t file_frame = { 0 };
 		switch_status_t status;
@@ -390,8 +496,26 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		context->vfh.mm.scale_w = frame->img->d_w;
 		context->vfh.mm.scale_h = frame->img->d_h;
 
-		status = switch_core_file_read_video(&context->vfh, &file_frame, SVR_FLUSH);
-		switch_core_file_command(&context->vfh, SCFC_FLUSH_AUDIO);
+		if (!zstr(context->child_uuid)) {
+			void *pop = NULL;
+
+			flush_video_queue(context->child_queue, 1);
+
+			if ((status = switch_queue_trypop(context->child_queue, &pop)) == SWITCH_STATUS_SUCCESS && pop) {
+				file_frame.img = (switch_image_t *) pop;
+
+				if (file_frame.img->d_w != context->vfh.mm.scale_w || file_frame.img->d_h != context->vfh.mm.scale_h) {
+					switch_img_fit(&file_frame.img, context->vfh.mm.scale_w, context->vfh.mm.scale_h, SWITCH_FIT_SIZE_AND_SCALE);
+					if (file_frame.img->d_w != context->vfh.mm.scale_w || file_frame.img->d_h != context->vfh.mm.scale_h) {
+						switch_img_free(&file_frame.img);
+					}
+				}
+			}
+			
+		} else {
+			status = switch_core_file_read_video(&context->vfh, &file_frame, SVR_FLUSH);
+			switch_core_file_command(&context->vfh, SCFC_FLUSH_AUDIO);
+		}
 
 		if (file_frame.img) {
 			switch_img_free(&context->bgimg_scaled);
