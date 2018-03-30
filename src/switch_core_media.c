@@ -2513,10 +2513,16 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
 		}
 
+		
+		
 		if (jb_msec < 10 || jb_msec > 10000) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-							  "Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
-		} else {
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			//"Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
+			jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * 1;
+			maxlen = jb_msec * 100;
+		}
+
+		if (jb_msec && maxlen) {
 			int qlen, maxqlen = 50;
 
 			qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
