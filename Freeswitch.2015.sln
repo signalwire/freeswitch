@@ -650,6 +650,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_pl", "src\mod\say\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_th", "src\mod\say\mod_say_th\mod_say_th.2015.vcxproj", "{C955E1A9-C12C-4BAD-AC32-8D53D9268AF7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_odbc_cdr", "src\mod\event_handlers\mod_odbc_cdr\mod_odbc_cdr.2015.vcxproj", "{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -3018,6 +3020,18 @@ Global
 		{C955E1A9-C12C-4BAD-AC32-8D53D9268AF7}.Release|Win32.Build.0 = Release|Win32
 		{C955E1A9-C12C-4BAD-AC32-8D53D9268AF7}.Release|x64.ActiveCfg = Release|x64
 		{C955E1A9-C12C-4BAD-AC32-8D53D9268AF7}.Release|x64.Build.0 = Release|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.All|Win32.ActiveCfg = Release|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.All|Win32.Build.0 = Release|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.All|x64.ActiveCfg = Release|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.All|x64.Build.0 = Release|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Debug|Win32.Build.0 = Debug|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Debug|x64.ActiveCfg = Debug|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Debug|x64.Build.0 = Debug|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Release|Win32.ActiveCfg = Release|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Release|Win32.Build.0 = Release|Win32
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Release|x64.ActiveCfg = Release|x64
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3256,5 +3270,6 @@ Global
 		{07EA6E5A-D181-4ABB-BECF-67A906867D04} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{20B15650-F910-4211-8729-AAB0F520C805} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{C955E1A9-C12C-4BAD-AC32-8D53D9268AF7} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
+		{096C9A84-55B2-4F9B-97E5-0FDF116FD25F} = {9ADF1E48-2F5C-4ED7-A893-596259FABFE0}
 	EndGlobalSection
 EndGlobal
