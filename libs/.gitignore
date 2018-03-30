@@ -846,3 +846,5 @@ zlib-*/
 zlib-*
 libpq-*/
 libpq-*
+lua-*/
+lua-*
