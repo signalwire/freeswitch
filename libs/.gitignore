@@ -848,3 +848,5 @@ libpq-*/
 libpq-*
 lua-*/
 lua-*
+curl-*/
+curl-*

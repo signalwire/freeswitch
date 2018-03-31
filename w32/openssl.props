@@ -8,6 +8,11 @@
     <OpensslPropsImported>true</OpensslPropsImported>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+  </PropertyGroup>
+
   <!-- 
        Download Target.
        Name must be unique. 
@@ -30,8 +35,8 @@
 
   <Target Name="opensslbinariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
-           expectfileordirectory="$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\openssl.exe" 
+           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\openssl.exe"
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs"
@@ -50,11 +55,11 @@
 
   <Target Name="opensslcopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="opensslbinariesTarget">  
       <ItemGroup>  
-          <opensslFiles Include="$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\*.*"/>  
+          <opensslFiles Include="$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\*.*"/>
       </ItemGroup>  
-      <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\openssl.exe')"
+      <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(LibraryConfiguration)\openssl.exe')"
           SourceFiles="@(opensslFiles)"  
-          DestinationFiles="@(opensslFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
+          DestinationFiles="@(opensslFiles->'$(BaseDir)\$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
       />  
   </Target>   
 
@@ -66,7 +71,7 @@
       <PreprocessorDefinitions>HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(OpenSSLLibDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies Condition="'$(Platform)'=='Win32'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies Condition="'$(Platform)'=='x64'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
