@@ -2,16 +2,16 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <cURL_Version>7.54.1</cURL_Version>
+    <curlVersion>7.59.0</curlVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <cURL_VersionImported>true</cURL_VersionImported>
+    <curlVersionImported>true</curlVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="cURL_Version">
-      <Value>$(cURL_Version)</Value>
+    <BuildMacro Include="curlVersion">
+      <Value>$(curlVersion)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

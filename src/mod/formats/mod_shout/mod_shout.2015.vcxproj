@@ -75,7 +75,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_TIMESPEC_DEFINED;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -97,7 +97,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -117,7 +117,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_TIMESPEC_DEFINED;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -141,7 +141,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -166,10 +166,6 @@
     <ClInclude Include="mpglib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2015.vcxproj">
-      <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\libmp3lame\libmp3lame.2015.vcxproj">
       <Project>{e316772f-5d8f-4f2a-8f71-094c3e859d34}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -45,7 +45,7 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />  
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)\w32\openssl.props" />
   <Import Project="$(SolutionDir)\w32\curl.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -133,9 +133,6 @@
     <ClCompile Include="common.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\libs\win32\curl\curllib.2015.vcxproj">
-      <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\w32\Library\FreeSwitchCore.2015.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
