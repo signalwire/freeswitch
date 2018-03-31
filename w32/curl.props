@@ -1,15 +1,72 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="curl-version.props" Condition=" '$(cURL_VersionImported)' == '' "/>
+    <Import Project="curl-version.props" Condition=" '$(curlVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <Import Project="openssl.props" />
+    <Import Project="zlib.props" />
   </ImportGroup>
   <PropertyGroup>
     <CurlPropsImported>true</CurlPropsImported>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <curlLibDir>$(SolutionDir)libs\curl-$(curlVersion)</curlLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="curlBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/curl/$(curlVersion)/curl-$(curlVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\curl.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="curlHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/curl/$(curlVersion)/curl-$(curlVersion)-headers.zip"
+           expectfileordirectory="$(curlLibDir)\include\curl\curl.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\curl-$(cURL_Version)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(curlLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_CURL;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>curl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
+
 </Project>
