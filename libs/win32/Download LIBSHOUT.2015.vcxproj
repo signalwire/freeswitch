@@ -68,11 +68,11 @@
   <ItemGroup>
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading Flite.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading libshout.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\libshout-2.2.2" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\libshout-2.2.2;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading Flite.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading libshout.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\libshout-2.2.2" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\libshout-2.2.2;%(Outputs)</Outputs>
