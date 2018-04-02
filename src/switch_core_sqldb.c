@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  *
  * switch_core_sqldb.c -- Main Core Library (statistics tracker)
@@ -76,6 +77,9 @@ static struct {
 
 static void switch_core_sqldb_start_thread(void);
 static void switch_core_sqldb_stop_thread(void);
+
+#define database_interface_handle_callback_exec(database_interface, dih, sql, callback, pdata, err) database_interface->callback_exec_detailed(__FILE__, (char *)__SWITCH_FUNC__, __LINE__, dih, sql, callback, pdata, err)
+#define database_interface_handle_exec(database_interface, dih, sql, err) database_interface->exec_detailed(__FILE__, (char *)__SWITCH_FUNC__, __LINE__, dih, sql, err)
 
 static switch_cache_db_handle_t *create_handle(switch_cache_db_handle_type_t type)
 {
@@ -135,6 +139,35 @@ static void del_handle(switch_cache_db_handle_t *dbh)
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 }
 
+SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_database_interface_t *database_interface)
+{
+	switch_cache_db_handle_t *dbh_ptr = NULL;
+
+	switch_mutex_lock(sql_manager.dbh_mutex);
+
+	for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
+		if (switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
+			if (dbh_ptr->type != SCDB_TYPE_DATABASE_INTERFACE) {
+				continue;
+			}
+
+			if (dbh_ptr->native_handle.database_interface_dbh->connection_options.database_interface != database_interface) {
+				continue;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Dropping DB connection %s\n", dbh_ptr->name);
+
+			database_interface->handle_destroy(&dbh_ptr->native_handle.database_interface_dbh);
+
+			del_handle(dbh_ptr);
+			switch_mutex_unlock(dbh_ptr->mutex);
+			switch_core_destroy_memory_pool(&dbh_ptr->pool);
+		}
+	}
+
+	switch_mutex_unlock(sql_manager.dbh_mutex);
+}
+
 static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user_str, const char *thread_str)
 {
 	switch_ssize_t hlen = -1;
@@ -155,7 +188,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 
 	if (!r) {
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
-			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_PGSQL || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) &&
+			if (dbh_ptr->hash == hash && ((dbh_ptr->type != SCDB_TYPE_PGSQL && dbh_ptr->type != SCDB_TYPE_DATABASE_INTERFACE) || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) &&
 				switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 				r = dbh_ptr;
 				break;
@@ -198,7 +231,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 		dsn = "core";
 	}
 
-	if ((r = _switch_cache_db_get_db_handle_dsn(dbh, dsn, file, func, line)) != SWITCH_STATUS_SUCCESS) {
+	if ((r = _switch_cache_db_get_db_handle_dsn_ex(dbh, dsn, SWITCH_TRUE, file, func, line)) != SWITCH_STATUS_SUCCESS) {
 		*dbh = NULL;
 	}
 
@@ -234,6 +267,12 @@ static void sql_close(time_t prune)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Dropping idle DB connection %s\n", dbh->name);
 
 			switch (dbh->type) {
+				case SCDB_TYPE_DATABASE_INTERFACE:
+				{
+					switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+					database_interface->handle_destroy(&dbh->native_handle.database_interface_dbh);
+				}
+				break;
 			case SCDB_TYPE_PGSQL:
 				{
 					switch_pgsql_handle_destroy(&dbh->native_handle.pgsql_dbh);
@@ -299,6 +338,12 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 	if (dbh && *dbh) {
 
 		switch((*dbh)->type) {
+		case SCDB_TYPE_DATABASE_INTERFACE:
+			{
+				switch_database_interface_t *database_interface = (*dbh)->native_handle.database_interface_dbh->connection_options.database_interface;
+				database_interface->flush((*dbh)->native_handle.database_interface_dbh);
+			}
+		break;
 		case SCDB_TYPE_PGSQL:
 			{
 				switch_pgsql_flush((*dbh)->native_handle.pgsql_dbh);
@@ -331,46 +376,115 @@ SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t 
 	switch_cache_db_release_db_handle(dbh);
 }
 
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
+SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn()
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_database_interface_t *database_interface;
+
+	if (!runtime.odbc_dsn) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		char *colon_slashes = NULL;
+		if (NULL != (colon_slashes = strstr(runtime.odbc_dsn, "://")))
+		{
+			char prefix[16] = "";
+			strncpy(prefix, runtime.odbc_dsn, MIN(colon_slashes - runtime.odbc_dsn, 15));
+
+			if (!strncasecmp(prefix, "odbc", 4)) {
+				if (switch_odbc_available()) status = SWITCH_STATUS_SUCCESS;
+			}
+			else if (!strncasecmp(prefix, "sqlite", 6)) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+			else if (!strncasecmp(prefix, "pgsql", 5)) {
+				if (switch_pgsql_available()) status = SWITCH_STATUS_SUCCESS;
+			}
+			else if ((database_interface = switch_loadable_module_get_database_interface(prefix, NULL))) {
+				status = SWITCH_STATUS_SUCCESS;
+				UNPROTECT_INTERFACE(database_interface);
+			}
+		}
+		else if (strchr(runtime.odbc_dsn + 2, ':')) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_db_handle_t **dbh, const char *dsn,
+	const char *file, const char *func, int line)
+{
+	return _switch_cache_db_get_db_handle_dsn_ex(dbh, dsn, SWITCH_FALSE, file, func, line);
+}
+
+SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn_ex(switch_cache_db_handle_t **dbh, const char *dsn, switch_bool_t make_module_no_unloadable,
 																   const char *file, const char *func, int line)
 {
 	switch_cache_db_connection_options_t connection_options = { {0} };
 	switch_cache_db_handle_type_t type;
+	switch_database_interface_t *database_interface = NULL;
 	char tmp[256] = "";
 	char *p;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int i;
 
-	if (!strncasecmp(dsn, "pgsql://", 8)) {
-		type = SCDB_TYPE_PGSQL;
-		connection_options.pgsql_options.dsn = (char *)(dsn + 8);
-	} else if (!strncasecmp(dsn, "sqlite://", 9)) {
-		type = SCDB_TYPE_CORE_DB;
-		connection_options.core_db_options.db_path = (char *)(dsn + 9);
-	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn+2, ':')) {
-		type = SCDB_TYPE_ODBC;
+	char *colon_slashes = NULL;
+	if ( NULL != (colon_slashes = strstr(dsn, "://")) )
+	{
+		char prefix[16] = "";
+		strncpy(prefix, dsn, MIN(colon_slashes - dsn, 15));
 
-		if (i) {
-			switch_set_string(tmp, dsn);
-		} else {
-			switch_set_string(tmp, dsn+7);
+		if ((database_interface = switch_loadable_module_get_database_interface(prefix, NULL))) {
+			type = SCDB_TYPE_DATABASE_INTERFACE;
+			connection_options.database_interface_options.make_module_no_unloadable = make_module_no_unloadable;
+			connection_options.database_interface_options.database_interface = database_interface;
+			connection_options.database_interface_options.dsn = colon_slashes + 3;
+			strcpy(connection_options.database_interface_options.prefix, prefix);
+			UNPROTECT_INTERFACE(database_interface);
 		}
+	}
 
-		connection_options.odbc_options.dsn = tmp;
+	if (!connection_options.database_interface_options.dsn)
+	{		
+		if (!strncasecmp(dsn, "pgsql://", 8)) {
+			type = SCDB_TYPE_PGSQL;
+			connection_options.pgsql_options.dsn = (char *)(dsn + 8);
+		}
+		else if (!strncasecmp(dsn, "sqlite://", 9)) {
+			type = SCDB_TYPE_CORE_DB;
+			connection_options.core_db_options.db_path = (char *)(dsn + 9);
+		}
+		else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || (strchr(dsn + 2, ':') && !colon_slashes)) {
+			type = SCDB_TYPE_ODBC;
 
-		if ((p = strchr(tmp, ':'))) {
-			*p++ = '\0';
-			connection_options.odbc_options.user = p;
+			if (i) {
+				switch_set_string(tmp, dsn);
+			}
+			else {
+				switch_set_string(tmp, dsn + 7);
+			}
 
-			if ((p = strchr(connection_options.odbc_options.user, ':'))) {
+			connection_options.odbc_options.dsn = tmp;
+
+			if ((p = strchr(tmp, ':'))) {
 				*p++ = '\0';
-				connection_options.odbc_options.pass = p;
+				connection_options.odbc_options.user = p;
+
+				if ((p = strchr(connection_options.odbc_options.user, ':'))) {
+					*p++ = '\0';
+					connection_options.odbc_options.pass = p;
+				}
 			}
 		}
-	} else {
-		type = SCDB_TYPE_CORE_DB;
-		connection_options.core_db_options.db_path = (char *)dsn;
+		else {
+			type = SCDB_TYPE_CORE_DB;
+			connection_options.core_db_options.db_path = (char *)dsn;
+		}
 	}
 
 	status = _switch_cache_db_get_db_handle(dbh, type, &connection_options, file, func, line);
@@ -416,6 +530,14 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	}
 
 	switch (type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			db_name = connection_options->database_interface_options.dsn;
+			odbc_user = NULL;
+			odbc_pass = NULL;
+			db_type = "database_interface";
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			db_name = connection_options->pgsql_options.dsn;
@@ -423,6 +545,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			odbc_pass = NULL;
 			db_type = "pgsql";
 		}
+		break;
 	case SCDB_TYPE_ODBC:
 		{
 			db_name = connection_options->odbc_options.dsn;
@@ -454,14 +577,41 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	snprintf(thread_str, sizeof(thread_str) - 1, "thread=\"%lu\"",  (unsigned long) (intptr_t) self);
 
 	if ((new_dbh = get_handle(db_str, db_callsite_str, thread_str))) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
-						  "Reuse Unused Cached DB handle %s [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
+		if (type == SCDB_TYPE_DATABASE_INTERFACE) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
+				"Reuse Unused Cached DB handle %s [Database interface prefix: %s]\n", new_dbh->name, connection_options->database_interface_options.prefix);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
+				"Reuse Unused Cached DB handle %s [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
+		}
 	} else {
 		switch_core_db_t *db = NULL;
 		switch_odbc_handle_t *odbc_dbh = NULL;
 		switch_pgsql_handle_t *pgsql_dbh = NULL;
+		switch_database_interface_handle_t *database_interface_dbh = NULL;		
 
 		switch (type) {
+		case SCDB_TYPE_DATABASE_INTERFACE:
+			{
+				switch_database_interface_t *database_interface = connection_options->database_interface_options.database_interface;
+
+				if (SWITCH_STATUS_SUCCESS != database_interface->handle_new(connection_options->database_interface_options.dsn, &database_interface_dbh)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! Can't create new handle! Can't connect to DSN %s\n", connection_options->database_interface_options.dsn);
+					goto end;
+				}
+
+				if (database_interface_dbh) {
+					database_interface_dbh->connection_options = connection_options->database_interface_options;
+				
+					if (connection_options->database_interface_options.make_module_no_unloadable == SWITCH_TRUE)
+					{
+						PROTECT_INTERFACE(database_interface)
+							switch_loadable_module_protect(database_interface->parent->module_name);
+						UNPROTECT_INTERFACE(database_interface)
+					}
+				}
+			}
+			break;
 		case SCDB_TYPE_PGSQL:
 			{
 				if (!switch_pgsql_available()) {
@@ -478,7 +628,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			break;
 		case SCDB_TYPE_ODBC:
 			{
-
 				if (!switch_odbc_available()) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! ODBC NOT AVAILABLE! Can't connect to DSN %s\n", connection_options->odbc_options.dsn);
 					goto end;
@@ -490,8 +639,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 						switch_odbc_handle_destroy(&odbc_dbh);
 					}
 				}
-
-
 			}
 			break;
 		case SCDB_TYPE_CORE_DB:
@@ -504,7 +651,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			goto end;
 		}
 
-		if (!db && !odbc_dbh && !pgsql_dbh) {
+		if (!db && !odbc_dbh && !pgsql_dbh && !database_interface_dbh) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure to connect to %s %s!\n", switch_cache_db_type_name(type), db_name);
 			goto end;
 		}
@@ -514,7 +661,9 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
 						  "Create Cached DB handle %s [%s] %s:%d\n", new_dbh->name, switch_cache_db_type_name(type), file, line);
 
-		if (db) {
+		if (database_interface_dbh) {
+			new_dbh->native_handle.database_interface_dbh = database_interface_dbh;
+		} else if (db) {
 			new_dbh->native_handle.core_db_dbh = db;
 		} else if (odbc_dbh) {
 			new_dbh->native_handle.odbc_dbh = odbc_dbh;
@@ -552,6 +701,13 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	}
 
 	switch (dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			type = (char *)dbh->native_handle.database_interface_dbh->connection_options.prefix;
+			status = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, &errmsg);
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			type = "PGSQL";
@@ -698,6 +854,13 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 			return switch_odbc_handle_affected_rows(dbh->native_handle.odbc_dbh);
 		}
 		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			int affected_rows = 0;
+			database_interface->affected_rows(dbh->native_handle.database_interface_dbh, &affected_rows);
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			return switch_pgsql_handle_affected_rows(dbh->native_handle.pgsql_dbh);
@@ -719,6 +882,11 @@ SWITCH_DECLARE(int) switch_cache_db_load_extension(switch_cache_db_handle_t *dbh
 	case SCDB_TYPE_ODBC:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "load extension not supported by type ODBC!\n");
+		}
+		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "load extension not supported by type DATABASE_INTERFACE!\n");
 		}
 		break;
 	case SCDB_TYPE_PGSQL:
@@ -781,6 +949,12 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 	case SCDB_TYPE_ODBC:
 		{
 			status = switch_odbc_handle_exec_string(dbh->native_handle.odbc_dbh, sql, str, len, err);
+		}
+		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			status = database_interface->exec_string(dbh->native_handle.database_interface_dbh, sql, str, len, err);
 		}
 		break;
 	case SCDB_TYPE_PGSQL:
@@ -887,6 +1061,18 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 				}
 			}
 			break;
+		case SCDB_TYPE_DATABASE_INTERFACE:
+			{
+				switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+				switch_status_t result;
+
+				if ((result = database_interface->sql_set_auto_commit_attr(dbh->native_handle.database_interface_dbh, 0)) != SWITCH_STATUS_SUCCESS) {
+					char tmp[100];
+					switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
+					errmsg = strdup(tmp);
+				}					
+			}
+			break;
 		case SCDB_TYPE_PGSQL:
 			{
 				switch_pgsql_status_t result;
@@ -920,6 +1106,17 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 					{
 						switch_odbc_SQLEndTran(dbh->native_handle.odbc_dbh, 1);
 						switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 1);
+					}
+					break;
+				case SCDB_TYPE_DATABASE_INTERFACE:
+					{
+						switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+						switch_status_t result;
+
+						if ((result = database_interface->commit(dbh->native_handle.database_interface_dbh)) != SWITCH_STATUS_SUCCESS) {
+							char tmp[100];
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction", result);
+						}
 					}
 					break;
 				case SCDB_TYPE_PGSQL:
@@ -997,6 +1194,17 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 			switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 1);
 		}
 		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+	
+			if ((result = database_interface->commit(dbh->native_handle.database_interface_dbh)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction", result);
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			switch_pgsql_SQLEndTran(dbh->native_handle.pgsql_dbh, 1);
@@ -1058,6 +1266,17 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switc
 	h.pdata = pdata;
 
 	switch (dbh->type) {
+		case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback", result);
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			status = switch_pgsql_handle_callback_exec(dbh->native_handle.pgsql_dbh, sql, helper_callback, &h, err);
@@ -1113,6 +1332,21 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback_err(s
 	h.pdata = pdata;
 
 	switch (dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback_err", result);
+			} else {
+				if (err && *err) {
+					(*err_callback)(pdata, (const char*)*err);
+				}
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			status = switch_pgsql_handle_callback_exec(dbh->native_handle.pgsql_dbh, sql, helper_callback, &h, err);
@@ -1173,6 +1407,17 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 
 
 	switch (dbh->type) {
+		case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback", result);
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			status = switch_pgsql_handle_callback_exec(dbh->native_handle.pgsql_dbh, sql, callback, pdata, err);
@@ -1223,6 +1468,21 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 
 
 	switch (dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback_err", result);
+			} else {
+				if (err && *err) {
+					(*err_callback)(pdata, (const char*)*err);
+				}
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			status = switch_pgsql_handle_callback_exec(dbh->native_handle.pgsql_dbh, sql, callback, pdata, err);
@@ -1318,6 +1578,31 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, test_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with test_sql", result);
+
+				if (drop_sql) {
+					if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, drop_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+						char tmp[100];
+						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with drop_sql", result);
+					}
+
+					if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+						char tmp[100];
+						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
+					}
+
+					r = result;
+				}
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			if (switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, test_sql, NULL) != SWITCH_PGSQL_SUCCESS) {
@@ -1940,6 +2225,18 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 			}
 		}
 		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = qm->event_db->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface->sql_set_auto_commit_attr(qm->event_db->native_handle.database_interface_dbh, 0)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
+				errmsg = strdup(tmp);
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			switch_pgsql_status_t result;
@@ -2016,6 +2313,17 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 			switch_odbc_SQLSetAutoCommitAttr(qm->event_db->native_handle.odbc_dbh, 1);
 		}
 		break;
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			switch_database_interface_t *database_interface = qm->event_db->native_handle.database_interface_dbh->connection_options.database_interface;
+			switch_status_t result;
+
+			if ((result = database_interface->commit(qm->event_db->native_handle.database_interface_dbh)) != SWITCH_STATUS_SUCCESS) {
+				char tmp[100];
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction", result);
+			}
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			switch_pgsql_SQLEndTran(qm->event_db->native_handle.pgsql_dbh, 1);
@@ -2072,6 +2380,8 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 	switch_mutex_lock(qm->cond_mutex);
 
 	switch (qm->event_db->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		break;
 	case SCDB_TYPE_PGSQL:
 		break;
 	case SCDB_TYPE_ODBC:
@@ -3390,6 +3700,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 
 	switch (sql_manager.dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
 	case SCDB_TYPE_PGSQL:
 	case SCDB_TYPE_ODBC:
 		if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
@@ -3440,6 +3751,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 
 	switch (sql_manager.dbh->type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
 	case SCDB_TYPE_PGSQL:
 	case SCDB_TYPE_ODBC:
 		{
@@ -3481,6 +3793,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 					}
 				}
 				break;
+			case SCDB_TYPE_DATABASE_INTERFACE:
+				{
+					switch_database_interface_t *database_interface = sql_manager.dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+					switch_status_t result;
+
+					if ((result = database_interface->sql_set_auto_commit_attr(sql_manager.dbh->native_handle.database_interface_dbh, 0)) != SWITCH_STATUS_SUCCESS) {
+						char tmp[100];
+						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
+						err = strdup(tmp);
+					}
+				}
+				break;
 			case SCDB_TYPE_PGSQL:
 				{
 					switch_pgsql_status_t result;
@@ -3510,6 +3834,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 							switch_odbc_SQLSetAutoCommitAttr(sql_manager.dbh->native_handle.odbc_dbh, 1) != SWITCH_ODBC_SUCCESS) {
 							char tmp[100];
 							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction.", result);
+							err = strdup(tmp);
+						}
+					}
+					break;
+				case SCDB_TYPE_DATABASE_INTERFACE:
+					{
+						switch_database_interface_t *database_interface = sql_manager.dbh->native_handle.database_interface_dbh->connection_options.database_interface;
+						switch_status_t result;
+
+						if ((result = database_interface->commit(sql_manager.dbh->native_handle.database_interface_dbh)) != SWITCH_STATUS_SUCCESS) {
+							char tmp[100];
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction", result);
 							err = strdup(tmp);
 						}
 					}

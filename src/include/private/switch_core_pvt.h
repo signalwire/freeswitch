@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Andrey Volk <andywolk@gmail.com>
  *
  *
  * switch_core.h -- Core Library Private Data (not to be installed into the system)
@@ -334,6 +335,8 @@ extern struct switch_session_manager session_manager;
 
 
 
+switch_status_t switch_core_sqldb_init(const char **err);
+void switch_core_sqldb_destroy();
 switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage);
 void switch_core_sqldb_stop(void);
 void switch_core_session_init(switch_memory_pool_t *pool);

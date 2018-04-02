@@ -25,6 +25,7 @@
  *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
+ * Andrey Volk <andywolk@gmail.com>
  *
  *
  * switch_module_interfaces.h -- Module Interface Definitions
@@ -612,6 +613,38 @@ struct switch_directory_handle {
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
+};
+
+/*! \brief Abstract interface to a database module */
+struct switch_database_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	switch_status_t(*handle_new)(char *dsn, switch_database_interface_handle_t **dih);
+	switch_status_t(*handle_destroy)(switch_database_interface_handle_t **dih); 
+	switch_status_t(*flush)(switch_database_interface_handle_t *dih);
+	switch_status_t(*exec_detailed)(const char *file, const char *func, int line, 
+		switch_database_interface_handle_t *dih, const char *sql, char **err);
+	switch_status_t(*exec_string)(switch_database_interface_handle_t *dih, const char *sql, char *resbuf, size_t len, char **err);
+	switch_status_t(*sql_set_auto_commit_attr)(switch_database_interface_handle_t *dih, switch_bool_t on);
+	switch_status_t(*commit)(switch_database_interface_handle_t *dih);
+	switch_status_t(*rollback)(switch_database_interface_handle_t *dih);
+	switch_status_t(*callback_exec_detailed)(const char *file, const char *func, int line,
+		switch_database_interface_handle_t *dih, const char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err);
+	switch_status_t(*affected_rows)(switch_database_interface_handle_t *dih, int *affected_rows);
+
+	/*! list of supported dsn prefixes */
+	char **prefixes;
+	switch_thread_rwlock_t *rwlock;
+	int refs;
+	switch_mutex_t *reflock;
+	switch_loadable_module_interface_t *parent;
+	struct switch_database_interface *next;
+};
+
+/*! an abstract representation of a database interface. */
+struct switch_database_interface_handle {
+	switch_cache_db_database_interface_options_t connection_options;
+	void *handle;
 };
 
 struct switch_audio_codec_settings {

@@ -27,6 +27,7 @@
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Joseph Sullivan <jossulli@amazon.com>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * switch_core.h -- Core Library
  *
@@ -2474,13 +2475,15 @@ typedef enum {
 typedef enum {
 	SCDB_TYPE_CORE_DB,
 	SCDB_TYPE_ODBC,
-	SCDB_TYPE_PGSQL
+	SCDB_TYPE_PGSQL,
+	SCDB_TYPE_DATABASE_INTERFACE
 } switch_cache_db_handle_type_t;
 
 typedef union {
 	switch_core_db_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
 	switch_pgsql_handle_t *pgsql_dbh;
+	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
@@ -2497,10 +2500,18 @@ typedef struct {
 	char *dsn;
 } switch_cache_db_pgsql_options_t;
 
+typedef struct {
+	char *dsn;
+	char prefix[16];
+	switch_database_interface_t *database_interface;
+	switch_bool_t make_module_no_unloadable;
+} switch_cache_db_database_interface_options_t;
+
 typedef union {
 	switch_cache_db_core_db_options_t core_db_options;
 	switch_cache_db_odbc_options_t odbc_options;
 	switch_cache_db_pgsql_options_t pgsql_options;
+	switch_cache_db_database_interface_options_t database_interface_options;
 } switch_cache_db_connection_options_t;
 
 struct switch_cache_db_handle;
@@ -2511,6 +2522,11 @@ static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_
 	const char *type_str = "INVALID";
 
 	switch (type) {
+	case SCDB_TYPE_DATABASE_INTERFACE:
+		{
+			type_str = "DATABASE_INTERFACE";
+		}
+		break;
 	case SCDB_TYPE_PGSQL:
 		{
 			type_str = "PGSQL";
@@ -2559,6 +2575,8 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 															   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle(_a, _b, _c) _switch_cache_db_get_db_handle(_a, _b, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn_ex(switch_cache_db_handle_t **dbh, const char *dsn, switch_bool_t make_module_no_unloadable,
+																	  const char *file, const char *func, int line);
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_db_handle_t **dbh, const char *dsn,
 																   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle_dsn(_a, _b) _switch_cache_db_get_db_handle_dsn(_a, _b, __FILE__, __SWITCH_FUNC__, __LINE__)
@@ -2642,6 +2660,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 																			  const char *inner_pre_trans_execute,
 																			  const char *inner_post_trans_execute);
 #define switch_cache_db_persistant_execute_trans(_d, _s, _r) switch_cache_db_persistant_execute_trans_full(_d, _s, _r, NULL, NULL, NULL, NULL)
+
+SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_database_interface_t *database_interface);
+
+/*!
+\brief Returns error if no suitable database interface found to serve core db dsn.
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn();
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);

@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Andrey Volk <andywolk@gmail.com>
  *
  *
  * switch_loadable_module.h -- Loadable Modules
@@ -51,6 +52,14 @@ SWITCH_BEGIN_EXTERN_C
   \ingroup core1
   \{
 */
+
+/*! \brief List of loadable module types */
+	typedef enum {
+		SWITCH_LOADABLE_MODULE_TYPE_PRELOAD,
+		SWITCH_LOADABLE_MODULE_TYPE_COMMON,
+		SWITCH_LOADABLE_MODULE_TYPE_POSTLOAD
+	} switch_loadable_module_type_t;
+
 /*! \brief The abstraction of a loadable module */
 	struct switch_loadable_module_interface {
 	/*! the name of the module */
@@ -87,6 +96,8 @@ SWITCH_BEGIN_EXTERN_C
 	switch_management_interface_t *management_interface;
 	/*! the table of limit interfaces the module has implemented */
 	switch_limit_interface_t *limit_interface;
+	/*! the table of database interfaces the module has implemented */
+	switch_database_interface_t *database_interface;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_memory_pool_t *pool;
@@ -206,6 +217,13 @@ SWITCH_DECLARE(switch_json_api_interface_t *) switch_loadable_module_get_json_ap
 SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name, const char *modname);
 
 /*!
+\brief Retrieve the database interface by it's registered name
+\param name the name of the dsn prefix
+\return the desired database format interface
+*/
+SWITCH_DECLARE(switch_database_interface_t *) switch_loadable_module_get_database_interface(const char *name, const char *modname);
+
+/*!
   \brief Retrieve the speech interface by it's registered name
   \param name the name of the speech interface
   \return the desired speech interface
@@ -310,6 +328,13 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *d
   \return the status
 */
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod);
+
+/*!
+\brief Protect module from beeing unloaded
+\param mod the module name
+\return the status
+*/
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_protect(const char *mod);
 
 /*!
   \brief Unoad a module

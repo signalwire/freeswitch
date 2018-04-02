@@ -29,6 +29,7 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Joseph Sullivan <jossulli@amazon.com>
  * Seven Du <dujinfang@gmail.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * switch_core.c -- Main Core Library
  *
@@ -2015,10 +2016,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_core_state_machine_init(runtime.memory_pool);
 
-	if (switch_core_sqldb_start(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_SQL) ? SWITCH_TRUE : SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
-		*err = "Error activating database";
-		return SWITCH_STATUS_FALSE;
-	}
 	switch_core_media_init();
 	switch_scheduler_task_thread_start();
 
@@ -2343,11 +2340,7 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {
 					runtime.dbname = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
-					if (switch_odbc_available() || switch_pgsql_available()) {
-						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
-					}
+					runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-non-sqlite-db-required") && !zstr(val)) {
 					switch_set_flag((&runtime), SCF_CORE_NON_SQLITE_DB_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
@@ -2425,6 +2418,20 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 			"\n");
 }
 
+switch_status_t switch_core_sqldb_init(const char **err)
+{
+	if (switch_core_check_core_db_dsn() != SWITCH_STATUS_SUCCESS) {
+		*err = "NO SUITABLE DATABASE INTERFACE IS AVAILABLE TO SERVE 'core-db-dsn'!\n";
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_core_sqldb_start(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_SQL) ? SWITCH_TRUE : SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+		*err = "Error activating database";
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
@@ -2969,6 +2976,13 @@ SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void)
 	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
+void switch_core_sqldb_destroy()
+{
+	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
+		switch_core_sqldb_stop();
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 	switch_event_t *event;
@@ -2989,9 +3003,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_ssl_destroy_ssl_locks();
 
-	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
-		switch_core_sqldb_stop();
-	}
 	switch_scheduler_task_thread_stop();
 
 	switch_rtp_shutdown();

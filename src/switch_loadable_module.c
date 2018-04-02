@@ -25,12 +25,14 @@
  *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * switch_loadable_module.c -- Loadable Modules
  *
  */
 
 #include <switch.h>
+#include "private/switch_core_pvt.h"
 
 /* for apr_pstrcat */
 #include <apr_strings.h>
@@ -46,6 +48,12 @@ typedef struct switch_file_node_s {
 	const char *interface_name;
 	struct switch_file_node_s *next;
 } switch_file_node_t;
+
+typedef struct switch_database_node_s {
+	const switch_database_interface_t *ptr;
+	const char *interface_name;
+	struct switch_database_node_s *next;
+} switch_database_node_t;
 
 typedef struct switch_codec_node_s {
 	const switch_codec_interface_t *ptr;
@@ -67,6 +75,7 @@ struct switch_loadable_module {
 	switch_status_t status;
 	switch_thread_t *thread;
 	switch_bool_t shutting_down;
+	switch_loadable_module_type_t type;
 };
 
 struct switch_loadable_module_container {
@@ -87,6 +96,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *say_hash;
 	switch_hash_t *management_hash;
 	switch_hash_t *limit_hash;
+	switch_hash_t *database_hash;
 	switch_hash_t *secondary_recover_hash;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
@@ -95,7 +105,7 @@ struct switch_loadable_module_container {
 static struct switch_loadable_module_container loadable_modules;
 static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy,
 								   const char **err);
-static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
+static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err, switch_loadable_module_type_t type, switch_hash_t *event_hash);
 
 static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
@@ -143,10 +153,27 @@ static void switch_loadable_module_runtime(void)
 	switch_mutex_unlock(loadable_modules.mutex);
 }
 
-static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module)
+static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module, switch_hash_t *event_hash)
 {
 	switch_event_t *event;
+	int *event_num = NULL;
+	char str_event_num[10];
+	void *val;
 	int added = 0;
+
+	if (event_hash)	{
+		if ((val = switch_core_hash_find(event_hash, "0"))) {
+			event_num = (int*)val;
+		} else {
+			if (!(event_num = malloc(sizeof(int)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation error.\n");
+				return SWITCH_STATUS_MEMERR;
+			}
+
+			*event_num = 0;
+			switch_core_hash_insert(event_hash, "0", (const void*)event_num);
+		}
+	}
 
 	new_module->key = switch_core_strdup(new_module->pool, key);
 
@@ -166,7 +193,14 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+					
+					if (!event_hash) {
+						switch_event_fire(&event);
+					} else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 			}
@@ -232,7 +266,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
-						switch_event_fire(&event);
+
+						if (!event_hash) {
+							switch_event_fire(&event);
+						}
+						else {
+							sprintf(str_event_num, "%i", ++*event_num);
+							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						}
+
 						added++;
 					}
 				}
@@ -253,7 +295,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.dialplan_hash, ptr->interface_name, (const void *) ptr);
@@ -274,7 +324,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.timer_hash, ptr->interface_name, (const void *) ptr);
@@ -297,7 +355,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.application_hash, ptr->interface_name, (const void *) ptr);
@@ -320,7 +386,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.chat_application_hash, ptr->interface_name, (const void *) ptr);
@@ -343,7 +417,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.api_hash, ptr->interface_name, (const void *) ptr);
@@ -366,7 +448,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.json_api_hash, ptr->interface_name, (const void *) ptr);
@@ -394,7 +484,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
-						switch_event_fire(&event);
+
+						if (!event_hash) {
+							switch_event_fire(&event);
+						}
+						else {
+							sprintf(str_event_num, "%i", ++*event_num);
+							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						}
+
 						added++;
 					}
 					node = switch_core_alloc(new_module->pool, sizeof(*node));
@@ -405,6 +503,52 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					}
 
 					switch_core_hash_insert(loadable_modules.file_hash, ptr->extens[i], (const void *) node);
+				}
+			}
+		}
+	}
+
+	if (new_module->module_interface->database_interface) {
+		const switch_database_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->database_interface; ptr; ptr = ptr->next) {
+			if (!ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load database interface from %s due to no interface name.\n", key);
+			}
+			else if (!ptr->prefixes) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load database interface from %s due to no prefixes.\n", key);
+			}
+			else {
+				int i;
+				switch_database_node_t *node, *head;
+
+				for (i = 0; ptr->prefixes[i]; i++) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding dsn prefix '%s'\n", ptr->prefixes[i]);
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "database");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
+
+						if (!event_hash) {
+							switch_event_fire(&event);
+						}
+						else {
+							sprintf(str_event_num, "%i", ++*event_num);
+							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						}
+
+						added++;
+					}
+					node = switch_core_alloc(new_module->pool, sizeof(*node));
+					node->ptr = ptr;
+					node->interface_name = switch_core_strdup(new_module->pool, new_module->module_interface->module_name);
+					if ((head = switch_core_hash_find(loadable_modules.database_hash, ptr->prefixes[i]))) {
+						node->next = head;
+					}
+
+					switch_core_hash_insert(loadable_modules.database_hash, ptr->prefixes[i], (const void *)node);
 				}
 			}
 		}
@@ -423,7 +567,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.speech_hash, ptr->interface_name, (const void *) ptr);
@@ -444,7 +596,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.asr_hash, ptr->interface_name, (const void *) ptr);
@@ -465,7 +625,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.directory_hash, ptr->interface_name, (const void *) ptr);
@@ -486,7 +654,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.chat_hash, ptr->interface_name, (const void *) ptr);
@@ -507,7 +683,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-					switch_event_fire(&event);
+
+					if (!event_hash) {
+						switch_event_fire(&event);
+					}
+					else {
+						sprintf(str_event_num, "%i", ++*event_num);
+						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+					}
+
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.say_hash, ptr->interface_name, (const void *) ptr);
@@ -534,7 +718,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-						switch_event_fire(&event);
+
+						if (!event_hash) {
+							switch_event_fire(&event);
+						}
+						else {
+							sprintf(str_event_num, "%i", ++*event_num);
+							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						}
+
 						added++;
 					}
 				}
@@ -561,7 +753,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-						switch_event_fire(&event);
+
+						if (!event_hash) {
+							switch_event_fire(&event);
+						}
+						else {
+							sprintf(str_event_num, "%i", ++*event_num);
+							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						}
+
 						added++;
 					}
 				}
@@ -576,7 +776,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", new_module->key);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-			switch_event_fire(&event);
+
+			if (!event_hash) {
+				switch_event_fire(&event);
+			}
+			else {
+				sprintf(str_event_num, "%i", ++*event_num);
+				switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+			}
+
 			added++;
 		}
 	}
@@ -1215,6 +1423,62 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		}
 	}
 
+	if (old_module->module_interface->database_interface) {
+		const switch_database_interface_t *ptr;
+		switch_database_node_t *node, *head, *last = NULL;
+
+		for (ptr = old_module->module_interface->database_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				int i;
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+					ptr->interface_name);
+
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				}
+				else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
+				}
+
+				for (i = 0; ptr->prefixes[i]; i++) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting dsn prefix '%s'\n", ptr->prefixes[i]);
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "database");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
+						switch_event_fire(&event);
+						removed++;
+					}
+
+					if ((head = switch_core_hash_find(loadable_modules.database_hash, ptr->prefixes[i]))) {
+						for (node = head; node; node = node->next) {
+							if (!strcmp(node->interface_name, old_module->module_interface->module_name)) {
+								if (node == head) {
+									if ((node = node->next)) {
+										switch_core_hash_insert(loadable_modules.database_hash, ptr->prefixes[i], (const void *)node);
+									}
+									else {
+										switch_core_hash_delete(loadable_modules.database_hash, ptr->prefixes[i]);
+									}
+								}
+								else {
+									if (last) {
+										last->next = node->next;
+									}
+								}
+								break;
+							}
+							last = node;
+						}
+					}
+				}
+
+				switch_cache_db_database_interface_flush_handles(old_module->module_interface->database_interface);
+			}
+		}
+	}
+
 	if (old_module->module_interface->speech_interface) {
 		const switch_speech_interface_t *ptr;
 
@@ -1546,10 +1810,10 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 }
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *dir, const char *fname, switch_bool_t runtime, const char **err)
 {
-	return switch_loadable_module_load_module_ex(dir, fname, runtime, SWITCH_FALSE, err);
+	return switch_loadable_module_load_module_ex(dir, fname, runtime, SWITCH_FALSE, err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, NULL);
 }
 
-static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err)
+static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err, switch_loadable_module_type_t type, switch_hash_t *event_hash)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -1593,7 +1857,9 @@ static switch_status_t switch_loadable_module_load_module_ex(const char *dir, co
 		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
 	} else if ((status = switch_loadable_module_load_file(path, file, global, &new_module)) == SWITCH_STATUS_SUCCESS) {
-		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
+		new_module->type = type;
+
+		if ((status = switch_loadable_module_process(file, new_module, event_hash)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
 				new_module->thread = switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
 			}
@@ -1621,6 +1887,30 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
 	if (switch_core_hash_find(loadable_modules.module_hash, mod)) {
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_protect(const char *mod)
+{
+	switch_loadable_module_t *module = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(mod)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(loadable_modules.mutex);
+	if ((module = switch_core_hash_find(loadable_modules.module_hash, mod))) {
+		if (!module->perm) {
+			module->perm++;
+		}
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	else {
 		status = SWITCH_STATUS_FALSE;
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
@@ -1801,7 +2091,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 		module->thread = switch_core_launch_thread(switch_loadable_module_exec, module, module->pool);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
-	return switch_loadable_module_process((char *) module->filename, module);
+	return switch_loadable_module_process((char *) module->filename, module, NULL);
 }
 
 #ifdef WIN32
@@ -1826,12 +2116,17 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	apr_finfo_t finfo = { 0 };
 	apr_dir_t *module_dir_handle = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
+	char *precf = "pre_load_modules.conf";
 	char *cf = "modules.conf";
 	char *pcf = "post_load_modules.conf";
 	switch_xml_t cfg, xml;
 	unsigned char all = 0;
 	unsigned int count = 0;
 	const char *err;
+	switch_hash_t *event_hash;
+	switch_hash_index_t *hi;
+	void *hash_val;
+	switch_event_t *event;
 
 
 #ifdef WIN32
@@ -1869,20 +2164,93 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.say_hash);
 	switch_core_hash_init_nocase(&loadable_modules.management_hash);
 	switch_core_hash_init_nocase(&loadable_modules.limit_hash);
+	switch_core_hash_init_nocase(&loadable_modules.database_hash);
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash);
 	switch_core_hash_init(&loadable_modules.secondary_recover_hash);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
 	if (!autoload) return SWITCH_STATUS_SUCCESS;
+	
+	/*
+		switch_core_sqldb_init() is not yet ready and is executed after starting modules from pre_load_modules.conf
+		Modules loading procedure generates events used by sqldb.
+		This is why we should hold those events (storing in the event_hash) not firing them until sqldb is ready.
+	*/
+	switch_core_hash_init(&event_hash);
 
-	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);
-	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_FALSE, &err);
-	switch_loadable_module_load_module("", "CORE_SPEEX_MODULE", SWITCH_FALSE, &err);
+	switch_loadable_module_load_module_ex("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
+	switch_loadable_module_load_module_ex("", "CORE_PCM_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
+	switch_loadable_module_load_module_ex("", "CORE_SPEEX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
 #ifdef SWITCH_HAVE_YUV
 #ifdef SWITCH_HAVE_VPX
-	switch_loadable_module_load_module("", "CORE_VPX_MODULE", SWITCH_FALSE, &err);
+	switch_loadable_module_load_module_ex("", "CORE_VPX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
 #endif
 #endif
+
+	if ((xml = switch_xml_open_cfg(precf, &cfg, NULL))) {
+		switch_xml_t mods, ld;
+		if ((mods = switch_xml_child(cfg, "modules"))) {
+			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				switch_bool_t global = SWITCH_FALSE;
+				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *path = switch_xml_attr_soft(ld, "path");
+				const char *critical = switch_xml_attr_soft(ld, "critical");
+				const char *sglobal = switch_xml_attr_soft(ld, "global");
+
+				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
+					continue;
+				}
+				global = switch_true(sglobal);
+
+				if (path && zstr(path)) {
+					path = SWITCH_GLOBAL_dirs.mod_dir;
+				}
+				if (switch_loadable_module_load_module_ex((char *)path, (char *)val, SWITCH_FALSE, global, &err, SWITCH_LOADABLE_MODULE_TYPE_PRELOAD, event_hash) == SWITCH_STATUS_GENERR) {
+					if (critical && switch_true(critical)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
+
+						if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
+							switch_safe_free(hash_val);
+						}
+						switch_core_hash_destroy(&event_hash);
+
+						abort();
+					}
+				}
+				count++;
+			}
+		}
+		switch_xml_free(xml);
+
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
+	}
+
+	if (switch_core_sqldb_init(&err) != SWITCH_STATUS_SUCCESS)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Loading modules interrupted. [Error: %s]\n", err);
+		if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
+			switch_safe_free(hash_val);
+		}
+		switch_core_hash_destroy(&event_hash);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	/* sqldb is ready. Fire holding events! */
+	if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
+		switch_safe_free(hash_val);
+		switch_core_hash_delete(event_hash, "0");
+	}
+
+	for (hi = switch_core_hash_first(event_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &hash_val);
+		event = (switch_event_t *)hash_val;
+		switch_event_fire(&event);
+	}
+
+	switch_core_hash_destroy(&event_hash);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
@@ -1902,7 +2270,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (path && zstr(path)) {
 					path = SWITCH_GLOBAL_dirs.mod_dir;
 				}
-				if (switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_GENERR) {
+				if (switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, NULL) == SWITCH_STATUS_GENERR) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
 						abort();
@@ -1935,7 +2303,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (path && zstr(path)) {
 					path = SWITCH_GLOBAL_dirs.mod_dir;
 				}
-				switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err);
+				switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err, SWITCH_LOADABLE_MODULE_TYPE_POSTLOAD, NULL);
 				count++;
 			}
 		}
@@ -2047,6 +2415,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 {
 	switch_hash_index_t *hi;
 	void *val;
+	const void *key;
 	switch_loadable_module_t *module;
 	int i;
 
@@ -2068,9 +2437,36 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 
 	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
-		module = (switch_loadable_module_t *) val;
-		if (!module->perm) {
+		module = (switch_loadable_module_t *)val;
+		if (module->type != SWITCH_LOADABLE_MODULE_TYPE_PRELOAD && !module->perm) {
 			do_shutdown(module, SWITCH_TRUE, SWITCH_FALSE, SWITCH_FALSE, NULL);
+		}
+	}
+
+	switch_yield(1000000);
+
+	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi;) {
+		switch_core_hash_this(hi, &key, NULL, &val);
+		module = (switch_loadable_module_t *)val;
+
+		hi = switch_core_hash_next(&hi);
+
+		if (module->type != SWITCH_LOADABLE_MODULE_TYPE_PRELOAD && !module->perm) {
+			if (do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE, SWITCH_FALSE, NULL) == SWITCH_STATUS_SUCCESS)
+			{
+				switch_core_hash_delete(loadable_modules.module_hash, key);
+			}
+		}
+	}
+
+	switch_core_sqldb_destroy();
+
+	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
+		if ((module = (switch_loadable_module_t *)val)) {
+			if (module->type == SWITCH_LOADABLE_MODULE_TYPE_PRELOAD && !module->perm) {
+				do_shutdown(module, SWITCH_TRUE, SWITCH_FALSE, SWITCH_FALSE, NULL);
+			}
 		}
 	}
 
@@ -2078,9 +2474,10 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 
 	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
-		module = (switch_loadable_module_t *) val;
-		if (!module->perm) {
-			do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE, SWITCH_FALSE, NULL);
+		if ((module = (switch_loadable_module_t *)val)) {
+			if (module->type == SWITCH_LOADABLE_MODULE_TYPE_PRELOAD && !module->perm) {
+				do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE, SWITCH_FALSE, NULL);
+			}
 		}
 	}
 
@@ -2100,6 +2497,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.say_hash);
 	switch_core_hash_destroy(&loadable_modules.management_hash);
 	switch_core_hash_destroy(&loadable_modules.limit_hash);
+	switch_core_hash_destroy(&loadable_modules.database_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
 
 	switch_core_destroy_memory_pool(&loadable_modules.pool);
@@ -2137,6 +2535,34 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
 			}
 		} else {
 			i = (switch_file_interface_t *) head->ptr;
+		}
+	}
+
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	if (i) PROTECT_INTERFACE(i);
+
+	return i;
+}
+
+SWITCH_DECLARE(switch_database_interface_t *) switch_loadable_module_get_database_interface(const char *name, const char *modname)
+{
+	switch_database_interface_t *i = NULL;
+	switch_database_node_t *node, *head;
+
+	switch_mutex_lock(loadable_modules.mutex);
+
+	if ((head = switch_core_hash_find(loadable_modules.database_hash, name))) {
+		if (modname) {
+			for (node = head; node; node = node->next) {
+				if (!strcasecmp(node->interface_name, modname)) {
+					i = (switch_database_interface_t *)node->ptr;
+					break;
+				}
+			}
+		}
+		else {
+			i = (switch_database_interface_t *)head->ptr;
 		}
 	}
 
@@ -2710,6 +3136,9 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 
 	case SWITCH_LIMIT_INTERFACE:
 		ALLOC_INTERFACE(limit)
+
+	case SWITCH_DATABASE_INTERFACE:
+		ALLOC_INTERFACE(database)
 
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Module Type!\n");

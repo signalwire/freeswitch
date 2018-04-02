@@ -28,6 +28,7 @@
  * Joseph Sullivan <jossulli@amazon.com>
  * Raymond Chandler <intralanman@freeswitch.org>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * switch_types.h -- Data Types
  *
@@ -400,6 +401,7 @@ typedef enum {
 	SWITCH_LIMIT_INTERFACE,
 	SWITCH_CHAT_APPLICATION_INTERFACE,
 	SWITCH_JSON_API_INTERFACE,
+	SWITCH_DATABASE_INTERFACE,
 } switch_module_interface_name_t;
 
 typedef enum {
@@ -2290,6 +2292,7 @@ typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_pgsql_handle switch_pgsql_handle_t;
 typedef struct switch_pgsql_result switch_pgsql_result_t;
+typedef struct switch_database_interface_handle switch_database_interface_handle_t;
 
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_speech_handle switch_speech_handle_t;
@@ -2313,6 +2316,7 @@ typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef struct switch_limit_interface switch_limit_interface_t;
+typedef struct switch_database_interface switch_database_interface_t;
 
 typedef void (*hashtable_destructor_t)(void *ptr);
 
