@@ -470,6 +470,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile Include="..\..\src\switch_stun.c" />
     <ClCompile Include="..\..\src\switch_time.c" />
     <ClCompile Include="..\..\src\switch_utils.c" />
+    <ClCompile Include="..\..\src\switch_vad.c" />
     <ClCompile Include="..\..\src\switch_version.c" />
     <ClCompile Include="..\..\src\switch_vpx.c" />
     <ClCompile Include="..\..\src\switch_jitterbuffer.c" />
@@ -805,6 +806,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClInclude Include="..\..\src\include\switch_stun.h" />
     <ClInclude Include="..\..\src\include\switch_types.h" />
     <ClInclude Include="..\..\src\include\switch_utils.h" />
+    <ClInclude Include="..\..\src\include\switch_vad.h" />
     <ClInclude Include="..\..\src\include\switch_version.h" />
     <ClInclude Include="..\..\src\include\switch_vpx.h" />
     <ClInclude Include="..\..\src\include\switch_xml.h" />
