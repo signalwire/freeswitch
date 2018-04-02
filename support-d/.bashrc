@@ -75,7 +75,7 @@ if [ "${UNAME}" = "Darwin" ]; then
 	alias canary='CHROME_LOG_FILE=chrome.log /Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
     fi
     if [ -d "/Applications/Google Chrome.app" ]; then
-	alias chrome='CHROME_LOG_FILE=chrome.log /Applications/Google\ Chrome.app/Concd outtents/MacOS/Google\ Chrome --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
+	alias chrome='CHROME_LOG_FILE=chrome.log /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
     fi
 fi
 
@@ -92,6 +92,11 @@ export LESSCHARSET="latin1"
 export LESS="-R"
 export CHARSET="ISO-8859-1"
 export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[\033[00m\]<\#>:'
+if [ -f /usr/src/freeswitch.git/support-d/git-prompt.sh ]; then
+    . /usr/src/freeswitch.git/support-d/git-prompt.sh
+    . /usr/src/freeswitch.git/support-d/git-completion.bash
+    export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w$(__git_ps1)\n\[\033[00m\]<\#>:'
+fi
 export PS2="\[\033[1m\]> \[\033[0m\]"
 if [ -f ~/.viplease ]; then
     if [ -f /usr/bin/vim ]; then
