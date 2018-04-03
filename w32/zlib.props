@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <zlibImported>true</zlibImported>
+  </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="zlib-version.props" Condition=" '$(zlibVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
@@ -8,10 +11,12 @@
   <PropertyGroup>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+    <LibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">zlibd</LibraryFileName> 
+    <LibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">zlib</LibraryFileName> 
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <zliblibDir>$(BaseDir)libs\zlib-$(zlibVersion)</zliblibDir>
+    <zlibLibDir>$(BaseDir)libs\zlib-$(zlibVersion)</zlibLibDir>
   </PropertyGroup>
 
   <!-- 
@@ -37,7 +42,7 @@
   <Target Name="zlibBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
-           expectfileordirectory="$(zliblibDir)\binaries\$(Platform)\$(LibraryConfiguration)\zlib.lib"
+           expectfileordirectory="$(zlibLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(LibraryFileName).lib"
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
@@ -46,12 +51,22 @@
   <Target Name="zlibHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-headers.zip"
-           expectfileordirectory="$(zliblibDir)\include\zlib.h" 
+           expectfileordirectory="$(zlibLibDir)\include\zlib.h" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
       />
   </Target> 
+
+  <Target Name="zlibcopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="zlibBinariesDownloadTarget">  
+      <ItemGroup>  
+          <zlibFiles Include="$(zlibLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\bin\*.dll" />
+      </ItemGroup>  
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(LibraryConfiguration)\$(LibraryFileName).dll')"
+          SourceFiles="@(zlibFiles)"  
+          DestinationFiles="@(zlibFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+      />  
+  </Target>   
 
   <ItemDefinitionGroup>
     <ClCompile>
@@ -59,8 +74,8 @@
       <PreprocessorDefinitions>HAVE_ZLIB;ZLIB_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(LibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

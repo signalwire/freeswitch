@@ -4,7 +4,7 @@
     <Import Project="curl-version.props" Condition=" '$(curlVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
     <Import Project="openssl.props" />
-    <Import Project="zlib.props" />
+    <Import Project="zlib.props" Condition=" '$(zlibImported)' == '' "/>
   </ImportGroup>
   <PropertyGroup>
     <CurlPropsImported>true</CurlPropsImported>
