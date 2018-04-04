@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <libsndfileImported>true</libsndfileImported>
+  </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libsndfile-version.props" Condition=" '$(libsndfileVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <libsndfileLibDir>$(BaseDir)libs\libsndfile-$(libsndfileVersion)</libsndfileLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libsndfileBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/libsndfile/$(libsndfileVersion)/libsndfile-$(libsndfileVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(libsndfileLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\libsndfile-1.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="libsndfileHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/libsndfile/$(libsndfileVersion)/libsndfile-$(libsndfileVersion)-headers.zip"
+           expectfileordirectory="$(libsndfileLibDir)\include\sndfile.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
+  <Target Name="libsndfilecopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libsndfileBinariesDownloadTarget">
+      <ItemGroup>
+          <libsndfileFiles Include="$(libsndfileLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\bin\libsndfile-1.dll" />
+      </ItemGroup>
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(LibraryConfiguration)\libsndfile-1.dll')"
+          SourceFiles="@(libsndfileFiles)"
+          DestinationFiles="@(libsndfileFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\libsndfile-$(libsndfileVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\libsndfile-$(libsndfileVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
