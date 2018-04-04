@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="curl-version.props" Condition=" '$(curlVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
-    <Import Project="openssl.props" />
+    <Import Project="openssl.props" Condition=" '$(OpensslPropsImported)' == '' "/>
     <Import Project="zlib.props" Condition=" '$(zlibImported)' == '' "/>
   </ImportGroup>
   <PropertyGroup>
