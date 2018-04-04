@@ -5,6 +5,10 @@
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
 
+  <PropertyGroup>
+    <libpqPropsImported>true</libpqPropsImported>
+  </PropertyGroup>
+
   <PropertyGroup Label="UserMacros">
     <libpqlibDir>$(BaseDir)libs\libpq-$(libpqVersion)</libpqlibDir>
   </PropertyGroup>

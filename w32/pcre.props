@@ -1,18 +1,85 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="pcre-version.props" Condition=" '$(PCREVersionImported)' == ''"/>
+    <Import Project="pcre-version.props" Condition=" '$(pcreVersionImported)' == ''"/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <PCREPropsImported>true</PCREPropsImported>
+    <pcrePropsImported>true</pcrePropsImported>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">pcred</PCRELibraryFileName>
+    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">pcre</PCRELibraryFileName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <pcreLibDir>$(BaseDir)libs\pcre-$(pcreVersion)</pcreLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="pcreBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/pcre/$(pcreVersion)/pcre-$(pcreVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(pcreLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(PCRELibraryFileName).lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="pcreHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/windows/packages/pcre/$(pcreVersion)/pcre-$(pcreVersion)-headers.zip"
+           expectfileordirectory="$(pcreLibDir)\include\pcre.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
+  <Target Name="pcrecopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="pcreBinariesDownloadTarget">
+      <ItemGroup>
+          <pcreFiles Include="$(pcreLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\bin\$(PCRELibraryFileName).dll" />
+      </ItemGroup>
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(LibraryConfiguration)\$(PCRELibraryFileName).dll')"
+          SourceFiles="@(pcreFiles)"
+          DestinationFiles="@(pcreFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BaseDir)libs\pcre-$(PCREVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BaseDir)libs\pcre-$(pcreVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\pcre-$(pcreVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition=" '$(LibraryConfiguration)' == 'Debug' ">pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition=" '$(LibraryConfiguration)' == 'Release' ">pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

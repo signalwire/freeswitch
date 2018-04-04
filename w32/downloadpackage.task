@@ -66,8 +66,8 @@ using System.Diagnostics;
 
             TaskCanceled = new ManualResetEvent(false);
 
-            Log.LogMessage(MessageImportance.High,
-                 "Checking for package \"" + package + "\".");          
+            //Log.LogMessage(MessageImportance.High,
+            //     "Checking for package \"" + package + "\".");
 
             //Log.LogMessage(MessageImportance.High,
             //    "BaseDir \"" + basedir + "\"");
@@ -83,8 +83,8 @@ using System.Diagnostics;
 
             if (FileOrDirectoryExists(expectfileordirectory))
             {
-                Log.LogMessage(MessageImportance.High,
-                    "Package \"" + package + "\" exists. Do nothing.");
+                //Log.LogMessage(MessageImportance.High,
+                //    "Package \"" + package + "\" exists. Do nothing.");
             }
             else
             {               
