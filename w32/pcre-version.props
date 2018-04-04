@@ -4,16 +4,16 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <PCREVersion>8.34</PCREVersion>
+    <pcreVersion>8.34</pcreVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <PCREVersionImported>true</PCREVersionImported>
+    <pcreVersionImported>true</pcreVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="PCREVersion">
-      <Value>$(PCREVersion)</Value>
+    <BuildMacro Include="pcreVersion">
+      <Value>$(pcreVersion)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

@@ -47,8 +47,8 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <Import Project="$(SolutionDir)\w32\curl.props" />
-  <Import Project="$(SolutionDir)\w32\openssl.props" />
+  <Import Project="$(SolutionDir)\w32\curl.props" Condition=" '$(CurlPropsImported)' == '' "/>
+  <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' "/>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
