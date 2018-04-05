@@ -93,6 +93,31 @@ static inline cJSON *json_add_child_string(cJSON *json, const char *name, const 
 	return new_json;
 }
 
+static inline int cJSON_isTrue(cJSON *json)
+{
+	if (!json) return 0;
+
+	if (json->type == cJSON_True) return 1;
+
+	if (json->type == cJSON_String && (
+		!strcasecmp(json->valuestring, "yes") ||
+		!strcasecmp(json->valuestring, "on") ||
+		!strcasecmp(json->valuestring, "true") ||
+		!strcasecmp(json->valuestring, "t") ||
+		!strcasecmp(json->valuestring, "enabled") ||
+		!strcasecmp(json->valuestring, "active") ||
+		!strcasecmp(json->valuestring, "allow") ||
+		atoi(json->valuestring))) {
+		return 1;
+	}
+
+	if (json->type == cJSON_Number && (json->valueint || json->valuedouble)) {
+		return 1;
+	}
+
+	return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
