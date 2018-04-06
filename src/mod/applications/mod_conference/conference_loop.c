@@ -1528,6 +1528,7 @@ void conference_loop_output(conference_member_t *member)
 
 					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_mutex_unlock(member->audio_out_mutex);
+						switch_mutex_unlock(member->write_mutex);
 						break;
 					}
 				}
