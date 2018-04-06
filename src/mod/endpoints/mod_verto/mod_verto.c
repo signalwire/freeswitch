@@ -2236,6 +2236,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 			switch_channel_set_variable(tech_pvt->channel, "verto_profile_name", jsock->profile->name);
 
 			if (!switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
+				switch_channel_set_variable(tech_pvt->channel, "codec_string", NULL);
 				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 
 				if ((status = switch_core_media_choose_ports(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE)) != SWITCH_STATUS_SUCCESS) {
