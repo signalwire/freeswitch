@@ -35,9 +35,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-using namespace std;
-using namespace cv;
-
 #include <switch.h>
 
 #include "highgui.h"
@@ -48,9 +45,14 @@ using namespace cv;
 
 switch_loadable_module_interface_t *MODULE_INTERFACE;
 
+SWITCH_BEGIN_EXTERN_C
 SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown);
 SWITCH_MODULE_DEFINITION(mod_cv, mod_cv_load, mod_cv_shutdown, NULL);
+SWITCH_END_EXTERN_C
+
+using namespace std;
+using namespace cv;
 
 static const int NCHANNELS = 3;
 
@@ -559,7 +561,7 @@ static void parse_stats(struct detect_stats *stats, uint32_t size, uint64_t skip
 void detectAndDraw(cv_context_t *context)
 {
     double scale = 1;
-    Mat img(context->rawImage);
+	Mat img = cvarrToMat(context->rawImage);
 
     switch_mutex_lock(context->mutex);
 
@@ -890,7 +892,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             int shape_w, shape_h;
             int cx, cy;
 
-            if (!overlay->png || context->overlay[i]->abs == POS_NONE && !context->detect_event && !context->shape[0].cx) {
+            if (!overlay->png || (context->overlay[i]->abs == POS_NONE && !context->detect_event && !context->shape[0].cx)) {
                 continue;
             }
 
