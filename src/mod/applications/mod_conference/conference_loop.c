@@ -1346,6 +1346,10 @@ void conference_loop_output(conference_member_t *member)
 		int to = 60;
 		int wait_sec = 2;
 		int loops = 0;
+		switch_event_t *var_event;
+
+		switch_event_create(&var_event, SWITCH_EVENT_CHANNEL_DATA);
+		switch_channel_process_export(channel, NULL, var_event, "conference_auto_outcall_export_vars");
 
 		if (ann && !switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
 			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
@@ -1377,9 +1381,11 @@ void conference_loop_output(conference_member_t *member)
 			}
 			for (x = 0; x < argc; x++) {
 				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
+				switch_event_t *event = NULL;
+				switch_event_dup(&event, var_event);
 				switch_assert(dial_str);
 				conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL,
-									  profile, &member->conference->cancel_cause, NULL);
+									  profile, &member->conference->cancel_cause, &event);
 				switch_safe_free(dial_str);
 			}
 			switch_safe_free(cpstr);
