@@ -856,3 +856,5 @@ pcre-*/
 pcre-*
 libsndfile-*/
 libsndfile-*
+opencv-*/
+opencv-*

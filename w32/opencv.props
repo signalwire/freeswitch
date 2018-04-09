@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <opencvImported>true</opencvImported>
+  </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="opencv-version.props" Condition=" '$(opencvVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">opencv_world341d</OpenCVLibraryFileName> 
+    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">opencv_world341</OpenCVLibraryFileName> 
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <opencvLibDir>$(BaseDir)libs\opencv-$(opencvVersion)</opencvLibDir>
+  </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="opencvBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/opencv/$(opencvVersion)/opencv-$(opencvVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(opencvLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(OpenCVLibraryFileName).lib"
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+  <Target Name="opencvHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/opencv/$(opencvVersion)/opencv-$(opencvVersion)-headers.zip"
+           expectfileordirectory="$(opencvLibDir)\include\opencv\cv.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+
+  <Target Name="opencvcopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="opencvBinariesDownloadTarget">  
+      <ItemGroup>  
+          <opencvFiles Include="$(opencvLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\bin\*.dll" />
+      </ItemGroup>  
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(LibraryConfiguration)\$(OpenCVLibraryFileName).dll')"
+          SourceFiles="@(opencvFiles)"  
+          DestinationFiles="@(opencvFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+      />  
+  </Target>   
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(opencvLibDir)\include\;$(opencvLibDir)\include\opencv\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\opencv-$(opencvVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OpenCVLibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
