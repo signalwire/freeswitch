@@ -4901,6 +4901,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		if (!(sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
 			return SWITCH_STATUS_NOT_INITALIZED;
 		}
+
+		switch_ivr_resume_detect_speech(session);
 	}
 
 	if (switch_core_asr_load_grammar(sth->ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
