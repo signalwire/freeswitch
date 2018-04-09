@@ -775,10 +775,10 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			if (!d_w) d_w = img->d_w;
 			if (!d_h) d_h = img->d_h;
 			
-			//if (d_w && d_h && (d_w != img->d_w || d_h != img->d_h)) {
+			if (d_w && d_h && (d_w != img->d_w || d_h != img->d_h)) {
 				/* scale to match established stream */
-			//	switch_img_fit(&img, d_w, d_h, SWITCH_FIT_SIZE);
-			//}
+				switch_img_fit(&img, d_w, d_h, SWITCH_FIT_SIZE);
+			}
 		} else {
 			continue;
 		}
