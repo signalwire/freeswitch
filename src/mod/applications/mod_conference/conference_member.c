@@ -73,6 +73,7 @@ void conference_member_bind_controls(conference_member_t *member, const char *co
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Name", member->conference->name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Profile", member->conference->profile_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Controls", controls);
 
