@@ -1324,6 +1324,8 @@ PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
 PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
   AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
+PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
+  AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
   AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
@@ -1333,7 +1335,7 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
     else
       AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])
     fi],[
-    AM_CONDITIONAL([HAVE_LDNS],[true])])])
+    AM_CONDITIONAL([HAVE_LDNS],[true])])])])
 PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
