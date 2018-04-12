@@ -414,7 +414,7 @@ void output_flattened_dial_string(char *data, switch_stream_handle_t *stream)
 SWITCH_STANDARD_API(list_users_function)
 {
 	int argc;
-	char *pdata, *argv[9];
+	char *pdata = NULL, *argv[9];
 	int32_t arg = 0;
 	switch_xml_t xml_root, x_domains, x_domain_tag;
 	switch_xml_t gts, gt, uts, ut;
@@ -422,7 +422,7 @@ SWITCH_STANDARD_API(list_users_function)
 	char *tag_name = NULL, *key_name = NULL, *key_value = NULL;
 	char *_domain = NULL;
 
-	if ((pdata = strdup(cmd))) {
+	if (!zstr(cmd) && (pdata = strdup(cmd))) {
 		argc = switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (argc >= 9) {
