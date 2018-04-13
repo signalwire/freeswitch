@@ -495,7 +495,7 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
   \param expr a string expression
   \return true or false
 */
-static inline int switch_true(const char *expr)
+static inline switch_bool_t switch_true(const char *expr)
 {
 	return ((expr && ( !strcasecmp(expr, "yes") ||
 					   !strcasecmp(expr, "on") ||
