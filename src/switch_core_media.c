@@ -2079,6 +2079,8 @@ SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session)
 	switch_core_session_unset_write_codec(session);
 	switch_core_media_deactivate_rtp(session);
 
+	if (a_engine->write_fb) switch_frame_buffer_destroy(&a_engine->write_fb);
+
 	if (smh->msrp_session) switch_msrp_session_destroy(&smh->msrp_session);
 }
 
@@ -7087,7 +7089,6 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 	mh->up = 0;
 	switch_mutex_unlock(smh->control_mutex);
 
-	switch_frame_buffer_destroy(&a_engine->write_fb);
 	switch_core_timer_destroy(&timer);
 
 	switch_core_session_rwunlock(session);
