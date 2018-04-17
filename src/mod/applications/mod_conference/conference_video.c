@@ -1272,8 +1272,8 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
 {
 	switch_rgb_color_t fgcolor, bgcolor;
-	int font_scale = 1;
-	uint16_t font_size = 0;
+	float font_scale = 1;
+	uint16_t min_font_size = 5, max_font_size = 24, font_size = 0;
 	const char *fg = "#cccccc";
 	const char *bg = "#142e55";
 	char *parsed = NULL;
@@ -1338,8 +1338,22 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 			font_face = var;
 		}
 
-		if ((var = switch_event_get_header(params, "font_scale"))) {
+		if ((var = switch_event_get_header(params, "min_font_size"))) {
 			int tmp = atoi(var);
+			if (tmp >= min_font_size && tmp <= max_font_size) {
+				min_font_size = tmp;
+			}
+		}
+
+		if ((var = switch_event_get_header(params, "max_font_size"))) {
+			int tmp = atoi(var);
+			if (tmp >= min_font_size && tmp <= max_font_size) {
+				max_font_size = tmp;
+			}
+		}
+
+		if ((var = switch_event_get_header(params, "font_scale"))) {
+			float tmp = atof(var);
 
 			if (tmp >= 0 && tmp <= 50) {
 				font_scale = tmp;
@@ -1351,8 +1365,8 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 
 	font_size =  (uint16_t)(((double)layer->screen_w / ((double)strlen(text) / 1.2f)) * font_scale);
 
-	if (font_size <= 5) font_size = 5;
-	if (font_size >= 24) font_size = 24;
+	if (font_size <= min_font_size) font_size = min_font_size;
+	if (font_size >= max_font_size) font_size = max_font_size;
 
 	switch_color_set_rgb(&fgcolor, fg);
 	switch_color_set_rgb(&bgcolor, bg);
