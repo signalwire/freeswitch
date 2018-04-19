@@ -258,7 +258,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -309,7 +309,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
