@@ -934,9 +934,13 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 			switch_core_session_request_video_refresh(jb->session);
 		}
 	}
-
+	
 	jb_debug(jb, 2, "%s", "RESET BUFFER\n");
 
+	switch_mutex_lock(jb->mutex);
+	hide_nodes(jb);
+	switch_mutex_unlock(jb->mutex);
+	
 	jb->drop_flag = 0;
 	jb->last_target_seq = 0;
 	jb->target_seq = 0;
@@ -958,10 +962,6 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->period_miss_inc = 0;
 	jb->target_ts = 0;
 	jb->last_target_ts = 0;
-
-	switch_mutex_lock(jb->mutex);
-	hide_nodes(jb);
-	switch_mutex_unlock(jb->mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
@@ -1377,7 +1377,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		if (!jb->read_init) jb->read_init = 1;
 	} else {
 		if (jb->type == SJB_VIDEO) {
-			switch_jb_reset(jb);
+			//switch_jb_reset(jb);
 
 			switch(status) {
 			case SWITCH_STATUS_RESTART:

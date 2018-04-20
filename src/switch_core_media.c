@@ -2565,7 +2565,7 @@ static void check_jb_sync(switch_core_session_t *session)
 	uint32_t cur_frames = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *v_engine = NULL;
-	int sync_audio = 0, sync_video = 0;
+	int sync_audio = 0;
 
 	const char *var;
 
@@ -2607,34 +2607,29 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	if (!fps) return;
 
+	sync_audio = 1;
 
 	if (!frames) {
-		sync_audio = 1;
-
 		if (cur_frames && min_frames && cur_frames >= min_frames) {
 			frames = cur_frames;
+		} else if (min_frames) {
+			frames = min_frames;
 		} else {
-			frames = fps / 15;
-			if (frames < 1) frames = 1;
+			frames = 0;
+			sync_audio = 0;
 		}
 	}
 
-	if (!jb_sync_msec) {
+	if (!jb_sync_msec && frames) {
 		jb_sync_msec = (double)(1000 / fps) * frames;
 	}
 
-	if (frames != cur_frames && frames > min_frames) {
-		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames, 0);
-		sync_audio = 1;
-		sync_video = 1;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s sync_ms:%d\n",
+					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames, FPS %u a:%s sync_ms:%d\n",
 					  switch_core_session_get_uuid(session),
 					  switch_channel_get_name(session->channel),
 					  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
-					  jb_sync_msec, frames, video_globals.fps, sync_audio ? "yes" : "no", sync_video ? "yes" : "no", jb_sync_msec);
+					  jb_sync_msec, frames, video_globals.fps, sync_audio ? "yes" : "no", jb_sync_msec);
 
 	if (sync_audio) {
 		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
