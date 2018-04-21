@@ -341,6 +341,9 @@
 
     $.FSRTC.prototype.setMute = function(what) {
 	var self = this;
+    if (!self.localStream) {
+        return false;
+    }
 	var audioTracks = self.localStream.getAudioTracks();	
 
 	for (var i = 0, len = audioTracks.length; i < len; i++ ) {
@@ -370,6 +373,9 @@
 
     $.FSRTC.prototype.setVideoMute = function(what) {
 	var self = this;
+    if (!self.localStream) {
+        return false;
+    }
 	var videoTracks = self.localStream.getVideoTracks();	
 
 	for (var i = 0, len = videoTracks.length; i < len; i++ ) {
