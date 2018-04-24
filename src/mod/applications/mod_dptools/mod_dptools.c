@@ -2908,6 +2908,50 @@ SWITCH_STANDARD_APP(phrase_function)
 }
 
 
+SWITCH_STANDARD_APP(broadcast_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char * uuid = switch_channel_get_uuid(channel);
+	switch_media_flag_t flags = SMF_ECHO_ALEG | SMF_ECHO_BLEG;
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid args for broadcast app\n");
+		return;
+	}
+
+	mycmd = switch_core_session_strdup(session, data);
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc > 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid args for broadcast app [%s]\n", data);
+		return;
+	} else {
+		if (argv[1]) {
+			if (switch_stristr("both", (argv[1]))) {
+				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+			}
+
+			if (switch_stristr("aleg", argv[1])) {
+				flags |= SMF_ECHO_ALEG;
+			}
+
+			if (switch_stristr("bleg", argv[1])) {
+				flags &= ~SMF_HOLD_BLEG;
+				flags |= SMF_ECHO_BLEG;
+			}
+
+			if (switch_stristr("holdb", argv[1])) {
+				flags &= ~SMF_ECHO_BLEG;
+				flags |= SMF_HOLD_BLEG;
+			}
+		}
+		switch_ivr_broadcast(uuid, argv[0], flags);
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "BROADCAST_SENT");
+	}
+}
+
 SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
@@ -6410,6 +6454,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "park_state", "Park State", "Park State", park_state_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "gentones", "Generate Tones", "Generate tones to the channel", gentones_function, "<tgml_script>[|<loops>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "broadcast", "Broadcast File", "Broadcast a file to the session", broadcast_function, "<path> <leg>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "loop_playback", "Playback File looply", "Playback a file to the channel looply for limted times",
