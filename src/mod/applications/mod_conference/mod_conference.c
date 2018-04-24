@@ -1448,7 +1448,10 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 								   char *cid_num,
 								   char *profile,
 								   switch_call_cause_t *cause,
-								   switch_call_cause_t *cancel_cause, switch_event_t *var_event)
+								   switch_call_cause_t *cancel_cause,
+								   switch_event_t *var_event,
+								   char** peer_uuid
+								   )
 {
 	switch_core_session_t *peer_session = NULL;
 	switch_channel_t *peer_channel;
@@ -1558,6 +1561,10 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_caller_extension_t *extension = NULL;
 
+		if(peer_uuid) {
+			*peer_uuid = switch_channel_get_uuid(peer_channel);
+		}
+
 		/* build an extension name object */
 		if ((extension = switch_caller_extension_new(peer_session, conference_name, conference_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -1604,6 +1611,7 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *obj)
 {
 	struct bg_call *call = (struct bg_call *) obj;
+	char* peer_uuid = NULL;
 
 	if (call) {
 		switch_call_cause_t cause;
@@ -1612,7 +1620,7 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 
 		conference_outcall(call->conference, call->conference_name,
 						   call->session, call->bridgeto, call->timeout,
-						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event);
+						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event, &peer_uuid);
 
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -1620,6 +1628,7 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Peer-UUID", peer_uuid);
 			switch_event_fire(&event);
 		}
 
@@ -1665,6 +1674,8 @@ switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	if (var_event) {
 		call->var_event = *var_event;
 		var_event = NULL;
+	} else {
+		switch_event_create_plain(&call->var_event, SWITCH_EVENT_GENERAL);
 	}
 
 	if (conference) {
@@ -1693,6 +1704,9 @@ switch_status_t conference_outcall_bg(conference_obj_t *conference,
 
 	if (call_uuid) {
 		call->uuid = strdup(call_uuid);
+		if (call->var_event) {
+			switch_event_add_header_string(call->var_event, SWITCH_STACK_BOTTOM, "conference_bgdial_jobid", call->uuid);
+		}
 	}
 
 	if (profile) {
@@ -2290,7 +2304,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
-		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {
