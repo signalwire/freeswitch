@@ -7606,6 +7606,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_audio ::console::list_uuid stop");
 	switch_console_set_complete("add uuid_break ::console::list_uuid all");
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
+	switch_console_set_complete("add uuid_pause ::console::list_uuid on");
+	switch_console_set_complete("add uuid_pause ::console::list_uuid off");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
 	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
