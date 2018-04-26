@@ -1919,7 +1919,7 @@ GCC_DIAG_ON(deprecated-declarations)
 
 		 delta = context->video_timer.samplecount - context->last_vid_write;
 
-		 if (context->audio_timer || delta >= 60) {
+		 if (context->audio_timer || delta >= 200) {
 			 uint32_t new_pts = context->video_timer.samplecount * (handle->samplerate / 1000);
 			 if (!context->audio_timer) {
 				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Delta of %d detected.  Video timer sync: %" SWITCH_UINT64_T_FMT "/%d %" SWITCH_UINT64_T_FMT "\n", delta, context->audio_st[0].next_pts, context->video_timer.samplecount, new_pts - context->audio_st[0].next_pts);
