@@ -650,7 +650,7 @@ Build-Depends: python-dev
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
-Build-Depends: git
+Build-Depends: git, libv8fs-6.1-dev
 
 Module: languages/mod_yaml
 Description: mod_yaml
