@@ -1451,6 +1451,16 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
+PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
+  AM_CONDITIONAL([HAVE_V8FS],[true])],[
+  if module_enabled mod_v8; then
+    AC_MSG_ERROR([You need to either install libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
+  else
+    AC_MSG_RESULT([no])
+    AM_CONDITIONAL([HAVE_V8FS],[false])
+  fi
+])
+
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
@@ -1549,23 +1559,6 @@ else
 fi
 
 AX_CHECK_JAVA
-
-# Option to enable static linking of Google's V8 inside mod_v8
-AC_ARG_ENABLE(static-v8,
-[AS_HELP_STRING([--enable-static-v8], [Statically link V8 into mod_v8])], [enable_static_v8="$enableval"], [enable_static_v8="no"])
-AM_CONDITIONAL([ENABLE_STATIC_V8],[test "x$enable_static_v8" != "xno"])
-
-# Option to disable parallel build of Google's V8
-AC_ARG_ENABLE(parallel-build-v8,
-[AS_HELP_STRING([--disable-parallel-build-v8], [Disable parallel build of V8])], [enable_parallel_build_v8="$enableval"], [enable_parallel_build_v8="yes"])
-AM_CONDITIONAL([ENABLE_PARALLEL_BUILD_V8],[test "x$enable_parallel_build_v8" != "xno"])
-
-if test "`uname -m`" = "x86_64"; then
-	V8_TARGET="x64"
-else
-	V8_TARGET="x86"
-fi
-AC_SUBST(V8_TARGET)
    
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
