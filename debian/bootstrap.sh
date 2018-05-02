@@ -318,7 +318,7 @@ Build-Depends:
 # core codecs
  libogg-dev, libspeex-dev, libspeexdsp-dev,
 # configure options
- libssl-dev, unixodbc-dev, libpq-dev,
+ libssl1.0-dev | libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg-turbo8-dev | libjpeg62-dev | libjpeg8-dev,
  python-dev, python-all-dev, python-support (>= 0.90) | dh-python, erlang-dev,
 # documentation
