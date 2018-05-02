@@ -81,7 +81,7 @@ Description: Easyroute
 Module: applications/mod_enum
 Description: ENUM
  This module implements ENUM support.
-Build-Depends: libldns-dev
+Build-Depends: libldns2-fs | libldns-dev
 
 Module: applications/mod_esf
 Description: Multicast support
