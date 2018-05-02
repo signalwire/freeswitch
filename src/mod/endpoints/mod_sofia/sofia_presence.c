@@ -3634,6 +3634,8 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, broadsoft_sla_notify_callback, sh);
 	switch_safe_free(sql);
 	total = sh->total;
+	switch_core_hash_destroy(&sh->hash);
+
 	sh = NULL;
 	switch_core_destroy_memory_pool(&pool);
 
