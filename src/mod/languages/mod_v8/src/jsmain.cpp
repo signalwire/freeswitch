@@ -209,7 +209,7 @@ const string JSMain::GetExceptionInfo(Isolate* isolate, TryCatch* try_catch)
 			ss << " ";
 		}
 
-		int32_t end = message->GetEndColumn(isolate->GetCurrentContext()).FromMaybe(0);
+		int end = message->GetEndColumn();
 
 		for (int i = start; i < end; i++) {
 			ss << "^";
@@ -292,7 +292,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 
 			isolate->SetData(0, this);
 
-			Handle<ObjectTemplate> global = ObjectTemplate::New(isolate);
+			Handle<ObjectTemplate> global = ObjectTemplate::New();
 			global->Set(String::NewFromUtf8(isolate, "include"), FunctionTemplate::New(isolate, Include));
 			global->Set(String::NewFromUtf8(isolate, "require"), FunctionTemplate::New(isolate, Include));
 			global->Set(String::NewFromUtf8(isolate, "log"), FunctionTemplate::New(isolate, Log));
@@ -323,7 +323,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 				inst->obj->RegisterInstance(isolate, inst->name, inst->auto_destroy);
 			}
 
-			TryCatch try_catch(isolate);
+			TryCatch try_catch;
 
 			// Compile the source code.
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
@@ -583,7 +583,7 @@ void JSMain::ExitScript(Isolate *isolate, const char *msg)
 		js->forcedTerminationScriptFile = GetStackInfo(isolate, &js->forcedTerminationLineNumber);
 	}
 
-	isolate->TerminateExecution();
+	V8::TerminateExecution(isolate);
 }
 
 char *JSMain::GetStackInfo(Isolate *isolate, int *lineNumber)
