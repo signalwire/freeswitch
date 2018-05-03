@@ -153,17 +153,9 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 		autoDestroy = args[1]->BooleanValue();
 	} else {
 		// Create a new C++ instance
-#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-		Isolate *isolate = args.GetIsolate();
-		v8::Local<v8::Context> context = isolate->GetCurrentContext();
-		v8::Local<v8::String> key = String::NewFromUtf8(isolate, "constructor_method");
-		v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, key);
-		Handle<External> ex;
-		v8::MaybeLocal<v8::Value> hiddenValue = args.Callee()->GetPrivate(context, privateKey);
-		if (!hiddenValue.IsEmpty()) {
-			ex = Handle<External>::Cast(hiddenValue.ToLocalChecked());
-		}
-#else
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=6 
+		Handle<External> ex = Handle<External>::Cast(args.Data());
+#else 
 		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetHiddenValue(String::NewFromUtf8(args.GetIsolate(), "constructor_method")));
 #endif
 
@@ -232,13 +224,14 @@ void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 void JSBase::RegisterInstance(Isolate *isolate, string name, bool autoDestroy)
 {
 	// Get the context's global scope (that's where we'll put the constructor)
-	Handle<Object> global = isolate->GetCurrentContext()->Global();
+	Local<Context> context = isolate->GetCurrentContext();
+	Handle<Object> global = context->Global();
 
 	Local<Function> func = Local<Function>::Cast(global->Get(v8::String::NewFromUtf8(isolate, this->GetJSClassName().c_str())));
 
 	// Add the C++ instance as an argument, so it won't try to create another one.
 	Handle<Value> args[] = { External::New(isolate, this), Boolean::New(isolate, autoDestroy) };
-	Handle<Object> newObj = func->NewInstance(2, args);
+	Handle<Object> newObj = func->NewInstance(context, 2, args).ToLocalChecked();
 
 	// Add the instance to JavaScript.
 	if (name.size() > 0) {
