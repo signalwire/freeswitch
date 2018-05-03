@@ -60,7 +60,7 @@ string FSCURL::GetJSClassName()
 size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	FSCURL *obj = static_cast<FSCURL *>(data);
-	register unsigned int realsize = (unsigned int) (size * nmemb);
+	unsigned int realsize = (unsigned int) (size * nmemb);
 	uint32_t argc = 0;
 	Handle<Value> argv[4];
 
