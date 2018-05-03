@@ -127,7 +127,7 @@
 
 /* Macro for basic script state check (to know if the script is being terminated), should be called before calling any callback actual code */
 #define JS_CHECK_SCRIPT_STATE() \
-	if (info.GetIsolate()->IsExecutionTerminating()) return;\
+	if (v8::V8::IsExecutionTerminating(info.GetIsolate())) return;\
 	if (JSMain::GetScriptInstanceFromIsolate(info.GetIsolate()) && JSMain::GetScriptInstanceFromIsolate(info.GetIsolate())->GetForcedTermination()) return
 
 /* Macro for easy unlocking an isolate on a long running c call */
