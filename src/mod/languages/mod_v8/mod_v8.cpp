@@ -645,7 +645,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 			isolate->SetData(0, js);
 
 			// New global template
-			Handle<ObjectTemplate> global = ObjectTemplate::New();
+			Handle<ObjectTemplate> global = ObjectTemplate::New(isolate);
 
 			if (global.IsEmpty()) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create JS global object template\n");
@@ -793,7 +793,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 							free(path);
 						}
 
-						TryCatch try_catch;
+						TryCatch try_catch(isolate);
 
 						// Compile the source code.
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
