@@ -1221,28 +1221,28 @@ JS_SESSION_FUNCTION_IMPL(Ready)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	info.GetReturnValue().Set((this && this->_session && switch_channel_ready(switch_core_session_get_channel(this->_session))) ? true : false);
+	info.GetReturnValue().Set((this->_session && switch_channel_ready(switch_core_session_get_channel(this->_session))) ? true : false);
 }
 
 JS_SESSION_FUNCTION_IMPL(MediaReady)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	info.GetReturnValue().Set((this && this->_session && switch_channel_media_ready(switch_core_session_get_channel(this->_session))) ? true : false);
+	info.GetReturnValue().Set((this->_session && switch_channel_media_ready(switch_core_session_get_channel(this->_session))) ? true : false);
 }
 
 JS_SESSION_FUNCTION_IMPL(RingReady)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	info.GetReturnValue().Set((this && this->_session && switch_channel_test_flag(switch_core_session_get_channel(this->_session), CF_RING_READY)) ? true : false);
+	info.GetReturnValue().Set((this->_session && switch_channel_test_flag(switch_core_session_get_channel(this->_session), CF_RING_READY)) ? true : false);
 }
 
 JS_SESSION_FUNCTION_IMPL(Answered)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	info.GetReturnValue().Set((this && this->_session && switch_channel_test_flag(switch_core_session_get_channel(this->_session), CF_ANSWERED)) ? true : false);
+	info.GetReturnValue().Set((this->_session && switch_channel_test_flag(switch_core_session_get_channel(this->_session), CF_ANSWERED)) ? true : false);
 }
 
 JS_SESSION_FUNCTION_IMPL(WaitForMedia)

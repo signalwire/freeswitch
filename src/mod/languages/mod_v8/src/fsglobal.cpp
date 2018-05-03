@@ -63,7 +63,7 @@ public:
 
 size_t FSGlobal::HashCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register size_t realsize = size * nmemb;
+	size_t realsize = size * nmemb;
 	char *line, lineb[2048], *nextline = NULL, *val = NULL, *p = NULL;
 	CURLCallbackData *config_data = (CURLCallbackData *)data;
 
@@ -112,7 +112,7 @@ size_t FSGlobal::HashCallback(void *ptr, size_t size, size_t nmemb, void *data)
 
 size_t FSGlobal::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register unsigned int realsize = (unsigned int) (size * nmemb);
+	unsigned int realsize = (unsigned int) (size * nmemb);
 	CURLCallbackData *config_data = (CURLCallbackData *)data;
 
 	if ((write(config_data->fileHandle, ptr, realsize) != (int) realsize)) {
@@ -124,7 +124,7 @@ size_t FSGlobal::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 
 size_t FSGlobal::FetchUrlCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register unsigned int realsize = (unsigned int) (size * nmemb);
+	unsigned int realsize = (unsigned int) (size * nmemb);
 	CURLCallbackData *config_data = (CURLCallbackData *)data;
 
 	/* Too much data. Do not increase buffer, but abort fetch instead. */

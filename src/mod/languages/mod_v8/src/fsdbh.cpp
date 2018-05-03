@@ -335,11 +335,6 @@ JS_DBH_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	if (!this) {
-		info.GetReturnValue().Set(false);
-		return;
-	}
-
 	String::Utf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "dsn")) {
