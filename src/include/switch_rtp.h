@@ -65,7 +65,6 @@ typedef enum {
 
 typedef struct switch_srtp_crypto_suite_s {
 	char *name;
-	const char *alias;
 	switch_rtp_crypto_key_type_t type;
 	int keysalt_len;
 	int salt_len;
