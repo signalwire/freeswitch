@@ -532,10 +532,15 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
 #ifdef SWITCH_HAVE_VPX
-	switch_image_t *tmp;
+	switch_image_t *tmp = NULL;
 	uint8_t *data;
 
 	if (x >= img->d_w || y >= img->d_h) return;
+
+	if (w == img->d_w && h == img->d_h) {
+		switch_img_patch(IMG, img, X, Y);
+		return;
+	}
 
 	if (!(img->fmt & SWITCH_IMG_FMT_PLANAR)) {
 		data = img->planes[SWITCH_PLANE_PACKED];
@@ -543,7 +548,12 @@ SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, sw
 		data = img->planes[SWITCH_PLANE_Y];
 	}
 
-	tmp = (switch_image_t *)vpx_img_wrap(NULL, img->fmt, img->d_w, img->d_h, 1, data);
+	if (img->d_w == img->stride[0]) {
+		tmp = (switch_image_t *)vpx_img_wrap(NULL, img->fmt, img->d_w, img->d_h, 1, data);
+	} else {
+		switch_img_copy(img, &tmp);
+	}
+
 	if (!tmp) return;
 
 	w = MIN(img->d_w - x, w);
