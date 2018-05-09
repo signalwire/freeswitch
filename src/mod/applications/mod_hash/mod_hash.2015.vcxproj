@@ -152,7 +152,7 @@
     <ClCompile Include="mod_hash.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\esl\src\esl.2015.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\esl\src\libesl.2015.vcxproj">
       <Project>{cf405366-9558-4ae8-90ef-5e21b51ccb4e}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2015.vcxproj">
