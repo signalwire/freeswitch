@@ -359,7 +359,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libg722_1", "libs\win32\lib
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_siren", "src\mod\codecs\mod_siren\mod_siren.2015.vcxproj", "{0B6C905B-142E-4999-B39D-92FF7951E921}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esl", "libs\esl\src\esl.2015.vcxproj", "{CF405366-9558-4AE8-90EF-5E21B51CCB4E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libesl", "libs\esl\src\libesl.2015.vcxproj", "{CF405366-9558-4AE8-90EF-5E21B51CCB4E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fs_cli", "libs\esl\fs_cli.2015.vcxproj", "{D2FB8043-D208-4AEE-8F18-3B5857C871B9}"
 	ProjectSection(ProjectDependencies) = postProject
