@@ -3273,6 +3273,65 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 }
 
 
+char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix)
+{
+	char *route;
+	int count = 0;
+	char *routes[ROUTE_MAX_HEADERS] = {0};
+	int buf_len_required = (add_fs_path_prefix ? 10 : 1);  /* ;fs_path=  + nul byte*/
+	int buf_len_avail;
+	char *route_encoded_buf = NULL;
+	char *buf_p = NULL;
+
+	for (sip_route_t *rr = rt; rr; rr = rr->r_next) {
+		int route_len;
+		int route_encoded_len;
+
+		if (count >= ROUTE_MAX_HEADERS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Message exceeds ROUTE_MAX_HEADERS of %d\n", ROUTE_MAX_HEADERS);
+			break;
+		}
+
+		route = sip_header_as_string(nh->nh_home, (void *) rr);
+		route_len = (int)strlen(route);
+		route_encoded_len = (route_len * 3) + (count ? 3 : 0);
+		routes[count] = route;
+		buf_len_required += route_encoded_len;
+		count++;
+	}
+
+	switch_zmalloc(route_encoded_buf, buf_len_required);
+	buf_p = route_encoded_buf;
+	buf_len_avail = buf_len_required;
+
+	if (add_fs_path_prefix) {
+		switch_copy_string(buf_p, ";fs_path=", 10);
+		buf_p += 9;
+		buf_len_avail -= 9;
+	}
+
+	for (int i = 0; i < count; i++) {
+		int actual_encoded_len;
+		route = routes[i];
+		if (i) {
+			switch_copy_string(buf_p, "%2C", buf_len_avail);
+			buf_p += 3;
+			buf_len_avail -= 3;
+		}
+
+		switch_url_encode(route, buf_p, buf_len_avail);
+		actual_encoded_len = strlen(buf_p);
+		buf_p += actual_encoded_len;
+		buf_len_avail -= actual_encoded_len;
+
+		su_free(nua_handle_home(nh), route);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Record-Route headers [%s]\n", count, route_encoded_buf);
+	return route_encoded_buf;
+}
+
+
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
@@ -3367,19 +3426,16 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	}
 
 	if (sip->sip_record_route) {
-		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);
-		char *route = sofia_glue_strip_uri(sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_record_route));
-		char *full_contact_dup;
-		char *route_encoded;
-		int route_encoded_len;
-		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
-		route_encoded_len = (int)(strlen(route) * 3) + 1;
-		switch_zmalloc(route_encoded, route_encoded_len);
-		switch_url_encode(route, route_encoded, route_encoded_len);
-		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
-		free(route);
-		free(full_contact_dup);
-		free(route_encoded);
+		char *fs_path_str = sofia_glue_get_encoded_fs_path(nh, sip->sip_record_route, SWITCH_FALSE);
+		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
+		char *full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+		if (fs_path_str && full_contact_dup) {
+			contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, fs_path_str);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
+		}
+		switch_safe_free(fs_path_str);
+		switch_safe_free(full_contact_dup);
 	}
 	else if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);
