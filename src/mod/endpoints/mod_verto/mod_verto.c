@@ -2449,7 +2449,7 @@ static switch_status_t verto_set_media_options(verto_pvt_t *tech_pvt, verto_prof
 	tech_pvt->mparams->inbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->inbound_codec_string);
 	tech_pvt->mparams->outbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->outbound_codec_string);
 
-	tech_pvt->mparams->jb_msec = "-1";
+	tech_pvt->mparams->jb_msec = "1p:50p";
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
 	//tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;

@@ -2487,6 +2487,7 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 
 			if (strchr(val, 'p') && jb_msec > 0) {
 				jb_msec *= -1;
+				if (!maxlen) maxlen = jb_msec * 50;
 			}
 
 			if ((p = strchr(val, ':'))) {
@@ -2499,6 +2500,8 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			}
 		}
 
+		if (!maxlen) maxlen = jb_msec * 50;
+		
 		if (jb_msec < 0 && jb_msec > -1000) {
 			jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
 		}
@@ -2506,7 +2509,6 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 		if (maxlen < 0 && maxlen > -1000) {
 			maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
 		}
-
 		
 		
 		if (jb_msec < 10 || jb_msec > 10000) {
@@ -2599,7 +2601,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	fps = video_globals.fps;
 
-	if (!fps) return;
+	if (fps < 15) return;
 
 	sync_audio = 1;
 
@@ -2626,7 +2628,7 @@ static void check_jb_sync(switch_core_session_t *session)
 					  jb_sync_msec, frames, video_globals.fps, sync_audio ? "yes" : "no", jb_sync_msec);
 
 	if (sync_audio) {
-		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
+		check_jb(session, NULL, jb_sync_msec, jb_sync_msec * 2, SWITCH_TRUE);
 	}
 
 	video_globals.synced++;
