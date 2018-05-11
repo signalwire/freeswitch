@@ -1512,7 +1512,9 @@ SWITCH_STANDARD_APP(respond_function)
 SWITCH_STANDARD_APP(deflect_function)
 {
 	switch_core_session_message_t msg = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 	/* Tell the channel to deflect the call */
 	msg.from = __FILE__;
 	msg.string_arg = data;
