@@ -4960,7 +4960,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		if (!(sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
 			return SWITCH_STATUS_NOT_INITALIZED;
 		}
-
+	} else {
 		switch_ivr_resume_detect_speech(session);
 	}
 
