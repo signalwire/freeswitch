@@ -1330,6 +1330,10 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t *stream, char *rtp_packet,
 	switch_size_t len = rtp_packet_length;
 	zrtp_status_t status = zrtp_status_ok;
 
+	if (!rtp_session->sock_output) {
+		return status;
+	}
+
 	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, rtp_packet, &len);
 	return status;
 }
