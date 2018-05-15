@@ -40,6 +40,9 @@
 
 struct switch_ivr_dmachine_binding {
 	char *digits;
+	char *repl;
+	int first_match;
+	char *substituted;
 	int32_t key;
 	uint8_t rmatch;
 	switch_ivr_dmachine_callback_t callback;
@@ -258,6 +261,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 	switch_size_t len;
 	dm_binding_head_t *headp;
 	const char *msg = "";
+	char *repl = NULL;
+	char *digits_;
 
 	if (strlen(digits) > DMACHINE_MAX_DIGIT_LEN -1) {
 		return SWITCH_STATUS_FALSE;
@@ -286,16 +291,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 
 	binding = switch_core_alloc(dmachine->pool, sizeof(*binding));
 
-	if (*digits == '~') {
+	digits_ = switch_core_strdup(dmachine->pool, digits);
+
+	if (*digits_ == '=') {
+		binding->first_match = 1;
+		digits_++;
+	}
+	
+	if (*digits_ == '~') {
 		binding->is_regex = 1;
-		digits++;
+		digits_++;
+		if ((repl = strchr(digits_, '~')) && *(repl+1) == '~') {
+			*repl++ = '\0';
+			*repl++ = '\0';
+		}
 	}
 
 	binding->key = key;
-	binding->digits = switch_core_strdup(dmachine->pool, digits);
+	binding->digits = digits_;
 	binding->is_priority = is_priority;
 	binding->callback = callback;
 	binding->user_data = user_data;
+	binding->repl = repl;
 
 	if (headp->tail) {
 		headp->tail->next = binding;
@@ -349,13 +366,44 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
-			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+			if (bp->repl) {
+				int ovector[30] = { 0 };
+				int proceed = 0;
+				switch_regex_t *re = NULL;
 
-			bp->rmatch = r_status == SWITCH_STATUS_SUCCESS;
+				
+				proceed = switch_regex_perform(dmachine->digits, bp->digits, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+				
+				if (proceed) {
+					char *substituted = NULL;
+					switch_size_t len;
+				
+					len = (strlen(dmachine->digits) + strlen(bp->digits) + 10) * proceed;
+					substituted = malloc(len);
+					switch_assert(substituted);
+					memset(substituted, 0, len);
+					switch_perform_substitution(re, proceed, bp->repl, dmachine->digits, substituted, len, ovector);
+
+					if (!bp->substituted || strcmp(substituted, bp->substituted)) {
+						bp->substituted = switch_core_strdup(dmachine->pool, substituted);
+					}
+					free(substituted);
+					switch_regex_safe_free(re);
+					bp->rmatch = 1;
+				} else {
+					bp->substituted = NULL;
+					bp->rmatch = 0;
+				}
+			} else {
+				switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+				bp->rmatch = r_status == SWITCH_STATUS_SUCCESS;
+			}
 
 			rmatches++;
 			pmatches++;
 
+			if (bp->rmatch && bp->first_match) break;
+			
 		} else {
 			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				pmatches++;
@@ -383,7 +431,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
 			if (bp->rmatch) {
-				if ((bp->is_priority && ! ematches) || is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
+				if (bp->first_match || (bp->is_priority && ! ematches) || is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
 					best = DM_MATCH_EXACT;
 					exact_bp = bp;
 					break;
@@ -434,7 +482,12 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 
 	if (r_bp) {
 		dmachine->last_matching_binding = r_bp;
-		switch_set_string(dmachine->last_matching_digits, dmachine->digits);
+
+		if (r_bp->substituted) {
+			switch_set_string(dmachine->last_matching_digits, r_bp->substituted);
+		} else {
+			switch_set_string(dmachine->last_matching_digits, dmachine->digits);
+		}
 		best = DM_MATCH_EXACT;
 	}
 
