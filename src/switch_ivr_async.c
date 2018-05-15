@@ -441,10 +441,10 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && pmatch && (!rmatches || bp->is_priority || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (bp->first_match || !rmatches || bp->is_priority || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
-				if (bp->is_priority || dmachine->cur_digit_len == dmachine->max_digit_len) break;
+				if (bp->first_match || bp->is_priority || dmachine->cur_digit_len == dmachine->max_digit_len) break;
 			}
 
 			if (!(both_bp && partial_bp) && strlen(bp->digits) != strlen(dmachine->digits) && pmatch) {
