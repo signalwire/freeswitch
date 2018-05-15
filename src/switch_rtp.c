@@ -477,6 +477,7 @@ struct switch_rtp {
 	uint8_t punts;
 	uint8_t clean;
 	uint32_t last_max_vb_frames;
+	int skip_timer;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -6296,8 +6297,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			case SWITCH_STATUS_BREAK:
 				break;
 			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
 			default:
 				{
+					if (status == SWITCH_STATUS_TIMEOUT) {
+						rtp_session->skip_timer = 1;
+					}
 					rtp_session->stats.inbound.jb_packet_count++;
 					status = SWITCH_STATUS_SUCCESS;
 					rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
@@ -7098,7 +7103,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					if (slept) {
 						switch_cond_next();
 					} else {
-						switch_core_timer_next(&rtp_session->timer);
+						if (rtp_session->skip_timer) {
+							rtp_session->skip_timer = 0;
+							switch_cond_next();
+						} else {
+							switch_core_timer_next(&rtp_session->timer);
+						}
 						slept++;
 					}
 
