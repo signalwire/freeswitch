@@ -218,7 +218,7 @@ SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 	r = (switch_image_t *)vpx_img_alloc((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align);
 	switch_assert(r);
 	switch_assert(r->d_w == d_w);
-	switch_assert(r->d_h = d_h);
+	switch_assert(r->d_h == d_h);
 
 	return r;
 #else
