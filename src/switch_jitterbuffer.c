@@ -1292,7 +1292,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	switch_jb_node_t *node = NULL;
 	switch_status_t status;
 	int plc = 0;
-	int too_big = 0;
 	
 	switch_mutex_lock(jb->mutex);
 
@@ -1454,30 +1453,17 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	}
 
 	switch_mutex_unlock(jb->mutex);
-
-	if (jb->type == SJB_VIDEO) {
-		too_big = jb->max_frame_len * 15;
-	} else {
-		too_big = (int)(jb->max_frame_len * 1.5);
-	}
 	
-	if (jb->visible_nodes > too_big) {
-		//if (jb->complete_frames > jb->max_frame_len) {
-		//int b4 = jb->visible_nodes;
-		//thin_frames(jb, 2, jb->max_frame_len / 2);
-		//jb_debug(jb, 2, "JB TOO BIG (%d/%d), DROP SOME\n", b4, jb->visible_nodes);
-		//switch_jb_reset(jb);
-	}
-
-	//if (jb->complete_frames > jb->max_frame_len * 2) {
-	//	jb_debug(jb, 2, "JB TOO BIG (%d), RESET\n", jb->complete_frames);
-	//	switch_jb_reset(jb);
-	//}
-
-	if (jb->visible_nodes > too_big && status == SWITCH_STATUS_SUCCESS) {
-	//if (jb->frame_len >= jb->max_frame_len && status == SWITCH_STATUS_SUCCESS) {
-	//if (jb->allocated_nodes > jb->max_frame_len) {
-		status = SWITCH_STATUS_TIMEOUT;
+	if (jb->type == SJB_VIDEO) {
+		if (jb->complete_frames > jb->max_frame_len * 2) {
+			jb_debug(jb, 2, "JB TOO BIG (%d), RESET\n", jb->complete_frames);
+			switch_jb_reset(jb);
+		}
+	} else {
+		int too_big = (int)(jb->max_frame_len * 1.5);
+		if (jb->visible_nodes > too_big && status == SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_TIMEOUT;
+		}
 	}
 	
 	return status;

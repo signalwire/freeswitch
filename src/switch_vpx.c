@@ -414,7 +414,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	context->start_time = switch_micro_time_now();
 
 	config->g_timebase.num = 1;
-	config->g_timebase.den = 1000;//90000;
+	config->g_timebase.den = 90000;
 	config->g_pass = VPX_RC_ONE_PASS;
 	config->g_w = context->codec_settings.video.width;
 	config->g_h = context->codec_settings.video.height;
@@ -864,8 +864,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	pts = (now - context->start_time) / 1000;
-	//pts = frame->timestamp;
+	//pts = (now - context->start_time) / 1000;
+	pts = frame->timestamp;
 
 	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
 
