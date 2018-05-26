@@ -2875,6 +2875,13 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	int kps = 0, kps_in = 0;
 	int max = 0;
 	int min_layer = 0, min = 0;
+	int screen_w = 0, screen_h = 0;
+
+	if (layer) {
+		screen_w = layer->screen_w;
+		screen_h = layer->screen_h;
+	}
+	
 
 	if (!conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) ||
 		switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
@@ -2906,6 +2913,13 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 
 	member->vid_params = vid_params;
 
+	if (member->vid_params.width && member->vid_params.height && (screen_w > member->vid_params.width || screen_h > member->vid_params.height)) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Layer is bigger than input res, limit size to %dx%d\n",
+		//switch_channel_get_name(member->channel), member->vid_params.width, member->vid_params.height);
+		screen_w = member->vid_params.width;
+		screen_h = member->vid_params.height;
+	}
+	
 	if (member->managed_kps_set) {
 		return;
 	}
@@ -2916,7 +2930,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	}
 
 	if (layer) {
-		kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+		kps = switch_calc_bitrate(screen_w, screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
 	} else {
 		kps = kps_in;
 	}
@@ -2940,8 +2954,13 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 						  switch_channel_get_name(member->channel), kps);
 	} else {
 		if (layer && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accommodate %dx%d resolution\n",
-							  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
+			if (layer->screen_w != screen_w) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps (max res %dx%d) to accommodate %dx%d resolution\n",
+								  switch_channel_get_name(member->channel), kps, screen_w, screen_h, layer->screen_w, layer->screen_h);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accommodate %dx%d resolution\n",
+								  switch_channel_get_name(member->channel), kps, screen_w, screen_h);
+			}
 		} else {
 			kps = min;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because the user is not visible\n",
