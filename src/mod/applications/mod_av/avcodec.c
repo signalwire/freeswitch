@@ -829,7 +829,8 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 {
 	int sane = 0;
 	int threads = switch_core_cpu_count();
-
+	int fps = 15;
+	
 #ifdef NVENC_SUPPORT
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
@@ -903,10 +904,21 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (threads > 4) threads = 4;
-	context->bandwidth *= 4;
 
+	context->bandwidth *= 3;
+
+	fps = context->codec_settings.video.fps;
+
+	if (!fps) fps = 20;
+		
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
-
+	context->encoder_ctx->rc_min_rate = context->encoder_ctx->bit_rate;
+	context->encoder_ctx->rc_max_rate = context->encoder_ctx->bit_rate;
+	context->encoder_ctx->rc_buffer_size = context->encoder_ctx->bit_rate;
+	context->encoder_ctx->qcompress = 0.6;
+	context->encoder_ctx->gop_size = fps * 2;
+	context->encoder_ctx->keyint_min = fps * 2;
+	
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	/* frames per second */
@@ -914,9 +926,6 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = threads;
-
-	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
-	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 4;
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 || context->av_codec_id == AV_CODEC_ID_H263P) {
 #ifndef H263_MODE_B
@@ -934,7 +943,6 @@ FF_DISABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->rtp_callback = rtp_callback;
 FF_ENABLE_DEPRECATION_WARNINGS
 #endif
-		context->encoder_ctx->rc_min_rate = context->encoder_ctx->rc_max_rate;
 		context->encoder_ctx->opaque = context;
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
