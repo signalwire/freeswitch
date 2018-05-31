@@ -909,7 +909,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 #define switch_ivr_phrase_macro(session, macro_name, data, lang, args) switch_ivr_phrase_macro_event(session, macro_name, data, NULL, lang, args)
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
 SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, char *b_uuid, switch_size_t blen);
-SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg);
+SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg);
 SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t *session, switch_core_session_t *peer_session);
 

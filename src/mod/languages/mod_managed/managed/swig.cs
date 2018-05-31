@@ -4019,8 +4019,8 @@ else
     return ret;
   }
 
-  public static int switch_true(string expr) {
-    int ret = freeswitchPINVOKE.switch_true(expr);
+  public static switch_bool_t switch_true(string expr) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_true(expr);
     return ret;
   }
 
@@ -4839,6 +4839,11 @@ else
 
   public static switch_status_t switch_channel_pass_callee_id(SWIGTYPE_p_switch_channel channel, SWIGTYPE_p_switch_channel other_channel) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_pass_callee_id(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_channel.getCPtr(other_channel));
+    return ret;
+  }
+
+  public static int switch_channel_var_false(SWIGTYPE_p_switch_channel channel, string variable) {
+    int ret = freeswitchPINVOKE.switch_channel_var_false(SWIGTYPE_p_switch_channel.getCPtr(channel), variable);
     return ret;
   }
 
@@ -6397,8 +6402,9 @@ else
     return ret;
   }
 
-  public static void switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session session, string uuid, switch_bool_t bleg) {
-    freeswitchPINVOKE.switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, (int)bleg);
+  public static switch_status_t switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session session, string uuid, switch_bool_t bleg) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, (int)bleg);
+    return ret;
   }
 
   public static void switch_ivr_park_session(SWIGTYPE_p_switch_core_session session) {
@@ -16707,6 +16713,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_pass_callee_id")]
   public static extern int switch_channel_pass_callee_id(HandleRef jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_var_false")]
+  public static extern int switch_channel_var_false(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_var_true")]
   public static extern int switch_channel_var_true(HandleRef jarg1, string jarg2);
 
@@ -18022,7 +18031,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_find_bridged_uuid(string jarg1, string jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_intercept_session")]
-  public static extern void switch_ivr_intercept_session(HandleRef jarg1, string jarg2, int jarg3);
+  public static extern int switch_ivr_intercept_session(HandleRef jarg1, string jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_park_session")]
   public static extern void switch_ivr_park_session(HandleRef jarg1);
@@ -18224,6 +18233,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_name_get")]
   public static extern string switch_srtp_crypto_suite_t_name_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_alias_set")]
+  public static extern void switch_srtp_crypto_suite_t_alias_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_alias_get")]
+  public static extern string switch_srtp_crypto_suite_t_alias_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_srtp_crypto_suite_t_type_set")]
   public static extern void switch_srtp_crypto_suite_t_type_set(HandleRef jarg1, int jarg2);
@@ -43146,6 +43161,16 @@ public class switch_srtp_crypto_suite_t : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.switch_srtp_crypto_suite_t_name_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string alias {
+    set {
+      freeswitchPINVOKE.switch_srtp_crypto_suite_t_alias_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_srtp_crypto_suite_t_alias_get(swigCPtr);
       return ret;
     } 
   }
