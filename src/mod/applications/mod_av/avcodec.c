@@ -916,8 +916,8 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->rc_max_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_buffer_size = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->qcompress = 0.6;
-	context->encoder_ctx->gop_size = fps * 2;
-	context->encoder_ctx->keyint_min = fps * 2;
+	context->encoder_ctx->gop_size = 1000;
+	context->encoder_ctx->keyint_min = 1000;
 	
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
