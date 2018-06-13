@@ -1,0 +1,100 @@
+<configuration name="vpx.conf" description="VPX Config">
+  <settings>
+    <!-- max bitrate the system support, truncate if over limit -->
+    <!-- <param name="max-bitrate" value="5mb"/> -->
+
+    <!-- integer of cpus, or 'auto', or 'cpu/<divisor>/<max> -->
+    <param name="dec-threads" value="cpu/2/4"/>
+    <param name="enc-threads" value="1"/>
+    <param name="vp8-profile" value="vp8"/>
+    <param name="vp9-profile" value="vp9"/>
+    <param name="vp10-profile" value="vp10"/>
+  </settings>
+
+  <profiles>
+    <profile name="vp8">
+      <!-- <param name="dec-threads" value="cpu/2/4"/> -->
+      <!-- <param name="enc-threads" value="1"/> -->
+
+      <param name="g-profile" value="2"/>
+      <param name="g-timebase" value="1/90000"/>
+      <!-- DEFULT | PARTITIONS -->
+      <param name="g-error-resilient" value="PARTITIONS"/>
+      <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
+      <!-- <param name="g-pass" value="ONE_PASS"/> -->
+      <!-- <param name="g-lag-in-frames" value="0"/> -->
+      <param name="rc-dropframe-thresh" value="0"/>
+      <param name="rc-resize-allowed" value="1"/>
+      <!-- <param name="rc-scaled-width" value="0"/> -->
+      <!-- <param name="rc-scaled-height" value="0"/> -->
+      <!-- <param name="rc-resize-up-thresh" value="0"/> -->
+      <!-- <param name="rc-resize-down-thresh" value="0"/> -->
+      <!-- VBR, CBR, CQ, Q -->
+      <param name="rc-end-usage" value="CBR"/>
+      <!-- bps -->
+      <param name="rc-target-bitrate" value="1mb"/>
+      <param name="rc-min-quantizer" value="0"/>
+      <param name="rc-max-quantizer" value="63"/>
+      <param name="rc-undershoot-pct" value="100"/>
+      <param name="rc-overshoot-pct" value="50"/>
+      <param name="rc-buf-sz" value="5000"/>
+      <param name="rc-buf-initial-sz" value="1000"/>
+      <param name="rc-buf-optimal-sz" value="1000"/>
+      <!-- <param name="rc-2pass-vbr-bias-pct" value="0"/> -->
+      <!-- <param name="rc-2pass-vbr-minsection-pct" value="0"/> -->
+      <!-- <param name="rc-2pass-vbr-maxsection-pct" value="0"/> -->
+      <!-- AUTO, DISABLED -->
+      <param name="kf-mode" value="AUTO"/>
+      <param name="kf-min-dist" value="0"/>
+      <param name="kf-max-dist" value="360"/>
+      <!-- <param name="ss-number-layers" value="0"/> -->
+      <!-- <param name="ts-number-layers" value="0"/> -->
+      <!-- <param name="ts-periodicity" value="0"/> -->
+      <!-- <param name="temporal-layering-mode" value="0"/> -->
+    </profile>
+
+    <profile name="vp9">
+      <!-- <param name="dec-threads" value="cpu/2/4"/> -->
+      <!-- <param name="enc-threads" value="1"/> -->
+
+      <param name="g-profile" value="2"/>
+      <param name="g-timebase" value="1/90000"/>
+      <!-- DEFULT | PARTITIONS -->
+      <param name="g-error-resilient" value="PARTITIONS"/>
+      <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
+      <!-- <param name="g-pass" value="ONE_PASS"/> -->
+      <!-- <param name="g-lag-in-frames" value="0"/> -->
+      <param name="rc-dropframe-thresh" value="0"/>
+      <param name="rc-resize-allowed" value="1"/>
+      <!-- <param name="rc-scaled-width" value="0"/> -->
+      <!-- <param name="rc-scaled-height" value="0"/> -->
+      <!-- <param name="rc-resize-up-thresh" value="0"/> -->
+      <!-- <param name="rc-resize-down-thresh" value="0"/> -->
+      <!-- VBR, CBR, CQ, Q -->
+      <param name="rc-end-usage" value="CBR"/>
+      <!-- bps -->
+      <!-- <param name="rc-target-bitrate" value="1mb"/> -->
+      <!-- <param name="rc-min-quantizer" value="0"/> -->
+      <!-- <param name="rc-max-quantizer" value="63"/> -->
+      <!-- <param name="rc-undershoot-pct" value="100"/> -->
+      <!-- <param name="rc-overshoot-pct" value="50"/> -->
+      <!-- <param name="rc-buf-sz" value="5000"/> -->
+      <!-- <param name="rc-buf-initial-sz" value="1000"/> -->
+      <!-- <param name="rc-buf-optimal-sz" value="1000"/> -->
+      <!-- <param name="rc-2pass-vbr-bias-pct" value="0"/> -->
+      <!-- <param name="rc-2pass-vbr-minsection-pct" value="0"/> -->
+      <!-- <param name="rc-2pass-vbr-maxsection-pct" value="0"/> -->
+      <!-- AUTO, DISABLED -->
+      <param name="kf-mode" value="AUTO"/>
+      <param name="kf-min-dist" value="0"/>
+      <param name="kf-max-dist" value="360"/>
+      <!-- <param name="ss-number-layers" value="0"/> -->
+      <!-- <param name="ts-number-layers" value="0"/> -->
+      <!-- <param name="ts-periodicity" value="0"/> -->
+      <!-- <param name="temporal-layering-mode" value="0"/> -->
+    </profile>
+
+    <profile name="vp10">
+    </profile>
+  </profiles>
+</configuration>
