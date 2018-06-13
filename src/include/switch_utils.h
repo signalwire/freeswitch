@@ -1084,6 +1084,61 @@ static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 	return (int32_t) roundf(bw);
 }
 
+static inline uint32_t switch_parse_cpu_string(const char *cpu)
+{
+	int cpu_count = switch_core_cpu_count();
+	int ncpu = cpu_count;
+
+	if (!cpu) return 1;
+
+	if (!strcasecmp(cpu, "auto")) {
+		if (cpu_count > 4) return 4;
+		if (cpu_count <= 2) return 1;
+
+		return (uint32_t)(cpu_count / 2);
+	}
+
+	if (!strncasecmp(cpu, "cpu/", 4)) { /* cpu/2 or cpu/2/<max>  */
+		const char *has_max = cpu;
+		float divisor;
+		int max = cpu_count;
+
+		cpu +=4;
+
+		has_max = strchr(cpu, '/');
+
+		if (has_max > cpu) {
+			max = atoi(has_max + 1);
+		}
+
+		divisor = atof(cpu);
+
+		if (divisor <= 0) divisor = 1;
+
+		ncpu = cpu_count / divisor;
+
+		if (ncpu <= 0) return 1;
+
+		if (ncpu > max) return (uint32_t)max;
+
+		return (uint32_t)ncpu;
+	} else if (!strcasecmp(cpu, "cpu")) {
+		ncpu = cpu_count;
+	} else {
+		ncpu = atoi(cpu);
+
+		if (cpu && strrchr(cpu, '%')) {
+			ncpu = (int) (cpu_count * ((float)ncpu / 100));
+		}
+	}
+
+	if (ncpu > cpu_count) return (uint32_t)cpu_count;
+
+	if (ncpu <= 0) return 1;
+
+	return ncpu;
+}
+
 static inline int switch_needs_url_encode(const char *s)
 {
 	const char hex[] = "0123456789ABCDEF";
