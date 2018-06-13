@@ -34833,20 +34833,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_pass_callee_id(void * jarg1, vo
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_var_false(void * jarg1, char * jarg2) {
-  int jresult ;
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  arg1 = (switch_channel_t *)jarg1; 
-  arg2 = (char *)jarg2; 
-  result = (int)switch_channel_var_false(arg1,(char const *)arg2);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_var_true(void * jarg1, char * jarg2) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -41948,35 +41934,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_name_get(void * 
   
   arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
   result = (char *) ((arg1)->name);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_alias_set(void * jarg1, char * jarg2) {
-  switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
-  arg2 = (char *)jarg2; 
-  {
-    if (arg2) {
-      arg1->alias = (char const *) (new char[strlen((const char *)arg2)+1]);
-      strcpy((char *)arg1->alias, (const char *)arg2);
-    } else {
-      arg1->alias = 0;
-    }
-  }
-}
-
-
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_srtp_crypto_suite_t_alias_get(void * jarg1) {
-  char * jresult ;
-  switch_srtp_crypto_suite_s *arg1 = (switch_srtp_crypto_suite_s *) 0 ;
-  char *result = 0 ;
-  
-  arg1 = (switch_srtp_crypto_suite_s *)jarg1; 
-  result = (char *) ((arg1)->alias);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
