@@ -306,6 +306,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
 
 struct vpx_context {
+	int debug;
 	switch_codec_t *codec;
 	int is_vp9;
 	vp9_info_t vp9;
@@ -840,11 +841,10 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t DES;
 	//	uint8_t PID;
 	int len;
-#if 0
-	int key = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					  "VIDEO VPX: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
+	if (context->debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, context->debug,
+					  "VIDEO VPX: seq: %d ts: %u len: %u %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
 					  frame->seq, frame->timestamp, frame->datalen,
 					  *((uint8_t *)data), *((uint8_t *)data + 1),
 					  *((uint8_t *)data + 2), *((uint8_t *)data + 3),
@@ -852,8 +852,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 					  *((uint8_t *)data + 6), *((uint8_t *)data + 7),
 					  *((uint8_t *)data + 8), *((uint8_t *)data + 9),
 					  *((uint8_t *)data + 10), frame->m);
-#endif
-
+	}
 
 	DES = *data;
 	data++;
@@ -931,8 +930,8 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)vp9;
 	int len = 0;
 
-#ifdef DEBUG_VP9
-	switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
+	if (context->debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
 					"[%02x %02x %02x %02x] m=%d len=%4d seq=%d ts=%u ssrc=%u "
 					"have_pid=%d "
 					"have_p_layer=%d "
@@ -951,7 +950,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 					desc->end,
 					desc->have_ss,
 					desc->zero);
-#endif
+	}
 
 	vp9++;
 
@@ -1066,12 +1065,12 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_start = 0, is_keyframe = 0, get_refresh = 0;
 
-#if 0
-	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)frame->data;
-	uint8_t *data = frame->data;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d m=%d len=%d\n",
-		*data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->m, frame->datalen);
-#endif
+	if (context->debug > 0 && context->debug < 4) {
+		vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)frame->data;
+		uint8_t *data = frame->data;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d m=%d len=%d\n",
+			*data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->m, frame->datalen);
+	}
 
 	if (context->is_vp9) {
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
@@ -1090,10 +1089,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	} else { // vp8
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
-
-#ifdef DEBUG_VP9
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VP8\n");
-#endif
 	}
 
     if (!is_keyframe && context->got_key_frame <= 0) {
@@ -1106,7 +1101,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		}
     }
 
-	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", context->got_key_frame);
+	if (context->debug > 0 && is_keyframe) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "GOT KEY FRAME %d\n", context->got_key_frame);
+	}
 
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
@@ -1292,6 +1289,29 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 			default:
 				break;
 			}
+		}
+		break;
+	case SCC_CODEC_SPECIFIC:
+		{
+			const char *command = (const char *)cmd_data;
+
+			if (ctype == SCCT_INT) {
+			} else if (ctype == SCCT_STRING && !zstr(command)) {
+				if (!strcasecmp(command, "VP8E_SET_CPUUSED")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, *(int *)cmd_arg);
+				} else if (!strcasecmp(command, "VP8E_SET_TOKEN_PARTITIONS")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, *(int *)cmd_arg);
+				} else if (!strcasecmp(command, "VP8E_SET_NOISE_SENSITIVITY")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, *(int *)cmd_arg);
+				}
+			}
+
+		}
+		break;
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			context->debug = level;
 		}
 		break;
 	default:
