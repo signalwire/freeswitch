@@ -51,6 +51,16 @@
       <!-- <param name="ts-number-layers" value="0"/> -->
       <!-- <param name="ts-periodicity" value="0"/> -->
       <!-- <param name="temporal-layering-mode" value="0"/> -->
+
+      <!-- params SET by codec_control -->
+      <param name="lossless" value="0"/>
+      <!-- cpuused -8..8 -->
+      <param name="cpuused" value="-6"/>
+      <!-- cpu string or integer -->
+      <param name="token-parts" value="cpu/2/3"/>
+      <param name="static-thresh" value="100"/>
+      <param name="noise-sensitivity" value="1"/>
+      <!-- <param name="max-intra-bitrate-pct" value="0"/> -->
     </profile>
 
     <profile name="vp9">
@@ -92,6 +102,16 @@
       <!-- <param name="ts-number-layers" value="0"/> -->
       <!-- <param name="ts-periodicity" value="0"/> -->
       <!-- <param name="temporal-layering-mode" value="0"/> -->
+
+      <!-- params SET by codec_control -->
+      <param name="lossless" value="0"/>
+      <!-- cpuused -8..8 -->
+      <param name="cpuused" value="-8"/>
+      <!-- cpu string or integer -->
+      <param name="token-parts" value="3"/>
+      <param name="static-threash" value="1000"/>
+      <param name="noise-sensitivity" value="0"/>
+      <param name="vp9e-tune-content" value="SCREEN"/>
     </profile>
 
     <profile name="vp10">
