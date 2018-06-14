@@ -3,6 +3,11 @@
     <!-- max bitrate the system support, truncate if over limit -->
     <!-- <param name="max-bitrate" value="5mb"/> -->
 
+    <!-- <param name="rtp-slice-size" value="1200"/> -->
+
+    <!-- minimum time to generate a new key frame in ms /> -->
+    <!-- <param name="key-frame-min-freq" value="250"/> -->
+
     <!-- integer of cpus, or 'auto', or 'cpu/<divisor>/<max> -->
     <param name="dec-threads" value="cpu/2/4"/>
     <param name="enc-threads" value="1"/>

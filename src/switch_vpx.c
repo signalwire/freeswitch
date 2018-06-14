@@ -380,6 +380,9 @@ typedef struct vpx_context vpx_context_t;
 struct vpx_globals {
 	int debug;
 	uint32_t max_bitrate;
+	uint32_t rtp_slice_size;
+	uint32_t key_frame_min_freq;
+
 	char vp8_profile[20];
 	char vp9_profile[20];
 	char vp10_profile[20];
@@ -651,7 +654,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	// if !extended
 	hdrlen = 1;
 	body = ((uint8_t *)frame->data) + hdrlen;
-	packet_size = SLICE_SIZE;
+	packet_size = vpx_globals.rtp_slice_size;
 	payload_size = packet_size - hdrlen;
 	// else add extended TBD
 
@@ -820,7 +823,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	if (context->need_key_frame > 0) {
 		// force generate a key frame
 
-		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
+		if (!context->last_key_frame || (now - context->last_key_frame) > vpx_globals.key_frame_min_freq) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VPX KEYFRAME GENERATED\n");
 			vpx_flags |= VPX_EFLAG_FORCE_KF;
 			context->need_key_frame = 0;
@@ -1406,6 +1409,13 @@ static void load_config()
 
 				if (!strcmp(name, "max-bitrate")) {
 					vpx_globals.max_bitrate = switch_parse_bandwidth_string(value);
+				} else if (!strcmp(name, "rtp-slice-size")) {
+					int val = atoi(value);
+					vpx_globals.rtp_slice_size = UINTVAL(val);
+				} else if (!strcmp(name, "key-frame-min-freq")) {
+					int val = atoi(value);
+					vpx_globals.key_frame_min_freq = UINTVAL(val);
+					vpx_globals.key_frame_min_freq *= 1000;
 				} else if (!strcmp(name, "dec-threads")) {
 					vpx_globals.vp8.dec_cfg.threads = switch_parse_cpu_string(value);
 					vpx_globals.vp9.dec_cfg.threads = switch_parse_cpu_string(value);
@@ -1634,6 +1644,14 @@ static void load_config()
 		vpx_globals.max_bitrate = switch_calc_bitrate(1920, 1080, 5, 60);
 	}
 
+	if (vpx_globals.rtp_slice_size < 500 || vpx_globals.rtp_slice_size > 1500) {
+		vpx_globals.rtp_slice_size = SLICE_SIZE;
+	}
+
+	if (vpx_globals.key_frame_min_freq < 10000 || vpx_globals.key_frame_min_freq > 3 * 1000000) {
+		vpx_globals.key_frame_min_freq = KEY_FRAME_MIN_FREQ;
+	}
+
 	if (!vpx_globals.vp8.enc_cfg.g_threads) vpx_globals.vp8.enc_cfg.g_threads = 1;
 	if (!vpx_globals.vp8.dec_cfg.threads) vpx_globals.vp8.dec_cfg.threads = switch_parse_cpu_string("cpu/2/4");
 	if (!vpx_globals.vp9.enc_cfg.g_threads) vpx_globals.vp9.enc_cfg.g_threads = vpx_globals.vp8.enc_cfg.g_threads;
@@ -1660,6 +1678,9 @@ SWITCH_STANDARD_API(vpx_api_function)
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
 		load_config();
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "rtp-slice-size", vpx_globals.rtp_slice_size);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "key-frame-min-freq", vpx_globals.key_frame_min_freq);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", vpx_globals.vp8.dec_cfg.threads);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp9-dec-threads", vpx_globals.vp9.dec_cfg.threads);
