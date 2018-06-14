@@ -51,6 +51,45 @@
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 250000
 
+#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field);
+
+static void show_enc_config(vpx_codec_enc_cfg_t *cfg)
+{
+	SHOW(cfg, g_usage);
+	SHOW(cfg, g_threads);
+	SHOW(cfg, g_profile);
+	SHOW(cfg, g_w);
+	SHOW(cfg, g_h);
+	SHOW(cfg, g_bit_depth);
+	SHOW(cfg, g_input_bit_depth);
+	SHOW(cfg, g_timebase.num);
+	SHOW(cfg, g_timebase.den);
+	SHOW(cfg, g_error_resilient);
+	SHOW(cfg, g_pass);
+	SHOW(cfg, g_lag_in_frames);
+	SHOW(cfg, rc_dropframe_thresh);
+	SHOW(cfg, rc_resize_allowed);
+	SHOW(cfg, rc_scaled_width);
+	SHOW(cfg, rc_scaled_height);
+	SHOW(cfg, rc_resize_up_thresh);
+	SHOW(cfg, rc_resize_down_thresh);
+	SHOW(cfg, rc_end_usage);
+	SHOW(cfg, rc_target_bitrate);
+	SHOW(cfg, rc_min_quantizer);
+	SHOW(cfg, rc_max_quantizer);
+	SHOW(cfg, rc_undershoot_pct);
+	SHOW(cfg, rc_overshoot_pct);
+	SHOW(cfg, rc_buf_sz);
+	SHOW(cfg, rc_buf_initial_sz);
+	SHOW(cfg, rc_buf_optimal_sz);
+	SHOW(cfg, rc_2pass_vbr_bias_pct);
+	SHOW(cfg, rc_2pass_vbr_minsection_pct);
+	SHOW(cfg, rc_2pass_vbr_maxsection_pct);
+	SHOW(cfg, kf_mode);
+	SHOW(cfg, kf_min_dist);
+	SHOW(cfg, kf_max_dist);
+}
+
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
 
 	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
@@ -458,43 +497,8 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
 		if (vpx_globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
-
-#define SHOW(field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "    %-28s = %d\n", #field, config->field);
-
-			SHOW(g_usage);
-			SHOW(g_threads);
-			SHOW(g_profile);
-			SHOW(g_w);
-			SHOW(g_h);
-			SHOW(g_bit_depth);
-			SHOW(g_input_bit_depth);
-			SHOW(g_timebase.num);
-			SHOW(g_timebase.den);
-			SHOW(g_error_resilient);
-			SHOW(g_pass);
-			SHOW(g_lag_in_frames);
-			SHOW(rc_dropframe_thresh);
-			SHOW(rc_resize_allowed);
-			SHOW(rc_scaled_width);
-			SHOW(rc_scaled_height);
-			SHOW(rc_resize_up_thresh);
-			SHOW(rc_resize_down_thresh);
-			SHOW(rc_end_usage);
-			SHOW(rc_target_bitrate);
-			SHOW(rc_min_quantizer);
-			SHOW(rc_max_quantizer);
-			SHOW(rc_undershoot_pct);
-			SHOW(rc_overshoot_pct);
-			SHOW(rc_buf_sz);
-			SHOW(rc_buf_initial_sz);
-			SHOW(rc_buf_optimal_sz);
-			SHOW(rc_2pass_vbr_bias_pct);
-			SHOW(rc_2pass_vbr_minsection_pct);
-			SHOW(rc_2pass_vbr_maxsection_pct);
-			SHOW(kf_mode);
-			SHOW(kf_min_dist);
-			SHOW(kf_max_dist);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
+			show_enc_config(config);
 		}
 
 		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
@@ -1582,6 +1586,18 @@ SWITCH_STANDARD_API(vpx_api_function)
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
 		load_config();
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", vpx_globals.vp8_dec_cfg.threads);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp9-dec-threads", vpx_globals.vp9_dec_cfg.threads);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp10-dec-threads", vpx_globals.vp10_dec_cfg.threads);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp8_cx()));
+		show_enc_config(&vpx_globals.vp8_enc_cfg);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp9_cx()));
+		show_enc_config(&vpx_globals.vp9_enc_cfg);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: VP10\n");
+		show_enc_config(&vpx_globals.vp10_enc_cfg);
+
 		stream->write_function(stream, "+OK\n");
 	} else if (!strcasecmp(cmd, "debug")) {
 		stream->write_function(stream, "+OK debug %s\n", vpx_globals.debug ? "on" : "off");
