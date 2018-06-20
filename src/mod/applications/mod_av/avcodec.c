@@ -38,10 +38,12 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
-#define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
+int SLICE_SIZE = SWITCH_DEFAULT_VIDEO_SIZE;
+
 #define H264_NALU_BUFFER_SIZE 65536
-#define MAX_NALUS 128
+#define MAX_NALUS 256
 #define H263_MODE_B // else Mode A only
+#define KEY_FRAME_MIN_FREQ 250000
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
 
@@ -193,6 +195,55 @@ typedef struct h264_codec_context_s {
 } h264_codec_context_t;
 
 static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
+
+#define MAX_CODECS 4
+
+typedef struct avcodec_profile_s {
+	char name[20];
+	int decoder_thread_count;
+	AVCodecContext ctx;
+	struct {
+		char preset[20];
+		char tune[64];
+		int intra_refresh;
+		int sc_threshold;
+		int b_strategy;
+		int crf;
+	} x264;
+} avcodec_profile_t;
+
+struct avcodec_globals {
+	int debug;
+	uint32_t max_bitrate;
+	uint32_t rtp_slice_size;
+	uint32_t key_frame_min_freq;
+
+	avcodec_profile_t profiles[MAX_CODECS];
+};
+
+struct avcodec_globals avcodec_globals = { 0 };
+
+char *CODEC_MAPS[] = {
+	"H263",
+	"H263+",
+	"H264",
+	"H265",
+	NULL
+};
+
+static int get_codec_index(const char *cstr)
+{
+	int i;
+
+	for (i = 0; ; i++) {
+		if (!strcasecmp(cstr, CODEC_MAPS[i])) {
+			return i;
+		}
+	}
+
+	abort();
+	return -1;
+}
 
 static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
@@ -827,9 +878,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
-	int sane = 0;
-	int threads = switch_core_cpu_count();
 	int fps = 15;
+	avcodec_profile_t *profile = NULL;
 	
 #ifdef NVENC_SUPPORT
 	if (!context->encoder) {
@@ -859,6 +909,18 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You want %dx%d, but valid sizes are 128x96, 176x144, 352x288, 704x576, and 1408x1152. Try H.263+\n", width, height);
 		return SWITCH_STATUS_FALSE;
 	}
+
+	if (context->av_codec_id == AV_CODEC_ID_H263) {
+		profile = &avcodec_globals.profiles[get_codec_index("H263")];
+	} else if (context->av_codec_id == AV_CODEC_ID_H263P) {
+		profile = &avcodec_globals.profiles[get_codec_index("H263+")];
+	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
+		profile = &avcodec_globals.profiles[get_codec_index("H264")];
+	} else if (context->av_codec_id == AV_CODEC_ID_H265) {
+		profile = &avcodec_globals.profiles[get_codec_index("H265")];
+	}
+
+	if (!profile) return SWITCH_STATUS_FALSE;
 
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) {
@@ -896,14 +958,10 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, fps);
 	}
 
-	sane = switch_calc_bitrate(1920, 1080, 3, 60);
-
-	if (context->bandwidth > sane) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
-		context->bandwidth = sane;
+	if (context->bandwidth > avcodec_globals.max_bitrate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", avcodec_globals.max_bitrate);
+		context->bandwidth = avcodec_globals.max_bitrate;
 	}
-
-	if (threads > 4) threads = 4;
 
 	context->bandwidth *= 3;
 
@@ -921,11 +979,10 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
-	/* frames per second */
 	context->encoder_ctx->time_base = (AVRational){1, 90};
-	context->encoder_ctx->max_b_frames = 0;
+	context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-	context->encoder_ctx->thread_count = threads;
+	context->encoder_ctx->thread_count = profile->ctx.thread_count;
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 || context->av_codec_id == AV_CODEC_ID_H263P) {
 #ifndef H263_MODE_B
@@ -946,44 +1003,38 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->opaque = context;
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
-		context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
-		context->encoder_ctx->level = 31;
+		context->encoder_ctx->profile = profile->ctx.profile;
+		context->encoder_ctx->level = profile->ctx.level;
 
 		if (context->hw_encoder) {
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
-			av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", profile->x264.intra_refresh, 0);
+			av_opt_set(context->encoder_ctx->priv_data, "preset", profile->x264.preset, 0);
+			av_opt_set(context->encoder_ctx->priv_data, "tune", profile->x264.tune, 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
-			
-			context->encoder_ctx->colorspace = AVCOL_SPC_RGB;
-			context->encoder_ctx->color_range = AVCOL_RANGE_JPEG;
+			context->encoder_ctx->colorspace = profile->ctx.colorspace;
+			context->encoder_ctx->color_range = profile->ctx.color_range;
 
-			/*
-			av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", 40, 0);
-			av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", 1, 0);
-			av_opt_set_int(context->encoder_ctx->priv_data, "crf",  18, 0);
+			if (profile->x264.sc_threshold > 0) av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", profile->x264.sc_threshold, 0);
+			if (profile->x264.b_strategy > 0)av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", profile->x264.b_strategy, 0);
+			if (profile->x264.crf > 0)av_opt_set_int(context->encoder_ctx->priv_data, "crf",  profile->x264.crf, 0);
 
-			// libx264-medium.ffpreset preset
-
-			context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
-			context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
-			context->encoder_ctx->me_range = 21;   // me_range=16
-			context->encoder_ctx->max_b_frames = 3;    // bf=3
-			//context->encoder_ctx->refs = 3;    // refs=3
-			context->encoder_ctx->gop_size = 250;  // g=250
-			context->encoder_ctx->keyint_min = 25; // keyint_min=25
-			context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
-			context->encoder_ctx->b_quant_factor = 0.76923078; // Qscale difference between P-frames and B-frames.
-			context->encoder_ctx->qcompress = 0;//0.6; // qcomp=0.6
-			context->encoder_ctx->qmin = 10;   // qmin=10
-			context->encoder_ctx->qmax = 51;   // qmax=51
-			context->encoder_ctx->max_qdiff = 4;   // qdiff=4
-			*/
+			context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+			if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
+			if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
+			if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
+			if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
+			if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
+			if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
+			if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
+			if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
+			if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
+			if (profile->ctx.qmin >= 0) context->encoder_ctx->qmin = profile->ctx.qmin;
+			if (profile->ctx.qmax >= 0) context->encoder_ctx->qmax = profile->ctx.qmax;
+			if (profile->ctx.max_qdiff >= 0) context->encoder_ctx->max_qdiff = profile->ctx.max_qdiff;
 		}
 	}
 
@@ -999,7 +1050,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 {
 	int encoding, decoding;
 	h264_codec_context_t *context = NULL;
-	int threads = switch_core_cpu_count();
+	avcodec_profile_t *profile = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -1022,11 +1073,16 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 
 	if (!strcmp(codec->implementation->iananame, "H263")) {
 		context->av_codec_id = AV_CODEC_ID_H263;
+		profile = &avcodec_globals.profiles[get_codec_index("H263")];
 	} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
 		context->av_codec_id = AV_CODEC_ID_H263P;
+		profile = &avcodec_globals.profiles[get_codec_index("H263+")];
 	} else {
 		context->av_codec_id = AV_CODEC_ID_H264;
+		profile = &avcodec_globals.profiles[get_codec_index("H264")];
 	}
+
+	switch_assert(profile);
 
 	if (decoding) {
 		context->decoder = avcodec_find_decoder(context->av_codec_id);
@@ -1042,11 +1098,9 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "codec: id=%d %s\n", context->decoder->id, context->decoder->long_name);
-
-		if (threads > 4) threads = 4;
 		
 		context->decoder_ctx = avcodec_alloc_context3(context->decoder);
-		//context->decoder_ctx->thread_count = threads;
+		context->decoder_ctx->thread_count = profile->decoder_thread_count;
 		if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
 			goto error;
@@ -1247,6 +1301,10 @@ GCC_DIAG_ON(deprecated-declarations)
 				while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
 				context->nalus[i].start = p;
 				context->nalus[i].eat = p;
+
+				if (mod_av_globals.debug && (*p & 0x1f) == 7) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
+				}
 			} else {
 				context->nalus[i].len = p - context->nalus[i].start;
 				while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
@@ -1558,9 +1616,301 @@ void show_codecs(switch_stream_handle_t *stream)
 	av_free(codecs);
 }
 
+#define UINTVAL(v) (v > 0 ? v : 0);
+
+static void load_config()
+{
+	switch_xml_t cfg = NULL, xml = NULL;
+	int i;
+
+	switch_set_string(avcodec_globals.profiles[get_codec_index("H263")].name, "H263");
+	switch_set_string(avcodec_globals.profiles[get_codec_index("H263+")].name, "H263+");
+	switch_set_string(avcodec_globals.profiles[get_codec_index("H264")].name, "H264");
+	switch_set_string(avcodec_globals.profiles[get_codec_index("H265")].name, "H265");
+
+	for (i = 0; i < MAX_CODECS; i++) {
+		avcodec_profile_t *profile = &avcodec_globals.profiles[i];
+
+		profile->ctx.colorspace = AVCOL_SPC_RGB;
+		profile->ctx.color_range = AVCOL_RANGE_JPEG;
+		profile->ctx.flags = 0;
+		profile->ctx.me_cmp = -1;
+		profile->ctx.me_range = -1;
+		profile->ctx.max_b_frames = -1;
+		profile->ctx.refs = -1;
+		profile->ctx.gop_size = -1;
+		profile->ctx.keyint_min = -1;
+		profile->ctx.i_quant_factor = -1;
+		profile->ctx.b_quant_factor = -1;
+		profile->ctx.qcompress = -1;
+		profile->ctx.qmin = -1;
+		profile->ctx.qmax = -1;
+		profile->ctx.max_qdiff = -1;
+
+		profile->x264.sc_threshold = 0;
+		profile->x264.b_strategy = 0;
+		profile->x264.crf = 0;
+
+		if (!strcasecmp(CODEC_MAPS[i], "H264")) {
+			profile->ctx.profile = FF_PROFILE_H264_BASELINE;
+			profile->ctx.level = 41;
+		}
+	}
+
+	avcodec_globals.max_bitrate = 0;
+
+	xml = switch_xml_open_cfg("avcodec.conf", &cfg, NULL);
+
+	if (xml) {
+		switch_xml_t settings = switch_xml_child(cfg, "settings");
+		switch_xml_t profiles = switch_xml_child(cfg, "profiles");
+
+		if (settings) {
+			switch_xml_t param;
+
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				const char *name = switch_xml_attr(param, "name");
+				const char *value = switch_xml_attr(param, "value");
+
+				if (zstr(name) || zstr(value)) continue;
+
+				if (!strcmp(name, "max-bitrate")) {
+					avcodec_globals.max_bitrate = switch_parse_bandwidth_string(value);
+				} else if (!strcmp(name, "rtp-slice-size")) {
+					int val = atoi(value);
+					avcodec_globals.rtp_slice_size = UINTVAL(val);
+				} else if (!strcmp(name, "key-frame-min-freq")) {
+					int val = atoi(value);
+					avcodec_globals.key_frame_min_freq = UINTVAL(val);
+					avcodec_globals.key_frame_min_freq *= 1000;
+				} else if (!strcmp(name, "dec-threads")) {
+					int i;
+					uint threads = switch_parse_cpu_string(value);
+
+					for (i = 0; i < MAX_CODECS; i++) {
+						avcodec_globals.profiles[i].decoder_thread_count = threads;
+					}
+				} else if (!strcmp(name, "enc-threads")) {
+					int i;
+					uint threads = switch_parse_cpu_string(value);
+
+					for (i = 0; i < MAX_CODECS; i++) {
+						avcodec_globals.profiles[i].ctx.thread_count = threads;
+					}
+				} else if (!strcasecmp(name, "h263-profile")) {
+					switch_set_string(avcodec_globals.profiles[get_codec_index("H263")].name, value);
+				} else if (!strcasecmp(name, "h263+-profile")) {
+					switch_set_string(avcodec_globals.profiles[get_codec_index("H263+")].name, value);
+				} else if (!strcasecmp(name, "h264-profile")) {
+					switch_set_string(avcodec_globals.profiles[get_codec_index("H264")].name, value);
+				} else if (!strcasecmp(name, "h265-profile")) {
+					switch_set_string(avcodec_globals.profiles[get_codec_index("H265")].name, value);
+				}
+			}
+		}
+
+		if (profiles) {
+			switch_xml_t profile = switch_xml_child(profiles, "profile");
+
+			for (; profile; profile = profile->next) {
+				switch_xml_t param = NULL;
+				const char *profile_name = switch_xml_attr(profile, "name");
+				avcodec_profile_t *aprofile = NULL;
+				AVCodecContext *ctx = NULL;
+				int i;
+
+				if (zstr(profile_name)) continue;
+
+				for (i = 0; i < MAX_CODECS; i++) {
+					if (!strcmp(profile_name, avcodec_globals.profiles[i].name)) {
+						aprofile = &avcodec_globals.profiles[i];
+						ctx = &aprofile->ctx;
+						break;
+					}
+				}
+
+				if (!ctx) continue;
+
+				for (param = switch_xml_child(profile, "param"); param; param = param->next) {
+					const char *name = switch_xml_attr(param, "name");
+					const char *value = switch_xml_attr(param, "value");
+					int val;
+
+					if (zstr(name) || zstr(value)) continue;
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
+
+					val = atoi(value);
+
+					if (!strcmp(name, "dec-threads")) {
+						aprofile->decoder_thread_count = switch_parse_cpu_string(value);
+					} else if (!strcmp(name, "enc-threads")) {
+						ctx->thread_count = switch_parse_cpu_string(value);
+					} else if (!strcmp(name, "profile")) {
+						ctx->profile = UINTVAL(val);
+
+						if (ctx->profile == 0 && !strcasecmp(CODEC_MAPS[i], "H264")) {
+							if (!strcasecmp(value, "baseline")) {
+								ctx->profile = FF_PROFILE_H264_BASELINE;
+							} else if (!strcasecmp(value, "main")) {
+								ctx->profile = FF_PROFILE_H264_MAIN;
+							} else if (!strcasecmp(value, "high")) {
+								ctx->profile = FF_PROFILE_H264_HIGH;
+							}
+						}
+					} else if (!strcmp(name, "level")) {
+						ctx->level = UINTVAL(val);
+					} else if (!strcmp(name, "timebase")) {
+						int num = 0;
+						int den = 0;
+						char *slash = strchr(value, '/');
+
+						num = UINTVAL(val);
+
+						if (slash) {
+							slash++;
+							den = atoi(slash);
+
+							if (den < 0) den = 0;
+						}
+
+						if (num && den) {
+							ctx->time_base.num = num;
+							ctx->time_base.den = den;
+						}
+					} else if (!strcmp(name, "preset")) {
+						switch_set_string(aprofile->x264.preset, value);
+					} else if (!strcmp(name, "flags")) {
+						char *s = strdup(value);
+						int flags = 0;
+
+						if (s) {
+							int argc;
+							char *argv[20];
+							int i;
+
+							argc = switch_separate_string(s, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+							for (i = 0; i < argc; i++) {
+								if (!strcasecmp(argv[i], "UNALIGNED")) {
+									flags |= AV_CODEC_FLAG_UNALIGNED;
+								} else if (!strcasecmp(argv[i], "QSCALE")) {
+									flags |= AV_CODEC_FLAG_QSCALE;
+								} else if (!strcasecmp(argv[i], "QSCALE")) {
+									flags |= AV_CODEC_FLAG_QSCALE;
+								} else if (!strcasecmp(argv[i], "4MV")) {
+									flags |= AV_CODEC_FLAG_4MV;
+								} else if (!strcasecmp(argv[i], "CORRUPT")) {
+									flags |= AV_CODEC_FLAG_OUTPUT_CORRUPT;
+								} else if (!strcasecmp(argv[i], "QPEL")) {
+									flags |= AV_CODEC_FLAG_QPEL;
+								} else if (!strcasecmp(argv[i], "PASS1")) {
+									flags |= AV_CODEC_FLAG_PASS1;
+								} else if (!strcasecmp(argv[i], "PASS2")) {
+									flags |= AV_CODEC_FLAG_PASS2;
+								} else if (!strcasecmp(argv[i], "FILTER")) {
+									flags |= AV_CODEC_FLAG_LOOP_FILTER;
+								} else if (!strcasecmp(argv[i], "GRAY")) {
+									flags |= AV_CODEC_FLAG_GRAY;
+								} else if (!strcasecmp(argv[i], "PSNR")) {
+									flags |= AV_CODEC_FLAG_PSNR;
+								} else if (!strcasecmp(argv[i], "TRUNCATED")) {
+									flags |= AV_CODEC_FLAG_TRUNCATED;
+								} else if (!strcasecmp(argv[i], "INTERLACED_DCT")) {
+									flags |= AV_CODEC_FLAG_INTERLACED_DCT;
+								} else if (!strcasecmp(argv[i], "LOW_DELAY")) {
+									flags |= AV_CODEC_FLAG_LOW_DELAY;
+								} else if (!strcasecmp(argv[i], "HEADER")) {
+									flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+								} else if (!strcasecmp(argv[i], "BITEXACT")) {
+									flags |= AV_CODEC_FLAG_BITEXACT;
+								} else if (!strcasecmp(argv[i], "AC_PRED")) {
+									flags |= AV_CODEC_FLAG_AC_PRED;
+								} else if (!strcasecmp(argv[i], "INTERLACED_ME")) {
+									flags |= AV_CODEC_FLAG_INTERLACED_ME;
+								} else if (!strcasecmp(argv[i], "CLOSED_GOP")) {
+									flags |= AV_CODEC_FLAG_CLOSED_GOP;
+								}
+							}
+
+							free(s);
+							ctx->flags = flags;
+						}
+					} else if (!strcmp(name, "me-cmp")) {
+						ctx->me_cmp = UINTVAL(val);
+					} else if (!strcmp(name, "me-range")) {
+						ctx->me_range = UINTVAL(val);
+					} else if (!strcmp(name, "max-b-frames")) {
+						ctx->max_b_frames = UINTVAL(val);
+					} else if (!strcmp(name, "refs")) {
+						ctx->refs = UINTVAL(val);
+					} else if (!strcmp(name, "gop-size")) {
+						ctx->gop_size = UINTVAL(val);
+					} else if (!strcmp(name, "keyint-min")) {
+						ctx->keyint_min = UINTVAL(val);
+					} else if (!strcmp(name, "i-quant-factor")) {
+						ctx->i_quant_factor = UINTVAL(val);
+					} else if (!strcmp(name, "b-quant-factor")) {
+						ctx->b_quant_factor = UINTVAL(val);
+					} else if (!strcmp(name, "qcompress")) {
+						ctx->qcompress = UINTVAL(val);
+					} else if (!strcmp(name, "qmin")) {
+						ctx->qmin = UINTVAL(val);
+					} else if (!strcmp(name, "qmax")) {
+						ctx->qmax = UINTVAL(val);
+					} else if (!strcmp(name, "max-qdiff")) {
+						ctx->max_qdiff = UINTVAL(val);
+					} else if (!strcmp(name, "colorspace")) {
+						ctx->colorspace = UINTVAL(val);
+
+						if (ctx->colorspace > AVCOL_SPC_NB) {
+							ctx->colorspace = AVCOL_SPC_RGB;
+						}
+					} else if (!strcmp(name, "color-range")) {
+						ctx->color_range = UINTVAL(val);
+
+						if (ctx->color_range >  AVCOL_RANGE_NB) {
+							ctx->color_range = 0;
+						}
+					} else if (!strcmp(name, "x264-preset")) {
+						switch_set_string(aprofile->x264.preset, value);
+					} else if (!strcmp(name, "x264-tune")) {
+						switch_set_string(aprofile->x264.tune, value);
+					} else if (!strcmp(name, "x264-sc-threshold")) {
+						aprofile->x264.sc_threshold = UINTVAL(val);
+					} else if (!strcmp(name, "x264-b-strategy")) {
+						aprofile->x264.b_strategy = UINTVAL(val);
+					} else if (!strcmp(name, "x264-crf")) {
+						aprofile->x264.crf = UINTVAL(val);
+					}
+				} // for param
+			} // for profile
+		} // profiles
+
+		switch_xml_free(xml);
+	} // xml
+
+	if (avcodec_globals.max_bitrate <= 0) {
+		avcodec_globals.max_bitrate = switch_calc_bitrate(1920, 1080, 5, 60);
+	}
+
+	if (avcodec_globals.rtp_slice_size < 500 || avcodec_globals.rtp_slice_size > 1500) {
+		avcodec_globals.rtp_slice_size = SWITCH_DEFAULT_VIDEO_SIZE;
+	}
+
+	SLICE_SIZE = avcodec_globals.rtp_slice_size;
+
+	if (avcodec_globals.key_frame_min_freq < 10000 || avcodec_globals.key_frame_min_freq > 3 * 1000000) {
+		avcodec_globals.key_frame_min_freq = KEY_FRAME_MIN_FREQ;
+	}
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 {
 	switch_codec_interface_t *codec_interface;
+
+	memset(&avcodec_globals, 0, sizeof(struct avcodec_globals));
+	load_config();
 
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
