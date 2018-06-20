@@ -123,14 +123,15 @@ enum AVColorRange {
 -->
       <param name="color-range" value="2"/>
 
-      <!-- x264 private -->
-      <param name="x264-preset" value="veryfast"/>
-      <param name="x264-intra-refresh" value="1"/>
-      <param name="x264-tune" value="animation+zerolatency"/>
-      <!-- <param name="x264-sc-threshold" value="40"/> -->
-      <!-- <param name="x264-b-strategy" value="1"/> -->
-      <!-- <param name="x264-crf" value="18"/> -->
-
+      <!-- x264 private options-->
+      <options>
+        <option name="preset" value="veryfast"/>
+        <option name="intra_refresh" value="1"/>
+        <option name="tune" value="animation+zerolatency"/>
+        <option name="sc_threshold" value="40"/>
+        <option name="b_strategy" value="1"/>
+        <option name="crf" value="18"/>
+      </options>
     </profile>
 
     <profile name="H265">

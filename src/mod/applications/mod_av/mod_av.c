@@ -38,6 +38,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
 SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avcodec_shutdown);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown);
 SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, mod_av_shutdown, NULL);
 
@@ -124,6 +125,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown)
 {
+	mod_avcodec_shutdown();
 	avformat_network_deinit();
 	av_log_set_callback(NULL);
 	av_lockmgr_register(NULL);

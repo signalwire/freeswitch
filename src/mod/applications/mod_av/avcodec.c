@@ -46,6 +46,7 @@ int SLICE_SIZE = SWITCH_DEFAULT_VIDEO_SIZE;
 #define KEY_FRAME_MIN_FREQ 250000
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avcodec_shutdown);
 
 /*  ff_avc_find_startcode is not exposed in the ffmpeg lib but you can use it
 	Either include the avc.h which available in the ffmpeg source, or
@@ -202,14 +203,7 @@ typedef struct avcodec_profile_s {
 	char name[20];
 	int decoder_thread_count;
 	AVCodecContext ctx;
-	struct {
-		char preset[20];
-		char tune[64];
-		int intra_refresh;
-		int sc_threshold;
-		int b_strategy;
-		int crf;
-	} x264;
+	switch_event_t *options;
 } avcodec_profile_t;
 
 struct avcodec_globals {
@@ -1010,17 +1004,17 @@ FF_ENABLE_DEPRECATION_WARNINGS
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
-			av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", profile->x264.intra_refresh, 0);
-			av_opt_set(context->encoder_ctx->priv_data, "preset", profile->x264.preset, 0);
-			av_opt_set(context->encoder_ctx->priv_data, "tune", profile->x264.tune, 0);
-			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
+			if (profile->options) {
+				switch_event_header_t *hp;
+
+				for (hp = profile->options->headers; hp; hp = hp->next) {
+					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
+					av_opt_set(context->encoder_ctx->priv_data, hp->name, hp->value, 0);
+				}
+			}
 
 			context->encoder_ctx->colorspace = profile->ctx.colorspace;
 			context->encoder_ctx->color_range = profile->ctx.color_range;
-
-			if (profile->x264.sc_threshold > 0) av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", profile->x264.sc_threshold, 0);
-			if (profile->x264.b_strategy > 0)av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", profile->x264.b_strategy, 0);
-			if (profile->x264.crf > 0)av_opt_set_int(context->encoder_ctx->priv_data, "crf",  profile->x264.crf, 0);
 
 			context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
@@ -1647,10 +1641,6 @@ static void load_config()
 		profile->ctx.qmax = -1;
 		profile->ctx.max_qdiff = -1;
 
-		profile->x264.sc_threshold = 0;
-		profile->x264.b_strategy = 0;
-		profile->x264.crf = 0;
-
 		if (!strcasecmp(CODEC_MAPS[i], "H264")) {
 			profile->ctx.profile = FF_PROFILE_H264_BASELINE;
 			profile->ctx.level = 41;
@@ -1713,6 +1703,7 @@ static void load_config()
 			switch_xml_t profile = switch_xml_child(profiles, "profile");
 
 			for (; profile; profile = profile->next) {
+				switch_xml_t options = switch_xml_child(profile, "options");
 				switch_xml_t param = NULL;
 				const char *profile_name = switch_xml_attr(profile, "name");
 				avcodec_profile_t *aprofile = NULL;
@@ -1778,8 +1769,6 @@ static void load_config()
 							ctx->time_base.num = num;
 							ctx->time_base.den = den;
 						}
-					} else if (!strcmp(name, "preset")) {
-						switch_set_string(aprofile->x264.preset, value);
 					} else if (!strcmp(name, "flags")) {
 						char *s = strdup(value);
 						int flags = 0;
@@ -1872,18 +1861,30 @@ static void load_config()
 						if (ctx->color_range >  AVCOL_RANGE_NB) {
 							ctx->color_range = 0;
 						}
-					} else if (!strcmp(name, "x264-preset")) {
-						switch_set_string(aprofile->x264.preset, value);
-					} else if (!strcmp(name, "x264-tune")) {
-						switch_set_string(aprofile->x264.tune, value);
-					} else if (!strcmp(name, "x264-sc-threshold")) {
-						aprofile->x264.sc_threshold = UINTVAL(val);
-					} else if (!strcmp(name, "x264-b-strategy")) {
-						aprofile->x264.b_strategy = UINTVAL(val);
-					} else if (!strcmp(name, "x264-crf")) {
-						aprofile->x264.crf = UINTVAL(val);
 					}
 				} // for param
+
+				if (options) {
+					switch_xml_t option = switch_xml_child(options, "option");
+
+					if (aprofile->options) {
+						switch_event_destroy(&aprofile->options);
+					}
+
+					switch_event_create(&aprofile->options, SWITCH_EVENT_CLONE);
+					aprofile->options->flags |= EF_UNIQ_HEADERS;
+
+					for (; option; option = option->next) {
+						const char *name = switch_xml_attr(option, "name");
+						const char *value = switch_xml_attr(option, "value");
+
+						if (zstr(name) || zstr(value)) continue;
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", name, value);
+
+						switch_event_add_header_string(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
+					}
+				} // for options
 			} // for profile
 		} // profiles
 
@@ -1925,6 +1926,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avcodec_shutdown)
+{
+	int i;
+
+	for (i = 0; i < MAX_CODECS; i++) {
+		avcodec_profile_t *profile = &avcodec_globals.profiles[i];
+
+		if (profile->options) {
+			switch_event_destroy(&profile->options);
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
