@@ -677,6 +677,11 @@ switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_st
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_core_session_write_blank_video(member->session, 50);
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SEE);
 	conference_video_reset_video_bitrate_counters(member);
@@ -727,6 +732,11 @@ switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
+
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
 		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
