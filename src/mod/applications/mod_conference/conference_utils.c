@@ -237,9 +237,7 @@ void conference_utils_clear_eflags(char *events, uint32_t *f)
 				*next++ = '\0';
 			}
 
-			if (!strcmp(event, "add-member")) {
-				*f &= ~EFLAG_ADD_MEMBER;
-			} else if (!strcmp(event, "del-member")) {
+			if (!strcmp(event, "del-member")) {
 				*f &= ~EFLAG_DEL_MEMBER;
 			} else if (!strcmp(event, "energy-level")) {
 				*f &= ~EFLAG_ENERGY_LEVEL;
@@ -257,6 +255,8 @@ void conference_utils_clear_eflags(char *events, uint32_t *f)
 				*f &= ~EFLAG_MUTE_DETECT;
 			} else if (!strcmp(event, "mute-member")) {
 				*f &= ~EFLAG_MUTE_MEMBER;
+			} else if (!strcmp(event, "hold-member")) {
+				*f &= ~EFLAG_HOLD_MEMBER;
 			} else if (!strcmp(event, "kick-member")) {
 				*f &= ~EFLAG_KICK_MEMBER;
 			} else if (!strcmp(event, "dtmf-member")) {

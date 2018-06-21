@@ -133,7 +133,9 @@ void conference_member_update_status_field(conference_member_t *member)
 
 	switch_live_array_lock(member->conference->la);
 
-	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		str = "HOLD";
+	} else if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		str = "MUTE";
 	} else if (switch_channel_test_flag(member->channel, CF_HOLD)) {
 		str = "HOLD";
@@ -258,6 +260,7 @@ switch_status_t conference_member_add_event_data(conference_member_t *member, sw
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speak", "%s", conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Talking", "%s", conference_utils_member_test_flag(member, MFLAG_TALKING) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mute-Detect", "%s", conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false" );
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hold", "%s", conference_utils_member_test_flag(member, MFLAG_HOLD) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", conference_utils_member_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Ghost", "%s", conference_utils_member_test_flag(member, MFLAG_GHOST) ? "true" : "false");
