@@ -430,7 +430,8 @@
                 offerSDP: {
                     type: "offer",
                     sdp: self.remoteSDP
-                }
+                },
+                turnServer: self.options.turnServer
             });
 
             onStreamSuccess(self, stream);
@@ -625,6 +626,7 @@
                 },
                 constraints: self.constraints,
                 iceServers: self.options.iceServers,
+                turnServer: self.options.turnServer
             });
 
             onStreamSuccess(self, stream);
@@ -674,13 +676,15 @@
     function FSRTCPeerConnection(options) {
 	var gathering = false, done = false;
 	var config = {};
-        var default_ice = {
-	    urls: ['stun:stun.l.google.com:19302']
-	};
+        var default_ice = [{ urls: ['stun:stun.l.google.com:19302'] }];
+
+        if (self.options.turnServer) {
+          default_ice.push(self.options.turnServer)
+        }
 
         if (options.iceServers) {
             if (typeof(options.iceServers) === "boolean") {
-		config.iceServers = [default_ice];
+		config.iceServers = default_ice;
             } else {
 		config.iceServers = options.iceServers;
 	    }
