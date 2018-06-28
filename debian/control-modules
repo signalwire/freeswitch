@@ -507,7 +507,7 @@ Build-Depends: erlang-dev
 Module: event_handlers/mod_event_multicast
 Description: mod_event_multicast
  Adds mod_event_multicast.
-Build-Depends: libssl-dev
+Build-Depends: libssl1.0-dev | libssl-dev
 
 Module: event_handlers/mod_event_socket
 Description: mod_event_socket
