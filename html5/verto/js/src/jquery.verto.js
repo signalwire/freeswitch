@@ -110,6 +110,8 @@
             login: verto.options.login,
             passwd: verto.options.passwd,
             socketUrl: verto.options.socketUrl,
+            socketFallbackUrl: verto.options.socketFallbackUrl,
+            turnServer: verto.options.turnServer,
 	    loginParams: verto.options.loginParams,
 	    userVariables: verto.options.userVariables,
             sessid: verto.sessid,
@@ -2076,10 +2078,11 @@
             videoParams: dialog.params.videoParams,
             audioParams: verto.options.audioParams,
             iceServers: verto.options.iceServers,
-	    screenShare: dialog.screenShare,
-	    useCamera: dialog.useCamera,
-	    useMic: dialog.useMic,
-	    useSpeak: dialog.useSpeak
+            screenShare: dialog.screenShare,
+            useCamera: dialog.useCamera,
+            useMic: dialog.useMic,
+            useSpeak: dialog.useSpeak,
+            turnServer: verto.options.turnServer
         });
 
         dialog.rtc.verto = dialog.verto;

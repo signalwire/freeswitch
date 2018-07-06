@@ -9,5 +9,11 @@
       "autologin": "true",
       "autocall": "3500",
       "googlelogin": "true",
-      "wsURL": "wss://gamma.tollfreegateway.com/wss2"
+      "wsURL": "wss://gamma.tollfreegateway.com/wss2",
+      "socketFallbackUrl": "wss://gamma.tollfreegateway.com/wss2",
+      "turnServer": {
+         "urls": "turn:someturnserver.com:443?transport=tcp",
+         "credential": "1234",
+         "username": "username"
+      }
 }
