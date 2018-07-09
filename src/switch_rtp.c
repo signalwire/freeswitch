@@ -6486,7 +6486,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
-				handle_nack(rtp_session, *nack);
+				handle_nack(rtp_session, nack[i]);
 			}
 
 			//switch_core_media_gen_key_frame(rtp_session->session);
