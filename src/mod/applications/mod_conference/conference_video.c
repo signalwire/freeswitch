@@ -1199,16 +1199,20 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 					if (y < 0) y = 0;
 				}
 
-				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
-				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
-				switch_img_attenuate(member->video_logo);
+				if ((img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var))) {
+					switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
+					switch_img_attenuate(member->video_logo);
 
-				if (center) {
-					x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
+
+					if (center) {
+						x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
+					}
+
+					switch_img_patch(member->video_logo, img, x, y);
+					switch_img_free(&img);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to write text on image!\n");
 				}
-
-				switch_img_patch(member->video_logo, img, x, y);
-				switch_img_free(&img);
 			}
 
 			if (params && (var = switch_event_get_header(params, "alt_text"))) {
@@ -1236,17 +1240,21 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 					y = atoi(tmp);
 					if (y < 0) y = 0;
 				}
+				
+				if ((img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var))) {
+					switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
+					switch_img_attenuate(member->video_logo);
+					
+					if (center) {
+						x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
+					}
 
-				img = switch_img_write_text_img(member->video_logo->d_w, member->video_logo->d_h, SWITCH_FALSE, var);
-				switch_img_fit(&img, member->video_logo->d_w, member->video_logo->d_h, SWITCH_FIT_NECESSARY);
-				switch_img_attenuate(member->video_logo);
-
-				if (center) {
-					x = center_off + ((member->video_logo->d_w - center_off - img->d_w) / 2);
+					switch_img_patch(member->video_logo, img, x, y);
+					switch_img_free(&img);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to write text on image!\n");
 				}
-
-				switch_img_patch(member->video_logo, img, x, y);
-				switch_img_free(&img);
+						 
 			}
 			
 		}

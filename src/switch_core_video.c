@@ -2196,6 +2196,11 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	} else {
 		width = pre_width;
 	}
+
+	if (width == 0 || height == 0) {
+		txtimg = NULL;
+		goto done;
+	}
 	
 	//if (bg) {
 	//	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
@@ -2224,6 +2229,9 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 								txtimg,
 								x, y,
 								txt, NULL, fg, bg, 0, 0);
+
+ done:
+	
 	switch_img_txt_handle_destroy(&txthandle);
 
 	switch_safe_free(duptxt);
