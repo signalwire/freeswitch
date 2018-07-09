@@ -534,10 +534,6 @@ switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_st
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	switch_core_session_write_blank_video(member->session, 50);
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SEE);
 	conference_video_reset_video_bitrate_counters(member);
@@ -583,10 +579,6 @@ switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SEE);
 	conference_video_reset_video_bitrate_counters(member);
