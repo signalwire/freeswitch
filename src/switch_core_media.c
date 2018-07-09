@@ -4054,7 +4054,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	sdp_attribute_t *attr = NULL, *attrs[2] = { 0 };
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
-	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0;
+	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0, relay_ok = 0;
 
 	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
 		return SWITCH_STATUS_BREAK;
@@ -4240,12 +4240,19 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
+	relay_ok = 0;
+	
+ relay:
+	
 	for (cid = 0; cid < 2; cid++) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Searching for %s candidate.\n", cid ? "rtcp" : "rtp");
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {
 			for (i = 0; i < engine->ice_in.cand_idx[cid]; i++) {
+				int is_relay = !strcmp(engine->ice_in.cands[i][cid].cand_type, "relay");
+
+				if (relay_ok != is_relay) continue;
+
 				if (switch_check_network_list_ip(engine->ice_in.cands[i][cid].con_addr, engine->cand_acl[ai])) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Choose %s candidate, index %d, %s:%d\n", cid ? "rtcp" : "rtp", i,
@@ -4283,8 +4290,13 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
  done_choosing:
 
-
 	if (!engine->ice_in.is_chosen[0]) {
+		if (!relay_ok) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Look for Relay Candidates as last resort\n");
+			relay_ok = 1;
+			goto relay;
+		}
+
 		/* PUNT */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "%s no suitable candidates found.\n",
 						  switch_channel_get_name(smh->session->channel));
