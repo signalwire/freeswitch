@@ -507,7 +507,7 @@
                     
 		},
 		localVideo: obj.options.localVideo,
-		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
+		onsuccess: function(e) {obj.options.localVideoStream = e; console.log("local video ready");},
 		onerror: function(e) {console.error("local video error!");}
             });
 	}
