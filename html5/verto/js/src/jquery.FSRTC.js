@@ -232,8 +232,6 @@
     FSRTCattachMediaStream = function(element, stream) {
         if (typeof element.srcObject !== 'undefined') {
 	    element.srcObject = stream;
-	} else if (typeof element.src !== 'undefined') {
-	    element.src = URL.createObjectURL(stream);
 	} else {
 	    console.error('Error attaching stream to element.');
 	}
@@ -960,7 +958,7 @@
 
         function streaming(stream) {
             if (options.localVideo) {
-                options.localVideo['src'] = window.URL.createObjectURL(stream);
+                options.localVideo['srcObject'] = stream;
 		options.localVideo.style.display = 'block';
             }
 
