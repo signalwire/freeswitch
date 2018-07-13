@@ -494,7 +494,10 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_stop_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "param")) {
 			switch_ivr_set_param_detect_speech(session, argv[1], argv[2]);
+		} else if (!strcasecmp(argv[0], "start-input-timers")) {
+			switch_ivr_detect_speech_start_input_timers(session);
 		} else if (!strcasecmp(argv[0], "start_input_timers")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "start_input_timers is deprecated, please use start-input-timers instead!\n");
 			switch_ivr_detect_speech_start_input_timers(session);
 		} else if (argc >= 3) {
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
