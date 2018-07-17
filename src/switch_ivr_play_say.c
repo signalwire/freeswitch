@@ -1307,38 +1307,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					continue;
 				}
 			} else if (!strncasecmp(file, "say:", 4)) {
-				char *engine = NULL, *voice = NULL, *text = NULL;
+				const char *engine = NULL, *voice = NULL, *text = NULL;
+
 				alt = file + 4;
-				dup = switch_core_session_strdup(session, alt);
-				engine = dup;
+				text = alt;
+				engine = switch_channel_get_variable(channel, "tts_engine");
+				voice = switch_channel_get_variable(channel, "tts_voice");
 
-				if (!zstr(engine)) {
-					if ((voice = strchr(engine, ':'))) {
-						*voice++ = '\0';
-						if (!zstr(voice) && (text = strchr(voice, ':'))) {
-							*text++ = '\0';
-						}
-					}
-				}
-
-				if (!zstr(engine) && !zstr(voice) && !zstr(text)) {
-					if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
+				if (engine && text) {
+					if ((status = switch_ivr_speak_text(session, engine, voice, (char *)text, args)) != SWITCH_STATUS_SUCCESS) {
 						arg_recursion_check_stop(args);
 						return status;
 					}
 				} else {
-					text = engine;
-					engine = (char *) switch_channel_get_variable(channel, "tts_engine");
-					voice = (char *) switch_channel_get_variable(channel, "tts_voice");
-					if (engine && text) {
-						if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
-							arg_recursion_check_stop(args);
-							return status;
-						}
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
-					}
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 				}
+
 				continue;
 			}
 
