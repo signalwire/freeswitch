@@ -4814,6 +4814,7 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 		}
 
 		if (!conference_utils_member_test_flag(imember, MFLAG_CAN_SEE)) {
+			switch_core_session_rwunlock(isession);
 			continue;
 		}
 
