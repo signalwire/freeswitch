@@ -1,0 +1,1655 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libav</ProjectName>
+    <RootNamespace>libav</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectGuid>{841C345F-FCC7-4F64-8F54-0281CEABEB01}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <YasmCommand>$(SolutionDir)libs\yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <YasmCommand>$(SolutionDir)libs\yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <YasmCommand>$(SolutionDir)libs\yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <YasmCommand>$(SolutionDir)libs\yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>"..\..\libav\config_x86";"..\..\libav";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>"..\..\libav\config_x86";"..\..\libav";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Full</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>"..\..\libav\config_x64";"..\..\libav";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>"..\..\libav\config_x64";"..\..\libav";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Full</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <CustomBuild Include="cleancount">
+      <FileType>Document</FileType>
+      <Message>Downloading Yasm Modular Assembler (yasm.exe).</Message>
+      <Command>if not exist "$(SolutionDir)libs\yasm.exe" cscript /nologo "$(ProjectDir)..\util.vbs" GetYasmEXE "$(SolutionDir)libs\"</Command>
+      <Outputs>$(ProjectDir)yasm.exe;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\..\libav\libavcodec\4xm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\8bps.c" />
+    <ClCompile Include="..\..\libav\libavcodec\8svx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\a64multienc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aac_ac3_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aac_adtstoasc_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aac_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacadtsdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aaccoder.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacps.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacpsdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacpsy.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aacsbr.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aactab.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aandcttab.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aasc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3dec_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3enc_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3enc_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ac3tab.c" />
+    <ClCompile Include="..\..\libav\libavcodec\acelp_filters.c" />
+    <ClCompile Include="..\..\libav\libavcodec\acelp_pitch_delay.c" />
+    <ClCompile Include="..\..\libav\libavcodec\acelp_vectors.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adpcm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adpcm_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adpcmenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adx_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adxdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\adxenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aic.c" />
+    <ClCompile Include="..\..\libav\libavcodec\alac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\alac_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\alacenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aliaspixdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aliaspixenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\allcodecs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\alsdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\amrnbdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\amrwbdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\anm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ansi.c" />
+    <ClCompile Include="..\..\libav\libavcodec\apedec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ass.c" />
+    <ClCompile Include="..\..\libav\libavcodec\assdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\assenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\asv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\asvdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\asvenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac3plus.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac3plusdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\atrac3plusdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\audio_frame_queue.c" />
+    <ClCompile Include="..\..\libav\libavcodec\audiodsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\aura.c" />
+    <ClCompile Include="..\..\libav\libavcodec\avfft.c" />
+    <ClCompile Include="..\..\libav\libavcodec\avpacket.c" />
+    <ClCompile Include="..\..\libav\libavcodec\avpicture.c" />
+    <ClCompile Include="..\..\libav\libavcodec\avs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bethsoftvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bfi.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bgmc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bink.c" />
+    <ClCompile Include="..\..\libav\libavcodec\binkaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\binkdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bitstream.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bitstream_filter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bitstream_filters.c" />
+    <ClCompile Include="..\..\libav\libavcodec\blockdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bmp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bmp_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bmpenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bmvaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bmvvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\brenderpix.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\bswapdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\c93.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cabac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\canopus.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cavs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cavs_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cavsdata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cavsdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cavsdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cdgraphics.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cdxl.c" />
+    <ClCompile Include="..\..\libav\libavcodec\celp_filters.c" />
+    <ClCompile Include="..\..\libav\libavcodec\celp_math.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cga_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\chomp_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cinepak.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cljrdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cljrenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cllc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cngdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cngenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\codec_desc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cook.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cook_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cscd.c" />
+    <ClCompile Include="..\..\libav\libavcodec\cyuv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\d3d11va.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dca.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dca_exss.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dca_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dca_xll.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dcadata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dcadec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dcadsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dct32_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dct32_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dds.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dfa.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dirac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dirac_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dnxhd_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dnxhddata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dnxhddec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dnxhdenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dpcm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dpx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dpx_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dpxenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dsicinaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dsicinvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dss_sp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dump_extradata_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dv_profile.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvbsub.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvbsub_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvbsubdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvdata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvdsub_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvdsubdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvdsubenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dvenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxtory.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxva2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxva2_h264.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxva2_hevc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxva2_mpeg2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\dxva2_vc1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eac3_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eac3dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eac3enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eacmv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eaidct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eamad.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eatgq.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eatgv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\eatqi.c" />
+    <ClCompile Include="..\..\libav\libavcodec\elbg.c" />
+    <ClCompile Include="..\..\libav\libavcodec\error_resilience.c" />
+    <ClCompile Include="..\..\libav\libavcodec\escape124.c" />
+    <ClCompile Include="..\..\libav\libavcodec\escape130.c" />
+    <ClCompile Include="..\..\libav\libavcodec\faandct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\faanidct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\faxcompr.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fdctdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fft_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fft_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ffv1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ffv1dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ffv1enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fic.c" />
+    <ClCompile Include="..\..\libav\libavcodec\file_open.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flac_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flacdata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flacdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flacdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flacenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flicvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flvdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\flvenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fmtconvert.c" />
+    <ClCompile Include="..\..\libav\libavcodec\fraps.c" />
+    <ClCompile Include="..\..\libav\libavcodec\frwu.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g722.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g722dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g722dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g722enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g723_1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g723_1dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g723_1enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\g726.c" />
+    <ClCompile Include="..\..\libav\libavcodec\gif.c" />
+    <ClCompile Include="..\..\libav\libavcodec\gifdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\golomb.c" />
+    <ClCompile Include="..\..\libav\libavcodec\gsm_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\gsmdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\gsmdec_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h261.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h261_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h261data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h261dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h261enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h263.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h263_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h263data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h263dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h263dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h2645_parse.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_cabac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_cavlc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_direct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_loopfilter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_mb.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_mp4toannexb_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_parse.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_picture.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_ps.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_refs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_sei.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264_slice.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264chroma.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264idct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264pred.c" />
+    <ClCompile Include="..\..\libav\libavcodec\h264qpel.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hap.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hapdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_cabac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_filter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_mp4toannexb_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_mvs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_ps.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_refs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevc_sei.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevcdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hevcpred.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hnm4video.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hpeldsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hq_hqa.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hq_hqadata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hq_hqadsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hqx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hqxdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\hqxvlc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffman.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffyuv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffyuvdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffyuvdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffyuvenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\huffyuvencdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\idcinvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\idctdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\iff.c" />
+    <ClCompile Include="..\..\libav\libavcodec\iirfilter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\imc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\imdct15.c" />
+    <ClCompile Include="..\..\libav\libavcodec\imgconvert.c" />
+    <ClCompile Include="..\..\libav\libavcodec\imx_dump_header_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\indeo2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\indeo3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\indeo4.c" />
+    <ClCompile Include="..\..\libav\libavcodec\indeo5.c" />
+    <ClCompile Include="..\..\libav\libavcodec\intelh263dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\interplayvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\intrax8.c" />
+    <ClCompile Include="..\..\libav\libavcodec\intrax8dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ituh263dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ituh263enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ivi.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ivi_dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jfdctfst.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jfdctint.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeg2000.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeg2000dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeg2000dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeg2000dwt.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpegls.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeglsdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpeglsenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jpegtables.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jrevdct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\jvdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\kbdwin.c" />
+    <ClCompile Include="..\..\libav\libavcodec\kgv1dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\kmvc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lagarith.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lagarithrac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\latm_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lcldec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ljpegenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\loco.c" />
+    <ClCompile Include="..\..\libav\libavcodec\log2_tab.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lpc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lzf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lzw.c" />
+    <ClCompile Include="..\..\libav\libavcodec\lzwenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mace.c" />
+    <ClCompile Include="..\..\libav\libavcodec\magicyuv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mathtables.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mdct_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mdct_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\me_cmp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\metasound.c" />
+    <ClCompile Include="..\..\libav\libavcodec\metasound_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mimic.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpeg2jpeg_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpeg_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpega_dump_header_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpegbdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpegdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpegenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mjpegenc_common.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mlp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mlp_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mlpdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mlpdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mmvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\motion_est.c" />
+    <ClCompile Include="..\..\libav\libavcodec\motionpixels.c" />
+    <ClCompile Include="..\..\libav\libavcodec\movsub_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpc7.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpc8.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg12.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg12data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg12dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg12enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg12framerate.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg4audio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg4video.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg4video_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg4videodec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg4videoenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpeg_er.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudio_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodec_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodec_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodecheader.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodsp_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodsp_fixed.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudiodsp_float.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegaudioenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegpicture.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegutils.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideo_enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideo_motion.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideo_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideodata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideodsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mpegvideoencdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mqc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mqcdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msgsmdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msmpeg4.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msmpeg4data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msmpeg4dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msmpeg4enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msrle.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msrledec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss12.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss2dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss34dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mss4.c" />
+    <ClCompile Include="..\..\libav\libavcodec\msvideo1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mvcdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\mxpegdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\nellymoser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\nellymoserdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\nellymoserenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\noise_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\nuv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\on2avc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\on2avcdata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\options.c" />
+    <ClCompile Include="..\..\libav\libavcodec\opus.c" />
+    <ClCompile Include="..\..\libav\libavcodec\opus_celt.c" />
+    <ClCompile Include="..\..\libav\libavcodec\opus_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\opus_silk.c" />
+    <ClCompile Include="..\..\libav\libavcodec\opusdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pafaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pafvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pamenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pcm-bluray.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pcm-dvd.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pcm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pcx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pcxenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pgssubdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pictordec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pixblockdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\png_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pnm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pnm_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pnmdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pnmenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\profiles.c" />
+    <ClCompile Include="..\..\libav\libavcodec\proresdata.c" />
+    <ClCompile Include="..\..\libav\libavcodec\proresdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\proresdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\proresenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\psymodel.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pthread.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pthread_frame.c" />
+    <ClCompile Include="..\..\libav\libavcodec\pthread_slice.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ptx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qcelpdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qdm2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qdrw.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qpeg.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qpeldsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qsv_api.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qtrle.c" />
+    <ClCompile Include="..\..\libav\libavcodec\qtrleenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\r210dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ra144.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ra144dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ra144enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ra288.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ralf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rangecoder.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ratecontrol.c" />
+    <ClCompile Include="..\..\libav\libavcodec\raw.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rawdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rawenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rdft.c" />
+    <ClCompile Include="..\..\libav\libavcodec\remove_extradata_bsf.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rl.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rl2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rle.c" />
+    <ClCompile Include="..\..\libav\libavcodec\roqaudioenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\roqvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\roqvideodec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\roqvideoenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rpza.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rtjpeg.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv10.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv10enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv20enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv30.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv30dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv34.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv34_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv34dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv40.c" />
+    <ClCompile Include="..\..\libav\libavcodec\rv40dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\s302m.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sanm.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sbrdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sgidec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sgienc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sgirledec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\shorten.c" />
+    <ClCompile Include="..\..\libav\libavcodec\simple_idct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sinewin.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sipr.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sipr16k.c" />
+    <ClCompile Include="..\..\libav\libavcodec\smacker.c" />
+    <ClCompile Include="..\..\libav\libavcodec\smc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\snappy.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sp5xdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\srtdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\startcode.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sunrast.c" />
+    <ClCompile Include="..\..\libav\libavcodec\sunrastenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\svq1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\svq13.c" />
+    <ClCompile Include="..\..\libav\libavcodec\svq1dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\svq1enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\svq3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\synth_filter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tak.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tak_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\takdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\targa.c" />
+    <ClCompile Include="..\..\libav\libavcodec\targaenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\texturedsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tiertexseqv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tiff.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tiffenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tmv.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tpeldsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\truemotion1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\truemotion2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\truemotion2rt.c" />
+    <ClCompile Include="..\..\libav\libavcodec\truespeech.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tscc2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\tta.c" />
+    <ClCompile Include="..\..\libav\libavcodec\twinvq.c" />
+    <ClCompile Include="..\..\libav\libavcodec\twinvqdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\txd.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ulti.c" />
+    <ClCompile Include="..\..\libav\libavcodec\utils.c" />
+    <ClCompile Include="..\..\libav\libavcodec\utvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\utvideodec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\utvideoenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\v210dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\v210enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\v210x.c" />
+    <ClCompile Include="..\..\libav\libavcodec\v410dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\v410enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vb.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vble.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1_block.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1_loopfilter.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1_mc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1_pred.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vc1dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vcr1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\videodsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vima.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vmdaudio.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vmdvideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vmnc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbis.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbis_data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbis_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbisdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbisdsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vorbisenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp3.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp3_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp3dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp5.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp56.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp56data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp56dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp56rac.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp6.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp6dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp8.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp8_parser.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp8dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9block.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9mvs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vp9prob.c" />
+    <ClCompile Include="..\..\libav\libavcodec\vqavideo.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wavpack.c" />
+    <ClCompile Include="..\..\libav\libavcodec\webp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wma.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wma_common.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wma_freqs.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmadec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmaenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmalosslessdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmaprodec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmavoice.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmv2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmv2data.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmv2dec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmv2dsp.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wmv2enc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wnv1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\wrapped_avframe.c" />
+    <ClCompile Include="..\..\libav\libavcodec\ws-snd1.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\ac3dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\apedsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\audiodsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\audiodsp_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\blockdsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\bswapdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\cavsdsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\constants.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\dcadsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\dct_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\dnxhdenc_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\fdct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\fdctdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\fft_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\fmtconvert_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\fpel_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\h263dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\h264_intrapred_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\h264_qpel.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\h264chroma_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\h264dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\hevcdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\hpeldsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\hpeldsp_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\hpeldsp_vp3_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\huffyuvdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\huffyuvencdsp_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\idctdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\idctdsp_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\lpc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\mdct_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\me_cmp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\mlpdsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\mpegaudiodsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\mpegvideo.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\mpegvideodsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\mpegvideoenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\mpegvideoencdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\pixblockdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\proresdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\qpeldsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\rv34dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\rv40dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\sbrdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\simple_idct.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\svq1enc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavcodec\x86\v210enc_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vc1dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vc1dsp_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\videodsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vorbisdsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vp3dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vp6dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vp8dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\vp9dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\xvididct_init.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\xvididct_mmx.c" />
+    <ClCompile Include="..\..\libav\libavcodec\x86\xvididct_sse2.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xan.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xbmdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xbmenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xiph.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xl.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xsubdec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xsubenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xvididct.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xwddec.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xwdenc.c" />
+    <ClCompile Include="..\..\libav\libavcodec\xxan.c" />
+    <ClCompile Include="..\..\libav\libavcodec\yop.c" />
+    <ClCompile Include="..\..\libav\libavcodec\libx264.c" />
+    <CustomBuild Include="..\..\libav\libavcodec\x86\ac3dsp.asm">
+      <Message>Assembling %(Filename)%(Extension)</Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\apedsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\audiodsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\bswapdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\dcadsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\dct32.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\dnxhdenc.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\fft.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\fmtconvert.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\fpel.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h263_loopfilter.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_chromamc.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_chromamc_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_deblock.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_deblock_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_idct.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_idct_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_intrapred.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_intrapred_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_qpel_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_qpel_8bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_weight.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\h264_weight_10bit.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\hevc_deblock.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\hevc_idct.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\hevc_mc.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\hpeldsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\hpeldsp_vp3.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\huffyuvdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\imdct36.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\me_cmp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\mpegvideoencdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\pixblockdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\proresdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\qpel.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\qpeldsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\rv34dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\rv40dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\sbrdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\v210enc.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vc1dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\videodsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vorbisdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vp3dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vp6dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vp8dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vp8dsp_loopfilter.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavcodec\x86\vp9mc.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\..\libav\libavutil\adler32.c" />
+    <ClCompile Include="..\..\libav\libavutil\aes.c" />
+    <ClCompile Include="..\..\libav\libavutil\atomic.c" />
+    <ClCompile Include="..\..\libav\libavutil\audio_fifo.c" />
+    <ClCompile Include="..\..\libav\libavutil\avstring.c" />
+    <ClCompile Include="..\..\libav\libavutil\base64.c" />
+    <ClCompile Include="..\..\libav\libavutil\blowfish.c" />
+    <ClCompile Include="..\..\libav\libavutil\buffer.c" />
+    <ClCompile Include="..\..\libav\libavutil\channel_layout.c" />
+    <ClCompile Include="..\..\libav\libavutil\cpu.c" />
+    <ClCompile Include="..\..\libav\libavutil\crc.c" />
+    <ClCompile Include="..\..\libav\libavutil\des.c" />
+    <ClCompile Include="..\..\libav\libavutil\dict.c" />
+    <ClCompile Include="..\..\libav\libavutil\display.c" />
+    <ClCompile Include="..\..\libav\libavutil\downmix_info.c" />
+    <ClCompile Include="..\..\libav\libavutil\error.c" />
+    <ClCompile Include="..\..\libav\libavutil\eval.c" />
+    <ClCompile Include="..\..\libav\libavutil\fifo.c" />
+    <ClCompile Include="..\..\libav\libavutil\file.c" />
+    <ClCompile Include="..\..\libav\libavutil\file_open.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavutil\float_dsp.c" />
+    <ClCompile Include="..\..\libav\libavutil\frame.c" />
+    <ClCompile Include="..\..\libav\libavutil\hmac.c" />
+    <ClCompile Include="..\..\libav\libavutil\hwcontext.c" />
+    <ClCompile Include="..\..\libav\libavutil\hwcontext_dxva2.c" />
+    <ClCompile Include="..\..\libav\libavutil\imgutils.c" />
+    <ClCompile Include="..\..\libav\libavutil\intmath.c" />
+    <ClCompile Include="..\..\libav\libavutil\lfg.c" />
+    <ClCompile Include="..\..\libav\libavutil\lls.c" />
+    <ClCompile Include="..\..\libav\libavutil\log.c" />
+    <ClCompile Include="..\..\libav\libavutil\log2_tab.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavutil\lzo.c" />
+    <ClCompile Include="..\..\libav\libavutil\mathematics.c" />
+    <ClCompile Include="..\..\libav\libavutil\md5.c" />
+    <ClCompile Include="..\..\libav\libavutil\mem.c" />
+    <ClCompile Include="..\..\libav\libavutil\opt.c" />
+    <ClCompile Include="..\..\libav\libavutil\parseutils.c" />
+    <ClCompile Include="..\..\libav\libavutil\pixdesc.c" />
+    <ClCompile Include="..\..\libav\libavutil\random_seed.c" />
+    <ClCompile Include="..\..\libav\libavutil\rational.c" />
+    <ClCompile Include="..\..\libav\libavutil\rc4.c" />
+    <ClCompile Include="..\..\libav\libavutil\samplefmt.c" />
+    <ClCompile Include="..\..\libav\libavutil\sha.c" />
+    <ClCompile Include="..\..\libav\libavutil\stereo3d.c" />
+    <ClCompile Include="..\..\libav\libavutil\time.c" />
+    <ClCompile Include="..\..\libav\libavutil\tree.c" />
+    <ClCompile Include="..\..\libav\libavutil\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavutil\x86/cpu.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavutil\x86/float_dsp_init.c" />
+    <ClCompile Include="..\..\libav\libavutil\x86/lls_init.c" />
+    <ClCompile Include="..\..\libav\libavutil\xtea.c" />
+    <CustomBuild Include="..\..\libav\libavutil\x86/cpuid.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavutil\x86/emms.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavutil\x86/float_dsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavutil\x86/lls.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\..\libav\libavformat\4xm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\a64.c" />
+    <ClCompile Include="..\..\libav\libavformat\aacdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\ac3dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\adtsenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\adxdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\aea.c" />
+    <ClCompile Include="..\..\libav\libavformat\aiffdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\aiffenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\allformats.c" />
+    <ClCompile Include="..\..\libav\libavformat\amr.c" />
+    <ClCompile Include="..\..\libav\libavformat\anm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\apc.c" />
+    <ClCompile Include="..\..\libav\libavformat\ape.c" />
+    <ClCompile Include="..\..\libav\libavformat\apetag.c" />
+    <ClCompile Include="..\..\libav\libavformat\asf.c" />
+    <ClCompile Include="..\..\libav\libavformat\asfcrypt.c" />
+    <ClCompile Include="..\..\libav\libavformat\asfdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\asfenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\assdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\assenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\au.c" />
+    <ClCompile Include="..\..\libav\libavformat\audiointerleave.c" />
+    <ClCompile Include="..\..\libav\libavformat\avc.c" />
+    <ClCompile Include="..\..\libav\libavformat\avidec.c" />
+    <ClCompile Include="..\..\libav\libavformat\avienc.c" />
+    <ClCompile Include="..\..\libav\libavformat\avio.c" />
+    <ClCompile Include="..\..\libav\libavformat\aviobuf.c" />
+    <ClCompile Include="..\..\libav\libavformat\avlanguage.c" />
+    <ClCompile Include="..\..\libav\libavformat\avs.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\bethsoftvid.c" />
+    <ClCompile Include="..\..\libav\libavformat\bfi.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\bink.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\bmv.c" />
+    <ClCompile Include="..\..\libav\libavformat\c93.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\caf.c" />
+    <ClCompile Include="..\..\libav\libavformat\cafdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\cavsvideodec.c" />
+    <ClCompile Include="..\..\libav\libavformat\cdg.c" />
+    <ClCompile Include="..\..\libav\libavformat\cdxl.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\concat.c" />
+    <ClCompile Include="..\..\libav\libavformat\crcenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\crypto.c" />
+    <ClCompile Include="..\..\libav\libavformat\cutils.c" />
+    <ClCompile Include="..\..\libav\libavformat\dashenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\dauddec.c" />
+    <ClCompile Include="..\..\libav\libavformat\daudenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\dfa.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\diracdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\dnxhddec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\dsicin.c" />
+    <ClCompile Include="..\..\libav\libavformat\dss.c" />
+    <ClCompile Include="..\..\libav\libavformat\dtsdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\dump.c" />
+    <ClCompile Include="..\..\libav\libavformat\dv.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\dvenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\dxa.c" />
+    <ClCompile Include="..\..\libav\libavformat\eacdata.c" />
+    <ClCompile Include="..\..\libav\libavformat\electronicarts.c" />
+    <ClCompile Include="..\..\libav\libavformat\ffmetadec.c" />
+    <ClCompile Include="..\..\libav\libavformat\ffmetaenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\file.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\file_open.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\filmstripdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\filmstripenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\flacdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\flacenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\flacenc_header.c" />
+    <ClCompile Include="..\..\libav\libavformat\flac_picture.c" />
+    <ClCompile Include="..\..\libav\libavformat\flic.c" />
+    <ClCompile Include="..\..\libav\libavformat\flvdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\flvenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\format.c" />
+    <ClCompile Include="..\..\libav\libavformat\framecrcenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\framehash.c" />
+    <ClCompile Include="..\..\libav\libavformat\g722.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\g723_1.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\g729dec.c" />
+    <ClCompile Include="..\..\libav\libavformat\gif.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\gopher.c" />
+    <ClCompile Include="..\..\libav\libavformat\gsmdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\gxf.c" />
+    <ClCompile Include="..\..\libav\libavformat\gxfenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\h261dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\h263dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\h264dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\hdsenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\hevc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\hevcdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\hls.c" />
+    <ClCompile Include="..\..\libav\libavformat\hlsenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\hlsproto.c" />
+    <ClCompile Include="..\..\libav\libavformat\hnm.c" />
+    <ClCompile Include="..\..\libav\libavformat\http.c" />
+    <ClCompile Include="..\..\libav\libavformat\httpauth.c" />
+    <ClCompile Include="..\..\libav\libavformat\icecast.c" />
+    <ClCompile Include="..\..\libav\libavformat\id3v1.c" />
+    <ClCompile Include="..\..\libav\libavformat\id3v2.c" />
+    <ClCompile Include="..\..\libav\libavformat\id3v2enc.c" />
+    <ClCompile Include="..\..\libav\libavformat\idcin.c" />
+    <ClCompile Include="..\..\libav\libavformat\idroqdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\idroqenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\iff.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\ilbc.c" />
+    <ClCompile Include="..\..\libav\libavformat\img2.c" />
+    <ClCompile Include="..\..\libav\libavformat\img2dec.c" />
+    <ClCompile Include="..\..\libav\libavformat\img2enc.c" />
+    <ClCompile Include="..\..\libav\libavformat\ingenientdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\ipmovie.c" />
+    <ClCompile Include="..\..\libav\libavformat\isom.c" />
+    <ClCompile Include="..\..\libav\libavformat\iss.c" />
+    <ClCompile Include="..\..\libav\libavformat\iv8.c" />
+    <ClCompile Include="..\..\libav\libavformat\ivfdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\ivfenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\jvdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\latmenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\lmlm4.c" />
+    <ClCompile Include="..\..\libav\libavformat\log2_tab.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\lxfdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\m4vdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\matroska.c" />
+    <ClCompile Include="..\..\libav\libavformat\matroskadec.c" />
+    <ClCompile Include="..\..\libav\libavformat\matroskaenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\md5enc.c" />
+    <ClCompile Include="..\..\libav\libavformat\md5proto.c" />
+    <ClCompile Include="..\..\libav\libavformat\metadata.c" />
+    <ClCompile Include="..\..\libav\libavformat\mm.c" />
+    <ClCompile Include="..\..\libav\libavformat\mmf.c" />
+    <ClCompile Include="..\..\libav\libavformat\mms.c" />
+    <ClCompile Include="..\..\libav\libavformat\mmsh.c" />
+    <ClCompile Include="..\..\libav\libavformat\mmst.c" />
+    <ClCompile Include="..\..\libav\libavformat\mov.c" />
+    <ClCompile Include="..\..\libav\libavformat\movenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\movenchint.c" />
+    <ClCompile Include="..\..\libav\libavformat\mov_chan.c" />
+    <ClCompile Include="..\..\libav\libavformat\mp3dec.c" />
+    <ClCompile Include="..\..\libav\libavformat\mp3enc.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\mpc8.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\mpeg.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpegenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpegts.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpegtsenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpegvideodec.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpjpeg.c" />
+    <ClCompile Include="..\..\libav\libavformat\mpjpegdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\msnwc_tcp.c" />
+    <ClCompile Include="..\..\libav\libavformat\mtv.c" />
+    <ClCompile Include="..\..\libav\libavformat\mux.c" />
+    <ClCompile Include="..\..\libav\libavformat\mvdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\mvi.c" />
+    <ClCompile Include="..\..\libav\libavformat\mxf.c" />
+    <ClCompile Include="..\..\libav\libavformat\mxfdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\mxfenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\mxg.c" />
+    <ClCompile Include="..\..\libav\libavformat\ncdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\network.c" />
+    <ClCompile Include="..\..\libav\libavformat\nsvdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\nullenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\nut.c" />
+    <ClCompile Include="..\..\libav\libavformat\nutdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\nutenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\nuv.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\oggdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsecelt.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsedirac.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparseflac.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparseogm.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparseopus.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparseskeleton.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsespeex.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsetheora.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsevorbis.c" />
+    <ClCompile Include="..\..\libav\libavformat\oggparsevp8.c" />
+    <ClCompile Include="..\..\libav\libavformat\oma.c" />
+    <ClCompile Include="..\..\libav\libavformat\omadec.c" />
+    <ClCompile Include="..\..\libav\libavformat\omaenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\options.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\os_support.c" />
+    <ClCompile Include="..\..\libav\libavformat\paf.c" />
+    <ClCompile Include="..\..\libav\libavformat\pcm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\pcmdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\pcmenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\pmpdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\protocols.c" />
+    <ClCompile Include="..\..\libav\libavformat\psxstr.c" />
+    <ClCompile Include="..\..\libav\libavformat\pva.c" />
+    <ClCompile Include="..\..\libav\libavformat\qcp.c" />
+    <ClCompile Include="..\..\libav\libavformat\r3d.c" />
+    <ClCompile Include="..\..\libav\libavformat\rawdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\rawenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\rawvideodec.c" />
+    <ClCompile Include="..\..\libav\libavformat\rdt.c" />
+    <ClCompile Include="..\..\libav\libavformat\replaygain.c" />
+    <ClCompile Include="..\..\libav\libavformat\riff.c" />
+    <ClCompile Include="..\..\libav\libavformat\riffdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\riffenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rl2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\rm.c" />
+    <ClCompile Include="..\..\libav\libavformat\rmdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\rmenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rmsipr.c" />
+    <ClCompile Include="..\..\libav\libavformat\rpl.c" />
+    <ClCompile Include="..\..\libav\libavformat\rso.c" />
+    <ClCompile Include="..\..\libav\libavformat\rsodec.c" />
+    <ClCompile Include="..\..\libav\libavformat\rsoenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtmphttp.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtmppkt.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtmpproto.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtp.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_ac3.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_amr.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_asf.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_dv.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_g726.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_h261.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_h263.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_h263_rfc2190.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_h264.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_hevc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_ilbc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_jpeg.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_latm.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_mpa_robust.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_mpeg12.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_mpeg4.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_mpegts.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_qcelp.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_qdm2.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_qt.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_svq3.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_vp8.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_vp9.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpdec_xiph.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_aac.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_amr.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_chain.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_h261.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_h263.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_h263_rfc2190.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_h264_hevc.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_jpeg.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_latm.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_mpegts.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_mpv.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_vp8.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpenc_xiph.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtpproto.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtsp.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtspdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\rtspenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\sapdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\sapenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\sauce.c" />
+    <ClCompile Include="..\..\libav\libavformat\sdp.c" />
+    <ClCompile Include="..\..\libav\libavformat\segafilm.c" />
+    <ClCompile Include="..\..\libav\libavformat\segment.c" />
+    <ClCompile Include="..\..\libav\libavformat\sierravmd.c" />
+    <ClCompile Include="..\..\libav\libavformat\siff.c" />
+    <ClCompile Include="..\..\libav\libavformat\smacker.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\smjpeg.c" />
+    <ClCompile Include="..\..\libav\libavformat\smjpegdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\smjpegenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\smoothstreamingenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\smush.c" />
+    <ClCompile Include="..\..\libav\libavformat\sol.c" />
+    <ClCompile Include="..\..\libav\libavformat\soxdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\soxenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\spdif.c" />
+    <ClCompile Include="..\..\libav\libavformat\spdifdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\spdifenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\srtdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\srtp.c" />
+    <ClCompile Include="..\..\libav\libavformat\srtpproto.c" />
+    <ClCompile Include="..\..\libav\libavformat\swf.c" />
+    <ClCompile Include="..\..\libav\libavformat\swfdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\swfenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\takdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\tcp.c" />
+    <ClCompile Include="..\..\libav\libavformat\thp.c" />
+    <ClCompile Include="..\..\libav\libavformat\tiertexseq.c" />
+    <ClCompile Include="..\..\libav\libavformat\tls.c" />
+    <ClCompile Include="..\..\libav\libavformat\tmv.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\tta.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\tty.c" />
+    <ClCompile Include="..\..\libav\libavformat\txd.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\udp.c" />
+    <ClCompile Include="..\..\libav\libavformat\url.c" />
+    <ClCompile Include="..\..\libav\libavformat\urldecode.c" />
+    <ClCompile Include="..\..\libav\libavformat\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\vc1test.c" />
+    <ClCompile Include="..\..\libav\libavformat\vc1testenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\voc.c" />
+    <ClCompile Include="..\..\libav\libavformat\vocdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\vocenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\voc_packet.c" />
+    <ClCompile Include="..\..\libav\libavformat\vorbiscomment.c" />
+    <ClCompile Include="..\..\libav\libavformat\vqf.c" />
+    <ClCompile Include="..\..\libav\libavformat\wavdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\wavenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\wc3movie.c" />
+    <ClCompile Include="..\..\libav\libavformat\westwood_aud.c" />
+    <ClCompile Include="..\..\libav\libavformat\westwood_vqa.c" />
+    <ClCompile Include="..\..\libav\libavformat\wtv.c" />
+    <ClCompile Include="..\..\libav\libavformat\wv.c" />
+    <ClCompile Include="..\..\libav\libavformat\wvdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\wvenc.c" />
+    <ClCompile Include="..\..\libav\libavformat\xa.c" />
+    <ClCompile Include="..\..\libav\libavformat\xmv.c" />
+    <ClCompile Include="..\..\libav\libavformat\xwma.c" />
+    <ClCompile Include="..\..\libav\libavformat\yop.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavformat\yuv4mpegdec.c" />
+    <ClCompile Include="..\..\libav\libavformat\yuv4mpegenc.c" />
+    <ClCompile Include="..\..\libav\libavresample\audio_convert.c" />
+    <ClCompile Include="..\..\libav\libavresample\audio_data.c" />
+    <ClCompile Include="..\..\libav\libavresample\audio_mix.c" />
+    <ClCompile Include="..\..\libav\libavresample\audio_mix_matrix.c" />
+    <ClCompile Include="..\..\libav\libavresample\dither.c" />
+    <ClCompile Include="..\..\libav\libavresample\options.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavresample\resample.c" />
+    <ClCompile Include="..\..\libav\libavresample\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libavresample\x86\audio_convert_init.c" />
+    <ClCompile Include="..\..\libav\libavresample\x86\audio_mix_init.c" />
+    <ClCompile Include="..\..\libav\libavresample\x86\dither_init.c" />
+    <CustomBuild Include="..\..\libav\libavresample/x86/audio_convert.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavresample/x86/audio_mix.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavresample/x86/dither.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\..\libav\libswscale\input.c" />
+    <ClCompile Include="..\..\libav\libswscale\options.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libswscale\output.c" />
+    <ClCompile Include="..\..\libav\libswscale\rgb2rgb.c" />
+    <ClCompile Include="..\..\libav\libswscale\swscale.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libswscale\swscale_unscaled.c" />
+    <ClCompile Include="..\..\libav\libswscale\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libswscale\x86\rgb2rgb.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libswscale\x86\swscale.c" />
+    <ClCompile Include="..\..\libav\libswscale\x86\yuv2rgb.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libav\libswscale\yuv2rgb.c" />
+    <CustomBuild Include="..\..\libav\libswscale/x86/input.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libswscale/x86/output.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libswscale/x86/scale.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\..\libav\libavfilter\vf_blackframe.c" />
+    <ClCompile Include="..\..\libav\libavfilter\vf_boxblur.c" />
+    <ClCompile Include="..\..\libav\libavfilter\vf_cropdetect.c" />
+    <ClCompile Include="..\..\libav\libavfilter\vf_delogo.c" />
+    <ClCompile Include="..\..\libav\libavfilter\vf_hqdn3d.c" />
+    <ClCompile Include="..\..\libav\libavfilter\vf_interlace.c" />
+    <ClCompile Include="..\..\libav\libavfilter\x86/vf_hqdn3d_init.c" />
+    <ClCompile Include="..\..\libav\libavfilter\x86/vf_interlace_init.c" />
+    <CustomBuild Include="..\..\libav\libavfilter\x86/vf_hqdn3d.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libav\libavfilter\x86/vf_interlace.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download libav.2017.vcxproj">
+      <Project>{77c9e0a2-177d-4bd6-9efd-75a56f886325}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libx264\libx264.2017.vcxproj">
+      <Project>{20179127-853b-4fe9-b7c0-9e817e6a3a72}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
