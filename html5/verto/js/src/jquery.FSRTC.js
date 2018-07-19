@@ -448,10 +448,7 @@
             getUserMedia({
 		constraints: {
                     audio: false,
-                    video: {
-			//mandatory: self.options.videoParams,
-			//optional: []
-                    },
+                    video: { deviceId: params.useCamera },
 		},
 		localVideo: self.options.localVideo,
 		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
@@ -501,8 +498,7 @@
             getUserMedia({
 		constraints: {
                     audio: false,
-                    video: obj.options.videoParams
-                    
+                    video: { deviceId: obj.options.useCamera },
 		},
 		localVideo: obj.options.localVideo,
 		onsuccess: function(e) {obj.options.localVideoStream = e; console.log("local video ready");},
