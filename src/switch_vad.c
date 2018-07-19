@@ -75,17 +75,32 @@ SWITCH_DECLARE(switch_vad_t *) switch_vad_init(int sample_rate, int channels)
 	return vad;
 }
 
-//Valid modes are 0 ("quality"), 1 ("low bitrate"), 2 ("aggressive"), and 3 * ("very aggressive"). The default mode is 0.
 SWITCH_DECLARE(int) switch_vad_set_mode(switch_vad_t *vad, int mode)
 {
 #ifdef SWITCH_HAVE_FVAD
-	int ret;
+	int ret = 0;
 
-	if (mode < 0) return 0;
+	if (mode < 0 && vad->fvad) {
+		fvad_free(vad->fvad);
+		vad->fvad = NULL;
+		return ret;
+	} else if (mode > 3) {
+		mode = 3;
+	}
 
-	vad->fvad = fvad_new();
-	ret = fvad_set_mode(vad->fvad, mode);
-	fvad_set_sample_rate(vad->fvad, vad->sample_rate);
+	if (!vad->fvad) {
+		vad->fvad = fvad_new();
+
+		if (!vad->fvad) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "libfvad init error\n");
+		}
+	}
+
+	if (vad->fvad) {
+		ret = fvad_set_mode(vad->fvad, mode);
+		fvad_set_sample_rate(vad->fvad, vad->sample_rate);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "libfvad started, mode = %d\n", mode);
 	return ret;
 #else
@@ -210,7 +225,7 @@ SWITCH_DECLARE(void) switch_vad_destroy(switch_vad_t **vad)
 	if (*vad) {
 
 #ifdef SWITCH_HAVE_FVAD
-		if ((*vad)->fvad) free ((*vad)->fvad);
+		if ((*vad)->fvad) fvad_free ((*vad)->fvad);
 #endif
 
 		free(*vad);
