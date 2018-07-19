@@ -175,7 +175,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       password: $cookieStore.get('verto_demo_passwd') || "1234",
       hostname: window.location.hostname,
       wsURL: ("wss://" + window.location.hostname + ":8082"),
-      socketFallbackUrl: null,
+      wsFallbackURL: null,
       turnServer: null,
       resCheckEnded: false
     };
@@ -735,7 +735,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             login: data.login + '@' + data.hostname,
             passwd: data.password,
             socketUrl: data.wsURL,
-            socketFallbackUrl: data.socketFallbackUrl,
+            wsFallbackURL: data.wsFallbackURL,
             turnServer: data.turnServer,
             tag: "webcam",
             ringFile: "sounds/bell_ring2.wav",

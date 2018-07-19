@@ -110,7 +110,7 @@
             login: verto.options.login,
             passwd: verto.options.passwd,
             socketUrl: verto.options.socketUrl,
-            socketFallbackUrl: verto.options.socketFallbackUrl,
+            wsFallbackURL: verto.options.wsFallbackURL,
             turnServer: verto.options.turnServer,
 	    loginParams: verto.options.loginParams,
 	    userVariables: verto.options.userVariables,
