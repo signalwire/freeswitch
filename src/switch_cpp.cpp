@@ -855,8 +855,8 @@ SWITCH_DECLARE(void) CoreSession::set_tts_params(char *tts_name_p, char *voice_n
 	sanity_check_noreturn;
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
-    tts_name = strdup(tts_name_p);
-    voice_name = strdup(voice_name_p);
+	tts_name = strdup(switch_str_nil(tts_name_p));
+	voice_name = strdup(switch_str_nil(voice_name_p));
 }
 
 SWITCH_DECLARE(int) CoreSession::collectDigits(int abs_timeout) {
