@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libcodec2</ProjectName>
+    <RootNamespace>libcodec2</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{19E934D6-1484-41C8-9305-78DC42FD61F2}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)w32\libcodec2.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)w32\extlib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBlibcodec2_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBlibcodec2_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBlibcodec2_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBlibcodec2_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command>
+xcopy "$(ProjectDir)generated\*" "$(libcodec2LibDir)\src\" /C /D /Y
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(libcodec2LibDir)\src\dump.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\lpc.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\nlp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\postfilter.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\sine.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codec2.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\fifo.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\fdmdv.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\kiss_fft.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\interp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\lsp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\phase.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\quantise.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\pack.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebook.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookd.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookvq.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookjnd.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookjvm.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookvqanssi.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookdt.c" />
+    <ClCompile Include="$(libcodec2LibDir)\src\codebookge.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(libcodec2LibDir)\src\dump.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\lpc.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\nlp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\postfilter.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\sine.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codec2.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\fifo.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\fdmdv.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\kiss_fft.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\interp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\lsp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\phase.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\quantise.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\pack.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebook.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookd.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookvq.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookjnd.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookjvm.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookvqanssi.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookdt.h" />
+    <ClInclude Include="$(libcodec2LibDir)\src\codebookge.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download libcodec2.2017.vcxproj">
+      <Project>{9cfa562c-c611-48a7-90a2-bb031b47fe6d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
