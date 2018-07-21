@@ -86,6 +86,7 @@ struct switch_ivr_dmachine {
 	uint8_t pinging;
 };
 
+static switch_status_t speech_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_last_ping(switch_ivr_dmachine_t *dmachine)
 {
@@ -4677,7 +4678,12 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
 			switch_status_t st;
-
+			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			
+			switch_channel_set_private(channel, SWITCH_SPEECH_KEY, NULL);
+			switch_core_event_hook_remove_recv_dtmf(session, speech_on_dtmf);
+			
 			switch_core_asr_close(sth->ah, &flags);
 			if (sth->mutex && sth->cond && sth->ready) {
 				if (switch_mutex_trylock(sth->mutex) == SWITCH_STATUS_SUCCESS) {
