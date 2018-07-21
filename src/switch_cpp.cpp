@@ -984,6 +984,71 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	return dtmf_buf;
 }
 
+SWITCH_DECLARE(void) CoreSession::detectSpeech(char *arg0, char *arg1, char *arg2, char *arg3)
+{
+	this_check_void();
+	sanity_check_noreturn;
+
+	begin_allow_threads();
+
+	if (!arg0) return;
+
+	if (!strcasecmp(arg0, "grammar") && arg1 && arg2) {
+		switch_ivr_detect_speech_load_grammar(session, arg1, arg2);
+	} else if (!strcasecmp(arg0, "nogrammar") && arg1) {
+		switch_ivr_detect_speech_unload_grammar(session, arg1);
+	} else if (!strcasecmp(arg0, "grammaron") && arg1) {
+		switch_ivr_detect_speech_enable_grammar(session, arg1);
+	} else if (!strcasecmp(arg0, "grammaroff") && arg1) {
+		switch_ivr_detect_speech_disable_grammar(session, arg1);
+	} else if (!strcasecmp(arg0, "grammarsalloff")) {
+		switch_ivr_detect_speech_disable_all_grammars(session);
+	} else if (!strcasecmp(arg0, "init") && arg1 && arg2) {
+		switch_ivr_detect_speech_init(session, arg1, arg2, NULL);
+	} else if (!strcasecmp(arg0, "pause")) {
+		switch_ivr_pause_detect_speech(session);
+	} else if (!strcasecmp(arg0, "resume")) {
+		switch_ivr_resume_detect_speech(session);
+	} else if (!strcasecmp(arg0, "stop")) {
+		switch_ivr_stop_detect_speech(session);
+	} else if (!strcasecmp(arg0, "param") && arg1 && arg2) {
+		switch_ivr_set_param_detect_speech(session, arg1, arg2);
+	} else if (!strcasecmp(arg0, "start-input-timers")) {
+		switch_ivr_detect_speech_start_input_timers(session);
+	} else if (!strcasecmp(arg0, "start_input_timers")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "start_input_timers is deprecated, please use start-input-timers instead!\n");
+		switch_ivr_detect_speech_start_input_timers(session);
+	} else if (arg1 && arg2 && arg3) {
+		switch_ivr_detect_speech(session, arg0, arg1, arg2, arg3, NULL);
+	}
+
+	end_allow_threads();
+}
+
+SWITCH_DECLARE(char *) CoreSession::playAndDetectSpeech(char *file, char *engine, char *grammar)
+{
+	sanity_check((char *)"");
+	this_check((char *)"");
+	begin_allow_threads();
+
+	char *result = NULL;
+
+	switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		// good
+	} else if (status == SWITCH_STATUS_GENERR) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "GRAMMAR ERROR\n");
+	} else if (status == SWITCH_STATUS_NOT_INITALIZED) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ASR INIT ERROR\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ERROR\n");
+	}
+
+	end_allow_threads();
+
+	return result; // remeber to free me
+}
+
 SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender)
 {
 	this_check_void();

@@ -128,6 +128,10 @@ class CoreSession {
 						 int max_digits,
 						 int max_tries,
 						 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files, char *dtmf_buf, char *digits_regex);
+
+	int playAndDetectSpeech(char *file, char *engine, char *grammar);
+	void detectSpeech(char *arg0, char * = NULL, char *arg2 = NULL, char *arg3 = NULL);
+
 	int streamFile(char *file, int starting_sample_count = 0);
 
 

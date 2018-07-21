@@ -42,6 +42,7 @@
 %newobject Dbh;
 %newobject API::execute;
 %newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 %include "typemaps.i"
 %apply int *OUTPUT { int *len };

@@ -14,6 +14,9 @@
 %newobject CoreSession;
 %newobject Event;
 %newobject Stream;
+%newobject API::execute;
+%newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 /** insert the following includes into generated code so it compiles */
 %{

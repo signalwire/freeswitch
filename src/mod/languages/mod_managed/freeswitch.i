@@ -84,6 +84,7 @@ char * SWIG_csharp_string_callback(const char * str) {
 %newobject Stream;
 %newobject API::execute;
 %newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 // Allow bitwise compare on flag fields
 %typemap(csclassmodifiers) session_flag_t "[System.Flags] public enum"

@@ -316,6 +316,10 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits,
 									 const char *prompt_audio_file, int timeout, const char *valid_terminators, int digit_timeout = 0);
 
+
+		SWITCH_DECLARE(void) detectSpeech(char *arg0, char *arg1 = NULL, char *arg2 = NULL, char *arg3 = NULL);
+
+
 	/** \brief Play a file into channel and collect dtmfs
 	 *
 	 * See API docs in switch_ivr.h: switch_play_and_get_digits(..)
@@ -330,6 +334,14 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 												 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files,
 												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0,
 												 const char *transfer_on_failure = NULL);
+
+
+	/** \brief Play a file and detect speech
+	 * See API docs switch_ivr_play_and_detect_speech(...)
+	 */
+
+		SWITCH_DECLARE(char *) playAndDetectSpeech(char *file, char *engine, char *grammar);
+
 
 	/** \brief Play a file that resides on disk into the channel
 	 *
