@@ -1941,6 +1941,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(_In_ switch_file_han
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
 
+/*!
+  \brief Pre close an open file handle, then can get file size etc., no more wirte to the file
+  \param fh the file handle to close
+  \return SWITCH_STATUS_SUCCESS if the file handle was pre closed
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
 
 /*!
   \brief Close an open file handle
