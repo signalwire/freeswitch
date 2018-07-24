@@ -1115,7 +1115,7 @@ static inline uint32_t switch_parse_cpu_string(const char *cpu)
 
 		if (divisor <= 0) divisor = 1;
 
-		ncpu = cpu_count / divisor;
+		ncpu = (int)(cpu_count / divisor);
 
 		if (ncpu <= 0) return 1;
 
