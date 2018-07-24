@@ -748,6 +748,19 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FileDelete)
 	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
 }
 
+/* Internal Version function accessable from JS - used to get the current V8 version */
+JS_GLOBAL_FUNCTION_IMPL_STATIC(Version)
+{
+	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), V8::GetVersion()));
+}
+
+/* TaskId assigned to the script - used to manage the task */
+JS_GLOBAL_FUNCTION_IMPL_STATIC(Id)
+{
+	js_isolate_private_data_t *private_data = (js_isolate_private_data_t*)info.GetIsolate()->GetData(ISOLATE_DATA_PRIVATE);
+	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), private_data->str_task_id.c_str()));
+}
+
 static const js_function_t fs_proc[] = {
 	{"console_log", FSGlobal::Log},				// Deprecated
 	{"consoleLog", FSGlobal::Log},
@@ -770,6 +783,8 @@ static const js_function_t fs_proc[] = {
 	{"fetchUrl", FSGlobal::FetchURL},
 	{"fetchUrlHash", FSGlobal::FetchURLHash},
 	{"fetchUrlFile", FSGlobal::FetchURLFile},
+	{"id", FSGlobal::Id },
+	{"version", FSGlobal::Version},
 	{0}
 };
 

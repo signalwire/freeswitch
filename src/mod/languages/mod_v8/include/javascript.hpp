@@ -332,7 +332,6 @@ public:
 	static void Dispose();												/* Deinitialize the V8 engine */
 
 	static void Include(const v8::FunctionCallbackInfo<v8::Value>& args);		/* Adds functionality to include another JavaScript from the running script */
-	static void Version(const v8::FunctionCallbackInfo<v8::Value>& args);		/* Internal Version function accessable from JS - used to get the current V( version */
 	static const std::string GetExceptionInfo(v8::Isolate* isolate, v8::TryCatch* try_catch);	/* Get the exception information from a V8 TryCatch instance */
 
 	const std::vector<const js_class_definition_t *>& GetExtenderClasses() const;/* Returns the list of class definitions */
@@ -355,7 +354,7 @@ public:
 	int GetForcedTerminationLineNumber(void);
 
 	/* Method to force termination of a script */
-	static void ExitScript(v8::Isolate *isolate, const char *msg);
+	static void ExitScript(v8::Isolate *isolate, const char *msg, bool jskill = false);
 
 	/* Get the filename and line number of the current JS stack */
 	static char *GetStackInfo(v8::Isolate *isolate, int *lineNumber);

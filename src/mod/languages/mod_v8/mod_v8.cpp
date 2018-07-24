@@ -125,6 +125,8 @@ typedef struct {
 	v8::Platform *v8platform;
 	switch_hash_t *compiled_script_hash;
 	switch_mutex_t *compiled_script_hash_mutex;
+	map<string, Isolate *> *task_manager;
+	switch_mutex_t *task_manager_mutex;
 	char *script_caching;
 	switch_time_t cache_expires_seconds;
 	bool performance_monitor;
@@ -607,7 +609,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 	JSMain *js;
 	Isolate *isolate;
 	char *arg, *argv[512];
-	int argc = 0, x = 0, y = 0;
+	int argc = 0;
 	unsigned int flags = 0;
 	char *path = NULL;
 	string result_string;
@@ -642,7 +644,26 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 			HandleScope scope(isolate);
 
 			// Store our object internally
-			isolate->SetData(0, js);
+			isolate->SetData(ISOLATE_DATA_OBJECT, js);
+
+			// Set isolate related data.
+			switch_uuid_t task_id;
+			switch_uuid_get(&task_id);
+			char str_task_id[SWITCH_UUID_FORMATTED_LENGTH + 1];
+			switch_uuid_format(str_task_id, &task_id);
+
+			js_isolate_private_data_t *private_data = new js_isolate_private_data_t();
+			private_data->str_task_id = str_task_id;
+			private_data->input_code = input_code;
+			private_data->start_time = switch_time_now();
+
+			// Store private data internally
+			isolate->SetData(ISOLATE_DATA_PRIVATE, private_data);
+
+			// Add isolate to the task manager 
+			switch_mutex_lock(globals.task_manager_mutex);
+			(*globals.task_manager)[str_task_id] = isolate;
+			switch_mutex_unlock(globals.task_manager_mutex);
 
 			// New global template
 			Handle<ObjectTemplate> global = ObjectTemplate::New(isolate);
@@ -650,9 +671,6 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 			if (global.IsEmpty()) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create JS global object template\n");
 			} else {
-				/* Function to print current V8 version */
-				global->Set(String::NewFromUtf8(isolate, "version"), FunctionTemplate::New(isolate, JSMain::Version));
-
 				/* Add all global functions */
 				for (size_t i = 0; i < js->GetExtenderFunctions().size(); i++) {
 					js_function_t *proc = js->GetExtenderFunctions()[i];
@@ -670,7 +688,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 
 #ifdef V8_ENABLE_DEBUGGING
 					Persistent<Context> *debug_context = new Persistent<Context>();
-					isolate->SetData(1, debug_context);
+					isolate->SetData(ISOLATE_DATA_DEBUG, debug_context);
 					debug_context->Reset(isolate, context);
 
 					//v8::Locker lck(isolate);
@@ -749,7 +767,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 
 						// Add arguments before running script.
 						Local<Array> arguments = Array::New(isolate, argc);
-						for (y = 0; y < argc; y++) {
+						for (int y = 0; y < argc; y++) {
 							arguments->Set(Integer::New(isolate, y), String::NewFromUtf8(isolate, argv[y]));
 						}
 						context->Global()->Set(String::NewFromUtf8(isolate, "argv"), arguments);
@@ -786,11 +804,11 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 					if (!script_data) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No script to execute!\n");
 					} else {
-						/* Store our base directoy in variable 'scriptPath' */
-						char *path = v8_get_script_path(script_file);
-						if (path) {
-							context->Global()->Set(String::NewFromUtf8(isolate, "scriptPath"), String::NewFromUtf8(isolate, path));
-							free(path);
+						/* Store our base directory in variable 'scriptPath' */
+						char *scriptPath = v8_get_script_path(script_file);
+						if (scriptPath) {
+							context->Global()->Set(String::NewFromUtf8(isolate, "scriptPath"), String::NewFromUtf8(isolate, scriptPath));
+							switch_safe_free(scriptPath);
 						}
 
 						TryCatch try_catch(isolate);
@@ -818,10 +836,10 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 #endif
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-							Handle<Value> result;
+							Handle<Value> script_result;
 
 							if (!v8_script.IsEmpty()) {
-								result = v8_script.ToLocalChecked()->Run();
+								script_result = v8_script.ToLocalChecked()->Run();
 							}
 
 							switch_mutex_lock(globals.mutex);
@@ -842,9 +860,9 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 									switch_log_printf(SWITCH_CHANNEL_ID_LOG, js->GetForcedTerminationScriptFile(), modname, js->GetForcedTerminationLineNumber(), NULL, SWITCH_LOG_NOTICE, "Script exited with info [%s]\n", js->GetForcedTerminationMessage());
 								}
 
-								if (!result.IsEmpty()) {
+								if (!script_result.IsEmpty()) {
 									// Return result as string
-									String::Utf8Value ascii(result);
+									String::Utf8Value ascii(script_result);
 									if (*ascii) {
 										res = *ascii;
 									}
@@ -868,7 +886,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 #endif
 					}
 #ifdef V8_ENABLE_DEBUGGING
-					isolate->SetData(1, NULL);
+					isolate->SetData(ISOLATE_DATA_DEBUG, NULL);
 					if (debug_listen_port > 0) {
 						Debug::DisableAgent();
 					}
@@ -877,7 +895,16 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 #endif
 				}
 			}
-			isolate->SetData(0, NULL);
+
+			// Remove isolate from the task manager
+			switch_mutex_lock(globals.task_manager_mutex);
+			globals.task_manager->erase(str_task_id);
+			switch_mutex_unlock(globals.task_manager_mutex);
+			
+			isolate->SetData(ISOLATE_DATA_PRIVATE, NULL);
+			isolate->SetData(ISOLATE_DATA_OBJECT, NULL);
+
+			delete private_data;
 		}
 
 #ifdef V8_FORCE_GC_AFTER_EXECUTION
@@ -1178,6 +1205,279 @@ SWITCH_STANDARD_API(jsmon_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(kill_function)
+{
+	if (!zstr(cmd)) {
+		switch_mutex_lock(globals.task_manager_mutex);
+
+		auto isolate_it = globals.task_manager->find(cmd);
+		if (isolate_it != globals.task_manager->end()) {
+			Isolate * isolate = isolate_it->second;
+			JSMain *js = JSMain::GetScriptInstanceFromIsolate(isolate);
+			if (js)
+				js->ExitScript(isolate, "Script termination requested by jskill API.", true);
+		}
+
+		switch_mutex_unlock(globals.task_manager_mutex);
+
+		stream->write_function(stream, "+OK\n");
+	}
+	else {
+		stream->write_function(stream, "false");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+inline static void stream_write_safe_d(switch_stream_handle_t *stream, const char *str) {
+	if (!str) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		stream->write_function(stream, "-ERR Memory Error!\n");
+	}
+	else {
+		stream->write_function(stream, "%s", str);
+	}
+}
+#define stream_write_safe(output_text) stream_write_safe_d(stream, output_text)
+
+SWITCH_STANDARD_API(process_status_function)
+{
+	char *mydata = NULL, *argv[3] = { 0 };
+	char *as = NULL, *output_text = NULL, *delim = ",";	
+	cJSON *json = NULL, *row;
+	switch_xml_t xml = NULL, xml_row, xml_field;
+	int rows = 0, f_off = 0, count = 0;
+	char tmp_str[50];
+	std::vector<js_isolate_private_data_t> tasks;
+
+	if (cmd && *cmd && (mydata = strdup(cmd))) {
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argv[1] && !strcasecmp(argv[0], "as")) {
+			as = argv[1];
+			if (!strcasecmp(as, "csv")) {
+				if (argv[2]) delim = argv[2];
+			}
+		}
+	}
+
+	if (!as) {
+		as = "plain";
+	}
+
+	if (!strcasecmp(as, "json")) {
+		if (!(json = cJSON_CreateArray())) {
+			goto end;
+		}
+	} else if (!strcasecmp(as, "xml")) {
+		if (!(xml = switch_xml_new("result"))) {
+			goto end;
+		}
+	} else if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
+		stream->write_function(stream, "%s%s", "task_id", delim);
+		stream->write_function(stream, "%s%s", "input_code", delim);
+		stream->write_function(stream, "%s%s", "execution_time", delim);
+
+		stream->write_function(stream, "%s%s", "total_physical_size", delim);
+		stream->write_function(stream, "%s%s", "total_heap_size_executable", delim);
+		stream->write_function(stream, "%s%s", "total_heap_size", delim);
+		stream->write_function(stream, "%s%s", "used_heap_size", delim);
+		stream->write_function(stream, "%s%s", "heap_size_limit", delim);
+		stream->write_function(stream, "%s%s", "malloced_memory", delim);
+		stream->write_function(stream, "%s%s", "peak_malloced_memory", "\n");		
+	} else {
+		stream->write_function(stream, "JavaScript process status.\n");
+	}
+	
+	switch_mutex_lock(globals.task_manager_mutex);
+
+	for (auto isolate_pair : *globals.task_manager) {
+		Isolate *isolate = isolate_pair.second;
+
+		js_isolate_private_data_t *isolate_private_data = (js_isolate_private_data_t*)isolate->GetData(ISOLATE_DATA_PRIVATE);
+		js_isolate_private_data_t private_data = *isolate_private_data;
+
+		isolate->GetHeapStatistics(&private_data.stats);
+
+		tasks.push_back(private_data);
+	}
+
+	switch_mutex_unlock(globals.task_manager_mutex);
+
+	for (auto isolate_private_data : tasks) {
+		count++;
+
+		js_isolate_private_data_t *private_data = (js_isolate_private_data_t *)&(isolate_private_data);
+
+		switch_time_t end = switch_time_now();
+		unsigned int delay = (end - private_data->start_time) / 1000;
+
+		if (!strcasecmp(as, "plain")) {
+
+			stream->write_function(stream, "\nTask id: %s\n", private_data->str_task_id.c_str());
+			stream->write_function(stream, "input_code: %s\n", (private_data->input_code[0] == '~' ? "inline" : private_data->input_code.c_str()));
+			stream->write_function(stream, "execution_time: %u ms\n", delay);
+
+			stream->write_function(stream, "total_physical_size: %u\n", private_data->stats.total_physical_size());
+			stream->write_function(stream, "total_heap_size_executable: %u\n", private_data->stats.total_heap_size_executable());
+			stream->write_function(stream, "total_heap_size: %u\n", private_data->stats.total_heap_size());
+			stream->write_function(stream, "used_heap_size: %u\n", private_data->stats.used_heap_size());
+			stream->write_function(stream, "heap_size_limit: %u\n", private_data->stats.heap_size_limit());
+			stream->write_function(stream, "malloced_memory: %u\n", private_data->stats.malloced_memory());
+			stream->write_function(stream, "peak_malloced_memory: %u\n", private_data->stats.peak_malloced_memory());
+		} else if (!strcasecmp(as, "json")) {
+			if (!(row = cJSON_CreateObject())) {				
+				goto end;
+			}
+
+			cJSON_AddItemToArray(json, row);
+
+			cJSON_AddItemToObject(row, "task_id", cJSON_CreateString(private_data->str_task_id.c_str()));
+			cJSON_AddItemToObject(row, "input_code", cJSON_CreateString((private_data->input_code[0] == '~' ? "inline" : private_data->input_code.c_str())));
+			cJSON_AddItemToObject(row, "execution_time", cJSON_CreateNumber(delay));
+
+			cJSON_AddItemToObject(row, "total_physical_size", cJSON_CreateNumber(private_data->stats.total_physical_size()));
+			cJSON_AddItemToObject(row, "total_heap_size_executable", cJSON_CreateNumber(private_data->stats.total_heap_size_executable()));
+			cJSON_AddItemToObject(row, "total_heap_size", cJSON_CreateNumber(private_data->stats.total_heap_size()));
+			cJSON_AddItemToObject(row, "used_heap_size", cJSON_CreateNumber(private_data->stats.used_heap_size()));
+			cJSON_AddItemToObject(row, "heap_size_limit", cJSON_CreateNumber(private_data->stats.heap_size_limit()));
+			cJSON_AddItemToObject(row, "malloced_memory", cJSON_CreateNumber(private_data->stats.malloced_memory()));
+			cJSON_AddItemToObject(row, "peak_malloced_memory", cJSON_CreateNumber(private_data->stats.peak_malloced_memory()));
+		} else if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
+			stream->write_function(stream, "%s%s", private_data->str_task_id.c_str(), delim);
+			stream->write_function(stream, "%s%s", (private_data->input_code[0] == '~' ? "inline" : private_data->input_code.c_str()), delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", delay);
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_physical_size());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_heap_size_executable());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_heap_size());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.used_heap_size());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.heap_size_limit());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.malloced_memory());
+			stream->write_function(stream, "%s%s", tmp_str, delim);
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.peak_malloced_memory());
+			stream->write_function(stream, "%s%s", tmp_str, "\n");
+
+		} else if (!strcasecmp(as, "xml")) {
+			if (!(xml_row = switch_xml_add_child_d(xml, "row", rows++))) {
+				goto end;
+			}
+
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%d", rows);
+			switch_xml_set_attr(switch_xml_set_flag(xml_row, SWITCH_XML_DUP), strdup("row_id"), strdup(tmp_str));
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "task_id", f_off++))) {				
+				goto end;
+			} 
+			switch_xml_set_txt_d(xml_field, private_data->str_task_id.c_str());
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "input_code", f_off++))) {
+				goto end;
+			}
+			switch_xml_set_txt_d(xml_field, (private_data->input_code[0] == '~' ? "inline" : private_data->input_code.c_str()));
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "execution_time", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", delay);
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "total_physical_size", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_physical_size());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "total_heap_size_executable", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_heap_size_executable());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "total_heap_size", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.total_heap_size());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "used_heap_size", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.used_heap_size());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "heap_size_limit", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.heap_size_limit());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "malloced_memory", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.malloced_memory());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+			if (!(xml_field = switch_xml_add_child_d(xml_row, "peak_malloced_memory", f_off++))) {
+				goto end;
+			}
+			switch_snprintf(tmp_str, sizeof(tmp_str), "%u", private_data->stats.peak_malloced_memory());
+			switch_xml_set_txt_d(xml_field, tmp_str);
+
+		}
+	}
+
+	if (!strcasecmp(as, "json")) {
+		cJSON *result;
+
+		if (!(result = cJSON_CreateObject())) {
+			stream->write_function(stream, "-ERR Error creating json object!\n");
+			goto end;
+		}
+		else {
+			cJSON_AddItemToObject(result, "row_count", cJSON_CreateNumber(count));
+			cJSON_AddItemToObject(result, "rows", json);
+
+			output_text = cJSON_PrintUnformatted(result);
+			json = result;
+		}
+
+		stream_write_safe(output_text);
+
+	} else if (!strcasecmp(as, "xml")) {
+		switch_snprintf(tmp_str, sizeof(tmp_str), "%u", count);
+		switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup("row_count"), strdup(tmp_str));
+
+		output_text = switch_xml_toxml(xml, SWITCH_FALSE);
+
+		stream_write_safe(output_text);
+
+	} else if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
+		stream->write_function(stream, "%s%u total.%s", "\n", count, "\n");
+	}
+
+end:
+	
+	switch_xml_free(xml);
+	cJSON_Delete(json);
+	switch_safe_free(output_text);
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 {
 	switch_application_interface_t *app_interface;
@@ -1193,12 +1493,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 	switch_mutex_init(&globals.compiled_script_hash_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&globals.task_manager_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 #endif
 	switch_mutex_init(&globals.event_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	globals.event_handlers = new set<FSEventHandler *>();
 
 	if (load_modules() != SWITCH_STATUS_SUCCESS) {
+		delete globals.event_handlers;
+		switch_event_unbind(&globals.event_node);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1211,6 +1514,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	JSMain::Initialize(&globals.v8platform);
 
 	switch_core_hash_init(&globals.compiled_script_hash);
+	globals.task_manager = new map<string, Isolate *>();
 #else
 	JSMain::Initialize();
 #endif
@@ -1234,6 +1538,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	SWITCH_ADD_API(jsrun_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
 	SWITCH_ADD_API(jsapi_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
 	SWITCH_ADD_API(jsmon_interface, "jsmon", "toggle performance monitor", jsmon_function, "jsmon on|off");
+	SWITCH_ADD_API(jsrun_interface, "jsps", "process status", process_status_function, "jsps [as plain|json|xml|delim|csv [<delimeter>]]");
+	SWITCH_ADD_API(jsrun_interface, "jskill", "kill a task", kill_function, "jskill <task_id>");
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", v8_dp_function, "<script> [additional_vars [...]]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "javascript", "execute a js script", "execute a js script", v8_chat_function, "<script>", SCAF_NONE);
 
@@ -1257,6 +1563,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_v8_shutdown)
 
 	switch_core_hash_destroy(&globals.compiled_script_hash);
 	switch_mutex_destroy(globals.compiled_script_hash_mutex);
+	switch_mutex_destroy(globals.task_manager_mutex);
+	delete globals.task_manager;
 	switch_mutex_destroy(globals.mutex);
 #endif
 
