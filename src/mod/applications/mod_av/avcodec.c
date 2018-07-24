@@ -910,8 +910,10 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		profile = &avcodec_globals.profiles[get_codec_index("H263+")];
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
 		profile = &avcodec_globals.profiles[get_codec_index("H264")];
+#ifdef AV_CODEC_ID_H265
 	} else if (context->av_codec_id == AV_CODEC_ID_H265) {
 		profile = &avcodec_globals.profiles[get_codec_index("H265")];
+#endif
 	}
 
 	if (!profile) return SWITCH_STATUS_FALSE;
@@ -1782,43 +1784,77 @@ static void load_config()
 
 							for (i = 0; i < argc; i++) {
 								if (!strcasecmp(argv[i], "UNALIGNED")) {
+#ifdef AV_CODEC_FLAG_UNALIGNED
 									flags |= AV_CODEC_FLAG_UNALIGNED;
+#endif
 								} else if (!strcasecmp(argv[i], "QSCALE")) {
+#ifdef AV_CODEC_FLAG_QSCALE
 									flags |= AV_CODEC_FLAG_QSCALE;
-								} else if (!strcasecmp(argv[i], "QSCALE")) {
-									flags |= AV_CODEC_FLAG_QSCALE;
+#endif
 								} else if (!strcasecmp(argv[i], "4MV")) {
+#ifdef AV_CODEC_FLAG_4MV
 									flags |= AV_CODEC_FLAG_4MV;
+#endif
 								} else if (!strcasecmp(argv[i], "CORRUPT")) {
+#ifdef AV_CODEC_FLAG_OUTPUT_CORRUPT
 									flags |= AV_CODEC_FLAG_OUTPUT_CORRUPT;
+#endif
 								} else if (!strcasecmp(argv[i], "QPEL")) {
+#ifdef AV_CODEC_FLAG_QPEL
 									flags |= AV_CODEC_FLAG_QPEL;
+#endif
 								} else if (!strcasecmp(argv[i], "PASS1")) {
+#ifdef AV_CODEC_FLAG_PASS1
 									flags |= AV_CODEC_FLAG_PASS1;
+#endif
 								} else if (!strcasecmp(argv[i], "PASS2")) {
+#ifdef AV_CODEC_FLAG_PASS2
 									flags |= AV_CODEC_FLAG_PASS2;
+#endif
 								} else if (!strcasecmp(argv[i], "FILTER")) {
+#ifdef AV_CODEC_FLAG_LOOP_FILTER
 									flags |= AV_CODEC_FLAG_LOOP_FILTER;
+#endif
 								} else if (!strcasecmp(argv[i], "GRAY")) {
+#ifdef AV_CODEC_FLAG_GRAY
 									flags |= AV_CODEC_FLAG_GRAY;
+#endif
 								} else if (!strcasecmp(argv[i], "PSNR")) {
+#ifdef AV_CODEC_FLAG_PSNR
 									flags |= AV_CODEC_FLAG_PSNR;
+#endif
 								} else if (!strcasecmp(argv[i], "TRUNCATED")) {
+#ifdef AV_CODEC_FLAG_TRUNCATED
 									flags |= AV_CODEC_FLAG_TRUNCATED;
+#endif
 								} else if (!strcasecmp(argv[i], "INTERLACED_DCT")) {
+#ifdef AV_CODEC_FLAG_INTERLACED_DCT
 									flags |= AV_CODEC_FLAG_INTERLACED_DCT;
+#endif
 								} else if (!strcasecmp(argv[i], "LOW_DELAY")) {
+#ifdef AV_CODEC_FLAG_LOW_DELAY
 									flags |= AV_CODEC_FLAG_LOW_DELAY;
+#endif
 								} else if (!strcasecmp(argv[i], "HEADER")) {
+#ifdef AV_CODEC_FLAG_GLOBAL_HEADER
 									flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif
 								} else if (!strcasecmp(argv[i], "BITEXACT")) {
+#ifdef AV_CODEC_FLAG_BITEXACT
 									flags |= AV_CODEC_FLAG_BITEXACT;
+#endif
 								} else if (!strcasecmp(argv[i], "AC_PRED")) {
+#ifdef AV_CODEC_FLAG_AC_PRED
 									flags |= AV_CODEC_FLAG_AC_PRED;
+#endif
 								} else if (!strcasecmp(argv[i], "INTERLACED_ME")) {
+#ifdef AV_CODEC_FLAG_INTERLACED_ME
 									flags |= AV_CODEC_FLAG_INTERLACED_ME;
+#endif
 								} else if (!strcasecmp(argv[i], "CLOSED_GOP")) {
+#ifdef AV_CODEC_FLAG_CLOSED_GOP
 									flags |= AV_CODEC_FLAG_CLOSED_GOP;
+#endif
 								}
 							}
 
