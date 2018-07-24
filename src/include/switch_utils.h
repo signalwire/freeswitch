@@ -1111,7 +1111,7 @@ static inline uint32_t switch_parse_cpu_string(const char *cpu)
 			max = atoi(has_max + 1);
 		}
 
-		divisor = atof(cpu);
+		divisor = (float)atof(cpu);
 
 		if (divisor <= 0) divisor = 1;
 
