@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2015, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -2921,12 +2921,10 @@ done:
 	return NULL;
 }
 
-
 /**
  * Dial a new call
- * @param rclient requesting the call
  * @param server handling the call
- * @param node the request
+ * @param msg the request
  */
 static iks *on_rayo_dial(struct rayo_actor *server, struct rayo_message *msg, void *data)
 {
@@ -2958,6 +2956,82 @@ static iks *on_rayo_dial(struct rayo_actor *server, struct rayo_message *msg, vo
 		switch_thread_create(&thread, thd_attr, rayo_dial_thread, dtdata, pool);
 	}
 
+	return response;
+}
+
+struct exec_thread_data {
+	switch_memory_pool_t *pool;
+	iks *node;
+};
+
+/**
+ * Thread that handles executing server APIs
+ * @param thread this thread
+ * @param user the API request
+ * @return NULL
+ */
+static void *SWITCH_THREAD_FUNC rayo_exec_thread(switch_thread_t *thread, void *user)
+{
+	struct exec_thread_data *etdata = (struct exec_thread_data *)user;
+	iks *response = NULL;
+	iks *exec = iks_find(etdata->node, "exec");
+	const char *api = iks_find_attrib(exec, "api");
+	const char *args = iks_find_attrib_soft(exec, "args");
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BGAPI EXEC: %s %s\n", api, args);
+	if (switch_api_execute(api, args, NULL, &stream) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BGAPI EXEC FAILURE\n");
+		response = iks_new_error_detailed(etdata->node, STANZA_ERROR_BAD_REQUEST, "Failed to execute API");
+	} else {
+		iks *api_result = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BGAPI EXEC RESULT: %s\n", (char *)stream.data);
+		response = iks_new_iq_result(etdata->node);
+		api_result = iks_insert(response, "response");
+		iks_insert_attrib(api_result, "response", zstr((char *)stream.data) ? "" : (char *)stream.data);
+	}
+
+	RAYO_SEND_REPLY(globals.server, iks_find_attrib(response, "to"), response);
+
+	switch_safe_free(stream.data);
+	{
+		switch_memory_pool_t *pool = etdata->pool;
+		switch_core_destroy_memory_pool(&pool);
+	}
+	return NULL;
+}
+
+/**
+ * Execute an API on the server
+ * @param server handling the call
+ * @param msg the request
+ */
+static iks *on_rayo_exec(struct rayo_actor *server, struct rayo_message *msg, void *data)
+{
+	iks *node = msg->payload;
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	iks *exec = iks_find(node, "exec");
+	iks *response = NULL;
+	const char *api = iks_find_attrib_soft(exec, "api");
+
+	if (zstr(api)) {
+		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "missing <exec> api attribute");
+	} else {
+		struct exec_thread_data *etdata = NULL;
+		switch_memory_pool_t *pool = NULL;
+		switch_core_new_memory_pool(&pool);
+		etdata = switch_core_alloc(pool, sizeof(*etdata));
+		etdata->pool = pool;
+		etdata->node = iks_copy(node);
+
+		/* start exec thread */
+		switch_threadattr_create(&thd_attr, pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, rayo_exec_thread, etdata, pool);
+	}
 	return response;
 }
 
@@ -5206,6 +5280,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	rayo_actor_command_handler_add(RAT_SERVER, "", "get:"IKS_NS_XMPP_PING":ping", on_iq_xmpp_ping);
 	rayo_actor_command_handler_add(RAT_SERVER, "", "get:"IKS_NS_XMPP_DISCO":query", on_iq_get_xmpp_disco);
 	rayo_actor_command_handler_add(RAT_SERVER, "", "set:"RAYO_NS":dial", on_rayo_dial);
+	rayo_actor_command_handler_add(RAT_SERVER, "", "set:"RAYO_NS":exec", on_rayo_exec);
 
 	/* Rayo call commands */
 	rayo_actor_command_handler_add(RAT_CALL, "", "set:"RAYO_NS":accept", on_rayo_accept);
