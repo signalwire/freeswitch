@@ -576,6 +576,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_mongodb\mod_cdr_mongodb.2017.vcxproj">
+      <Name>mod_cdr_mongodb</Name>
+      <Project>{4dff29b4-2976-447d-a8b3-43476451517c}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_pg_csv\mod_cdr_pg_csv.2017.vcxproj">
       <Name>mod_cdr_pg_csv</Name>
       <Project>{411f6d43-9f09-47d0-8b04-e1eb6b67c5bf}</Project>
