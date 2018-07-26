@@ -1858,7 +1858,9 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   if (aparam == bparam)
     return 1;
 
-  if (!aparam) aparam = "1"; if (!bparam) bparam = "1";
+  if (!aparam) aparam = "1";
+
+  if (!bparam) bparam = "1";
 
   if (!su_casematch(aparam, bparam))
     return 0;
@@ -1895,7 +1897,10 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
           break;
     }
 
-    if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
+    if (!lparam) lparam = "1";
+
+    if (!rparam) rparam = "1";
+
     if (!su_casematch(lparam, rparam))
       continue;
 

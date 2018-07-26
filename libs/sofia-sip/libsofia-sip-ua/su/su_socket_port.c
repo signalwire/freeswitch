@@ -170,10 +170,12 @@ void su_socket_port_deinit(su_port_t *self)
   self->sup_mbox_index = 0;
 
   if (self->sup_mbox[0] && self->sup_mbox[0] != INVALID_SOCKET)
-    su_close(self->sup_mbox[0]); self->sup_mbox[0] = INVALID_SOCKET;
+    su_close(self->sup_mbox[0]);
+  self->sup_mbox[0] = INVALID_SOCKET;
 #if HAVE_SOCKETPAIR
   if (self->sup_mbox[1] && self->sup_mbox[1] != INVALID_SOCKET)
-    su_close(self->sup_mbox[1]); self->sup_mbox[1] = INVALID_SOCKET;
+    su_close(self->sup_mbox[1]);
+  self->sup_mbox[1] = INVALID_SOCKET;
 #endif
 
   su_pthread_port_deinit(self);

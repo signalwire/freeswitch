@@ -1600,7 +1600,7 @@ int nua_client_next_request(nua_client_request_t *cr, int invite)
   for (; cr; cr = cr->cr_next) {
     if (cr->cr_method == sip_method_cancel)
       continue;
-      break;
+    break;
   }
 
   if (cr && !nua_client_request_in_progress(cr)) {
