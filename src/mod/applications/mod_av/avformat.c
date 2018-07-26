@@ -1100,7 +1100,8 @@ GCC_DIAG_ON(deprecated-declarations)
 			context->video_st.st = context->fc->streams[i];
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 				context->has_video = 1;
-				handle->duration = av_rescale_q(context->video_st.st->duration, context->video_st.st->time_base, AV_TIME_BASE_Q);
+				handle->duration = av_rescale_q(context->video_st.st->duration != AV_NOPTS_VALUE ? context->video_st.st->duration : context->fc->duration / AV_TIME_BASE * 1000,
+					context->video_st.st->time_base, AV_TIME_BASE_Q);
 			}
 			if (context->video_st.st->avg_frame_rate.num) {
 				handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
@@ -2397,7 +2398,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 	if (!context->video_start_time) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "start: %" SWITCH_INT64_T_FMT " ticks: %d ticks_per_frame: %d st num:%d st den:%d codec num:%d codec den:%d start: %" SWITCH_TIME_T_FMT ", duration:%" SWITCH_INT64_T_FMT " nb_frames:%" SWITCH_INT64_T_FMT " q2d:%f\n",
 			context->video_start_time, ticks, st->codec->ticks_per_frame, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den,
-			st->start_time, st->duration, st->nb_frames, av_q2d(st->time_base));
+			st->start_time, st->duration == AV_NOPTS_VALUE ? context->fc->duration / AV_TIME_BASE * 1000 : st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
 GCC_DIAG_ON(deprecated-declarations)
 
