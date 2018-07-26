@@ -2713,10 +2713,17 @@
     
     $.verto.unloadJobs = [];
 
-    $(window).bind('beforeunload', function() {
-	for (var f in $.verto.unloadJobs) {
-	    $.verto.unloadJobs[f]();
-	}
+    var unloadEventName = 'beforeunload';
+    // Hacks for Mobile Safari
+    var iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+    if (iOS) {
+      unloadEventName = 'pagehide';
+    }
+
+    $(window).bind(unloadEventName, function() {
+        for (var f in $.verto.unloadJobs) {
+          $.verto.unloadJobs[f]();
+        }
 
         if ($.verto.haltClosure)
           return $.verto.haltClosure();
