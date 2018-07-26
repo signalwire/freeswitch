@@ -312,7 +312,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 
 		
-					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER)) {
+					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER) || conference_utils_test_flag(conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 						conference_member_set_floor_holder(conference, imember, 0);
 						floor_holder = conference->floor_holder;
 					}

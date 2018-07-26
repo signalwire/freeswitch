@@ -261,6 +261,7 @@ typedef enum {
 	CFLAG_REFRESH_LAYOUT,
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	CFLAG_NO_MOH,
+	CFLAG_DED_VID_LAYER_AUDIO_FLOOR,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
