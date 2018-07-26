@@ -246,7 +246,6 @@
 
 	    if (iOS) {
 		self.options.useVideo.setAttribute("playsinline", true);
-		self.options.useVideo.setAttribute("controls", true);
 	    }
         }
 
