@@ -2060,6 +2060,13 @@
             console.log("stream started");
         };
 
+        RTCcallbacks.onRemoteStream = function(rtc, stream) {
+          if (typeof dialog.callbacks.onRemoteStream === 'function') {
+            dialog.callbacks.onRemoteStream(stream, dialog);
+          }
+          console.log("remote stream started");
+        };
+
         RTCcallbacks.onError = function(e) {
             if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onDenied === 'function'){

@@ -189,6 +189,11 @@
         doCallback(self, "onStream", stream);
     }
 
+    function onRemoteStreamSuccess(self, stream) {
+      console.log("Remote Stream Success");
+      doCallback(self, "onRemoteStream", stream);
+    }
+
     function onICE(self, candidate) {
         self.mediaData.candidate = candidate;
         self.mediaData.candidateList.push(self.mediaData.candidate);
@@ -259,6 +264,7 @@
 	
         //self.options.useAudio.play();
         self.remoteStream = stream;
+        onRemoteStreamSuccess(self, stream);
     }
 
     function onOfferSDP(self, sdp) {
