@@ -80,7 +80,8 @@
 	    userVariables: {},
             iceServers: false,
             ringSleep: 6000,
-	    sessid: null
+      sessid: null,
+      useStream: null
         }, options);
 
 	if (verto.options.deviceParams.useCamera) {
@@ -1939,7 +1940,8 @@
             tag: verto.options.tag,
             localTag: verto.options.localTag,
             login: verto.options.login,
-	    videoParams: verto.options.videoParams
+      videoParams: verto.options.videoParams,
+      useStream: verto.options.useStream,
         }, params);
 	
 
@@ -2082,7 +2084,8 @@
             useCamera: dialog.useCamera,
             useMic: dialog.useMic,
             useSpeak: dialog.useSpeak,
-            turnServer: verto.options.turnServer
+      turnServer: verto.options.turnServer,
+      useStream: dialog.params.useStream
         });
 
         dialog.rtc.verto = dialog.verto;
