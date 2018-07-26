@@ -557,7 +557,9 @@
 		
 		if (obj.options.useCamera !== "any") {
 		    //video.optional.push({sourceId: obj.options.useCamera});
-		    video.deviceId = obj.options.useCamera;
+        video.deviceId = {
+          exact: obj.options.useCamera,
+        };
 		}
 
 		if (bestFrameRate) {
@@ -1011,28 +1013,20 @@
 	    return;
 	}
 
-	var video = {
-            //mandatory: {},
-            //optional: []
-        }	
-	//FIXME
-	if (cam) {
-	    //video.optional = [{sourceId: cam}];
-	    video.deviceId = {exact: cam};
-	}
-	
 	w = resList[resI][0];
 	h = resList[resI][1];
 	resI++;
 
-	video = {
+	var video = {
 	    width: {exact: w},
 	    height: {exact: h}
-	    //"minWidth": w,
-	    //"minHeight": h,
-	    //"maxWidth": w,
-	    //"maxHeight": h
 	};
+
+  if (cam !== "any") {
+    video.deviceId = {
+      exact: cam,
+    };
+  }
 
 	getUserMedia({
 	    constraints: {
