@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <Import Project="sound_tools.props" Condition=" '$(sounds_dirImported)' == '' "/>
+  </ImportGroup>
+
+  <PropertyGroup>
+    <SoundSuffix>$(SoundPrimaryName.Replace("-","_"))$(SoundQuality)</SoundSuffix>
+  </PropertyGroup>
+
+  <Target Name="DownloadSoundPackage" BeforeTargets="Build" DependsOnTargets="7za">
+      <GetSoundFileNameTask
+          SoundPrimaryName="$(SoundPrimaryName)"
+          SoundQuality="$(SoundQuality)"
+      >         
+           <Output PropertyName="SoundFileName" TaskParameter="SoundFileName" /> 
+      </GetSoundFileNameTask>         
+      <Message Importance="High" Text="SoundFileName is set to: $(SoundFileName)"/> 
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/releases/sounds/$(SoundFileName)"
+           expectfileordirectory="$(SoundsDir)\$(ExpectRelative)" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(SoundsDir)"
+      />
+  </Target>
+
+</Project>

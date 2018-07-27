@@ -48,6 +48,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\download_celt.props" Condition=" '$(downloadceltPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -70,6 +71,11 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -144,12 +150,6 @@
     <ClCompile Include="..\..\celt-0.10.0\libcelt\rangeenc.c" />
     <ClCompile Include="..\..\celt-0.10.0\libcelt\rate.c" />
     <ClCompile Include="..\..\celt-0.10.0\libcelt\vq.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download CELT.2017.vcxproj">
-      <Project>{fff82f9b-6a2b-4be3-95d8-dc5a4fc71e19}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

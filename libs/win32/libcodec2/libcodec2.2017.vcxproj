@@ -49,6 +49,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)w32\libcodec2.props" />
+  <Import Project="$(SolutionDir)w32\download_libcodec2.props" Condition=" '$(downloadlibcodec2PropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -169,11 +170,6 @@ xcopy "$(ProjectDir)generated\*" "$(libcodec2LibDir)\src\" /C /D /Y
     <ClInclude Include="$(libcodec2LibDir)\src\codebookvqanssi.h" />
     <ClInclude Include="$(libcodec2LibDir)\src\codebookdt.h" />
     <ClInclude Include="$(libcodec2LibDir)\src\codebookge.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download libcodec2.2017.vcxproj">
-      <Project>{9cfa562c-c611-48a7-90a2-bb031b47fe6d}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -24,6 +24,8 @@
     <RootNamespace>libx264</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\vsyasm.props" Condition=" '$(vsyasmPropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\download_libx264.props" Condition=" '$(libx264PropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -490,11 +492,6 @@ del /f /q $(OutDir)\x264.txt
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
       <AdditionalIncludeDirectories>$(VC_IncludePath)\;$(WindowsSDK_IncludePath)\;$(VCInstallDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download libx264.2017.vcxproj">
-      <Project>{6d1bc01c-3f97-4c08-8a45-69c9b94281aa}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

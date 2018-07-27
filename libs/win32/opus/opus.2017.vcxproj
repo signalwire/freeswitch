@@ -46,6 +46,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\download_opus.props" Condition=" '$(downloadopusPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -235,14 +236,6 @@
     <ClInclude Include="..\..\opus-1.1\src\opus_private.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download OPUS.2017.vcxproj">
-      <Project>{092124c9-09ed-43c7-bd6d-4ae5d6b3c547}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="opus.celt.2017.vcxproj">
       <Project>{245603e3-f580-41a5-9632-b25fe3372cbf}</Project>
     </ProjectReference>

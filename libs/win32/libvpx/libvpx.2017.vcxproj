@@ -24,6 +24,7 @@
     <RootNamespace>libvpx</RootNamespace>
     <Keyword>ManagedCProj</Keyword>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -118,12 +119,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="cleancount">
-      <FileType>Document</FileType>
-      <Message>Downloading Yasm Modular Assembler (yasm.exe).</Message>
-      <Command>if not exist "$(ProjectDir)yasm.exe" cscript /nologo "$(ProjectDir)..\util.vbs" GetYasmEXE "$(ProjectDir)"</Command>
-      <Outputs>$(ProjectDir)yasm.exe;%(Outputs)</Outputs>
-    </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx\src\vpx_decoder.c">
       <ObjectFileName>$(IntDir)vpx_src_vpx_decoder.obj</ObjectFileName>
     </ClCompile>

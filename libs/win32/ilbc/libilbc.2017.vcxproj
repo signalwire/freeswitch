@@ -49,6 +49,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)w32\ilbc.props" />
+  <Import Project="$(SolutionDir)w32\download_iLBC.props" Condition=" '$(downloadiLBCPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -165,11 +166,6 @@
     <ClInclude Include="$(iLBCLibDir)\src\StateSearchW.h" />
     <ClInclude Include="$(iLBCLibDir)\src\syntFilter.h" />
     <ClInclude Include="$(iLBCLibDir)\src\ilbc\version.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download iLBC.2017.vcxproj">
-      <Project>{53aada60-df12-46ff-bf94-566bbf849336}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

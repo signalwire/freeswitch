@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+
+  <PropertyGroup>
+    <switch_versionPropsImported>true</switch_versionPropsImported>
+  </PropertyGroup>
+
+  <UsingTask TaskName="SwitchVersionTask" 
+             TaskFactory="CodeTaskFactory"  
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+             <Task>  
+                <Reference Include="Microsoft.Build" />
+                <Reference Include="Microsoft.Build.Framework" />
+                <Code Type="Class" Language="cs">
+<![CDATA[  
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Microsoft.Build.Framework;
+
+    public class SwitchVersionTask : Microsoft.Build.Utilities.Task
+    {
+        private string basedir;
+        private string TemplatePath;
+        private string DestinationPath;
+
+        public override bool Execute()
+        {
+            basedir = Path.GetFullPath(@"$(BaseDir)");
+
+            Log.LogMessage(MessageImportance.High,
+                  "Parsing FreeSWITCH version.");                    
+
+            string ConfigureAC = File.ReadAllText(@"$(BaseDir)configure.ac");                
+            string pattern = @"AC_SUBST\((SWITCH_VERSION_[A-Z_]+),.*\[(.?)\]\)";
+
+            Dictionary<string, string> v = new Dictionary<string, string>();
+
+            string year = DateTime.UtcNow.Year.ToString();
+            v.Add("SWITCH_VERSION_YEAR", year);
+            
+            foreach (Match m in Regex.Matches(ConfigureAC, pattern)) {
+               v.Add(m.Groups[1].Value.Trim(), m.Groups[2].Value.Trim());
+               Log.LogMessage(MessageImportance.High,
+                    m.Groups[1].Value + " = '" + m.Groups[2].Value + "'");                    
+            }
+            
+            //---------------------------------------------------------            
+            Log.LogMessage(MessageImportance.High,
+                "Generating switch_version.h");            
+                
+            TemplatePath = basedir + @"src\include\switch_version.h.template";
+            DestinationPath = basedir + @"src\include\switch_version.h";
+            
+            string template = File.ReadAllText(TemplatePath);
+            foreach (var version_bit in v) {
+                template = template.Replace("@" + version_bit.Key + "@", version_bit.Value);
+            }            
+                       
+            File.WriteAllText(DestinationPath, template);            
+            
+            //---------------------------------------------------------
+            Log.LogMessage(MessageImportance.High,
+                "Generating switch_version.inc");                    
+            
+            TemplatePath = @"$(ProjectDir)\switch_version.inc.template";
+            DestinationPath = @"$(ProjectDir)\switch_version.inc";            
+
+            template = File.ReadAllText(TemplatePath);
+            foreach (var version_bit in v) {
+                template = template.Replace("@" + version_bit.Key + "@", version_bit.Value);
+            }
+                                                           
+            File.WriteAllText(DestinationPath, template);
+            
+            //---------------------------------------------------------
+
+            return true;
+        }
+    }
+]]>  
+                </Code>  
+             </Task>  
+  </UsingTask>  
+
+  <Target Name="SwitchVersionTarget" BeforeTargets="CustomBuild;Build">  
+      <SwitchVersionTask>         
+      </SwitchVersionTask>         
+  </Target> 
+
+</Project>

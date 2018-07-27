@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{bc7cc560-067b-45b5-93cf-951746813aac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{137db408-0f1d-432e-a147-da6e92e61e68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{18bebc71-8cbf-41c4-bc1a-21f68793ff17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{a6276c57-fa13-4946-89df-8f9d82e94024}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\encoder">
+      <UniqueIdentifier>{8e13f554-52a8-4e7d-a1fe-d208a84e7ea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common\x86">
+      <UniqueIdentifier>{7e3927b1-018f-4cb1-9bfc-6b66b16a30b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common\opencl">
+      <UniqueIdentifier>{a6ce58a1-9122-46af-96c2-b72f36749479}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\x264">
+      <UniqueIdentifier>{b6d71a01-1aa0-4011-884a-a32258e46159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\x264\encoder">
+      <UniqueIdentifier>{bd0dc0c9-1336-4cec-90e6-8275ab412aae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\x264\common">
+      <UniqueIdentifier>{4ca40a58-f38f-46cf-9cf0-14a17adbbf71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\x264\common\x86">
+      <UniqueIdentifier>{5a1ab630-e4ce-41c9-98c1-b09ffdfba9d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\x264\common\opencl">
+      <UniqueIdentifier>{e5117c26-5cc2-4054-9723-a8e365fadb02}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libx264\common\bitstream.c" />
+    <ClCompile Include="..\..\libx264\common\cabac.c" />
+    <ClCompile Include="..\..\libx264\common\common.c" />
+    <ClCompile Include="..\..\libx264\common\cpu.c" />
+    <ClCompile Include="..\..\libx264\common\dct.c" />
+    <ClCompile Include="..\..\libx264\common\deblock.c" />
+    <ClCompile Include="..\..\libx264\common\frame.c" />
+    <ClCompile Include="..\..\libx264\common\macroblock.c" />
+    <ClCompile Include="..\..\libx264\common\mc.c" />
+    <ClCompile Include="..\..\libx264\common\mvpred.c" />
+    <ClCompile Include="..\..\libx264\common\opencl.c" />
+    <ClCompile Include="..\..\libx264\common\osdep.c" />
+    <ClCompile Include="..\..\libx264\common\pixel.c" />
+    <ClCompile Include="..\..\libx264\common\predict.c" />
+    <ClCompile Include="..\..\libx264\common\quant.c" />
+    <ClCompile Include="..\..\libx264\common\rectangle.c" />
+    <ClCompile Include="..\..\libx264\common\set.c" />
+    <ClCompile Include="..\..\libx264\common\threadpool.c" />
+    <ClCompile Include="..\..\libx264\common\vlc.c" />
+    <ClCompile Include="..\..\libx264\common\win32thread.c" />
+    <ClCompile Include="..\..\libx264\common\x86\mc-c.c" />
+    <ClCompile Include="..\..\libx264\common\x86\predict-c.c" />
+    <ClCompile Include="..\..\libx264\encoder\analyse.c" />
+    <ClCompile Include="..\..\libx264\encoder\cabac.c" />
+    <ClCompile Include="..\..\libx264\encoder\cavlc.c" />
+    <ClCompile Include="..\..\libx264\encoder\encoder.c" />
+    <ClCompile Include="..\..\libx264\encoder\lookahead.c" />
+    <ClCompile Include="..\..\libx264\encoder\macroblock.c" />
+    <ClCompile Include="..\..\libx264\encoder\me.c" />
+    <ClCompile Include="..\..\libx264\encoder\ratecontrol.c" />
+    <ClCompile Include="..\..\libx264\encoder\set.c" />
+    <ClCompile Include="..\..\libx264\encoder\slicetype-cl.c" />
+    <ClCompile Include="..\..\libx264\x264dll.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="x264_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\oclobj.h">
+      <Filter>Header Files\x264\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libx264\common\bitstream.h" />
+    <ClInclude Include="..\..\libx264\common\cabac.h" />
+    <ClInclude Include="..\..\libx264\common\common.h" />
+    <ClInclude Include="..\..\libx264\common\cpu.h" />
+    <ClInclude Include="..\..\libx264\common\dct.h" />
+    <ClInclude Include="..\..\libx264\common\frame.h" />
+    <ClInclude Include="..\..\libx264\common\macroblock.h" />
+    <ClInclude Include="..\..\libx264\common\mc.h" />
+    <ClInclude Include="..\..\libx264\common\opencl.h" />
+    <ClInclude Include="..\..\libx264\common\opencl\x264-cl.h" />
+    <ClInclude Include="..\..\libx264\common\osdep.h" />
+    <ClInclude Include="..\..\libx264\common\pixel.h" />
+    <ClInclude Include="..\..\libx264\common\predict.h" />
+    <ClInclude Include="..\..\libx264\common\quant.h" />
+    <ClInclude Include="..\..\libx264\common\rectangle.h" />
+    <ClInclude Include="..\..\libx264\common\set.h" />
+    <ClInclude Include="..\..\libx264\common\threadpool.h" />
+    <ClInclude Include="..\..\libx264\common\win32thread.h" />
+    <ClInclude Include="..\..\libx264\common\x86\dct.h" />
+    <ClInclude Include="..\..\libx264\common\x86\mc.h" />
+    <ClInclude Include="..\..\libx264\common\x86\pixel.h" />
+    <ClInclude Include="..\..\libx264\common\x86\predict.h" />
+    <ClInclude Include="..\..\libx264\common\x86\quant.h" />
+    <ClInclude Include="..\..\libx264\common\x86\util.h" />
+    <ClInclude Include="..\..\libx264\encoder\analyse.h" />
+    <ClInclude Include="..\..\libx264\encoder\macroblock.h" />
+    <ClInclude Include="..\..\libx264\encoder\me.h" />
+    <ClInclude Include="..\..\libx264\encoder\ratecontrol.h" />
+    <ClInclude Include="..\..\libx264\encoder\set.h" />
+    <ClInclude Include="..\..\libx264\x264.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libx264.def">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\libx264\common\opencl\bidir.cl" />
+    <None Include="..\..\libx264\common\opencl\downscale.cl" />
+    <None Include="..\..\libx264\common\opencl\intra.cl" />
+    <None Include="..\..\libx264\common\opencl\motionsearch.cl" />
+    <None Include="..\..\libx264\common\opencl\subpel.cl" />
+    <None Include="..\..\libx264\common\opencl\weightp.cl" />
+  </ItemGroup>
+  <ItemGroup>
+    <YASM Include="..\..\libx264\common\x86\bitstream-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\cabac-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\const-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\cpu-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\dct-32.asm" />
+    <YASM Include="..\..\libx264\common\x86\dct-64.asm" />
+    <YASM Include="..\..\libx264\common\x86\dct-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\deblock-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\mc-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\mc-a2.asm" />
+    <YASM Include="..\..\libx264\common\x86\pixel-32.asm" />
+    <YASM Include="..\..\libx264\common\x86\pixel-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\predict-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\quant-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\sad-a.asm" />
+    <YASM Include="..\..\libx264\common\x86\trellis-64.asm" />
+    <YASM Include="..\..\libx264\common\x86\x86inc.asm" />
+    <YASM Include="..\..\libx264\common\x86\x86util.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\libx264\x264res.rc" />
+  </ItemGroup>
+</Project>
