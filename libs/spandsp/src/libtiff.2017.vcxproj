@@ -68,6 +68,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="..\..\..\w32\tiff.props" />
+    <Import Project="..\..\..\w32\download_tiff.props" Condition=" '$(downloadtiffPropsImported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -199,11 +200,6 @@ if not exist "$(TiffDir)/tif_config.h" copy "$(TiffDir)\tif_config.vc.h" "$(Tiff
     <ClInclude Include="$(TiffDir)\tiffiop.h" />
     <ClInclude Include="$(TiffDir)\tiffvers.h" />
     <ClInclude Include="$(TiffDir)\uvcode.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\win32\Download tiff.2017.vcxproj">
-      <Project>{583d8cea-4171-4493-9025-b63265f408d8}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

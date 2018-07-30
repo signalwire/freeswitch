@@ -40,6 +40,7 @@
     <RootNamespace>portaudio</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\download_portaudio.props" Condition=" '$(downloadportaudioPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release DirectSound|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
@@ -851,11 +852,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="portaudio.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download PORTAUDIO.2017.vcxproj">
-      <Project>{c0779bcc-c037-4f58-b890-ef37ba956b3c}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

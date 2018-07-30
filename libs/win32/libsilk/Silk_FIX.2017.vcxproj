@@ -49,6 +49,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)w32\libsilk.props" />
+  <Import Project="$(SolutionDir)w32\download_libsilk.props" Condition=" '$(downloadlibsilkPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -263,11 +264,6 @@
     <ClInclude Include="$(libsilkLibDir)/SKP_Silk_tables_NLSF_CB0_16.h" />
     <ClInclude Include="$(libsilkLibDir)/SKP_Silk_tables_NLSF_CB1_16.h" />
     <ClInclude Include="$(libsilkLibDir)/SKP_Silk_tuning_parameters.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download libsilk.2017.vcxproj">
-      <Project>{08782d64-e775-4e96-b707-cc633a226f32}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

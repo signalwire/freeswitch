@@ -200,11 +200,6 @@
     <ClInclude Include="$(broadvoiceLibDir)\broadvoice\version.h" />
     <ClInclude Include="$(broadvoiceLibDir)\broadvoice\private\broadvoice.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download broadvoice.2017.vcxproj">
-      <Project>{46502007-0d94-47ac-a640-c2b5eea98333}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

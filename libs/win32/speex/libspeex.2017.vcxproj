@@ -65,6 +65,7 @@
     <ProjectName>libspeex</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\download_speex.props" Condition=" '$(downloadspeexPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_RTL_dll|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
@@ -636,11 +637,6 @@
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\vbr.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\vq.h" />
     <ClInclude Include="config.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download SPEEX.2017.vcxproj">
-      <Project>{1bdab935-27dc-47e3-95ea-17e024d39c31}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

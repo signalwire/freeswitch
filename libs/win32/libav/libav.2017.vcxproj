@@ -24,6 +24,8 @@
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectGuid>{841C345F-FCC7-4F64-8F54-0281CEABEB01}</ProjectGuid>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\download_libav.props" Condition=" '$(libavPropsImported)' == '' " />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -141,12 +143,6 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <CustomBuild Include="cleancount">
-      <FileType>Document</FileType>
-      <Message>Downloading Yasm Modular Assembler (yasm.exe).</Message>
-      <Command>if not exist "$(SolutionDir)libs\yasm.exe" cscript /nologo "$(ProjectDir)..\util.vbs" GetYasmEXE "$(SolutionDir)libs\"</Command>
-      <Outputs>$(ProjectDir)yasm.exe;%(Outputs)</Outputs>
-    </CustomBuild>
     <ClCompile Include="..\..\libav\libavcodec\4xm.c" />
     <ClCompile Include="..\..\libav\libavcodec\8bps.c" />
     <ClCompile Include="..\..\libav\libavcodec\8svx.c" />
@@ -1642,9 +1638,6 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download libav.2017.vcxproj">
-      <Project>{77c9e0a2-177d-4bd6-9efd-75a56f886325}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\libx264\libx264.2017.vcxproj">
       <Project>{20179127-853b-4fe9-b7c0-9e817e6a3a72}</Project>
     </ProjectReference>
