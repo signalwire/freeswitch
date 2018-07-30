@@ -1677,14 +1677,14 @@ static void load_config()
 					avcodec_globals.key_frame_min_freq *= 1000;
 				} else if (!strcmp(name, "dec-threads")) {
 					int i;
-					uint threads = switch_parse_cpu_string(value);
+					unsigned int threads = switch_parse_cpu_string(value);
 
 					for (i = 0; i < MAX_CODECS; i++) {
 						avcodec_globals.profiles[i].decoder_thread_count = threads;
 					}
 				} else if (!strcmp(name, "enc-threads")) {
 					int i;
-					uint threads = switch_parse_cpu_string(value);
+					unsigned int threads = switch_parse_cpu_string(value);
 
 					for (i = 0; i < MAX_CODECS; i++) {
 						avcodec_globals.profiles[i].ctx.thread_count = threads;
