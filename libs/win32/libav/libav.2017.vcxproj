@@ -32,26 +32,26 @@
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <YasmCommand>$(SolutionDir)libs\yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
+    <YasmCommand>yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <YasmCommand>$(SolutionDir)libs\yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
+    <YasmCommand>yasm.exe -f win32 -DPREFIX -I./../../libav/ -P.\..\..\libs\libav\config_x86\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <YasmCommand>$(SolutionDir)libs\yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
+    <YasmCommand>yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <YasmCommand>$(SolutionDir)libs\yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
+    <YasmCommand>yasm.exe -f x64 -I./../../libav/ -P.\..\..\libs\libav\config_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
