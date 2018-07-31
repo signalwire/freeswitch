@@ -33,7 +33,9 @@ using Microsoft.Build.Framework;
             /*SoundsDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             SoundsDir += "\\FreeSWITCH\\sounds"; */
 
-            SoundsDir = @"$(SolutionDir)$(Platform)\$(Configuration)\sounds";
+            string platform = (@"$(Platform)" == "x86") ? "Win32" : @"$(Platform)";
+
+            SoundsDir = @"$(SolutionDir)" + platform + @"\$(Configuration)\sounds";
 
             Directory.CreateDirectory(SoundsDir);
 
