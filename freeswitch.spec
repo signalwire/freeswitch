@@ -136,10 +136,7 @@ Prefix:        	%{prefix}
 ######################################################################################################################
 
 %if 0%{?suse_version} > 100
-#BuildRequires: openldap2-devel
 BuildRequires: lzo-devel
-%else
-#BuildRequires: openldap-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
@@ -175,14 +172,7 @@ Requires: zlib
 Requires: libxml2
 Requires: libsndfile
 
-%if %{?suse_version:1}0
-%if 0%{?suse_version} > 910
-#BuildRequires: autogen
-%endif
-%endif
-
 %if 0%{?suse_version} > 800
-#PreReq:       /usr/sbin/useradd /usr/sbin/groupadd
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
@@ -971,7 +961,7 @@ JSON and XML Logger for the FreeSWITCH open source telephony platform
 %package kazoo
 Summary:	Kazoo Module for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 Requires:	erlang
 BuildRequires:	erlang
 
@@ -981,7 +971,7 @@ Kazoo Module for FreeSWITCH.
 %package event-multicast
 Summary:	Multicast Event System for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 
 %description event-multicast
 Multicast Event System for FreeSWITCH.
@@ -1273,7 +1263,7 @@ platform.
 %package xml-cdr
 Summary:        Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 
 %description xml-cdr
 Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
@@ -1281,7 +1271,7 @@ Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
 %package xml-curl
 Summary:        Provides XML Curl interface for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 
 %description xml-curl
 Provides XML Curl interface for the FreeSWITCH Open Source telephone platform.
