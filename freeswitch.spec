@@ -143,12 +143,9 @@ BuildRequires: lzo-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
-BuildRequires: bzip2
 BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
-BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
-BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: sofia-sip-devel >= 1.12.12
 BuildRequires: spandsp3-devel >= 3.0
@@ -159,31 +156,13 @@ BuildRequires: libtiff-devel
 BuildRequires: libedit-devel
 BuildRequires: yasm
 BuildRequires: pkgconfig
-%if 0%{?rhel} < 6 && 0%{?fedora} <= 6
-BuildRequires: termcap
-%endif
 BuildRequires: unixODBC-devel
-BuildRequires: gdbm-devel
-%if 0%{?suse_version} > 100
-BuildRequires: db-devel
-%else
-BuildRequires: db4-devel
-%endif
-BuildRequires: libogg-devel
-BuildRequires: libvorbis-devel
 BuildRequires: libjpeg-devel
-#BuildRequires: mono-devel
 BuildRequires: which
 BuildRequires: zlib-devel
-BuildRequires: e2fsprogs-devel
-BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
 BuildRequires: libsndfile-devel
-BuildRequires: libyuv-devel >= 0.0.1280
-Requires: libogg
-Requires: libvorbis
 Requires: curl >= 7.19
-Requires: ncurses
 Requires: pcre
 Requires: speex
 Requires: sqlite >= 3.6.20
@@ -192,12 +171,7 @@ Requires: libedit
 Requires: openssl >= 1.0.1e
 Requires: unixODBC
 Requires: libjpeg
-#Requires: openldap
-Requires: db4
-Requires: gdbm
 Requires: zlib
-Requires: libtiff
-Requires: libtheora
 Requires: libxml2
 Requires: libsndfile
 
