@@ -309,7 +309,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
-	<action application="set" data="conference_auto_outcall_flags=none"/>
+	<action application="set" data="conference_utils_auto_outcall_flags=none"/>
 	<!--<action application="set" data="conference_auto_outcall_announce=say:You have been called into an emergency conference"/>-->
 
 	<!--Add as many of these as you need, These are the people you are going to call-->
