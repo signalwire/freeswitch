@@ -63,13 +63,13 @@
 					<!-- </Component> -->
 					<?if $(var.Platform) != x64 ?>
 						<Merge Id="CrtFiles_x86"
-						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC140_$(var.CRT_Configuration)CRT_x86.msm"
+						SourceFile="$(var.MergeModules)\Microsoft_VC$(var.VCVer)_$(var.CRT_Configuration)CRT_x86.msm"
 						DiskId="1"
 						Language="1033"/>
 					<?endif ?>
 					<?if $(var.Platform) = x64 ?>
 						<Merge Id="CrtFiles_x64"
-						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC140_$(var.CRT_Configuration)CRT_x64.msm"
+						SourceFile="$(var.MergeModules)\Microsoft_VC$(var.VCVer)_$(var.CRT_Configuration)CRT_x64.msm"
 						DiskId="1"
 						Language="1033"/>
 					<?endif ?>

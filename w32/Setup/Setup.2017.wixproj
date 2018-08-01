@@ -4,6 +4,7 @@
     <GitSkipCache>true</GitSkipCache>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Common.props" />
     <Import Project="..\sound_tools.props" />
     <Import Project="GitInfo\GitInfo.targets" />
   </ImportGroup>
@@ -915,9 +916,18 @@
     <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)$(Revision)$(SnapshotName)-$(UserFriendlyPlatform)-$(Configuration).msi">
       <Output TaskParameter="Value" PropertyName="DestinationFileName" />
     </CreateProperty>
-    <CreateProperty Value="FreeSWITCHSoundFilesDir=$(SoundsDir);$(DefineConstants)">
+    <CreateProperty Value="$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Major).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Minor).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Bld)">
+      <Output TaskParameter="Value" PropertyName="VCLibVersion" />
+    </CreateProperty>
+    <CreateProperty Value="$(VSInstallDir)\VC\Redist\MSVC\$(VCLibVersion)\MergeModules\">
+      <Output TaskParameter="Value" PropertyName="MergeModules" />
+    </CreateProperty>
+    <CreateProperty Value="FreeSWITCHSoundFilesDir=$(SoundsDir);MergeModules=$(MergeModules);VCVer=$(PlatformToolsetVersion);$(DefineConstants)">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
+    <Message Importance="High" Text="Visual C++ lib-version: $(VCLibVersion)" />
+    <Message Importance="High" Text="PlatformToolsetVersion: $(PlatformToolsetVersion)" />
+    <Message Importance="High" Text="VSInstallDir: $(VSInstallDir)" />
     <Message Importance="High" Text="SoundsDir: $(SoundsDir)" />
     <Message Importance="High" Text="DefineConstants: $(DefineConstants)" />
   </Target>
