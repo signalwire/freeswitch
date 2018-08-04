@@ -13212,13 +13212,21 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 
 		if ((m->m_type == sdp_media_audio || m->m_type == sdp_media_video) && m->m_port) {
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				int found = 0;
+				for (attr = m->m_attributes; attr && found < 2; attr = attr->a_next) {
 					if (zstr(attr->a_name)) {
 						continue;
 					}
 					if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 						ptime = atoi(attr->a_value);
-						break;
+						found++;
+					}
+					if (!strcasecmp(attr->a_name, "rtcp-mux")) {
+						if (switch_channel_var_true(channel, "rtcp_mux_auto_detect")) {
+							switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "setting rtcp-mux from sdp\n");
+							switch_channel_set_variable(channel, "rtcp_mux", "true");
+						}
+						found++;
 					}
 				}
 				switch_core_media_add_payload_map(session,
