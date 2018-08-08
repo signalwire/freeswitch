@@ -2483,6 +2483,11 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 		avatar = var;
 	}
 
+	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
+		avatar = NULL;
+		force = 0;
+	}
+	
 	switch_mutex_lock(member->flag_mutex);
 	switch_img_free(&member->avatar_png_img);
 
