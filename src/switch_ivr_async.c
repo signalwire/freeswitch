@@ -4941,6 +4941,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void asr_set_json_text_params(switch_core_session_t *session, switch_asr_handle_t *ah)
+{
+	switch_event_header_t *hp;
+	switch_event_t *event, *cevent;
+	const char *variable_prefix = "asr_json_param_";
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_core_get_variables(&event);
+	switch_channel_get_variables(channel, &cevent);
+	switch_event_merge(event, cevent);
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		char *var = hp->name;
+		char *val = hp->value;
+
+		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix)) && !zstr(val)) {
+			char *json_var = var + strlen(variable_prefix);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting json param %s = %s\n", json_var, val);
+			switch_core_asr_text_param(ah, json_var, val);
+		}
+	}
+
+	switch_event_destroy(&event);
+	switch_event_destroy(&cevent);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
 														 const char *mod_name,
 														 const char *grammar, const char *name, const char *dest, switch_asr_handle_t *ah)
@@ -4949,6 +4976,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	switch_status_t status;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	const char *p;
+	int resume = 0;
+
 
 	if (!sth) {
 		/* No speech thread handle available yet, init speech detection first. */
@@ -4961,13 +4990,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 			return SWITCH_STATUS_NOT_INITALIZED;
 		}
 	} else {
-		switch_ivr_resume_detect_speech(session);
+		resume = 1;
 	}
+
+	asr_set_json_text_params(session, sth->ah);
 
 	if (switch_core_asr_load_grammar(sth->ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 		switch_ivr_stop_detect_speech(session);
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (resume) {
+		switch_ivr_resume_detect_speech(session);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
