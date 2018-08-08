@@ -121,6 +121,17 @@ ELEMENT(RAYO_SENDFAX)
 	ATTRIB(xmlns,, any)
 ELEMENT_END
 
+/**
+ * <app> command validation
+ */
+ELEMENT(RAYO_APP)
+	ATTRIB(xmlns,, any)
+	ATTRIB(app,, any)
+	OPTIONAL_ATTRIB(args,, any)
+ELEMENT_END
+
+
+
 
 /* For Emacs:
  * Local Variables:
