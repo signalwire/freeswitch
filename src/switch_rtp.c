@@ -1197,7 +1197,9 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			uint8_t do_adj = 0;
 			switch_time_t now = switch_micro_time_now();
 			int cmp = 0;
-
+			int cur_idx = -1;//, is_relay = 0;
+			int i;
+			
 			if (is_rtcp) {
 				from_addr = rtp_session->rtcp_from_addr;
 				sock_output = rtp_session->rtcp_sock_output;
@@ -1250,46 +1252,42 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				if (!do_adj) {
 					rtp_session->wrong_addrs++;
 				}
+
+				for (i = 0; i < ice->ice_params->cand_idx[ice->proto]; i++) {
+					if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host)) {
+						cur_idx = i;
+						//if (!strcasecmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
+						//	is_relay = 1;
+						//}
+					}
+				}
+				
+				
+				if (!strcasecmp(ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].cand_type, "relay")) {
+					do_adj++;
+				}
 			}
-
+			
 			if ((ice->type & ICE_VANILLA) && ice->ice_params && do_adj) {
-				int i = 0;
-
 				ice->missed_count = 0;
 				ice->rready = 1;
 
-				for (i = 0; i < ice->ice_params->cand_idx[ice->proto]; i++) {
-					if (ice->ice_params->cands[i][ice->proto].con_port == port) {
-						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) &&
-							ice->ice_params->cands[i][ice->proto].cand_type &&
-							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
-
-							if (elapsed < 1000) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
-												  "Skiping RELAY stun/%s/dtls port change from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp",
-												  host2, port2,
-												  host, port);
-
-								goto end;
-							}
-
-							break;
-						}
-					}
+				if (cur_idx > -1) {
+					ice->ice_params->chosen[ice->proto] = cur_idx;
 				}
-
+				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
-								  "Auto Changing %s stun/%s/dtls port from %s:%u to %s:%u\n", rtp_type(rtp_session), is_rtcp ? "rtcp" : "rtp",
+								  "Auto Changing %s stun/%s/dtls port from %s:%u to %s:%u idx:%d\n", rtp_type(rtp_session), is_rtcp ? "rtcp" : "rtp",
 								  host2, port2,
-								  host, port);
+								  host, port, cur_idx);
 
 				switch_rtp_change_ice_dest(rtp_session, ice, host, port);
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			}
-			if (cmp) {
-				switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
-			}
+			//if (cmp) {
+			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
+			//}
 		}
 	} else if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
 
