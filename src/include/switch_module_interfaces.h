@@ -298,6 +298,8 @@ struct switch_file_interface {
 	switch_status_t (*file_set_string) (switch_file_handle_t *fh, switch_audio_col_t col, const char *string);
 	/*! function to get meta data */
 	switch_status_t (*file_get_string) (switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
+	/*! function to pre close the file to read params */
+	switch_status_t (*file_pre_close) (switch_file_handle_t *fh);
 	/*! function to control the underlying tech of the file  */
 	switch_status_t (*file_command) (switch_file_handle_t *fh, switch_file_command_t command);
 	/*! list of supported file extensions */
