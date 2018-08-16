@@ -2801,7 +2801,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: Using dialstring: %s\n", dialstring);
 
 		/* <iq><ref> response will be sent when originate event is received- otherwise error is returned */
-		if (switch_ivr_originate(NULL, &called_session, &cause, dialstring, dial_timeout_sec, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS && called_session) {
+		if (switch_ivr_originate(NULL, &called_session, &cause, dialstring, dial_timeout_sec, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS && called_session) {
 			/* start APP */
 			switch_caller_extension_t *extension = NULL;
 			switch_channel_t *called_channel = switch_core_session_get_channel(called_session);

@@ -2565,7 +2565,7 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 		switch_core_session_rwunlock(b_session);
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
+	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
@@ -3480,7 +3480,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 			status = switch_ivr_originate(NULL, &peer_session,
 										  &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE,
-										  switch_channel_get_cause_ptr(caller_channel));
+										  switch_channel_get_cause_ptr(caller_channel), NULL);
 
 
 		} while (camping && switch_channel_ready(caller_channel));
@@ -3509,7 +3509,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 	} else {
 		if ((status =
-			 switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)) != SWITCH_STATUS_SUCCESS) {
+			 switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
 			fail = 1;
 		}
 	}
@@ -4166,7 +4166,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 
 
 	if (switch_ivr_originate(session, new_session, &cause, dest, timelimit, NULL,
-							 cid_name_override, cid_num_override, NULL, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
+							 cid_name_override, cid_num_override, NULL, var_event, myflags, cancel_cause, NULL) == SWITCH_STATUS_SUCCESS) {
 		const char *context;
 		switch_caller_profile_t *cp;
 
@@ -4364,7 +4364,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			cause = SWITCH_CAUSE_INVALID_IE_CONTENTS;
 		} else if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL,
 										cid_name_override, cid_num_override, outbound_profile, var_event, myflags,
-										cancel_cause) == SWITCH_STATUS_SUCCESS) {
+										cancel_cause, NULL) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
 
@@ -5627,7 +5627,7 @@ void *SWITCH_THREAD_FUNC page_thread(switch_thread_t *thread, void *obj)
 	switch_memory_pool_t *pool = pd->pool;
 
 
-	if (switch_ivr_originate(NULL, &session, &cause, pd->dial_str, SWITCH_DEFAULT_TIMEOUT, NULL, NULL, NULL, NULL, pd->var_event, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &session, &cause, pd->dial_str, SWITCH_DEFAULT_TIMEOUT, NULL, NULL, NULL, NULL, pd->var_event, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		switch_channel_set_variable(channel, "page_file", pd->path);

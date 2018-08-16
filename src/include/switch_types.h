@@ -2786,6 +2786,16 @@ typedef struct secure_settings_s {
 /* max number of MKI in a single crypto line supported */
 #define SWITCH_CRYPTO_MKI_MAX	20
 
+struct switch_dial_handle_s;
+typedef struct switch_dial_handle_s switch_dial_handle_t;
+
+struct switch_dial_leg_s;
+typedef struct switch_dial_leg_s switch_dial_leg_t;
+
+struct switch_dial_leg_list_s;
+typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

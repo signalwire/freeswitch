@@ -5480,7 +5480,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 			}
 
 			if (switch_ivr_originate(session, new_session, &cause, dial_str, 0, NULL,
-									 NULL, NULL, outbound_profile, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
+									 NULL, NULL, outbound_profile, var_event, myflags, cancel_cause, NULL) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_rwunlock(*new_session);
 			}
 

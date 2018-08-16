@@ -80,6 +80,32 @@ static const switch_state_handler_table_t originate_state_handlers = {
 	/*.on_consume_media */ originate_on_consume_media_transmit
 };
 
+#define MAX_PEERS 128
+
+struct switch_dial_handle_s;
+
+
+struct switch_dial_leg_list_s {
+	int leg_idx;
+	switch_dial_leg_t *legs[MAX_PEERS];
+	struct switch_dial_handle_s *handle;
+};
+
+struct switch_dial_leg_s {
+	char *dial_string;
+	switch_event_t *leg_vars;
+	struct switch_dial_handle_s *handle;
+	struct switch_dial_leg_s *next;
+};
+
+struct switch_dial_handle_s {
+	int is_sub;
+	int leg_list_idx;
+	switch_dial_leg_list_t *leg_lists[MAX_PEERS];
+	switch_event_t *global_vars;
+	switch_memory_pool_t *pool;
+};
+
 
 typedef struct {
 	switch_core_session_t *down_session;
@@ -1366,7 +1392,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 }
 
 
-#define MAX_PEERS 128
+
 
 typedef struct {
 	switch_core_session_t *session;
@@ -1404,7 +1430,12 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 										  handle->bridgeto, handle->timelimit_sec,
 										  handle->table,
 										  handle->cid_name_override,
-										  handle->cid_num_override, handle->caller_profile_override, handle->ovars, handle->flags, &handle->cancel_cause);
+										  handle->cid_num_override,
+										  handle->caller_profile_override,
+										  handle->ovars,
+										  handle->flags,
+										  &handle->cancel_cause,
+										  NULL);
 
 
 	handle->done = 1;
@@ -1936,7 +1967,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *cid_name_override,
 													 const char *cid_num_override,
 													 switch_caller_profile_t *caller_profile_override,
-													 switch_event_t *ovars, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
+													 switch_event_t *ovars, switch_originate_flag_t flags,
+													 switch_call_cause_t *cancel_cause,
+													 switch_dial_handle_t *dh)
 {
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
 	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
@@ -1945,6 +1978,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 	char *peer_names[MAX_PEERS] = { 0 };
+	switch_event_t *peer_vars[MAX_PEERS] = { 0 };
 	switch_core_session_t *new_session = NULL, *peer_session = NULL;
 	switch_caller_profile_t *new_profile = NULL, *caller_caller_profile;
 	char *chan_type = NULL, *chan_data;
@@ -1985,7 +2019,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *aniii_override = NULL;
 	const char *ent_aleg_uuid = NULL;
 	switch_core_session_t *a_session = session, *l_session = NULL;
-
+	char *event_string;
+	
+	if (!bridgeto || dh) {
+		bridgeto = "";
+	}
+	
 	if (session) {
 		caller_channel = switch_core_session_get_channel(session);
 
@@ -2138,7 +2177,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		|| switch_true(switch_core_get_variable("origination_nested_vars")) || switch_stristr("origination_nested_vars=true", data)) {
 		oglobals.check_vars = SWITCH_FALSE;
 	}
-
+	
+	if (dh) {
+		switch_event_t *vp = switch_dial_handle_get_global_vars(dh);
+		if (vp) {
+			switch_event_dup(&var_event, vp);
+		}
+	}
 
 	/* extract channel variables, allowing multiple sets of braces */
 	if (*data == '<') {
@@ -2167,14 +2212,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		data = parsed;
 	}
-
-
+	
+	if (dh && var_event && switch_event_serialize(var_event, &event_string, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Global Vars\n======================\n%s\n", event_string);
+		switch_safe_free(event_string);
+	}
+	
 	/* strip leading spaces (again) */
 	while (data && *data && *data == ' ') {
 		data++;
 	}
 
-	if (zstr(data)) {
+	if (zstr(data) && !dh) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No origination URL specified!\n");
 		status = SWITCH_STATUS_GENERR;
 		goto done;
@@ -2569,14 +2618,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_safe_free(loop_data);
 		loop_data = strdup(data);
 		switch_assert(loop_data);
-		or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
+		if (dh) {
+			or_argc = switch_dial_handle_get_total(dh);
+		} else {
+			or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
+		}
+		
 		if ((flags & SOF_NOBLOCK) && or_argc > 1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 			or_argc = 1;
 		}
-
-
+		
+		if (or_argc <= 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Nothing to do\n");
+			goto outer_for;
+		}
+		
 		for (r = 0; r < or_argc && (!cancel_cause || *cancel_cause == 0); r++) {
 			char *p, *end = NULL;
 			int q = 0, alt = 0;
@@ -2625,46 +2683,51 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				last_retry_start = switch_micro_time_now();
 			}
 
-			p = pipe_names[r];
+			if (!dh) {
+				p = pipe_names[r];
 
-			while (p && *p) {
-				if (!end && *p == '[') {
-					end = switch_find_end_paren(p, '[', ']');
-					if (*(p+1) == '^' && *(p + 2) == '^') {
-						alt = 1;
-					} else {
-						alt = 0;
+				while (p && *p) {
+					if (!end && *p == '[') {
+						end = switch_find_end_paren(p, '[', ']');
+						if (*(p+1) == '^' && *(p + 2) == '^') {
+							alt = 1;
+						} else {
+							alt = 0;
+						}
+						q = 0;
 					}
-					q = 0;
-				}
 
-				if (*p == '\'') {
-					q = !q;
-				}
-
-				if (end && p < end && *p == ',' && *(p-1) != '\\') {
-
-					if (q || alt) {
-						*p = QUOTED_ESC_COMMA;
-					} else {
-						*p = UNQUOTED_ESC_COMMA;
+					if (*p == '\'') {
+						q = !q;
 					}
-				}
 
-				if (p == end) {
-					end = NULL;
-				}
+					if (end && p < end && *p == ',' && *(p-1) != '\\') {
 
-				p++;
+						if (q || alt) {
+							*p = QUOTED_ESC_COMMA;
+						} else {
+							*p = UNQUOTED_ESC_COMMA;
+						}
+					}
+
+					if (p == end) {
+						end = NULL;
+					}
+
+					p++;
+				}
+				
+				and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
+			} else {
+				and_argc = switch_dial_handle_get_peers(dh, r, peer_names, MAX_PEERS);
+				switch_dial_handle_get_vars(dh, r, peer_vars, MAX_PEERS);
 			}
-
-			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
-
+			
 			if ((flags & SOF_NOBLOCK) && and_argc > 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 				and_argc = 1;
 			}
-
+			
 			for (i = 0; i < and_argc; i++) {
 				const char *current_variable;
 				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
@@ -2710,7 +2773,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
+				if (peer_vars[i]) {
+					if (local_var_event) {
+						switch_event_merge(local_var_event, peer_vars[i]);
+					} else {
+						switch_event_dup(&local_var_event, peer_vars[i]);
+					}
 
+					if (dh && local_var_event && switch_event_serialize(local_var_event, &event_string, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local Vars for %s\n======================\n%s\n",
+										  peer_names[i], event_string);
+						switch_safe_free(event_string);
+					}
+				}
+				
 				/* strip leading spaces (again) */
 				while (chan_type && *chan_type && *chan_type == ' ') {
 					chan_type++;
@@ -4096,6 +4172,287 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	return status;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create(switch_dial_handle_t **handle)
+{
+	switch_dial_handle_t *hp;
+	switch_memory_pool_t *pool = NULL;
+
+	switch_core_new_memory_pool(&pool);
+	switch_assert(pool);
+	
+	hp = switch_core_alloc(pool, sizeof(*hp));
+	switch_assert(hp);
+
+	hp->pool = pool;
+
+	*handle = hp;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_destroy(switch_dial_handle_t **handle)
+{
+	switch_dial_handle_t *hp = *handle;
+	switch_memory_pool_t *pool = NULL;
+
+	*handle = NULL;
+
+	if (hp) {
+		int i, j;
+
+		for (i = 0; i < hp->leg_list_idx; i++) {
+			for(j = 0; j < hp->leg_lists[i]->leg_idx; j++) {
+				switch_event_destroy(&hp->leg_lists[i]->legs[j]->leg_vars);
+			}
+		}
+
+		switch_event_destroy(&hp->global_vars);
+		pool = hp->pool;
+		hp = NULL;
+		switch_core_destroy_memory_pool(&pool);	
+	}
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_add_leg_list(switch_dial_handle_t *handle, switch_dial_leg_list_t **leg_listP)
+{
+	switch_dial_leg_list_t *leg_list;
+	
+	switch_assert(handle);
+
+	leg_list = switch_core_alloc(handle->pool, sizeof(*leg_list));
+	leg_list->handle = handle;
+
+	handle->leg_lists[handle->leg_list_idx++] = leg_list;
+	
+	*leg_listP = leg_list;
+}
+
+SWITCH_DECLARE(void) switch_dial_leg_list_add_leg_printf(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *fmt, ...)
+{
+	int ret = 0;
+	char *data = NULL;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (ret == -1) {
+		abort();
+	}
+
+	switch_dial_leg_list_add_leg(parent, legP, data);
+	free(data);
+}
+
+SWITCH_DECLARE(void) switch_dial_leg_list_add_leg(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *dial_string)
+{
+	switch_dial_leg_t *leg;
+	
+	switch_assert(parent);
+
+	leg = switch_core_alloc(parent->handle->pool, sizeof(*leg));
+	leg->handle = parent->handle;
+	leg->dial_string = switch_core_strdup(parent->handle->pool, dial_string);
+	
+	parent->legs[parent->leg_idx++] = leg;
+
+	if (legP) {
+		*legP = leg;
+	}
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_add_global_var(switch_dial_handle_t *handle, const char *var, const char *val)
+{
+	switch_assert(handle);
+	
+	if (!handle->global_vars) {
+		switch_event_create_plain(&handle->global_vars, SWITCH_EVENT_CHANNEL_DATA);
+	}
+
+	switch_event_add_header_string(handle->global_vars, SWITCH_STACK_BOTTOM, var, val);
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_add_global_var_printf(switch_dial_handle_t *handle, const char *var, const char *fmt, ...)
+{
+	int ret = 0;
+	char *data = NULL;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (ret == -1) {
+		abort();
+	}
+
+	switch_dial_handle_add_global_var(handle, var, data);
+	free(data);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_add_leg_var(switch_dial_leg_t *leg, const char *var, const char *val)
+{
+	if (!leg) return SWITCH_STATUS_NOTFOUND;
+	
+	if (!leg->leg_vars) {
+		switch_event_create_plain(&leg->leg_vars, SWITCH_EVENT_CHANNEL_DATA);
+	}
+
+	switch_event_add_header_string(leg->leg_vars, SWITCH_STACK_BOTTOM, var, val);
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_add_leg_var_printf(switch_dial_leg_t *leg, const char *var, const char *fmt, ...)
+{
+	int ret = 0;
+	char *data = NULL;
+	va_list ap;
+	switch_status_t status;
+	
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (ret == -1) {
+		abort();
+	}
+
+	status = switch_dial_handle_add_leg_var(leg, var, data);
+
+	free(data);
+
+	return status;
+}
+
+SWITCH_DECLARE(int) switch_dial_handle_get_total(switch_dial_handle_t *handle)
+{
+	return handle->leg_list_idx;
+}
+
+SWITCH_DECLARE(int) switch_dial_handle_get_peers(switch_dial_handle_t *handle, int idx, char **array, int max)
+{
+	int i, j = 0;
+
+	if (!handle->leg_lists[idx]) return 0;
+	
+	for (i = 0; i < max && handle->leg_lists[idx]->legs[i]; i++) {
+		array[j++] = handle->leg_lists[idx]->legs[i]->dial_string;
+	}
+
+	return j;
+}
+
+
+SWITCH_DECLARE(int) switch_dial_handle_get_vars(switch_dial_handle_t *handle, int idx, switch_event_t **array, int max)
+{
+	int i, j = 0;
+
+	if (!handle->leg_lists[idx]) return 0;
+	
+	for (i = 0; i < max && handle->leg_lists[idx]->legs[i]; i++) {
+		array[j++] = handle->leg_lists[idx]->legs[i]->leg_vars;
+	}
+
+	return j;
+}
+
+
+SWITCH_DECLARE(switch_event_t *) switch_dial_handle_get_global_vars(switch_dial_handle_t *handle)
+{
+	switch_assert(handle);
+	
+	return handle->global_vars;
+}
+
+SWITCH_DECLARE(switch_event_t *) switch_dial_leg_get_vars(switch_dial_leg_t *leg)
+{
+	switch_assert(leg);
+	
+	return leg->leg_vars;
+}
+
+
+static switch_status_t o_bridge_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	char *str = (char *) buf;
+
+	if (str && input && itype == SWITCH_INPUT_TYPE_DTMF) {
+		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+		if (strchr(str, dtmf->digit)) {
+			return SWITCH_STATUS_BREAK;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh)
+{
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_core_session_t *peer_session = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int fail = 0;
+	
+	if ((status = switch_ivr_originate(session,
+									   &peer_session,
+									   &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh)) != SWITCH_STATUS_SUCCESS) {
+		fail = 1;
+	}
+
+
+	if (fail) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+		
+		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(cause));
+
+		switch_channel_handle_cause(caller_channel, cause);
+
+		return;
+	} else {
+		
+		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+		}
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+			switch_ivr_signal_bridge(session, peer_session);
+		} else {
+			char *a_key = (char *) switch_channel_get_variable(caller_channel, "bridge_terminate_key");
+			char *b_key = (char *) switch_channel_get_variable(peer_channel, "bridge_terminate_key");
+			int ok = 0;
+			switch_input_callback_function_t func = NULL;
+
+			if (a_key) {
+				a_key = switch_core_session_strdup(session, a_key);
+				ok++;
+			}
+			if (b_key) {
+				b_key = switch_core_session_strdup(session, b_key);
+				ok++;
+			}
+			if (ok) {
+				func = o_bridge_on_dtmf;
+			} else {
+				a_key = NULL;
+				b_key = NULL;
+			}
+
+			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
+		}
+
+		if (peer_session) {
+			switch_core_session_rwunlock(peer_session);
+		}
+	}
+}
+
+
 
 /* For Emacs:
  * Local Variables:
