@@ -40,22 +40,38 @@ struct switch_vad_s {
 	int talking;
 	int talked;
 	int talk_hits;
+	int listen_hits;
 	int hangover;
 	int hangover_len;
 	int divisor;
 	int thresh;
-	int timeout_len;
-	int timeout;
 	int channels;
 	int sample_rate;
-
+	int debug;
 	int _hangover_len;
 	int _thresh;
-	int _timeout_len;
+	int _listen_hits;
+	switch_vad_state_t vad_state;
 #ifdef SWITCH_HAVE_FVAD
 	Fvad *fvad;
 #endif
 };
+
+static const char *state2str(switch_vad_state_t state)
+{
+	switch(state) {
+	case SWITCH_VAD_STATE_NONE:                                                                                                                                      return "none";
+		
+	case SWITCH_VAD_STATE_START_TALKING:                                                                                                                             return "start_talking";
+		
+	case SWITCH_VAD_STATE_TALKING:                                                                                                                                   return "talking";
+		
+	case SWITCH_VAD_STATE_STOP_TALKING:                                                                                                                              return "stop_talking";
+
+	default:
+		return "error";
+	}
+}
 
 SWITCH_DECLARE(switch_vad_t *) switch_vad_init(int sample_rate, int channels)
 {
@@ -68,8 +84,7 @@ SWITCH_DECLARE(switch_vad_t *) switch_vad_init(int sample_rate, int channels)
 	vad->channels = channels;
 	vad->_hangover_len = 25;
 	vad->_thresh = 100;
-	vad->_timeout_len = 25;
-
+	vad->_listen_hits = 10;
 	switch_vad_reset(vad);
 
 	return vad;
@@ -116,8 +131,10 @@ SWITCH_DECLARE(void) switch_vad_set_param(switch_vad_t *vad, const char *key, in
 		vad->hangover_len = vad->_hangover_len = val;
 	} else if (!strcmp(key, "thresh")) {
 		vad->thresh = vad->_thresh = val;
-	} else if (!strcmp(key, "timeout_len")) {
-		vad->timeout = vad->timeout_len = vad->_timeout_len = val;
+	} else if (!strcmp(key, "debug")) {
+		vad->debug = val;
+	} else if (!strcmp(key, "listen_hits")) {
+		vad->listen_hits = vad->_listen_hits = val;
 	}
 }
 
@@ -134,19 +151,26 @@ SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad)
 	vad->talked = 0;
 	vad->talk_hits = 0;
 	vad->hangover = 0;
+	vad->listen_hits = vad->_listen_hits;
 	vad->hangover_len = vad->_hangover_len;
 	vad->divisor = vad->sample_rate / 8000;
 	vad->thresh = vad->_thresh;
-	vad->timeout_len = vad->_timeout_len;
-	vad->timeout = vad->timeout_len;
+	vad->vad_state = SWITCH_VAD_STATE_NONE;
 }
 
 SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t *data, unsigned int samples)
 {
 	int energy = 0, j = 0, count = 0;
 	int score = 0;
-	switch_vad_state_t vad_state = SWITCH_VAD_STATE_NONE;
 
+	if (vad->vad_state == SWITCH_VAD_STATE_STOP_TALKING) {
+		vad->vad_state = SWITCH_VAD_STATE_NONE;
+	}
+
+	if (vad->vad_state == SWITCH_VAD_STATE_START_TALKING) {
+		vad->vad_state = SWITCH_VAD_STATE_TALKING;
+	}
+	
 #ifdef SWITCH_HAVE_FVAD
 	if (vad->fvad) {
 		int ret = fvad_process(vad->fvad, data, samples);
@@ -168,8 +192,8 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	}
 #endif
 
-	// printf("%d ", score); fflush(stdout);
-	// printf("yay %d %d %d\n", score, vad->hangover, vad->talking);
+	//printf("%d ", score); fflush(stdout);
+	//printf("yay %d %d %d\n", score, vad->hangover, vad->talking);
 
 	if (vad->talking && score < vad->thresh) {
 		if (vad->hangover > 0) {
@@ -181,7 +205,7 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 		}
 	} else {
 		if (score >= vad->thresh) {
-			vad_state = vad->talking ? SWITCH_VAD_STATE_TALKING : SWITCH_VAD_STATE_START_TALKING;
+			vad->vad_state = vad->talking ? SWITCH_VAD_STATE_TALKING : SWITCH_VAD_STATE_START_TALKING;
 			vad->talking = 1;
 			vad->hangover = vad->hangover_len;
 		}
@@ -192,32 +216,25 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	if (vad->talking) {
 		vad->talk_hits++;
 		// printf("WTF %d %d %d\n", vad->talking, vad->talk_hits, vad->talked);
-		if (vad->talk_hits > 10) {
+		if (vad->talk_hits > vad->listen_hits) {
 			vad->talked = 1;
-			vad_state = SWITCH_VAD_STATE_TALKING;
+			vad->vad_state = SWITCH_VAD_STATE_TALKING;
 		}
 	} else {
 		vad->talk_hits = 0;
 	}
 
-	if (vad->timeout > 0 && !vad->talking) {
-		vad->timeout--;
-	}
-
 	if ((vad->talked && !vad->talking)) {
 		// printf("NOT TALKING ANYMORE\n");
 		vad->talked = 0;
-		vad->timeout = vad->timeout_len;
-		vad_state = SWITCH_VAD_STATE_STOP_TALKING;
-	} else {
-		// if (vad->skip > 0) {
-		// 	vad->skip--;
-		// }
+		vad->vad_state = SWITCH_VAD_STATE_STOP_TALKING;
 	}
 
-	if (vad_state) return vad_state;
-
-	return SWITCH_VAD_STATE_NONE;
+	if (vad->debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VAD DEBUG energy: %d state %s\n", score, state2str(vad->vad_state));
+	}
+	
+	return vad->vad_state;
 }
 
 SWITCH_DECLARE(void) switch_vad_destroy(switch_vad_t **vad)
