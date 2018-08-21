@@ -6169,14 +6169,27 @@ SWITCH_STANDARD_APP(vad_test_function)
 		if (tmp > 0) switch_vad_set_param(vad, "thresh", tmp);
 	}
 
-	if ((var = switch_channel_get_variable(channel, "vad_timeout_len"))) {
+	if ((var = switch_channel_get_variable(channel, "vad_listen_hits"))) {
 		tmp = atoi(var);
 
-		if (tmp > 0) switch_vad_set_param(vad, "timeout_len", tmp);
+		if (tmp > 0) switch_vad_set_param(vad, "listen_hits", tmp);
 	}
 
-	while(switch_channel_ready(channel)) {
-		switch_core_session_read_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
+	if ((var = switch_channel_get_variable(channel, "vad_debug"))) {
+		tmp = atoi(var);
+
+		if (tmp < 0) tmp = 0;
+		if (tmp > 1) tmp = 1;
+
+		switch_vad_set_param(vad, "debug", tmp);
+	}
+
+	while (switch_channel_ready(channel)) {
+		switch_status_t status = switch_core_session_read_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
 
 		if (switch_test_flag(frame, SFF_CNG)) {
 			continue;
@@ -6192,7 +6205,7 @@ SWITCH_STANDARD_APP(vad_test_function)
 		} else if (vad_state == SWITCH_VAD_STATE_TALKING) {
 			switch_core_session_write_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "vad_state: %d\n", vad_state);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "vad_state: %s\n", switch_vad_state2str(vad_state));
 		}
 	}
 

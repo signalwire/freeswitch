@@ -57,17 +57,17 @@ struct switch_vad_s {
 #endif
 };
 
-static const char *state2str(switch_vad_state_t state)
+SWITCH_DECLARE(const char *) switch_vad_state2str(switch_vad_state_t state)
 {
 	switch(state) {
 	case SWITCH_VAD_STATE_NONE:                                                                                                                                      return "none";
-		
+		return "none";
 	case SWITCH_VAD_STATE_START_TALKING:                                                                                                                             return "start_talking";
-		
+		return "start-talking";
 	case SWITCH_VAD_STATE_TALKING:                                                                                                                                   return "talking";
-		
+		return "talking";
 	case SWITCH_VAD_STATE_STOP_TALKING:                                                                                                                              return "stop_talking";
-
+		return "stop-talking";
 	default:
 		return "error";
 	}
@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	}
 
 	if (vad->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VAD DEBUG energy: %d state %s\n", score, state2str(vad->vad_state));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VAD DEBUG energy: %d state %s\n", score, switch_vad_state2str(vad->vad_state));
 	}
 	
 	return vad->vad_state;

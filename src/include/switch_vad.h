@@ -52,6 +52,8 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad);
 SWITCH_DECLARE(void) switch_vad_destroy(switch_vad_t **vad);
 
+SWITCH_DECLARE(const char *) switch_vad_state2str(switch_vad_state_t state);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
