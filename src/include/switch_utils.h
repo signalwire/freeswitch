@@ -1087,7 +1087,7 @@ static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 static inline uint32_t switch_parse_cpu_string(const char *cpu)
 {
 	int cpu_count = switch_core_cpu_count();
-	int ncpu = cpu_count;
+	int ncpu;
 
 	if (!cpu) return 1;
 
