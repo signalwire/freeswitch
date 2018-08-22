@@ -6964,6 +6964,47 @@ fail:
 }
 
 
+static int _wrap_CoreSession_detectSpeech(lua_State* L) {
+  int SWIG_arg = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  
+  SWIG_check_num_args("CoreSession::detectSpeech",2,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CoreSession::detectSpeech",1,"CoreSession *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("CoreSession::detectSpeech",2,"char *");
+  if(lua_gettop(L)>=3 && !SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("CoreSession::detectSpeech",3,"char *");
+  if(lua_gettop(L)>=4 && !SWIG_lua_isnilstring(L,4)) SWIG_fail_arg("CoreSession::detectSpeech",4,"char *");
+  if(lua_gettop(L)>=5 && !SWIG_lua_isnilstring(L,5)) SWIG_fail_arg("CoreSession::detectSpeech",5,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_detectSpeech",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
+  if(lua_gettop(L)>=5){
+    arg5 = (char *)lua_tostring(L, 5);
+  }
+  (arg1)->detectSpeech(arg2,arg3,arg4,arg5);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   int SWIG_arg = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7017,6 +7058,40 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   }
   result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11,(char const *)arg12);
   lua_pushstring(L,(const char *)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_playAndDetectSpeech(lua_State* L) {
+  int SWIG_arg = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("CoreSession::playAndDetectSpeech",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CoreSession::playAndDetectSpeech",1,"CoreSession *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("CoreSession::playAndDetectSpeech",2,"char *");
+  if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("CoreSession::playAndDetectSpeech",3,"char *");
+  if(!SWIG_lua_isnilstring(L,4)) SWIG_fail_arg("CoreSession::playAndDetectSpeech",4,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_playAndDetectSpeech",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  result = (char *)(arg1)->playAndDetectSpeech(arg2,arg3,arg4);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  free(result);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -7702,7 +7777,9 @@ static swig_lua_method swig_CoreSession_methods[]= {
     { "getDigits", _wrap_CoreSession_getDigits},
     { "transfer", _wrap_CoreSession_transfer},
     { "read", _wrap_CoreSession_read},
+    { "detectSpeech", _wrap_CoreSession_detectSpeech},
     { "playAndGetDigits", _wrap_CoreSession_playAndGetDigits},
+    { "playAndDetectSpeech", _wrap_CoreSession_playAndDetectSpeech},
     { "streamFile", _wrap_CoreSession_streamFile},
     { "sleep", _wrap_CoreSession_sleep},
     { "flushEvents", _wrap_CoreSession_flushEvents},

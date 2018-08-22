@@ -39,7 +39,7 @@ swigclean: clean
 	rm -f freeswitch_wrap.cxx managed/swig.cs
 
 freeswitch_wrap.cxx:
-	swig2.0 -I../../../include -v -O -c++ -csharp -namespace FreeSWITCH.Native -dllimport mod_managed -DSWIG_CSHARP_NO_STRING_HELPER freeswitch.i
+	swig3.0 -I../../../include -v -O -c++ -csharp -namespace FreeSWITCH.Native -dllimport mod_managed -DSWIG_CSHARP_NO_STRING_HELPER freeswitch.i
 	rm -f ./managed/swig.cs
 	cat *.cs > ./managed/swig.cs
 	rm -f *.cs
