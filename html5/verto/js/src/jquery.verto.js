@@ -613,7 +613,9 @@
                 break;
 
             case 'verto.clientReady':
-                verto.callbacks.onMessage(verto, null, $.verto.enum.message.clientReady, data.params);
+                if (verto.callbacks.onMessage) {
+                    verto.callbacks.onMessage(verto, null, $.verto.enum.message.clientReady, data.params);
+                }
                 console.debug("CLIENT READY", data.params);
                 break;
 
