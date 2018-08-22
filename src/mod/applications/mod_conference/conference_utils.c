@@ -214,6 +214,8 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 				f[CFLAG_MANAGE_INBOUND_VIDEO_BITRATE] = 1;
 			} else if (!strcasecmp(argv[i], "video-muxing-personal-canvas")) {
 				f[CFLAG_PERSONAL_CANVAS] = 1;
+			} else if (!strcasecmp(argv[i], "ded-vid-layer-audio-floor")) {
+				f[CFLAG_DED_VID_LAYER_AUDIO_FLOOR] = 1;
 			}
 		}
 

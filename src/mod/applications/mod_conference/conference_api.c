@@ -2316,7 +2316,7 @@ switch_status_t conference_api_sub_floor(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER) && !conference_utils_test_flag(member->conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 		if (stream != NULL) {
 			stream->write_function(stream, "-ERR cannot set floor on a member in an active video role\n");
 		}
