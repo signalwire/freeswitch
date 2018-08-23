@@ -200,7 +200,7 @@ switch_jb_node_t *sort_nodes(switch_jb_node_t *list, int (*cmp)(const void *, co
 	}
 }
 
-static inline void thin_frames(switch_jb_t *jb, int freq, int max);
+// static inline void thin_frames(switch_jb_t *jb, int freq, int max);
 
 
 static inline switch_jb_node_t *new_node(switch_jb_t *jb)
@@ -391,6 +391,7 @@ static inline uint32_t jb_find_lowest_ts(switch_jb_t *jb)
 	return lowest ? lowest->packet.header.ts : 0;
 }
 
+#if 0
 static inline void thin_frames(switch_jb_t *jb, int freq, int max)
 {
 	switch_jb_node_t *node, *this_node;
@@ -420,8 +421,6 @@ static inline void thin_frames(switch_jb_t *jb, int freq, int max)
 	switch_mutex_unlock(jb->list_mutex);
 }
 
-
-#if 0
 static inline switch_jb_node_t *jb_find_highest_node(switch_jb_t *jb)
 {
 	switch_jb_node_t *np, *highest = NULL;
