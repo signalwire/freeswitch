@@ -381,6 +381,8 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
   char *b, *end;
   msg_param_t param;
 
+  if (!pl) return NULL;
+
   p = pl->pl_data; len = pl->pl_len; end = p + len;
 
   su_home_init(msg_home(msg));
