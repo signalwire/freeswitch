@@ -1858,6 +1858,8 @@ static void load_config()
 		profile->ctx.qmin = -1;
 		profile->ctx.qmax = -1;
 		profile->ctx.max_qdiff = -1;
+		profile->ctx.thread_count = switch_parse_cpu_string("cpu/2/4");
+		profile->decoder_thread_count = switch_parse_cpu_string("cpu/2/4");
 
 		if (!strcasecmp(CODEC_MAPS[i], "H264")) {
 			profile->ctx.profile = FF_PROFILE_H264_BASELINE;
