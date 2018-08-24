@@ -1676,6 +1676,13 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		conference_video_set_canvas_bgimg(canvas, conference->video_canvas_bgimg);
 	}
 
+	switch_mutex_lock(conference->file_mutex);
+	if (conference->fnode && (conference->fnode->canvas_id == canvas->canvas_id || conference->fnode->canvas_id == -1)) {
+		conference_video_canvas_del_fnode_layer(conference, conference->fnode);
+		conference_video_fnode_check(conference->fnode, canvas->canvas_id);
+	}
+	switch_mutex_unlock(conference->file_mutex);
+
 	switch_mutex_unlock(canvas->write_mutex);
 	switch_mutex_unlock(canvas->mutex);
 
