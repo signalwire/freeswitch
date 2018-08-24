@@ -14696,7 +14696,7 @@ class freeswitchPINVOKE {
     public delegate string SWIGStringDelegate(string message);
     static SWIGStringDelegate stringDelegate = new SWIGStringDelegate(CreateString);
 
-    [DllImport("mod_managed", EntryPoint="SWIGRegisterStringCallback_freeswitch")]
+    [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="SWIGRegisterStringCallback_freeswitch")]
     public static extern void SWIGRegisterStringCallback_freeswitch(SWIGStringDelegate stringDelegate);
 
     static string CreateString(string cString) {

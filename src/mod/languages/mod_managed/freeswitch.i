@@ -28,7 +28,7 @@ static SWIG_CSharpStringHelperCallback SWIG_csharp_string_callback_real = NULL;
     public delegate string SWIGStringDelegate(string message);
     static SWIGStringDelegate stringDelegate = new SWIGStringDelegate(CreateString);
 
-    [DllImport("$dllimport", EntryPoint="SWIGRegisterStringCallback_$module")]
+    [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="SWIGRegisterStringCallback_$module")]
     public static extern void SWIGRegisterStringCallback_$module(SWIGStringDelegate stringDelegate);
 
     static string CreateString(string cString) {
