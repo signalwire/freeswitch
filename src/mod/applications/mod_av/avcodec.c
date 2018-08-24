@@ -1864,6 +1864,7 @@ static void load_config()
 		if (!strcasecmp(CODEC_MAPS[i], "H264")) {
 			profile->ctx.profile = FF_PROFILE_H264_BASELINE;
 			profile->ctx.level = 41;
+			profile->ctx.flags |= (CODEC_FLAG_LOOP_FILTER | AV_CODEC_FLAG_PSNR);
 		}
 	}
 
