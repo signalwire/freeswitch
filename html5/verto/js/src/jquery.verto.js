@@ -465,11 +465,11 @@
 
         var dialog = new $.verto.dialog($.verto.enum.direction.outbound, this, args);
 
-        dialog.invite();
-
         if (callbacks) {
             dialog.callbacks = callbacks;
         }
+
+        dialog.invite();
 
         return dialog;
     };
