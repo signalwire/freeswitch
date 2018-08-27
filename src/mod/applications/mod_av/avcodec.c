@@ -1213,6 +1213,12 @@ FF_ENABLE_DEPRECATION_WARNINGS
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
+
 			if (profile->options) {
 				switch_event_header_t *hp;
 
