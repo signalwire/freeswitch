@@ -6613,7 +6613,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					switch_time_exp_gmt(&now_hr,now);
 						
 					/* Calculating RTT = A - DLSR - LSR */
-					rtt_now = (double)(lsr_now - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr)/65536;
+					rtt_now = ((double)(((int64_t)lsr_now) - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr))/65536;
 
 					/* Only account RTT if it didn't overflow. */
 					if (lsr_now > rtp_session->rtcp_frame.reports[i].dlsr + rtp_session->rtcp_frame.reports[i].lsr) {
@@ -6641,10 +6641,10 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 								rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
 								lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
 #endif
+						rtt_valid = 0;
+						rtt_now = 0;
 					}
 
-					rtt_valid = 0;
-					rtt_now = 0;
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "RTT average %f\n",
 							rtp_session->rtcp_frame.reports[i].rtt_avg);
