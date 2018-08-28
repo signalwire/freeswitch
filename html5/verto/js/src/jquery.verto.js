@@ -2055,7 +2055,11 @@
         };
 
         RTCcallbacks.onStream = function(rtc, stream) {
-            if (dialog.verto.options.permissionCallback &&
+            if (dialog.callbacks.permissionCallback &&
+                typeof dialog.callbacks.permissionCallback.onGranted === 'function') {
+                dialog.callbacks.permissionCallback.onGranted(stream);
+            }
+            else if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onGranted === 'function'){
                 dialog.verto.options.permissionCallback.onGranted(stream);
             }
@@ -2070,7 +2074,11 @@
         };
 
         RTCcallbacks.onError = function(e) {
-            if (dialog.verto.options.permissionCallback &&
+            if (dialog.callbacks.permissionCallback &&
+                typeof dialog.callbacks.permissionCallback.onDenied === 'function') {
+                dialog.callbacks.permissionCallback.onDenied();
+            }
+            else if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onDenied === 'function'){
                 dialog.verto.options.permissionCallback.onDenied();
             }
