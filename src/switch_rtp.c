@@ -3240,9 +3240,14 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		return 0;
 	}
 
-	if ((ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes)) != (int)dtls->bytes && dtls->bytes > 0) {
-		ret = SSL_get_error(dtls->ssl, ret);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
+	if (dtls->bytes > 0 && dtls->data) {
+		ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes);
+		if (ret <= 0) {
+			ret = SSL_get_error(dtls->ssl, ret);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet decode err: SSL err %d\n", rtp_type(rtp_session), ret);
+		} else if (ret != (int)dtls->bytes) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet decode err: read %d bytes instead of %d\n", rtp_type(rtp_session), ret, (int)dtls->bytes);
+		}
 	}
 
 	if (dtls_states[dtls->state]) {
@@ -3252,12 +3257,19 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	while ((pending = BIO_ctrl_pending(dtls->filter_bio)) > 0) {
 		switch_assert(pending <= sizeof(buf));
 
-		if ((len = BIO_read(dtls->write_bio, buf, pending)) > 0) {
+		len = BIO_read(dtls->write_bio, buf, pending);
+		if (len > 0) {
 			bytes = len;
+			ret = switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, (void *)buf, &bytes);
 
-			if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, (void *)buf, &bytes ) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s DTLS packet not written\n", rtp_type(rtp_session));
+			if (ret != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet not written to socket: %d\n", rtp_type(rtp_session), ret);
+			} else if (bytes != len) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet write err: written %d bytes instead of %d\n", rtp_type(rtp_session), (int)bytes, len);
 			}
+		} else {
+			ret = SSL_get_error(dtls->ssl, len);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet encode err: SSL err %d\n", rtp_type(rtp_session), ret);
 		}
 	}
 
