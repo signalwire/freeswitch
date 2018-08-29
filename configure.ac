@@ -1427,9 +1427,23 @@ PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
   AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 
-PKG_CHECK_MODULES([FLITE], [flite >= 2.0.0],[
+PKG_CHECK_MODULES([FLITE], [flite >= 2],[
   AM_CONDITIONAL([HAVE_FLITE],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FLITE],[false])])
+  AC_CHECK_LIB([flite], [flite_init],[
+    AC_CHECK_HEADERS([flite/flite.h],[      
+      AM_CONDITIONAL([HAVE_FLITE],[true])
+      FLITE_LIBS="-lflite -lflite_cmu_grapheme_lang -lflite_cmu_grapheme_lex -lflite_cmu_indic_lang -lflite_cmu_indic_lex -lflite_cmulex -lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal16 -lflite_cmu_us_kal -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish"
+      FLITE_CFLAGS=""
+    ], [
+      if module_enabled mod_flite; then
+        AC_MSG_ERROR([You must install libflite-dev to build mod_flite])
+      else
+        AC_MSG_RESULT([no])
+        AM_CONDITIONAL([HAVE_FLITE],[false])
+      fi
+    ])
+  ])
+])
 
 PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0 >= 1.0.8],[
   AM_CONDITIONAL([HAVE_MONGOC],[true])],[

@@ -31,7 +31,7 @@
  */
 
 #include <switch.h>
-#include <flite.h>
+#include <flite/flite.h>
 
 cst_voice *register_cmu_us_awb(void);
 void unregister_cmu_us_awb(cst_voice * v);
