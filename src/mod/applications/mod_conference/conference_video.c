@@ -723,7 +723,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						crop_y = c_y;
 					}
 					
-					set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+					set_bounds(&crop_x, &crop_y, img->w, img->h, crop_w, crop_h);
 
 					//printf("ZOOM %d,%d %d,%d %dx%d\n", crop_x, crop_y, c_x, c_y, zoom_w, zoom_h);
 				}
@@ -745,7 +745,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						crop_x = use_geometry->x;
 					}
 				} else if (screen_aspect < img_aspect) {
-					crop_x = img->d_w / 4;
+					crop_x = img->w / 4;
 				}
 
 				if (can_pan) {
@@ -755,7 +755,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						crop_y = use_geometry->y;
 					}
 				} else if (screen_aspect > img_aspect) {
-					crop_y = img->d_h / 4;
+					crop_y = img->h / 4;
 				}
 
 				crop_x = switch_round_to_step(crop_x, layer->cam_opts.snap_factor);
@@ -763,7 +763,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 
 			//printf("BOUNDS B4 %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
-			set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+			set_bounds(&crop_x, &crop_y, img->w, img->h, crop_w, crop_h);
 			//printf("BOUNDS AF %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
 				
 			if (img_changed) {
@@ -789,7 +789,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			layer->crop_h = layer->crop_w / screen_aspect;
 			if (layer->crop_h > img->d_h) layer->crop_h = img->d_h;
 
-			set_bounds(&layer->crop_x, &layer->crop_y, img->d_w, img->d_h, layer->crop_w, layer->crop_h);
+			set_bounds(&layer->crop_x, &layer->crop_y, img->w, img->h, layer->crop_w, layer->crop_h);
 
 			assert(layer->crop_w > 0);
 
