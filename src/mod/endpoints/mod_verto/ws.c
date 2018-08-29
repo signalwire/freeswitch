@@ -830,7 +830,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		{
 			wsh->plen = wsh->buffer[1] & 0x7f;
 			*data = (uint8_t *) &wsh->buffer[2];
-			return ws_close(wsh, 1000);
+			return ws_close(wsh, WS_RECV_CLOSE);
 		}
 		break;
 	case WSOC_CONTINUATION:
