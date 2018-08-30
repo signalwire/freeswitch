@@ -5334,7 +5334,7 @@ SWITCH_STANDARD_API(bgapi_function)
 	switch_threadattr_t *thd_attr = NULL;
 	
 	const char *p, *arg = cmd;
-	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = ""; 
 
 	if (!cmd) {
 		stream->write_function(stream, "-ERR Invalid syntax\n");
