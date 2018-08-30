@@ -276,7 +276,7 @@ Description: mod_cepstral
 Module: asr_tts/mod_flite
 Description: mod_flite
  Adds mod_flite.
-Build-Depends: libflite-dev
+Build-Depends: libflite-dev | flite1-dev
 
 Module: asr_tts/mod_pocketsphinx
 Description: mod_pocketsphinx
