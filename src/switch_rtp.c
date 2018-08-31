@@ -477,6 +477,7 @@ struct switch_rtp {
 	uint8_t punts;
 	uint8_t clean;
 	uint32_t last_max_vb_frames;
+	int skip_timer;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1329,6 +1330,10 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t *stream, char *rtp_packet,
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 	switch_size_t len = rtp_packet_length;
 	zrtp_status_t status = zrtp_status_ok;
+
+	if (!rtp_session->sock_output) {
+		return status;
+	}
 
 	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, rtp_packet, &len);
 	return status;
@@ -6292,8 +6297,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			case SWITCH_STATUS_BREAK:
 				break;
 			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
 			default:
 				{
+					if (status == SWITCH_STATUS_TIMEOUT) {
+						rtp_session->skip_timer = 1;
+					}
 					rtp_session->stats.inbound.jb_packet_count++;
 					status = SWITCH_STATUS_SUCCESS;
 					rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
@@ -6477,7 +6486,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
-				handle_nack(rtp_session, *nack);
+				handle_nack(rtp_session, nack[i]);
 			}
 
 			//switch_core_media_gen_key_frame(rtp_session->session);
@@ -6493,6 +6502,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			uint32_t lsr;
 			uint32_t packet_ssrc;
 			double rtt_now = 0;
+			uint8_t rtt_valid = 0;
 			int rtt_increase = 0, packet_loss_increase=0;
 
 			//if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
@@ -6502,7 +6512,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			now = switch_micro_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
 			sec = (uint32_t)(now/1000000);              /* converted to second (NTP most significant bits) */
 			ntp_sec = sec+NTP_TIME_OFFSET;  /* 32bits most significant */
-			ntp_usec = (uint32_t)(now - (sec*1000000)); /* micro seconds */
+			ntp_usec = (uint32_t)(now - (((switch_time_t) sec) * 1000000)); /* micro seconds */
 			lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; // 0.065536 is used for convertion from useconds
 
 			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
@@ -6580,23 +6590,47 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
 				rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
 				rtp_session->rtcp_frame.reports[i].dlsr = ntohl(report->dlsr);
+				
 				if (rtp_session->rtcp_frame.reports[i].lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
+
 					switch_time_exp_gmt(&now_hr,now);
+						
 					/* Calculating RTT = A - DLSR - LSR */
 					rtt_now = (double)(lsr_now - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr)/65536;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
-									  "Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
-									  "RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
-									  1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
-									  rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
-									  lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
-					if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
-						rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
+
+					/* Only account RTT if it didn't overflow. */
+					if (lsr_now > rtp_session->rtcp_frame.reports[i].dlsr + rtp_session->rtcp_frame.reports[i].lsr) {
+
+						rtt_valid = 1;
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
+								"Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
+								"RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
+								1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
+								rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
+								lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
+						if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
+							rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
+						} else {
+							rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
+						}
 					} else {
-						rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
+
+#ifdef DEBUG_RTCP
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+								"Receiving RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
+								"Ignoring erroneous RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
+								1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
+								rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
+								lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
+#endif
 					}
+
+					rtt_valid = 0;
+					rtt_now = 0;
+
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "RTT average %f\n",
-									  rtp_session->rtcp_frame.reports[i].rtt_avg);
+							rtp_session->rtcp_frame.reports[i].rtt_avg);
 				}
 
 				if (rtp_session->flags[SWITCH_RTP_FLAG_ADJ_BITRATE_CAP] && rtp_session->flags[SWITCH_RTP_FLAG_ESTIMATORS] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
@@ -6606,14 +6640,17 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Current packet loss: [%d %%] Current RTT: [%f ms]\n", percent_fraction, rtt_now);
 #endif
 
-					switch_kalman_estimate(rtp_session->estimators[EST_RTT], rtt_now, EST_RTT);
+					if (rtt_valid) {
 
-					if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_RTT], rtt_now, rtp_session->estimators[EST_RTT]->val_estimate_last)) {
-						/* sudden change in the mean value of RTT */
+						switch_kalman_estimate(rtp_session->estimators[EST_RTT], rtt_now, EST_RTT);
+
+						if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_RTT], rtt_now, rtp_session->estimators[EST_RTT]->val_estimate_last)) {
+							/* sudden change in the mean value of RTT */
 #ifdef DEBUG_ESTIMATORS_
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of RTT !\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of RTT !\n");
 #endif
-						rtt_increase = 1;
+							rtt_increase = 1;
+						}
 					}
 
 					switch_kalman_estimate(rtp_session->estimators[EST_LOSS], percent_fraction, EST_LOSS);
@@ -6657,7 +6694,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 															(void *)&rtp_session->rtcp_frame.reports[i].loss_avg,
 															SCCT_NONE, NULL, NULL, NULL);
 
-						} else if (!rtt_increase && rtp_session->estimators[EST_LOSS]->val_estimate_last >= rtp_session->rtcp_frame.reports[i].loss_avg ) {
+						} else if (rtt_valid && !rtt_increase && rtp_session->estimators[EST_LOSS]->val_estimate_last >= rtp_session->rtcp_frame.reports[i].loss_avg ) {
 							/* lossy because of congestion (queues full somewhere -> some packets are dropped , but RTT is good ), packet loss with many small gaps */
 #ifdef DEBUG_ESTIMATORS_
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "packet loss, but RTT is not bad\n");
@@ -7094,7 +7131,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					if (slept) {
 						switch_cond_next();
 					} else {
-						switch_core_timer_next(&rtp_session->timer);
+						if (rtp_session->skip_timer) {
+							rtp_session->skip_timer = 0;
+							switch_cond_next();
+						} else {
+							switch_core_timer_next(&rtp_session->timer);
+						}
 						slept++;
 					}
 
@@ -8283,7 +8325,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 #ifdef DEBUG_TS_ROLLOVER
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WRITE TS LAST:%u THIS:%u DELTA:%u\n", rtp_session->last_write_ts, this_ts, ts_delta);
 #endif
-		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf) {
+		if (ts_delta == 0 || !switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf) {
 			send = 0;
 		}
 	}
@@ -8804,6 +8846,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		data = frame->data;
 		len = frame->datalen;
 		ts = rtp_session->flags[SWITCH_RTP_FLAG_RAW_WRITE] ? (uint32_t) frame->timestamp : 0;
+		if (!ts) ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 	}
 
 	/*

@@ -1405,12 +1405,12 @@ SWITCH_DECLARE(char *) switch_strip_commas(char *in, char *out, switch_size_t le
 	for (; p && *p; p++) {
 		if ((*p > 47 && *p < 58)) {
 			*q++ = *p;
-		} else if (*p != ',') {
-			ret = NULL;
-			break;
-		}
 
-		if (++x > len) {
+			if (++x > len) {
+				ret = NULL;
+				break;
+			}
+		} else if (*p != ',') {
 			ret = NULL;
 			break;
 		}
@@ -1428,11 +1428,11 @@ SWITCH_DECLARE(char *) switch_strip_nonnumerics(char *in, char *out, switch_size
 	for (; p && *p; p++) {
 		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
 			*q++ = *p;
-		}
 
-		if (++x > len) {
-			ret = NULL;
-			break;
+			if (++x > len) {
+				ret = NULL;
+				break;
+			}
 		}
 	}
 

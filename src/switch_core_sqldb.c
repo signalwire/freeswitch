@@ -2054,7 +2054,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 	switch_sql_queue_manager_t *qm = (switch_sql_queue_manager_t *) obj;
 	uint32_t i;
 
-	while (!qm->event_db) {
+	while (sanity && !qm->event_db) {
 		if (switch_cache_db_get_db_handle_dsn(&qm->event_db, qm->dsn) == SWITCH_STATUS_SUCCESS && qm->event_db)
 			break;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Error getting db handle, Retrying\n", qm->name);

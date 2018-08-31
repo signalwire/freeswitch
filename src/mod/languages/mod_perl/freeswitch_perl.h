@@ -41,6 +41,9 @@ namespace PERL {
 		void unsetInputCallback(void);
 		void setHangupHook(char *func, char *arg = NULL);
 		bool ready();
+		switch_mutex_t *callback_mutex;
+		int destroying = 0;
+		int event_idx = 0;
 		char *suuid;
 		char *cb_function;
 		char *cb_arg;

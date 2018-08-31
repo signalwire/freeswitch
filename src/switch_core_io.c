@@ -417,7 +417,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_set_flag(session, SSF_WARN_TRANSCODE);
 		}
 
-		if (read_frame->codec || is_cng) {
+		if (read_frame->codec || (is_cng && session->plc)) {
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 
 			if (is_cng) {

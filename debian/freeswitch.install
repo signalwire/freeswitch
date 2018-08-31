@@ -1,1 +1,3 @@
 /usr/bin
+fonts/FreeMono.ttf /usr/share/freeswitch/fonts/
+fonts/FreeSans.ttf /usr/share/freeswitch/fonts/

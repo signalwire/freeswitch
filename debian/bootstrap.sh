@@ -56,6 +56,7 @@ avoid_mods=(
   endpoints/mod_skypopen
   endpoints/mod_unicall
   event_handlers/mod_smpp
+  event_handlers/mod_cdr_pg_csv
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap

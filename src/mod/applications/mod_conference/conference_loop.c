@@ -132,6 +132,8 @@ void conference_loop_mute_toggle(conference_member_t *member, caller_control_act
 	if (member == NULL)
 		return;
 
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) return;
+
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		conference_api_sub_mute(member, NULL, NULL);
 	} else {
@@ -144,6 +146,8 @@ void conference_loop_mute_toggle(conference_member_t *member, caller_control_act
 
 void conference_loop_mute_on(conference_member_t *member, caller_control_action_t *action)
 {
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) return;
+
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		conference_api_sub_mute(member, NULL, NULL);
 	}
@@ -151,6 +155,8 @@ void conference_loop_mute_on(conference_member_t *member, caller_control_action_
 
 void conference_loop_mute_off(conference_member_t *member, caller_control_action_t *action)
 {
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) return;
+
 	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		conference_api_sub_unmute(member, NULL, NULL);
 		if (!conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
@@ -279,6 +285,8 @@ void conference_loop_deafmute_toggle(conference_member_t *member, caller_control
 {
 	if (member == NULL)
 		return;
+
+	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) return;
 
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		conference_api_sub_mute(member, NULL, NULL);
@@ -933,7 +941,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
-		if ((conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) || conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT))) {
+		if (((conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_member_test_flag(member, MFLAG_HOLD)) ||
+			 conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT))) {
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int gate_check = 0;
@@ -990,7 +999,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 			gate_check = conference_member_noise_gate_check(member);
 
-			if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+			if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_member_test_flag(member, MFLAG_HOLD)) {
 				if (member->max_energy_level) {
 					if (member->score > member->max_energy_level && ++member->max_energy_hits > member->max_energy_hit_trigger) {
 						member->mute_counter = member->burst_mute_count;
@@ -1131,6 +1140,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 						member->talking_count = 0;
 						
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&
+							!conference_utils_member_test_flag(member, MFLAG_HOLD) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_member_add_event_data(member, event);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
@@ -1157,7 +1167,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 					hangunder_hits--;
 				}
 
-				if (conference_utils_member_test_flag(member, MFLAG_TALKING) && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+				if (conference_utils_member_test_flag(member, MFLAG_TALKING) && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&
+					!conference_utils_member_test_flag(member, MFLAG_HOLD)) {
 					if (++hangover_hits >= hangover) {
 						hangover_hits = hangunder_hits = 0;
 
@@ -1188,7 +1199,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((conference_utils_member_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS))
-			&& conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&	!conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)
+			&& conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)
+			&& !conference_utils_member_test_flag(member, MFLAG_HOLD)
 			&& (member->conference->count > 1 || (member->conference->record_count && member->conference->count >= member->conference->min_recording_participants))) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;

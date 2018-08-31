@@ -20023,10 +20023,10 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_find_parameter(char * jarg1, char * 
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_true(char * jarg1) {
   int jresult ;
   char *arg1 = (char *) 0 ;
-  int result;
+  switch_bool_t result;
   
   arg1 = (char *)jarg1; 
-  result = (int)switch_true((char const *)arg1);
+  result = (switch_bool_t)switch_true((char const *)arg1);
   jresult = result; 
   return jresult;
 }
@@ -40954,15 +40954,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_find_bridged_uuid(char * jarg1, cha
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_ivr_intercept_session(void * jarg1, char * jarg2, int jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_intercept_session(void * jarg1, char * jarg2, int jarg3) {
+  int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_bool_t arg3 ;
+  switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (switch_bool_t)jarg3; 
-  switch_ivr_intercept_session(arg1,(char const *)arg2,arg3);
+  result = (switch_status_t)switch_ivr_intercept_session(arg1,(char const *)arg2,arg3);
+  jresult = result; 
+  return jresult;
 }
 
 

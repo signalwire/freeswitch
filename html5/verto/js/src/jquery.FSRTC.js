@@ -232,8 +232,6 @@
     FSRTCattachMediaStream = function(element, stream) {
         if (typeof element.srcObject !== 'undefined') {
 	    element.srcObject = stream;
-	} else if (typeof element.src !== 'undefined') {
-	    element.src = URL.createObjectURL(stream);
 	} else {
 	    console.error('Error attaching stream to element.');
 	}
@@ -430,7 +428,8 @@
                 offerSDP: {
                     type: "offer",
                     sdp: self.remoteSDP
-                }
+                },
+                turnServer: self.options.turnServer
             });
 
             onStreamSuccess(self, stream);
@@ -449,10 +448,7 @@
             getUserMedia({
 		constraints: {
                     audio: false,
-                    video: {
-			//mandatory: self.options.videoParams,
-			//optional: []
-                    },
+                    video: { deviceId: params.useCamera },
 		},
 		localVideo: self.options.localVideo,
 		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
@@ -502,11 +498,10 @@
             getUserMedia({
 		constraints: {
                     audio: false,
-                    video: obj.options.videoParams
-                    
+                    video: { deviceId: obj.options.useCamera },
 		},
 		localVideo: obj.options.localVideo,
-		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
+		onsuccess: function(e) {obj.options.localVideoStream = e; console.log("local video ready");},
 		onerror: function(e) {console.error("local video error!");}
             });
 	}
@@ -625,6 +620,7 @@
                 },
                 constraints: self.constraints,
                 iceServers: self.options.iceServers,
+                turnServer: self.options.turnServer
             });
 
             onStreamSuccess(self, stream);
@@ -674,13 +670,15 @@
     function FSRTCPeerConnection(options) {
 	var gathering = false, done = false;
 	var config = {};
-        var default_ice = {
-	    urls: ['stun:stun.l.google.com:19302']
-	};
+        var default_ice = [{ urls: ['stun:stun.l.google.com:19302'] }];
+
+        if (self.options.turnServer) {
+          default_ice.push(self.options.turnServer)
+        }
 
         if (options.iceServers) {
             if (typeof(options.iceServers) === "boolean") {
-		config.iceServers = [default_ice];
+		config.iceServers = default_ice;
             } else {
 		config.iceServers = options.iceServers;
 	    }
@@ -958,7 +956,7 @@
 
         function streaming(stream) {
             if (options.localVideo) {
-                options.localVideo['src'] = window.URL.createObjectURL(stream);
+                options.localVideo['srcObject'] = stream;
 		options.localVideo.style.display = 'block';
             }
 

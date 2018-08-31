@@ -89,7 +89,7 @@ static int pcount = 0;
 static esl_handle_t *global_handle;
 static cli_profile_t *global_profile;
 static int running = 1;
-static int thread_running = 0;
+static int thread_running = 0, thread_up = 0, check_up = 0;
 static char *filter_uuid;
 static char *logfilter;
 static int timeout = 0;
@@ -671,40 +671,45 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifdef HAVE_LIBEDIT
-#ifdef HAVE_DECL_EL_REFRESH
-#ifdef HAVE_EL_WSET
-	/* Current libedit versions don't implement EL_REFRESH in eln.c so
-	 * use the wide version instead. */
-	el_wset(el, EL_REFRESH);
-#else
-	/* This will work on future libedit versions and versions built
-	 * without wide character support. */
-	el_set(el, EL_REFRESH);
-#endif
-#else
-	/* Old libedit versions don't implement EL_REFRESH at all so use
-	 * our own implementation instead. */
-	const LineInfo *lf = el_line(el);
-	const char *c = lf->buffer;
-	if (global_profile->batch_mode) return;
-	printf("%s",prompt_str);
-	while (c < lf->lastchar && *c) {
-		putchar(*c);
-		c++;
-	}
+	esl_mutex_lock(MUTEX);
 	{
-		int pos = (int)(lf->cursor - lf->buffer);
-		char s1[12], s2[12];
-		putchar('\r');
-		snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
-		snprintf(s2, sizeof(s2), "\033[%dC", pos);
-		printf("%s%s",s1,s2);
+#ifdef HAVE_LIBEDIT
+#ifdef XHAVE_DECL_EL_REFRESH
+#ifdef HAVE_EL_WSET
+		/* Current libedit versions don't implement EL_REFRESH in eln.c so
+		 * use the wide version instead. */
+		el_wset(el, EL_REFRESH);
+#else
+		/* This will work on future libedit versions and versions built
+		 * without wide character support. */
+		el_set(el, EL_REFRESH);
+#endif
+#else
+		/* Old libedit versions don't implement EL_REFRESH at all so use
+		 * our own implementation instead. */
+		const LineInfo *lf = el_line(el);
+		const char *c = lf->buffer;
+		if (global_profile->batch_mode) return;
+		printf("%s",prompt_str);
+		while (c < lf->lastchar && *c) {
+			putchar(*c);
+			c++;
+		}
+		{
+			int pos = (int)(lf->cursor - lf->buffer);
+			char s1[12], s2[12] = "";
+			
+			putchar('\r');
+			snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);			
+			if (pos) snprintf(s2, sizeof(s2), "\033[%dC", pos);
+			printf("%s%s",s1,s2);
+		}
+		fflush(stdout);
+#endif
+#endif
 	}
-	fflush(stdout);
+	esl_mutex_unlock(MUTEX);
 	return;
-#endif
-#endif
 }
 
 static int output_printf(const char *fmt, ...)
@@ -726,6 +731,9 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
 	esl_handle_t *handle = (esl_handle_t *) obj;
 	thread_running = 1;
+	esl_mutex_lock(MUTEX);
+	thread_up = 1;
+	esl_mutex_unlock(MUTEX);
 	while(thread_running && handle->connected) {
 		int aok = 1;
 		esl_status_t status;
@@ -846,6 +854,10 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		}
 		//sleep_ms(1);
 	}
+
+	esl_mutex_lock(MUTEX);  
+	thread_up = 0;
+	esl_mutex_unlock(MUTEX);  
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
 	return NULL;
@@ -1165,8 +1177,10 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", buf);
 	}
 
+	esl_mutex_lock(MUTEX);
 	esl_send_recv(global_handle, cmd_str);
-
+	esl_mutex_unlock(MUTEX);
+	
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
 		char *r = global_handle->last_sr_event->body;
 		char *w, *p1;
@@ -1828,6 +1842,7 @@ int main(int argc, char *argv[])
 	output_printf("%s\n", handle.last_sr_reply);
 	while (running > 0) {
 		int r;
+
 #ifdef HAVE_LIBEDIT
 		if (!(global_profile->batch_mode)) {
 			line = el_gets(el, &count);
@@ -1869,6 +1884,13 @@ int main(int argc, char *argv[])
 	global_handle = NULL;
 	thread_running = 0;
 
+	do {
+		esl_mutex_lock(MUTEX);
+		check_up = thread_up;
+		esl_mutex_unlock(MUTEX);
+		sleep_ms(10);
+	} while (check_up > 0);
+	
 	esl_mutex_destroy(&MUTEX);
 
 	return 0;

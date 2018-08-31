@@ -2204,25 +2204,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 
 }
 
-SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg)
+SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg)
 {
 	switch_core_session_t *rsession, *bsession = NULL;
 	switch_channel_t *channel, *rchannel, *bchannel = NULL;
 	const char *buuid, *var;
 	char brto[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (bleg) {
 		if (switch_ivr_find_bridged_uuid(uuid, brto, sizeof(brto)) == SWITCH_STATUS_SUCCESS) {
 			uuid = switch_core_session_strdup(session, brto);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "no uuid bridged to %s\n", uuid);
-			return;
+			return status;
 		}
 	}
 
 	if (zstr(uuid) || !(rsession = switch_core_session_locate(uuid))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "no uuid %s\n", uuid);
-		return;
+		return status;
 	}
 
 	channel = switch_core_session_get_channel(session);
@@ -2236,14 +2237,14 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	if ((var = switch_channel_get_variable(channel, "intercept_unbridged_only")) && switch_true(var)) {
 		if ((switch_channel_test_flag(rchannel, CF_BRIDGED))) {
 			switch_core_session_rwunlock(rsession);
-			return;
+			return status;
 		}
 	}
 
 	if ((var = switch_channel_get_variable(channel, "intercept_unanswered_only")) && switch_true(var)) {
 		if ((switch_channel_test_flag(rchannel, CF_ANSWERED))) {
 			switch_core_session_rwunlock(rsession);
-			return;
+			return status;
 		}
 	}
 
@@ -2275,7 +2276,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	}
 
 	switch_channel_set_flag(rchannel, CF_INTERCEPTED);
-	switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
+	status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
 	switch_core_session_rwunlock(rsession);
 
 	if (bsession) {
@@ -2283,7 +2284,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		switch_core_session_rwunlock(bsession);
 	}
 
-
+	return status;
 
 }
 

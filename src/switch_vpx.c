@@ -51,6 +51,68 @@
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 250000
 
+typedef struct my_vpx_cfg_s {
+	int lossless;
+	int cpuused;
+	int token_parts;
+	int static_thresh;
+	int noise_sensitivity;
+	int max_intra_bitrate_pct;
+	vp9e_tune_content tune_content;
+
+	vpx_codec_enc_cfg_t enc_cfg;
+	vpx_codec_dec_cfg_t dec_cfg;
+} my_vpx_cfg_t;
+
+#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field);
+
+static void show_config(my_vpx_cfg_t *my_cfg)
+{
+	vpx_codec_enc_cfg_t *cfg = &my_cfg->enc_cfg;
+
+	SHOW(my_cfg, lossless);
+	SHOW(my_cfg, cpuused);
+	SHOW(my_cfg, token_parts);
+	SHOW(my_cfg, static_thresh);
+	SHOW(my_cfg, noise_sensitivity);
+	SHOW(my_cfg, max_intra_bitrate_pct);
+	SHOW(my_cfg, tune_content);
+
+	SHOW(cfg, g_usage);
+	SHOW(cfg, g_threads);
+	SHOW(cfg, g_profile);
+	SHOW(cfg, g_w);
+	SHOW(cfg, g_h);
+	SHOW(cfg, g_bit_depth);
+	SHOW(cfg, g_input_bit_depth);
+	SHOW(cfg, g_timebase.num);
+	SHOW(cfg, g_timebase.den);
+	SHOW(cfg, g_error_resilient);
+	SHOW(cfg, g_pass);
+	SHOW(cfg, g_lag_in_frames);
+	SHOW(cfg, rc_dropframe_thresh);
+	SHOW(cfg, rc_resize_allowed);
+	SHOW(cfg, rc_scaled_width);
+	SHOW(cfg, rc_scaled_height);
+	SHOW(cfg, rc_resize_up_thresh);
+	SHOW(cfg, rc_resize_down_thresh);
+	SHOW(cfg, rc_end_usage);
+	SHOW(cfg, rc_target_bitrate);
+	SHOW(cfg, rc_min_quantizer);
+	SHOW(cfg, rc_max_quantizer);
+	SHOW(cfg, rc_undershoot_pct);
+	SHOW(cfg, rc_overshoot_pct);
+	SHOW(cfg, rc_buf_sz);
+	SHOW(cfg, rc_buf_initial_sz);
+	SHOW(cfg, rc_buf_optimal_sz);
+	SHOW(cfg, rc_2pass_vbr_bias_pct);
+	SHOW(cfg, rc_2pass_vbr_minsection_pct);
+	SHOW(cfg, rc_2pass_vbr_maxsection_pct);
+	SHOW(cfg, kf_mode);
+	SHOW(cfg, kf_min_dist);
+	SHOW(cfg, kf_max_dist);
+}
+
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
 
 	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
@@ -267,6 +329,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
 
 struct vpx_context {
+	int debug;
 	switch_codec_t *codec;
 	int is_vp9;
 	vp9_info_t vp9;
@@ -276,7 +339,7 @@ struct vpx_context {
 	unsigned int flags;
 	switch_codec_settings_t codec_settings;
 	unsigned int bandwidth;
-	vpx_codec_enc_cfg_t	config;
+	vpx_codec_enc_cfg_t config;
 	switch_time_t last_key_frame;
 
 	vpx_codec_ctx_t	encoder;
@@ -314,6 +377,22 @@ struct vpx_context {
 };
 typedef struct vpx_context vpx_context_t;
 
+struct vpx_globals {
+	int debug;
+	uint32_t max_bitrate;
+	uint32_t rtp_slice_size;
+	uint32_t key_frame_min_freq;
+
+	char vp8_profile[20];
+	char vp9_profile[20];
+	char vp10_profile[20];
+
+	my_vpx_cfg_t vp8;
+	my_vpx_cfg_t vp9;
+	my_vpx_cfg_t vp10;
+};
+
+struct vpx_globals vpx_globals = { 0 };
 
 static switch_status_t init_decoder(switch_codec_t *codec)
 {
@@ -329,14 +408,11 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		//	context->decoder_init = 0;
 		//}
 
-		//cfg.threads = 1;//(switch_core_cpu_count() > 1) ? 2 : 1;
-
-		cfg.threads = switch_core_cpu_count() / 2;
-		if (cfg.threads > 4) cfg.threads = 4;
-		if (cfg.threads < 1) cfg.threads = 1;
-
-		if (!context->is_vp9) { // vp8 only
+		if (context->is_vp9) {
+			cfg.threads = vpx_globals.vp9.dec_cfg.threads;
+		} else {
 			// dec_flags = VPX_CODEC_USE_POSTPROC;
+			cfg.threads = vpx_globals.vp8.dec_cfg.threads;
 		}
 
 		if (vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags) != VPX_CODEC_OK) {
@@ -377,7 +453,17 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_codec_enc_cfg_t *config = &context->config;
 	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
-	int sane, threads = 1;
+	vpx_codec_enc_cfg_t *vp8_enc_cfg = &vpx_globals.vp8.enc_cfg;
+	vpx_codec_enc_cfg_t *vp9_enc_cfg = &vpx_globals.vp9.enc_cfg;
+	my_vpx_cfg_t *my_cfg = NULL;
+
+	if (context->is_vp9) {
+		*config = *vp9_enc_cfg;
+		my_cfg = &vpx_globals.vp9;
+	} else {
+		*config = *vp8_enc_cfg;
+		my_cfg = &vpx_globals.vp8;
+	}
 
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
@@ -395,14 +481,11 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15);
-
 	}
 
-	sane = switch_calc_bitrate(1920, 1080, 5, 60);
-
-	if (context->bandwidth > sane) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, sane);
-		context->bandwidth = sane;
+	if (context->bandwidth > vpx_globals.max_bitrate) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, vpx_globals.max_bitrate);
+		context->bandwidth = vpx_globals.max_bitrate;
 	}
 
 	context->pkt = NULL;
@@ -413,29 +496,20 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	context->start_time = switch_micro_time_now();
 
-	config->g_timebase.num = 1;
-	config->g_timebase.den = 1000;//90000;
-	config->g_pass = VPX_RC_ONE_PASS;
 	config->g_w = context->codec_settings.video.width;
 	config->g_h = context->codec_settings.video.height;
 	config->rc_target_bitrate = context->bandwidth;
-	config->g_lag_in_frames = 0;
-	config->kf_max_dist = 360;//2000;
-	threads = cpus / 2;
-	if (threads > 4) threads = 4;
-	if (threads < 1) threads = 1;
-	config->g_threads = threads;
+
+	token_parts = (cpus > 1) ? 3 : 0;
 
 	if (context->is_vp9) {
-		//config->rc_dropframe_thresh = 2;
-		token_parts = (cpus > 1) ? 3 : 0;
+		if (vpx_globals.vp9.token_parts > 0) {
+			token_parts = vpx_globals.vp9.token_parts;
+		}
 
 		if (context->lossless) {
 			config->rc_min_quantizer = 0;
 			config->rc_max_quantizer = 0;
-		} else {
-			config->rc_min_quantizer = 0;
-			config->rc_max_quantizer = 63;
 		}
 
 		config->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING;
@@ -444,63 +518,9 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		config->ts_periodicity = 1;
 		config->ts_layer_id[0] = 0;
 	} else {
-
-		// settings
-		config->g_profile = 2;
-		config->g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
-		token_parts = (cpus > 1) ? 3 : 0;
-
-		// rate control settings
-		config->rc_dropframe_thresh = 0;
-		config->rc_end_usage = VPX_CBR;
-		//config->g_pass = VPX_RC_ONE_PASS;
-		config->kf_mode = VPX_KF_AUTO;
-		config->kf_max_dist = 360;//1000;
-
-		//config->kf_mode = VPX_KF_DISABLED;
-		config->rc_resize_allowed = 1;
-		//config->rc_min_quantizer = 0;
-		//config->rc_max_quantizer = 63;
-		config->rc_min_quantizer = 0;
-		config->rc_max_quantizer = 63;
-		//Rate control adaptation undershoot control.
-		//	This value, expressed as a percentage of the target bitrate,
-		//	controls the maximum allowed adaptation speed of the codec.
-		//	This factor controls the maximum amount of bits that can be
-		//	subtracted from the target bitrate in order to compensate for
-		//	prior overshoot.
-		//	Valid values in the range 0-1000.
-		config->rc_undershoot_pct = 100;
-		//Rate control adaptation overshoot control.
-		//	This value, expressed as a percentage of the target bitrate,
-		//	controls the maximum allowed adaptation speed of the codec.
-		//	This factor controls the maximum amount of bits that can be
-		//	added to the target bitrate in order to compensate for prior
-		//	undershoot.
-		//	Valid values in the range 0-1000.
-		config->rc_overshoot_pct = 15;
-		//Decoder Buffer Size.
-		//	This value indicates the amount of data that may be buffered
-		//	by the decoding application. Note that this value is expressed
-		//	in units of time (milliseconds). For example, a value of 5000
-		//	indicates that the client will buffer (at least) 5000ms worth
-		//	of encoded data. Use the target bitrate (rc_target_bitrate) to
-		//	convert to bits/bytes, if necessary.
-		config->rc_buf_sz = 5000;
-		//Decoder Buffer Initial Size.
-		//	This value indicates the amount of data that will be buffered
-		//	by the decoding application prior to beginning playback.
-		//	This value is expressed in units of time (milliseconds).
-		//	Use the target bitrate (rc_target_bitrate) to convert to
-		//	bits/bytes, if necessary.
-		config->rc_buf_initial_sz = 1000;
-		//Decoder Buffer Optimal Size.
-		//	This value indicates the amount of data that the encoder should
-		//	try to maintain in the decoder's buffer. This value is expressed
-		//	in units of time (milliseconds).
-		//	Use the target bitrate (rc_target_bitrate) to convert to
-		//	bits/bytes, if necessary.
-		config->rc_buf_optimal_sz = 1000;
+		if (vpx_globals.vp8.token_parts > 0) {
+			token_parts = vpx_globals.vp8.token_parts;
+		}
 	}
 
 	if (context->encoder_init) {
@@ -510,45 +530,10 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
-		// #define SHOW(field) fprintf(stderr, "    %-28s = %d\n", #field, config->field);
-
-#ifdef SHOW
-		fprintf(stderr, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
-
-		SHOW(g_usage);
-		SHOW(g_threads);
-		SHOW(g_profile);
-		SHOW(g_w);
-		SHOW(g_h);
-		SHOW(g_bit_depth);
-		SHOW(g_input_bit_depth);
-		SHOW(g_timebase.num);
-		SHOW(g_timebase.den);
-		SHOW(g_error_resilient);
-		SHOW(g_pass);
-		SHOW(g_lag_in_frames);
-		SHOW(rc_dropframe_thresh);
-		SHOW(rc_resize_allowed);
-		SHOW(rc_scaled_width);
-		SHOW(rc_scaled_height);
-		SHOW(rc_resize_up_thresh);
-		SHOW(rc_resize_down_thresh);
-		SHOW(rc_end_usage);
-		SHOW(rc_target_bitrate);
-		SHOW(rc_min_quantizer);
-		SHOW(rc_max_quantizer);
-		SHOW(rc_undershoot_pct);
-		SHOW(rc_overshoot_pct);
-		SHOW(rc_buf_sz);
-		SHOW(rc_buf_initial_sz);
-		SHOW(rc_buf_optimal_sz);
-		SHOW(rc_2pass_vbr_bias_pct);
-		SHOW(rc_2pass_vbr_minsection_pct);
-		SHOW(rc_2pass_vbr_maxsection_pct);
-		SHOW(kf_mode);
-		SHOW(kf_min_dist);
-		SHOW(kf_max_dist);
-#endif
+		if (vpx_globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
+			show_config(my_cfg);
+		}
 
 		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
@@ -557,34 +542,24 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 		context->encoder_init = 1;
 
+		vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
+
 		if (context->is_vp9) {
-			if (context->lossless) {
+			if (context->lossless || vpx_globals.vp9.lossless) {
 				vpx_codec_control(&context->encoder, VP9E_SET_LOSSLESS, 1);
-				vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
-			} else {
-				vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -8);
 			}
 
-			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 1000);
-			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
-			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, VP9E_CONTENT_SCREEN);
-
+			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, vpx_globals.vp9.cpuused);
+			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, vpx_globals.vp9.static_thresh);
+			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, vpx_globals.vp9.tune_content);
 		} else {
-			// The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
-			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
-			//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
-			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
+			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, vpx_globals.vp8.static_thresh);
+			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, vpx_globals.vp8.cpuused);
+			vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, vpx_globals.vp8.noise_sensitivity);
 
-			// Enable noise reduction
-			vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, 1);
-			//Set max data rate for Intra frames.
-			//	This value controls additional clamping on the maximum size of a keyframe.
-			//	It is expressed as a percentage of the average per-frame bitrate, with the
-			//	special (and default) value 0 meaning unlimited, or no additional clamping
-			//	beyond the codec's built-in algorithm.
-			//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-			//vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
+			if (vpx_globals.vp8.max_intra_bitrate_pct) {
+				vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, vpx_globals.vp8.max_intra_bitrate_pct);
+			}
 		}
 	}
 
@@ -623,11 +598,6 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 
 	if (codec->fmtp_in) {
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-	}
-
-	if (vpx_codec_enc_config_default(context->encoder_interface, &context->config, 0) != VPX_CODEC_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder config Error\n");
-		return SWITCH_STATUS_FALSE;
 	}
 
 	context->codec_settings.video.width = 320;
@@ -684,7 +654,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	// if !extended
 	hdrlen = 1;
 	body = ((uint8_t *)frame->data) + hdrlen;
-	packet_size = SLICE_SIZE;
+	packet_size = vpx_globals.rtp_slice_size;
 	payload_size = packet_size - hdrlen;
 	// else add extended TBD
 
@@ -826,14 +796,13 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		height = frame->img->h;
 	}
 
-	if (context->config.g_w != width || context->config.g_h != height) {
+	if (context->codec_settings.video.width != width || context->codec_settings.video.height != height) {
 		context->codec_settings.video.width = width;
 		context->codec_settings.video.height = height;
 		reset_codec_encoder(codec);
 		frame->flags |= SFF_PICTURE_RESET;
 		context->need_key_frame = 3;
 	}
-
 
 	if (!context->encoder_init) {
 		if (init_encoder(codec) != SWITCH_STATUS_SUCCESS) {
@@ -854,7 +823,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	if (context->need_key_frame > 0) {
 		// force generate a key frame
 
-		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
+		if (!context->last_key_frame || (now - context->last_key_frame) > vpx_globals.key_frame_min_freq) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VPX KEYFRAME GENERATED\n");
 			vpx_flags |= VPX_EFLAG_FORCE_KF;
 			context->need_key_frame = 0;
@@ -864,8 +833,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	pts = (now - context->start_time) / 1000;
-	//pts = frame->timestamp;
+	//pts = (now - context->start_time) / 1000;
+	pts = frame->timestamp;
 
 	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
 
@@ -895,11 +864,10 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t DES;
 	//	uint8_t PID;
 	int len;
-#if 0
-	int key = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					  "VIDEO VPX: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
+	if (context->debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, context->debug,
+					  "VIDEO VPX: seq: %d ts: %u len: %u %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
 					  frame->seq, frame->timestamp, frame->datalen,
 					  *((uint8_t *)data), *((uint8_t *)data + 1),
 					  *((uint8_t *)data + 2), *((uint8_t *)data + 3),
@@ -907,8 +875,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 					  *((uint8_t *)data + 6), *((uint8_t *)data + 7),
 					  *((uint8_t *)data + 8), *((uint8_t *)data + 9),
 					  *((uint8_t *)data + 10), frame->m);
-#endif
-
+	}
 
 	DES = *data;
 	data++;
@@ -986,8 +953,8 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)vp9;
 	int len = 0;
 
-#ifdef DEBUG_VP9
-	switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
+	if (context->debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
 					"[%02x %02x %02x %02x] m=%d len=%4d seq=%d ts=%u ssrc=%u "
 					"have_pid=%d "
 					"have_p_layer=%d "
@@ -1006,7 +973,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 					desc->end,
 					desc->have_ss,
 					desc->zero);
-#endif
+	}
 
 	vp9++;
 
@@ -1121,12 +1088,12 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_start = 0, is_keyframe = 0, get_refresh = 0;
 
-#if 0
-	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)frame->data;
-	uint8_t *data = frame->data;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d m=%d len=%d\n",
-		*data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->m, frame->datalen);
-#endif
+	if (context->debug > 0 && context->debug < 4) {
+		vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)frame->data;
+		uint8_t *data = frame->data;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d m=%d len=%d\n",
+			*data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->m, frame->datalen);
+	}
 
 	if (context->is_vp9) {
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
@@ -1145,10 +1112,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	} else { // vp8
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
-
-#ifdef DEBUG_VP9
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VP8\n");
-#endif
 	}
 
     if (!is_keyframe && context->got_key_frame <= 0) {
@@ -1161,7 +1124,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		}
     }
 
-	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", context->got_key_frame);
+	if (context->debug > 0 && is_keyframe) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "GOT KEY FRAME %d\n", context->got_key_frame);
+	}
 
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
@@ -1349,6 +1314,29 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 			}
 		}
 		break;
+	case SCC_CODEC_SPECIFIC:
+		{
+			const char *command = (const char *)cmd_data;
+
+			if (ctype == SCCT_INT) {
+			} else if (ctype == SCCT_STRING && !zstr(command)) {
+				if (!strcasecmp(command, "VP8E_SET_CPUUSED")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, *(int *)cmd_arg);
+				} else if (!strcasecmp(command, "VP8E_SET_TOKEN_PARTITIONS")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, *(int *)cmd_arg);
+				} else if (!strcasecmp(command, "VP8E_SET_NOISE_SENSITIVITY")) {
+					vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, *(int *)cmd_arg);
+				}
+			}
+
+		}
+		break;
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			context->debug = level;
+		}
+		break;
 	default:
 		break;
 	}
@@ -1386,18 +1374,363 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UINTVAL(v) (v > 0 ? v : 0);
+
+static void load_config()
+{
+	switch_xml_t cfg = NULL, xml = NULL;
+
+	vpx_codec_enc_config_default(vpx_codec_vp8_cx(), &vpx_globals.vp8.enc_cfg, 0);
+	vpx_codec_enc_config_default(vpx_codec_vp9_cx(), &vpx_globals.vp9.enc_cfg, 0);
+
+	switch_set_string(vpx_globals.vp8_profile, "vp8");
+	switch_set_string(vpx_globals.vp9_profile, "vp9");
+	switch_set_string(vpx_globals.vp10_profile, "vp10");
+
+	vpx_globals.max_bitrate = 0;
+	vpx_globals.vp8.cpuused = -6;
+	vpx_globals.vp9.cpuused = -6;
+	vpx_globals.vp10.cpuused = -6;
+
+	xml = switch_xml_open_cfg("vpx.conf", &cfg, NULL);
+
+	if (xml) {
+		switch_xml_t settings = switch_xml_child(cfg, "settings");
+		switch_xml_t profiles = switch_xml_child(cfg, "profiles");
+
+		if (settings) {
+			switch_xml_t param;
+
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				const char *name = switch_xml_attr(param, "name");
+				const char *value = switch_xml_attr(param, "value");
+
+				if (zstr(name) || zstr(value)) continue;
+
+				if (!strcmp(name, "max-bitrate")) {
+					vpx_globals.max_bitrate = switch_parse_bandwidth_string(value);
+				} else if (!strcmp(name, "rtp-slice-size")) {
+					int val = atoi(value);
+					vpx_globals.rtp_slice_size = UINTVAL(val);
+				} else if (!strcmp(name, "key-frame-min-freq")) {
+					int val = atoi(value);
+					vpx_globals.key_frame_min_freq = UINTVAL(val);
+					vpx_globals.key_frame_min_freq *= 1000;
+				} else if (!strcmp(name, "dec-threads")) {
+					vpx_globals.vp8.dec_cfg.threads = switch_parse_cpu_string(value);
+					vpx_globals.vp9.dec_cfg.threads = switch_parse_cpu_string(value);
+					vpx_globals.vp10.dec_cfg.threads = switch_parse_cpu_string(value);
+				} else if (!strcmp(name, "enc-threads")) {
+					vpx_globals.vp8.enc_cfg.g_threads = switch_parse_cpu_string(value);
+					vpx_globals.vp9.enc_cfg.g_threads = switch_parse_cpu_string(value);
+					vpx_globals.vp10.enc_cfg.g_threads = switch_parse_cpu_string(value);
+				} else if (!strcmp(name, "vp8-profile")) {
+					switch_set_string(vpx_globals.vp8_profile, value);
+				} else if (!strcmp(name, "vp9-profile")) {
+					switch_set_string(vpx_globals.vp9_profile, value);
+				} else if (!strcmp(name, "vp10-profile")) {
+					switch_set_string(vpx_globals.vp10_profile, value);
+				}
+			}
+		}
+
+		if (profiles) {
+			switch_xml_t profile = switch_xml_child(profiles, "profile");
+
+			for (; profile; profile = profile->next) {
+				switch_xml_t param = NULL;
+				const char *profile_name = switch_xml_attr(profile, "name");
+				vpx_codec_dec_cfg_t *dec_cfg = NULL;
+				vpx_codec_enc_cfg_t *enc_cfg = NULL;
+				my_vpx_cfg_t *my_cfg = NULL;
+
+				if (zstr(profile_name)) continue;
+
+				if (!strcmp(profile_name, vpx_globals.vp8_profile)) {
+					my_cfg = &vpx_globals.vp8;
+				} else if (!strcmp(profile_name, vpx_globals.vp9_profile)) {
+					my_cfg = &vpx_globals.vp9;
+				} else if (!strcmp(profile_name, vpx_globals.vp10_profile)) {
+					my_cfg = &vpx_globals.vp10;
+				}
+
+				if (!my_cfg) continue;
+
+				dec_cfg = &my_cfg->dec_cfg;
+				enc_cfg = &my_cfg->enc_cfg;
+
+				for (param = switch_xml_child(profile, "param"); param; param = param->next) {
+					const char *name = switch_xml_attr(param, "name");
+					const char *value = switch_xml_attr(param, "value");
+					int val;
+
+					if (!enc_cfg || !dec_cfg) break;
+					if (zstr(name) || zstr(value)) continue;
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
+
+					val = atoi(value);
+
+					if (!strcmp(name, "dec-threads")) {
+						dec_cfg->threads = switch_parse_cpu_string(value);
+					} else if (!strcmp(name, "enc-threads")) {
+						enc_cfg->g_threads = switch_parse_cpu_string(value);
+					} else if (!strcmp(name, "g-profile")) {
+						enc_cfg->g_profile = UINTVAL(val);
+					} else if (!strcmp(name, "g-timebase")) {
+						int num = 0;
+						int den = 0;
+						char *slash = strchr(value, '/');
+
+						num = UINTVAL(val);
+
+						if (slash) {
+							slash++;
+							den = atoi(slash);
+
+							if (den < 0) den = 0;
+						}
+
+						if (num && den) {
+							enc_cfg->g_timebase.num = num;
+							enc_cfg->g_timebase.den = den;
+						}
+					} else if (!strcmp(name, "g-error-resilient")) {
+						char *s = strdup(value);
+						vpx_codec_er_flags_t res = 0;
+
+						if (s) {
+							int argc;
+							char *argv[10];
+							int i;
+
+							argc = switch_separate_string(s, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+							for (i = 0; i < argc; i++) {
+								if (!strcasecmp(argv[i], "DEFAULT")) {
+									res |= VPX_ERROR_RESILIENT_DEFAULT;
+								} else if (!strcasecmp(argv[i], "PARTITIONS")) {
+									res |= VPX_ERROR_RESILIENT_PARTITIONS;
+								}
+							}
+
+							free(s);
+							enc_cfg->g_error_resilient = res;
+						}
+					} else if (!strcmp(name, "g-pass")) {
+						int pass = 0;
+
+						if (!strcasecmp(value, "ONE_PASS")) {
+							pass = VPX_RC_ONE_PASS;
+						} else if (!strcasecmp(value, "FIRST_PASS")) {
+							pass = VPX_RC_FIRST_PASS;
+						} else if (!strcasecmp(value, "LAST_PASS")) {
+							pass = VPX_RC_FIRST_PASS;
+						}
+
+						enc_cfg->g_pass = pass;
+					} else if (!strcmp(name, "g-lag-in-frames")) {
+						enc_cfg->g_lag_in_frames = UINTVAL(val);
+					} else if (!strcmp(name, "rc_dropframe_thresh")) {
+						enc_cfg->rc_dropframe_thresh = UINTVAL(val);
+					} else if (!strcmp(name, "rc-resize-allowed")) {
+						enc_cfg->rc_resize_allowed = UINTVAL(val);
+					} else if (!strcmp(name, "rc-scaled-width")) {
+						enc_cfg->rc_scaled_width = UINTVAL(val);
+					} else if (!strcmp(name, "rc-scaled-height")) {
+						enc_cfg->rc_scaled_height = UINTVAL(val);
+					} else if (!strcmp(name, "rc-resize-up-thresh")) {
+						enc_cfg->rc_resize_up_thresh = UINTVAL(val);
+					} else if (!strcmp(name, "rc-resize-down-thresh")) {
+						enc_cfg->rc_resize_down_thresh = UINTVAL(val);
+					} else if (!strcmp(name, "rc-end-usage")) {
+						int mode = 0;
+
+						if (!strcasecmp(value, "VBR")) {
+							mode = VPX_VBR;
+						} else if (!strcasecmp(value, "CBR")) {
+							mode = VPX_CBR;
+						} else if (!strcasecmp(value, "CQ")) {
+							mode = VPX_CQ;
+						} else if (!strcasecmp(value, "Q")) {
+							mode = VPX_Q;
+						}
+						enc_cfg->rc_end_usage = mode;
+					} else if (!strcmp(name, "rc-target-bitrate")) {
+						int br = switch_parse_bandwidth_string(value);
+
+						if (br > 0) {
+							enc_cfg->rc_target_bitrate = br;
+						}
+					} else if (!strcmp(name, "rc-min-quantizer")) {
+						enc_cfg->rc_min_quantizer = UINTVAL(val);
+					} else if (!strcmp(name, "rc-max-quantizer")) {
+						enc_cfg->rc_max_quantizer = UINTVAL(val);
+					} else if (!strcmp(name, "rc-undershoot-pct")) {
+						enc_cfg->rc_undershoot_pct = UINTVAL(val);
+					} else if (!strcmp(name, "rc-overshoot-pct")) {
+						enc_cfg->rc_overshoot_pct = UINTVAL(val);
+					} else if (!strcmp(name, "rc-buf-sz")) {
+						enc_cfg->rc_buf_sz = UINTVAL(val);
+					} else if (!strcmp(name, "rc-buf-initial-sz")) {
+						enc_cfg->rc_buf_initial_sz = UINTVAL(val);
+					} else if (!strcmp(name, "rc-buf-optimal-sz")) {
+						enc_cfg->rc_buf_optimal_sz = UINTVAL(val);
+					} else if (!strcmp(name, "rc-2pass-vbr-bias-pct")) {
+						enc_cfg->rc_2pass_vbr_bias_pct = UINTVAL(val);
+					} else if (!strcmp(name, "rc-2pass-vbr-minsection-pct")) {
+						enc_cfg->rc_2pass_vbr_minsection_pct = UINTVAL(val);
+					} else if (!strcmp(name, "rc-2pass-vbr-maxsection-pct")) {
+						enc_cfg->rc_2pass_vbr_maxsection_pct = UINTVAL(val);
+					} else if (!strcmp(name, "kf-mode")) {
+						int mode = 0;
+
+						if (!strcasecmp(value, "AUTO")) {
+							mode = VPX_KF_AUTO;
+						} else if (!strcasecmp(value, "DISABLED")) {
+							mode = VPX_KF_DISABLED;
+						}
+
+						enc_cfg->kf_mode = mode;
+					} else if (!strcmp(name, "kf-min-dist")) {
+						enc_cfg->kf_min_dist = UINTVAL(val);
+					} else if (!strcmp(name, "kf-max-dist")) {
+						enc_cfg->kf_max_dist = UINTVAL(val);
+					} else if (!strcmp(name, "ss-number-layers")) {
+						enc_cfg->ss_number_layers = UINTVAL(val);
+					} else if (!strcmp(name, "ts-number-layers")) {
+						enc_cfg->ts_number_layers = UINTVAL(val);
+					} else if (!strcmp(name, "ts-periodicity")) {
+						enc_cfg->ts_periodicity = UINTVAL(val);
+					} else if (!strcmp(name, "temporal-layering-mode")) {
+						enc_cfg->temporal_layering_mode = UINTVAL(val);
+					} else if (!strcmp(name, "lossless")) {
+						my_cfg->lossless = UINTVAL(val);
+					} else if (!strcmp(name, "cpuused")) {
+						if (my_cfg == &vpx_globals.vp8) {
+							if (val < -16) val = -16;
+							if (val > 16) val = 16;
+						} else if (my_cfg == &vpx_globals.vp9) {
+							if (val < -8) val = -8;
+							if (val > 8) val = 8;
+						}
+
+						my_cfg->cpuused = val;
+					} else if (!strcmp(name, "token-parts")) {
+						my_cfg->token_parts = switch_parse_cpu_string(value);
+					} else if (!strcmp(name, "static-thresh")) {
+						my_cfg->static_thresh = UINTVAL(val);
+					} else if (!strcmp(name, "noise-sensitivity")) {
+						my_cfg->noise_sensitivity = UINTVAL(val);
+					} else if (!strcmp(name, "losmax-intra-bitrate-pct")) {
+						my_cfg->max_intra_bitrate_pct = UINTVAL(val);
+					} else if (!strcmp(name, "tune-content")) {
+						uint32_t tune = VP9E_CONTENT_DEFAULT;
+
+						if (!strcasecmp(value, "SCREEN")) {
+							tune = VP9E_CONTENT_SCREEN;
+						}
+
+						my_cfg->tune_content = tune;
+					}
+				} // for param
+			} // for profile
+		} // profiles
+
+		switch_xml_free(xml);
+	} // xml
+
+	if (vpx_globals.max_bitrate <= 0) {
+		vpx_globals.max_bitrate = switch_calc_bitrate(1920, 1080, 5, 60);
+	}
+
+	if (vpx_globals.rtp_slice_size < 500 || vpx_globals.rtp_slice_size > 1500) {
+		vpx_globals.rtp_slice_size = SLICE_SIZE;
+	}
+
+	if (vpx_globals.key_frame_min_freq < 10000 || vpx_globals.key_frame_min_freq > 3 * 1000000) {
+		vpx_globals.key_frame_min_freq = KEY_FRAME_MIN_FREQ;
+	}
+
+	if (!vpx_globals.vp8.enc_cfg.g_threads) vpx_globals.vp8.enc_cfg.g_threads = 1;
+	if (!vpx_globals.vp8.dec_cfg.threads) vpx_globals.vp8.dec_cfg.threads = switch_parse_cpu_string("cpu/2/4");
+	if (!vpx_globals.vp9.enc_cfg.g_threads) vpx_globals.vp9.enc_cfg.g_threads = vpx_globals.vp8.enc_cfg.g_threads;
+	if (!vpx_globals.vp9.dec_cfg.threads) vpx_globals.vp9.dec_cfg.threads = vpx_globals.vp8.dec_cfg.threads;
+	if (!vpx_globals.vp10.enc_cfg.g_threads) vpx_globals.vp10.enc_cfg.g_threads = vpx_globals.vp8.enc_cfg.g_threads;
+	if (!vpx_globals.vp10.dec_cfg.threads) vpx_globals.vp10.dec_cfg.threads = vpx_globals.vp8.dec_cfg.threads;
+}
+
+#define VPX_API_SYNTAX "<reload|debug <on|off>>"
+SWITCH_STANDARD_API(vpx_api_function)
+{
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+
+	if (!strcasecmp(cmd, "reload")) {
+		const char *err;
+
+		switch_xml_reload(&err);
+		stream->write_function(stream, "Reload XML [%s]\n", err);
+
+		load_config();
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "rtp-slice-size", vpx_globals.rtp_slice_size);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "key-frame-min-freq", vpx_globals.key_frame_min_freq);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", vpx_globals.vp8.dec_cfg.threads);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp9-dec-threads", vpx_globals.vp9.dec_cfg.threads);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp10-dec-threads", vpx_globals.vp10.dec_cfg.threads);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp8_cx()));
+		show_config(&vpx_globals.vp8);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp9_cx()));
+		show_config(&vpx_globals.vp9);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: VP10\n");
+		show_config(&vpx_globals.vp10);
+
+		stream->write_function(stream, "+OK\n");
+	} else if (!strcasecmp(cmd, "debug")) {
+		stream->write_function(stream, "+OK debug %s\n", vpx_globals.debug ? "on" : "off");
+	} else if (!strcasecmp(cmd, "debug on")) {
+		vpx_globals.debug = 1;
+		stream->write_function(stream, "+OK debug on\n");
+	} else if (!strcasecmp(cmd, "debug off")) {
+		vpx_globals.debug = 0;
+		stream->write_function(stream, "+OK debug off\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+  usage:
+	stream->write_function(stream, "USAGE: %s\n", VPX_API_SYNTAX);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 {
 	switch_codec_interface_t *codec_interface;
+	switch_api_interface_t *vpx_api_interface;
+
+	memset(&vpx_globals, 0, sizeof(struct vpx_globals));
+	load_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
 	SWITCH_ADD_CODEC(codec_interface, "VP8 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "VP8", NULL,
 											   switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_control, switch_vpx_destroy);
 	SWITCH_ADD_CODEC(codec_interface, "VP9 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "VP9", NULL,
 											   switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_control, switch_vpx_destroy);
+
+	SWITCH_ADD_API(vpx_api_interface, "vpx",
+				   "VPX API", vpx_api_function, VPX_API_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

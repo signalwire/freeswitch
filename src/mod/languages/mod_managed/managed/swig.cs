@@ -4019,8 +4019,8 @@ else
     return ret;
   }
 
-  public static int switch_true(string expr) {
-    int ret = freeswitchPINVOKE.switch_true(expr);
+  public static switch_bool_t switch_true(string expr) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_true(expr);
     return ret;
   }
 
@@ -6397,8 +6397,9 @@ else
     return ret;
   }
 
-  public static void switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session session, string uuid, switch_bool_t bleg) {
-    freeswitchPINVOKE.switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, (int)bleg);
+  public static switch_status_t switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session session, string uuid, switch_bool_t bleg) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_intercept_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, (int)bleg);
+    return ret;
   }
 
   public static void switch_ivr_park_session(SWIGTYPE_p_switch_core_session session) {
@@ -18022,7 +18023,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_find_bridged_uuid(string jarg1, string jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_intercept_session")]
-  public static extern void switch_ivr_intercept_session(HandleRef jarg1, string jarg2, int jarg3);
+  public static extern int switch_ivr_intercept_session(HandleRef jarg1, string jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_park_session")]
   public static extern void switch_ivr_park_session(HandleRef jarg1);

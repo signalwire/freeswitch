@@ -322,6 +322,10 @@
                         self.options.onWSClose(self);
                     }
 
+                    if (self.ws_cnt > 10 && self.options.wsFallbackURL) {
+                      self.options.socketUrl = self.options.wsFallbackURL;
+                    }
+
                     console.error("Websocket Lost " + self.ws_cnt + " sleep: " + self.ws_sleep + "msec");
 
                     self.to = setTimeout(function() {

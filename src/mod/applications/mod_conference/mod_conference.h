@@ -220,6 +220,7 @@ typedef enum {
 	MFLAG_NO_VIDEO_BLANKS,
 	MFLAG_VIDEO_JOIN,
 	MFLAG_DED_VID_LAYER,
+	MFLAG_HOLD,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -322,7 +323,7 @@ typedef enum {
 } node_flag_t;
 
 typedef enum {
-	EFLAG_ADD_MEMBER = (1 << 0),
+	EFLAG_HOLD_MEMBER = (1 << 0),
 	EFLAG_DEL_MEMBER = (1 << 1),
 	EFLAG_ENERGY_LEVEL = (1 << 2),
 	EFLAG_VOLUME_LEVEL = (1 << 3),
@@ -1210,6 +1211,8 @@ switch_status_t conference_api_sub_file_seek(conference_obj_t *conference, switc
 switch_status_t conference_api_sub_cam(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_stop(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_hup(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_hold(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_unhold(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_volume_out(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_lock(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

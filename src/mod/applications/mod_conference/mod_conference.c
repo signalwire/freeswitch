@@ -84,6 +84,7 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 		char *uuid;
 		char *name;
 		uint32_t count = 0;
+		switch_bool_t hold = conference_utils_member_test_flag(member, MFLAG_HOLD);
 
 		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
 			continue;
@@ -97,18 +98,23 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 		stream->write_function(stream, "%u%s%s%s%s%s%s%s%s%s",
 							   member->id, delim, name, delim, uuid, delim, profile->caller_id_name, delim, profile->caller_id_number, delim);
 
-		if (conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		if (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
 			stream->write_function(stream, "hear");
 			count++;
 		}
 
-		if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "speak");
 			count++;
 		}
 
-		if (conference_utils_member_test_flag(member, MFLAG_TALKING)) {
+		if (!hold && conference_utils_member_test_flag(member, MFLAG_TALKING)) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "talking");
+			count++;
+		}
+
+		if (hold) {
+			stream->write_function(stream, "%s%s", count ? "|" : "", "hold");
 			count++;
 		}
 
@@ -331,6 +337,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					switch_channel_test_flag(channel, CF_VIDEO_READY) &&
 					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY &&
 					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) &&
+					!conference_utils_member_test_flag(imember, MFLAG_HOLD) &&
 					(!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) ||
 					 conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
 					members_with_video++;
@@ -1225,7 +1232,8 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		switch_xml_t x_tag;
 		int toff = 0;
 		char tmp[50] = "";
-
+		switch_bool_t hold = conference_utils_member_test_flag(member, MFLAG_HOLD);
+		
 		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
 			if (member->rec_path) {
 				x_member = switch_xml_add_child_d(x_members, "member", moff++);
@@ -1286,19 +1294,22 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		switch_assert(x_flags);
 
 		x_tag = switch_xml_add_child_d(x_flags, "can_hear", count++);
-		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false");
+		switch_xml_set_txt_d(x_tag, (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "can_see", count++);
-		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_SEE) ? "true" : "false");
+		switch_xml_set_txt_d(x_tag, (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_SEE)) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "can_speak", count++);
-		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false");
+		switch_xml_set_txt_d(x_tag, (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "mute_detect", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "talking", count++);
-		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_TALKING) ? "true" : "false");
+		switch_xml_set_txt_d(x_tag, (!hold && conference_utils_member_test_flag(member, MFLAG_TALKING)) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "hold", count++);
+		switch_xml_set_txt_d(x_tag, hold ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "has_video", count++);
 		switch_xml_set_txt_d(x_tag, switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false");
@@ -1374,6 +1385,8 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		switch_channel_t *channel;
 		switch_caller_profile_t *profile;
 		char *uuid;
+		switch_bool_t hold = conference_utils_member_test_flag(member, MFLAG_HOLD);
+
 		cJSON_AddItemToObject(json_conference_members, "member", json_conference_member = cJSON_CreateObject());
 
 		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
@@ -1405,9 +1418,10 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		cJSON_AddNumberToObject(json_conference_member, "volume_out", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "output-volume", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->volume_in_level);
-		ADDBOOL(json_conference_member_flags, "can_hear", conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
-		ADDBOOL(json_conference_member_flags, "can_see", conference_utils_member_test_flag(member, MFLAG_CAN_SEE));
-		ADDBOOL(json_conference_member_flags, "can_speak", conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));
+		ADDBOOL(json_conference_member_flags, "can_hear", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
+		ADDBOOL(json_conference_member_flags, "can_see", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_SEE));
+		ADDBOOL(json_conference_member_flags, "can_speak", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));
+		ADDBOOL(json_conference_member_flags, "hold", hold);
 		ADDBOOL(json_conference_member_flags, "mute_detect", conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT));
 		ADDBOOL(json_conference_member_flags, "talking", conference_utils_member_test_flag(member, MFLAG_TALKING));
 		ADDBOOL(json_conference_member_flags, "has_video", switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO));

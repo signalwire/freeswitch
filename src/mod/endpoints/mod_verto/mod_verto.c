@@ -5052,10 +5052,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 	switch_mutex_lock(verto_globals.mutex);
 	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
-		for (i = 0; i < profile->i; i++) { 
+		for (i = 0; i < profile->i; i++) {
 			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
 										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
-			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
+			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->server_socket[i] != ws_sock_invalid) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
 		}
 		cp++;
