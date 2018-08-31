@@ -315,15 +315,10 @@ switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stre
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR mute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	conference_utils_member_clear_flag_locked(member, MFLAG_TALKING);
 
-	if (member->session && !conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT)) {
+	if (member->session && !conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT) && !conference_utils_member_test_flag(member, MFLAG_HOLD)) {
 		switch_core_media_hard_mute(member->session, SWITCH_TRUE);
 	}
 
@@ -460,11 +455,6 @@ switch_status_t conference_api_sub_tmute(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR mute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		return conference_api_sub_mute(member, stream, data);
 	}
@@ -479,11 +469,6 @@ switch_status_t conference_api_sub_unmute(conference_member_t *member, switch_st
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR unmute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SPEAK);
 
@@ -672,27 +657,18 @@ switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_st
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	switch_core_session_write_blank_video(member->session, 50);
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SEE);
-	conference_video_reset_video_bitrate_counters(member);
+
+	if (!conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		switch_core_session_write_blank_video(member->session, 50);
+		conference_video_reset_video_bitrate_counters(member);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		conference_utils_member_set_flag(member, MFLAG_INDICATE_BLIND);
 	}
 
-	if (stream != NULL) {
-		stream->write_function(stream, "+OK vblind %u\n", member->id);
-	}
+	if (stream) stream->write_function(stream, "+OK vblind %u\n", member->id);
 
 	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -713,11 +689,6 @@ switch_status_t conference_api_sub_tvblind(conference_member_t *member, switch_s
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SEE)) {
 		return conference_api_sub_vblind(member, stream, data);
 	}
@@ -733,20 +704,12 @@ switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SEE);
-	conference_video_reset_video_bitrate_counters(member);
 
-	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+	if (!conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		conference_video_reset_video_bitrate_counters(member);
+		switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		conference_utils_member_set_flag(member, MFLAG_INDICATE_UNBLIND);
@@ -775,11 +738,6 @@ switch_status_t conference_api_sub_deaf(conference_member_t *member, switch_stre
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_HEAR);
 
@@ -822,11 +780,6 @@ switch_status_t conference_api_sub_undeaf(conference_member_t *member, switch_st
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_HEAR);
 
