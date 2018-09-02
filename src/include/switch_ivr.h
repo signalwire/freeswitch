@@ -543,6 +543,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(_In_ switch_cor
 																 void *peer_session_data);
 
 /*!
+  \brief Bridge leaving b-leg in the control of another thread.  Call from b-leg first then call switch_ivr_multi_threaded_bridge on a-leg and b-leg.
+  \param session b-leg session
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/								
+SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *session, switch_core_session_t *peer_session, uint32_t max_wait_ms);
+
+								
+/*!
   \brief Bridge Signalling from one session to another
   \param session one session
   \param peer_session the other session
