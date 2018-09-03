@@ -525,9 +525,9 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		if (img->d_w && layer->last_w) {
 			if (img->d_w < layer->last_w) {
-				change_scale = layer->last_w / img->d_w;
+				change_scale = (double) layer->last_w / img->d_w;
 			} else {
-				change_scale = img->d_w / layer->last_w;
+				change_scale = (double) img->d_w / layer->last_w;
 			}
 
 			layer->crop_x = (int)(layer->crop_x * change_scale);
@@ -637,7 +637,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			int can_zoom = 0;
 			int did_zoom = 0;
 
-			if (screen_aspect < img_aspect) {
+			if (screen_aspect <= img_aspect) {
 				if (img->d_h != layer->screen_h) {
 					scale = (double)layer->screen_h / img->d_h;
 				}
@@ -744,7 +744,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 					} else {
 						crop_x = use_geometry->x;
 					}
-				} else if (screen_aspect < img_aspect) {
+				} else if (screen_aspect <= img_aspect) {
 					crop_x = img->w / 4;
 				}
 
