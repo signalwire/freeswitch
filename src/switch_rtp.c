@@ -1309,8 +1309,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
  end:
 	switch_mutex_unlock(rtp_session->ice_mutex);
-	READ_DEC(rtp_session);
 	WRITE_DEC(rtp_session);
+	READ_DEC(rtp_session);
 }
 
 #ifdef ENABLE_ZRTP
@@ -2675,8 +2675,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 			return SWITCH_STATUS_FALSE;
 		}
 
-		WRITE_INC(rtp_session);
 		READ_INC(rtp_session);
+		WRITE_INC(rtp_session);
 
 		if (!switch_rtp_ready(rtp_session)) {
 			goto done;
@@ -4993,8 +4993,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 
 	(*rtp_session)->ready = 0;
 
-	READ_DEC((*rtp_session));
 	WRITE_DEC((*rtp_session));
+	READ_DEC((*rtp_session));
 
 	if ((*rtp_session)->flags[SWITCH_RTP_FLAG_VAD]) {
 		switch_rtp_disable_vad(*rtp_session);
