@@ -984,10 +984,12 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 
 	if (!context->nalus[context->nalu_current_index].len) frame->m = 1;
 
+#if 0
 	{
 		uint8_t *p = frame->data;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "len: %d, mark:%d %02x %02x %02x %02x\n", frame->datalen, frame->m, *p, *(p+1), *(p+2), *(p+3));
 	}
+#endif
 
 	if (frame->m) {
 		av_packet_unref(&context->encoder_avpacket);
