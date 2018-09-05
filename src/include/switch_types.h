@@ -1366,6 +1366,7 @@ CF_ACCEPT_CNG		- Channel will accept CNG frames
 CF_REDIRECT 		- Channel is being redirected
 CF_BRIDGED			- Channel in a bridge
 CF_HOLD				- Channel is on hold
+CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
@@ -1417,6 +1418,7 @@ typedef enum {
 	CF_REDIRECT,
 	CF_BRIDGED,
 	CF_HOLD,
+	CF_HOLD_BLEG,
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
