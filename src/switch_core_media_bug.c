@@ -1012,53 +1012,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(switch_core_sess
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session)
-{
-	switch_media_bug_t *bp;
-	char *list[100] = { 0 };
-	int stop_times[100] = { 0 };
-	int i = 0, x = 0;
-
-	if (orig_session->bugs) {
-		switch_channel_t *new_channel = switch_core_session_get_channel(new_session);
-		switch_channel_t *orig_channel = switch_core_session_get_channel(orig_session);
-		const char *save_append = switch_channel_get_variable(new_channel, "record_append");
-		const char *save_stereo = switch_channel_get_variable(new_channel, "record_stereo");
-		const char *orig_stereo = switch_channel_get_variable(orig_channel, "record_stereo");
-		const char *new_stereo = orig_stereo;
-
-		switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
-		switch_channel_set_variable(new_channel, "RECORD_MIN_SEC", "0");
-		switch_channel_set_variable(new_channel, "record_append", "true");
-		switch_channel_set_variable(new_channel, "record_stereo", new_stereo);
-
-		for (bp = orig_session->bugs; bp; bp = bp->next) {
-			if (!strcmp(bp->function, "session_record")) {
-				list[x] = switch_core_session_strdup(new_session, bp->target);
-				if (bp->stop_time > 0) {
-					stop_times[x] = (int)(bp->stop_time - switch_epoch_time_now(NULL));
-				}
-				x++;
-			}
-		}
-
-		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
-
-		for(i = 0; i < x; i++) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_DEBUG, "Transfering %s from %s to %s\n", list[i],
-							  switch_core_session_get_name(orig_session), switch_core_session_get_name(new_session));
-			switch_ivr_stop_record_session(orig_session, list[i]);
-			switch_ivr_record_session(new_session, list[i], stop_times[i], NULL);
-		}
-
-		switch_channel_set_variable(new_channel, "record_append", save_append);
-		switch_channel_set_variable(new_channel, "record_stereo", save_stereo);
-
-	}
-
-	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
-}
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_core_session_t *orig_session, switch_core_session_t *new_session,
 																		switch_media_bug_callback_t callback, void * (*user_data_dup_func) (switch_core_session_t *, void *))

@@ -3064,14 +3064,14 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "recording_follow_transfer")) &&
 			(tmp = switch_core_session_locate(br_a))) {
 			switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
-			switch_core_media_bug_transfer_recordings(session, tmp);
+			switch_ivr_transfer_recordings(session, tmp);
 			switch_core_session_rwunlock(tmp);
 		}
 
 
 		if (switch_true(switch_channel_get_variable(b_tech_pvt->channel, "recording_follow_transfer")) &&
 			(tmp = switch_core_session_locate(br_b))) {
-			switch_core_media_bug_transfer_recordings(b_session, tmp);
+			switch_ivr_transfer_recordings(b_session, tmp);
 			switch_core_session_rwunlock(tmp);
 		}
 
@@ -3117,7 +3117,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 				ext = switch_channel_get_variable(hup_channel, "destination_number");
 
 				if (switch_true(switch_channel_get_variable(hup_channel, "recording_follow_transfer"))) {
-					switch_core_media_bug_transfer_recordings(hup_session, t_session);
+					switch_ivr_transfer_recordings(hup_session, t_session);
 				}
 
 				if (idest) {
