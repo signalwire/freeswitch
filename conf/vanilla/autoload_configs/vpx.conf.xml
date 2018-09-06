@@ -116,6 +116,7 @@
       <param name="token-parts" value="3"/>
       <param name="static-threash" value="1000"/>
       <param name="noise-sensitivity" value="0"/>
+      <!-- DEFAULT or SCREEN -->
       <param name="vp9e-tune-content" value="SCREEN"/>
     </profile>
 

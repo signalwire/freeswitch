@@ -1383,7 +1383,36 @@ static void load_config()
 
 	vpx_globals.max_bitrate = 0;
 	vpx_globals.vp8.cpuused = -6;
+	vpx_globals.vp8.enc_cfg.g_profile = 2;
+	vpx_globals.vp8.enc_cfg.g_timebase.den = 1000;
+	vpx_globals.vp8.enc_cfg.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
+	vpx_globals.vp8.enc_cfg.rc_resize_allowed = 1;
+	vpx_globals.vp8.enc_cfg.rc_end_usage = VPX_CBR;
+	vpx_globals.vp8.enc_cfg.rc_target_bitrate = switch_parse_bandwidth_string("1mb");
+	vpx_globals.vp8.enc_cfg.rc_min_quantizer = 4;
+	vpx_globals.vp8.enc_cfg.rc_max_quantizer = 63;
+	vpx_globals.vp8.enc_cfg.rc_overshoot_pct = 50;
+	vpx_globals.vp8.enc_cfg.rc_buf_sz = 5000;
+	vpx_globals.vp8.enc_cfg.rc_buf_initial_sz = 1000;
+	vpx_globals.vp8.enc_cfg.rc_buf_optimal_sz = 1000;
+	vpx_globals.vp8.enc_cfg.kf_max_dist = 360;
+
 	vpx_globals.vp9.cpuused = -6;
+	vpx_globals.vp9.enc_cfg.g_profile = 2;
+	vpx_globals.vp9.enc_cfg.g_timebase.den = 1000;
+	vpx_globals.vp9.enc_cfg.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
+	vpx_globals.vp9.enc_cfg.rc_resize_allowed = 1;
+	vpx_globals.vp9.enc_cfg.rc_end_usage = VPX_CBR;
+	vpx_globals.vp9.enc_cfg.rc_target_bitrate = switch_parse_bandwidth_string("1mb");
+	vpx_globals.vp9.enc_cfg.rc_min_quantizer = 4;
+	vpx_globals.vp9.enc_cfg.rc_max_quantizer = 63;
+	vpx_globals.vp9.enc_cfg.rc_overshoot_pct = 50;
+	vpx_globals.vp9.enc_cfg.rc_buf_sz = 5000;
+	vpx_globals.vp9.enc_cfg.rc_buf_initial_sz = 1000;
+	vpx_globals.vp9.enc_cfg.rc_buf_optimal_sz = 1000;
+	vpx_globals.vp9.enc_cfg.kf_max_dist = 360;
+	vpx_globals.vp9.tune_content = VP9E_CONTENT_SCREEN;
+
 	vpx_globals.vp10.cpuused = -6;
 
 	xml = switch_xml_open_cfg("vpx.conf", &cfg, NULL);
