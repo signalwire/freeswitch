@@ -992,6 +992,7 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str);
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip);
 SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch_bool_t dup);
 SWITCH_DECLARE(switch_bool_t) switch_ast2regex(const char *pat, char *rbuf, size_t len);
+SWITCH_DECLARE(char *) switch_pool_strip_whitespace(switch_memory_pool_t *pool, const char *str);
 
 /*!
   \brief Escape a string by prefixing a list of characters with an escape character

@@ -1328,6 +1328,38 @@ SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch
 	return p;
 }
 
+SWITCH_DECLARE(char *) switch_pool_strip_whitespace(switch_memory_pool_t *pool, const char *str)
+{
+	const char *sp = str;
+	char *p, *s = NULL;
+	size_t len;
+
+	if (zstr(sp)) {
+		return switch_core_strdup(pool, SWITCH_BLANK_STRING);
+	}
+
+	while ((*sp == 13 ) || (*sp == 10 ) || (*sp == 9 ) || (*sp == 32) || (*sp == 11) ) {
+		sp++;
+	}
+
+	if (zstr(sp)) {
+		return switch_core_strdup(pool, SWITCH_BLANK_STRING);
+	}
+
+	s = switch_core_strdup(pool, sp);
+	switch_assert(s);
+
+	if ((len = strlen(s)) > 0) {
+		p = s + (len - 1);
+
+		while ((p >= s) && ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 32) || (*p == 11))) {
+			*p-- = '\0';
+		}
+	}
+
+	return s;
+}
+
 SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 {
 	const char *sp = str;
