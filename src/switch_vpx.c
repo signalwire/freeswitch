@@ -1500,6 +1500,7 @@ static void load_config()
 						enc_cfg->g_threads = switch_parse_cpu_string(value);
 					} else if (!strcmp(name, "g-profile")) {
 						enc_cfg->g_profile = UINTVAL(val);
+#if 0
 					} else if (!strcmp(name, "g-timebase")) {
 						int num = 0;
 						int den = 0;
@@ -1518,6 +1519,7 @@ static void load_config()
 							enc_cfg->g_timebase.num = num;
 							enc_cfg->g_timebase.den = den;
 						}
+#endif
 					} else if (!strcmp(name, "g-error-resilient")) {
 						char *s = strdup(value);
 						vpx_codec_er_flags_t res = 0;

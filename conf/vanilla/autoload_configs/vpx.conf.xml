@@ -73,7 +73,6 @@
       <!-- <param name="enc-threads" value="1"/> -->
 
       <param name="g-profile" value="2"/>
-      <param name="g-timebase" value="1/1000"/>
       <!-- DEFULT | PARTITIONS -->
       <param name="g-error-resilient" value="PARTITIONS"/>
       <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
