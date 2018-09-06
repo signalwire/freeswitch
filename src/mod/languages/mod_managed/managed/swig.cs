@@ -7959,11 +7959,6 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_core_media_bug_transfer_recordings(SWIGTYPE_p_switch_core_session orig_session, SWIGTYPE_p_switch_core_session new_session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_transfer_recordings(SWIGTYPE_p_switch_core_session.getCPtr(orig_session), SWIGTYPE_p_switch_core_session.getCPtr(new_session));
-    return ret;
-  }
-
   public static switch_status_t switch_core_media_bug_transfer_callback(SWIGTYPE_p_switch_core_session orig_session, SWIGTYPE_p_switch_core_session new_session, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_f_p_switch_core_session_p_void__p_void user_data_dup_func) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_transfer_callback(SWIGTYPE_p_switch_core_session.getCPtr(orig_session), SWIGTYPE_p_switch_core_session.getCPtr(new_session), SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_f_p_switch_core_session_p_void__p_void.getCPtr(user_data_dup_func));
     return ret;
@@ -10740,6 +10735,11 @@ else
     return ret;
   }
 
+  public static string switch_pool_strip_whitespace(SWIGTYPE_p_apr_pool_t pool, string str) {
+    string ret = freeswitchPINVOKE.switch_pool_strip_whitespace(SWIGTYPE_p_apr_pool_t.getCPtr(pool), str);
+    return ret;
+  }
+
   public static string switch_escape_char(SWIGTYPE_p_apr_pool_t pool, string arg1, string delim, char esc) {
     string ret = freeswitchPINVOKE.switch_escape_char(SWIGTYPE_p_apr_pool_t.getCPtr(pool), arg1, delim, esc);
     return ret;
@@ -12718,6 +12718,11 @@ else
 
   public static switch_status_t switch_ivr_multi_threaded_bridge(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_core_session peer_session, SWIGTYPE_p_f_p_switch_core_session_p_void_enum_switch_input_type_t_p_void_unsigned_int__switch_status_t dtmf_callback, SWIGTYPE_p_void session_data, SWIGTYPE_p_void peer_session_data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_multi_threaded_bridge(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_core_session.getCPtr(peer_session), SWIGTYPE_p_f_p_switch_core_session_p_void_enum_switch_input_type_t_p_void_unsigned_int__switch_status_t.getCPtr(dtmf_callback), SWIGTYPE_p_void.getCPtr(session_data), SWIGTYPE_p_void.getCPtr(peer_session_data));
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_bridge_bleg(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_core_session peer_session, uint max_wait_ms) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_bridge_bleg(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_core_session.getCPtr(peer_session), max_wait_ms);
     return ret;
   }
 
@@ -17825,9 +17830,6 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_media_bug_enumerate___")]
   public static extern int switch_core_media_bug_enumerate(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_media_bug_transfer_recordings___")]
-  public static extern int switch_core_media_bug_transfer_recordings(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
-
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_media_bug_transfer_callback___")]
   public static extern int switch_core_media_bug_transfer_callback(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
@@ -19729,6 +19731,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ast2regex___")]
   public static extern int switch_ast2regex(string jarg1, string jarg2, uint jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_pool_strip_whitespace___")]
+  public static extern string switch_pool_strip_whitespace(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_escape_char___")]
   public static extern string switch_escape_char(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, char jarg4);
@@ -24511,6 +24516,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_multi_threaded_bridge___")]
   public static extern int switch_ivr_multi_threaded_bridge(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_bridge_bleg___")]
+  public static extern int switch_ivr_bridge_bleg(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, uint jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_signal_bridge___")]
   public static extern int switch_ivr_signal_bridge(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
@@ -30403,6 +30411,7 @@ public enum switch_channel_flag_t {
   CF_REDIRECT,
   CF_BRIDGED,
   CF_HOLD,
+  CF_HOLD_BLEG,
   CF_SERVICE,
   CF_TAGGED,
   CF_WINNER,
@@ -30555,6 +30564,8 @@ public enum switch_channel_flag_t {
   CF_AWAITING_STREAM_CHANGE,
   CF_PROCESSING_STREAM_CHANGE,
   CF_STREAM_CHANGED,
+  CF_ARRANGED_BRIDGE,
+  CF_STATE_REPEAT,
   CF_FLAG_MAX
 }
 
