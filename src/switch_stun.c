@@ -331,8 +331,6 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 
 		bytes_left -= alen;	/* attribute value consumed, substract padded length */
 
-		if (alen == 0) break;
-
 		xlen += 4 + alen;
 
 		attr = (switch_stun_packet_attribute_t *) (attr->value + alen);
