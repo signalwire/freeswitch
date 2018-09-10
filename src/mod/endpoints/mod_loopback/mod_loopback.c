@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1207,6 +1207,353 @@ static switch_io_routines_t channel_io_routines = {
 
 SWITCH_STANDARD_APP(unloop_function) { /* NOOP */}
 
+
+static switch_endpoint_interface_t *null_endpoint_interface = NULL;
+
+
+struct null_private_object {
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_timer_t timer;
+	switch_caller_profile_t *caller_profile;
+	switch_frame_t read_frame;
+	int16_t *null_buf;
+};
+
+typedef struct null_private_object null_private_t;
+
+static switch_status_t null_channel_on_init(switch_core_session_t *session);
+static switch_status_t null_channel_on_destroy(switch_core_session_t *session);
+static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+													switch_call_cause_t *cancel_cause);
+static switch_status_t null_channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_kill_channel(switch_core_session_t *session, int sig);
+
+
+
+static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_session_t *session)
+{
+	const char *iananame = "L16";
+	uint32_t rate = 8000;
+	uint32_t interval = 20;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const switch_codec_implementation_t *read_impl;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n", switch_channel_get_name(channel), iananame, rate,
+					  interval);
+
+	status = switch_core_codec_init(&tech_pvt->read_codec,
+					iananame,
+					NULL,
+					NULL,
+					rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+	if (status != SWITCH_STATUS_SUCCESS || !tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
+		goto end;
+	}
+
+	status = switch_core_codec_init(&tech_pvt->write_codec,
+					iananame,
+					NULL,
+					NULL,
+					rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+		goto end;
+	}
+
+	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
+	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+
+	read_impl = tech_pvt->read_codec.implementation;
+
+	switch_core_timer_init(&tech_pvt->timer, "soft",
+			   read_impl->microseconds_per_packet / 1000, read_impl->samples_per_packet * 4, switch_core_session_get_pool(session));
+
+	switch_core_session_set_private(session, tech_pvt);
+	tech_pvt->session = session;
+	tech_pvt->channel = switch_core_session_get_channel(session);
+	tech_pvt->null_buf = switch_core_session_alloc(session, sizeof(char) * read_impl->samples_per_packet * sizeof(int16_t));
+
+  end:
+
+	return status;
+}
+
+
+static switch_status_t null_channel_on_init(switch_core_session_t *session)
+{
+	switch_channel_t *channel;
+	null_private_t *tech_pvt = NULL;
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+	switch_channel_set_flag(channel, CF_AUDIO);
+
+	switch_channel_set_state(channel, CS_ROUTING);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t null_channel_on_destroy(switch_core_session_t *session)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+
+	if (tech_pvt) {
+		switch_core_timer_destroy(&tech_pvt->timer);
+
+		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t null_channel_kill_channel(switch_core_session_t *session, int sig)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	switch (sig) {
+	case SWITCH_SIG_BREAK:
+		break;
+	case SWITCH_SIG_KILL:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL SWITCH_SIG_KILL - hanging up\n");
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t null_channel_on_consume_media(switch_core_session_t *session)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering\n");
+
+	switch_channel_mark_answered(channel);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t null_channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
+{
+	null_private_t *tech_pvt = NULL;
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t null_channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	*frame = NULL;
+
+	if (!switch_channel_ready(channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_timer_next(&tech_pvt->timer);
+
+	if (tech_pvt->null_buf) {
+		int samples;
+		memset(&tech_pvt->read_frame, 0, sizeof(switch_frame_t));
+		samples = tech_pvt->read_codec.implementation->samples_per_packet;
+		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
+		tech_pvt->read_frame.datalen = samples * sizeof(int16_t);
+		tech_pvt->read_frame.samples = samples;
+		tech_pvt->read_frame.data = tech_pvt->null_buf;
+		switch_generate_sln_silence((int16_t *)tech_pvt->read_frame.data, tech_pvt->read_frame.samples, tech_pvt->read_codec.implementation->number_of_channels, 10000);
+		*frame = &tech_pvt->read_frame;
+	}
+
+	if (*frame) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+}
+
+static switch_status_t null_channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	switch_core_timer_sync(&tech_pvt->timer);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t null_channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	switch_channel_t *channel;
+	null_private_t *tech_pvt;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		switch_channel_mark_answered(channel);
+		break;
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+		switch_core_timer_sync(&tech_pvt->timer);
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
+						switch_caller_profile_t *outbound_profile,
+						switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+						switch_call_cause_t *cancel_cause)
+{
+	char name[128];
+	switch_channel_t *ochannel = NULL;
+
+	if (session) {
+		ochannel = switch_core_session_get_channel(session);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
+		switch_channel_pre_answer(ochannel);
+	}
+
+	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
+		null_private_t *tech_pvt;
+		switch_channel_t *channel;
+		switch_caller_profile_t *caller_profile;
+
+		switch_core_session_add_stream(*new_session, NULL);
+
+		if ((tech_pvt = (null_private_t *) switch_core_session_alloc(*new_session, sizeof(null_private_t))) != 0) {
+			channel = switch_core_session_get_channel(*new_session);
+			switch_snprintf(name, sizeof(name), "null/%s", outbound_profile->destination_number);
+			switch_channel_set_name(channel, name);
+			if (null_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS) {
+				switch_core_session_destroy(new_session);
+				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		if (outbound_profile) {
+			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			caller_profile->source = switch_core_strdup(caller_profile->pool, modname);
+
+			switch_snprintf(name, sizeof(name), "null/%s", caller_profile->destination_number);
+			switch_channel_set_name(channel, name);
+			switch_channel_set_caller_profile(channel, caller_profile);
+			tech_pvt->caller_profile = caller_profile;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		switch_channel_set_state(channel, CS_INIT);
+		switch_channel_set_flag(channel, CF_AUDIO);
+		return SWITCH_CAUSE_SUCCESS;
+	}
+
+	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+}
+
+static switch_state_handler_table_t null_channel_event_handlers = {
+	/*.on_init */ null_channel_on_init,
+	/*.on_routing */ NULL,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ NULL,
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media */ null_channel_on_consume_media,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ NULL,
+	/*.on_destroy */ null_channel_on_destroy
+};
+
+static switch_io_routines_t null_channel_io_routines = {
+	/*.outgoing_channel */ null_channel_outgoing_channel,
+	/*.read_frame */ null_channel_read_frame,
+	/*.write_frame */ null_channel_write_frame,
+	/*.kill_channel */ null_channel_kill_channel,
+	/*.send_dtmf */ null_channel_send_dtmf,
+	/*.receive_message */ null_channel_receive_message
+};
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
 	switch_application_interface_t *app_interface;
@@ -1225,6 +1572,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 	loopback_endpoint_interface->interface_name = "loopback";
 	loopback_endpoint_interface->io_routines = &channel_io_routines;
 	loopback_endpoint_interface->state_handler = &channel_event_handlers;
+
+	null_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	null_endpoint_interface->interface_name = "null";
+	null_endpoint_interface->io_routines = &null_channel_io_routines;
+	null_endpoint_interface->state_handler = &null_channel_event_handlers;
 
 	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
 
