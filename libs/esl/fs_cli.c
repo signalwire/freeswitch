@@ -753,7 +753,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 				int known = 1;
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
 				if (!esl_strlen_zero(type)) {
-					if (!strcasecmp(type, "log/data")) {
+					if (!strcasecmp(type, "log/data") && handle->last_event->body) {
 						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
 						if (esl_strlen_zero(userdata) || esl_strlen_zero(filter_uuid) || !strcasecmp(filter_uuid, userdata)) {
 							int level = 0;
