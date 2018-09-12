@@ -57,7 +57,9 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 #include <ctype.h>
 #include <sys/stat.h>
 
-
+#ifdef WIN32
+#define strerror_r(errno, buf, len) strerror_s(buf, len, errno)
+#endif
 
 #define die(...) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, __VA_ARGS__); goto error
 #define die_errno(fmt) do { char errbuf[BUFSIZ] = {0}; strerror_r(errno, (char *)&errbuf, sizeof(errbuf)); die(fmt ", errno=%d, %s\n", errno, (char *)&errbuf); } while(0)
