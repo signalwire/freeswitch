@@ -119,57 +119,57 @@
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <Command>
-xcopy "$(ProjectDir)generated\*" "$(libcodec2LibDir)\src\" /C /D /Y
+xcopy "$(ProjectDir)generated\*" "$(libcodec2LibDir)\codec2\" /C /D /Y
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(libcodec2LibDir)\src\dump.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\lpc.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\nlp.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\postfilter.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\sine.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codec2.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\fifo.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\fdmdv.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\kiss_fft.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\interp.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\lsp.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\phase.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\quantise.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\pack.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebook.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookd.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookvq.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookjnd.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookjvm.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookvqanssi.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookdt.c" />
-    <ClCompile Include="$(libcodec2LibDir)\src\codebookge.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\dump.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\lpc.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\nlp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\postfilter.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\sine.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codec2.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\fifo.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\fdmdv.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\kiss_fft.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\interp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\lsp.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\phase.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\quantise.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\pack.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebook.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookd.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookvq.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookjnd.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookjvm.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookvqanssi.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookdt.c" />
+    <ClCompile Include="$(libcodec2LibDir)\codec2\codebookge.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(libcodec2LibDir)\src\dump.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\lpc.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\nlp.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\postfilter.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\sine.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codec2.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\fifo.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\fdmdv.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\kiss_fft.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\interp.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\lsp.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\phase.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\quantise.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\pack.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebook.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookd.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookvq.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookjnd.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookjvm.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookvqanssi.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookdt.h" />
-    <ClInclude Include="$(libcodec2LibDir)\src\codebookge.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\dump.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\lpc.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\nlp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\postfilter.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\sine.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codec2.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\fifo.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\fdmdv.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\kiss_fft.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\interp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\lsp.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\phase.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\quantise.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\pack.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebook.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookd.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookvq.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookjnd.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookjvm.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookvqanssi.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookdt.h" />
+    <ClInclude Include="$(libcodec2LibDir)\codec2\codebookge.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
