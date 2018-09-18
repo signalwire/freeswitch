@@ -1415,9 +1415,25 @@ PKG_CHECK_MODULES([G7221], [g722_1 >= 0.2.0],[
   AM_CONDITIONAL([HAVE_G7221],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_G7221],[false])])
 
-PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.2],[
-  AM_CONDITIONAL([HAVE_CODEC2],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CODEC2],[false])])
+codec2="true"
+PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.5],[],[
+  AC_CHECK_LIB([codec2], [codec2_create],[
+    AC_CHECK_HEADERS([codec2/codec2.h],[
+      CODEC2_LIBS="-lcodec2"
+      CODEC2_CFLAGS=""
+    ], [
+    codec2="false"
+    if module_enabled mod_codec2; then
+        AC_MSG_ERROR([You must install libcodec2-dev to build mod_codec2])
+      else
+        AC_MSG_RESULT([no])
+      fi
+    ])
+  ])
+])
+
+AM_CONDITIONAL([HAVE_CODEC2],[$codec2])
+
 
 PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[

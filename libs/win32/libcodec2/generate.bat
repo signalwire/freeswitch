@@ -3,7 +3,7 @@ REM In order to regenerate headers
 REM execute this generate.bat from the "VS2015 x86 Native Tools Command Prompt"
 REM 
 
-cd ../../libcodec2-2.59/src
+cd ../../libcodec2-2.59/codec2
 cl /EHsc generate_codebook.c
 generate_codebook.exe lsp_cb codebook/lsp1.txt codebook/lsp2.txt codebook/lsp3.txt codebook/lsp4.txt codebook/lsp5.txt codebook/lsp6.txt codebook/lsp7.txt codebook/lsp8.txt codebook/lsp9.txt codebook/lsp10.txt > codebook.c
 generate_codebook.exe lsp_cbd codebook/dlsp1.txt codebook/dlsp2.txt codebook/dlsp3.txt codebook/dlsp4.txt codebook/dlsp5.txt codebook/dlsp6.txt codebook/dlsp7.txt codebook/dlsp8.txt codebook/dlsp9.txt codebook/dlsp10.txt > codebookd.c
