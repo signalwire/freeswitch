@@ -1387,6 +1387,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_size_t len;
 				uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				switch_frame_t frame = { 0 };
+				const char *file_trimmed_ms = NULL;
+				const char *file_size = NULL;
+				const char *file_trimmed = NULL;
 
 				if (rh->thread_ready) {
 					switch_status_t st;
@@ -1425,6 +1428,14 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					//switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 				//}
 
+
+				switch_core_file_pre_close(rh->fh);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_SIZE, &file_size);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED, &file_trimmed);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED_MS, &file_trimmed_ms);
+				if (file_trimmed_ms) switch_channel_set_variable(channel, "record_trimmed_ms", file_trimmed_ms);
+				if (file_size) switch_channel_set_variable(channel, "record_file_size", file_size);
+				if (file_trimmed) switch_channel_set_variable(channel, "record_trimmed", file_trimmed);
 				switch_core_file_close(rh->fh);
 
 				if (!rh->writes && !rh->vwrites) {
