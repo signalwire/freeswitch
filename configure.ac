@@ -1482,16 +1482,19 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
-PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
+PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   AM_CONDITIONAL([HAVE_V8FS],[true])],[
-  PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
+  PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
     AM_CONDITIONAL([HAVE_V8FS],[true])],[
-    if module_enabled mod_v8; then
-      AC_MSG_ERROR([You need to either install libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
-    else
-      AC_MSG_RESULT([no])
-      AM_CONDITIONAL([HAVE_V8FS],[false])
-    fi
+    PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
+      AM_CONDITIONAL([HAVE_V8FS],[true])],[
+      if module_enabled mod_v8; then
+        AC_MSG_ERROR([You need to either install libv8-6.1-dev (>= 6.1.298), libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
+      else
+        AC_MSG_RESULT([no])
+        AM_CONDITIONAL([HAVE_V8FS],[false])
+      fi
+    ])
   ])
 ])
 
