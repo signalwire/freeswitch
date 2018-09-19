@@ -57,6 +57,7 @@ avoid_mods=(
   endpoints/mod_unicall
   event_handlers/mod_smpp
   event_handlers/mod_cdr_pg_csv
+  event_handlers/mod_event_zmq
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
