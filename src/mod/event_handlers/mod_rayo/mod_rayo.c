@@ -2989,6 +2989,7 @@ static void *SWITCH_THREAD_FUNC rayo_exec_thread(switch_thread_t *thread, void *
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BGAPI EXEC RESULT: %s\n", (char *)stream.data);
 		response = iks_new_iq_result(etdata->node);
 		api_result = iks_insert(response, "response");
+		iks_insert_attrib(api_result, "xmlns", RAYO_NS);
 		iks_insert_attrib(api_result, "response", zstr((char *)stream.data) ? "" : (char *)stream.data);
 	}
 
