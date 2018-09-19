@@ -564,6 +564,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cidlookup", "src\mod\ap
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cdr_mongodb", "src\mod\event_handlers\mod_cdr_mongodb\mod_cdr_mongodb.2017.vcxproj", "{4DFF29B4-2976-447D-A8B3-43476451517C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg", "libs\win32\ffmpeg\ffmpeg.2017.vcxproj", "{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2567,6 +2569,14 @@ Global
 		{4DFF29B4-2976-447D-A8B3-43476451517C}.Release|Win32.Build.0 = Release|Win32
 		{4DFF29B4-2976-447D-A8B3-43476451517C}.Release|x64.ActiveCfg = Release|x64
 		{4DFF29B4-2976-447D-A8B3-43476451517C}.Release|x64.Build.0 = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.All|Win32.ActiveCfg = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.All|Win32.Build.0 = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.All|x64.ActiveCfg = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.All|x64.Build.0 = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Debug|Win32.ActiveCfg = Debug|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Debug|x64.ActiveCfg = Debug|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Release|Win32.ActiveCfg = Release|x64
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2771,6 +2781,7 @@ Global
 		{40C4E2A2-B49B-496C-96D6-C04B890F7F88} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{0A130A8B-3076-4619-BADF-9E86F621AEEC} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{4DFF29B4-2976-447D-A8B3-43476451517C} = {9ADF1E48-2F5C-4ED7-A893-596259FABFE0}
+		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}

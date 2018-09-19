@@ -710,8 +710,8 @@ void rtp_callback(struct AVCodecContext *avctx, void *data, int size, int mb_nb)
 }
 #endif
 
-const uint8_t *fs_h263_find_resync_marker_reverse(const uint8_t *restrict start,
-												  const uint8_t *restrict end)
+const uint8_t *fs_h263_find_resync_marker_reverse(const uint8_t *av_restrict start,
+												  const uint8_t *av_restrict end)
 {
 	const uint8_t *p = end - 1;
 	start += 1; /* Make sure we never return the original start. */
