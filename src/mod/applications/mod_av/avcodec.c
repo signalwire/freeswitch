@@ -1079,12 +1079,53 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 	return consume_h264_bitstream(context, frame);
 }
 
+static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile_t *profile)
+{
+	if (context->hw_encoder) {
+		av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
+		av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
+		return;
+	}
+
+	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
+
+	if (profile->options) {
+		switch_event_header_t *hp;
+
+		for (hp = profile->options->headers; hp; hp = hp->next) {
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
+			av_opt_set(context->encoder_ctx->priv_data, hp->name, hp->value, 0);
+		}
+	}
+
+	context->encoder_ctx->colorspace = profile->ctx.colorspace;
+	context->encoder_ctx->color_range = profile->ctx.color_range;
+
+	context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+	if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
+	if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
+	if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
+	if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
+	if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
+	if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
+	if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
+	if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
+	if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
+	if (profile->ctx.qmin >= 0) context->encoder_ctx->qmin = profile->ctx.qmin;
+	if (profile->ctx.qmax >= 0) context->encoder_ctx->qmax = profile->ctx.qmax;
+	if (profile->ctx.max_qdiff >= 0) context->encoder_ctx->max_qdiff = profile->ctx.max_qdiff;
+}
+
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
 	int fps = 15;
 	avcodec_profile_t *profile = NULL;
-	
-#ifdef NVENC_SUPPORT
+	char codec_string[1024];
+
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
 			if (context->codec_settings.video.try_hardware_encoder && (context->encoder = avcodec_find_encoder_by_name("nvenc_h264"))) {
@@ -1095,14 +1136,11 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 			}
 		}
 	}
-#endif
 
-	
 	if (!context->encoder) {
 		context->encoder = avcodec_find_encoder(context->av_codec_id);
 	}
 
-	
 	if (!context->encoder) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
 		return SWITCH_STATUS_FALSE;
@@ -1211,57 +1249,40 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->profile = profile->ctx.profile;
 		context->encoder_ctx->level = profile->ctx.level;
 
-		if (context->hw_encoder) {
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
-			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
-		} else {
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
-			av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
-
-			if (profile->options) {
-				switch_event_header_t *hp;
-
-				for (hp = profile->options->headers; hp; hp = hp->next) {
-					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
-					av_opt_set(context->encoder_ctx->priv_data, hp->name, hp->value, 0);
-				}
-			}
-
-			context->encoder_ctx->colorspace = profile->ctx.colorspace;
-			context->encoder_ctx->color_range = profile->ctx.color_range;
-
-			context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
-			if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
-			if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
-			if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
-			if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
-			if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
-			if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
-			if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
-			if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
-			if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
-			if (profile->ctx.qmin >= 0) context->encoder_ctx->qmin = profile->ctx.qmin;
-			if (profile->ctx.qmax >= 0) context->encoder_ctx->qmax = profile->ctx.qmax;
-			if (profile->ctx.max_qdiff >= 0) context->encoder_ctx->max_qdiff = profile->ctx.max_qdiff;
-		}
+		set_h264_private_data(context, profile);
 	}
 
-	{
-		char buf[1024];
-
-		avcodec_string(buf, sizeof(buf), context->encoder_ctx, 0);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", buf);
-	}
+GCC_DIAG_OFF(deprecated-declarations)
+	avcodec_string(codec_string, sizeof(codec_string), context->encoder_ctx, 0);
+GCC_DIAG_ON(deprecated-declarations)
 
 	dump_encoder_ctx(context->encoder_ctx);
 
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
-		return SWITCH_STATUS_FALSE;
+		if (!context->hw_encoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+
+		context->hw_encoder = 0;
+		av_opt_free(context->encoder_ctx->priv_data);
+		set_h264_private_data(context, profile);
+		context->encoder = avcodec_find_encoder(context->av_codec_id);
+
+		if (!context->encoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec opened: %s\n", codec_string);
 
 	return SWITCH_STATUS_SUCCESS;
 }
