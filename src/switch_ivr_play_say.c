@@ -382,6 +382,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	const char *prefix, *var, *video_file = NULL;
 	int vid_play_file_flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
 	int echo_on = 0;
+	const char *file_trimmed_ms = NULL;
+	const char *file_size = NULL;
+	const char *file_trimmed = NULL;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -917,6 +920,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 	}
 	switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
+
+	switch_core_file_pre_close(fh);
+	switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_FILE_SIZE, &file_size);
+	switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED, &file_trimmed);
+	switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED_MS, &file_trimmed_ms);
+	if (file_trimmed_ms) switch_channel_set_variable(channel, "record_record_trimmed_ms", file_trimmed_ms);
+	if (file_size) switch_channel_set_variable(channel, "record_record_file_size", file_size);
+	if (file_trimmed) switch_channel_set_variable(channel, "record_record_trimmed", file_trimmed);
 	switch_core_file_close(fh);
 
 
