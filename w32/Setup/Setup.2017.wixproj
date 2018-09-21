@@ -44,6 +44,10 @@
     <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
     <Compile Include="Fragments\FreeSWITCHSoundFiles8.wxs" />
     <Compile Include="Fragments\FreeSWITCHBaseFiles.wxs" />
+    <Compile Include="Fragments\FreeSWITCHhtdocsFilesDir.wxs" />
+    <Compile Include="Fragments\FreeSWITCHimagesFilesDir.wxs" />
+    <Compile Include="Fragments\FreeSWITCHfontsFilesDir.wxs" />
+    <Compile Include="Fragments\FreeSWITCHgrammarFilesDir.wxs" />
     <Compile Include="FreeSWITCHConsole.wxs" />
     <Compile Include="Product.2017.wxs" />
   </ItemGroup>
@@ -922,7 +926,15 @@
     <CreateProperty Value="$(VSInstallDir)\VC\Redist\MSVC\$(VCLibVersion)\MergeModules\">
       <Output TaskParameter="Value" PropertyName="MergeModules" />
     </CreateProperty>
-    <CreateProperty Value="FreeSWITCHSoundFilesDir=$(SoundsDir);MergeModules=$(MergeModules);VCVer=$(PlatformToolsetVersion);$(DefineConstants)">
+    <CreateProperty Value="
+        FreeSWITCHgrammarFilesDir=$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\grammar;
+        FreeSWITCHfontsFilesDir=$(SolutionDir)fonts;
+        FreeSWITCHimagesFilesDir=$(SolutionDir)images;
+        FreeSWITCHhtdocsFilesDir=$(SolutionDir)htdocs;
+        FreeSWITCHSoundFilesDir=$(SoundsDir);
+        MergeModules=$(MergeModules);
+        VCVer=$(PlatformToolsetVersion);
+        $(DefineConstants)">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
     <Message Importance="High" Text="Visual C++ lib-version: $(VCLibVersion)" />
@@ -970,24 +982,62 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
-   <HeatDirectory Condition=" '$(Platform)' == 'x86' "
+   <HeatDirectory
         ToolPath="$(WixToolPath)"
-        OutputFile="$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"
-        Directory="$(SolutionDir)Win32\$(Configuration)"
-        Transforms="$(ProjectDir)filter.xslt"
+        OutputFile="$(ProjectDir)Fragments\FreeSWITCHhtdocsFilesDir.wxs"
+        Directory="$(ProjectDir)..\..\htdocs"
         DirectoryRefId="INSTALLLOCATION"
-        ComponentGroupName="FreeSWITCHBaseFiles"
+        ComponentGroupName="FreeSWITCHhtdocsFiles"
         GenerateGuidsNow="true"
-        SuppressRootDirectory="true"
+        SuppressRootDirectory="false"
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
-        PreprocessorVariable="var.FreeSWITCHBaseDir">
+        PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
-   <HeatDirectory Condition=" '$(Platform)' == 'x64' "
+   <HeatDirectory
+        ToolPath="$(WixToolPath)"
+        OutputFile="$(ProjectDir)Fragments\FreeSWITCHimagesFilesDir.wxs"
+        Directory="$(ProjectDir)..\..\images"
+        DirectoryRefId="INSTALLLOCATION"
+        ComponentGroupName="FreeSWITCHimagesFiles"
+        GenerateGuidsNow="true"
+        SuppressRootDirectory="false"
+        SuppressRegistry="true"
+        SuppressCom="true"
+        SuppressFragments="true"
+        PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
+    </HeatDirectory>
+   <HeatDirectory
+        ToolPath="$(WixToolPath)"
+        OutputFile="$(ProjectDir)Fragments\FreeSWITCHfontsFilesDir.wxs"
+        Directory="$(ProjectDir)..\..\fonts"
+        DirectoryRefId="INSTALLLOCATION"
+        ComponentGroupName="FreeSWITCHfontsFiles"
+        GenerateGuidsNow="true"
+        SuppressRootDirectory="false"
+        SuppressRegistry="true"
+        SuppressCom="true"
+        SuppressFragments="true"
+        PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
+    </HeatDirectory>
+   <HeatDirectory
+        ToolPath="$(WixToolPath)"
+        OutputFile="$(ProjectDir)Fragments\FreeSWITCHgrammarFilesDir.wxs"
+        Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\grammar"
+        DirectoryRefId="INSTALLLOCATION"
+        ComponentGroupName="FreeSWITCHgrammarFiles"
+        GenerateGuidsNow="true"
+        SuppressRootDirectory="false"
+        SuppressRegistry="true"
+        SuppressCom="true"
+        SuppressFragments="true"
+        PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
+    </HeatDirectory>
+   <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"
-        Directory="$(SolutionDir)x64\$(Configuration)"
+        Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)"
         Transforms="$(ProjectDir)filter.xslt"
         DirectoryRefId="INSTALLLOCATION"
         ComponentGroupName="FreeSWITCHBaseFiles"
