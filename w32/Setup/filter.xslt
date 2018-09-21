@@ -19,11 +19,13 @@
   </xsl:template>
 
   <!-- Exclude all File elements that are not a .dll file -->
-  <xsl:template match="wix:Component[not(contains(wix:File/@Source, 
-'.dll'))]" />
+  <xsl:template match="wix:Component[not(contains(wix:File/@Source, '.dll'))]" />
 
   <!-- Exclude Directory elements -->
   <!--<xsl:template match="wix:Directory[not(contains(*/@Source, '.pdb'))]"/>-->
+  <xsl:template match="wix:Directory[@Name='htdocs']"/>
+  <xsl:template match="wix:Directory[@Name='images']"/>
+  <xsl:template match="wix:Directory[@Name='fonts']"/>
   <xsl:template match="wix:Directory[@Name='conf']"/>
   <xsl:template match="wix:Directory[@Name='sounds']"/>
   <xsl:template match="wix:Directory[@Name='grammar']"/>
