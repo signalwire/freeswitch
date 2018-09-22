@@ -95,8 +95,9 @@ SWITCH_DECLARE(int) switch_vad_set_mode(switch_vad_t *vad, int mode)
 #ifdef SWITCH_HAVE_FVAD
 	int ret = 0;
 
-	if (mode < 0 && vad->fvad) {
-		fvad_free(vad->fvad);
+	if (mode < 0) {
+		if (vad->fvad) fvad_free(vad->fvad);
+
 		vad->fvad = NULL;
 		return ret;
 	} else if (mode > 3) {
