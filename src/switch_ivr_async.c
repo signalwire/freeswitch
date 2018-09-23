@@ -787,6 +787,8 @@ typedef struct {
 	int mux;
 	int loop;
 	char *file;
+	switch_buffer_t *wbuffer; // only in r&w mode
+	switch_mutex_t *mutex;
 } displace_helper_t;
 
 static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -885,6 +887,9 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 			switch_channel_t *channel;
 
+			if (dh->wbuffer) switch_buffer_destroy(&dh->wbuffer);
+			if (dh->mutex) switch_mutex_destroy(dh->mutex);
+
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
@@ -895,9 +900,24 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			switch_frame_t *rframe = switch_core_media_bug_get_write_replace_frame(bug);
-			if (dh && !dh->mux) {
-				memset(rframe->data, 255, rframe->datalen);
+
+			if (dh) {
+				if (dh->wbuffer) {
+					switch_mutex_lock(dh->mutex);
+					if (switch_buffer_inuse(dh->wbuffer) >= rframe->datalen) {
+						switch_buffer_read(dh->wbuffer, rframe->data, rframe->datalen);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)),
+							SWITCH_LOG_WARNING, "not enough data %" SWITCH_SIZE_T_FMT "\n",
+							switch_buffer_inuse(dh->wbuffer));
+						memset(rframe->data, 255, rframe->datalen);
+					}
+					switch_mutex_unlock(dh->mutex);
+				} else if (!dh->mux) {
+					memset(rframe->data, 255, rframe->datalen);
+				}
 			}
+
 			switch_core_media_bug_set_write_replace_frame(bug, rframe);
 		}
 		break;
@@ -925,6 +945,12 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				rframe->samples = (uint32_t) len;
+
+				if (dh->wbuffer) {
+					switch_mutex_lock(dh->mutex);
+					switch_buffer_write(dh->wbuffer, rframe->data, len * 2 * dh->fh.channels);
+					switch_mutex_unlock(dh->mutex);
+				}
 			}
 
 			rframe->datalen = rframe->samples * 2 * dh->fh.channels;
@@ -1067,6 +1093,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	}
 
 	if (flags && strchr(flags, 'r')) {
+		if (strchr(flags, 'w')) { // r&w mode, both sides can hear the same file
+			int len = dh->fh.samplerate / 10 * 2 * dh->fh.channels; // init with 100ms
+
+			switch_mutex_init(&dh->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_buffer_create_dynamic(&dh->wbuffer, len, len, 0);
+		}
+
 		status = switch_core_media_bug_add(session, "displace", file,
 										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
