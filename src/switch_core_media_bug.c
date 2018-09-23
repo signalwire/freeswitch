@@ -800,7 +800,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_media_bug_t *bug, *bp;
 	switch_size_t bytes;
 	switch_event_t *event;
-	int tap_only = 1, punt = 0;
+	int tap_only = 1, punt = 0, added = 0;
 
 	const char *p;
 
@@ -961,12 +961,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
-	bug->next = session->bugs;
-	session->bugs = bug;
 
+	if (!session->bugs) {
+		session->bugs = bug;
+		added = 1;
+	}
+	
 	for(bp = session->bugs; bp; bp = bp->next) {
 		if (bp->ready && !switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
 			tap_only = 0;
+		}
+
+		if (!added && !bp->next) {
+			bp->next = bug;
+			break;
 		}
 	}
 
