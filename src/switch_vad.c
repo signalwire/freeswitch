@@ -60,14 +60,14 @@ struct switch_vad_s {
 SWITCH_DECLARE(const char *) switch_vad_state2str(switch_vad_state_t state)
 {
 	switch(state) {
-	case SWITCH_VAD_STATE_NONE:                                                                                                                                      return "none";
+	case SWITCH_VAD_STATE_NONE:
 		return "none";
-	case SWITCH_VAD_STATE_START_TALKING:                                                                                                                             return "start_talking";
-		return "start-talking";
-	case SWITCH_VAD_STATE_TALKING:                                                                                                                                   return "talking";
+	case SWITCH_VAD_STATE_START_TALKING:
+		return "start_talking";
+	case SWITCH_VAD_STATE_TALKING:
 		return "talking";
-	case SWITCH_VAD_STATE_STOP_TALKING:                                                                                                                              return "stop_talking";
-		return "stop-talking";
+	case SWITCH_VAD_STATE_STOP_TALKING:
+		return "stop_talking";
 	default:
 		return "error";
 	}
