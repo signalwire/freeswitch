@@ -2357,6 +2357,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		}
 
 		if (pop && status == SWITCH_STATUS_SUCCESS) {
+			switch_img_free(&context->last_img);
 			context->last_img = (switch_image_t *)pop;
 			switch_img_copy(context->last_img, &frame->img);
 			context->vid_ready = 1;
@@ -2467,6 +2468,7 @@ GCC_DIAG_ON(deprecated-declarations)
 			if (switch_micro_time_now() - mst->next_pts > -10000) {
 				frame->img = img;
 			} else {
+				switch_img_free(&context->last_img);
 				context->last_img = img;
 				return SWITCH_STATUS_BREAK;
 			}

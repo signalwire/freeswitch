@@ -529,10 +529,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								source->has_video = 1;
 								if (source->total) {
 									if (switch_queue_trypush(source->video_q, vid_frame.img) == SWITCH_STATUS_SUCCESS) {
+										vid_frame.img = NULL;
 										flush = 0;
 									}
 								}
-
+								
 								if (flush) {
 									switch_img_free(&vid_frame.img);
 									flush_video_queue(source->video_q);
@@ -645,13 +646,15 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						if (!pop) break;
 
 						img = (switch_image_t *) pop;
-
+						
 						switch_mutex_lock(source->mutex);
 						if (source->context_list) {
 							if (source->total == 1) {
-								if (switch_queue_trypush(source->context_list->video_q, img) != SWITCH_STATUS_SUCCESS) {
+								if (!switch_test_flag(source->context_list->handle, SWITCH_FILE_FLAG_VIDEO)) {
 									flush_video_queue(source->context_list->video_q);
-
+								} else if (switch_queue_trypush(source->context_list->video_q, img) != SWITCH_STATUS_SUCCESS) {
+									flush_video_queue(source->context_list->video_q);
+									
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Flushing video queue\n");
 									if (++source->context_list->video_flushes > 1) {
 										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnecting file\n");
@@ -659,6 +662,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 									}
 								} else {
 									source->context_list->video_flushes = 0;
+									img = NULL;
 								}
 							} else {
 								for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
@@ -671,7 +675,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 										imgcp = NULL;
 										switch_img_copy(img, &imgcp);
 										if (imgcp) {
-											if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
+											if (!switch_test_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO)) {
+												flush_video_queue(cp->video_q);
+											} else if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
 												flush_video_queue(cp->video_q);
 												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Flushing video queue\n");
 												if (++cp->video_flushes > 1) {
@@ -684,10 +690,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 										}
 									}
 								}
-								switch_img_free(&img);
 							}
 						}
 						switch_mutex_unlock(source->mutex);
+						switch_img_free(&img);
 					}
 				}
 			}
@@ -887,7 +893,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 
 	context->pool = pool;
 
-	switch_queue_create(&context->video_q, 500, context->pool);
+	switch_queue_create(&context->video_q, 40, context->pool);
 
 	handle->samples = 0;
 	handle->samplerate = source->rate;
@@ -907,7 +913,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		goto end;
 	}
 
-	if (!switch_core_has_video() ||
+	if (!switch_core_has_video() || !source->has_video ||
 		(switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && !source->has_video && !source->blank_img && !source->cover_art && !source->banner_txt)) {
 		switch_clear_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
 	}
@@ -1037,7 +1043,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		buf_qsize = 1;
 	}
 
-	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize) {
+	while(context->ready && context->source->ready && switch_queue_size(context->video_q) > min_qsize) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
@@ -1151,11 +1157,7 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->source->has_video)  {
-		if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
-			switch_set_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
-		}
-	} else {
+	if (!context->source->has_video)  {
 		if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 			switch_clear_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
 		}
