@@ -4257,7 +4257,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {
 			for (i = 0; i < engine->ice_in.cand_idx[cid]; i++) {
-				int is_relay = !strcmp(engine->ice_in.cands[i][cid].cand_type, "relay");
+				int is_relay = engine->ice_in.cands[i][cid].cand_type && !strcmp(engine->ice_in.cands[i][cid].cand_type, "relay");
 
 				if (relay_ok != is_relay) continue;
 
