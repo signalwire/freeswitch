@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Platform specific variables -->
+<?define ProductName = "FreeSWITCH Sounds - $(var.SoundPrimaryName) $(var.SoundQuality)Hz $(var.SoundVersion)" ?>
+<?define ComponentGroup = "FreeSWITCHSoundFiles$(var.SoundSuffix)" ?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="$(var.ProductName)" Language="1033" Version="$(var.SoundVersion)" Manufacturer="FreeSWITCH" UpgradeCode="$(var.SoundUpgradeCode)">
+    <Package InstallerVersion="200" Compressed="yes" />    
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />	
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="FREESWITCHFOLDER" Name="FreeSWITCH">
+          <Directory Id="SOUNDLOCATION" Name="sounds">
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+    
+    <Feature Id="ProductFeature" Title="$(var.ProductName)" Level="1">
+      <ComponentGroupRef Id="$(var.ComponentGroup)" />
+    </Feature>
+
+    <UIRef Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.BaseDir)/docs/COPYING.rtf" /> 
+  </Product>
+</Wix>

@@ -24,6 +24,8 @@
     <RootNamespace>sphinxbase</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\download_sphinxbase.props" Condition=" '$(downloadsphinxbasePropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\download_sphinxmodel.props" Condition=" '$(downloadsphinxmodelPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
@@ -642,16 +644,6 @@
     <ClInclude Include="..\..\sphinxbase-0.7\include\strfuncs.h" />
     <ClInclude Include="..\..\sphinxbase-0.7\include\unlimit.h" />
     <ClInclude Include="..\..\sphinxbase-0.7\include\yin.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download sphinxbase.2017.vcxproj">
-      <Project>{4f92b672-dadb-4047-8d6a-4bb3796733fd}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\Download sphinxmodel.2017.vcxproj">
-      <Project>{2dee4895-1134-439c-b688-52203e57d878}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

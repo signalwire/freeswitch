@@ -346,10 +346,12 @@ int ws_handshake(wsh_t *wsh)
 
 }
 
+#define SSL_WANT_READ_WRITE(err) (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
+
 ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 {
 	ssize_t r;
-	int err = 0;
+	int ssl_err = 0;
 
 	wsh->x++;
 	if (wsh->x > 250) ms_sleep(1);
@@ -358,10 +360,10 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
 
-			if (r == -1) {
-				err = SSL_get_error(wsh->ssl, r);
+			if (r < 0) {
+				ssl_err = SSL_get_error(wsh->ssl, r);
 
-				if (err == SSL_ERROR_WANT_READ) {
+				if (SSL_WANT_READ_WRITE(ssl_err)) {
 					if (!block) {
 						r = -2;
 						goto end;
@@ -374,7 +376,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 				}
 			}
 
-		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 1000);
+		} while (r < 0 && SSL_WANT_READ_WRITE(ssl_err) && wsh->x < 1000);
 
 		goto end;
 	}
@@ -446,10 +448,10 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 				ms_sleep(ms);
 			}
 
-			if (r == -1) {
+			if (r < 0) {
 				ssl_err = SSL_get_error(wsh->ssl, r);
 
-				if (ssl_err != SSL_ERROR_WANT_WRITE && ssl_err != SSL_ERROR_WANT_READ) {
+				if (!SSL_WANT_READ_WRITE(ssl_err)) {
 					break;
 				}
 				ssl_err = 0;
@@ -581,7 +583,8 @@ int establish_logical_layer(wsh_t *wsh)
 			}
 
 			if (code < 0) {
-				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
+				int ssl_err = SSL_get_error(wsh->ssl, code);
+				if (code < 0 && !SSL_WANT_READ_WRITE(ssl_err)) {
 					return -1;
 				}
 			}
@@ -692,10 +695,22 @@ void ws_destroy(wsh_t *wsh)
 	}
 
 	if (wsh->ssl) {
-		int code;
+		int code, ssl_err, sanity = 100;
 		do {
 			code = SSL_shutdown(wsh->ssl);
-		} while (code == -1 && SSL_get_error(wsh->ssl, code) == SSL_ERROR_WANT_READ);
+			if (code == 1) {
+				break;
+			}
+			if (code < 0) {
+				ssl_err = SSL_get_error(wsh->ssl, code);
+			}
+			if (wsh->block) {
+				ms_sleep(10);
+			} else {
+				ms_sleep(1);
+			}
+
+		} while ((code == 0 || (code < 0 && SSL_WANT_READ_WRITE(ssl_err))) && --sanity > 0);
 
 		SSL_free(wsh->ssl);
 		wsh->ssl = NULL;
@@ -815,7 +830,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		{
 			wsh->plen = wsh->buffer[1] & 0x7f;
 			*data = (uint8_t *) &wsh->buffer[2];
-			return ws_close(wsh, 1000);
+			return ws_close(wsh, WS_RECV_CLOSE);
 		}
 		break;
 	case WSOC_CONTINUATION:

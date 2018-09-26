@@ -45,6 +45,9 @@ typedef unsigned long in_addr_t;
 %newobject CoreSession;
 %newobject Event;
 %newobject Stream;
+%newobject API::execute;
+%newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type

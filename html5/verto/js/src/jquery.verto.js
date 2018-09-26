@@ -80,7 +80,8 @@
 	    userVariables: {},
             iceServers: false,
             ringSleep: 6000,
-	    sessid: null
+      sessid: null,
+      useStream: null
         }, options);
 
 	if (verto.options.deviceParams.useCamera) {
@@ -465,11 +466,11 @@
 
         var dialog = new $.verto.dialog($.verto.enum.direction.outbound, this, args);
 
-        dialog.invite();
-
         if (callbacks) {
             dialog.callbacks = callbacks;
         }
+
+        dialog.invite();
 
         return dialog;
     };
@@ -613,7 +614,9 @@
                 break;
 
             case 'verto.clientReady':
-                verto.callbacks.onMessage(verto, null, $.verto.enum.message.clientReady, data.params);
+                if (verto.callbacks.onMessage) {
+                    verto.callbacks.onMessage(verto, null, $.verto.enum.message.clientReady, data.params);
+                }
                 console.debug("CLIENT READY", data.params);
                 break;
 
@@ -1939,7 +1942,8 @@
             tag: verto.options.tag,
             localTag: verto.options.localTag,
             login: verto.options.login,
-	    videoParams: verto.options.videoParams
+      videoParams: verto.options.videoParams,
+      useStream: verto.options.useStream,
         }, params);
 	
 
@@ -2053,15 +2057,30 @@
         };
 
         RTCcallbacks.onStream = function(rtc, stream) {
-            if (dialog.verto.options.permissionCallback &&
+            if (dialog.callbacks.permissionCallback &&
+                typeof dialog.callbacks.permissionCallback.onGranted === 'function') {
+                dialog.callbacks.permissionCallback.onGranted(stream);
+            }
+            else if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onGranted === 'function'){
                 dialog.verto.options.permissionCallback.onGranted(stream);
             }
             console.log("stream started");
         };
 
+        RTCcallbacks.onRemoteStream = function(rtc, stream) {
+          if (typeof dialog.callbacks.onRemoteStream === 'function') {
+            dialog.callbacks.onRemoteStream(stream, dialog);
+          }
+          console.log("remote stream started");
+        };
+
         RTCcallbacks.onError = function(e) {
-            if (dialog.verto.options.permissionCallback &&
+            if (dialog.callbacks.permissionCallback &&
+                typeof dialog.callbacks.permissionCallback.onDenied === 'function') {
+                dialog.callbacks.permissionCallback.onDenied();
+            }
+            else if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onDenied === 'function'){
                 dialog.verto.options.permissionCallback.onDenied();
             }
@@ -2082,7 +2101,8 @@
             useCamera: dialog.useCamera,
             useMic: dialog.useMic,
             useSpeak: dialog.useSpeak,
-            turnServer: verto.options.turnServer
+      turnServer: verto.options.turnServer,
+      useStream: dialog.params.useStream
         });
 
         dialog.rtc.verto = dialog.verto;
@@ -2713,10 +2733,17 @@
     
     $.verto.unloadJobs = [];
 
-    $(window).bind('beforeunload', function() {
-	for (var f in $.verto.unloadJobs) {
-	    $.verto.unloadJobs[f]();
-	}
+    var unloadEventName = 'beforeunload';
+    // Hacks for Mobile Safari
+    var iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+    if (iOS) {
+      unloadEventName = 'pagehide';
+    }
+
+    $(window).bind(unloadEventName, function() {
+        for (var f in $.verto.unloadJobs) {
+          $.verto.unloadJobs[f]();
+        }
 
         if ($.verto.haltClosure)
           return $.verto.haltClosure();

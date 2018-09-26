@@ -13,7 +13,7 @@
 @REM default build
 @REM change these variables if you want to build differently by default
 @set configuration=Release
-@set platform=Win32
+@set platform=x64
 
 
 @REM if commandline parameters contain "ebug" and/or "64 and/or 32"
@@ -48,25 +48,7 @@
 @set /a procs -= 1
 
 @REM check and set VS2017 environment
-rem VS2017U2 contains vswhere.exe
-if "%VSWHERE%"=="" set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-
-rem Use %ProgramFiles% in a 32-bit program prior to Windows 10)
-If Not Exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
-
-If Not Exist "%VSWHERE%" (
-    echo "WARNING: Can't find vswhere.exe. It is a part of VS 2017 version 15.2 or later. Trying known path..."
-    set "InstallDir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community"
-) ELSE (
-    for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
-       set InstallDir=%%i
-    )
-)
-
-echo Install dir is "%InstallDir%"
-if exist "%InstallDir%\MSBuild\15.0\Bin\MSBuild.exe" (
-    set msbuild="%InstallDir%\MSBuild\15.0\Bin\MSBuild.exe"
-)
+CALL msbuild.cmd
 
 if exist %msbuild% (
 %msbuild% Freeswitch.2017.sln /m:%procs% /verbosity:normal /property:Configuration=%configuration% /property:Platform=%platform% /fl /flp:logfile=vs2017%platform%%configuration%.log;verbosity=normal

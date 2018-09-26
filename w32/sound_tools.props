@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+
+  <PropertyGroup>
+    <sounds_dirImported>true</sounds_dirImported>
+  </PropertyGroup>
+
+  <UsingTask TaskName="GetSoundsDirTask" 
+             TaskFactory="CodeTaskFactory"  
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+             <ParameterGroup>  
+                <SoundsDir ParameterType="System.String" Output="True"/>   
+             </ParameterGroup>  
+             <Task>  
+                <Reference Include="Microsoft.Build" />
+                <Reference Include="Microsoft.Build.Framework" />
+                <Code Type="Class" Language="cs">
+<![CDATA[  
+using System;
+using System.IO;
+using Microsoft.Build.Framework;
+
+    public class GetSoundsDirTask : Microsoft.Build.Utilities.Task
+    {
+        [Output]        
+        public string SoundsDir { get; set; }
+
+        public override bool Execute()
+        {
+            /*SoundsDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            SoundsDir += "\\FreeSWITCH\\sounds"; */
+
+            string platform = (@"$(Platform)" == "x86") ? "Win32" : @"$(Platform)";
+
+            SoundsDir = @"$(SolutionDir)" + platform + @"\$(Configuration)\sounds";
+
+            Directory.CreateDirectory(SoundsDir);
+
+            return true;
+        }
+    }
+]]>  
+                </Code>  
+             </Task>  
+  </UsingTask>  
+
+  <Target Name="GetSoundsDirTarget" BeforeTargets="CustomBuild;Build">  
+      <GetSoundsDirTask>         
+           <Output PropertyName="SoundsDir" TaskParameter="SoundsDir" /> 
+      </GetSoundsDirTask>         
+      <Message Importance="High" Text="SoundsDir is set to: $(SoundsDir)"/> 
+  </Target> 
+
+  <UsingTask TaskName="GetSoundFileNameTask" 
+             TaskFactory="CodeTaskFactory"  
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+             <ParameterGroup>  
+                <SoundPrimaryName Required="true" />
+                <SoundQuality Required="true" />
+                <SoundFileName ParameterType="System.String" Output="True"/>   
+             </ParameterGroup>  
+             <Task>  
+                <Reference Include="Microsoft.Build" />
+                <Reference Include="Microsoft.Build.Framework" />
+                <Code Type="Class" Language="cs">
+<![CDATA[  
+using System;
+using System.IO;
+using Microsoft.Build.Framework;
+
+    public class GetSoundFileNameTask : Microsoft.Build.Utilities.Task
+    {
+        [Required]
+        public string SoundPrimaryName { get; set; }
+        public string SoundQuality { get; set; }
+
+        [Output]        
+        public string SoundFileName { get; set; }
+
+        public override bool Execute()
+        {
+            string SoundVersion = "";
+
+            string SoundVersionFile = "";
+            if (SoundPrimaryName == "music") {
+                SoundVersion = File.ReadAllText(@"$(BaseDir)build/moh_version.txt").Trim();
+            } else {
+                foreach (string line in File.ReadLines(@"$(BaseDir)build/sounds_version.txt")) {
+                    var items = line.Split(' ');
+                    if ( items[0] == SoundPrimaryName ) {
+                        SoundVersion = items[1].Trim();
+                        break;
+                    }                           
+                }
+            }
+
+            SoundFileName = "freeswitch-sounds-" + SoundPrimaryName + "-" + SoundQuality + "-" + SoundVersion + ".tar.gz";
+            return true;
+        }
+    }
+]]>  
+                </Code>  
+             </Task>  
+  </UsingTask>  
+
+</Project>

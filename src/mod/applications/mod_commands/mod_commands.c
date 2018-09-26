@@ -2976,7 +2976,7 @@ SWITCH_STANDARD_API(transfer_function)
 				tsession = other_session;
 				other_session = NULL;
 				if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-					switch_core_media_bug_transfer_recordings(tmp, tsession);
+					switch_ivr_transfer_recordings(tmp, tsession);
 				}
 				switch_core_session_rwunlock(tmp);
 			}
@@ -5042,7 +5042,7 @@ SWITCH_STANDARD_API(originate_function)
 		timeout = atoi(argv[6]);
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL) != SWITCH_STATUS_SUCCESS
+	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL, NULL) != SWITCH_STATUS_SUCCESS
 		|| !caller_session) {
 			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
 		goto done;
@@ -5334,7 +5334,7 @@ SWITCH_STANDARD_API(bgapi_function)
 	switch_threadattr_t *thd_attr = NULL;
 	
 	const char *p, *arg = cmd;
-	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = ""; 
 
 	if (!cmd) {
 		stream->write_function(stream, "-ERR Invalid syntax\n");

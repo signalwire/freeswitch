@@ -1603,7 +1603,8 @@ void *FSSession::Construct(const v8::FunctionCallbackInfo<Value>& info)
 				old_obj = JSBase::GetInstance<FSSession>(Handle<Object>::Cast(info[1]));
 			}
 			if (switch_ivr_originate(old_obj ? old_obj->_session : NULL,
-									 &session_obj->_session, &session_obj->_cause, uuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
+									 &session_obj->_session, &session_obj->_cause, uuid, 60,
+									 NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 				switch_set_flag(session_obj, S_HUP);
 			} else {
 				/* This will return the Session object, but with no C++ instance related to it */
@@ -1765,7 +1766,8 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, "mod_v8", context, dest.c_str());
 
 		status =
-			switch_ivr_originate(session, &peer_session, &this->_cause, dest.c_str(), to.length() > 0 ? atoi(to.c_str()) : 60, NULL, NULL, NULL, caller_profile, NULL, SOF_NONE, NULL);
+			switch_ivr_originate(session, &peer_session, &this->_cause,
+								 dest.c_str(), to.length() > 0 ? atoi(to.c_str()) : 60, NULL, NULL, NULL, caller_profile, NULL, SOF_NONE, NULL, NULL);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest.c_str());

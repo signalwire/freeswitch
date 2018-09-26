@@ -18,6 +18,7 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <Import Project="$(SolutionDir)\w32\download_libjpeg.props" Condition=" '$(downloadlibjpegPropsImported)' == '' " />
   <ItemGroup>
     <ClInclude Include="..\..\jpeg-8d\jconfig.h" />
     <ClInclude Include="..\..\jpeg-8d\jdct.h" />

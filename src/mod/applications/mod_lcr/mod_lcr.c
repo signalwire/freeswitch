@@ -1511,7 +1511,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 				}
 			}
 			if (switch_ivr_originate(session, new_session, &cause, cur_route->dialstring, timelimit, NULL,
-									 cid_name_override, cid_num_override, NULL, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
+									 cid_name_override, cid_num_override, NULL, var_event, myflags, cancel_cause, NULL) == SWITCH_STATUS_SUCCESS) {
 				const char *context;
 				switch_caller_profile_t *cp;
 

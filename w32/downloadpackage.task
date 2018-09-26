@@ -13,6 +13,7 @@
                 <outputfolder />   
                 <outputfilename />   
                 <extractto />   
+                <moveafter />
              </ParameterGroup>  
              <Task>  
                 <Reference Include="Microsoft.Build" />
@@ -54,6 +55,7 @@ using System.Diagnostics;
         public string outputfolder { get; set; }
         public string outputfilename { get; set; }
         public string extractto { get; set; }
+        public string moveafter { get; set; }
 
         internal static bool FileOrDirectoryExists(string name)
         {
@@ -136,18 +138,32 @@ using System.Diagnostics;
                     if (File.Exists(output))
                     {
                         // Successful download.
+
+                        string extracttofolder = Path.GetFullPath((extractto ?? Path.GetDirectoryName(output)) + "/");
+
                         if (Path.GetExtension(output) != ".exe")
                         {
-                            Extract(output);
-                            string filename = Path.Combine(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output));
+                            Extract(output, extracttofolder);
+                            string filename = Path.Combine(Path.GetDirectoryName(extracttofolder), Path.GetFileNameWithoutExtension(output));
                             Log.LogMessage(MessageImportance.High,
                                 "Filename \"" + filename + "\".");
 
                             if (File.Exists(filename))
                             {
-                                Extract(filename);
+                                Extract(filename, extracttofolder);
                                 File.Delete(filename);
                             }
+                        }
+
+                        if (moveafter != null && moveafter != "") {
+                            var items = moveafter.Split('|');
+                            string s = extracttofolder + items[0];
+                            string d = extracttofolder + items[1];
+
+                            Log.LogMessage(MessageImportance.High,
+                                "Move directory from \"" + s + "\" to \"" + d + "\".");
+
+                            Directory.Move(s, d);
                         }
                     }
                 }
@@ -164,10 +180,8 @@ using System.Diagnostics;
             return true;
         }
 
-        private void Extract(string filename)
+        private void Extract(string filename, string extracttofolder)
         {
-            string extracttofolder = Path.GetFullPath((extractto ?? Path.GetDirectoryName(filename)) + "/");
-
             string arctool = Path.Combine(new string[] { basedir, "libs", "win32", "7za1701.exe" });
             string args = " x \"" + filename + "\" -y -o\"" + extracttofolder + "\"";
 

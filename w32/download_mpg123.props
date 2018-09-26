@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup>
+    <downloadmpg123PropsImported>true</downloadmpg123PropsImported>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+
+       moveafter: Move directory. A pipe separated string "FromPath|ToPath"
+   -->
+
+  <Target Name="mpg123DownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/downloads/libs/mpg123-1.14.4.tar.bz2"
+           expectfileordirectory="$(BaseDir)libs\libmpg123\Makefile.am"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+           moveafter="mpg123-1.14.4|libmpg123"
+      />
+  </Target>
+
+  <Target Name="mpg123MoveTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="mpg123DownloadTarget">
+
+  </Target>
+</Project>

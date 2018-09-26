@@ -1081,7 +1081,7 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 		member = lmember = conference_member_get(conference, id);
 	}
 
-	if (member && conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+	if (member && conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER) && !conference_utils_test_flag(conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 		goto end;
 	}
 	

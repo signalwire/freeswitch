@@ -1439,6 +1439,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(switch_c
 	} else {
 		if (switch_channel_state_thread_trylock(session->channel) == SWITCH_STATUS_SUCCESS) {
 			/* We've beat them for sure, as soon as we release this lock, they will be checking their queue on the next line. */
+			switch_channel_set_flag(session->channel, CF_STATE_REPEAT);
 			switch_channel_state_thread_unlock(session->channel);
 		} else {
 			/* What luck!  The channel has already started going to sleep *after* we checked if we need to wake it up.

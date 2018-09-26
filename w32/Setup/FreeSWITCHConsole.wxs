@@ -33,7 +33,7 @@
   <Fragment>
     <DirectoryRef Id="INSTALLLOCATION">
       <Component Id="cmp7AC01B2B6EDD58CE539876AB86975286" Guid="*">
-        <File Id="filA3A7609AFEB16B75D819A0208EFFF451" Source="$(var.FreeSwitchConsole.ProjectDir)\FreeSwitchConsole.2010.vcxproj" />
+        <File Id="filA3A7609AFEB16B75D819A0208EFFF451" Source="$(var.FreeSwitchConsole.ProjectDir)\FreeSwitchConsole.2017.vcxproj" />
       </Component>
     </DirectoryRef>
   </Fragment>

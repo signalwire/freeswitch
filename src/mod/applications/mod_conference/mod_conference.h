@@ -261,6 +261,7 @@ typedef enum {
 	CFLAG_REFRESH_LAYOUT,
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	CFLAG_NO_MOH,
+	CFLAG_DED_VID_LAYER_AUDIO_FLOOR,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -1223,7 +1224,8 @@ switch_status_t conference_api_sub_exit_sound(conference_obj_t *conference, swit
 switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_enter_sound(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_set(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
-switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_vid_res_id(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_vid_res_id_member(conference_member_t *member, switch_stream_handle_t *stream, char *res_id, int clear, int force);
 switch_status_t conference_api_sub_vid_role_id(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_get_uuid(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_get(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

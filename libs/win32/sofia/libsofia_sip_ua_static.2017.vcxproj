@@ -49,6 +49,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="..\..\..\w32\gawk.props" />
   <Import Project="..\..\..\w32\openssl.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -74,8 +75,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
-cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+      <Command>cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
 set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
 if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
 if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
@@ -107,8 +107,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
-cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+      <Command>cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
 set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
 if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
 if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
@@ -144,8 +143,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
-cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+      <Command>cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
 set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
 if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
 if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
@@ -179,8 +177,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
-cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+      <Command>cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
 set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
 if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
 if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
@@ -514,10 +511,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
     <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_tag.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download PTHREAD.2017.vcxproj">
-      <Project>{8b3b4c4c-13c2-446c-beb0-f412cc2cfb9a}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\pthread\pthread.2017.vcxproj">
       <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -49,6 +49,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)w32\g722_1.props" />
+  <Import Project="$(SolutionDir)w32\download_g722_1.props" Condition=" '$(downloadg722_1PropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -147,11 +148,6 @@
     <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\sam2coef.h" />
     <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\tables.h" />
     <ClInclude Include="$(SolutionDir)libs\g722_1-0.2.0\src\utilities.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download g722_1.2017.vcxproj">
-      <Project>{36603fe1-253f-4c2c-aab6-12927a626135}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

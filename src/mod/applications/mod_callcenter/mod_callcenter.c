@@ -1707,7 +1707,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
 		switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
 
 		/* Search for loopback agent */
 		if (status == SWITCH_STATUS_SUCCESS) {

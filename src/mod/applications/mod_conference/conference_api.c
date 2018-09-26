@@ -112,7 +112,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-mute-img", (void_fn_t) & conference_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
 	{"vid-logo-img", (void_fn_t) & conference_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
 	{"vid-codec-group", (void_fn_t) & conference_api_sub_vid_codec_group, CONF_API_SUB_MEMBER_TARGET, "vid-codec-group", "<member_id|last> [<group>|clear]"},
-	{"vid-res-id", (void_fn_t) & conference_api_sub_vid_res_id, CONF_API_SUB_MEMBER_TARGET, "vid-res-id", "<member_id|last> <val>|clear"},
+	{"vid-res-id", (void_fn_t) & conference_api_sub_vid_res_id, CONF_API_SUB_ARGS_SPLIT, "vid-res-id", "<member_id>|all <val>|clear [force]"},
 	{"vid-role-id", (void_fn_t) & conference_api_sub_vid_role_id, CONF_API_SUB_MEMBER_TARGET, "vid-role-id", "<member_id|last> <val>|clear"},
 	{"get-uuid", (void_fn_t) & conference_api_sub_get_uuid, CONF_API_SUB_MEMBER_TARGET, "get-uuid", "<member_id|last>"},
 	{"clear-vid-floor", (void_fn_t) & conference_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
@@ -315,15 +315,10 @@ switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stre
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR mute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	conference_utils_member_clear_flag_locked(member, MFLAG_TALKING);
 
-	if (member->session && !conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT)) {
+	if (member->session && !conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT) && !conference_utils_member_test_flag(member, MFLAG_HOLD)) {
 		switch_core_media_hard_mute(member->session, SWITCH_TRUE);
 	}
 
@@ -460,11 +455,6 @@ switch_status_t conference_api_sub_tmute(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR mute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		return conference_api_sub_mute(member, stream, data);
 	}
@@ -479,11 +469,6 @@ switch_status_t conference_api_sub_unmute(conference_member_t *member, switch_st
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR unmute %u\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SPEAK);
 
@@ -672,22 +657,18 @@ switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_st
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	switch_core_session_write_blank_video(member->session, 50);
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_SEE);
-	conference_video_reset_video_bitrate_counters(member);
+
+	if (!conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		switch_core_session_write_blank_video(member->session, 50);
+		conference_video_reset_video_bitrate_counters(member);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		conference_utils_member_set_flag(member, MFLAG_INDICATE_BLIND);
 	}
 
-	if (stream != NULL) {
-		stream->write_function(stream, "+OK vblind %u\n", member->id);
-	}
+	if (stream) stream->write_function(stream, "+OK vblind %u\n", member->id);
 
 	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -708,11 +689,6 @@ switch_status_t conference_api_sub_tvblind(conference_member_t *member, switch_s
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (conference_utils_member_test_flag(member, MFLAG_CAN_SEE)) {
 		return conference_api_sub_vblind(member, stream, data);
 	}
@@ -728,15 +704,12 @@ switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_SEE);
-	conference_video_reset_video_bitrate_counters(member);
 
-	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+	if (!conference_utils_member_test_flag(member, MFLAG_HOLD)) {
+		conference_video_reset_video_bitrate_counters(member);
+		switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		conference_utils_member_set_flag(member, MFLAG_INDICATE_UNBLIND);
@@ -765,11 +738,6 @@ switch_status_t conference_api_sub_deaf(conference_member_t *member, switch_stre
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_HEAR);
 
@@ -812,11 +780,6 @@ switch_status_t conference_api_sub_undeaf(conference_member_t *member, switch_st
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
-
-	if (conference_utils_member_test_flag(member, MFLAG_HOLD)) {
-		if (stream) stream->write_function(stream, "-ERR member %u is on hold\n", member->id);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_HEAR);
 
@@ -2306,7 +2269,7 @@ switch_status_t conference_api_sub_floor(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER)) {
+	if (conference_utils_member_test_flag(member, MFLAG_DED_VID_LAYER) && !conference_utils_test_flag(member->conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 		if (stream != NULL) {
 			stream->write_function(stream, "-ERR cannot set floor on a member in an active video role\n");
 		}
@@ -2497,12 +2460,57 @@ static void clear_role_id(conference_obj_t *conference, conference_member_t *mem
 	switch_mutex_unlock(conference->member_mutex);
 }
 
-switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+switch_status_t conference_api_sub_vid_res_id(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	char *text = (char *) data;
+	uint8_t all = 0, clear = 0, force = 0;
+	uint32_t member_id;
+	char *res_id = NULL;
+	conference_member_t *member;
 
-	if (member == NULL)
+	if (argc < 3 || argc > 5)
 		return SWITCH_STATUS_GENERR;
+
+	res_id = argv[3];
+
+	if (argc > 3) {
+		if (!strcasecmp(res_id, "clear")) {
+			clear = 1;
+		}
+	} else {
+		clear = 1;
+	}
+
+	if (argc > 4)
+		force = strcasecmp(argv[4], "force") ? 0 : 1;
+
+	if (!(member_id = atoi(argv[2]))) {
+		all = strcasecmp(argv[2], "all") ? 0 : 1;
+	}
+
+	if (all && clear) {
+		switch_mutex_lock(conference->member_mutex);
+		for (member = conference->members; member; member = member->next) {
+			if (member->session && !conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+				conference_api_sub_vid_res_id_member(member, stream, res_id, clear, force);
+			}
+		}
+		switch_mutex_unlock(conference->member_mutex);
+	} else if (member_id) {
+		if (!(member = conference_member_get(conference, member_id)))
+			return SWITCH_STATUS_GENERR;
+		conference_api_sub_vid_res_id_member(member, stream, res_id, clear, force);
+		switch_thread_rwlock_unlock(member->rwlock);
+	} else {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+switch_status_t conference_api_sub_vid_res_id_member(conference_member_t *member, switch_stream_handle_t *stream, char *res_id, int clear, int force)
+{
 
 	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
 		return SWITCH_STATUS_FALSE;
@@ -2513,21 +2521,19 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (zstr(text) || !strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
+	if (clear || (!force && member->video_reservation_id && !strcasecmp(res_id, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
 		stream->write_function(stream, "+OK reservation_id cleared\n");
 		conference_video_detach_video_layer(member);
 	} else {
-		clear_res_id(member->conference, member, text);
-		if (!member->video_reservation_id || strcmp(member->video_reservation_id, text)) {
-			member->video_reservation_id = switch_core_strdup(member->pool, text);
+		clear_res_id(member->conference, member, res_id);
+		if (!member->video_reservation_id || strcmp(member->video_reservation_id, res_id)) {
+			member->video_reservation_id = switch_core_strdup(member->pool, res_id);
 		}
-		stream->write_function(stream, "+OK reservation_id %s\n", text);
+		stream->write_function(stream, "+OK reservation_id %s\n", res_id);
 		conference_video_detach_video_layer(member);
 		conference_video_find_floor(member, SWITCH_FALSE);
 	}
-
-
 
 	return SWITCH_STATUS_SUCCESS;
 

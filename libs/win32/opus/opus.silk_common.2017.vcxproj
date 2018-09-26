@@ -25,6 +25,7 @@
     <ProjectName>opus.silk_common</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\download_opus.props" Condition=" '$(downloadopusPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -305,11 +306,6 @@
     <ClInclude Include="..\..\opus-1.1\silk\tables.h" />
     <ClInclude Include="..\..\opus-1.1\silk\tuning_parameters.h" />
     <ClInclude Include="..\..\opus-1.1\silk\typedef.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Download OPUS.2017.vcxproj">
-      <Project>{092124c9-09ed-43c7-bd6d-4ae5d6b3c547}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -235,8 +235,16 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_read(swigCPtr, this, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators, digit_timeout);
   }
 
+  public void detectSpeech(String arg0, String arg1, String arg2, String arg3) {
+    freeswitchJNI.CoreSession_detectSpeech(swigCPtr, this, arg0, arg1, arg2, arg3);
+  }
+
   public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex, String var_name, int digit_timeout, String transfer_on_failure) {
     return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name, digit_timeout, transfer_on_failure);
+  }
+
+  public String playAndDetectSpeech(String file, String engine, String grammar) {
+    return freeswitchJNI.CoreSession_playAndDetectSpeech(swigCPtr, this, file, engine, grammar);
   }
 
   public int streamFile(String file, int starting_sample_count) {

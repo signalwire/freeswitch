@@ -13,6 +13,9 @@
 %newobject CoreSession;
 %newobject Event;
 %newobject Stream;
+%newobject API::execute;
+%newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 
 // I thought we were using swig because it's easier than the alternatives :-)

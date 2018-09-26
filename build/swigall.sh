@@ -1,6 +1,6 @@
 cd src/mod/languages/mod_lua
 make swigclean
-make lua_wrap
+make mod_lua_wrap.cpp
 cd ../../../..
 
 cd src/mod/languages/mod_perl

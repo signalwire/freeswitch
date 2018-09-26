@@ -440,7 +440,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss1"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
-	<action application="set" data="conference_auto_outcall_flags=mute"/>
+	<action application="set" data="conference_utils_auto_outcall_flags=mute"/>
 	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 transfer::intercept:${uuid} inline'}"/>
 	<action application="set" data="sip_exclude_contact=${network_addr}"/>
 	<action application="conference_set_auto_outcall" data="${group_call(sales)}"/>
@@ -458,7 +458,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss2"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0912"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
-	<action application="set" data="conference_auto_outcall_flags=mute"/>
+	<action application="set" data="conference_utils_auto_outcall_flags=mute"/>
 	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 transfer::intercept:${uuid} inline'}"/>
 	<action application="set" data="sip_exclude_contact=${network_addr}"/>
 	<action application="conference_set_auto_outcall" data="loopback/9664"/>
@@ -473,7 +473,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
-	<action application="set" data="conference_auto_outcall_flags=none"/>
+	<action application="set" data="conference_utils_auto_outcall_flags=none"/>
 	<!--<action application="set" data="conference_auto_outcall_announce=say:You have been called into an emergency conference"/>-->
 	<!--Add as many of these as you need, These are the people you are going to call-->
 	<action application="conference_set_auto_outcall" data="loopback/9664"/>

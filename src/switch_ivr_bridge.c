@@ -1076,6 +1076,38 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_consume_media */ audio_bridge_on_consume_media,
 };
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *session, switch_core_session_t *peer_session, uint32_t max_wait_ms)
+{
+	switch_channel_t *channel;
+	switch_channel_t *peer_channel = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(session);
+	channel = switch_core_session_get_channel(session);
+	
+	switch_channel_set_flag(channel, CF_ARRANGED_BRIDGE);
+
+	if (peer_session) {
+		peer_channel = switch_core_session_get_channel(peer_session);
+	}
+
+	status = switch_channel_wait_for_flag(channel, CF_ARRANGED_BRIDGE, SWITCH_FALSE, max_wait_ms, peer_channel);
+
+	if (status == SWITCH_STATUS_FALSE) return status;
+
+	if (switch_channel_test_flag(channel, CF_ARRANGED_BRIDGE)) {
+		switch_channel_clear_flag(channel, CF_ARRANGED_BRIDGE);
+		return SWITCH_STATUS_FALSE;
+	} else {
+		audio_bridge_on_exchange_media(session);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session);
 static switch_status_t uuid_bridge_on_hibernate(switch_core_session_t *session);
 static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *session);
@@ -1636,7 +1668,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			goto done;
 		}
 
-		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
+		if (!switch_channel_test_flag(peer_channel, CF_ARRANGED_BRIDGE)) {
+			switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
+		}
 
 		switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
 
@@ -1741,9 +1775,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
-			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
 
-
+			if (switch_channel_test_flag(peer_channel, CF_ARRANGED_BRIDGE)) {
+				switch_channel_clear_flag(peer_channel, CF_ARRANGED_BRIDGE);
+			} else {
+				switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
+			}
+			
 			audio_bridge_thread(NULL, (void *) a_leg);
 
 			switch_channel_clear_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);

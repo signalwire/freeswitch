@@ -36,6 +36,30 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+
+static switch_status_t get_file_size(switch_file_handle_t *fh, const char **string)
+{
+	switch_status_t status;
+	switch_file_t *newfile;
+	switch_size_t size = 0;
+
+	status = switch_file_open(&newfile, fh->spool_path ? fh->spool_path : fh->file_path, SWITCH_FOPEN_READ, SWITCH_FPROT_OS_DEFAULT, fh->memory_pool);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	size = switch_file_get_size(newfile);
+
+	if (size) {
+		*string = switch_core_sprintf(fh->memory_pool, "%" SWITCH_SIZE_T_FMT, size);
+	}
+
+	status = switch_file_close(newfile);
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  switch_file_handle_t *fh,
 															  const char *file_path,
@@ -755,18 +779,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col, const char **string)
 {
+	switch_status_t status;
+
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
-	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) && col < SWITCH_AUDIO_COL_STR_FILE_SIZE) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!fh->file_interface->file_get_string) {
+		if (col == SWITCH_AUDIO_COL_STR_FILE_SIZE) {
+			return get_file_size(fh, string);
+		}
+
 		return SWITCH_STATUS_FALSE;
 	}
 
-	return fh->file_interface->file_get_string(fh, col, string);
+	status = fh->file_interface->file_get_string(fh, col, string);
+
+	if (status == SWITCH_STATUS_SUCCESS && string) return status;
+
+	if (col == SWITCH_AUDIO_COL_STR_FILE_SIZE) {
+		return get_file_size(fh, string);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset)
@@ -829,15 +867,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_command(switch_file_handle_t *f
 	return status;
 }
 
-
-SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t *fh)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_assert(fh != NULL);
 
-	if (!fh->file_interface || !switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+	if (!fh->file_interface) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (fh->pre_buffer) {
@@ -863,7 +904,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	}
 
 	switch_clear_flag_locked(fh, SWITCH_FILE_OPEN);
-	status = fh->file_interface->file_close(fh);
+
+	if (fh->file_interface->file_pre_close) {
+		status = fh->file_interface->file_pre_close(fh);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		status = switch_core_file_pre_close(fh);
+	}
+
+	fh->file_interface->file_close(fh);
 
 	if (fh->params) {
 		switch_event_destroy(&fh->params);

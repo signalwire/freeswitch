@@ -273,15 +273,15 @@ struct switch_media_handle_s {
 };
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
-	{ "AEAD_AES_256_GCM_8", AEAD_AES_256_GCM_8, 44, 12},
-	{ "AEAD_AES_128_GCM_8", AEAD_AES_128_GCM_8, 28, 12},
-	{ "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
-	{ "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
-	{ "AES_CM_128_HMAC_SHA1_80", AES_CM_128_HMAC_SHA1_80, 30, 14},
-	{ "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46, 14},
-	{ "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38, 14},
-	{ "AES_CM_128_HMAC_SHA1_32", AES_CM_128_HMAC_SHA1_32, 30, 14},
-	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30, 14}
+	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
+	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
+	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
+	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
+	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14},
+	{ "AES_256_CM_HMAC_SHA1_32", "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46, 14},
+	{ "AES_192_CM_HMAC_SHA1_32", "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38, 14},
+	{ "AES_CM_128_HMAC_SHA1_32", "", AES_CM_128_HMAC_SHA1_32, 30, 14},
+	{ "AES_CM_128_NULL_AUTH", "", AES_CM_128_NULL_AUTH, 30, 14}
 };
 
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
@@ -289,7 +289,7 @@ SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(c
 	int i;
 
 	for (i = 0; i < CRYPTO_INVALID; i++) {
-		if (!strncasecmp(str, SUITES[i].name, strlen(SUITES[i].name))) {
+		if (!strncasecmp(str, SUITES[i].name, strlen(SUITES[i].name)) || (SUITES[i].alias && strlen(SUITES[i].alias) && !strncasecmp(str, SUITES[i].alias, strlen(SUITES[i].alias)))) {
 			return SUITES[i].type;
 		}
 	}
@@ -1140,10 +1140,12 @@ SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *fla
 	}
 }
 
-
+/**
+ * If @use_alias != 0 then send crypto with alias name instead of name.
+ */ 
 static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh,
 													  switch_media_type_t type,
-													  int index, switch_rtp_crypto_key_type_t ctype, switch_rtp_crypto_direction_t direction, int force)
+													  int index, switch_rtp_crypto_key_type_t ctype, switch_rtp_crypto_direction_t direction, int force, int use_alias)
 {
 	unsigned char b64_key[512] = "";
 	unsigned char *key;
@@ -1185,7 +1187,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 #endif
 
 	switch_b64_encode(key, SUITES[ctype].keysalt_len, b64_key, sizeof(b64_key));
-	if (!switch_channel_var_true(channel, "rtp_pad_srtp_keys")) {
+	if (switch_channel_var_false(channel, "rtp_pad_srtp_keys")) {
 		p = strrchr((char *) b64_key, '=');
 
 		while (p && *p && *p == '=') {
@@ -1196,9 +1198,9 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 	if (index == SWITCH_NO_CRYPTO_TAG) index = ctype + 1;
 
 	if (switch_channel_var_true(channel, "rtp_secure_media_mki")) {	
-		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s|2^31|1:1", index, SUITES[ctype].name, b64_key);
+		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s|2^31|1:1", index, (use_alias ? SUITES[ctype].alias : SUITES[ctype].name), b64_key);
 	} else {
-		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
+		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, (use_alias ? SUITES[ctype].alias : SUITES[ctype].name), b64_key);
 	}
 
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
@@ -1217,7 +1219,6 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 #define CRYPTO_KEY_MATERIAL_LIFETIME_MKI_ERR	0x0u
 #define CRYPTO_KEY_MATERIAL_MKI					0x1u
@@ -1771,8 +1772,6 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 	}
 }
 
-
-
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session,
 															   const char *varname,
 															  switch_media_type_t type, const char *crypto, int crypto_tag, switch_sdp_type_t sdp_type)
@@ -1781,6 +1780,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int i = 0;
 	int ctype = 0;
 	const char *vval = NULL;
+	int use_alias = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
 
@@ -1801,15 +1801,21 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s] in [%s]\n", SUITES[j].name, crypto);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s]alias=[%s] in [%s]\n", SUITES[j].name, SUITES[j].alias, crypto);
 
-		if (switch_stristr(SUITES[j].name, crypto)) {
+		if (switch_stristr(SUITES[j].alias, crypto)) {
+			use_alias = 1;
+		}
+		
+		if (use_alias || switch_stristr(SUITES[j].name, crypto)) {
 			ctype = SUITES[j].type;
-			vval = SUITES[j].name;
+			vval = use_alias ? SUITES[j].alias : SUITES[j].name;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
 			switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
 			break;
 		}
+
+		use_alias = 0;
 	}
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
@@ -1828,7 +1834,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				}
 				switch_channel_set_variable(session->channel, varname, vval);
 
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
+				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), &engine->ssec[engine->crypto_type]);
 			}
 
@@ -1893,7 +1899,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
-			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
+			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 		}
 	}
 
@@ -1929,13 +1935,13 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_AUDIO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+									   SWITCH_MEDIA_TYPE_AUDIO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 
 		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_VIDEO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+									   SWITCH_MEDIA_TYPE_VIDEO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 
 		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_TEXT, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+									   SWITCH_MEDIA_TYPE_TEXT, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 	}
 
 }
@@ -2487,6 +2493,7 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 
 			if (strchr(val, 'p') && jb_msec > 0) {
 				jb_msec *= -1;
+				if (!maxlen) maxlen = jb_msec * 50;
 			}
 
 			if ((p = strchr(val, ':'))) {
@@ -2499,6 +2506,8 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			}
 		}
 
+		if (!maxlen) maxlen = jb_msec * 50;
+		
 		if (jb_msec < 0 && jb_msec > -1000) {
 			jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
 		}
@@ -2506,7 +2515,6 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 		if (maxlen < 0 && maxlen > -1000) {
 			maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
 		}
-
 		
 		
 		if (jb_msec < 10 || jb_msec > 10000) {
@@ -2599,7 +2607,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	fps = video_globals.fps;
 
-	if (!fps) return;
+	if (fps < 15) return;
 
 	sync_audio = 1;
 
@@ -2626,7 +2634,7 @@ static void check_jb_sync(switch_core_session_t *session)
 					  jb_sync_msec, frames, video_globals.fps, sync_audio ? "yes" : "no", jb_sync_msec);
 
 	if (sync_audio) {
-		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
+		check_jb(session, NULL, jb_sync_msec, jb_sync_msec * 2, SWITCH_TRUE);
 	}
 
 	video_globals.synced++;
@@ -4249,7 +4257,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {
 			for (i = 0; i < engine->ice_in.cand_idx[cid]; i++) {
-				int is_relay = !strcmp(engine->ice_in.cands[i][cid].cand_type, "relay");
+				int is_relay = engine->ice_in.cands[i][cid].cand_type && !strcmp(engine->ice_in.cands[i][cid].cand_type, "relay");
 
 				if (relay_ok != is_relay) continue;
 

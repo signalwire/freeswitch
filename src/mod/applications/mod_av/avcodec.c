@@ -45,6 +45,8 @@ int SLICE_SIZE = SWITCH_DEFAULT_VIDEO_SIZE;
 #define H263_MODE_B // else Mode A only
 #define KEY_FRAME_MIN_FREQ 250000
 
+// #define DUMP_ENCODER_CTX
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avcodec_shutdown);
 
@@ -102,6 +104,207 @@ const uint8_t *fs_avc_find_startcode(const uint8_t *p, const uint8_t *end){
 
     return out;
 }
+
+static void dump_encoder_ctx(AVCodecContext *ctx)
+{
+#ifdef DUMP_ENCODER_CTX
+#define STRINGIFY(x) #x
+#define my_dump_int(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
+#define my_dump_int64(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = % " SWITCH_INT64_T_FMT "\n", ctx->x);
+#define my_dump_float(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %f\n", ctx->x);
+#define my_dump_enum(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
+#define my_dump_uint(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = 0x%x\n", ctx->x);
+
+	my_dump_int(log_level_offset);
+	my_dump_enum(codec_type); /* see AVMEDIA_TYPE_xxx */
+	my_dump_enum(codec_id); /* see AV_CODEC_ID_xxx */
+	my_dump_int(codec_tag);
+	my_dump_int64(bit_rate);
+	my_dump_int(bit_rate_tolerance);
+	my_dump_int(global_quality);
+	my_dump_int(compression_level);
+	my_dump_uint(flags);
+	my_dump_uint(flags2);
+	my_dump_int(extradata_size);
+	my_dump_int(time_base.num);
+	my_dump_int(time_base.den);
+	my_dump_int(ticks_per_frame);
+	my_dump_int(delay);
+	my_dump_int(width);
+	my_dump_int(height);
+	my_dump_int(coded_width);
+	my_dump_int(coded_height);
+	my_dump_int(gop_size);
+	my_dump_enum(pix_fmt);
+	my_dump_int(max_b_frames);
+	my_dump_float(b_quant_factor);
+	my_dump_float(b_quant_offset);
+	my_dump_int(has_b_frames);
+	my_dump_float(i_quant_factor);
+	my_dump_float(i_quant_offset);
+	my_dump_float(lumi_masking);
+	my_dump_float(temporal_cplx_masking);
+	my_dump_float(spatial_cplx_masking);
+	my_dump_float(p_masking);
+	my_dump_float(dark_masking);
+	my_dump_int(slice_count);
+	my_dump_int(sample_aspect_ratio.num);
+	my_dump_int(sample_aspect_ratio.den);
+	my_dump_int(me_cmp);
+	my_dump_int(me_sub_cmp);
+	my_dump_int(mb_cmp);
+	my_dump_int(ildct_cmp);
+	my_dump_int(dia_size);
+	my_dump_int(last_predictor_count);
+	my_dump_int(me_pre_cmp);
+	my_dump_int(pre_dia_size);
+	my_dump_int(me_subpel_quality);
+	my_dump_int(me_range);
+	my_dump_uint(slice_flags);
+	my_dump_int(mb_decision);
+	my_dump_int(scenechange_threshold);
+	my_dump_int(noise_reduction);
+	// my_dump_int(me_threshold);
+	// my_dump_int(mb_threshold);
+	my_dump_int(intra_dc_precision);
+	my_dump_int(skip_top);
+	my_dump_int(skip_bottom);
+	my_dump_int(mb_lmin);
+	my_dump_int(mb_lmax);
+	my_dump_int(me_penalty_compensation);
+	my_dump_int(bidir_refine);
+	my_dump_int(brd_scale);
+	my_dump_int(keyint_min);
+	my_dump_int(refs);
+	my_dump_int(chromaoffset);
+	my_dump_int(mv0_threshold);
+	my_dump_int(b_sensitivity);
+	my_dump_enum(color_primaries);
+	my_dump_enum(color_trc);
+	my_dump_enum(colorspace);
+	my_dump_enum(color_range);
+	my_dump_enum(chroma_sample_location);
+	my_dump_int(slices);
+	my_dump_enum(field_order);
+	my_dump_int(sample_rate); ///< samples per second
+	my_dump_int(channels);    ///< number of audio channels
+	my_dump_enum(sample_fmt);  ///< sample format
+	my_dump_int(frame_size);
+	my_dump_int(frame_number);
+	my_dump_int(block_align);
+	my_dump_int(cutoff);
+	my_dump_int64(channel_layout);
+	my_dump_int64(request_channel_layout);
+	my_dump_enum(audio_service_type);
+	my_dump_enum(request_sample_fmt);
+	my_dump_int(refcounted_frames);
+	my_dump_float(qcompress);  ///< amount of qscale change between easy & hard scenes (0.0-1.0)
+	my_dump_float(qblur);      ///< amount of qscale smoothing over time (0.0-1.0)
+	my_dump_int(qmin);
+	my_dump_int(qmax);
+	my_dump_int(max_qdiff);
+	my_dump_int(rc_buffer_size);
+	my_dump_int(rc_override_count);
+	my_dump_int64(rc_max_rate);
+	my_dump_int64(rc_min_rate);
+	my_dump_float(rc_max_available_vbv_use);
+	my_dump_float(rc_min_vbv_overflow_use);
+	my_dump_int(rc_initial_buffer_occupancy);
+	my_dump_int(trellis);
+	my_dump_int(workaround_bugs);
+	my_dump_int(strict_std_compliance);
+	my_dump_int(error_concealment);
+	my_dump_int(debug);
+	my_dump_int(debug_mv);
+	my_dump_int(err_recognition);
+	my_dump_int64(reordered_opaque);
+	my_dump_int(dct_algo);
+	my_dump_int(idct_algo);
+	my_dump_int(bits_per_coded_sample);
+	my_dump_int(bits_per_raw_sample);
+	my_dump_int(lowres);
+	my_dump_int(thread_count);
+	my_dump_int(thread_type);
+	my_dump_int(active_thread_type);
+	my_dump_int(thread_safe_callbacks);
+	my_dump_int(nsse_weight);
+	my_dump_int(profile);
+	my_dump_int(level);
+	my_dump_enum(skip_loop_filter);
+	my_dump_enum(skip_idct);
+	my_dump_enum(skip_frame);
+	my_dump_int(subtitle_header_size);
+	my_dump_int(initial_padding);
+	my_dump_int(framerate.num);
+	my_dump_int(framerate.den);
+	my_dump_enum(sw_pix_fmt);
+	my_dump_int(pkt_timebase.num);
+	my_dump_int(pkt_timebase.den);
+	my_dump_int(lowres);
+	my_dump_int64(pts_correction_num_faulty_pts); /// Number of incorrect PTS values so far
+	my_dump_int64(pts_correction_num_faulty_dts); /// Number of incorrect DTS values so far
+	my_dump_int64(pts_correction_last_pts);       /// PTS of the last frame
+	my_dump_int64(pts_correction_last_dts);       /// DTS of the last frame
+	my_dump_int(sub_charenc_mode);
+	my_dump_int(skip_alpha);
+	my_dump_int(seek_preroll);
+	my_dump_int(debug_mv);
+	my_dump_int(sub_text_format);
+	my_dump_int(trailing_padding);
+	my_dump_int64(max_pixels);
+	my_dump_int(hwaccel_flags);
+	my_dump_int(apply_cropping);
+
+#if 0
+	// depracated
+	my_dump_int(rc_strategy);
+	my_dump_int(b_frame_strategy);
+	my_dump_int(prediction_method);
+	my_dump_int(pre_me);
+	my_dump_int(intra_quant_bias);
+	my_dump_int(inter_quant_bias);
+	my_dump_int(xvmc_acceleration);
+	my_dump_int(scenechange_factor);
+	my_dump_float(rc_qsquish);
+	my_dump_float(rc_qmod_amp);
+	my_dump_int(rc_qmod_freq);
+	my_dump_float(rc_buffer_aggressivity);
+	my_dump_float(rc_initial_cplx);
+	my_dump_int(coder_type);
+	my_dump_int(context_model);
+	// my_dump_int(lmin);
+	// my_dump_int(lmax);
+	my_dump_int(frame_skip_threshold);
+	my_dump_int(frame_skip_factor);
+	my_dump_int(frame_skip_exp);
+	my_dump_int(frame_skip_cmp);
+	my_dump_int(min_prediction_order);
+	my_dump_int(max_prediction_order);
+	my_dump_int64(timecode_frame_start);
+	my_dump_int(rtp_payload_size);
+	my_dump_int(mv_bits);
+	my_dump_int(header_bits);
+	my_dump_int(i_tex_bits);
+	my_dump_int(p_tex_bits);
+	my_dump_int(i_count);
+	my_dump_int(p_count);
+	my_dump_int(skip_count);
+	my_dump_int(misc_bits);
+	my_dump_int(frame_bits);
+	// my_dump_int64(vbv_delay);
+	my_dump_int(side_data_only_packets);
+#endif
+
+
+#undef my_dump_int
+#undef my_dump_int64
+#undef my_dump_float
+#undef my_dump_enum
+#undef my_dump_uint
+
+#endif
+}
+
 
 /* RFC 2190 MODE A
     0                   1                   2                   3
@@ -195,7 +398,11 @@ typedef struct h264_codec_context_s {
 	int hw_encoder;
 } h264_codec_context_t;
 
-static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
+#ifndef AV_INPUT_BUFFER_PADDING_SIZE
+#define AV_INPUT_BUFFER_PADDING_SIZE FF_INPUT_BUFFER_PADDING_SIZE
+#endif
+
+static uint8_t ff_input_buffer_padding[AV_INPUT_BUFFER_PADDING_SIZE] = { 0 };
 
 #define MAX_CODECS 4
 
@@ -503,8 +710,13 @@ void rtp_callback(struct AVCodecContext *avctx, void *data, int size, int mb_nb)
 }
 #endif
 
+#ifdef WIN32
+const uint8_t *fs_h263_find_resync_marker_reverse(const uint8_t *av_restrict start,
+												  const uint8_t *av_restrict end)
+#else
 const uint8_t *fs_h263_find_resync_marker_reverse(const uint8_t *restrict start,
 												  const uint8_t *restrict end)
+#endif
 {
 	const uint8_t *p = end - 1;
 	start += 1; /* Make sure we never return the original start. */
@@ -872,12 +1084,53 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 	return consume_h264_bitstream(context, frame);
 }
 
+static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile_t *profile)
+{
+	if (context->hw_encoder) {
+		av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
+		av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
+		return;
+	}
+
+	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
+
+	if (profile->options) {
+		switch_event_header_t *hp;
+
+		for (hp = profile->options->headers; hp; hp = hp->next) {
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
+			av_opt_set(context->encoder_ctx->priv_data, hp->name, hp->value, 0);
+		}
+	}
+
+	context->encoder_ctx->colorspace = profile->ctx.colorspace;
+	context->encoder_ctx->color_range = profile->ctx.color_range;
+
+	context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+	if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
+	if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
+	if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
+	if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
+	if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
+	if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
+	if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
+	if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
+	if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
+	if (profile->ctx.qmin >= 0) context->encoder_ctx->qmin = profile->ctx.qmin;
+	if (profile->ctx.qmax >= 0) context->encoder_ctx->qmax = profile->ctx.qmax;
+	if (profile->ctx.max_qdiff >= 0) context->encoder_ctx->max_qdiff = profile->ctx.max_qdiff;
+}
+
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
 	int fps = 15;
 	avcodec_profile_t *profile = NULL;
-	
-#ifdef NVENC_SUPPORT
+	char codec_string[1024];
+
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
 			if (context->codec_settings.video.try_hardware_encoder && (context->encoder = avcodec_find_encoder_by_name("nvenc_h264"))) {
@@ -888,14 +1141,11 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 			}
 		}
 	}
-#endif
 
-	
 	if (!context->encoder) {
 		context->encoder = avcodec_find_encoder(context->av_codec_id);
 	}
 
-	
 	if (!context->encoder) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
 		return SWITCH_STATUS_FALSE;
@@ -1004,42 +1254,40 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->profile = profile->ctx.profile;
 		context->encoder_ctx->level = profile->ctx.level;
 
-		if (context->hw_encoder) {
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
-			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
-		} else {
-			if (profile->options) {
-				switch_event_header_t *hp;
+		set_h264_private_data(context, profile);
+	}
 
-				for (hp = profile->options->headers; hp; hp = hp->next) {
-					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
-					av_opt_set(context->encoder_ctx->priv_data, hp->name, hp->value, 0);
-				}
-			}
+GCC_DIAG_OFF(deprecated-declarations)
+	avcodec_string(codec_string, sizeof(codec_string), context->encoder_ctx, 0);
+GCC_DIAG_ON(deprecated-declarations)
 
-			context->encoder_ctx->colorspace = profile->ctx.colorspace;
-			context->encoder_ctx->color_range = profile->ctx.color_range;
+	dump_encoder_ctx(context->encoder_ctx);
 
-			context->encoder_ctx->flags |= profile->ctx.flags; // CODEC_FLAG_LOOP_FILTER;   // flags=+loop
-			if (profile->ctx.me_cmp >= 0) context->encoder_ctx->me_cmp = profile->ctx.me_cmp;  // cmp=+chroma, where CHROMA = 1
-			if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
-			if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
-			if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
-			if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
-			if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
-			if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
-			if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
-			if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
-			if (profile->ctx.qmin >= 0) context->encoder_ctx->qmin = profile->ctx.qmin;
-			if (profile->ctx.qmax >= 0) context->encoder_ctx->qmax = profile->ctx.qmax;
-			if (profile->ctx.max_qdiff >= 0) context->encoder_ctx->max_qdiff = profile->ctx.max_qdiff;
+	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
+		if (!context->hw_encoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+
+		context->hw_encoder = 0;
+		av_opt_free(context->encoder_ctx->priv_data);
+		set_h264_private_data(context, profile);
+		context->encoder = avcodec_find_encoder(context->av_codec_id);
+
+		if (!context->encoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 
-	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
-		return SWITCH_STATUS_FALSE;
-	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec opened: %s\n", codec_string);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1644,10 +1892,18 @@ static void load_config()
 		profile->ctx.qmin = -1;
 		profile->ctx.qmax = -1;
 		profile->ctx.max_qdiff = -1;
+		profile->ctx.thread_count = switch_parse_cpu_string("cpu/2/4");
+		profile->decoder_thread_count = switch_parse_cpu_string("cpu/2/4");
 
 		if (!strcasecmp(CODEC_MAPS[i], "H264")) {
 			profile->ctx.profile = FF_PROFILE_H264_BASELINE;
 			profile->ctx.level = 41;
+#ifdef AV_CODEC_FLAG_PSNR			
+			profile->ctx.flags |= AV_CODEC_FLAG_PSNR;
+#endif
+#ifdef CODEC_FLAG_LOOP_FILTER
+			profile->ctx.flags |= CODEC_FLAG_LOOP_FILTER;
+#endif
 		}
 	}
 
@@ -1679,14 +1935,14 @@ static void load_config()
 					avcodec_globals.key_frame_min_freq *= 1000;
 				} else if (!strcmp(name, "dec-threads")) {
 					int i;
-					uint threads = switch_parse_cpu_string(value);
+					unsigned int threads = switch_parse_cpu_string(value);
 
 					for (i = 0; i < MAX_CODECS; i++) {
 						avcodec_globals.profiles[i].decoder_thread_count = threads;
 					}
 				} else if (!strcmp(name, "enc-threads")) {
 					int i;
-					uint threads = switch_parse_cpu_string(value);
+					unsigned int threads = switch_parse_cpu_string(value);
 
 					for (i = 0; i < MAX_CODECS; i++) {
 						avcodec_globals.profiles[i].ctx.thread_count = threads;

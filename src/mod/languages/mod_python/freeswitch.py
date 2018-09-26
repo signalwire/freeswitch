@@ -518,8 +518,14 @@ class CoreSession(_object):
     def read(self, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators, digit_timeout=0):
         return _freeswitch.CoreSession_read(self, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators, digit_timeout)
 
+    def detectSpeech(self, arg0, arg1=None, arg2=None, arg3=None):
+        return _freeswitch.CoreSession_detectSpeech(self, arg0, arg1, arg2, arg3)
+
     def playAndGetDigits(self, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name=None, digit_timeout=0, transfer_on_failure=None):
         return _freeswitch.CoreSession_playAndGetDigits(self, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name, digit_timeout, transfer_on_failure)
+
+    def playAndDetectSpeech(self, file, engine, grammar):
+        return _freeswitch.CoreSession_playAndDetectSpeech(self, file, engine, grammar)
 
     def streamFile(self, file, starting_sample_count=0):
         return _freeswitch.CoreSession_streamFile(self, file, starting_sample_count)

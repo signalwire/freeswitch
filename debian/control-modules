@@ -276,7 +276,7 @@ Description: mod_cepstral
 Module: asr_tts/mod_flite
 Description: mod_flite
  Adds mod_flite.
-Build-Depends: libflite-dev
+Build-Depends: libflite-dev | flite1-dev
 
 Module: asr_tts/mod_pocketsphinx
 Description: mod_pocketsphinx
@@ -650,7 +650,7 @@ Build-Depends: python-dev
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
-Build-Depends: git, libv8fs-6.1-dev
+Build-Depends: git, libv8-6.1-dev
 
 Module: languages/mod_yaml
 Description: mod_yaml

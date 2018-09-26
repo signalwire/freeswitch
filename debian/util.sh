@@ -46,9 +46,9 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    testing) echo "stretch";;
-    stable) echo "jessie";;
-    oldstable) echo "wheezy";;
+    testing) echo "buster";;
+    stable) echo "stretch";;
+    oldstable) echo "jessie";;
     *) echo "$1";;
   esac
 }
@@ -56,9 +56,9 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    stretch) echo "testing";;
-    jessie) echo "stable";;
-    wheezy) echo "oldstable";;
+    buster) echo "testing";;
+    stretch) echo "stable";;
+    jessie) echo "oldstable";;
     *) echo "$1";;
   esac
 }
@@ -101,8 +101,8 @@ getlibs () {
   getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-  getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
-    || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
+  #getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
+  #  || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
   #getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 }
@@ -305,12 +305,11 @@ build_debs () {
       use_custom_sources=false
     fi
     if [[ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]]; then
-      echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
+      echo "deb [trusted=yes] http://files.freeswitch.org/repo/deb/freeswitch-1.8/ stretch main" >> "/tmp/fs.sources.list"
     fi
     if [[ "$custom_keyring" == "/tmp/fs.gpg" && ! -r "/tmp/fs.gpg" ]]; then
       cat << EOF > "/tmp/fs.gpg"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
 mQINBFlVeA4BEADg3MkzUvnbuqG7S6ppt0BJIYx2WIlDzsj2EBPBBo7VpppWPGa/
 5IDuCgSTVeNPffo6jlHk6HFK4g3r+oVJIDoSGE8bKHAeva/iQRUx5o56zXBVOu8q
@@ -324,42 +323,43 @@ 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
-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
-=06q/
+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
+Y4o4oqgePeTYzkxVYj8=
+=XPvO
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
     fi
@@ -436,7 +436,7 @@ default_distros () {
   local host_distro="Debian"
   test -z "$(which lsb_release)" || host_distro="$(lsb_release -is)"
   case "$host_distro" in
-    Debian) echo "sid jessie wheezy" ;;
+    Debian) echo "sid stretch jessie" ;;
     Ubuntu) echo "utopic trusty" ;;
     *) err "Unknown host distribution \"$host_distro\"" ;;
   esac

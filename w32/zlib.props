@@ -71,7 +71,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>HAVE_ZLIB;ZLIB_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_ZLIB;ZLIB_STATICLIB;Z_SOLO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -409,7 +409,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(_In_ s
 #define switch_core_media_bug_remove_all(_s) switch_core_media_bug_remove_all_function(_s, NULL)
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream);
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session);
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_core_session_t *orig_session, switch_core_session_t *new_session,
 																		switch_media_bug_callback_t callback, void * (*user_data_dup_func) (switch_core_session_t *, void *));
@@ -1943,6 +1942,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(_In_ switch_file_han
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
 
+/*!
+  \brief Pre close an open file handle, then can get file size etc., no more wirte to the file
+  \param fh the file handle to close
+  \return SWITCH_STATUS_SUCCESS if the file handle was pre closed
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
 
 /*!
   \brief Close an open file handle

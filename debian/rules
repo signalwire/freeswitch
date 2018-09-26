@@ -75,7 +75,7 @@ override_dh_auto_clean:
 		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
 		--with-gnu-ld --with-python --with-erlang --with-openssl \
 		--enable-core-odbc-support --enable-zrtp \
-		--enable-static-v8 --disable-parallel-build-v8
+		--enable-core-pgsql-support
 	touch $@
 
 override_dh_auto_configure: .stamp-configure

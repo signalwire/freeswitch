@@ -1415,9 +1415,25 @@ PKG_CHECK_MODULES([G7221], [g722_1 >= 0.2.0],[
   AM_CONDITIONAL([HAVE_G7221],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_G7221],[false])])
 
-PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.2],[
-  AM_CONDITIONAL([HAVE_CODEC2],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CODEC2],[false])])
+codec2="true"
+PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.5],[],[
+  AC_CHECK_LIB([codec2], [codec2_create],[
+    AC_CHECK_HEADERS([codec2/codec2.h],[
+      CODEC2_LIBS="-lcodec2"
+      CODEC2_CFLAGS=""
+    ], [
+    codec2="false"
+    if module_enabled mod_codec2; then
+        AC_MSG_ERROR([You must install libcodec2-dev to build mod_codec2])
+      else
+        AC_MSG_RESULT([no])
+      fi
+    ])
+  ])
+])
+
+AM_CONDITIONAL([HAVE_CODEC2],[$codec2])
+
 
 PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
@@ -1427,9 +1443,24 @@ PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
   AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 
-PKG_CHECK_MODULES([FLITE], [flite >= 2.0.0],[
-  AM_CONDITIONAL([HAVE_FLITE],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FLITE],[false])])
+flite="true"
+PKG_CHECK_MODULES([FLITE], [flite >= 2],[],[
+  AC_CHECK_LIB([flite], [flite_init],[
+    AC_CHECK_HEADERS([flite/flite.h],[      
+      FLITE_LIBS="-lflite -lflite_cmu_grapheme_lang -lflite_cmu_grapheme_lex -lflite_cmu_indic_lang -lflite_cmu_indic_lex -lflite_cmulex -lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal16 -lflite_cmu_us_kal -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish"
+      FLITE_CFLAGS=""
+    ], [
+    flite="false"
+    if module_enabled mod_flite; then
+        AC_MSG_ERROR([You must install libflite-dev to build mod_flite])
+      else
+        AC_MSG_RESULT([no])
+      fi
+    ])
+  ])
+])
+
+AM_CONDITIONAL([HAVE_FLITE],[$flite])
 
 PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0 >= 1.0.8],[
   AM_CONDITIONAL([HAVE_MONGOC],[true])],[
@@ -1451,16 +1482,19 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
-PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
+PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   AM_CONDITIONAL([HAVE_V8FS],[true])],[
-  PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
+  PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
     AM_CONDITIONAL([HAVE_V8FS],[true])],[
-    if module_enabled mod_v8; then
-      AC_MSG_ERROR([You need to either install libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
-    else
-      AC_MSG_RESULT([no])
-      AM_CONDITIONAL([HAVE_V8FS],[false])
-    fi
+    PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
+      AM_CONDITIONAL([HAVE_V8FS],[true])],[
+      if module_enabled mod_v8; then
+        AC_MSG_ERROR([You need to either install libv8-6.1-dev (>= 6.1.298), libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
+      else
+        AC_MSG_RESULT([no])
+        AM_CONDITIONAL([HAVE_V8FS],[false])
+      fi
+    ])
   ])
 ])
 

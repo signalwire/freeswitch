@@ -1552,15 +1552,16 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_switch_event_types_t swig_types[19]
 #define SWIGTYPE_p_switch_input_args_t swig_types[20]
 #define SWIGTYPE_p_switch_input_type_t swig_types[21]
-#define SWIGTYPE_p_switch_priority_t swig_types[22]
-#define SWIGTYPE_p_switch_queue_t swig_types[23]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[24]
-#define SWIGTYPE_p_switch_status_t swig_types[25]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[26]
-#define SWIGTYPE_p_uint32_t swig_types[27]
-#define SWIGTYPE_p_void swig_types[28]
-static swig_type_info *swig_types[30];
-static swig_module_info swig_module = {swig_types, 29, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_mutex_t swig_types[22]
+#define SWIGTYPE_p_switch_priority_t swig_types[23]
+#define SWIGTYPE_p_switch_queue_t swig_types[24]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[25]
+#define SWIGTYPE_p_switch_status_t swig_types[26]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[27]
+#define SWIGTYPE_p_uint32_t swig_types[28]
+#define SWIGTYPE_p_void swig_types[29]
+static swig_type_info *swig_types[31];
+static swig_module_info swig_module = {swig_types, 30, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -7629,6 +7630,83 @@ XS(_wrap_CoreSession_read) {
 }
 
 
+XS(_wrap_CoreSession_detectSpeech) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) NULL ;
+    char *arg4 = (char *) NULL ;
+    char *arg5 = (char *) NULL ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int res5 ;
+    char *buf5 = 0 ;
+    int alloc5 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 5)) {
+      SWIG_croak("Usage: CoreSession_detectSpeech(self,arg0,arg1,arg2,arg3);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_detectSpeech" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_detectSpeech" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (items > 2) {
+      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_detectSpeech" "', argument " "3"" of type '" "char *""'");
+      }
+      arg3 = reinterpret_cast< char * >(buf3);
+    }
+    if (items > 3) {
+      res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_detectSpeech" "', argument " "4"" of type '" "char *""'");
+      }
+      arg4 = reinterpret_cast< char * >(buf4);
+    }
+    if (items > 4) {
+      res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "CoreSession_detectSpeech" "', argument " "5"" of type '" "char *""'");
+      }
+      arg5 = reinterpret_cast< char * >(buf5);
+    }
+    (arg1)->detectSpeech(arg2,arg3,arg4,arg5);
+    ST(argvi) = sv_newmortal();
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_playAndGetDigits) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7774,6 +7852,68 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     
     if (alloc12 == SWIG_NEWOBJ) delete[] buf12;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_playAndDetectSpeech) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int argvi = 0;
+    char *result = 0 ;
+    dXSARGS;
+    
+    if ((items < 4) || (items > 4)) {
+      SWIG_croak("Usage: CoreSession_playAndDetectSpeech(self,file,engine,grammar);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_playAndDetectSpeech" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_playAndDetectSpeech" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_playAndDetectSpeech" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_playAndDetectSpeech" "', argument " "4"" of type '" "char *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+    result = (char *)(arg1)->playAndDetectSpeech(arg2,arg3,arg4);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    free(result);
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     SWIG_croak_null();
   }
 }
@@ -9856,6 +9996,201 @@ XS(_wrap_Session_ready) {
 }
 
 
+XS(_wrap_Session_callback_mutex_set) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    switch_mutex_t *arg2 = (switch_mutex_t *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Session_callback_mutex_set(self,callback_mutex);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_callback_mutex_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_switch_mutex_t, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_callback_mutex_set" "', argument " "2"" of type '" "switch_mutex_t *""'"); 
+    }
+    arg2 = reinterpret_cast< switch_mutex_t * >(argp2);
+    if (arg1) (arg1)->callback_mutex = arg2;
+    ST(argvi) = sv_newmortal();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Session_callback_mutex_get) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    switch_mutex_t *result = 0 ;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Session_callback_mutex_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_callback_mutex_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    result = (switch_mutex_t *) ((arg1)->callback_mutex);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_switch_mutex_t, 0 | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Session_destroying_set) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Session_destroying_set(self,destroying);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_destroying_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Session_destroying_set" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
+    if (arg1) (arg1)->destroying = arg2;
+    ST(argvi) = sv_newmortal();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Session_destroying_get) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    int result;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Session_destroying_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_destroying_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    result = (int) ((arg1)->destroying);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Session_event_idx_set) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Session_event_idx_set(self,event_idx);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_event_idx_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Session_event_idx_set" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
+    if (arg1) (arg1)->event_idx = arg2;
+    ST(argvi) = sv_newmortal();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Session_event_idx_get) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    int result;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Session_event_idx_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_event_idx_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    result = (int) ((arg1)->event_idx);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_Session_suuid_set) {
   {
     PERL::Session *arg1 = (PERL::Session *) 0 ;
@@ -10281,6 +10616,7 @@ static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_e
 static swig_type_info _swigt__p_switch_event_types_t = {"_p_switch_event_types_t", "switch_event_types_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_mutex_t = {"_p_switch_mutex_t", "switch_mutex_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_queue_t = {"_p_switch_queue_t", "switch_queue_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_state_handler_table_t = {"_p_switch_state_handler_table_t", "switch_state_handler_table_t *", 0, 0, (void*)0, 0};
@@ -10312,6 +10648,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_event_types_t,
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
+  &_swigt__p_switch_mutex_t,
   &_swigt__p_switch_priority_t,
   &_swigt__p_switch_queue_t,
   &_swigt__p_switch_state_handler_table_t,
@@ -10343,6 +10680,7 @@ static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t
 static swig_cast_info _swigc__p_switch_event_types_t[] = {  {&_swigt__p_switch_event_types_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_mutex_t[] = {  {&_swigt__p_switch_mutex_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_queue_t[] = {  {&_swigt__p_switch_queue_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_state_handler_table_t[] = {  {&_swigt__p_switch_state_handler_table_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -10374,6 +10712,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_event_types_t,
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
+  _swigc__p_switch_mutex_t,
   _swigc__p_switch_priority_t,
   _swigc__p_switch_queue_t,
   _swigc__p_switch_state_handler_table_t,
@@ -10519,7 +10858,9 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_getDigits", _wrap_CoreSession_getDigits},
 {"freeswitchc::CoreSession_transfer", _wrap_CoreSession_transfer},
 {"freeswitchc::CoreSession_read", _wrap_CoreSession_read},
+{"freeswitchc::CoreSession_detectSpeech", _wrap_CoreSession_detectSpeech},
 {"freeswitchc::CoreSession_playAndGetDigits", _wrap_CoreSession_playAndGetDigits},
+{"freeswitchc::CoreSession_playAndDetectSpeech", _wrap_CoreSession_playAndDetectSpeech},
 {"freeswitchc::CoreSession_streamFile", _wrap_CoreSession_streamFile},
 {"freeswitchc::CoreSession_sleep", _wrap_CoreSession_sleep},
 {"freeswitchc::CoreSession_flushEvents", _wrap_CoreSession_flushEvents},
@@ -10562,6 +10903,12 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::Session_unsetInputCallback", _wrap_Session_unsetInputCallback},
 {"freeswitchc::Session_setHangupHook", _wrap_Session_setHangupHook},
 {"freeswitchc::Session_ready", _wrap_Session_ready},
+{"freeswitchc::Session_callback_mutex_set", _wrap_Session_callback_mutex_set},
+{"freeswitchc::Session_callback_mutex_get", _wrap_Session_callback_mutex_get},
+{"freeswitchc::Session_destroying_set", _wrap_Session_destroying_set},
+{"freeswitchc::Session_destroying_get", _wrap_Session_destroying_get},
+{"freeswitchc::Session_event_idx_set", _wrap_Session_event_idx_set},
+{"freeswitchc::Session_event_idx_get", _wrap_Session_event_idx_get},
 {"freeswitchc::Session_suuid_set", _wrap_Session_suuid_set},
 {"freeswitchc::Session_suuid_get", _wrap_Session_suuid_get},
 {"freeswitchc::Session_cb_function_set", _wrap_Session_cb_function_set},

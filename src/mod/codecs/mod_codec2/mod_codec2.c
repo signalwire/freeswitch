@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#include <codec2.h>
+#include <codec2/codec2.h>
 
 /* Uncomment to log input/output data for debugging
 #define LOG_DATA

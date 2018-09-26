@@ -88,6 +88,7 @@
                 onICE: function() {},
                 onOfferSDP: function() {}
             },
+      useStream: null,
         }, options);
 
 	this.audioEnabled = true;
@@ -189,6 +190,11 @@
         doCallback(self, "onStream", stream);
     }
 
+    function onRemoteStreamSuccess(self, stream) {
+      console.log("Remote Stream Success");
+      doCallback(self, "onRemoteStream", stream);
+    }
+
     function onICE(self, candidate) {
         self.mediaData.candidate = candidate;
         self.mediaData.candidateList.push(self.mediaData.candidate);
@@ -246,7 +252,6 @@
 
 	    if (iOS) {
 		self.options.useVideo.setAttribute("playsinline", true);
-		self.options.useVideo.setAttribute("controls", true);
 	    }
         }
 
@@ -259,6 +264,7 @@
 	
         //self.options.useAudio.play();
         self.remoteStream = stream;
+        onRemoteStreamSuccess(self, stream);
     }
 
     function onOfferSDP(self, sdp) {
@@ -290,7 +296,7 @@
             self.options.useVideo['src'] = '';
         }
 
-        if (self.localStream) {
+        if (self.localStream && !self.options.useStream) {
             if(typeof self.localStream.stop == 'function') {
                 self.localStream.stop();
             } else {
@@ -307,11 +313,10 @@
         }
 
         if (self.options.localVideo) {
-            self.options.localVideo.style.display = 'none';
-            self.options.localVideo['src'] = '';
+      deactivateLocalVideo(self.options.localVideo);
         }
 
-	if (self.options.localVideoStream) {
+	if (self.options.localVideoStream && !self.options.useStream) {
             if(typeof self.options.localVideoStream.stop == 'function') {
 	        self.options.localVideoStream.stop();
             } else {
@@ -444,7 +449,7 @@
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
 
-	if (self.options.useVideo && self.options.localVideo) {
+    if (self.options.useVideo && self.options.localVideo && !self.options.useStream) {
             getUserMedia({
 		constraints: {
                     audio: false,
@@ -456,17 +461,26 @@
             });
 	}
 
-        getUserMedia({
-            constraints: {
-		audio: mediaParams.audio,
-		video: mediaParams.video
-            },
-            video: mediaParams.useVideo,
-            onsuccess: onSuccess,
-            onerror: onError
-        });
-
-
+    if (self.options.useStream) {
+      if (self.options.useVideo) {
+        self.options.localVideoStream = self.options.useStream;
+        if (self.options.localVideo) {
+          activateLocalVideo(self.options.localVideo, self.options.useStream);
+        }
+      }
+      onSuccess(self.options.useStream);
+    }
+    else {
+      getUserMedia({
+        constraints: {
+          audio: mediaParams.audio,
+          video: mediaParams.video
+        },
+        video: mediaParams.useVideo,
+        onsuccess: onSuccess,
+        onerror: onError
+      });
+    }
 
     };
 
@@ -494,7 +508,7 @@
 	    }
 	}
 
-	if (obj.options.useVideo && obj.options.localVideo) {
+    if (obj.options.useVideo && obj.options.localVideo && !obj.options.useStream) {
             getUserMedia({
 		constraints: {
                     audio: false,
@@ -536,6 +550,11 @@
 		    mandatory: obj.options.videoParams,
 		    optional: opt		
 		};
+          // NOTE: This is a workaround for
+          // https://bugs.chromium.org/p/chromium/issues/detail?id=862325
+          if (!!navigator.userAgent.match(/Android/i)) {
+            delete video.frameRate.min;
+          }
 	    }
 	} else {
 
@@ -557,7 +576,9 @@
 		
 		if (obj.options.useCamera !== "any") {
 		    //video.optional.push({sourceId: obj.options.useCamera});
-		    video.deviceId = obj.options.useCamera;
+        video.deviceId = {
+          exact: obj.options.useCamera,
+        };
 		}
 
 		if (bestFrameRate) {
@@ -635,7 +656,16 @@
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
 
-	if (mediaParams.audio || mediaParams.video) {
+    if (self.options.useStream) {
+      if (self.options.useVideo) {
+        self.options.localVideoStream = self.options.useStream;
+        if (self.options.localVideo) {
+          activateLocalVideo(self.options.localVideo, self.options.useStream);
+        }
+      }
+      onSuccess(self.options.useStream);
+    }
+    else if (mediaParams.audio || mediaParams.video) {
 
             getUserMedia({
 		constraints: {
@@ -941,6 +971,16 @@
         //optional: []
     };
 
+  function activateLocalVideo(el, stream) {
+    el.srcObject = stream;
+    el.style.display = 'block';
+  }
+
+  function deactivateLocalVideo(el) {
+    el.srcObject = null;
+    el.style.display = 'none';
+  }
+
     function getUserMedia(options) {
         var n = navigator,
         media;
@@ -956,8 +996,7 @@
 
         function streaming(stream) {
             if (options.localVideo) {
-                options.localVideo['srcObject'] = stream;
-		options.localVideo.style.display = 'block';
+        activateLocalVideo(options.localVideo, stream);
             }
 
             if (options.onsuccess) {
@@ -1011,28 +1050,20 @@
 	    return;
 	}
 
-	var video = {
-            //mandatory: {},
-            //optional: []
-        }	
-	//FIXME
-	if (cam) {
-	    //video.optional = [{sourceId: cam}];
-	    video.deviceId = {exact: cam};
-	}
-	
 	w = resList[resI][0];
 	h = resList[resI][1];
 	resI++;
 
-	video = {
+	var video = {
 	    width: {exact: w},
 	    height: {exact: h}
-	    //"minWidth": w,
-	    //"minHeight": h,
-	    //"maxWidth": w,
-	    //"maxHeight": h
 	};
+
+  if (cam !== "any") {
+    video.deviceId = {
+      exact: cam,
+    };
+  }
 
 	getUserMedia({
 	    constraints: {

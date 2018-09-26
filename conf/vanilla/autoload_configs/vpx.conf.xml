@@ -22,7 +22,7 @@
       <!-- <param name="enc-threads" value="1"/> -->
 
       <param name="g-profile" value="2"/>
-      <param name="g-timebase" value="1/90000"/>
+      <param name="g-timebase" value="1/1000"/>
       <!-- DEFULT | PARTITIONS -->
       <param name="g-error-resilient" value="PARTITIONS"/>
       <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
@@ -73,7 +73,6 @@
       <!-- <param name="enc-threads" value="1"/> -->
 
       <param name="g-profile" value="2"/>
-      <param name="g-timebase" value="1/90000"/>
       <!-- DEFULT | PARTITIONS -->
       <param name="g-error-resilient" value="PARTITIONS"/>
       <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
@@ -116,6 +115,7 @@
       <param name="token-parts" value="3"/>
       <param name="static-threash" value="1000"/>
       <param name="noise-sensitivity" value="0"/>
+      <!-- DEFAULT or SCREEN -->
       <param name="vp9e-tune-content" value="SCREEN"/>
     </profile>
 

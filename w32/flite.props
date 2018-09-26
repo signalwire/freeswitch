@@ -42,16 +42,17 @@
   <Target Name="flite-headersTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/flite/$(fliteVersion)/flite-$(fliteVersion)-headers.zip"
-           expectfileordirectory="$(fliteLibDir)\include\flite.h" 
+           expectfileordirectory="$(fliteLibDir)\flite\flite.h" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs"
+           moveafter="flite-$(fliteVersion)\include|flite-$(fliteVersion)\flite"
       />
   </Target> 
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(fliteLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(fliteLibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(fliteLibDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -28,7 +28,7 @@ static SWIG_CSharpStringHelperCallback SWIG_csharp_string_callback_real = NULL;
     public delegate string SWIGStringDelegate(string message);
     static SWIGStringDelegate stringDelegate = new SWIGStringDelegate(CreateString);
 
-    [DllImport("$dllimport", EntryPoint="SWIGRegisterStringCallback_$module")]
+    [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="SWIGRegisterStringCallback_$module")]
     public static extern void SWIGRegisterStringCallback_$module(SWIGStringDelegate stringDelegate);
 
     static string CreateString(string cString) {
@@ -84,6 +84,7 @@ char * SWIG_csharp_string_callback(const char * str) {
 %newobject Stream;
 %newobject API::execute;
 %newobject API::executeString;
+%newobject CoreSession::playAndDetectSpeech;
 
 // Allow bitwise compare on flag fields
 %typemap(csclassmodifiers) session_flag_t "[System.Flags] public enum"

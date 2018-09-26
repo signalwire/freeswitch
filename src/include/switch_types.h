@@ -583,12 +583,22 @@ typedef enum {
 typedef uint32_t switch_caller_profile_flag_t;
 
 typedef enum {
+	// flags matching libsndfile
 	SWITCH_AUDIO_COL_STR_TITLE = 0x01,
 	SWITCH_AUDIO_COL_STR_COPYRIGHT = 0x02,
 	SWITCH_AUDIO_COL_STR_SOFTWARE = 0x03,
 	SWITCH_AUDIO_COL_STR_ARTIST = 0x04,
 	SWITCH_AUDIO_COL_STR_COMMENT = 0x05,
-	SWITCH_AUDIO_COL_STR_DATE = 0x06
+	SWITCH_AUDIO_COL_STR_DATE = 0x06,
+	SWITCH_AUDIO_COL_STR_ALBUM = 0x07,
+	SWITCH_AUDIO_COL_STR_LICENSE = 0x08,
+	SWITCH_AUDIO_COL_STR_TRACKNUMBER = 0x09,
+	SWITCH_AUDIO_COL_STR_GENRE = 0x10,
+
+	// custom flags
+	SWITCH_AUDIO_COL_STR_FILE_SIZE = 0xF0,
+	SWITCH_AUDIO_COL_STR_FILE_TRIMMED = 0xF1,
+	SWITCH_AUDIO_COL_STR_FILE_TRIMMED_MS = 0xF2
 } switch_audio_col_t;
 
 typedef enum {
@@ -1356,6 +1366,7 @@ CF_ACCEPT_CNG		- Channel will accept CNG frames
 CF_REDIRECT 		- Channel is being redirected
 CF_BRIDGED			- Channel in a bridge
 CF_HOLD				- Channel is on hold
+CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
@@ -1407,6 +1418,7 @@ typedef enum {
 	CF_REDIRECT,
 	CF_BRIDGED,
 	CF_HOLD,
+	CF_HOLD_BLEG,
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
@@ -1559,6 +1571,8 @@ typedef enum {
 	CF_AWAITING_STREAM_CHANGE,
 	CF_PROCESSING_STREAM_CHANGE,
 	CF_STREAM_CHANGED,
+	CF_ARRANGED_BRIDGE,
+	CF_STATE_REPEAT,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -2775,6 +2789,16 @@ typedef struct secure_settings_s {
 
 /* max number of MKI in a single crypto line supported */
 #define SWITCH_CRYPTO_MKI_MAX	20
+
+struct switch_dial_handle_s;
+typedef struct switch_dial_handle_s switch_dial_handle_t;
+
+struct switch_dial_leg_s;
+typedef struct switch_dial_leg_s switch_dial_leg_t;
+
+struct switch_dial_leg_list_s;
+typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
+
 
 SWITCH_END_EXTERN_C
 #endif

@@ -525,9 +525,9 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		if (img->d_w && layer->last_w) {
 			if (img->d_w < layer->last_w) {
-				change_scale = layer->last_w / img->d_w;
+				change_scale = (double) layer->last_w / img->d_w;
 			} else {
-				change_scale = img->d_w / layer->last_w;
+				change_scale = (double) img->d_w / layer->last_w;
 			}
 
 			layer->crop_x = (int)(layer->crop_x * change_scale);
@@ -637,7 +637,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			int can_zoom = 0;
 			int did_zoom = 0;
 
-			if (screen_aspect < img_aspect) {
+			if (screen_aspect <= img_aspect) {
 				if (img->d_h != layer->screen_h) {
 					scale = (double)layer->screen_h / img->d_h;
 				}
@@ -723,7 +723,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						crop_y = c_y;
 					}
 					
-					set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+					set_bounds(&crop_x, &crop_y, img->w, img->h, crop_w, crop_h);
 
 					//printf("ZOOM %d,%d %d,%d %dx%d\n", crop_x, crop_y, c_x, c_y, zoom_w, zoom_h);
 				}
@@ -744,8 +744,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 					} else {
 						crop_x = use_geometry->x;
 					}
-				} else if (screen_aspect < img_aspect) {
-					crop_x = img->d_w / 4;
+				} else if (screen_aspect <= img_aspect) {
+					crop_x = img->w / 4;
 				}
 
 				if (can_pan) {
@@ -755,7 +755,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						crop_y = use_geometry->y;
 					}
 				} else if (screen_aspect > img_aspect) {
-					crop_y = img->d_h / 4;
+					crop_y = img->h / 4;
 				}
 
 				crop_x = switch_round_to_step(crop_x, layer->cam_opts.snap_factor);
@@ -763,7 +763,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			}
 
 			//printf("BOUNDS B4 %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
-			set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+			set_bounds(&crop_x, &crop_y, img->w, img->h, crop_w, crop_h);
 			//printf("BOUNDS AF %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
 				
 			if (img_changed) {
@@ -789,7 +789,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			layer->crop_h = layer->crop_w / screen_aspect;
 			if (layer->crop_h > img->d_h) layer->crop_h = img->d_h;
 
-			set_bounds(&layer->crop_x, &layer->crop_y, img->d_w, img->d_h, layer->crop_w, layer->crop_h);
+			set_bounds(&layer->crop_x, &layer->crop_y, img->w, img->h, layer->crop_w, layer->crop_h);
 
 			assert(layer->crop_w > 0);
 
@@ -1272,8 +1272,8 @@ void conference_member_set_logo(conference_member_t *member, const char *path)
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
 {
 	switch_rgb_color_t fgcolor, bgcolor;
-	int font_scale = 1;
-	uint16_t font_size = 0;
+	float font_scale = 1;
+	uint16_t min_font_size = 5, max_font_size = 24, font_size = 0;
 	const char *fg = "#cccccc";
 	const char *bg = "#142e55";
 	char *parsed = NULL;
@@ -1338,8 +1338,22 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 			font_face = var;
 		}
 
-		if ((var = switch_event_get_header(params, "font_scale"))) {
+		if ((var = switch_event_get_header(params, "min_font_size"))) {
 			int tmp = atoi(var);
+			if (tmp >= min_font_size && tmp <= max_font_size) {
+				min_font_size = tmp;
+			}
+		}
+
+		if ((var = switch_event_get_header(params, "max_font_size"))) {
+			int tmp = atoi(var);
+			if (tmp >= min_font_size && tmp <= max_font_size) {
+				max_font_size = tmp;
+			}
+		}
+
+		if ((var = switch_event_get_header(params, "font_scale"))) {
+			float tmp = atof(var);
 
 			if (tmp >= 0 && tmp <= 50) {
 				font_scale = tmp;
@@ -1351,8 +1365,8 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 
 	font_size =  (uint16_t)(((double)layer->screen_w / ((double)strlen(text) / 1.2f)) * font_scale);
 
-	if (font_size <= 5) font_size = 5;
-	if (font_size >= 24) font_size = 24;
+	if (font_size <= min_font_size) font_size = min_font_size;
+	if (font_size >= max_font_size) font_size = max_font_size;
 
 	switch_color_set_rgb(&fgcolor, fg);
 	switch_color_set_rgb(&bgcolor, bg);
@@ -1661,6 +1675,13 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 	if (conference->video_canvas_bgimg && !vlayout->bgimg) {
 		conference_video_set_canvas_bgimg(canvas, conference->video_canvas_bgimg);
 	}
+
+	switch_mutex_lock(conference->file_mutex);
+	if (conference->fnode && (conference->fnode->canvas_id == canvas->canvas_id || conference->fnode->canvas_id == -1)) {
+		conference_video_canvas_del_fnode_layer(conference, conference->fnode);
+		conference_video_fnode_check(conference->fnode, canvas->canvas_id);
+	}
+	switch_mutex_unlock(conference->file_mutex);
 
 	switch_mutex_unlock(canvas->write_mutex);
 	switch_mutex_unlock(canvas->mutex);
@@ -2421,6 +2442,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	const char *avatar = NULL, *var = NULL;
 	mcu_canvas_t *canvas;
 	int novid = 0;
+    switch_event_t *event;
 
 	if (member->canvas_id < 0) {
 		return;
@@ -2469,6 +2491,11 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 		avatar = var;
 	}
 
+	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
+		avatar = NULL;
+		force = 0;
+	}
+	
 	switch_mutex_lock(member->flag_mutex);
 	switch_img_free(&member->avatar_png_img);
 
@@ -2478,6 +2505,14 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	}
 
 	if (force && !member->avatar_png_img && member->video_mute_img) {
+        switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+        if (member->conference) {
+            conference_event_add_data(member->conference, event);
+        }       
+        conference_member_add_event_data(member, event);
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vfi-triggered-member");
+        switch_event_fire(&event);
+
 		switch_img_copy(member->video_mute_img, &member->avatar_png_img);
 	}
 

@@ -442,7 +442,9 @@ sub DESTROY {
 *getDigits = *freeswitchc::CoreSession_getDigits;
 *transfer = *freeswitchc::CoreSession_transfer;
 *read = *freeswitchc::CoreSession_read;
+*detectSpeech = *freeswitchc::CoreSession_detectSpeech;
 *playAndGetDigits = *freeswitchc::CoreSession_playAndGetDigits;
+*playAndDetectSpeech = *freeswitchc::CoreSession_playAndDetectSpeech;
 *streamFile = *freeswitchc::CoreSession_streamFile;
 *sleep = *freeswitchc::CoreSession_sleep;
 *flushEvents = *freeswitchc::CoreSession_flushEvents;
@@ -513,6 +515,12 @@ sub DESTROY {
 *unsetInputCallback = *freeswitchc::Session_unsetInputCallback;
 *setHangupHook = *freeswitchc::Session_setHangupHook;
 *ready = *freeswitchc::Session_ready;
+*swig_callback_mutex_get = *freeswitchc::Session_callback_mutex_get;
+*swig_callback_mutex_set = *freeswitchc::Session_callback_mutex_set;
+*swig_destroying_get = *freeswitchc::Session_destroying_get;
+*swig_destroying_set = *freeswitchc::Session_destroying_set;
+*swig_event_idx_get = *freeswitchc::Session_event_idx_get;
+*swig_event_idx_set = *freeswitchc::Session_event_idx_set;
 *swig_suuid_get = *freeswitchc::Session_suuid_get;
 *swig_suuid_set = *freeswitchc::Session_suuid_set;
 *swig_cb_function_get = *freeswitchc::Session_cb_function_get;

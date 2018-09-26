@@ -66,10 +66,8 @@ typedef struct my_vpx_cfg_s {
 
 #define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field);
 
-static void show_config(my_vpx_cfg_t *my_cfg)
+static void show_config(my_vpx_cfg_t *my_cfg, vpx_codec_enc_cfg_t *cfg)
 {
-	vpx_codec_enc_cfg_t *cfg = &my_cfg->enc_cfg;
-
 	SHOW(my_cfg, lossless);
 	SHOW(my_cfg, cpuused);
 	SHOW(my_cfg, token_parts);
@@ -397,29 +395,32 @@ struct vpx_globals vpx_globals = { 0 };
 static switch_status_t init_decoder(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
-	vpx_codec_dec_cfg_t cfg = {0, 0, 0};
-	vpx_codec_flags_t dec_flags = 0;
+
+	//if (context->decoder_init) {
+	//	vpx_codec_destroy(&context->decoder);
+	//	context->decoder_init = 0;
+	//}
 
 	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
+		vpx_codec_dec_cfg_t cfg = {0, 0, 0};
+		vpx_codec_flags_t dec_flags = 0;
 		vp8_postproc_cfg_t ppcfg;
-
-		//if (context->decoder_init) {
-		//	vpx_codec_destroy(&context->decoder);
-		//	context->decoder_init = 0;
-		//}
+		my_vpx_cfg_t *my_cfg = NULL;
 
 		if (context->is_vp9) {
-			cfg.threads = vpx_globals.vp9.dec_cfg.threads;
+			my_cfg = &vpx_globals.vp9;
 		} else {
-			// dec_flags = VPX_CODEC_USE_POSTPROC;
-			cfg.threads = vpx_globals.vp8.dec_cfg.threads;
+			my_cfg = &vpx_globals.vp8;
 		}
+
+		cfg.threads = my_cfg->dec_cfg.threads;
 
 		if (vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->decoder_interface), context->encoder.err, context->encoder.err_detail);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
+				"VPX decoder %s codec init error: [%d:%s]\n",
+				vpx_codec_iface_name(context->decoder_interface), context->decoder.err, context->decoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
-
 
 		context->last_ts = 0;
 		context->last_received_timestamp = 0;
@@ -451,17 +452,11 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	vpx_codec_enc_cfg_t *config = &context->config;
-	int token_parts = 1;
-	int cpus = switch_core_cpu_count();
-	vpx_codec_enc_cfg_t *vp8_enc_cfg = &vpx_globals.vp8.enc_cfg;
-	vpx_codec_enc_cfg_t *vp9_enc_cfg = &vpx_globals.vp9.enc_cfg;
 	my_vpx_cfg_t *my_cfg = NULL;
 
 	if (context->is_vp9) {
-		*config = *vp9_enc_cfg;
 		my_cfg = &vpx_globals.vp9;
 	} else {
-		*config = *vp8_enc_cfg;
 		my_cfg = &vpx_globals.vp8;
 	}
 
@@ -484,30 +479,26 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	}
 
 	if (context->bandwidth > vpx_globals.max_bitrate) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, vpx_globals.max_bitrate);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "REQUESTED BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, vpx_globals.max_bitrate);
 		context->bandwidth = vpx_globals.max_bitrate;
 	}
 
-	context->pkt = NULL;
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE,
-					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n",
-					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
+		"VPX encoder reset (WxH/BW) from %dx%d/%u to %dx%d/%u\n",
+		config->g_w, config->g_h, config->rc_target_bitrate,
+		context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
+	context->pkt = NULL;
 	context->start_time = switch_micro_time_now();
+
+	*config = my_cfg->enc_cfg; // reset whole config to current defaults
 
 	config->g_w = context->codec_settings.video.width;
 	config->g_h = context->codec_settings.video.height;
 	config->rc_target_bitrate = context->bandwidth;
 
-	token_parts = (cpus > 1) ? 3 : 0;
-
 	if (context->is_vp9) {
-		if (vpx_globals.vp9.token_parts > 0) {
-			token_parts = vpx_globals.vp9.token_parts;
-		}
-
-		if (context->lossless) {
+		if (context->lossless || my_cfg->lossless) {
 			config->rc_min_quantizer = 0;
 			config->rc_max_quantizer = 0;
 		}
@@ -517,48 +508,51 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		config->ts_rate_decimator[0] = 1;
 		config->ts_periodicity = 1;
 		config->ts_layer_id[0] = 0;
-	} else {
-		if (vpx_globals.vp8.token_parts > 0) {
-			token_parts = vpx_globals.vp8.token_parts;
-		}
 	}
 
 	if (context->encoder_init) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VPX ENCODER RESET\n");
 		if (vpx_codec_enc_config_set(&context->encoder, config) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
+				"VPX encoder %s codec reconf error: [%d:%s]\n",
+				vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
+			return SWITCH_STATUS_FALSE;
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
+		int token_parts;
 
 		if (vpx_globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
-			show_config(my_cfg);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_INFO, "VPX encoder %s settings:\n", vpx_codec_iface_name(context->encoder_interface));
+			show_config(my_cfg, config);
 		}
 
 		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
+				"VPX encoder %s codec init error: [%d:%s]\n",
+				vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
 
 		context->encoder_init = 1;
 
+		token_parts = (switch_core_cpu_count() > 1) ? 3 : 0;
+		if (my_cfg->token_parts > 0) {
+			token_parts = my_cfg->token_parts;
+		}
 		vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
+		vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, my_cfg->cpuused);
+		vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, my_cfg->static_thresh);
 
 		if (context->is_vp9) {
-			if (context->lossless || vpx_globals.vp9.lossless) {
+			if (context->lossless || my_cfg->lossless) {
 				vpx_codec_control(&context->encoder, VP9E_SET_LOSSLESS, 1);
 			}
 
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, vpx_globals.vp9.cpuused);
-			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, vpx_globals.vp9.static_thresh);
-			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, vpx_globals.vp9.tune_content);
+			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, my_cfg->tune_content);
 		} else {
-			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, vpx_globals.vp8.static_thresh);
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, vpx_globals.vp8.cpuused);
-			vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, vpx_globals.vp8.noise_sensitivity);
+			vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, my_cfg->noise_sensitivity);
 
-			if (vpx_globals.vp8.max_intra_bitrate_pct) {
-				vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, vpx_globals.vp8.max_intra_bitrate_pct);
+			if (my_cfg->max_intra_bitrate_pct) {
+				vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, my_cfg->max_intra_bitrate_pct);
 			}
 		}
 	}
@@ -603,7 +597,7 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	context->codec_settings.video.width = 320;
 	context->codec_settings.video.height = 240;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VPX VER:%s VPX_IMAGE_ABI_VERSION:%d VPX_CODEC_ABI_VERSION:%d\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "VPX VER:%s VPX_IMAGE_ABI_VERSION:%d VPX_CODEC_ABI_VERSION:%d\n",
 		vpx_codec_version_str(), VPX_IMAGE_ABI_VERSION, VPX_CODEC_ABI_VERSION);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -833,8 +827,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	//pts = (now - context->start_time) / 1000;
-	pts = frame->timestamp;
+	pts = (now - context->start_time) / 1000;
+	//pts = frame->timestamp;
 
 	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
 
@@ -1389,7 +1383,36 @@ static void load_config()
 
 	vpx_globals.max_bitrate = 0;
 	vpx_globals.vp8.cpuused = -6;
+	vpx_globals.vp8.enc_cfg.g_profile = 2;
+	vpx_globals.vp8.enc_cfg.g_timebase.den = 1000;
+	vpx_globals.vp8.enc_cfg.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
+	vpx_globals.vp8.enc_cfg.rc_resize_allowed = 1;
+	vpx_globals.vp8.enc_cfg.rc_end_usage = VPX_CBR;
+	vpx_globals.vp8.enc_cfg.rc_target_bitrate = switch_parse_bandwidth_string("1mb");
+	vpx_globals.vp8.enc_cfg.rc_min_quantizer = 4;
+	vpx_globals.vp8.enc_cfg.rc_max_quantizer = 63;
+	vpx_globals.vp8.enc_cfg.rc_overshoot_pct = 50;
+	vpx_globals.vp8.enc_cfg.rc_buf_sz = 5000;
+	vpx_globals.vp8.enc_cfg.rc_buf_initial_sz = 1000;
+	vpx_globals.vp8.enc_cfg.rc_buf_optimal_sz = 1000;
+	vpx_globals.vp8.enc_cfg.kf_max_dist = 360;
+
 	vpx_globals.vp9.cpuused = -6;
+	vpx_globals.vp9.enc_cfg.g_profile = 2;
+	vpx_globals.vp9.enc_cfg.g_timebase.den = 1000;
+	vpx_globals.vp9.enc_cfg.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
+	vpx_globals.vp9.enc_cfg.rc_resize_allowed = 1;
+	vpx_globals.vp9.enc_cfg.rc_end_usage = VPX_CBR;
+	vpx_globals.vp9.enc_cfg.rc_target_bitrate = switch_parse_bandwidth_string("1mb");
+	vpx_globals.vp9.enc_cfg.rc_min_quantizer = 4;
+	vpx_globals.vp9.enc_cfg.rc_max_quantizer = 63;
+	vpx_globals.vp9.enc_cfg.rc_overshoot_pct = 50;
+	vpx_globals.vp9.enc_cfg.rc_buf_sz = 5000;
+	vpx_globals.vp9.enc_cfg.rc_buf_initial_sz = 1000;
+	vpx_globals.vp9.enc_cfg.rc_buf_optimal_sz = 1000;
+	vpx_globals.vp9.enc_cfg.kf_max_dist = 360;
+	vpx_globals.vp9.tune_content = VP9E_CONTENT_SCREEN;
+
 	vpx_globals.vp10.cpuused = -6;
 
 	xml = switch_xml_open_cfg("vpx.conf", &cfg, NULL);
@@ -1477,6 +1500,7 @@ static void load_config()
 						enc_cfg->g_threads = switch_parse_cpu_string(value);
 					} else if (!strcmp(name, "g-profile")) {
 						enc_cfg->g_profile = UINTVAL(val);
+#if 0
 					} else if (!strcmp(name, "g-timebase")) {
 						int num = 0;
 						int den = 0;
@@ -1495,6 +1519,7 @@ static void load_config()
 							enc_cfg->g_timebase.num = num;
 							enc_cfg->g_timebase.den = den;
 						}
+#endif
 					} else if (!strcmp(name, "g-error-resilient")) {
 						char *s = strdup(value);
 						vpx_codec_er_flags_t res = 0;
@@ -1687,11 +1712,11 @@ SWITCH_STANDARD_API(vpx_api_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp10-dec-threads", vpx_globals.vp10.dec_cfg.threads);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp8_cx()));
-		show_config(&vpx_globals.vp8);
+		show_config(&vpx_globals.vp8, &vpx_globals.vp8.enc_cfg);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp9_cx()));
-		show_config(&vpx_globals.vp9);
+		show_config(&vpx_globals.vp9, &vpx_globals.vp9.enc_cfg);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: VP10\n");
-		show_config(&vpx_globals.vp10);
+		show_config(&vpx_globals.vp10, &vpx_globals.vp10.enc_cfg);
 
 		stream->write_function(stream, "+OK\n");
 	} else if (!strcasecmp(cmd, "debug")) {

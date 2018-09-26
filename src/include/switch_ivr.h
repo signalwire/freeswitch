@@ -66,11 +66,11 @@ SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
 
 #define SWITCH_IVR_VERIFY_SILENCE_DIVISOR(divisor) \
-	{ \
+	do { \
 		if ((divisor) <= 0 && (divisor) != -1) { \
 			divisor = 400; \
 		} \
-	}
+	} while (0)
 
 /**
  * @defgroup switch_ivr IVR Library
@@ -510,7 +510,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *cid_name_override,
 													 const char *cid_num_override,
 													 switch_caller_profile_t *caller_profile_override,
-													 switch_event_t *ovars, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
+													 switch_event_t *ovars, switch_originate_flag_t flags,
+													 switch_call_cause_t *cancel_cause,
+													 switch_dial_handle_t *dh);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_session_t *session,
 																switch_core_session_t **bleg,
@@ -540,6 +542,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(_In_ switch_cor
 																 switch_input_callback_function_t dtmf_callback, void *session_data,
 																 void *peer_session_data);
 
+/*!
+  \brief Bridge leaving b-leg in the control of another thread.  Call from b-leg first then call switch_ivr_multi_threaded_bridge on a-leg and b-leg.
+  \param session b-leg session
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/								
+SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *session, switch_core_session_t *peer_session, uint32_t max_wait_ms);
+
+								
 /*!
   \brief Bridge Signalling from one session to another
   \param session one session
@@ -1023,6 +1033,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_co
 																	   switch_img_position_t pos, uint8_t alpha);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on);
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create(switch_dial_handle_t **handle);
+SWITCH_DECLARE(void) switch_dial_handle_destroy(switch_dial_handle_t **handle);
+SWITCH_DECLARE(void) switch_dial_handle_add_leg_list(switch_dial_handle_t *handle, switch_dial_leg_list_t **leg_listP);
+SWITCH_DECLARE(void) switch_dial_leg_list_add_leg(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *dial_string);
+SWITCH_DECLARE(void) switch_dial_leg_list_add_leg_printf(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *fmt, ...);
+SWITCH_DECLARE(void) switch_dial_handle_add_global_var(switch_dial_handle_t *handle, const char *var, const char *val);
+SWITCH_DECLARE(void) switch_dial_handle_add_global_var_printf(switch_dial_handle_t *handle, const char *var, const char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_add_leg_var(switch_dial_leg_t *leg, const char *var, const char *val);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_add_leg_var_printf(switch_dial_leg_t *leg, const char *var, const char *fmt, ...);
+SWITCH_DECLARE(int) switch_dial_handle_get_peers(switch_dial_handle_t *handle, int idx, char **array, int max);
+SWITCH_DECLARE(int) switch_dial_handle_get_vars(switch_dial_handle_t *handle, int idx, switch_event_t **array, int max);
+SWITCH_DECLARE(switch_event_t *) switch_dial_handle_get_global_vars(switch_dial_handle_t *handle);
+SWITCH_DECLARE(switch_event_t *) switch_dial_leg_get_vars(switch_dial_leg_t *leg);
+SWITCH_DECLARE(int) switch_dial_handle_get_total(switch_dial_handle_t *handle);
+SWITCH_DECLARE(void) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh);
 
 /** @} */
 

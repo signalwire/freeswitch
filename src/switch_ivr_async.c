@@ -787,6 +787,8 @@ typedef struct {
 	int mux;
 	int loop;
 	char *file;
+	switch_buffer_t *wbuffer; // only in r&w mode
+	switch_mutex_t *mutex;
 } displace_helper_t;
 
 static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -885,6 +887,9 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 			switch_channel_t *channel;
 
+			if (dh->wbuffer) switch_buffer_destroy(&dh->wbuffer);
+			if (dh->mutex) switch_mutex_destroy(dh->mutex);
+
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
@@ -895,9 +900,24 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			switch_frame_t *rframe = switch_core_media_bug_get_write_replace_frame(bug);
-			if (dh && !dh->mux) {
-				memset(rframe->data, 255, rframe->datalen);
+
+			if (dh) {
+				if (dh->wbuffer) {
+					switch_mutex_lock(dh->mutex);
+					if (switch_buffer_inuse(dh->wbuffer) >= rframe->datalen) {
+						switch_buffer_read(dh->wbuffer, rframe->data, rframe->datalen);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)),
+							SWITCH_LOG_WARNING, "not enough data %" SWITCH_SIZE_T_FMT "\n",
+							switch_buffer_inuse(dh->wbuffer));
+						memset(rframe->data, 255, rframe->datalen);
+					}
+					switch_mutex_unlock(dh->mutex);
+				} else if (!dh->mux) {
+					memset(rframe->data, 255, rframe->datalen);
+				}
 			}
+
 			switch_core_media_bug_set_write_replace_frame(bug, rframe);
 		}
 		break;
@@ -925,6 +945,12 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				rframe->samples = (uint32_t) len;
+
+				if (dh->wbuffer) {
+					switch_mutex_lock(dh->mutex);
+					switch_buffer_write(dh->wbuffer, rframe->data, len * 2 * dh->fh.channels);
+					switch_mutex_unlock(dh->mutex);
+				}
 			}
 
 			rframe->datalen = rframe->samples * 2 * dh->fh.channels;
@@ -1067,6 +1093,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	}
 
 	if (flags && strchr(flags, 'r')) {
+		if (strchr(flags, 'w')) { // r&w mode, both sides can hear the same file
+			int len = dh->fh.samplerate / 10 * 2 * dh->fh.channels; // init with 100ms
+
+			switch_mutex_init(&dh->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_buffer_create_dynamic(&dh->wbuffer, len, len, 0);
+		}
+
 		status = switch_core_media_bug_add(session, "displace", file,
 										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
@@ -1283,6 +1316,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			rh->completion_cause = NULL;
 
 			switch_core_session_get_read_impl(session, &rh->read_impl);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Record session sample rate: %d -> %d\n", rh->fh->native_rate, rh->read_impl.actual_samples_per_second);
+			rh->fh->native_rate = rh->read_impl.actual_samples_per_second;
 
 			if (rh->fh && switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 				switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
@@ -1385,6 +1420,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_size_t len;
 				uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				switch_frame_t frame = { 0 };
+				const char *file_trimmed_ms = NULL;
+				const char *file_size = NULL;
+				const char *file_trimmed = NULL;
 
 				if (rh->thread_ready) {
 					switch_status_t st;
@@ -1423,6 +1461,14 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					//switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 				//}
 
+
+				switch_core_file_pre_close(rh->fh);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_SIZE, &file_size);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED, &file_trimmed);
+				switch_core_file_get_string(rh->fh, SWITCH_AUDIO_COL_STR_FILE_TRIMMED_MS, &file_trimmed_ms);
+				if (file_trimmed_ms) switch_channel_set_variable(channel, "record_trimmed_ms", file_trimmed_ms);
+				if (file_size) switch_channel_set_variable(channel, "record_file_size", file_size);
+				if (file_trimmed) switch_channel_set_variable(channel, "record_trimmed", file_trimmed);
 				switch_core_file_close(rh->fh);
 
 				if (!rh->writes && !rh->vwrites) {
@@ -4941,6 +4987,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void asr_set_json_text_params(switch_core_session_t *session, switch_asr_handle_t *ah)
+{
+	switch_event_header_t *hp;
+	switch_event_t *event, *cevent;
+	const char *variable_prefix = "asr_json_param_";
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_core_get_variables(&event);
+	switch_channel_get_variables(channel, &cevent);
+	switch_event_merge(event, cevent);
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		char *var = hp->name;
+		char *val = hp->value;
+
+		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix)) && !zstr(val)) {
+			char *json_var = var + strlen(variable_prefix);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting json param %s = %s\n", json_var, val);
+			switch_core_asr_text_param(ah, json_var, val);
+		}
+	}
+
+	switch_event_destroy(&event);
+	switch_event_destroy(&cevent);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
 														 const char *mod_name,
 														 const char *grammar, const char *name, const char *dest, switch_asr_handle_t *ah)
@@ -4949,6 +5022,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	switch_status_t status;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	const char *p;
+	int resume = 0;
+
 
 	if (!sth) {
 		/* No speech thread handle available yet, init speech detection first. */
@@ -4960,14 +5035,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		if (!(sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
 			return SWITCH_STATUS_NOT_INITALIZED;
 		}
-
-		switch_ivr_resume_detect_speech(session);
+	} else {
+		resume = 1;
 	}
+
+	asr_set_json_text_params(session, sth->ah);
 
 	if (switch_core_asr_load_grammar(sth->ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 		switch_ivr_stop_detect_speech(session);
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (resume) {
+		switch_ivr_resume_detect_speech(session);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {

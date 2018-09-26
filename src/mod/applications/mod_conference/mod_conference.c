@@ -312,7 +312,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 
 		
-					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER)) {
+					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER) || conference_utils_test_flag(conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 						conference_member_set_floor_holder(conference, imember, 0);
 						floor_holder = conference->floor_holder;
 					}
@@ -1520,7 +1520,7 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 
 	if (conference == NULL) {
 		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
-		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, NULL);
+		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, NULL, NULL);
 		switch_safe_free(dialstr);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -1562,7 +1562,7 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 	}
 
 
-	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, cancel_cause);
+	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, cancel_cause, NULL);
 	switch_mutex_lock(conference->mutex);
 	conference->originating--;
 	switch_mutex_unlock(conference->mutex);
