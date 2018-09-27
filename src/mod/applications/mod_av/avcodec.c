@@ -1095,8 +1095,8 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
-	av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
-	av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
+	//av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
+	//av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
 
 	if (profile->options) {
 		switch_event_header_t *hp;
@@ -1993,6 +1993,9 @@ static void load_config()
 
 					val = atoi(value);
 
+					ctx->profile = FF_PROFILE_H264_BASELINE;
+					ctx->level = 31;
+					
 					if (!strcmp(name, "dec-threads")) {
 						aprofile->decoder_thread_count = switch_parse_cpu_string(value);
 					} else if (!strcmp(name, "enc-threads")) {
