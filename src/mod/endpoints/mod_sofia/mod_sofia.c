@@ -2172,7 +2172,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
-
+			printf("WHAT THE FUCKING HELL? %d\n", switch_channel_test_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE));
 			if (switch_channel_test_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE)) {
 				switch_channel_clear_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE);
 

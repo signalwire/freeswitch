@@ -825,6 +825,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_indications(switch_core_sessi
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 			break;
+		case SWITCH_MESSAGE_INDICATE_RESPOND:
+			switch_core_session_receive_message(session, message);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+
 		default:
 		status = SWITCH_STATUS_FALSE;
 			break;

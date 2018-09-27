@@ -4623,7 +4623,7 @@ static void media_flow_get_mode(switch_media_flow_t smode, const char **mode_str
 	
 }
 
-static void check_stream_changes(switch_core_session_t *session, switch_sdp_type_t sdp_type)
+static void check_stream_changes(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
 	switch_core_session_t *other_session = NULL;
 	switch_core_session_message_t *msg;
@@ -4637,6 +4637,14 @@ static void check_stream_changes(switch_core_session_t *session, switch_sdp_type
 		if (other_session) {
 			switch_channel_set_flag(other_session->channel, CF_PROCESSING_STREAM_CHANGE);
 			switch_channel_set_flag(session->channel, CF_AWAITING_STREAM_CHANGE);
+
+			if (sdp_type == SDP_TYPE_REQUEST && r_sdp) {
+				const char *filter_codec_string = switch_channel_get_variable(session->channel, "filter_codec_string");
+				
+				switch_core_media_merge_sdp_codec_string(session, r_sdp, sdp_type, filter_codec_string);
+			}
+			switch_core_session_check_outgoing_crypto(other_session);
+
 			msg = switch_core_session_alloc(other_session, sizeof(*msg));
 			msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
 			msg->string_arg = switch_core_session_sprintf(other_session, "=%s", switch_channel_get_variable(session->channel, "ep_codec_string"));
@@ -4647,15 +4655,26 @@ static void check_stream_changes(switch_core_session_t *session, switch_sdp_type
 
 	if (other_session) {
 		if (sdp_type == SDP_TYPE_RESPONSE && switch_channel_test_flag(session->channel, CF_PROCESSING_STREAM_CHANGE)) {
+			switch_channel_clear_flag(session->channel, CF_PROCESSING_STREAM_CHANGE);
+			
 			if (switch_channel_test_flag(other_session->channel, CF_AWAITING_STREAM_CHANGE)) {
+				uint8_t proceed = 1;
+				const char *sdp_in, *other_ep;
+
+				if ((other_ep = switch_channel_get_variable(session->channel, "ep_codec_string"))) {
+					switch_channel_set_variable(other_session->channel, "codec_string", other_ep);
+				}
+
+				sdp_in = switch_channel_get_variable(other_session->channel, SWITCH_R_SDP_VARIABLE);
+				switch_core_media_negotiate_sdp(other_session, sdp_in, &proceed, SDP_TYPE_REQUEST);
+				switch_core_media_activate_rtp(other_session);
 				msg = switch_core_session_alloc(other_session, sizeof(*msg));
 				msg->message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 				msg->from = __FILE__;
-				
+
+				switch_channel_set_flag(other_session->channel, CF_AWAITING_STREAM_CHANGE);
 				switch_core_session_queue_message(other_session, msg);
 			}
-			
-			switch_channel_clear_flag(session->channel, CF_PROCESSING_STREAM_CHANGE);
 		}
 
 		switch_core_session_rwunlock(other_session);
@@ -5972,6 +5991,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
 
 			switch_channel_set_variable(session->channel, "video_possible", "true");
+			switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
 			switch_channel_set_flag(session->channel, CF_VIDEO_SDP_RECVD);
 
 			connection = sdp->sdp_connection;
@@ -6347,7 +6367,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	smh->mparams->cng_pt = cng_pt;
 	smh->mparams->cng_rate = cng_rate;
 
-	check_stream_changes(session, sdp_type);
+	check_stream_changes(session, r_sdp, sdp_type);
 
 	return match || vmatch || tmatch || fmatch;
 }
@@ -11545,7 +11565,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	switch_core_media_set_local_sdp(session, buf, SWITCH_TRUE);
 
-	check_stream_changes(session, sdp_type);
+	check_stream_changes(session, NULL, sdp_type);
 
 	switch_safe_free(buf);
 }
@@ -13064,6 +13084,15 @@ SWITCH_DECLARE(switch_jb_t *) switch_core_media_get_jb(switch_core_session_t *se
 //?
 SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
+	switch_core_media_merge_sdp_codec_string(session, r_sdp, sdp_type, switch_core_media_get_codec_string(session));
+}
+
+SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_session_t *session, const char *r_sdp,
+															  switch_sdp_type_t sdp_type, const char *codec_string)
+{
+
+	
+
 	sdp_parser_t *parser;
 	sdp_session_t *sdp;
 	switch_media_handle_t *smh;
@@ -13078,10 +13107,15 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Setting NULL SDP is invalid\n");
 		return;
 	}
+
+	if (zstr(codec_string)) {
+		codec_string = switch_core_media_get_codec_string(session);
+	}
+	
 	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 
 		if ((sdp = sdp_session(parser))) {
-			switch_core_media_set_r_sdp_codec_string(session, switch_core_media_get_codec_string(session), sdp, sdp_type);
+			switch_core_media_set_r_sdp_codec_string(session, codec_string, sdp, sdp_type);
 		}
 
 		sdp_parser_free(parser);

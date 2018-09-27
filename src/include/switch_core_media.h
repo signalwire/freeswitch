@@ -270,6 +270,10 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_ses
 
 
 SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type);
+SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_session_t *session, const char *r_sdp,
+															  switch_sdp_type_t sdp_type, const char *codec_string);
+							  		
+
 SWITCH_DECLARE(void) switch_core_media_reset_autofix(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);

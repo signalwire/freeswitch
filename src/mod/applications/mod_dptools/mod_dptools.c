@@ -587,6 +587,23 @@ SWITCH_STANDARD_APP(sched_heartbeat_function)
 
 }
 
+#define FILTER_CODECS_SYNTAX "<codec string>"
+SWITCH_STANDARD_APP(filter_codecs_function)
+{
+	const char *r_sdp;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	
+	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+	
+	if (data && r_sdp) {
+		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST, data);
+		switch_channel_set_variable(channel, "filter_codec_string", data);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Incomplete data\n");
+	}
+}
+
 
 #define HEARTBEAT_SYNTAX "[0|<seconds>]"
 SWITCH_STANDARD_APP(heartbeat_function)
@@ -6506,6 +6523,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "filter_codecs", "Filter Codecs", "Filter Codecs", filter_codecs_function, FILTER_CODECS_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "enable_keepalive", "Enable Keepalive", "Enable Keepalive",
 				   keepalive_function, KEEPALIVE_SYNTAX, SAF_SUPPORT_NOMEDIA);
