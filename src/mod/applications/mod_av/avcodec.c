@@ -1269,22 +1269,19 @@ GCC_DIAG_ON(deprecated-declarations)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+		if (context->encoder_ctx) {
+			if (avcodec_is_open(context->encoder_ctx)) {
+				avcodec_close(context->encoder_ctx);
+			}
+			av_free(context->encoder_ctx);
+			context->encoder_ctx = NULL;
+		}
 
+		context->encoder = NULL;
 		context->hw_encoder = 0;
-		av_opt_free(context->encoder_ctx->priv_data);
-		set_h264_private_data(context, profile);
-		context->encoder = avcodec_find_encoder(context->av_codec_id);
-
-		if (!context->encoder) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
-			return SWITCH_STATUS_FALSE;
-		}
-
-		if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
-			return SWITCH_STATUS_FALSE;
-		}
+		context->codec_settings.video.try_hardware_encoder = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+		return open_encoder(context, width, height);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec opened: %s\n", codec_string);
