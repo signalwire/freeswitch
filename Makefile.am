@@ -271,6 +271,11 @@ CORE_LIBS += libs/libzrtp/libzrtp.a
 LIBS += libs/libzrtp/third_party/bnlib/libbn.a
 endif
 
+library_includetestdir = $(includedir)/test
+library_includetest_HEADERS = \
+	src/include/test/switch_fct.h \
+	src/include/test/switch_test.h
+
 library_includedir      = $(includedir)
 library_include_HEADERS = \
 	src/include/switch_am_config.h \
