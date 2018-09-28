@@ -611,7 +611,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			for (omember = conference->members; omember; omember = omember->next) {
 				switch_size_t ok = 1;
 
-				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING)) {
+				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING) || !switch_channel_test_flag(omember->channel, CF_AUDIO)) {
 					continue;
 				}
 
@@ -667,13 +667,14 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					write_frame[x] = (int16_t) z;
 				}
 
-				switch_mutex_lock(omember->audio_out_mutex);
-				ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
-				switch_mutex_unlock(omember->audio_out_mutex);
-
-				if (!ok) {
-					switch_mutex_unlock(conference->mutex);
-					goto end;
+				if (switch_channel_test_flag(omember->channel, CF_AUDIO)) {
+					switch_mutex_lock(omember->audio_out_mutex);
+					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+					switch_mutex_unlock(omember->audio_out_mutex);
+					if (!ok) {
+						switch_mutex_unlock(conference->mutex);
+						goto end;
+					}
 				}
 			}
 		} else { /* There is no source audio.  Push silence into all of the buffers */
@@ -688,7 +689,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			for (omember = conference->members; omember; omember = omember->next) {
 				switch_size_t ok = 1;
 
-				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING)) {
+				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING) || !switch_channel_test_flag(omember->channel, CF_AUDIO)) {
 					continue;
 				}
 
