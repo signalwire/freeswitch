@@ -6060,7 +6060,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (!m->m_port) {
-				goto endsdp;
+				continue;
 			}
 
 			vmatch = 0;
@@ -6330,7 +6330,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
- endsdp:
 
 	if (rtcp_auto_audio || rtcp_auto_video) {
 		if (rtcp_auto_audio && !skip_rtcp && !got_audio_rtcp && audio_port) {
