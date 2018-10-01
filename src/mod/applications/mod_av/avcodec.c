@@ -1871,6 +1871,229 @@ void show_codecs(switch_stream_handle_t *stream)
 
 #define UINTVAL(v) (v > 0 ? v : 0);
 
+static void parse_profile(switch_xml_t profile)
+{
+	switch_xml_t options = switch_xml_child(profile, "options");
+	switch_xml_t param = NULL;
+	const char *profile_name = switch_xml_attr(profile, "name");
+	avcodec_profile_t *aprofile = NULL;
+	AVCodecContext *ctx = NULL;
+	int i;
+
+	if (zstr(profile_name)) return;
+
+	for (i = 0; i < MAX_CODECS; i++) {
+		if (!strcmp(profile_name, avcodec_globals.profiles[i].name)) {
+			aprofile = &avcodec_globals.profiles[i];
+			ctx = &aprofile->ctx;
+			break;
+		}
+	}
+
+	if (!ctx) return;
+
+	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
+		const char *name = switch_xml_attr(param, "name");
+		const char *value = switch_xml_attr(param, "value");
+		int val;
+
+		if (zstr(name) || zstr(value)) continue;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
+
+		val = atoi(value);
+
+		ctx->profile = FF_PROFILE_H264_BASELINE;
+		ctx->level = 31;
+
+		if (!strcmp(name, "dec-threads")) {
+			aprofile->decoder_thread_count = switch_parse_cpu_string(value);
+		} else if (!strcmp(name, "enc-threads")) {
+			ctx->thread_count = switch_parse_cpu_string(value);
+		} else if (!strcmp(name, "profile")) {
+			ctx->profile = UINTVAL(val);
+
+			if (ctx->profile == 0 && !strcasecmp(CODEC_MAPS[i], "H264")) {
+				if (!strcasecmp(value, "baseline")) {
+					ctx->profile = FF_PROFILE_H264_BASELINE;
+				} else if (!strcasecmp(value, "main")) {
+					ctx->profile = FF_PROFILE_H264_MAIN;
+				} else if (!strcasecmp(value, "high")) {
+					ctx->profile = FF_PROFILE_H264_HIGH;
+				}
+			}
+		} else if (!strcmp(name, "level")) {
+			ctx->level = UINTVAL(val);
+		} else if (!strcmp(name, "timebase")) {
+			int num = 0;
+			int den = 0;
+			char *slash = strchr(value, '/');
+
+			num = UINTVAL(val);
+
+			if (slash) {
+				slash++;
+				den = atoi(slash);
+
+				if (den < 0) den = 0;
+			}
+
+			if (num && den) {
+				ctx->time_base.num = num;
+				ctx->time_base.den = den;
+			}
+		} else if (!strcmp(name, "flags")) {
+			char *s = strdup(value);
+			int flags = 0;
+
+			if (s) {
+				int argc;
+				char *argv[20];
+				int i;
+
+				argc = switch_separate_string(s, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+				for (i = 0; i < argc; i++) {
+					if (!strcasecmp(argv[i], "UNALIGNED")) {
+#ifdef AV_CODEC_FLAG_UNALIGNED
+						flags |= AV_CODEC_FLAG_UNALIGNED;
+#endif
+					} else if (!strcasecmp(argv[i], "QSCALE")) {
+#ifdef AV_CODEC_FLAG_QSCALE
+						flags |= AV_CODEC_FLAG_QSCALE;
+#endif
+					} else if (!strcasecmp(argv[i], "4MV")) {
+#ifdef AV_CODEC_FLAG_4MV
+						flags |= AV_CODEC_FLAG_4MV;
+#endif
+					} else if (!strcasecmp(argv[i], "CORRUPT")) {
+#ifdef AV_CODEC_FLAG_OUTPUT_CORRUPT
+						flags |= AV_CODEC_FLAG_OUTPUT_CORRUPT;
+#endif
+					} else if (!strcasecmp(argv[i], "QPEL")) {
+#ifdef AV_CODEC_FLAG_QPEL
+						flags |= AV_CODEC_FLAG_QPEL;
+#endif
+					} else if (!strcasecmp(argv[i], "PASS1")) {
+#ifdef AV_CODEC_FLAG_PASS1
+						flags |= AV_CODEC_FLAG_PASS1;
+#endif
+					} else if (!strcasecmp(argv[i], "PASS2")) {
+#ifdef AV_CODEC_FLAG_PASS2
+						flags |= AV_CODEC_FLAG_PASS2;
+#endif
+					} else if (!strcasecmp(argv[i], "FILTER")) {
+#ifdef AV_CODEC_FLAG_LOOP_FILTER
+						flags |= AV_CODEC_FLAG_LOOP_FILTER;
+#endif
+					} else if (!strcasecmp(argv[i], "GRAY")) {
+#ifdef AV_CODEC_FLAG_GRAY
+						flags |= AV_CODEC_FLAG_GRAY;
+#endif
+					} else if (!strcasecmp(argv[i], "PSNR")) {
+#ifdef AV_CODEC_FLAG_PSNR
+						flags |= AV_CODEC_FLAG_PSNR;
+#endif
+					} else if (!strcasecmp(argv[i], "TRUNCATED")) {
+#ifdef AV_CODEC_FLAG_TRUNCATED
+						flags |= AV_CODEC_FLAG_TRUNCATED;
+#endif
+					} else if (!strcasecmp(argv[i], "INTERLACED_DCT")) {
+#ifdef AV_CODEC_FLAG_INTERLACED_DCT
+						flags |= AV_CODEC_FLAG_INTERLACED_DCT;
+#endif
+					} else if (!strcasecmp(argv[i], "LOW_DELAY")) {
+#ifdef AV_CODEC_FLAG_LOW_DELAY
+						flags |= AV_CODEC_FLAG_LOW_DELAY;
+#endif
+					} else if (!strcasecmp(argv[i], "HEADER")) {
+#ifdef AV_CODEC_FLAG_GLOBAL_HEADER
+						flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif
+					} else if (!strcasecmp(argv[i], "BITEXACT")) {
+#ifdef AV_CODEC_FLAG_BITEXACT
+						flags |= AV_CODEC_FLAG_BITEXACT;
+#endif
+					} else if (!strcasecmp(argv[i], "AC_PRED")) {
+#ifdef AV_CODEC_FLAG_AC_PRED
+						flags |= AV_CODEC_FLAG_AC_PRED;
+#endif
+					} else if (!strcasecmp(argv[i], "INTERLACED_ME")) {
+#ifdef AV_CODEC_FLAG_INTERLACED_ME
+						flags |= AV_CODEC_FLAG_INTERLACED_ME;
+#endif
+					} else if (!strcasecmp(argv[i], "CLOSED_GOP")) {
+#ifdef AV_CODEC_FLAG_CLOSED_GOP
+						flags |= AV_CODEC_FLAG_CLOSED_GOP;
+#endif
+					}
+				}
+
+				free(s);
+				ctx->flags = flags;
+			}
+		} else if (!strcmp(name, "me-cmp")) {
+			ctx->me_cmp = UINTVAL(val);
+		} else if (!strcmp(name, "me-range")) {
+			ctx->me_range = UINTVAL(val);
+		} else if (!strcmp(name, "max-b-frames")) {
+			ctx->max_b_frames = UINTVAL(val);
+		} else if (!strcmp(name, "refs")) {
+			ctx->refs = UINTVAL(val);
+		} else if (!strcmp(name, "gop-size")) {
+			ctx->gop_size = UINTVAL(val);
+		} else if (!strcmp(name, "keyint-min")) {
+			ctx->keyint_min = UINTVAL(val);
+		} else if (!strcmp(name, "i-quant-factor")) {
+			ctx->i_quant_factor = UINTVAL(val);
+		} else if (!strcmp(name, "b-quant-factor")) {
+			ctx->b_quant_factor = UINTVAL(val);
+		} else if (!strcmp(name, "qcompress")) {
+			ctx->qcompress = UINTVAL(val);
+		} else if (!strcmp(name, "qmin")) {
+			ctx->qmin = UINTVAL(val);
+		} else if (!strcmp(name, "qmax")) {
+			ctx->qmax = UINTVAL(val);
+		} else if (!strcmp(name, "max-qdiff")) {
+			ctx->max_qdiff = UINTVAL(val);
+		} else if (!strcmp(name, "colorspace")) {
+			ctx->colorspace = UINTVAL(val);
+
+			if (ctx->colorspace > AVCOL_SPC_NB) {
+				ctx->colorspace = AVCOL_SPC_RGB;
+			}
+		} else if (!strcmp(name, "color-range")) {
+			ctx->color_range = UINTVAL(val);
+
+			if (ctx->color_range >  AVCOL_RANGE_NB) {
+				ctx->color_range = 0;
+			}
+		}
+	} // for param
+
+	if (options) {
+		switch_xml_t option = switch_xml_child(options, "option");
+
+		if (aprofile->options) {
+			switch_event_destroy(&aprofile->options);
+		}
+
+		switch_event_create(&aprofile->options, SWITCH_EVENT_CLONE);
+		aprofile->options->flags |= EF_UNIQ_HEADERS;
+
+		for (; option; option = option->next) {
+			const char *name = switch_xml_attr(option, "name");
+			const char *value = switch_xml_attr(option, "value");
+
+			if (zstr(name) || zstr(value)) continue;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", name, value);
+
+			switch_event_add_header_string(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
+		}
+	} // for options
+}
+
 static void load_config()
 {
 	switch_xml_t cfg = NULL, xml = NULL;
@@ -1970,225 +2193,7 @@ static void load_config()
 			switch_xml_t profile = switch_xml_child(profiles, "profile");
 
 			for (; profile; profile = profile->next) {
-				switch_xml_t options = switch_xml_child(profile, "options");
-				switch_xml_t param = NULL;
-				const char *profile_name = switch_xml_attr(profile, "name");
-				avcodec_profile_t *aprofile = NULL;
-				AVCodecContext *ctx = NULL;
-				int i;
-
-				if (zstr(profile_name)) continue;
-
-				for (i = 0; i < MAX_CODECS; i++) {
-					if (!strcmp(profile_name, avcodec_globals.profiles[i].name)) {
-						aprofile = &avcodec_globals.profiles[i];
-						ctx = &aprofile->ctx;
-						break;
-					}
-				}
-
-				if (!ctx) continue;
-
-				for (param = switch_xml_child(profile, "param"); param; param = param->next) {
-					const char *name = switch_xml_attr(param, "name");
-					const char *value = switch_xml_attr(param, "value");
-					int val;
-
-					if (zstr(name) || zstr(value)) continue;
-
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
-
-					val = atoi(value);
-
-					ctx->profile = FF_PROFILE_H264_BASELINE;
-					ctx->level = 31;
-					
-					if (!strcmp(name, "dec-threads")) {
-						aprofile->decoder_thread_count = switch_parse_cpu_string(value);
-					} else if (!strcmp(name, "enc-threads")) {
-						ctx->thread_count = switch_parse_cpu_string(value);
-					} else if (!strcmp(name, "profile")) {
-						ctx->profile = UINTVAL(val);
-
-						if (ctx->profile == 0 && !strcasecmp(CODEC_MAPS[i], "H264")) {
-							if (!strcasecmp(value, "baseline")) {
-								ctx->profile = FF_PROFILE_H264_BASELINE;
-							} else if (!strcasecmp(value, "main")) {
-								ctx->profile = FF_PROFILE_H264_MAIN;
-							} else if (!strcasecmp(value, "high")) {
-								ctx->profile = FF_PROFILE_H264_HIGH;
-							}
-						}
-					} else if (!strcmp(name, "level")) {
-						ctx->level = UINTVAL(val);
-					} else if (!strcmp(name, "timebase")) {
-						int num = 0;
-						int den = 0;
-						char *slash = strchr(value, '/');
-
-						num = UINTVAL(val);
-
-						if (slash) {
-							slash++;
-							den = atoi(slash);
-
-							if (den < 0) den = 0;
-						}
-
-						if (num && den) {
-							ctx->time_base.num = num;
-							ctx->time_base.den = den;
-						}
-					} else if (!strcmp(name, "flags")) {
-						char *s = strdup(value);
-						int flags = 0;
-
-						if (s) {
-							int argc;
-							char *argv[20];
-							int i;
-
-							argc = switch_separate_string(s, '|', argv, (sizeof(argv) / sizeof(argv[0])));
-
-							for (i = 0; i < argc; i++) {
-								if (!strcasecmp(argv[i], "UNALIGNED")) {
-#ifdef AV_CODEC_FLAG_UNALIGNED
-									flags |= AV_CODEC_FLAG_UNALIGNED;
-#endif
-								} else if (!strcasecmp(argv[i], "QSCALE")) {
-#ifdef AV_CODEC_FLAG_QSCALE
-									flags |= AV_CODEC_FLAG_QSCALE;
-#endif
-								} else if (!strcasecmp(argv[i], "4MV")) {
-#ifdef AV_CODEC_FLAG_4MV
-									flags |= AV_CODEC_FLAG_4MV;
-#endif
-								} else if (!strcasecmp(argv[i], "CORRUPT")) {
-#ifdef AV_CODEC_FLAG_OUTPUT_CORRUPT
-									flags |= AV_CODEC_FLAG_OUTPUT_CORRUPT;
-#endif
-								} else if (!strcasecmp(argv[i], "QPEL")) {
-#ifdef AV_CODEC_FLAG_QPEL
-									flags |= AV_CODEC_FLAG_QPEL;
-#endif
-								} else if (!strcasecmp(argv[i], "PASS1")) {
-#ifdef AV_CODEC_FLAG_PASS1
-									flags |= AV_CODEC_FLAG_PASS1;
-#endif
-								} else if (!strcasecmp(argv[i], "PASS2")) {
-#ifdef AV_CODEC_FLAG_PASS2
-									flags |= AV_CODEC_FLAG_PASS2;
-#endif
-								} else if (!strcasecmp(argv[i], "FILTER")) {
-#ifdef AV_CODEC_FLAG_LOOP_FILTER
-									flags |= AV_CODEC_FLAG_LOOP_FILTER;
-#endif
-								} else if (!strcasecmp(argv[i], "GRAY")) {
-#ifdef AV_CODEC_FLAG_GRAY
-									flags |= AV_CODEC_FLAG_GRAY;
-#endif
-								} else if (!strcasecmp(argv[i], "PSNR")) {
-#ifdef AV_CODEC_FLAG_PSNR
-									flags |= AV_CODEC_FLAG_PSNR;
-#endif
-								} else if (!strcasecmp(argv[i], "TRUNCATED")) {
-#ifdef AV_CODEC_FLAG_TRUNCATED
-									flags |= AV_CODEC_FLAG_TRUNCATED;
-#endif
-								} else if (!strcasecmp(argv[i], "INTERLACED_DCT")) {
-#ifdef AV_CODEC_FLAG_INTERLACED_DCT
-									flags |= AV_CODEC_FLAG_INTERLACED_DCT;
-#endif
-								} else if (!strcasecmp(argv[i], "LOW_DELAY")) {
-#ifdef AV_CODEC_FLAG_LOW_DELAY
-									flags |= AV_CODEC_FLAG_LOW_DELAY;
-#endif
-								} else if (!strcasecmp(argv[i], "HEADER")) {
-#ifdef AV_CODEC_FLAG_GLOBAL_HEADER
-									flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-#endif
-								} else if (!strcasecmp(argv[i], "BITEXACT")) {
-#ifdef AV_CODEC_FLAG_BITEXACT
-									flags |= AV_CODEC_FLAG_BITEXACT;
-#endif
-								} else if (!strcasecmp(argv[i], "AC_PRED")) {
-#ifdef AV_CODEC_FLAG_AC_PRED
-									flags |= AV_CODEC_FLAG_AC_PRED;
-#endif
-								} else if (!strcasecmp(argv[i], "INTERLACED_ME")) {
-#ifdef AV_CODEC_FLAG_INTERLACED_ME
-									flags |= AV_CODEC_FLAG_INTERLACED_ME;
-#endif
-								} else if (!strcasecmp(argv[i], "CLOSED_GOP")) {
-#ifdef AV_CODEC_FLAG_CLOSED_GOP
-									flags |= AV_CODEC_FLAG_CLOSED_GOP;
-#endif
-								}
-							}
-
-							free(s);
-							ctx->flags = flags;
-						}
-					} else if (!strcmp(name, "me-cmp")) {
-						ctx->me_cmp = UINTVAL(val);
-					} else if (!strcmp(name, "me-range")) {
-						ctx->me_range = UINTVAL(val);
-					} else if (!strcmp(name, "max-b-frames")) {
-						ctx->max_b_frames = UINTVAL(val);
-					} else if (!strcmp(name, "refs")) {
-						ctx->refs = UINTVAL(val);
-					} else if (!strcmp(name, "gop-size")) {
-						ctx->gop_size = UINTVAL(val);
-					} else if (!strcmp(name, "keyint-min")) {
-						ctx->keyint_min = UINTVAL(val);
-					} else if (!strcmp(name, "i-quant-factor")) {
-						ctx->i_quant_factor = UINTVAL(val);
-					} else if (!strcmp(name, "b-quant-factor")) {
-						ctx->b_quant_factor = UINTVAL(val);
-					} else if (!strcmp(name, "qcompress")) {
-						ctx->qcompress = UINTVAL(val);
-					} else if (!strcmp(name, "qmin")) {
-						ctx->qmin = UINTVAL(val);
-					} else if (!strcmp(name, "qmax")) {
-						ctx->qmax = UINTVAL(val);
-					} else if (!strcmp(name, "max-qdiff")) {
-						ctx->max_qdiff = UINTVAL(val);
-					} else if (!strcmp(name, "colorspace")) {
-						ctx->colorspace = UINTVAL(val);
-
-						if (ctx->colorspace > AVCOL_SPC_NB) {
-							ctx->colorspace = AVCOL_SPC_RGB;
-						}
-					} else if (!strcmp(name, "color-range")) {
-						ctx->color_range = UINTVAL(val);
-
-						if (ctx->color_range >  AVCOL_RANGE_NB) {
-							ctx->color_range = 0;
-						}
-					}
-				} // for param
-
-				if (options) {
-					switch_xml_t option = switch_xml_child(options, "option");
-
-					if (aprofile->options) {
-						switch_event_destroy(&aprofile->options);
-					}
-
-					switch_event_create(&aprofile->options, SWITCH_EVENT_CLONE);
-					aprofile->options->flags |= EF_UNIQ_HEADERS;
-
-					for (; option; option = option->next) {
-						const char *name = switch_xml_attr(option, "name");
-						const char *value = switch_xml_attr(option, "value");
-
-						if (zstr(name) || zstr(value)) continue;
-
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", name, value);
-
-						switch_event_add_header_string(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
-					}
-				} // for options
+				parse_profile(profile);
 			} // for profile
 		} // profiles
 
