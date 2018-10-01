@@ -21,8 +21,8 @@
     </profile>
 
     <profile name="H264">
-      <!-- <param name="dec-threads" value="cpu/2/4"/> -->
-      <!-- <param name="enc-threads" value="1"/> -->
+      <!-- <param name="dec-threads" value="1"/> -->
+      <!-- <param name="enc-threads" value="cpu/2/4"/> -->
 
       <!-- <param name="profile" value="baseline"/> -->
       <!-- <param name="level" value="41"/> -->
@@ -132,6 +132,31 @@ enum AVColorRange {
 
     <profile name="H265">
     </profile>
+
+    <profile name="conference">
+      <param name="dec-threads" value="1"/>
+      <param name="enc-threads" value="cpu/2/4"/>
+
+      <codecs>
+        <!-- profiles will be parsed at runtime
+          to overwrite this profile params if codec matches -->
+        <codec name="H263" profile="H263"/>
+        <codec name="H264" profile="H264"/>
+        <codec name="H264" profile="conference-H264"/>
+      </codecs>
+    </profile>
+
+    <profile name="conference-H264">
+      <options>
+        <option name="preset" value="veryfast"/>
+        <option name="intra_refresh" value="1"/>
+        <option name="tune" value="animation+zerolatency"/>
+        <option name="sc_threshold" value="40"/>
+        <option name="b_strategy" value="1"/>
+        <option name="crf" value="10"/>
+      </options>
+    </profile>
+
   </profiles>
 </configuration>
 
