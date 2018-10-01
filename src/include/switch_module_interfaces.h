@@ -659,6 +659,7 @@ struct switch_video_codec_settings {
 	int32_t height;
 	uint8_t try_hardware_encoder;
 	uint8_t fps;
+	char config_profile_name[64];
 };
 
 union switch_codec_settings {
