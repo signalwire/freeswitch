@@ -413,6 +413,7 @@ typedef struct avcodec_profile_s {
 	int decoder_thread_count;
 	AVCodecContext ctx;
 	switch_event_t *options;
+	switch_event_t *codecs;
 } avcodec_profile_t;
 
 struct avcodec_globals {
@@ -438,6 +439,36 @@ const char *get_profile_name(int codec_id)
 	}
 
 	return "NONE";
+}
+
+static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile);
+
+static void parse_codec_specific_profile(avcodec_profile_t *aprofile, const char *codec_name)
+{
+	switch_xml_t cfg = NULL;
+	switch_xml_t xml = switch_xml_open_cfg("avcodec.conf", &cfg, NULL);
+	switch_xml_t profiles = cfg ? switch_xml_child(cfg, "profiles") : NULL;
+
+	// open config and find the profile to parse
+	if (profiles) {
+		switch_event_header_t *hp;
+
+		for (hp = aprofile->codecs->headers; hp; hp = hp->next) {
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
+			if (!strcmp(hp->name, codec_name)) {
+				switch_xml_t profile;
+				for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
+					const char *name = switch_xml_attr(profile, "name");
+
+					if (!strcmp(hp->value, name)) {
+						parse_profile(aprofile, profile);
+					}
+				}
+			}
+		}
+	}
+
+	if (xml) switch_xml_free(xml);
 }
 
 static void init_profile(avcodec_profile_t *aprofile, const char *name);
@@ -1183,7 +1214,7 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
 	int fps = 15;
-	avcodec_profile_t *profile = NULL;
+	avcodec_profile_t *aprofile = NULL;
 	char codec_string[1024];
 
 	if (!context->encoder) {
@@ -1212,16 +1243,20 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (!zstr(context->codec_settings.video.config_profile_name)) {
-		profile = find_profile(context->codec_settings.video.config_profile_name, SWITCH_FALSE);
+		aprofile = find_profile(context->codec_settings.video.config_profile_name, SWITCH_FALSE);
 	}
 
-	if (!profile) {
-		profile = find_profile(get_profile_name(context->av_codec_id), SWITCH_FALSE);
+	if (!aprofile) {
+		aprofile = find_profile(get_profile_name(context->av_codec_id), SWITCH_FALSE);
 	}
 
-	if (!profile) return SWITCH_STATUS_FALSE;
+	if (!aprofile) return SWITCH_STATUS_FALSE;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using config profile: [%s]\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using config profile: [%s]\n", aprofile->name);
+
+	if (aprofile->codecs) {
+		parse_codec_specific_profile(aprofile, get_profile_name(context->av_codec_id));
+	}
 
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) {
@@ -1281,9 +1316,9 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	context->encoder_ctx->time_base = (AVRational){1, 90};
-	context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
+	context->encoder_ctx->max_b_frames = aprofile->ctx.max_b_frames;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-	context->encoder_ctx->thread_count = profile->ctx.thread_count;
+	context->encoder_ctx->thread_count = aprofile->ctx.thread_count;
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 || context->av_codec_id == AV_CODEC_ID_H263P) {
 #ifndef H263_MODE_B
@@ -1304,10 +1339,10 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->opaque = context;
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
-		context->encoder_ctx->profile = profile->ctx.profile;
-		context->encoder_ctx->level = profile->ctx.level;
+		context->encoder_ctx->profile = aprofile->ctx.profile;
+		context->encoder_ctx->level = aprofile->ctx.level;
 
-		set_h264_private_data(context, profile);
+		set_h264_private_data(context, aprofile);
 	}
 
 GCC_DIAG_OFF(deprecated-declarations)
@@ -1919,22 +1954,14 @@ void show_codecs(switch_stream_handle_t *stream)
 	av_free(codecs);
 }
 
-static void parse_profile(switch_xml_t profile)
+static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 {
 	switch_xml_t options = switch_xml_child(profile, "options");
 	switch_xml_t param = NULL;
 	const char *profile_name = switch_xml_attr(profile, "name");
-	avcodec_profile_t *aprofile = NULL;
 	AVCodecContext *ctx = NULL;
 
 	if (zstr(profile_name)) return;
-
-	aprofile = find_profile(profile_name, SWITCH_TRUE);
-
-	if (!aprofile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot find profile %s\n", profile_name);
-		return;
-	}
 
 	ctx = &aprofile->ctx;
 
@@ -2142,6 +2169,36 @@ static void parse_profile(switch_xml_t profile)
 	} // for options
 }
 
+static void parse_codecs(avcodec_profile_t *aprofile, switch_xml_t codecs)
+{
+	switch_xml_t codec = NULL;
+
+	if (!codecs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no codecs in %s\n", aprofile->name);
+		return;
+	}
+
+	codec = switch_xml_child(codecs, "codec");
+
+	if (aprofile->codecs) {
+		switch_event_destroy(&aprofile->codecs);
+	}
+
+	switch_event_create(&aprofile->codecs, SWITCH_EVENT_CLONE);
+
+	for (; codec; codec = codec->next) {
+		const char *codec_name = switch_xml_attr(codec, "name");
+		const char *profile_name = switch_xml_attr(codec, "profile");
+
+		if (zstr(codec_name) || zstr(profile_name)) continue;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec: %s, profile: %s\n", codec_name, profile_name);
+
+		switch_event_add_header_string(aprofile->codecs, SWITCH_STACK_BOTTOM, codec_name, profile_name);
+	}
+}
+
+
 static void load_config()
 {
 	switch_xml_t cfg = NULL, xml = NULL;
@@ -2186,7 +2243,21 @@ static void load_config()
 			switch_xml_t profile = switch_xml_child(profiles, "profile");
 
 			for (; profile; profile = profile->next) {
-				parse_profile(profile);
+				switch_xml_t codecs = switch_xml_child(profile, "codecs");
+				const char *profile_name = switch_xml_attr(profile, "name");
+				avcodec_profile_t *aprofile = NULL;
+
+				if (zstr(profile_name)) continue;
+
+				aprofile = find_profile(profile_name, SWITCH_TRUE);
+
+				if (!aprofile) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot find profile %s\n", profile_name);
+					continue;
+				}
+
+				parse_profile(aprofile, profile);
+				parse_codecs(aprofile, codecs);
 			} // for profile
 		} // profiles
 
@@ -2248,6 +2319,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avcodec_shutdown)
 
 		if (profile->options) {
 			switch_event_destroy(&profile->options);
+		}
+
+		if (profile->codecs) {
+			switch_event_destroy(&profile->codecs);
 		}
 
 		free(profile);
