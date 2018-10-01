@@ -63,12 +63,15 @@ typedef struct my_vpx_cfg_s {
 
 	vpx_codec_enc_cfg_t enc_cfg;
 	vpx_codec_dec_cfg_t dec_cfg;
+	switch_event_t *codecs;
 } my_vpx_cfg_t;
 
-#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field);
+#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field)
 
 static void show_config(my_vpx_cfg_t *my_cfg, vpx_codec_enc_cfg_t *cfg)
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %s\n", "name", my_cfg->name);
+
 	SHOW(my_cfg, lossless);
 	SHOW(my_cfg, cpuused);
 	SHOW(my_cfg, token_parts);
@@ -110,6 +113,16 @@ static void show_config(my_vpx_cfg_t *my_cfg, vpx_codec_enc_cfg_t *cfg)
 	SHOW(cfg, kf_mode);
 	SHOW(cfg, kf_min_dist);
 	SHOW(cfg, kf_max_dist);
+
+	if (my_cfg->codecs) {
+		switch_event_header_t *hp;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "======== Codec specific profiles ========\n");
+
+		for (hp = my_cfg->codecs->headers; hp; hp = hp->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %s\n", hp->name, hp->value);
+		}
+	}
 }
 
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
@@ -347,7 +360,8 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 #define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
 #endif
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
-SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vpx_shutdown);
+SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, mod_vpx_shutdown, NULL);
 
 struct vpx_context {
 	int debug;
@@ -417,6 +431,7 @@ struct vpx_globals {
 struct vpx_globals vpx_globals = { 0 };
 
 static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig);
+static void parse_profile(my_vpx_cfg_t *my_cfg, switch_xml_t profile);
 
 static switch_status_t init_decoder(switch_codec_t *codec)
 {
@@ -477,6 +492,33 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void parse_codec_specific_profile(my_vpx_cfg_t *my_cfg, const char *codec_name)
+{
+	switch_xml_t cfg = NULL;
+	switch_xml_t xml = switch_xml_open_cfg("vpx.conf", &cfg, NULL);
+	switch_xml_t profiles = cfg ? switch_xml_child(cfg, "profiles") : NULL;
+
+	// open config and find the profile to parse
+	if (profiles) {
+		switch_event_header_t *hp;
+
+		for (hp = my_cfg->codecs->headers; hp; hp = hp->next) {
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", hp->name, hp->value);
+			if (!strcmp(hp->name, codec_name)) {
+				switch_xml_t profile;
+				for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
+					const char *name = switch_xml_attr(profile, "name");
+
+					if (!strcmp(hp->value, name)) {
+						parse_profile(my_cfg, profile);
+					}
+				}
+			}
+		}
+	}
+
+	if (xml) switch_xml_free(xml);
+}
 
 static switch_status_t init_encoder(switch_codec_t *codec)
 {
@@ -484,14 +526,29 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_codec_enc_cfg_t *config = &context->config;
 	my_vpx_cfg_t *my_cfg = NULL;
 	vpx_codec_err_t err;
+	char *codec_name = "vp8";
 
 	if (context->is_vp9) {
-		my_cfg = find_cfg_profile("vp9", SWITCH_FALSE);
-	} else {
-		my_cfg = find_cfg_profile("vp8", SWITCH_FALSE);
+		codec_name = "vp9";
+	}
+
+	if (!zstr(context->codec_settings.video.config_profile_name)) {
+		my_cfg = find_cfg_profile(context->codec_settings.video.config_profile_name, SWITCH_FALSE);
+	}
+
+	if (!my_cfg) {
+		my_cfg = find_cfg_profile(codec_name, SWITCH_FALSE);
 	}
 
 	if (!my_cfg) return SWITCH_STATUS_FALSE;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "config: %s\n", my_cfg->name);
+
+	if (my_cfg->codecs) {
+		parse_codec_specific_profile(my_cfg, codec_name);
+	}
+
+	if (vpx_globals.debug) show_config(my_cfg, &my_cfg->enc_cfg);
 
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
@@ -1508,6 +1565,8 @@ static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig)
 				init_vp9(vpx_globals.profiles[i]);
 			} else if (!strcmp(name, "vp10")) {
 				init_vp10(vpx_globals.profiles[i]);
+			} else {
+				init_vp8(vpx_globals.profiles[i]);
 			}
 
 			return vpx_globals.profiles[i];
@@ -1528,19 +1587,12 @@ static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig)
 
 #define UINTVAL(v) (v > 0 ? v : 0);
 
-static void parse_config(switch_xml_t profile)
+static void parse_profile(my_vpx_cfg_t *my_cfg, switch_xml_t profile)
 {
 	switch_xml_t param = NULL;
-	const char *profile_name = switch_xml_attr(profile, "name");
-	my_vpx_cfg_t *my_cfg = NULL;
+
 	vpx_codec_dec_cfg_t *dec_cfg = NULL;
 	vpx_codec_enc_cfg_t *enc_cfg = NULL;
-
-	if (zstr(profile_name)) return;
-
-	my_cfg = find_cfg_profile(profile_name, SWITCH_TRUE);
-
-	if (!my_cfg) return;
 
 	dec_cfg = &my_cfg->dec_cfg;
 	enc_cfg = &my_cfg->enc_cfg;
@@ -1553,7 +1605,7 @@ static void parse_config(switch_xml_t profile)
 		if (!enc_cfg || !dec_cfg) break;
 		if (zstr(name) || zstr(value)) continue;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", my_cfg->name, name, value);
 
 		val = atoi(value);
 
@@ -1722,6 +1774,36 @@ static void parse_config(switch_xml_t profile)
 			my_cfg->tune_content = tune;
 		}
 	} // for param
+
+}
+
+static void parse_codecs(my_vpx_cfg_t *my_cfg, switch_xml_t codecs)
+{
+	switch_xml_t codec = NULL;
+
+	if (!codecs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no codecs in %s\n", my_cfg->name);
+		return;
+	}
+
+	codec = switch_xml_child(codecs, "codec");
+
+	if (my_cfg->codecs) {
+		switch_event_destroy(&my_cfg->codecs);
+	}
+
+	switch_event_create(&my_cfg->codecs, SWITCH_EVENT_CLONE);
+
+	for (; codec; codec = codec->next) {
+		const char *name = switch_xml_attr(codec, "name");
+		const char *profile = switch_xml_attr(codec, "profile");
+
+		if (zstr(name) || zstr(profile)) continue;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec: %s, profile: %s\n", name, profile);
+
+		switch_event_add_header_string(my_cfg->codecs, SWITCH_STACK_BOTTOM, name, profile);
+	}
 }
 
 static void load_config()
@@ -1731,7 +1813,6 @@ static void load_config()
 
 	memset(&vpx_globals, 0, sizeof(vpx_globals));
 	vpx_globals.max_bitrate = 0;
-	vpx_globals.debug = 1;
 
 	xml = switch_xml_open_cfg("vpx.conf", &cfg, NULL);
 
@@ -1748,7 +1829,9 @@ static void load_config()
 
 				if (zstr(name) || zstr(value)) continue;
 
-				if (!strcmp(name, "max-bitrate")) {
+				if (!strcmp(name, "debug")) {
+					vpx_globals.debug = atoi(value);
+				} else if (!strcmp(name, "max-bitrate")) {
 					vpx_globals.max_bitrate = switch_parse_bandwidth_string(value);
 				} else if (!strcmp(name, "rtp-slice-size")) {
 					int val = atoi(value);
@@ -1769,8 +1852,18 @@ static void load_config()
 			switch_xml_t profile = switch_xml_child(profiles, "profile");
 
 			for (; profile; profile = profile->next) {
-				parse_config(profile);
+				switch_xml_t codecs = switch_xml_child(profile, "codecs");
+				const char *profile_name = switch_xml_attr(profile, "name");
+				my_vpx_cfg_t *my_cfg = NULL;
 
+				if (zstr(profile_name)) continue;
+
+				my_cfg = find_cfg_profile(profile_name, SWITCH_TRUE);
+
+				if (!my_cfg) continue;
+
+				parse_profile(my_cfg, profile);
+				parse_codecs(my_cfg, codecs);
 			} // for profile
 		} // profiles
 
@@ -1826,6 +1919,7 @@ SWITCH_STANDARD_API(vpx_api_function)
 	if (!strcasecmp(cmd, "reload")) {
 		const char *err;
 		my_vpx_cfg_t *my_cfg;
+		int i;
 
 		switch_xml_reload(&err);
 		stream->write_function(stream, "Reload XML [%s]\n", err);
@@ -1835,24 +1929,19 @@ SWITCH_STANDARD_API(vpx_api_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "rtp-slice-size", vpx_globals.rtp_slice_size);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "key-frame-min-freq", vpx_globals.key_frame_min_freq);
 
-		my_cfg = find_cfg_profile("vp8", SWITCH_FALSE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp8_cx()));
-		if (my_cfg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", my_cfg->dec_cfg.threads);
-			show_config(my_cfg, &my_cfg->enc_cfg);
-		}
+		for (i = 0; i < MAX_PROFILES; i++) {
+			my_cfg = vpx_globals.profiles[i];
 
-		my_cfg = find_cfg_profile("vp9", SWITCH_FALSE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp9_cx()));
-		if (my_cfg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", my_cfg->dec_cfg.threads);
-			show_config(my_cfg, &my_cfg->enc_cfg);
-		}
+			if (!my_cfg) break;
 
-		my_cfg = find_cfg_profile("vp10", SWITCH_FALSE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: VP10\n");
-		if (my_cfg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-26s = %d\n", "vp8-dec-threads", my_cfg->dec_cfg.threads);
+			if (!strcmp(my_cfg->name, "vp8")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp8_cx()));
+			} else if (!strcmp(my_cfg->name, "vp9")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", vpx_codec_iface_name(vpx_codec_vp9_cx()));
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec: %s\n", my_cfg->name);
+			}
+
 			show_config(my_cfg, &my_cfg->enc_cfg);
 		}
 
@@ -1899,6 +1988,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vpx_shutdown)
+{
+	int i;
+
+	for (i = 0; i < MAX_PROFILES; i++) {
+		my_vpx_cfg_t *my_cfg = vpx_globals.profiles[i];
+
+		if (!my_cfg) break;
+
+		if (my_cfg->codecs) {
+			switch_event_destroy(&my_cfg->codecs);
+		}
+
+		free(my_cfg);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 #endif
 #endif
 /* For Emacs:
