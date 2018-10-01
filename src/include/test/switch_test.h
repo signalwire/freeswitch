@@ -156,7 +156,7 @@ static void fst_session_park(switch_core_session_t *session)
  * Define the beginning of a test suite not associated with a module. 
  * @param suite the name of this test suite
  */
-#define FST_SUITE_BEGIN(suite) FCT_FIXTURE_SUITE_BGN \
+#define FST_SUITE_BEGIN(suite) \
 	const char *fst_test_module = NULL; \
 	FCT_FIXTURE_SUITE_BGN(suite)
 
