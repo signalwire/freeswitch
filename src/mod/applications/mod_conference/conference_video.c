@@ -3371,6 +3371,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							canvas->write_codecs[i] = switch_core_alloc(conference->pool, sizeof(codec_set_t));
 							canvas->write_codecs_count = i+1;
 
+							if (conference->video_codec_config_profile_name) {
+								switch_set_string(conference->video_codec_settings.video.config_profile_name, conference->video_codec_config_profile_name);
+							}
+
 							if (switch_core_codec_copy(check_codec, &canvas->write_codecs[i]->codec,
 													   &conference->video_codec_settings, conference->pool) == SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,

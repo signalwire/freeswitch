@@ -2767,6 +2767,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	int scale_h264_canvas_height = 0;
 	int scale_h264_canvas_fps_divisor = 0;
 	char *scale_h264_canvas_bandwidth = NULL;
+	char *video_codec_config_profile_name = NULL;
 	int tmp;
 
 	/* Validate the conference name */
@@ -3136,6 +3137,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				if (scale_h264_canvas_fps_divisor < 0) scale_h264_canvas_fps_divisor = 0;
 			} else if (!strcasecmp(var, "scale-h264-canvas-bandwidth") && !zstr(val)) {
 				scale_h264_canvas_bandwidth = val;
+			} else if (!strcasecmp(var, "video-codec-config-profile-name") && !zstr(val)) {
+				video_codec_config_profile_name = val;
 			}
 		}
 
@@ -3203,6 +3206,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->auto_kps_debounce = auto_kps_debounce;
 	switch_event_create_plain(&conference->variables, SWITCH_EVENT_CHANNEL_DATA);
 	conference->conference_video_mode = conference_video_mode;
+	conference->video_codec_config_profile_name = switch_core_strdup(conference->pool, video_codec_config_profile_name);
 
 	conference->scale_h264_canvas_width = scale_h264_canvas_width;
 	conference->scale_h264_canvas_height = scale_h264_canvas_height;
