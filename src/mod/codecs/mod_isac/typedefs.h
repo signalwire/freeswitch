@@ -61,6 +61,9 @@
 #define WEBRTC_ARCH_X86_64
 #define WEBRTC_ARCH_64_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
+#elif defined(__aarch64__)
+#define WEBRTC_ARCH_64_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(_M_IX86) || defined(__i386__)
 #define WEBRTC_ARCH_X86_FAMILY
 #define WEBRTC_ARCH_X86
