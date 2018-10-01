@@ -409,7 +409,7 @@ static uint8_t ff_input_buffer_padding[AV_INPUT_BUFFER_PADDING_SIZE] = { 0 };
 #define MAX_PROFILES 100
 
 typedef struct avcodec_profile_s {
-	char name[20];
+	char name[64];
 	int decoder_thread_count;
 	AVCodecContext ctx;
 	switch_event_t *options;
@@ -1211,9 +1211,17 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		return SWITCH_STATUS_FALSE;
 	}
 
-	profile = find_profile(get_profile_name(context->av_codec_id), SWITCH_FALSE);
+	if (!zstr(context->codec_settings.video.config_profile_name)) {
+		profile = find_profile(context->codec_settings.video.config_profile_name, SWITCH_FALSE);
+	}
+
+	if (!profile) {
+		profile = find_profile(get_profile_name(context->av_codec_id), SWITCH_FALSE);
+	}
 
 	if (!profile) return SWITCH_STATUS_FALSE;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using config profile: [%s]\n", profile->name);
 
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) {
