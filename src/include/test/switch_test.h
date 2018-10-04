@@ -59,13 +59,41 @@
 /**
  * initialize FS core from optional configuration dir
  */
-static void fst_init_core_and_modload(const char *confdir)
+static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 {
 	const char *err;
+	// Let FreeSWITCH core pick these
+	//SWITCH_GLOBAL_dirs.base_dir = strdup("/usr/local/freeswitch");
+	//SWITCH_GLOBAL_dirs.mod_dir = strdup("/usr/local/freeswitch/mod");
+	//SWITCH_GLOBAL_dirs.lib_dir = strdup("/usr/local/freeswitch/lib");
+	//SWITCH_GLOBAL_dirs.temp_dir = strdup("/tmp");
+
+	if (zstr(basedir)) {
+		basedir = ".";
+	}
+
+	// Allow test to define the runtime dir
 	if (!zstr(confdir)) {
 		SWITCH_GLOBAL_dirs.conf_dir = strdup(confdir);
+	} else {
+		SWITCH_GLOBAL_dirs.conf_dir = switch_mprintf("%s%sconf", basedir, SWITCH_PATH_SEPARATOR);
 	}
-	SWITCH_GLOBAL_dirs.sounds_dir = strdup("./");
+
+	SWITCH_GLOBAL_dirs.log_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.run_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.recordings_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.sounds_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.cache_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.db_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.script_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.htdocs_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.grammar_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.fonts_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.images_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.storage_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.data_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.localstate_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+
 	switch_core_init_and_modload(0, SWITCH_TRUE, &err);
 	switch_sleep(1 * 1000000);
 	switch_core_set_variable("sound_prefix", "");
@@ -122,7 +150,7 @@ static void fst_session_park(switch_core_session_t *session)
 	{ \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
-		fst_init_core_and_modload(confdir);
+		fst_init_core_and_modload(confdir, NULL);
 
 /**
  * Define the end of a freeswitch core test driver.
