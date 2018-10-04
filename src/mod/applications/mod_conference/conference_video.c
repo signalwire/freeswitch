@@ -49,9 +49,7 @@ int conference_video_set_fps(conference_obj_t *conference, float fps)
 		return 0;
 	}
 
-	conference->video_fps.fps = fps;
-	conference->video_fps.ms = (int) 1000 / fps;
-	conference->video_fps.samples = (int) 90000 / conference->video_fps.ms;
+	switch_calc_video_fps(&conference->video_fps, fps);
 
 	for (j = 0; j <= conference->canvas_count; j++) {
 		if (conference->canvases[j]) {

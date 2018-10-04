@@ -1910,7 +1910,7 @@ switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_
 	fps = (float)atof(argv[2]);
 
 	if (conference_video_set_fps(conference, fps)) {
-		stream->write_function(stream, "+OK FPS set to [%s]\n", argv[2]);
+		stream->write_function(stream, "+OK FPS set to [%0.2f]\n", conference->video_fps.fps);
 	} else {
 		stream->write_function(stream, "-ERR Invalid FPS [%s]\n", argv[2]);
 	}

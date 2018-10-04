@@ -119,13 +119,6 @@
 
 /* STRUCTS */
 
-struct conference_fps {
-	float fps;
-	int ms;
-	int samples;
-};
-
-
 typedef enum {
 	CONF_SILENT_REQ = (1 << 0),
 	CONF_SILENT_DONE = (1 << 1)
@@ -749,7 +742,7 @@ typedef struct conference_obj {
 	switch_mutex_t *canvas_mutex;
 	switch_hash_t *layout_hash;
 	switch_hash_t *layout_group_hash;
-	struct conference_fps video_fps;
+	switch_fps_t video_fps;
 	int recording_members;
 	uint32_t video_floor_packets;
 	video_layout_t *new_personal_vlayout;

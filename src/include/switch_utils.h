@@ -1072,6 +1072,15 @@ static inline int32_t switch_calc_bitrate(int w, int h, int quality, double fps)
 
 }
 
+static inline void switch_calc_fps(switch_fps_t *fpsP, float fps, int samplerate)
+{
+	fpsP->fps = fps;
+	fpsP->ms = (int)(1000 / fps);
+	fpsP->samples = (int)(samplerate / fps);
+	return;
+}
+#define switch_calc_video_fps(fpsP, fps) switch_calc_fps(fpsP, fps, 90000)
+
 static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 {
 	float bw = 0;

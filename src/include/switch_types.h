@@ -1620,6 +1620,11 @@ typedef struct switch_vid_params_s {
 	uint32_t d_height;
 } switch_vid_params_t;
 
+typedef struct switch_fps_s {
+	float fps;
+	int ms;
+	int samples;
+} switch_fps_t;
 
 
 typedef enum {

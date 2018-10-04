@@ -6661,21 +6661,6 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 
 }
 
-typedef struct core_fps_s {
-	float fps;
-	int ms;
-	int samples;
-} core_fps_t;
-
-static int video_get_fps(core_fps_t *fpsP, float fps)
-{
-	fpsP->fps = fps;
-	fpsP->ms = (int) 1000 / fps;
-	fpsP->samples = (int) 90000 / fpsP->ms;
-
-	return 0;
-}
-
 static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_session_t *session = (switch_core_session_t *) obj;
@@ -6688,7 +6673,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	int fps;
 	switch_video_read_flag_t read_flags = SVR_BLOCK;
 	switch_core_session_t *b_session = NULL;
-	core_fps_t fps_data = { 0 };
+	switch_fps_t fps_data = { 0 };
 	switch_image_t *last_frame = NULL;
 	
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
@@ -6732,8 +6717,8 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	}
 
 
-	video_get_fps(&fps_data, fps);
-	switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , fps_data.samples, switch_core_session_get_pool(session));
+	switch_calc_video_fps(&fps_data, fps);
+	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, switch_core_session_get_pool(session));
 
 	while (smh->video_write_thread_running > 0 &&
 		   switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
@@ -6744,8 +6729,8 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 		//if (smh->video_write_fh && smh->video_write_fh->mm.source_fps && smh->video_write_fh->mm.source_fps != fps) {
 		//	switch_core_timer_destroy(&timer);
-		//	video_get_fps(&fps_data, fps);
-		//	switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , fps_data.samples, switch_core_session_get_pool(session));
+		//	switch_calc_video_fps(&fps_data, fps);
+		//	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, switch_core_session_get_pool(session));
 		//}
 
 		if (smh->video_write_fh && !switch_test_flag(smh->video_write_fh, SWITCH_FILE_FLAG_VIDEO_EOF)) {
@@ -6779,7 +6764,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 		switch_img_fill(last_frame, 0, 0, last_frame->d_w, last_frame->d_h, &bgcolor);
 		fr.img = last_frame;
 
-		for (x = 0; x < fps / 2; x++) {
+		for (x = 0; x < fps_data.fps / 2; x++) {
 			switch_core_timer_next(&timer);
 			fr.timestamp = timer.samplecount;
 			fr.flags = SFF_USE_VIDEO_TIMESTAMP|SFF_RAW_RTP|SFF_RAW_RTP_PARSE_FRAME;
