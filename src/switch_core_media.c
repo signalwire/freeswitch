@@ -4662,7 +4662,7 @@ static void check_stream_changes(switch_core_session_t *session, switch_sdp_type
 	}
 }
 
-static void switch_core_media_set_smode(switch_core_session_t *session, switch_media_type_t type, switch_media_flow_t smode, switch_sdp_type_t sdp_type)
+SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session, switch_media_type_t type, switch_media_flow_t smode, switch_sdp_type_t sdp_type)
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;

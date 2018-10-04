@@ -2096,7 +2096,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	const char *forwardvar = switch_channel_get_variable(channel, forwardvar_name);
 	int forwardval = 70;
 	const char *use_dialplan = dialplan, *use_context = context;
-
+	switch_media_flow_t flow;
+	
 	if (zstr(forwardvar)) {
 		forwardvar_name = SWITCH_MAX_FORWARDS_VARIABLE; /* fall back to max_forwards variable for setting maximum */
 		forwardvar = switch_channel_get_variable(channel, forwardvar_name);
@@ -2109,6 +2110,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if ((flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
+		msg.from = __FILE__;
+
+		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
+		switch_core_session_receive_message(session, &msg);
+	}
+	
 	max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 	switch_channel_set_variable(channel, forwardvar_name, max_forwards);
 
