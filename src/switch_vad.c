@@ -37,20 +37,18 @@
 #endif
 
 struct switch_vad_s {
-	int talking;
-	int talked;
-	int talk_hits;
-	int listen_hits;
-	int hangover;
-	int hangover_len;
-	int divisor;
-	int thresh;
+	// configs
 	int channels;
 	int sample_rate;
 	int debug;
-	int _hangover_len;
-	int _thresh;
-	int _listen_hits;
+	int divisor;
+	int thresh;
+	int voice_samples_thresh;
+	int silence_samples_thresh;
+
+	// VAD state
+	int voice_samples;
+	int silence_samples;
 	switch_vad_state_t vad_state;
 #ifdef SWITCH_HAVE_FVAD
 	Fvad *fvad;
@@ -82,9 +80,13 @@ SWITCH_DECLARE(switch_vad_t *) switch_vad_init(int sample_rate, int channels)
 	memset(vad, 0, sizeof(*vad));
 	vad->sample_rate = sample_rate ? sample_rate : 8000;
 	vad->channels = channels;
-	vad->_hangover_len = 25;
-	vad->_thresh = 100;
-	vad->_listen_hits = 10;
+	vad->silence_samples_thresh = 500 * (vad->sample_rate / 1000);
+	vad->voice_samples_thresh = 200 * (vad->sample_rate / 1000);
+	vad->thresh = 100;
+	vad->divisor = vad->sample_rate / 8000;
+	if (vad->divisor <= 0) {
+		vad->divisor = 1;
+	}
 	switch_vad_reset(vad);
 
 	return vad;
@@ -129,13 +131,29 @@ SWITCH_DECLARE(void) switch_vad_set_param(switch_vad_t *vad, const char *key, in
 	if (!key) return;
 
 	if (!strcmp(key, "hangover_len")) {
-		vad->hangover_len = vad->_hangover_len = val;
+		/* convert old-style hits to samples assuming 20ms ptime */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "hangover_len is deprecated, setting silence_ms to %d\n", 20 * val);
+		switch_vad_set_param(vad, "silence_ms", val * 20);
+	} else if (!strcmp(key, "silence_ms")) {
+		if (val > 0) {
+			vad->silence_samples_thresh = val * (vad->sample_rate / 1000);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring invalid silence_ms of %d\n", val);
+		}
 	} else if (!strcmp(key, "thresh")) {
-		vad->thresh = vad->_thresh = val;
+		vad->thresh = val;
 	} else if (!strcmp(key, "debug")) {
 		vad->debug = val;
+	} else if (!strcmp(key, "voice_ms")) {
+		if (val > 0) {
+			vad->voice_samples_thresh = val * (vad->sample_rate / 1000);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring invalid voice_ms of %d\n", val);
+		}
 	} else if (!strcmp(key, "listen_hits")) {
-		vad->listen_hits = vad->_listen_hits = val;
+		/* convert old-style hits to samples assuming 20ms ptime */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "listen_hits is deprecated, setting voice_ms to %d\n", 20 * val);
+		switch_vad_set_param(vad, "voice_ms", 20 * val);
 	}
 }
 
@@ -144,34 +162,23 @@ SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad)
 #ifdef SWITCH_HAVE_FVAD
 	if (vad->fvad) {
 		fvad_reset(vad->fvad);
-		return;
 	}
 #endif
-
-	vad->talking = 0;
-	vad->talked = 0;
-	vad->talk_hits = 0;
-	vad->hangover = 0;
-	vad->listen_hits = vad->_listen_hits;
-	vad->hangover_len = vad->_hangover_len;
-	vad->divisor = vad->sample_rate / 8000;
-	vad->thresh = vad->_thresh;
 	vad->vad_state = SWITCH_VAD_STATE_NONE;
+	vad->voice_samples = 0;
+	vad->silence_samples = 0;
 }
 
 SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t *data, unsigned int samples)
 {
-	int energy = 0, j = 0, count = 0;
 	int score = 0;
 
-	if (vad->vad_state == SWITCH_VAD_STATE_STOP_TALKING) {
-		vad->vad_state = SWITCH_VAD_STATE_NONE;
-	}
+	// Each frame has 2 possible outcomes- voice or not voice.
+	// The VAD has 2 real states- talking / not talking with
+	// begin talking and stop talking as events to mark transitions
 
-	if (vad->vad_state == SWITCH_VAD_STATE_START_TALKING) {
-		vad->vad_state = SWITCH_VAD_STATE_TALKING;
-	}
-	
+
+	// determine if this is a voice or non-voice frame
 #ifdef SWITCH_HAVE_FVAD
 	if (vad->fvad) {
 		int ret = fvad_process(vad->fvad, data, samples);
@@ -181,60 +188,40 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 		score = vad->thresh + ret - 1;
 	} else {
 #endif
+		int energy = 0, j = 0, count = 0;
+		for (energy = 0, j = 0, count = 0; count < samples; count++) {
+			energy += abs(data[j]);
+			j += vad->channels;
+		}
 
-	for (energy = 0, j = 0, count = 0; count < samples; count++) {
-		energy += abs(data[j]);
-		j += vad->channels;
-	}
-
-	score = (uint32_t) (energy / (samples / vad->divisor));
-
+		score = (uint32_t) (energy / (samples / vad->divisor));
 #ifdef SWITCH_HAVE_FVAD
 	}
 #endif
 
-	//printf("%d ", score); fflush(stdout);
-	//printf("yay %d %d %d\n", score, vad->hangover, vad->talking);
-
-	if (vad->talking && score < vad->thresh) {
-		if (vad->hangover > 0) {
-			vad->hangover--;
-		} else {// if (hangover <= 0) {
-			vad->talking = 0;
-			vad->talk_hits = 0;
-			vad->hangover = 0;
-		}
-	} else {
-		if (score >= vad->thresh) {
-			vad->vad_state = vad->talking ? SWITCH_VAD_STATE_TALKING : SWITCH_VAD_STATE_START_TALKING;
-			vad->talking = 1;
-			vad->hangover = vad->hangover_len;
-		}
+	// clear the STOP/START TALKING events
+	if (vad->vad_state == SWITCH_VAD_STATE_STOP_TALKING) {
+		vad->vad_state = SWITCH_VAD_STATE_NONE;
+	} else if (vad->vad_state == SWITCH_VAD_STATE_START_TALKING) {
+		vad->vad_state = SWITCH_VAD_STATE_TALKING;
 	}
 
-	// printf("WTF %d %d %d\n", score, vad->talked, vad->talking);
-
-	if (vad->talking) {
-		vad->talk_hits++;
-		// printf("WTF %d %d %d\n", vad->talking, vad->talk_hits, vad->talked);
-		if (vad->talk_hits > vad->listen_hits) {
-			vad->talked = 1;
-			vad->vad_state = SWITCH_VAD_STATE_TALKING;
-		}
+	// adjust voice/silence run length counters
+	if (score > vad->thresh) {
+		vad->silence_samples = 0;
+		vad->voice_samples += samples;
 	} else {
-		vad->talk_hits = 0;
+		vad->silence_samples += samples;
+		vad->voice_samples = 0;
 	}
 
-	if ((vad->talked && !vad->talking)) {
-		// printf("NOT TALKING ANYMORE\n");
-		vad->talked = 0;
+	// check for state transitions
+	if (vad->vad_state == SWITCH_VAD_STATE_TALKING && vad->silence_samples > vad->silence_samples_thresh) {
 		vad->vad_state = SWITCH_VAD_STATE_STOP_TALKING;
+	} else if (vad->vad_state == SWITCH_VAD_STATE_NONE && vad->voice_samples > vad->voice_samples_thresh) {
+		vad->vad_state = SWITCH_VAD_STATE_START_TALKING;
 	}
 
-	if (vad->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VAD DEBUG energy: %d state %s\n", score, switch_vad_state2str(vad->vad_state));
-	}
-	
 	return vad->vad_state;
 }
 
