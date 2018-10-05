@@ -6670,10 +6670,10 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_rtp_engine_t *v_engine;
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_timer_t timer = { 0 };
-	int fps;
 	switch_video_read_flag_t read_flags = SVR_BLOCK;
 	switch_core_session_t *b_session = NULL;
 	switch_fps_t fps_data = { 0 };
+	float fps;
 	switch_image_t *last_frame = NULL;
 	
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
@@ -6707,17 +6707,14 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 
 	if (smh->video_write_fh && smh->video_write_fh->mm.source_fps) {
-		fps = (int) smh->video_write_fh->mm.source_fps;
-	} else {
+		fps = smh->video_write_fh->mm.source_fps;
+	} else if (video_globals.fps) {
 		fps = video_globals.fps;
-	}
-
-	if (!fps) {
+	} else {
 		fps = 15;
 	}
-
-
 	switch_calc_video_fps(&fps_data, fps);
+
 	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, switch_core_session_get_pool(session));
 
 	while (smh->video_write_thread_running > 0 &&
@@ -6764,7 +6761,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 		switch_img_fill(last_frame, 0, 0, last_frame->d_w, last_frame->d_h, &bgcolor);
 		fr.img = last_frame;
 
-		for (x = 0; x < fps_data.fps / 2; x++) {
+		for (x = 0; x < (int)(fps_data.fps / 2); x++) {
 			switch_core_timer_next(&timer);
 			fr.timestamp = timer.samplecount;
 			fr.flags = SFF_USE_VIDEO_TIMESTAMP|SFF_RAW_RTP|SFF_RAW_RTP_PARSE_FRAME;

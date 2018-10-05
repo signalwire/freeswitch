@@ -2797,12 +2797,12 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				member->blanks++;
 
 
-				if (member->blanks == member->conference->video_fps.fps || (member->blanks % (int)(member->conference->video_fps.fps * 10)) == 0) {
+				if (member->blanks == (int)member->conference->video_fps.fps || (member->blanks % (int)(member->conference->video_fps.fps * 10)) == 0) {
 					switch_core_session_request_video_refresh(member->session);
 					member->good_img = 0;
 				}
 
-				if (member->blanks == member->conference->video_fps.fps * 5) {
+				if (member->blanks == (int)(member->conference->video_fps.fps * 5)) {
 					member->blackouts++;
 					conference_video_check_avatar(member, SWITCH_TRUE);
 					conference_video_clear_managed_kps(member);
@@ -2973,12 +2973,12 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	}
 
 	if ((kps_in = switch_calc_bitrate(vid_params.width, vid_params.height,
-									  member->conference->video_quality, (int)(member->conference->video_fps.fps))) < 512) {
+									  member->conference->video_quality, member->conference->video_fps.fps)) < 512) {
 		kps_in = 512;
 	}
 
 	if (layer) {
-		kps = switch_calc_bitrate(screen_w, screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+		kps = switch_calc_bitrate(screen_w, screen_h, member->conference->video_quality, member->conference->video_fps.fps);
 	} else {
 		kps = kps_in;
 	}
@@ -3701,7 +3701,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					if (imember->channel && !switch_channel_test_flag(imember->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && 
 						conference_utils_test_flag(conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
 						switch_core_media_get_vid_params(imember->session, &vid_params);
-						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, (int)(imember->conference->video_fps.fps));
+						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, imember->conference->video_fps.fps);
 						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
 					}
 				}
@@ -4273,7 +4273,7 @@ void pop_conference_video_next_canvas_image(mcu_canvas_t *canvas, switch_image_t
 			break;
 		}
 		size = switch_queue_size(canvas->video_queue);
-	} while(size > canvas->conference->video_fps.fps / 2);
+	} while(size > (int)(canvas->conference->video_fps.fps / 2));
 
 	*imgP = img;
 }
@@ -4993,7 +4993,7 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 		if (frame->img && (((member->video_layer_id > -1) && canvas_id > -1) || member->canvas) &&
 			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			!conference_utils_member_test_flag(member, MFLAG_HOLD) &&
-			switch_queue_size(member->video_queue) < member->conference->video_fps.fps &&
+			switch_queue_size(member->video_queue) < (int)member->conference->video_fps.fps &&
 			!member->conference->canvases[canvas_id]->playing_video_file) {
 
 			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) ||

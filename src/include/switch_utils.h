@@ -1074,9 +1074,13 @@ static inline int32_t switch_calc_bitrate(int w, int h, int quality, double fps)
 
 static inline void switch_calc_fps(switch_fps_t *fpsP, float fps, int samplerate)
 {
-	fpsP->fps = fps;
-	fpsP->ms = (int)(1000 / fps);
-	fpsP->samples = (int)(samplerate / fps);
+	/*
+	  implicit/truncf() - leave us with equal-or-smaller ms and thus equal-or-bigger fps, which is better for quality (than roundf()).
+	  also equal-or-bigger fps is better for things like (int)fps
+	*/
+	fpsP->ms = (int)(1000.0f / fps);
+	fpsP->fps = 1000.0f / fpsP->ms;
+	fpsP->samples = (int)(samplerate / 1000 * fpsP->ms); // samplerate 99.99% is a factor of 1000, so we safe here with integer div by 1000
 	return;
 }
 #define switch_calc_video_fps(fpsP, fps) switch_calc_fps(fpsP, fps, 90000)

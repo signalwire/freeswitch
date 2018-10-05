@@ -599,11 +599,11 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 	switch_frame_t frame = { 0 };
 	switch_timer_t timer = { 0 };
 	switch_mm_t mm = { 0 };
-	int fps = 15;
 	int vw = 1280;
 	int vh = 720;
 	int last_w = 0, last_h = 0, other_last_w = 0, other_last_h = 0;
 	switch_fps_t fps_data = { 0 };
+	float fps;
 	switch_rgb_color_t color = { 0 };
 	switch_color_set_rgb(&color, "#000000");
 
@@ -628,14 +628,16 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 
 	switch_core_media_bug_get_media_params(bug, &mm);
 
-	if (mm.fps) {
-		fps = (int) mm.fps;
-	}
-
 	if (mm.vw) vw = mm.vw;
 	if (mm.vh) vh = mm.vh;
 
+	if (mm.fps) {
+		fps = mm.fps;
+	} else {
+		fps = 15;
+	}
 	switch_calc_video_fps(&fps_data, fps);
+
 	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, NULL);
 
 	while (bug->ready) {
