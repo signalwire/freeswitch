@@ -316,7 +316,10 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_init()
 		globals.msock.thread = thread;
 	}
 
-	msrp_init_ssl();
+	if (msrp_init_ssl() == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP ssl init failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
 	status = msock_init(globals.ip, globals.msock_ssl.port, &globals.msock_ssl.sock, pool);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
