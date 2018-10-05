@@ -443,6 +443,7 @@ static void fst_session_park(switch_core_session_t *session)
  * Test Requires:
  *   switch_ivr_displace_session(input_filename) == SWITCH_STATUS_SUCCESS
  *   switch_core_session_execute_application(play_and_detect_speech) == SWITCH_STATUS_SUCCESS
+ *   mod_dptools is loaded
  *
  * Test Checks:
  *   fst_asr_result != NULL after recognition completes
@@ -455,9 +456,10 @@ static void fst_session_park(switch_core_session_t *session)
  * @param prompt_filename name of prompt to play
  * @param input_filename name of file containing input audio for the recognizer
  */
-#define fst_play_and_detect_speech_test(recognizer, grammar, prompt_filename, input_filename) \
+#define fst_play_and_detect_speech_app_test(recognizer, grammar, prompt_filename, input_filename) \
 { \
 	char *args = NULL; \
+	fst_requires_module("mod_dptools"); \
 	switch_channel_set_variable(fst_channel, "detect_speech_result", ""); \
 	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "r") == SWITCH_STATUS_SUCCESS); \
 	args = switch_core_session_sprintf(fst_session, "%s detect:%s %s", prompt_filename, recognizer, grammar); \
@@ -467,9 +469,57 @@ static void fst_session_park(switch_core_session_t *session)
 }
 
 /**
+ * Use play_and_detect_speech core function to test recognizer
+ *
+ * Test Requires:
+ *   switch_ivr_displace_session(input_filename) == SWITCH_STATUS_SUCCESS
+ *
+ * Test Checks:
+ *   fst_asr_result != NULL after recognition completes
+ *
+ * Test Output:
+ *   fst_asr_result has the result from detect_speech_result channel variable.
+ *
+ * @param recognizer name of recognizer
+ * @param grammar recognizer grammar
+ * @param prompt_filename name of prompt to play
+ * @param input_filename name of file containing input audio for the recognizer
+ * @param input_args input callback args
+ */
+#define fst_play_and_detect_speech_test(recognizer, grammar, prompt_filename, input_filename, input_args) \
+{ \
+	char *args = NULL; \
+	fst_asr_result = NULL; \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "r") == SWITCH_STATUS_SUCCESS); \
+	switch_status_t status = switch_ivr_play_and_detect_speech(fst_session, prompt_filename, recognizer, grammar, (char **)&fst_asr_result, 0, input_args); \
+	fst_check(fst_asr_result != NULL); \
+}
+
+/**
  * Define end of play_and_detect_speech recognizer test
  */
 #define fst_play_and_detect_speech_test_end() \
+}
+
+/**
+ * Inject DTMF into the session to be detected.
+ *
+ * Test Requires:
+ *   switch_api_execute(sched_api) == SWITCH_STATUS_SUCCESS
+ *   mod_commands is loaded
+ *
+ * @param when string describing when to send dtmf
+ * @param digits to send
+ */
+#define fst_sched_recv_dtmf(when, digits) \
+{ \
+	switch_stream_handle_t stream = { 0 }; \
+	SWITCH_STANDARD_STREAM(stream); \
+	fst_requires_module("mod_commands"); \
+	switch_status_t api_result = switch_api_execute("sched_api", switch_core_session_sprintf(fst_session, "%s none uuid_recv_dtmf %s %s", when, switch_core_session_get_uuid(fst_session), digits), NULL, &stream); \
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fst_session), SWITCH_LOG_INFO, "Injecting DTMF %s at %s\n", digits, when); \
+	fst_requires(api_result == SWITCH_STATUS_SUCCESS); \
+	switch_safe_free(stream.data); \
 }
 
 /**
