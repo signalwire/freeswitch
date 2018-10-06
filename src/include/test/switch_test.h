@@ -522,6 +522,40 @@ static void fst_session_park(switch_core_session_t *session)
 	switch_safe_free(stream.data); \
 }
 
+#define fst_xml_start() \
+	switch_stream_handle_t fst_xml_stream = { 0 }; \
+	SWITCH_STANDARD_STREAM(fst_xml_stream);
+	int fst_tag_children = 0;
+	int fst_tag_body = 0;
+
+#define fst_xml_open_tag(tag_name) \
+	fst_xml_stream.write_function(&fst_xml_stream, "<%s", #tag_name); \
+	fst_tag_children++;
+
+#define fst_xml_attr(attr) \
+	if (!zstr(attr)) fst_xml_stream.write_function(&fst_xml_stream, " %s=\"%s\"", #attr, attr);
+
+#define fst_xml_close_tag(tag_name) \
+	--fst_tag_children; \
+	if (fst_tag_children > 0 || fst_tag_body) { \
+		fst_xml_stream.write_function(&fst_xml_stream, "</%s>", #tag_name); \
+	} else { \
+		fst_xml_stream.write_function(&fst_xml_stream, "/>"); \
+	} \
+	fst_tag_body = 0;
+
+#define fst_xml_body(body) \
+	if (fst_tag_body) { \
+		fst_xml_stream.write_function(&fst_xml_stream "%s", body); \
+	} else { \
+		fst_tag_body = 1; \
+		fst_xml_stream.write_function(&fst_xml_stream, ">%s", body); \
+	}
+
+#define fst_xml_end() \
+	switch_xml_parse_str_dynamic((char *)fst_xml_stream.data, SWITCH_FALSE);
+
+
 /**
  * Parse JSON file and save to varname
  *
