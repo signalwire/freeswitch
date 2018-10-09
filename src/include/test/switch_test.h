@@ -140,6 +140,50 @@ static void fst_session_park(switch_core_session_t *session)
  */
 #define fst_check_string_not_equals fct_chk_neq_str
 
+/**
+ * Mark reference for time measure
+ */
+#define fst_time_mark() \
+	fst_time_start = switch_time_now();
+
+/**
+ * Check duration relative to test start, last marked time, or last check.
+ */
+#define fst_check_duration(duration_ms, precision_ms) \
+	{ \
+		int actual_duration_ms = (int)((switch_time_now() - fst_time_start) / 1000); \
+		fct_xchk( \
+			abs((actual_duration_ms - duration_ms)) <= precision_ms, \
+			"fst_check_duration: %d != %d +/- %d", \
+			(actual_duration_ms), \
+			(duration_ms), \
+			(precision_ms) \
+		); \
+	}
+
+/**
+ * Check if integer is in range
+ */
+#define fst_check_int_range(actual, expected, precision) \
+	fct_xchk( \
+		abs((val - expected)) <= precision, \
+		"fst_check_int_range: %d != %d +/- %d", \
+		(actual), \
+		(expected), \
+		(precision) \
+	);
+
+/**
+ * Check if double-precision number is in range
+ */
+#define fst_check_double_range(actual, expected, precision) \
+	fct_xchk( \
+		fabs((val - expected)) <= precision, \
+		"fst_check_double_range: %f != %f +/- %f", \
+		(actual), \
+		(expected), \
+		(precision) \
+	);
 
 /**
  * Define the beginning of a freeswitch core test driver.  Only one per test application allowed.
@@ -150,7 +194,8 @@ static void fst_session_park(switch_core_session_t *session)
 	{ \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
-		fst_init_core_and_modload(confdir, NULL);
+		fst_init_core_and_modload(confdir, NULL); \
+		switch_time_t fst_time_start = 0;
 
 /**
  * Define the end of a freeswitch core test driver.
@@ -201,7 +246,8 @@ static void fst_session_park(switch_core_session_t *session)
 	FCT_SETUP_BGN() \
 		switch_core_new_memory_pool(&fst_pool); \
 		fst_requires(fst_pool != NULL); \
-		fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS);
+		fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+		fst_time_mark();
 
 /**
  * Define the end of test suite setup.

@@ -840,6 +840,9 @@ of "checks".
 
 struct _fctchk_t
 {
+    /* The name of the test this condition is in */
+    char name[FCT_MAX_LOG_LINE];
+
     /* This string that represents the condition. */
     char cndtn[FCT_MAX_LOG_LINE];
 
@@ -861,10 +864,12 @@ struct _fctchk_t
 #define fctchk__lineno(_CHK_)  ((_CHK_)->lineno)
 #define fctchk__cndtn(_CHK_)   ((_CHK_)->cndtn)
 #define fctchk__msg(_CHK_)     ((_CHK_)->msg)
+#define fctchk__name(_CHK_)    ((_CHK_)->name)
 
 static fctchk_t*
 fctchk_new(int is_pass,
            char const *cndtn,
+           char const *name,
            char const *file,
            int lineno,
            char const *format,
@@ -882,6 +887,7 @@ fctchk_new(int is_pass,
         return NULL;
     }
 
+    fctstr_safe_cpy(chk->name, name ? name : "", FCT_MAX_LOG_LINE);
     fctstr_safe_cpy(chk->cndtn, cndtn, FCT_MAX_LOG_LINE);
     fctstr_safe_cpy(chk->file, file, FCT_MAX_LOG_LINE);
     chk->lineno = lineno;
@@ -2693,20 +2699,7 @@ of char*'s that will eventually be free'd by the logger. */
 static void
 fct_logger_record_failure(fctchk_t const* chk, fct_nlist_t* fail_list)
 {
-    /* For now we will truncate the string to some set amount, later
-    we can work out a dynamic string object. */
-    char *str = (char*)malloc(sizeof(char)*FCT_MAX_LOG_LINE);
-    FCT_ASSERT( str != NULL );
-    fct_snprintf(
-        str,
-        FCT_MAX_LOG_LINE,
-        "%s(%d):\n    %s",
-        fctchk__file(chk),
-        fctchk__lineno(chk),
-        fctchk__msg(chk)
-    );
-    /* Append it to the listing ... */
-    fct_nlist__append(fail_list, (void*)str);
+    fct_nlist__append(fail_list, (void *)chk);
 }
 
 
@@ -2714,13 +2707,21 @@ fct_logger_record_failure(fctchk_t const* chk, fct_nlist_t* fail_list)
 static void
 fct_logger_print_failures(fct_nlist_t const *fail_list)
 {
+    const char *last_test = NULL;
     puts(
         "\n----------------------------------------------------------------------------\n"
     );
-    puts("FAILED TESTS\n\n");
-    FCT_NLIST_FOREACH_BGN(char *, cndtn_str, fail_list)
+    puts("FAILED TESTS\n");
+    FCT_NLIST_FOREACH_BGN(fctchk_t const *, chk, fail_list)
     {
-        printf("%s\n", cndtn_str);
+        if (!last_test || strcmp(last_test, fctchk__name(chk))) {
+            printf("\n%s\n", fctchk__name(chk));
+        }
+        last_test = fctchk__name(chk);
+        printf("  %s(%d):\n    %s\n",
+            fctchk__file(chk),
+            fctchk__lineno(chk),
+            fctchk__msg(chk));
     }
     FCT_NLIST_FOREACH_END();
 
@@ -3571,8 +3572,10 @@ _fct_xchk_fn_varg(
 {
     fctchk_t *chk =NULL;
     chk = fctchk_new(
+
               is_pass,
               condition,
+              fct_test__name(fct_xchk_test),
               fct_xchk_file,
               fct_xchk_lineno,
               format,
