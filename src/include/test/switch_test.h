@@ -212,17 +212,24 @@ static void fst_session_park(switch_core_session_t *session)
  * @param suite the name of this test suite
  */
 #define FST_MODULE_BEGIN(modname,suite) \
-	const char *fst_test_module = #modname; \
-	if (!zstr(fst_test_module)) { \
-		const char *err; \
-		switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
-	} \
-	FCT_FIXTURE_SUITE_BGN(suite)
+	{ \
+		const char *fst_test_module = #modname; \
+		if (!zstr(fst_test_module)) { \
+			const char *err; \
+			switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
+		} \
+		FCT_FIXTURE_SUITE_BGN(suite);
 
 /**
  * Define the end of a FreeSWITCH module test suite.
  */
-#define FST_MODULE_END FCT_FIXTURE_SUITE_END
+#define FST_MODULE_END() \
+		FCT_FIXTURE_SUITE_END(); \
+		if (!zstr(fst_test_module) && switch_loadable_module_exists(fst_test_module) == SWITCH_STATUS_SUCCESS) { \
+			const char *err; \
+			switch_loadable_module_unload_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
+		} \
+	}
 
 
 /**
