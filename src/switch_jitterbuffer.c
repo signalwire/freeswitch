@@ -34,7 +34,6 @@
 
 #define NACK_TIME 80000
 #define RENACK_TIME 100000
-#define PERIOD_LEN 250
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
 #define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s:%d/%d lv:%d ln:%.4d sz:%.3u/%.3u/%.3u/%.3u c:%.3u %.3u/%.3u/%.3u/%.3u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_TEXT ? "txt" : (jb->type == SJB_AUDIO ? "aud" : "vid")), _jb->allocated_nodes, _jb->visible_nodes, _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
@@ -107,6 +106,7 @@ struct switch_jb_s {
 	uint32_t flush;
 	uint32_t packet_count;
 	uint32_t max_packet_len;
+	uint32_t period_len;
 };
 
 
@@ -516,7 +516,8 @@ static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 	}
 
 	if (old_frame_len != jb->frame_len) {
-		jb_debug(jb, 2, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
+		jb_debug(jb, 1, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
+
 		//if (jb->session) {
 		//	switch_core_session_request_video_refresh(jb->session);
 		//}
@@ -641,7 +642,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 		switch_core_inthash_insert(jb->node_hash_ts, node->packet.header.ts, node);
 	}
 
-	jb_debug(jb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n",
+	jb_debug(jb, (packet->header.m ? 2 : 3), "PUT packet last_ts:%u ts:%u seq:%u%s\n",
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
 	if (jb->write_init && jb->type == SJB_VIDEO) {
@@ -773,11 +774,6 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 		if (jb->type == SJB_VIDEO) {
 			int x;
 
-			if (jb->period_miss_count > 1 && !jb->period_miss_inc) {
-				jb->period_miss_inc++;
-				jb_frame_inc(jb, 1);
-			}
-
 			if (jb->session) {
 				switch_core_session_request_video_refresh(jb->session);
 			}
@@ -792,6 +788,13 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 						jb->dropped++;
 						drop_ts(jb, node->packet.header.ts);
 						jb->highest_dropped_ts = ntohl(node->packet.header.ts);
+
+
+						if (jb->period_miss_count > 2 && jb->period_miss_inc < 1) {
+							jb->period_miss_inc++;
+							jb_frame_inc(jb, 1);
+						}
+
 						node = NULL;
 						goto top;
 					}
@@ -1070,7 +1073,11 @@ SWITCH_DECLARE(switch_status_t) switch_jb_create(switch_jb_t **jbp, switch_jb_ty
 
 	if (jb->type == SJB_VIDEO) {
 		switch_core_inthash_init(&jb->missing_seq_hash);
+		jb->period_len = 2500;
+	} else {
+		jb->period_len = 250;
 	}
+	
 	switch_core_inthash_init(&jb->node_hash);
 	switch_mutex_init(&jb->mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&jb->list_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -1228,7 +1235,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 				switch_jb_reset(jb);
 			} else {
 
-				if (jb->frame_len < got - want) {
+				if (jb->type != SJB_VIDEO && jb->frame_len < got - want) {
 					jb_frame_inc(jb, 1);
 				}
 
@@ -1312,9 +1319,9 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	jb_debug(jb, 2, "GET PACKET %u/%u n:%d\n", jb->complete_frames , jb->frame_len, jb->visible_nodes);
 
-	if (++jb->period_count >= PERIOD_LEN) {
+	if (++jb->period_count >= jb->period_len) {
 
-		if (jb->consec_good_count >= (PERIOD_LEN - 5)) {
+		if (jb->consec_good_count >= (jb->period_len - 5)) {
 			jb_frame_inc(jb, -1);
 		}
 
@@ -1429,7 +1436,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		packet->header.version = 2;
 		hide_node(node, SWITCH_TRUE);
 
-		jb_debug(jb, 1, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
+		jb_debug(jb, 2, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
 
 	} else {
 		status = SWITCH_STATUS_MORE_DATA;

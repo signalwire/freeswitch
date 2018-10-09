@@ -1550,58 +1550,54 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 	return m;
 }
 
-static void do_mos(switch_rtp_t *rtp_session, int force) {
-
+static void do_mos(switch_rtp_t *rtp_session) {
+	int R;
+	
 	if ((switch_size_t)rtp_session->stats.inbound.recved < rtp_session->stats.inbound.flaws) {
 		rtp_session->stats.inbound.flaws = 0;
 	}
 
 	if (rtp_session->stats.inbound.recved > 0 &&
-		rtp_session->stats.inbound.flaws && (force || rtp_session->stats.inbound.last_flaw != rtp_session->stats.inbound.flaws)) {
-		int R;
-
+		rtp_session->stats.inbound.flaws && (rtp_session->stats.inbound.last_flaw != rtp_session->stats.inbound.flaws)) {
+		
 		if (rtp_session->consecutive_flaws++) {
-			int diff, penalty;
+			int penalty = rtp_session->consecutive_flaws;
 
-			diff = (rtp_session->stats.inbound.flaws - rtp_session->stats.inbound.last_flaw);
-
-			if (diff < 1) diff = 1;
-
-			penalty = diff * 2;
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s %d consecutive flaws, adding %d flaw penalty\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s %d consecutive flaws, adding %d flaw penalty\n",
 							  rtp_session_name(rtp_session), rtp_type(rtp_session),
 							  rtp_session->consecutive_flaws, penalty);
 			rtp_session->bad_stream++;
 			rtp_session->stats.inbound.flaws += penalty;
-
+			rtp_session->stats.inbound.last_flaw = rtp_session->stats.inbound.flaws;
+			
 			if (rtp_session->stats.inbound.error_log) {
 				rtp_session->stats.inbound.error_log->flaws += penalty;
 				rtp_session->stats.inbound.error_log->consecutive_flaws++;
 			}
 		}
-
-		R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
-
-		if (R < 0 || R > 100) R = 100;
-
-		rtp_session->stats.inbound.R = R;
-		rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
-		rtp_session->stats.inbound.last_flaw = rtp_session->stats.inbound.flaws;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
-						  rtp_session_name(rtp_session),
-						  rtp_type(rtp_session),
-						  rtp_session->stats.inbound.R,
-						  (long int)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws), rtp_session->stats.inbound.recved,
-						  (long int)rtp_session->stats.inbound.flaws,
-						  rtp_session->stats.inbound.mos,
-						  rtp_session->stats.inbound.variance,
-						  rtp_session->stats.inbound.min_variance,
-						  rtp_session->stats.inbound.max_variance
-						  );
 	} else {
 		rtp_session->consecutive_flaws = 0;
 	}
+
+	R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
+
+	if (R < 0 || R > 100) R = 100;
+
+	rtp_session->stats.inbound.R = R;
+	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
+		
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
+					  rtp_session_name(rtp_session),
+					  rtp_type(rtp_session),
+					  rtp_session->stats.inbound.R,
+					  (long int)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws), rtp_session->stats.inbound.recved,
+					  (long int)rtp_session->stats.inbound.flaws,
+					  rtp_session->stats.inbound.mos,
+					  rtp_session->stats.inbound.variance,
+					  rtp_session->stats.inbound.min_variance,
+					  rtp_session->stats.inbound.max_variance
+					  );
+	
 }
 
 void burstr_calculate ( int loss[], int received, double *burstr, double *lossr )
@@ -1699,9 +1695,9 @@ static void check_jitter(switch_rtp_t *rtp_session)
 		rtp_session->next_stat_check_time = current_time + 5000;
 		burstr_calculate(rtp_session->stats.inbound.loss, rtp_session->stats.inbound.recved,
 						 &(rtp_session->stats.inbound.burstrate), &(rtp_session->stats.inbound.lossrate));
-		do_mos(rtp_session, SWITCH_TRUE);
+		do_mos(rtp_session);
 	} else {
-		do_mos(rtp_session, SWITCH_FALSE);
+		do_mos(rtp_session);
 	}
 
 	if (rtp_session->stats.inbound.last_loss || rtp_session->bad_stream) {
@@ -2226,7 +2222,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 					nack = (uint32_t *) p;
 					*nack = cur_nack[n];
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP NACK %u [%d]\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Sending RTCP NACK %u [%d]\n",
 									  ntohs(*nack & 0xFFFF), rtp_session->rtcp_vstats.video_in.nack_count);
 
 					rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(cur_nack[n]);
@@ -2269,7 +2265,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				fir->r1 = fir->r2 = fir->r3 = 0;
 
 				rtp_session->rtcp_vstats.video_in.fir_count++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP FIR SEQ %d [%u]\n", rtp_session->fir_seq, rtp_session->rtcp_vstats.video_in.fir_count);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Sending RTCP FIR SEQ %d [%u]\n", rtp_session->fir_seq, rtp_session->rtcp_vstats.video_in.fir_count);
 
 				rtp_session->fir_seq++;
 
@@ -2299,12 +2295,12 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				ext_hdr->recv_ssrc = 0;
 
 				if (rtp_session->tmmbr) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBR %u\n", rtp_session->tmmbr);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Sending RTCP TMMBR %u\n", rtp_session->tmmbr);
 					ext_hdr->fmt = _RTCP_RTPFB_TMMBR;
 					bps = rtp_session->tmmbr;
 					rtp_session->tmmbr = 0;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBN %u\n", rtp_session->tmmbr);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Sending RTCP TMMBN %u\n", rtp_session->tmmbr);
 					ext_hdr->fmt = _RTCP_RTPFB_TMMBN;
 					bps = rtp_session->tmmbn;
 					rtp_session->tmmbn = 0;
@@ -2762,10 +2758,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		goto done;
 	}
 
-	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-	//switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
-		//switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
-	//}
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
+		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
+	}
 
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		char *em = switch_core_sprintf(rtp_session->pool, "Bind Error! %s:%d", host, port);
@@ -5014,7 +5010,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_sync_stats(switch_rtp_t *rtp_session)
 		switch_channel_set_variable_printf(channel, "vad_total_talk_time_sec", "%u", (uint32_t)rtp_session->vad_data.total_talk_time / 1000000);
 	}
 
-	do_mos(rtp_session, SWITCH_TRUE);
+	do_mos(rtp_session);
 
 	if (rtp_session->stats.inbound.error_log && !rtp_session->stats.inbound.error_log->stop) {
 		rtp_session->stats.inbound.error_log->stop = switch_micro_time_now();
@@ -6453,7 +6449,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Got NACK [%u][0x%x] for seq %u\n", 
 					  switch_core_session_get_name(rtp_session->session), nack, nack, ntohs(seq));
 
 	if (switch_jb_get_packet_by_seq(rtp_session->vbw, seq, (switch_rtp_packet_t *) send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
@@ -6469,16 +6465,16 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 							  send_msg->header.pt, ntohl(send_msg->header.ts), ntohs(send_msg->header.seq), send_msg->header.m);
 
 		}
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RE----SEND %u\n", ntohs(send_msg->header.seq));
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG2, "RE----SEND %u\n", ntohs(send_msg->header.seq));
 		switch_rtp_write_raw(rtp_session, (void *) send_msg, &bytes, SWITCH_FALSE);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Cannot send NACK for seq %u\n", ntohs(seq));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Cannot send NACK for seq %u\n", ntohs(seq));
 	}
 
 	blp = ntohs(blp);
 	for (i = 0; i < 16; i++) {
 		if (blp & (1 << i)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Also Got NACK for seq %u\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Also Got NACK for seq %u\n", 
 							  switch_core_session_get_name(rtp_session->session), ntohs(seq) + i + 1);
 			/* If they are missing more than one, may as well gen a key frame for good measure */
 			//switch_core_media_gen_key_frame(rtp_session->session);
@@ -6498,7 +6494,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 
 				switch_rtp_write_raw(rtp_session, (void *) &send_msg, &bytes, SWITCH_FALSE);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Cannot send NACK for seq %u\n", ntohs(seq) + i);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "Cannot send NACK for seq %u\n", ntohs(seq) + i);
 			}
 		}
 	}
@@ -6516,7 +6512,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) msg;
 
 		if (extp->header.fmt != 15) { // <---- REMOVE WHEN BRIA STOPS SENDING UNSOLICITED REMB
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s PICKED UP %s XRTCP type: %d fmt: %d\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s PICKED UP %s XRTCP type: %d fmt: %d\n",
 							  switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), msg->header.type, extp->header.fmt);
 		}
 
@@ -6534,14 +6530,14 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 #endif
 			
 			if (switch_core_session_media_flow(rtp_session->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Ignoring FIR/PLI from a sendonly stream.\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Ignoring FIR/PLI from a sendonly stream.\n", 
 								  switch_core_session_get_name(rtp_session->session));
 			} else {
 				switch_core_media_gen_key_frame(rtp_session->session);
 				if (rtp_session->vbw) {
 					switch_jb_reset(rtp_session->vbw);
 				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got FIR/PLI\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Got FIR/PLI\n", 
 								  switch_core_session_get_name(rtp_session->session));
 				switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
 			}
@@ -6551,7 +6547,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			uint32_t *nack = (uint32_t *) extp->body;
 			int i;
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK count %d\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Got NACK count %d\n", 
 							  switch_core_session_get_name(rtp_session->session), ntohs(extp->header.length) - 2);
 
 
@@ -6586,8 +6582,8 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
 				struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)msg->body;
 
-				rtp_session->stats.rtcp.packet_count += ntohl(sr->sender_info.pc);
-				rtp_session->stats.rtcp.octet_count += ntohl(sr->sender_info.oc);
+				rtp_session->stats.rtcp.packet_count = ntohl(sr->sender_info.pc);
+				rtp_session->stats.rtcp.octet_count = ntohl(sr->sender_info.oc);
 				packet_ssrc = sr->ssrc;
 				/* Extracting LSR from NTP timestamp and save it */
 				lsr = (ntohl(sr->sender_info.ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->sender_info.ntp_msw)&0x0000ffff)<<16; /* The middle 32 bits out of 64 in the NTP timestamp */
@@ -7753,7 +7749,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						rtp_session->stats.inbound.error_log->flaws++;
 					}
 					rtp_session->stats.inbound.flaws++;
-					do_mos(rtp_session, SWITCH_FALSE);
+					do_mos(rtp_session);
 				}
 
 				rtp_session->cng_count++;
@@ -8958,7 +8954,7 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_sess
 		switch_jb_get_frames(rtp_session->jb, NULL, NULL, NULL, (uint32_t *)&s->inbound.largest_jb_size);
 	}
 
-	do_mos(rtp_session, SWITCH_FALSE);
+	do_mos(rtp_session);
 
 	switch_mutex_unlock(rtp_session->flag_mutex);
 
