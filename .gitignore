@@ -155,6 +155,8 @@ Release/
 /src/mod/applications/mod_osp/Makefile.in
 /src/mod/applications/mod_rss/Makefile
 /src/mod/applications/mod_snipe_hunt/Makefile
+/src/mod/applications/mod_test/test/Makefile
+/src/mod/applications/mod_test/test/Makefile.in
 /src/mod/codecs/mod_com_g729/Makefile
 /src/mod/codecs/mod_com_g729/Makefile.in
 /src/mod/codecs/mod_dahdi_codec/Makefile

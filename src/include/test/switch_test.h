@@ -35,26 +35,34 @@
 
 #include <test/switch_fct.h>
 
+/**
+ * Get environment variable and save to var
+ ( )
+ */
+static char *fst_getenv_default(const char *env, char *default_value, switch_bool_t required)
+{
+	char *val = getenv(env);
+	if (!val) {
+		if (required) {
+			fprintf(stderr, "Failed to start test: environment variable \"%s\" is not set!\n", env);
+			exit(1);
+		}
+		return default_value;
+	}
+	return val;
+}
 
 /**
  * Get environment variable and save to var
  */
 #define fst_getenv(env, default_value) \
-	char *env = getenv(#env); \
-	if (!env) { \
-		env = (char *)default_value; \
-	}
+	char *env = fst_getenv_default(#env, (char *)default_value, SWITCH_FALSE);
 
 /**
  * Get mandatory environment variable and save to var.  Exit with error if missing.
  */
 #define fst_getenv_required(env) \
-	char *env = getenv(#env); \
-	if (!env) { \
-		fprintf(stderr, "Failed to start test: environment variable \"%s\" is not set!\n", #env); \
-		exit(1); \
-	}
-
+	char *env = fst_getenv_default(#env, NULL, SWITCH_TRUE);
 
 /**
  * initialize FS core from optional configuration dir
@@ -96,19 +104,16 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 
 	switch_core_init_and_modload(0, SWITCH_TRUE, &err);
 	switch_sleep(1 * 1000000);
-	switch_core_set_variable("sound_prefix", "");
+	switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
 }
 
 /**
  * Park FreeSWITCH session.  This is handy when wanting to use switch_core_session_execute_async() on the test session.
  * @param session to park
  */
-static void fst_session_park(switch_core_session_t *session)
-{
-	switch_ivr_park_session(session);
+#define fst_session_park(session) \
+	switch_ivr_park_session(session); \
 	switch_channel_wait_for_state(switch_core_session_get_channel(session), NULL, CS_PARK);
-}
-
 
 /**
  * check for test requirement - execute teardown on failure
@@ -192,16 +197,19 @@ static void fst_session_park(switch_core_session_t *session)
 #define FST_CORE_BEGIN(confdir) \
 	FCT_BGN() \
 	{ \
+		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
+		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		fst_init_core_and_modload(confdir, NULL); \
-		switch_time_t fst_time_start = 0;
+		{ \
 
 /**
  * Define the end of a freeswitch core test driver.
  */
 #define FST_CORE_END() \
 		/*switch_core_destroy();*/ \
+		} \
 	} \
 	FCT_END()
 
@@ -348,6 +356,9 @@ static void fst_session_park(switch_core_session_t *session)
 			if (fst_originate_vars) { \
 				switch_event_destroy(&fst_originate_vars); \
 			} \
+			if (fst_session_pool) { \
+				fst_session_pool = NULL; \
+			} \
 			switch_core_session_rwunlock(fst_session); \
 			switch_sleep(1000000); \
 		} \
@@ -399,28 +410,29 @@ static void fst_session_park(switch_core_session_t *session)
  */
 #define fst_test_core_asr(grammar, input_filename) \
 { \
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Test recognizer: input = %s\n", input_filename); \
-	fst_asr_result = NULL; \
-	fst_requires(switch_core_asr_load_grammar(&ah, grammar, "") == SWITCH_STATUS_SUCCESS); \
 	/* feed file into ASR */ \
 	switch_status_t result; \
 	switch_file_handle_t file_handle = { 0 }; \
-	file_handle.channels = 1; \
-	file_handle.native_rate = 8000; \
-	fst_requires(switch_core_file_open(&file_handle, input_filename, file_handle.channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS); \
-	uint8_t *buf = (uint8_t *)switch_core_alloc(fst_pool, sizeof(uint8_t) * 160 * sizeof(uint16_t) * file_handle.channels); \
+	uint8_t *buf; \
 	size_t len = 160; \
 	int got_result = 0; \
+	fst_asr_result = NULL; \
+	file_handle.channels = 1; \
+	file_handle.native_rate = 8000; \
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Test recognizer: input = %s\n", input_filename); \
+	fst_requires(switch_core_asr_load_grammar(&ah, grammar, "") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_core_file_open(&file_handle, input_filename, file_handle.channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS); \
+	buf = (uint8_t *)switch_core_alloc(fst_pool, sizeof(uint8_t) * 160 * sizeof(uint16_t) * file_handle.channels); \
 	switch_core_timer_sync(&fst_timer); \
 	while ((result = switch_core_file_read(&file_handle, buf, &len)) == SWITCH_STATUS_SUCCESS) { \
 		fst_requires(switch_core_asr_feed(&ah, buf, len * sizeof(int16_t), &flags) == SWITCH_STATUS_SUCCESS); \
 		switch_core_timer_next(&fst_timer); \
 		if (switch_core_asr_check_results(&ah, &flags) == SWITCH_STATUS_SUCCESS) { \
+			char *xmlstr = NULL; \
+			switch_event_t *headers = NULL; \
 			flags = SWITCH_ASR_FLAG_NONE; \
 			/* switch_ivr_detect_speech.. checks one in media bug then again in speech_thread  */ \
 			fst_requires(switch_core_asr_check_results(&ah, &flags) == SWITCH_STATUS_SUCCESS); \
-			char *xmlstr = NULL; \
-			switch_event_t *headers = NULL; \
 			result = switch_core_asr_get_results(&ah, &xmlstr, &flags); \
 			if (result == SWITCH_STATUS_SUCCESS) { \
 				got_result++; \
@@ -514,7 +526,7 @@ static void fst_session_park(switch_core_session_t *session)
 	char *args = NULL; \
 	fst_requires_module("mod_dptools"); \
 	switch_channel_set_variable(fst_channel, "detect_speech_result", ""); \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "r") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
 	args = switch_core_session_sprintf(fst_session, "%s detect:%s %s", prompt_filename, recognizer, grammar); \
 	fst_requires(switch_core_session_execute_application(fst_session, "play_and_detect_speech", args) == SWITCH_STATUS_SUCCESS); \
 	fst_asr_result = switch_channel_get_variable(fst_channel, "detect_speech_result"); \
@@ -543,7 +555,7 @@ static void fst_session_park(switch_core_session_t *session)
 { \
 	char *args = NULL; \
 	fst_asr_result = NULL; \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "r") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
 	switch_status_t status = switch_ivr_play_and_detect_speech(fst_session, prompt_filename, recognizer, grammar, (char **)&fst_asr_result, 0, input_args); \
 	fst_check(fst_asr_result != NULL); \
 }
