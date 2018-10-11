@@ -90,6 +90,15 @@ static void handle_SIGILL(int sig)
 	return;
 }
 
+static void handle_SIGTERM(int sig)
+{
+	int32_t arg = 0;
+	if (sig) {};
+	/* send shutdown signal to the freeswitch core */
+	switch_core_session_ctl(SCSC_SHUTDOWN_ELEGANT, &arg);
+	return;
+}
+
 /* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
 {
@@ -495,6 +504,7 @@ int main(int argc, char *argv[])
 	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
 	switch_bool_t nc = SWITCH_FALSE;				/* TRUE if we are running in noconsole mode */
+	switch_bool_t elegant_term = SWITCH_FALSE;
 	pid_t pid = 0;
 	int i, x;
 	char *opts;
@@ -663,6 +673,10 @@ int main(int argc, char *argv[])
 
 		else if (!strcmp(local_argv[x], "-nf")) {
 			nf = SWITCH_TRUE;
+		}
+
+		else if (!strcmp(local_argv[x], "-elegant-term")) {
+			elegant_term = SWITCH_TRUE;
 		}
 
 		else if (!strcmp(local_argv[x], "-reincarnate")) {
@@ -1065,7 +1079,12 @@ int main(int argc, char *argv[])
 #endif
 #endif
 	signal(SIGILL, handle_SIGILL);
-	signal(SIGTERM, handle_SIGILL);
+	if (elegant_term) {
+		signal(SIGTERM, handle_SIGTERM);
+	} else {
+		signal(SIGTERM, handle_SIGILL);
+	}
+
 #ifndef WIN32
 	if (do_wait) {
 		if (pipe(fds)) {
