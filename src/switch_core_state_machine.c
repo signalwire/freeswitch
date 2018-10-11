@@ -273,6 +273,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 						continue;
 					}
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Dialplan [%s] not found, skipping\n", dpname);
 						continue;
 					}
 
