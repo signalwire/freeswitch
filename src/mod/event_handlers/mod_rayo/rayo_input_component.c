@@ -877,6 +877,30 @@ static iks *start_timers_call_input_component(struct rayo_actor *component, stru
 }
 
 /**
+ * Get text / error from result
+ */
+static const char *get_detected_speech_result_text(cJSON *result_json, double *confidence, const char **error_text)
+{
+	const char *result_text = NULL;
+	const char *text = cJSON_GetObjectCstr(result_json, "text");
+	if (confidence) {
+		*confidence = 0.0;
+	}
+	if (!zstr(text)) {
+		cJSON *json_confidence = cJSON_GetObjectItem(result_json, "confidence");
+		if (json_confidence && json_confidence->valuedouble > 0.0) {
+			*confidence = json_confidence->valuedouble;
+		} else {
+			*confidence = 100.0;
+		}
+		result_text = text;
+	} else if (error_text) {
+		*error_text = cJSON_GetObjectCstr(result_json, "error");
+	}
+	return result_text;
+}
+
+/**
  * Handle speech detection event
  */
 static void on_detected_speech_event(switch_event_t *event)
@@ -905,7 +929,50 @@ static void on_detected_speech_event(switch_event_t *event)
 			if (zstr(result)) {
 				rayo_component_send_complete(component, INPUT_NOMATCH);
 			} else {
-				if (strchr(result, '<')) {
+				if (result[0] == '{') {
+					// internal FS JSON format
+					cJSON *json_result = cJSON_Parse(result);
+					if (json_result) {
+						// examine result to determine what happened
+						double confidence = 0.0;
+						const char *error_text = NULL;
+						const char *result_text = NULL;
+						result_text = get_detected_speech_result_text(json_result, &confidence, &error_text);
+						if (!zstr(result_text)) {
+							// got result... send as NLSML
+							iks *result = nlsml_create_match(result_text, NULL, "speech", (int)confidence);
+							/* notify of match */
+							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "MATCH = %s\n", result_text);
+							send_match_event(RAYO_COMPONENT(component), result);
+							iks_delete(result);
+						} else if (zstr(error_text)) {
+							// unknown error
+							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_WARNING, "No matching text nor error in result: %s!\n", result);
+							rayo_component_send_complete(component, INPUT_NOMATCH);
+						} else if (!strcmp(error_text, "no_input")) {
+							// no input error
+							rayo_component_send_complete(component, INPUT_NOINPUT);
+						} else if (!strcmp(error_text, "no_match")) {
+							// no match error
+							rayo_component_send_complete(component, INPUT_NOMATCH);
+						} else {
+							// generic error
+							iks *response = rayo_component_create_complete_event(component, COMPONENT_COMPLETE_ERROR);
+							iks *error = NULL;
+							if ((error = iks_find(response, "complete"))) {
+								if ((error = iks_find(error, "error"))) {
+									iks_insert_cdata(error, error_text, strlen(error_text));
+								}
+							}
+							rayo_component_send_complete_event(component, response);
+						}
+						cJSON_Delete(json_result);
+					} else {
+						// failed to parse JSON result
+						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_WARNING, "Failed to parse JSON result: %s!\n", result);
+						rayo_component_send_complete(component, INPUT_NOMATCH);
+					}
+				} else if (strchr(result, '<')) {
 					/* got an XML result */
 					enum nlsml_match_type match_type = nlsml_parse(result, uuid);
 					switch (match_type) {

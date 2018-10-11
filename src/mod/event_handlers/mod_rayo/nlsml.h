@@ -44,6 +44,7 @@ extern void nlsml_destroy(void);
 enum nlsml_match_type nlsml_parse(const char *result, const char *uuid);
 iks *nlsml_normalize(const char *result);
 extern iks *nlsml_create_dtmf_match(const char *digits, const char *interpretation);
+extern iks *nlsml_create_match(const char *digits, const char *interpretation, const char *mode, int confidence);
 
 #endif
 
