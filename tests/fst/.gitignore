@@ -1,0 +1,4 @@
+Makefile
+Makefile.in
+freeswitch.xml.fsxml
+originate_test

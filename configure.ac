@@ -1998,6 +1998,7 @@ AC_CONFIG_FILES([Makefile
 		libs/xmlrpc-c/config.mk
 		libs/xmlrpc-c/srcdir.mk
 		libs/xmlrpc-c/stamp-h
+		tests/fst/Makefile
 		scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
