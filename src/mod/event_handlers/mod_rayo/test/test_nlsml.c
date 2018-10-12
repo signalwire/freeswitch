@@ -1,8 +1,8 @@
 
 
 #include <switch.h>
-#include "test.h"
-#include "nlsml.h"
+#include <test/switch_test.h>
+#include <nlsml.h>
 
 static const char *nlsml_good =
 	"<result x-model=\"http://theYesNoModel\""
@@ -224,22 +224,6 @@ static const char *nlsml_no_match =
 	"  </interpretation>\n"
 	"</result>\n";
 
-/**
- * Test parsing NLSML example results
- */
-static void test_parse_nlsml_examples(void)
-{
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_good, "1234"));
-	ASSERT_EQUALS(NMT_BAD_XML, nlsml_parse(nlsml_bad, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_match_with_model_instance, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_multi_input, "1234"));
-	ASSERT_EQUALS(NMT_NOINPUT, nlsml_parse(nlsml_no_input, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_multi_input_dtmf, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_meta, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_simple_ambiguity, "1234"));
-	ASSERT_EQUALS(NMT_MATCH, nlsml_parse(nlsml_mixed_initiative, "1234"));
-	ASSERT_EQUALS(NMT_NOMATCH, nlsml_parse(nlsml_no_match, "1234"));
-}
 
 static const char *nlsml_dtmf_result =
 	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
@@ -248,38 +232,6 @@ static const char *nlsml_dtmf_result =
 	"<instance>1 2 3 4</instance>"
 	"</interpretation></result>";
 
-/**
- * Test creating DTMF match result
- */
-static void test_create_dtmf_match(void)
-{
-	iks *result = nlsml_create_dtmf_match("1234", NULL);
-	char *result_str;
-	ASSERT_NOT_NULL(result);
-	result_str = iks_string(NULL, result);
-	ASSERT_STRING_EQUALS(nlsml_dtmf_result, result_str);
-	iks_free(result_str);
-}
-
-static const char *nlsml_dtmf_instance_result =
-	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
-	"xmlns:xf='http://www.w3.org/2000/xforms'><interpretation>"
-	"<input mode='dtmf' confidence='100'>1</input>"
-	"<instance>foo</instance>"
-	"</interpretation></result>";
-
-/**
- * Test creating DTMF match result with instance interpretation
- */
-static void test_create_dtmf_instance(void)
-{
-	iks *result = nlsml_create_dtmf_match("1", "foo");
-	char *result_str;
-	ASSERT_NOT_NULL(result);
-	result_str = iks_string(NULL, result);
-	ASSERT_STRING_EQUALS(nlsml_dtmf_instance_result, result_str);
-	iks_free(result_str);
-}
 
 static const char *nlsml_good_normalized =
 	"<result x-model='http://theYesNoModel'"
@@ -296,28 +248,89 @@ static const char *nlsml_good_normalized =
 	"</interpretation>"
 	"</result>";
 
+
+static const char *nlsml_dtmf_instance_result =
+	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
+	"xmlns:xf='http://www.w3.org/2000/xforms'><interpretation>"
+	"<input mode='dtmf' confidence='100'>1</input>"
+	"<instance>foo</instance>"
+	"</interpretation></result>";
+
+
+FST_BEGIN()
+
+FST_SUITE_BEGIN(nlsml)
+
+FST_SETUP_BEGIN()
+{
+	fst_requires(nlsml_init());
+}
+FST_SETUP_END()
+
+FST_TEARDOWN_BEGIN()
+{
+}
+FST_TEARDOWN_END()
+
+/**
+ * Test parsing NLSML example results
+ */
+FST_TEST_BEGIN(parse_nlsml_examples)
+{
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_good, "1234"));
+	fst_check(NMT_BAD_XML == nlsml_parse(nlsml_bad, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_match_with_model_instance, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_multi_input, "1234"));
+	fst_check(NMT_NOINPUT == nlsml_parse(nlsml_no_input, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_multi_input_dtmf, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_meta, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_simple_ambiguity, "1234"));
+	fst_check(NMT_MATCH == nlsml_parse(nlsml_mixed_initiative, "1234"));
+	fst_check(NMT_NOMATCH == nlsml_parse(nlsml_no_match, "1234"));
+}
+FST_TEST_END()
+
+/**
+ * Test creating DTMF match result
+ */
+FST_TEST_BEGIN(create_dtmf_match)
+{
+	iks *result = nlsml_create_dtmf_match("1234", NULL);
+	char *result_str;
+	fst_requires(result);
+	result_str = iks_string(NULL, result);
+	fst_check_string_equals(nlsml_dtmf_result, result_str);
+	iks_free(result_str);
+}
+FST_TEST_END()
+
+
+/**
+ * Test creating DTMF match result with instance interpretation
+ */
+FST_TEST_BEGIN(create_dtmf_instance)
+{
+	iks *result = nlsml_create_dtmf_match("1", "foo");
+	char *result_str;
+	fst_requires(result);
+	result_str = iks_string(NULL, result);
+	fst_check_string_equals(nlsml_dtmf_instance_result, result_str);
+	iks_free(result_str);
+}
+FST_TEST_END()
+
 /**
  * Test NLSML normalization
  */
-static void test_normalize(void)
+FST_TEST_BEGIN(normalize)
 {
 	iks *result = nlsml_normalize(nlsml_good);
-	ASSERT_NOT_NULL(result);
-	ASSERT_STRING_EQUALS(nlsml_good_normalized, iks_string(NULL, result));
+	fst_requires(result);
+	fst_check_string_equals(nlsml_good_normalized, iks_string(NULL, result));
 }
+FST_TEST_END()
 
-/**
- * main program
- */
-int main(int argc, char **argv)
-{
-	const char *err;
-	TEST_INIT
-	nlsml_init();
-	TEST(test_parse_nlsml_examples);
-	TEST(test_create_dtmf_match);
-	TEST(test_create_dtmf_instance);
-	TEST(test_normalize);
-	return 0;
-}
 
+FST_SUITE_END()
+
+FST_END()

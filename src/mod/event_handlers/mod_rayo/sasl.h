@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -29,7 +29,7 @@
 #ifndef SASL_H
 #define SASL_H
 
-extern void parse_plain_auth_message(const char *message, char **authzid, char **authcid, char **password);
+SWITCH_DECLARE(void) parse_plain_auth_message(const char *message, char **authzid, char **authcid, char **password);
 
 #endif
 

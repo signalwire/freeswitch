@@ -34,9 +34,9 @@
 
 #include "mod_rayo.h"
 
-extern switch_status_t rayo_cpa_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
-extern void rayo_cpa_component_shutdown(void);
-extern iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg, void *session_data);
+SWITCH_DECLARE(switch_status_t) rayo_cpa_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+SWITCH_DECLARE(void) rayo_cpa_component_shutdown(void);
+SWITCH_DECLARE(iks *) rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg, void *session_data);
 
 #endif
 

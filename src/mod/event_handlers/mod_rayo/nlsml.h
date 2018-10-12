@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -39,12 +39,12 @@ enum nlsml_match_type {
 	NMT_NOMATCH
 };
 
-extern int nlsml_init(void);
-extern void nlsml_destroy(void);
-enum nlsml_match_type nlsml_parse(const char *result, const char *uuid);
-iks *nlsml_normalize(const char *result);
-extern iks *nlsml_create_dtmf_match(const char *digits, const char *interpretation);
-extern iks *nlsml_create_match(const char *digits, const char *interpretation, const char *mode, int confidence);
+SWITCH_DECLARE(int) nlsml_init(void);
+SWITCH_DECLARE(void) nlsml_destroy(void);
+SWITCH_DECLARE(enum nlsml_match_type) nlsml_parse(const char *result, const char *uuid);
+SWITCH_DECLARE(iks *) nlsml_normalize(const char *result);
+SWITCH_DECLARE(iks *) nlsml_create_dtmf_match(const char *digits, const char *interpretation);
+SWITCH_DECLARE(iks *) nlsml_create_match(const char *digits, const char *interpretation, const char *mode, int confidence);
 
 #endif
 
