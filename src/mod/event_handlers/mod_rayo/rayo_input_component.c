@@ -415,7 +415,7 @@ static int validate_call_input(iks *input, const char **error)
 			if (!zstr(iks_find_attrib(grammar, "url"))) {
 				*error = "url not allowed with content-type";
 				return 0;
-			} else if (strcmp("application/srgs+xml", content_type)) {
+			} else if (strcmp("application/srgs+xml", content_type) && strcmp("text/plain", content_type)) {
 				*error = "Unsupported content type";
 				return 0;
 			}
@@ -891,7 +891,7 @@ static const char *get_detected_speech_result_text(cJSON *result_json, double *c
 		if (json_confidence && json_confidence->valuedouble > 0.0) {
 			*confidence = json_confidence->valuedouble;
 		} else {
-			*confidence = 100.0;
+			*confidence = 0.99;
 		}
 		result_text = text;
 	} else if (error_text) {
@@ -940,7 +940,7 @@ static void on_detected_speech_event(switch_event_t *event)
 						result_text = get_detected_speech_result_text(json_result, &confidence, &error_text);
 						if (!zstr(result_text)) {
 							// got result... send as NLSML
-							iks *result = nlsml_create_match(result_text, NULL, "speech", (int)confidence);
+							iks *result = nlsml_create_match(result_text, NULL, "speech", (int)(confidence * 100.0));
 							/* notify of match */
 							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "MATCH = %s\n", result_text);
 							send_match_event(RAYO_COMPONENT(component), result);

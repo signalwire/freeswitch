@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -42,7 +42,6 @@ ELEMENT(RAYO_INPUT)
 	ATTRIB(sensitivity, 0.5, decimal_between_zero_and_one)
 	ATTRIB(min-confidence, 0, decimal_between_zero_and_one)
 	ATTRIB(max-silence, -1, positive_or_neg_one)
-	/* for now, only NLSML */
 	STRING_ATTRIB(match-content-type, application/nlsml+xml, "application/nlsml+xml")
 	/* internal attribs for prompt support */
 	ATTRIB(barge-event, false, bool)
@@ -72,6 +71,7 @@ ELEMENT(RAYO_OUTPUT)
 	ATTRIB(max-time, -1, positive_or_neg_one)
 	ATTRIB(renderer,, any)
 	ATTRIB(voice,, any)
+	STRING_ATTRIB(direction, out, "out,in")
 ELEMENT_END
 
 /**
