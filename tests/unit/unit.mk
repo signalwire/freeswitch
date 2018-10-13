@@ -6,12 +6,19 @@ check_PROGRAMS += tests/unit/switch_event
 tests_unit_switch_event_SOURCES = tests/unit/switch_event.c
 tests_unit_switch_event_CFLAGS = $(SWITCH_AM_CFLAGS)
 tests_unit_switch_event_LDADD = $(FSLD)
-tests_unit_switch_event_LDFLAGS = $(SWITCH_AM_LDFLAGS) -ltap
+tests_unit_switch_event_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 
 check_PROGRAMS += tests/unit/switch_hash
 
 tests_unit_switch_hash_SOURCES = tests/unit/switch_hash.c
 tests_unit_switch_hash_CFLAGS = $(SWITCH_AM_CFLAGS)
 tests_unit_switch_hash_LDADD = $(FSLD)
-tests_unit_switch_hash_LDFLAGS = $(SWITCH_AM_LDFLAGS) -ltap
+tests_unit_switch_hash_LDFLAGS = $(SWITCH_AM_LDFLAGS)
+
+check_PROGRAMS += tests/unit/switch_ivr_originate
+
+tests_unit_switch_ivr_originate_SOURCES = tests/unit/switch_ivr_originate.c
+tests_unit_switch_ivr_originate_CFLAGS = $(SWITCH_AM_CFLAGS)
+tests_unit_switch_ivr_originate_LDADD = $(FSLD)
+tests_unit_switch_ivr_originate_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 

@@ -26,7 +26,7 @@
  * Seven Du <dujinfang@gmail.com>
  *
  *
- * originate_test.c -- tests originate
+ * switch_ivr_originate.c -- tests originate
  *
  */
 #include <switch.h>
@@ -69,7 +69,7 @@ static switch_state_handler_table_t state_handlers = {
 
 FST_CORE_BEGIN("./conf")
 {
-	FST_SUITE_BEGIN(originate)
+	FST_SUITE_BEGIN(switch_ivr_originate)
 	{
 		FST_SETUP_BEGIN()
 		{

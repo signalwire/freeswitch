@@ -66,7 +66,7 @@ static char *fst_getenv_default(const char *env, char *default_value, switch_boo
 /**
  * initialize FS core from optional configuration dir
  */
-static void fst_init_core_and_modload(const char *confdir, const char *basedir)
+static void fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal)
 {
 	const char *err;
 	// Let FreeSWITCH core pick these
@@ -101,9 +101,13 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 	SWITCH_GLOBAL_dirs.data_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.localstate_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 
-	switch_core_init_and_modload(0, SWITCH_TRUE, &err);
-	switch_sleep(1 * 1000000);
-	switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
+	if (!minimal) {
+		switch_core_init_and_modload(0, SWITCH_TRUE, &err);
+		switch_sleep(1 * 1000000);
+		switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
+	} else {
+		switch_core_init(SCF_MINIMAL, SWITCH_TRUE, &err);
+	}
 }
 
 /**
@@ -149,6 +153,18 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
  */
 #define fst_time_mark() \
 	fst_time_start = switch_time_now();
+
+/**
+ * Check a test /w error message
+ */
+#define fst_xcheck(expr, error_msg) \
+	fct_xchk(expr, error_msg);
+
+/**
+ * Fail a test
+ */
+#define fst_fail(error_msg) \
+	fct_xchk(0, error_msg);
 
 /**
  * Check duration relative to test start, last marked time, or last check.
@@ -201,7 +217,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 		switch_memory_pool_t *fst_pool = NULL; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_core) { \
-			fst_init_core_and_modload(NULL, NULL); /* shuts up compiler */ \
+			fst_init_core_and_modload(NULL, NULL, 0); /* shuts up compiler */ \
 		} \
 		{ \
 
@@ -222,13 +238,14 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 #define FST_CORE_BEGIN(confdir) \
 	FCT_BGN() \
 	{ \
-		int fst_core = 1; \
+		int fst_core = 2; \
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		fst_init_core_and_modload(confdir, NULL); \
+		fst_init_core_and_modload(confdir, NULL, 0); \
 		{
+
 
 /**
  * Define the end of a freeswitch core test driver.
@@ -243,6 +260,21 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 	} \
 	FCT_END()
 
+/**
+ * Minimal FS core load
+ */
+#define FST_MINCORE_BEGIN() \
+	FCT_BGN() \
+	{ \
+		int fst_core = 1; \
+		switch_time_t fst_time_start = 0; \
+		switch_timer_t fst_timer = { 0 }; \
+		switch_memory_pool_t *fst_pool = NULL; \
+		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
+		fst_init_core_and_modload(".", NULL, 1); /* minimal load */ \
+		{
+
+#define FST_MINCORE_END FST_CORE_END
 
 /**
  * Define the beginning of a FreeSWITCH module test suite.  Loads the module for test.
@@ -252,8 +284,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 #define FST_MODULE_BEGIN(modname,suite) \
 	{ \
 		const char *fst_test_module = #modname; \
-		fst_requires(fst_core); \
-		if (!zstr(fst_test_module)) { \
+		if (fst_core && !zstr(fst_test_module)) { \
 			const char *err; \
 			switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
 		} \
@@ -293,7 +324,9 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 		if (fst_core) { \
 			switch_core_new_memory_pool(&fst_pool); \
 			fst_requires(fst_pool != NULL); \
-			fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+			if (fst_core > 1) { \
+				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+			} \
 			fst_time_mark(); \
 		}
 
@@ -310,7 +343,9 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 	FCT_TEARDOWN_BGN() \
 		if (fst_core) { \
 			switch_core_destroy_memory_pool(&fst_pool); \
-			switch_core_timer_destroy(&fst_timer); \
+			if (fst_core > 1) { \
+				switch_core_timer_destroy(&fst_timer); \
+			} \
 		}
 
 /**
@@ -423,7 +458,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 	char *fst_asr_result = NULL; \
 	switch_asr_handle_t ah = { 0 }; \
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE; \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Open recognizer: %s\n", recognizer); \
 	/* open ASR interface and feed recorded audio into it and collect result */ \
 	fst_requires(switch_core_asr_open(&ah, recognizer, "L16", 8000, "", &flags, fst_pool) == SWITCH_STATUS_SUCCESS); \
@@ -456,7 +491,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 	fst_asr_result = NULL; \
 	file_handle.channels = 1; \
 	file_handle.native_rate = 8000; \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Test recognizer: input = %s\n", input_filename); \
 	fst_requires(switch_core_asr_load_grammar(&ah, grammar, "") == SWITCH_STATUS_SUCCESS); \
 	fst_requires(switch_core_file_open(&file_handle, input_filename, file_handle.channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS); \
@@ -499,7 +534,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
  *    switch_core_asr_pause(&ah) == SWITCH_STATUS_SUCCESS
  */
 #define fst_test_core_asr_pause() \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Pause recognizer\n"); \
 	flags = SWITCH_ASR_FLAG_NONE; \
 	fst_requires(switch_core_asr_pause(&ah) == SWITCH_STATUS_SUCCESS);
@@ -511,7 +546,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
  *    switch_core_asr_resume(&ah) == SWITCH_STATUS_SUCCESS
  */
 #define fst_test_core_asr_resume() \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Resume recognizer\n"); \
 	flags = SWITCH_ASR_FLAG_NONE; \
 	fst_requires(switch_core_asr_resume(&ah) == SWITCH_STATUS_SUCCESS);	
@@ -523,7 +558,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
  *   switch_core_asr_close(&ah, flags) == SWITCH_STATUS_SUCCESS
  */
 #define fst_test_core_asr_close() \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Close recognizer\n"); \
 	flags = SWITCH_ASR_FLAG_NONE; \
 	fst_requires(switch_core_asr_close(&ah, &flags) == SWITCH_STATUS_SUCCESS); \
@@ -542,7 +577,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 #define fst_play_and_detect_speech_test_begin() \
 { \
 	const char *fst_asr_result = NULL; \
-	fst_requires(fst_core);
+	fst_requires(fst_core > 1);
 
 /**
  * Use play_and_detect_speech APP to test recognizer
@@ -566,7 +601,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 #define fst_play_and_detect_speech_app_test(recognizer, grammar, prompt_filename, input_filename) \
 { \
 	char *args = NULL; \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	fst_requires_module("mod_dptools"); \
 	switch_channel_set_variable(fst_channel, "detect_speech_result", ""); \
 	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
@@ -598,7 +633,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 { \
 	char *args = NULL; \
 	fst_asr_result = NULL; \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
 	switch_status_t status = switch_ivr_play_and_detect_speech(fst_session, prompt_filename, recognizer, grammar, (char **)&fst_asr_result, 0, input_args); \
 	fst_check(fst_asr_result != NULL); \
@@ -624,7 +659,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir)
 { \
 	switch_stream_handle_t stream = { 0 }; \
 	SWITCH_STANDARD_STREAM(stream); \
-	fst_requires(fst_core); \
+	fst_requires(fst_core > 1); \
 	fst_requires_module("mod_commands"); \
 	switch_status_t api_result = switch_api_execute("sched_api", switch_core_session_sprintf(fst_session, "%s none uuid_recv_dtmf %s %s", when, switch_core_session_get_uuid(fst_session), digits), NULL, &stream); \
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fst_session), SWITCH_LOG_INFO, "Injecting DTMF %s at %s\n", digits, when); \
