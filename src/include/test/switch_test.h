@@ -81,7 +81,15 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 
 	// Allow test to define the runtime dir
 	if (!zstr(confdir)) {
-		SWITCH_GLOBAL_dirs.conf_dir = strdup(confdir);
+#ifdef SWITCH_TEST_BASE_DIR_FOR_CONF
+		SWITCH_GLOBAL_dirs.conf_dir = switch_mprintf("%s%s%s", SWITCH_TEST_BASE_DIR_FOR_CONF, SWITCH_PATH_SEPARATOR, confdir);
+#else
+		if (confdir[0] != '/') {
+			SWITCH_GLOBAL_dirs.conf_dir = switch_mprintf(".%s%s", SWITCH_PATH_SEPARATOR, confdir);
+		} else {
+			SWITCH_GLOBAL_dirs.conf_dir = strdup(confdir);
+		}
+#endif
 	} else {
 		SWITCH_GLOBAL_dirs.conf_dir = switch_mprintf("%s%sconf", basedir, SWITCH_PATH_SEPARATOR);
 	}

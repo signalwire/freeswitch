@@ -566,6 +566,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cdr_mongodb", "src\mod\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg", "libs\win32\ffmpeg\ffmpeg.2017.vcxproj", "{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9388C266-C3FC-468A-92EF-0CBC35941412}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_mod_av", "src\mod\applications\mod_av\test\test_mod_av.2017.vcxproj", "{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2577,6 +2581,14 @@ Global
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Debug|x64.ActiveCfg = Debug|x64
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Release|Win32.ActiveCfg = Release|x64
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}.Release|x64.ActiveCfg = Release|x64
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.All|Win32.ActiveCfg = Release|Win32
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.All|Win32.Build.0 = Release|Win32
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.All|x64.ActiveCfg = Release|x64
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.All|x64.Build.0 = Release|x64
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.Debug|x64.ActiveCfg = Debug|x64
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.Release|Win32.ActiveCfg = Release|Win32
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2782,6 +2794,7 @@ Global
 		{0A130A8B-3076-4619-BADF-9E86F621AEEC} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{4DFF29B4-2976-447D-A8B3-43476451517C} = {9ADF1E48-2F5C-4ED7-A893-596259FABFE0}
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
+		{7926CB0D-62CE-4A09-AE94-1DA2BC92D625} = {9388C266-C3FC-468A-92EF-0CBC35941412}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}
