@@ -101,6 +101,8 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 	SWITCH_GLOBAL_dirs.data_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.localstate_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 
+	switch_core_set_globals();
+
 	if (!minimal) {
 		switch_core_init_and_modload(0, SWITCH_TRUE, &err);
 		switch_sleep(1 * 1000000);
@@ -281,6 +283,16 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
  * @param modname name of module to load.
  * @param suite the name of this test suite
  */
+#ifdef WIN32
+#define FST_MODULE_BEGIN(modname,suite) \
+	{ \
+		const char *fst_test_module = #modname; \
+		if (fst_core && !zstr(fst_test_module)) { \
+			const char *err; \
+			switch_loadable_module_load_module((char *)"./mod", (char *)fst_test_module, SWITCH_FALSE, &err); \
+		} \
+		FCT_FIXTURE_SUITE_BGN(suite);
+#else
 #define FST_MODULE_BEGIN(modname,suite) \
 	{ \
 		const char *fst_test_module = #modname; \
@@ -289,10 +301,20 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 			switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
 		} \
 		FCT_FIXTURE_SUITE_BGN(suite);
+#endif
 
 /**
  * Define the end of a FreeSWITCH module test suite.
  */
+#ifdef WIN32
+#define FST_MODULE_END() \
+		FCT_FIXTURE_SUITE_END(); \
+		if (!zstr(fst_test_module) && switch_loadable_module_exists(fst_test_module) == SWITCH_STATUS_SUCCESS) { \
+			const char *err; \
+			switch_loadable_module_unload_module((char *)"./mod", (char *)fst_test_module, SWITCH_FALSE, &err); \
+		} \
+	}
+#else
 #define FST_MODULE_END() \
 		FCT_FIXTURE_SUITE_END(); \
 		if (!zstr(fst_test_module) && switch_loadable_module_exists(fst_test_module) == SWITCH_STATUS_SUCCESS) { \
@@ -300,7 +322,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 			switch_loadable_module_unload_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
 		} \
 	}
-
+#endif
 
 /**
  * Define the beginning of a test suite not associated with a module. 
