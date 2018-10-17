@@ -16,7 +16,7 @@
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}</ProjectGuid>
   </PropertyGroup>
-  <Import Project="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2\extras\visual_studio_integration\MSBuildExtensions\CUDA 9.2.props" />
+  <Import Project="$(CUDA_PATH)\extras\visual_studio_integration\MSBuildExtensions\CUDA *.props" />
   <Import Project="$(SolutionDir)w32\zlib.props" Condition=" '$(zlibImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\download_ffmpeg.props" Condition=" '$(downloadFfmpegPropsImported)' == '' " />
