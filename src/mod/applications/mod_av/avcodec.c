@@ -1089,6 +1089,8 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 	if (context->hw_encoder) {
 		av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 		av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
+		av_opt_set_int(context->encoder_ctx->priv_data, "delay", 0, 0);
+		av_opt_set(context->encoder_ctx->priv_data, "forced-idr", "true", 0);
 		return;
 	}
 
