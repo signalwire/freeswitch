@@ -721,7 +721,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 
 #define fst_xml_body(body) \
 	if (fst_tag_body) { \
-		fst_xml_stream.write_function(&fst_xml_stream "%s", body); \
+		fst_xml_stream.write_function(&fst_xml_stream, "%s", body); \
 	} else { \
 		fst_tag_body = 1; \
 		fst_xml_stream.write_function(&fst_xml_stream, ">%s", body); \
