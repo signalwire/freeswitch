@@ -356,6 +356,7 @@ struct vpx_context {
 	switch_time_t last_ms;
 	vpx_codec_ctx_t	decoder;
 	uint8_t decoder_init;
+	int decoded_first_frame;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
 	int no_key_frame;
@@ -406,6 +407,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		vpx_codec_flags_t dec_flags = 0;
 		vp8_postproc_cfg_t ppcfg;
 		my_vpx_cfg_t *my_cfg = NULL;
+		vpx_codec_err_t err;
 
 		if (context->is_vp9) {
 			my_cfg = &vpx_globals.vp9;
@@ -415,10 +417,11 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 
 		cfg.threads = my_cfg->dec_cfg.threads;
 
-		if (vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags) != VPX_CODEC_OK) {
+		if ((err = vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags)) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
-				"VPX decoder %s codec init error: [%d:%s]\n",
-				vpx_codec_iface_name(context->decoder_interface), context->decoder.err, context->decoder.err_detail);
+				"VPX decoder %s codec init error: [%d:%s:%s]\n",
+				vpx_codec_iface_name(context->decoder_interface),
+				err, vpx_codec_error(&context->decoder), vpx_codec_error_detail(&context->decoder));
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -453,6 +456,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	vpx_codec_enc_cfg_t *config = &context->config;
 	my_vpx_cfg_t *my_cfg = NULL;
+	vpx_codec_err_t err;
 
 	if (context->is_vp9) {
 		my_cfg = &vpx_globals.vp9;
@@ -511,10 +515,11 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	}
 
 	if (context->encoder_init) {
-		if (vpx_codec_enc_config_set(&context->encoder, config) != VPX_CODEC_OK) {
+		if ((err = vpx_codec_enc_config_set(&context->encoder, config)) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
-				"VPX encoder %s codec reconf error: [%d:%s]\n",
-				vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
+				"VPX encoder %s codec reconf error: [%d:%s:%s]\n",
+				vpx_codec_iface_name(context->encoder_interface),
+				err, vpx_codec_error(&context->encoder), vpx_codec_error_detail(&context->encoder));
 			return SWITCH_STATUS_FALSE;
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
@@ -525,10 +530,11 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			show_config(my_cfg, config);
 		}
 
-		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
+		if ((err = vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION)) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR,
-				"VPX encoder %s codec init error: [%d:%s]\n",
-				vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
+				"VPX encoder %s codec init error: [%d:%s:%s]\n",
+				vpx_codec_iface_name(context->encoder_interface),
+				err, vpx_codec_error(&context->encoder), vpx_codec_error_detail(&context->encoder));
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -769,7 +775,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	int64_t pts;
 	vpx_enc_frame_flags_t vpx_flags = 0;
 	switch_time_t now;
-	int err;
+	vpx_codec_err_t err;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -816,9 +822,9 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	if (context->need_key_frame > 0) {
 		// force generate a key frame
-
 		if (!context->last_key_frame || (now - context->last_key_frame) > vpx_globals.key_frame_min_freq) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VPX KEYFRAME GENERATED\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), VPX_SWITCH_LOG_LEVEL,
+				"VPX encoder keyframe request\n");
 			vpx_flags |= VPX_EFLAG_FORCE_KF;
 			context->need_key_frame = 0;
 			context->last_key_frame = now;
@@ -838,7 +844,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 						 dur,
 						 vpx_flags,
 						 VPX_DL_REALTIME)) != VPX_CODEC_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s:%s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR, "VPX encode error [%d:%s:%s]\n",
 			err, vpx_codec_error(&context->encoder), vpx_codec_error_detail(&context->encoder));
 		frame->datalen = 0;
 		return SWITCH_STATUS_FALSE;
@@ -1188,7 +1194,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (status == SWITCH_STATUS_SUCCESS && frame->m && len) {
 		uint8_t *data;
 		int corrupted = 0;
-		int err;
+		vpx_codec_err_t err;
 
 		switch_buffer_peek_zerocopy(context->vpx_packet_buffer, (void *)&data);
 
@@ -1196,20 +1202,22 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
 		if (err != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
-							  len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
-
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), (context->decoded_first_frame ? SWITCH_LOG_ERROR : VPX_SWITCH_LOG_LEVEL),
+				"VPX error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
+				len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
 
 			if (err == VPX_CODEC_MEM_ERROR) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX MEM ERROR, resetting decoder!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "VPX MEM ERROR, resetting decoder!\n");
 				context->need_decoder_reset = 1;
 			}
 
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
+		} else {
+			if (!context->decoded_first_frame) context->decoded_first_frame = 1;
 		}
 
 		if (vpx_codec_control(decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX control error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "VPX control error!\n");
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
 
