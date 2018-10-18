@@ -1802,10 +1802,11 @@ done:
 
 			if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 			if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
-			if (pflags & SWITCH_POLL_HUP) { log_and_exit(SWITCH_LOG_INFO, "%s POLL HANGUP DETECTED (peer closed its end of socket)\n", jsock->name); }
-			if (pflags & SWITCH_POLL_ERROR) { die("%s POLL ERROR\n", jsock->name); }
-			if (pflags & SWITCH_POLL_INVALID) { die("%s POLL INVALID SOCKET (not opened or already closed)\n", jsock->name); }
-			if (pflags & SWITCH_POLL_READ) {
+			if (pflags == 0) { /* keepalive socket poll timeout */ break; }
+			if (pflags > 0 && (pflags & SWITCH_POLL_HUP)) { log_and_exit(SWITCH_LOG_INFO, "%s POLL HANGUP DETECTED (peer closed its end of socket)\n", jsock->name); }
+			if (pflags > 0 && (pflags & SWITCH_POLL_ERROR)) { die("%s POLL ERROR\n", jsock->name); }
+			if (pflags > 0 && (pflags & SWITCH_POLL_INVALID)) { die("%s POLL INVALID SOCKET (not opened or already closed)\n", jsock->name); }
+			if (pflags > 0 && (pflags & SWITCH_POLL_READ)) {
 				ssize_t bytes;
 
 				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen - 1, wsh->block);
@@ -1835,8 +1836,6 @@ done:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "socket %s is going to handle a new request\n", jsock->name);
 					goto new_req;
 				}
-			} else {
-				break;
 			}
 		}
 	}
@@ -1872,10 +1871,11 @@ static void client_run(jsock_t *jsock)
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
-		if (pflags & SWITCH_POLL_HUP) { log_and_exit(SWITCH_LOG_INFO, "%s POLL HANGUP DETECTED (peer closed its end of socket)\n", jsock->name); }
-		if (pflags & SWITCH_POLL_ERROR) { die("%s POLL ERROR\n", jsock->name); }
-		if (pflags & SWITCH_POLL_INVALID) { die("%s POLL INVALID SOCKET (not opened or already closed)\n", jsock->name); }
-		if (pflags & SWITCH_POLL_READ) {
+		if (pflags == 0) {/* socket poll timeout */ jsock_check_event_queue(jsock); }
+		if (pflags > 0 && (pflags & SWITCH_POLL_HUP)) { log_and_exit(SWITCH_LOG_INFO, "%s POLL HANGUP DETECTED (peer closed its end of socket)\n", jsock->name); }
+		if (pflags > 0 && (pflags & SWITCH_POLL_ERROR)) { die("%s POLL ERROR\n", jsock->name); }
+		if (pflags > 0 && (pflags & SWITCH_POLL_INVALID)) { die("%s POLL INVALID SOCKET (not opened or already closed)\n", jsock->name); }
+		if (pflags > 0 && (pflags & SWITCH_POLL_READ)) {
 			switch_ssize_t bytes;
 			ws_opcode_t oc;
 			uint8_t *data;
@@ -1964,8 +1964,6 @@ static void client_run(jsock_t *jsock)
 					switch_set_flag(jsock, JPFLAG_CHECK_ATTACH);
 				}
 			}
-		} else {
-			jsock_check_event_queue(jsock);
 		}
 	}
 
@@ -4413,6 +4411,7 @@ static int profile_one_loop(verto_profile_t *profile)
 		if (errno != EINTR) {
 			die_errnof("%s POLL FAILED with %d", profile->name, res);
 		}
+		return 0;
 	}
 
 	if (res == 0) {
