@@ -2695,11 +2695,13 @@ fct_logger__on_warn(fct_logger_i *logger, char const *msg)
 
 /* Common routine to record strings representing failures. The
 chk should be a failure before we call this, and the list is a list
-of char*'s that will eventually be free'd by the logger. */
+of conditions that will eventually be free'd by the logger. */
 static void
 fct_logger_record_failure(fctchk_t const* chk, fct_nlist_t* fail_list)
 {
-    fct_nlist__append(fail_list, (void *)chk);
+    fctchk_t *dup_chk = (fctchk_t *)malloc(sizeof(*dup_chk));
+    memcpy(dup_chk, chk, sizeof(*dup_chk));
+    fct_nlist__append(fail_list, (void *)dup_chk);
 }
 
 
@@ -2795,7 +2797,7 @@ fct_minimal_logger__on_delete(
 {
     fct_minimal_logger_t *self = (fct_minimal_logger_t*)self_;
     fct_unused(e);
-    fct_nlist__final(&(self->failed_cndtns_list), free);
+    fct_nlist__final(&(self->failed_cndtns_list), (fct_nlist_on_del_t)fctchk__del);
     free(self);
 
 }
@@ -2966,7 +2968,7 @@ fct_standard_logger__on_delete(
 {
     fct_standard_logger_t *logger = (fct_standard_logger_t*)logger_;
     fct_unused(e);
-    fct_nlist__final(&(logger->failed_cndtns_list), free);
+    fct_nlist__final(&(logger->failed_cndtns_list), (fct_nlist_on_del_t)fctchk__del);
     free(logger);
     logger_ =NULL;
 }
