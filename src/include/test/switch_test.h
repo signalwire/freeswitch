@@ -675,6 +675,38 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 #define fst_play_and_detect_speech_test_end() \
 }
 
+
+/**
+ * Compare extension dialplan apps and args with expected apps and args
+ * @param expected NULL terminated string array of app arg and names. 
+ *     const char *expected[] = { "playback", "https://example.com/foo.wav", "park", "", NULL };
+ * @param extension the switch_caller_extension_t to check
+ */
+#define fst_check_extension_apps(expected, extension) \
+	{ \
+		fst_xcheck(extension != NULL, "Missing extension\n"); \
+		if (extension) { \
+			int i; \
+			switch_caller_application_t *cur_app = extension->applications; \
+			for (i = 0; ; i += 2, cur_app = cur_app->next) { \
+				int cur_app_num = i / 2 + 1; \
+				if (!expected[i]) { \
+					if (cur_app != NULL) { \
+						fst_fail(switch_core_sprintf(fst_pool, "Unexpected application #%d \"%s\"\n", cur_app_num, cur_app->application_name)); \
+					} \
+					break; \
+				} \
+				fst_xcheck(cur_app != NULL, switch_core_sprintf(fst_pool, "Extension application #%d \"%s\" is missing", cur_app_num, expected[i])); \
+				if (!cur_app) { \
+					break; \
+				} \
+				fst_xcheck(cur_app->application_name && !strcmp(expected[i], cur_app->application_name), switch_core_sprintf(fst_pool, "Expected application #%d name is \"%s\", but is \"%s\"\n", cur_app_num, expected[i], cur_app->application_name)); \
+				fst_xcheck(cur_app->application_data && !strcmp(expected[i + 1], cur_app->application_data), switch_core_sprintf(fst_pool, "Expected application #%d %s data is \"%s\", but is \"%s\"\n", cur_app_num, expected[i], expected[i + 1], cur_app->application_data)); \
+			} \
+		} \
+	}
+
+
 /**
  * Inject DTMF into the session to be detected.
  *
