@@ -297,7 +297,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 		const char *fst_test_module = #modname; \
 		if (fst_core && !zstr(fst_test_module)) { \
 			const char *err; \
-			switch_loadable_module_load_module((char *)"./mod", (char *)fst_test_module, SWITCH_FALSE, &err); \
+			switch_loadable_module_load_module((char *)"./mod", (char *)fst_test_module, SWITCH_TRUE, &err); \
 		} \
 		FCT_FIXTURE_SUITE_BGN(suite);
 #else
@@ -306,7 +306,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 		const char *fst_test_module = #modname; \
 		if (fst_core && !zstr(fst_test_module)) { \
 			const char *err; \
-			switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_FALSE, &err); \
+			switch_loadable_module_load_module((char *)"../.libs", (char *)fst_test_module, SWITCH_TRUE, &err); \
 		} \
 		FCT_FIXTURE_SUITE_BGN(suite);
 #endif
