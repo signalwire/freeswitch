@@ -2626,7 +2626,7 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 
 typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
-static const char *sofia_state_names[] = {
+const char *sofia_state_names[] = {
 	"UNREGED",
 	"TRYING",
 	"REGISTER",
@@ -2754,7 +2754,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-static uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
+uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
 {
 	struct cb_helper_sql2str cb;
 	char reg_count[80] = "";
@@ -4362,6 +4362,8 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
+	} else if (!strcasecmp(argv[0], "jsonstatus")) {
+		func = cmd_json_status;
 	} else if (!strcasecmp(argv[0], "filter")) {
 	    if (argc > 1) {
 	        if (!strcasecmp(argv[1],"off")) {
@@ -6263,6 +6265,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
 	management_interface->relative_oid = "1001";
 	management_interface->management_function = sofia_manage;
+
+	add_sofia_json_apis(module_interface);
 
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function",
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
