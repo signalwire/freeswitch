@@ -698,6 +698,9 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
+iksemel-dep:
+	make -C src/mod/endpoints/mod_dingaling deps
+
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
