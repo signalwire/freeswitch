@@ -4084,6 +4084,8 @@ switch_status_t conference_api_sub_json_list(conference_obj_t *conference, switc
 	switch_assert(ebuf);
 	stream->write_function(stream, "%s", ebuf);
 	free(ebuf);
+	
+	cJSON_Delete(conferences);
 
 	return SWITCH_STATUS_SUCCESS;
 }
