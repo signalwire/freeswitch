@@ -4626,7 +4626,7 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 	*e++ = '\0';
 
 	if (switch_needs_url_encode(q)) {
-		enclen = (strlen(q) * 2)  + 2;
+		enclen = (strlen(q) * 3)  + 2;
 		qenc = switch_core_alloc(cp->pool, enclen);
 		switch_url_encode(q, qenc, enclen);
 		mod = 1;
