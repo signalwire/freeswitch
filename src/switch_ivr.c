@@ -2115,7 +2115,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
+	if (switch_channel_test_flag(channel, CF_ANSWERED) &&
+		(flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
 		switch_core_session_message_t msg = { 0 };
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
