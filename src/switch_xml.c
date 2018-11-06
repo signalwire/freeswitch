@@ -124,7 +124,7 @@ static void preprocess_exec_set(char *keyval)
 	if (key && val) {
 		switch_stream_handle_t exec_result = { 0 };
 		SWITCH_STANDARD_STREAM(exec_result);
-		if (switch_stream_system_fork(val, &exec_result) == 0) {
+		if (switch_stream_system(val, &exec_result) == 0) {
 			if (!zstr(exec_result.data)) {
 				char *tmp = (char *) exec_result.data;
 				tmp = &tmp[strlen(tmp)-1];

@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <document type="freeswitch/xml">
+  <X-PRE-PROCESS cmd="exec-set" data="test=echo 1234"/>
+  <X-PRE-PROCESS cmd="set" data="default_password=$${test}"/>
   <section name="configuration" description="Various Configuration">
     <configuration name="modules.conf" description="Modules">
       <modules>
