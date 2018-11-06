@@ -2837,16 +2837,15 @@
 		    has_video++;
 		}
 	    }
+	    navigator.mediaDevices.getUserMedia({ audio: (has_audio > 0 ? true : false), video: (has_video > 0 ? true : false)})
+                .then(function(stream) {
+                        Xstream = stream;
+                        navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+           })
+           .catch(function(err) {
+                console.log("The following error occurred: " + err.name);
+          });
 
-	    navigator.getUserMedia({ audio: (has_audio > 0 ? true : false), video: (has_video > 0 ? true : false)},
-				   function(stream) {
-				       Xstream = stream;
-				       navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
-				   },
-				   function(err) {
-				       console.log("The following error occurred: " + err.name);
-				   }
-				  );
 	}
 
 	navigator.mediaDevices.enumerateDevices().then(checkTypes).catch(handleError);
