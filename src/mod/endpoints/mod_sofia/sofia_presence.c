@@ -4945,7 +4945,7 @@ void sofia_presence_handle_sip_i_message(int status,
 							first_history_info = 0;
 						} else {
 							/* Append the History-Info into one long string */
-							const char *history_var = switch_channel_get_variable(channel, "sip_history_info");
+							const char *history_var = switch_event_get_header(event, "sip_history_info");
 							if (!zstr(history_var)) {
 								char *tmp_str;
 								if ((tmp_str = switch_mprintf("%s, %s", history_var, un->un_value))) {
