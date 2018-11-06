@@ -404,6 +404,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 
 	if (fh->real_channels != fh->channels && (flags & SWITCH_FILE_FLAG_READ) && !(fh->flags & SWITCH_FILE_NOMUX)) {
+		fh->cur_channels = fh->real_channels;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to %d channel%s will occur.\n", fh->real_channels, fh->channels, fh->channels == 1 ? "" : "s");
 	}
 

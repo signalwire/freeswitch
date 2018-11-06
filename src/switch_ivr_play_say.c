@@ -1664,7 +1664,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
-			buflen = (FILE_STARTSAMPLES * sizeof(*abuf) * fh->cur_channels) > 0 ? fh->cur_channels : fh->channels;
+			buflen = FILE_STARTSAMPLES * sizeof(*abuf) * (fh->cur_channels > 0 ? fh->cur_channels : fh->channels); 
 
 			if (buflen > write_frame.buflen) {
 				abuf = realloc(abuf, buflen);
