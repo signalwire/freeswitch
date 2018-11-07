@@ -136,7 +136,6 @@ AC_STRUCT_TM
 
 # Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 #AC_CHECK_FUNCS([gethostname gettimeofday localtime_r memmove memset socket strcasecmp strchr strdup strncasecmp strstr])
