@@ -2596,35 +2596,25 @@ switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switc
 	mcu_layer_t *layer = NULL;
 	char *text = (char *) data;
 
-	if (member == NULL)
+	if (member == NULL) {
 		return SWITCH_STATUS_GENERR;
+	}
 
 	switch_url_decode(text);
 
-	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
-		stream->write_function(stream, "-ERR Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	layer = conference_video_get_layer_locked(member);
-
-	if (!layer) {
-		stream->write_function(stream, "-ERR Channel %s is not in a video layer\n", switch_channel_get_name(member->channel));
-		goto end;
-	}
-
-	if (zstr(text)) {
-		stream->write_function(stream, "-ERR No text supplied\n", switch_channel_get_name(member->channel));
-		goto end;
-	}
+ 	if (zstr(text)) goto end;
 
 	member->video_banner_text = switch_core_strdup(member->pool, text);
 
+	layer = conference_video_get_layer_locked(member);
+
+	if (!layer) goto end;
+
 	conference_video_layer_set_banner(member, layer, NULL);
 
-	stream->write_function(stream, "+OK\n");
-
  end:
+
+	stream->write_function(stream, "+OK\n");
 
 	conference_video_release_layer(&layer);
 
