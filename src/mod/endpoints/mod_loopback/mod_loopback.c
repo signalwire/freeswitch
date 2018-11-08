@@ -831,7 +831,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (switch_test_flag(frame, SFF_CNG) ||
 		(switch_test_flag(tech_pvt, TFLAG_BOWOUT) && switch_test_flag(tech_pvt, TFLAG_BOWOUT_USED))) {
 		switch_core_timer_sync(&tech_pvt->timer);
-		switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
+		if (tech_pvt->other_tech_pvt) switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -991,10 +991,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 			done = 1;
 			switch_set_flag(tech_pvt, TFLAG_CLEAR);
-			switch_set_flag(tech_pvt->other_tech_pvt, TFLAG_CLEAR);
+			if (tech_pvt->other_tech_pvt) switch_set_flag(tech_pvt->other_tech_pvt, TFLAG_CLEAR);
 
 			switch_core_timer_sync(&tech_pvt->timer);
-			switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
+			if (tech_pvt->other_tech_pvt) switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
 		}
 		break;
 	default:
