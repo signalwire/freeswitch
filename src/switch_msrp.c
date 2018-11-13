@@ -103,14 +103,13 @@ static switch_bool_t msrp_check_success_report(switch_msrp_msg_t *msrp_msg)
 
 static void msrp_deinit_ssl()
 {
-	globals.ssl_ready = 0;
 	if (globals.ssl_ctx) {
 		SSL_CTX_free(globals.ssl_ctx);
 		globals.ssl_ctx = NULL;
 	}
 }
 
-static void msrp_init_ssl()
+static int msrp_init_ssl()
 {
 	const char *err = "";
 
@@ -176,11 +175,15 @@ static void msrp_init_ssl()
 
 	SSL_CTX_set_cipher_list(globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
-	return;
+	return 1;
 
  fail:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
+
+	globals.ssl_ready = 0;
 	msrp_deinit_ssl();
+
+	return 0;
 }
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
@@ -1139,10 +1142,6 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		// switch_socket_opt_set(csock->sock, SWITCH_SO_NONBLOCK, TRUE);
 
 		if (csock->secure) { // tls?
-			if (globals.ssl_ready != 1) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL not ready\n");
-				goto end;
-			}
 			int secure_established = 0;
 			int sanity = 10;
 			switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
