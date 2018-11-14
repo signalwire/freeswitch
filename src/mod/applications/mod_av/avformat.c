@@ -50,6 +50,7 @@ GCC_DIAG_ON(deprecated-declarations)
 #define AVUTIL_TIMESTAMP_H
 
 #define AV_TS_MAX_STRING_SIZE 32
+#define UINTVAL(v) (v > 0 ? v : 0);
 
 // Compatibility with old libav on Debian Jessie
 // Not required if libavcodec version > 56.34.1
@@ -58,6 +59,12 @@ GCC_DIAG_ON(deprecated-declarations)
 #define AV_CODEC_FLAG_GLOBAL_HEADER 	 CODEC_FLAG_GLOBAL_HEADER
 #define AV_CODEC_CAP_VARIABLE_FRAME_SIZE CODEC_CAP_VARIABLE_FRAME_SIZE
 #endif
+
+struct avformat_globals {
+	enum AVColorSpace colorspace;
+};
+
+struct avformat_globals avformat_globals = { 0 };
 
 /* App interface */
 
@@ -566,7 +573,7 @@ GCC_DIAG_ON(deprecated-declarations)
 
 		// av_opt_set_int(c->priv_data, "slice-max-size", SWITCH_DEFAULT_VIDEO_SIZE, 0);
 
-		c->colorspace = AVCOL_SPC_RGB;
+		c->colorspace = avformat_globals.colorspace;
 		c->color_range = AVCOL_RANGE_JPEG;
 
 		break;
@@ -2626,10 +2633,44 @@ static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 static const char modname[] = "mod_av";
 
+static switch_status_t load_config()
+{
+	char *cf = "avformat.conf";
+	switch_xml_t cfg, xml, param, settings;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "colorspace")) {
+				int value = atoi(val);
+
+				avformat_globals.colorspace = UINTVAL(value);
+
+				if (avformat_globals.colorspace > AVCOL_SPC_NB) {
+					avformat_globals.colorspace = AVCOL_SPC_RGB;
+				}
+			}
+		}
+	}
+
+	switch_xml_free(xml);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 {
 	switch_file_interface_t *file_interface;
 	int i = 0;
+
+	memset(&avformat_globals, 0, sizeof(struct avformat_globals));
+	load_config();
 
 	supported_formats[i++] = "av";
 	supported_formats[i++] = "rtmp";
