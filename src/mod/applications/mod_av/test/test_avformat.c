@@ -60,7 +60,7 @@ FST_CORE_BEGIN("conf")
 			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
 
 			status = switch_core_file_write(&fh, data, &len);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, (int)len);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			// fst_requires(len == SAMPLES);
 
@@ -116,7 +116,7 @@ FST_CORE_BEGIN("conf")
 			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
 
 			status = switch_core_file_write(&fh, data, &len);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, (int)len);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			// fst_requires(len == SAMPLES);
 
