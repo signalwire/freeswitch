@@ -42,11 +42,11 @@ FST_CORE_BEGIN("conf")
 		}
 		FST_SETUP_END()
 
-		FST_TEST_BEGIN(avformat_test)
+		FST_TEST_BEGIN(avformat_test_colorspace_RGB)
 		{
 			switch_status_t status;
 			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
-            switch_file_handle_t fh = { 0 };
+			switch_file_handle_t fh = { 0 };
 			uint8_t data[SAMPLES * 2] = { 0 };
 			switch_frame_t frame = { 0 };
 			switch_size_t len = SAMPLES;
@@ -54,9 +54,9 @@ FST_CORE_BEGIN("conf")
 
 			fst_requires(img);
 
-            status = switch_core_file_open(&fh, "./test.mp4", 1, 8000, flags, fst_pool);
+			status = switch_core_file_open(&fh, "{colorspace=0}./test_RGB.mp4", 1, 8000, flags, fst_pool);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
-            fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
+			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
 
 			status = switch_core_file_write(&fh, data, &len);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, len);
@@ -91,7 +91,62 @@ FST_CORE_BEGIN("conf")
 				switch_yield(100000);
 			}
 
-            switch_core_file_close(&fh);
+			switch_core_file_close(&fh);
+			switch_img_free(&img);
+			switch_img_free(&ccimg);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(avformat_test_colorspace_BT7)
+		{
+			switch_status_t status;
+			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
+			switch_file_handle_t fh = { 0 };
+			uint8_t data[SAMPLES * 2] = { 0 };
+			switch_frame_t frame = { 0 };
+			switch_size_t len = SAMPLES;
+			uint32_t flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+
+			fst_requires(img);
+
+			status = switch_core_file_open(&fh, "{colorspace=1}./test_BT7.mp4", 1, 8000, flags, fst_pool);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
+
+			status = switch_core_file_write(&fh, data, &len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, len);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			// fst_requires(len == SAMPLES);
+
+			frame.img = img;
+			status = switch_core_file_write_video(&fh, &frame);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_image_t *ccimg = switch_img_read_png("./cluecon.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(ccimg);
+
+			switch_rgb_color_t color = {0};
+			color.a = 255;
+
+			for (int i = 0; i < 30; i++) {
+				len = SAMPLES;
+
+				if (i == 10) {
+					color.r = 255;
+				} else if (i == 20) {
+					color.r = 0;
+					color.b = 255;
+				}
+
+				switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
+				switch_img_patch(img, ccimg, i * 10, i * 10);
+
+				status = switch_core_file_write(&fh, data, &len);
+				status = switch_core_file_write_video(&fh, &frame);
+				switch_yield(100000);
+			}
+
+			switch_core_file_close(&fh);
 			switch_img_free(&img);
 			switch_img_free(&ccimg);
 		}
@@ -101,7 +156,7 @@ FST_CORE_BEGIN("conf")
 		{
 			const char *err = NULL;
 			switch_sleep(1000000);
-			fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_av", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
+			//fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_av", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
 		}
 		FST_TEARDOWN_END()
 	}

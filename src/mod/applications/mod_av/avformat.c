@@ -126,6 +126,7 @@ struct av_file_context {
 	AVFormatContext *fc;
 	AVCodec *audio_codec;
 	AVCodec *video_codec;
+	enum AVColorSpace colorspace;
 
 	int has_audio;
 	int has_video;
@@ -573,8 +574,9 @@ GCC_DIAG_ON(deprecated-declarations)
 
 		// av_opt_set_int(c->priv_data, "slice-max-size", SWITCH_DEFAULT_VIDEO_SIZE, 0);
 
-		c->colorspace = avformat_globals.colorspace;
+		c->colorspace = context->colorspace;
 		c->color_range = AVCOL_RANGE_JPEG;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "colorspace = %d\n", c->colorspace);
 
 		break;
 	default:
@@ -1605,7 +1607,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	context->offset = DFT_RECORD_OFFSET;
 	context->handle = handle;
 	context->audio_timer = 1;
-	
+	context->colorspace = avformat_globals.colorspace;
+
 	if (handle->params) {
 		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 			context->offset = atoi(tmp);
@@ -1613,6 +1616,14 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		if ((tmp = switch_event_get_header(handle->params, "video_time_audio"))) {
 			if (tmp && switch_false(tmp)) {
 				context->audio_timer = 0;
+			}
+		}
+		if ((tmp = switch_event_get_header(handle->params, "colorspace"))) {
+			int value = atoi(tmp);
+			enum AVColorSpace colorspace = UINTVAL(value);
+
+			if (colorspace <= AVCOL_SPC_NB) {
+				context->colorspace = colorspace;
 			}
 		}
 	}
