@@ -141,5 +141,6 @@ enum AVColorRange {
 
 <configuration name="avformat.conf" description="AVFormat Config">
   <settings>
+      <param name="colorspace" value="1"/>
   </settings>
 </configuration>
