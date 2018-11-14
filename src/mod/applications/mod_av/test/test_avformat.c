@@ -51,6 +51,7 @@ FST_CORE_BEGIN("conf")
 			switch_frame_t frame = { 0 };
 			switch_size_t len = SAMPLES;
 			uint32_t flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+			int i = 0;
 
 			fst_requires(img);
 
@@ -73,7 +74,7 @@ FST_CORE_BEGIN("conf")
 			switch_rgb_color_t color = {0};
 			color.a = 255;
 
-			for (int i = 0; i < 30; i++) {
+			for (i = 0; i < 30; i++) {
 				len = SAMPLES;
 
 				if (i == 10) {
@@ -106,6 +107,7 @@ FST_CORE_BEGIN("conf")
 			switch_frame_t frame = { 0 };
 			switch_size_t len = SAMPLES;
 			uint32_t flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+			int i = 0;
 
 			fst_requires(img);
 
@@ -128,7 +130,7 @@ FST_CORE_BEGIN("conf")
 			switch_rgb_color_t color = {0};
 			color.a = 255;
 
-			for (int i = 0; i < 30; i++) {
+			for (i = 0; i < 30; i++) {
 				len = SAMPLES;
 
 				if (i == 10) {
