@@ -51,6 +51,13 @@ GCC_DIAG_ON(deprecated-declarations)
 
 #define AV_TS_MAX_STRING_SIZE 32
 
+// Compatibility with old libav on Debian Jessie
+// Not required if libavcodec version > 56.34.1
+#ifndef AV_CODEC_FLAG_LOOP_FILTER
+#define AV_CODEC_FLAG_LOOP_FILTER   	 CODEC_FLAG_LOOP_FILTER
+#define AV_CODEC_FLAG_GLOBAL_HEADER 	 CODEC_FLAG_GLOBAL_HEADER
+#define AV_CODEC_CAP_VARIABLE_FRAME_SIZE CODEC_CAP_VARIABLE_FRAME_SIZE
+#endif
 
 /* App interface */
 
@@ -479,13 +486,14 @@ GCC_DIAG_ON(deprecated-declarations)
 			c->ticks_per_frame = 2;
 
 
-			c->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+			c->flags|=AV_CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			c->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
 			c->me_range = 16;   // me_range=16
 			c->max_b_frames = 3;    // bf=3
 
 			av_opt_set_int(c->priv_data, "b_strategy", 1, 0);
-			av_opt_set_int(c->priv_data, "motion_est", ME_HEX, 0);
+			//av_opt_set_int(c->priv_data, "motion_est", ME_HEX, 0);
+			av_opt_set(c->priv_data, "motion_est", "hex", 0);
 			av_opt_set_int(c->priv_data, "coder", 1, 0);
 
 			switch (mm->vprofile) {
@@ -568,7 +576,7 @@ GCC_DIAG_ON(deprecated-declarations)
 
 	/* Some formats want stream headers to be separate. */
 	if (fc->oformat->flags & AVFMT_GLOBALHEADER) {
-		c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 	}
 
 	mst->active = 1;
@@ -660,7 +668,7 @@ GCC_DIAG_ON(deprecated-declarations)
 	mst->frame->format         = AV_SAMPLE_FMT_S16;
 	mst->frame->channel_layout = c->channel_layout;
 
-	if (c->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE) {
+	if (c->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE) {
 		//mst->frame->nb_samples = 10000;
 		mst->frame->nb_samples = (mst->frame->sample_rate / 50) * c->channels;
 	} else {
