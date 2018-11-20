@@ -8916,11 +8916,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TRANSFEROR) == SWITCH_STATUS_SUCCESS) {
 									switch_channel_event_set_data(channel_a, event);
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_original_call_id", br_a);
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_call_id", br_b);
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_peer_uuid", switch_core_session_get_uuid(b_session));
 									switch_event_fire(&event);
 								}
 
 								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TRANSFEREE) == SWITCH_STATUS_SUCCESS) {
 									switch_channel_event_set_data(a_channel, event);
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(b_session));
 									switch_event_fire(&event);
 								}
 							}
@@ -9023,6 +9027,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TRANSFEROR) == SWITCH_STATUS_SUCCESS) {
 								switch_channel_event_set_data(channel_a, event);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_original_call_id", br_a);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_call_id", br_b);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_peer_uuid", switch_core_session_get_uuid(b_session));
 								switch_event_fire(&event);
 							}
 
@@ -9101,6 +9108,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								if(sofia_test_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS)) {
 									if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TRANSFEROR) == SWITCH_STATUS_SUCCESS) {
 										switch_channel_event_set_data(channel_a, event);
+										switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_original_call_id", switch_core_session_get_uuid(hup_session));
+										switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_call_id", switch_core_session_get_uuid(t_session));
+										switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_peer_uuid", switch_channel_get_partner_uuid(t_channel));
 										switch_event_fire(&event);
 									}
 
@@ -9288,6 +9298,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 						if(sofia_test_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS)) {
 							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TRANSFEROR) == SWITCH_STATUS_SUCCESS) {
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_original_call_id", br_a);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_destination_call_id", br_b);
 								switch_channel_event_set_data(channel_a, event);
 								switch_event_fire(&event);
 							}
