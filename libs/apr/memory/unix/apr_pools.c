@@ -507,6 +507,16 @@ static void free_proc_chain(struct process_chain *procs);
 static void pool_destroy_debug(apr_pool_t *pool, const char *file_line);
 #endif
 
+
+#if APR_HAS_THREADS
+APR_DECLARE(void) apr_pool_mutex_set(apr_pool_t *pool,
+                                     apr_thread_mutex_t *mutex)
+{
+    pool->user_mutex = mutex;
+}
+#endif
+
+
 #if !APR_POOL_DEBUG
 /*
  * Initialization
@@ -728,14 +738,6 @@ APR_DECLARE(void) apr_pool_clear(apr_pool_t *pool)
 	if (pool->user_mutex) apr_thread_mutex_unlock(pool->user_mutex);
 #endif
 }
-
-#if APR_HAS_THREADS
-APR_DECLARE(void) apr_pool_mutex_set(apr_pool_t *pool,
-									 apr_thread_mutex_t *mutex)
-{
-    pool->user_mutex = mutex;
-}
-#endif
 
 APR_DECLARE(void) apr_pool_destroy(apr_pool_t *pool)
 {

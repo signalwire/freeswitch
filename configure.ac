@@ -1817,9 +1817,19 @@ AC_ARG_ENABLE(address_sanitizer,
   [enable_address_sanitizer="no"])
 
 if test "${enable_address_sanitizer}" = "yes"; then
-  APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer)
-  APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+  APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
+  APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
   APR_ADDTO(LDFLAGS, -fsanitize=address)
+fi
+
+AC_ARG_ENABLE(,
+  [AC_HELP_STRING([--enable-pool-sanitizer],[build with sanitizer friendly pool behavior])],
+  [enable_pool_sanitizer="$enable_pool_sanitizer"],
+  [enable_pool_sanitizer="no"])
+
+if test "${enable_pool_sanitizer}" = "yes"; then
+  APR_ADDTO(CFLAGS, -DDESTROY_POOLS)
+  ac_configure_args="$ac_configure_args --enable-pool-debug=yes"
 fi
 
 # we never use this, and hard setting it will make cross compile work better
