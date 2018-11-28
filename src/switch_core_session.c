@@ -772,6 +772,7 @@ static const char *message_names[] = {
 	"REDIRECT_AUDIO",
 	"TRANSMIT_TEXT",
 	"ANSWER",
+	"ACKNOWLEDGE_CALL",
 	"PROGRESS",
 	"BRIDGE",
 	"UNBRIDGE",
