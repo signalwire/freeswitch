@@ -1322,7 +1322,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 			switch_core_session_get_read_impl(session, &rh->read_impl);
 			if (rh->fh) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Record session sample rate: %d -> %d\n", rh->fh->native_rate, rh->read_impl.actual_samples_per_second);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Record session sample rate: %d -> %d\n", rh->fh->native_rate, rh->fh->samplerate);
 				rh->fh->native_rate = rh->read_impl.actual_samples_per_second;
 				if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 					switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
