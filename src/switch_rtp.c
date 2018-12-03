@@ -2033,7 +2033,7 @@ static int using_ice(switch_rtp_t *rtp_session)
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
-	int rtcp_ok = 0, rtcp_fb = 0, send_rr = 0;
+	int rtcp_ok = 0, rtcp_fb = 0, force_send_rr = 0;
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
@@ -2086,7 +2086,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	if (rtp_session->send_rr) {
 		rtp_session->send_rr = 0;
 		rtcp_ok = 1;
-		send_rr = 1;
+		force_send_rr = 1;
 	}
 
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "TIME CHECK %d > %d\n", (int)((now - rtp_session->rtcp_last_sent) / 1000), rate);
@@ -2110,17 +2110,18 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "WTF %d %d %d %d\n", rate, rtp_session->rtcp_sent_packets, rtcp_ok, nack_ttl);
 
-	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && rtcp_ok) {
+	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && (rtcp_ok || rtcp_fb)) {
 		switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
 		struct switch_rtcp_receiver_report *rr;
 		struct switch_rtcp_sender_report *sr;
-		struct switch_rtcp_report_block *rtcp_report_block;
+		struct switch_rtcp_report_block *rtcp_report_block = NULL;
 		switch_size_t rtcp_bytes = sizeof(struct switch_rtcp_hdr_s)+sizeof(uint32_t); /* add size of the packet header and the ssrc */
 		switch_rtcp_hdr_t *sdes;
 		uint8_t *p;
 		switch_size_t sdes_bytes = sizeof(struct switch_rtcp_hdr_s);
 		uint32_t *ssrc;
 		switch_rtcp_sdes_unit_t *unit;
+		switch_bool_t is_only_receiver = FALSE;
 
 		if (!rtcp_fb) {
 			rtp_session->rtcp_last_sent = now;
@@ -2129,15 +2130,21 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		rtp_session->rtcp_send_msg.header.version = 2;
 		rtp_session->rtcp_send_msg.header.p = 0;
-		rtp_session->rtcp_send_msg.header.count = 1;
 
 
-		if (!rtp_session->stats.rtcp.sent_pkt_count || send_rr) {
+		if ((switch_core_session_media_flow(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO) == SWITCH_MEDIA_FLOW_RECVONLY) ||
+				switch_core_session_media_flow(rtp_session->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+			is_only_receiver = TRUE;
+		}
+		if (!rtp_session->stats.rtcp.sent_pkt_count || is_only_receiver || force_send_rr) {
 			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_RR; /* Receiver report */
 			rr=(struct switch_rtcp_receiver_report*) rtp_session->rtcp_send_msg.body;
 			rr->ssrc = htonl(rtp_session->ssrc);
 			rtcp_report_block = &rr->report_block;
 			rtcp_bytes += sizeof(struct switch_rtcp_report_block);
+			rtcp_generate_report_block(rtp_session, rtcp_report_block);
+			rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP RR");
 		} else {
 			struct switch_rtcp_sender_info *rtcp_sender_info;
 			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_SR; /* Sender report */
@@ -2145,10 +2152,18 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			sr->ssrc = htonl(rtp_session->ssrc);
 			rtcp_sender_info = &sr->sender_info;
 			rtcp_generate_sender_info(rtp_session, rtcp_sender_info);
-			rtcp_report_block = &sr->report_block;
-			rtcp_bytes += sizeof(struct switch_rtcp_sender_info) + sizeof(struct switch_rtcp_report_block);
+			rtcp_bytes += sizeof(struct switch_rtcp_sender_info);
+			if (!rtcp_ok && rtcp_fb) {
+				 /* rtcp-fb only, don't send receive report block */
+				rtp_session->rtcp_send_msg.header.count = 0;
+			} else {
+				rtcp_report_block = &sr->report_block;
+				rtcp_bytes += sizeof(struct switch_rtcp_report_block);
+				rtcp_generate_report_block(rtp_session, rtcp_report_block);
+				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR");
 		}
-		rtcp_generate_report_block(rtp_session, rtcp_report_block);
 
 		rtp_session->rtcp_send_msg.header.length = htons((uint16_t)(rtcp_bytes / 4) - 1);
 
