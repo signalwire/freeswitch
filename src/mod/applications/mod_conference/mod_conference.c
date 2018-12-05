@@ -1911,8 +1911,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 	switch_channel_set_flag(channel, CF_CONFERENCE);
 
-	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel pre answer failed.\n");
 		goto end;
 	}
 
@@ -2060,6 +2060,7 @@ SWITCH_STANDARD_APP(conference_function)
 		locked = 0;
 
 		switch_channel_set_variable(channel, "conference_name", conference->name);
+		switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, conference->uuid_str);
 
 		/* Set the minimum number of members (once you go above it you cannot go below it) */
 		conference->min = 2;
@@ -2144,6 +2145,7 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 
 			switch_channel_set_variable(channel, "conference_name", conference->name);
+			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, conference->uuid_str);
 
 			/* Set MOH from variable if not set */
 			if (zstr(conference->moh_sound)) {
@@ -2210,6 +2212,7 @@ SWITCH_STANDARD_APP(conference_function)
 			switch_channel_api_on(channel, "api_on_conference_create");
 		} else {				/* setup user variable */
 			switch_channel_set_variable(channel, "conference_name", conference->name);
+			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, conference->uuid_str);
 			rl++;
 		}
 
@@ -2223,6 +2226,12 @@ SWITCH_STANDARD_APP(conference_function)
 			mdpin = conference->mpin;
 		}
 
+		/* Tell the channel we have a new Session-ID */
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_SESSION_ID;
+		switch_core_session_receive_message(session, &msg);
+
+		switch_channel_answer(channel);
 
 		/* if this is not an outbound call, deal with conference pins */
 		if (enforce_security && (!zstr(dpin) || !zstr(mdpin))) {
@@ -2232,9 +2241,6 @@ SWITCH_STANDARD_APP(conference_function)
 			int pin_valid = 0;
 			switch_status_t status = SWITCH_STATUS_SUCCESS;
 			char *supplied_pin_value;
-
-			/* Answer the channel */
-			switch_channel_answer(channel);
 
 			/* look for PIN in channel variable first.  If not present or invalid revert to prompting user */
 			supplied_pin_value = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "supplied_pin"));

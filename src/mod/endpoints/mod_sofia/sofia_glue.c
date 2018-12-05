@@ -338,6 +338,316 @@ enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
 	return ret;
 }
 
+/* create "local-uuid" */
+int sofia_glue_is_valid_session_uuid(const char *session_uuid)
+{
+	int i;
+	if (zstr(session_uuid) || strlen(session_uuid) != RFC7989_SESSION_UUID_LEN) {
+		return 0;
+	}
+	for (i = 0; i < RFC7989_SESSION_UUID_LEN; i++) {
+		char c = session_uuid[i];
+		if ((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* NIL session-uuid: 00000000000000000000000000000000 */
+int sofia_glue_is_nil_session_uuid(const char *session_uuid)
+{
+	if (zstr(session_uuid)) {
+		return 0;
+	}
+	if (!memcmp(session_uuid, RFC7989_SESSION_UUID_NULL, RFC7989_SESSION_UUID_LEN)) {
+		return 1;
+	}
+	return 0;
+}
+
+const char *sofia_glue_uuid_to_session_uuid(switch_memory_pool_t *pool, const char *uuid)
+{
+	char *session_uuid = NULL; /*"local-uuid", per rfc7989*/
+	if (zstr(uuid) || strlen(uuid) != 36) return NULL;
+
+	session_uuid = switch_core_alloc(pool, RFC7989_SESSION_UUID_LEN + 1);
+	memcpy(session_uuid, uuid, 8);
+	memcpy(session_uuid + 8, uuid + 9, 4);
+	memcpy(session_uuid + 12, uuid + 14, 4);
+	memcpy(session_uuid + 16, uuid + 19, 4);
+	memcpy(session_uuid + 20, uuid + 24, 12);
+
+	if (!sofia_glue_is_valid_session_uuid(session_uuid)) return NULL;
+
+	return session_uuid;
+}
+
+/* rfc7989 generic params, return 0 if param is disabled from config or invalid. ALL params allowed by default. */
+/* save updated generic params list in chan var. */
+int sofia_glue_check_filter_generic_params(switch_core_session_t *session, sofia_profile_t *profile, char *param)
+{
+
+	char *tmp = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (zstr(param)) {
+		return 0;
+	}
+	if (profile->rfc7989_filter) {
+		char *found = NULL; char *end = NULL; 
+		char *token_array[100] = { 0 };
+		int tokens = switch_separate_string(profile->rfc7989_filter, ',', token_array, (sizeof(token_array) / sizeof(token_array[0])));
+		tmp = switch_core_session_strdup(session, param);
+		if (tokens) {
+			int i;
+			for (i = 0; i < tokens && token_array[i]; i++) {
+				while ((found = strstr(tmp, token_array[i]))) {
+					end = strchr(found, ';');
+					if (!end) end = strchr(found, '\0');
+					*found = '\0';
+					strcat(tmp, found + (end - found));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+						"Session-ID: Dropped generic param: %s\n", token_array[i]); 
+				}
+			}
+		}
+	}
+
+	if (tmp) {
+		switch_channel_set_variable(channel, SWITCH_RFC7989_GENERIC_PARAM_VARIABLE, tmp);
+	} else {
+		switch_channel_set_variable(channel, SWITCH_RFC7989_GENERIC_PARAM_VARIABLE, param);
+	}
+
+	return 1;
+}
+/* check and store Session-ID header. */
+/* retrieve "local-uuid" and "remote-uuid" of the remote party. */
+void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t is_reply)
+{
+	char *a_id, *b_id, *duped, *p, *remote_param;
+	const char *header = sofia_glue_get_unknown_header(sip, "Session-ID");
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!sofia_test_pflag(profile, PFLAG_RFC7989_SESSION_ID)) return;
+
+	if (!header) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: missing header.");
+		return;
+	}
+
+	duped = switch_core_session_strdup(session, header);
+
+	if (zstr(duped)) return;
+
+	a_id = switch_strip_whitespace(duped);
+
+	if (zstr(a_id)) return;
+
+	p = strchr(a_id, ';');
+	if (p) *p = '\0';
+
+	if (!sofia_glue_is_valid_session_uuid(a_id)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: Ignoring \"%s\" parsed as \"%s\"\n", header, a_id);
+		return;
+	}
+
+	/* RFC7329 compatibility */
+	if (is_reply) {
+		const char *temp_id = switch_channel_get_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE);
+		if (!zstr(temp_id) && !memcmp(a_id, temp_id, RFC7989_SESSION_UUID_LEN) ) {
+			/* 'If a SIP response only contains the "local-uuid" that was sent
+			 *  originally, this comes from a pre-standard implementation and MUST
+			 *  NOT be discarded for removing the nil "remote-uuid". In this
+			 *  case, all future transactions within this dialog MUST contain only
+			 *  the UUID received in the first SIP response" */
+			switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
+			switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
+		}
+	}
+
+	/* "local-uuid" field retrieved from remote party will become 
+	 * SWITCH_RFC7989_APP_SESSION_ID_VARIABLE in a b2bua role. */
+	if (!zstr(a_id)) {
+		struct private_object *tech_pvt = switch_core_session_get_private(session);
+		switch_channel_set_variable(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE, a_id);
+		if (tech_pvt && tech_pvt->sofia_private && !tech_pvt->sofia_private->rfc7989_uuid) {
+			tech_pvt->sofia_private->rfc7989_uuid = su_strdup(tech_pvt->nh->nh_home, a_id);
+		}
+	}
+
+	if (!p) {
+		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
+		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
+		return;
+	}
+	p++;
+	remote_param = strstr(p, "remote=");
+	if (!remote_param) {
+		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
+		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
+		sofia_glue_check_filter_generic_params(session, profile, p);
+		return;
+	} 
+	b_id = remote_param + 7;
+	if (!zstr(b_id) && strlen(b_id) == RFC7989_SESSION_UUID_LEN /*32*/) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session-ID: Set remote-uuid: %s\n", b_id);
+		/*using chan var as placeholder only when UAS or when answer() was called in the dialplan */
+		switch_channel_set_variable(channel, SWITCH_RFC7989_REMOTE_SESSION_ID_VARIABLE, b_id);
+		switch_channel_set_variable_partner(channel, SWITCH_RFC7989_REMOTE_SESSION_ID_VARIABLE, b_id);
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: invalid uuid, ignored.\n");
+	}
+}
+
+/* add "Session-ID:" header */
+char *sofia_glue_session_id_header(switch_core_session_t *session, sofia_profile_t *profile)
+{
+	switch_channel_t *channel;
+	const char *b_id = NULL;
+	const char *a_id = NULL;
+	const char *temp_id = NULL;
+	const char *generic = NULL;
+
+	if (!session) return NULL;
+
+	if (!profile) return NULL;
+
+	if (!sofia_test_pflag(profile, PFLAG_RFC7989_SESSION_ID)) return NULL;
+
+	channel = switch_core_session_get_channel(session);
+
+	a_id = switch_channel_get_variable_partner(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE);
+
+	if (zstr(a_id)) {
+		a_id = switch_channel_get_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE);
+		if (!zstr(a_id) && strlen(a_id) == 36) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Reformatting app Session-ID: %s\n", a_id);
+			a_id = sofia_glue_uuid_to_session_uuid(switch_core_session_get_pool(session), a_id);
+			if (!zstr(a_id)) {
+				struct private_object *tech_pvt = switch_core_session_get_private(session);
+				switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, a_id);
+				if (tech_pvt && tech_pvt->sofia_private && !tech_pvt->sofia_private->rfc7989_uuid) {
+					tech_pvt->sofia_private->rfc7989_uuid = su_strdup(tech_pvt->nh->nh_home, a_id);
+				}
+			}
+		}
+	}
+
+	if (zstr(a_id)) {
+		const char *partner_uuid = switch_channel_get_partner_uuid(channel);
+		if (!zstr(partner_uuid)) {
+			const char *partner_session_id = sofia_glue_uuid_to_session_uuid(switch_core_session_get_pool(session), partner_uuid);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Setting \"Session-ID: %s\" from partner leg\n", partner_session_id);
+			switch_channel_set_variable_partner(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE, partner_session_id);
+			a_id = partner_session_id;
+		}
+	}
+
+	if (((switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) && zstr(a_id) &&
+				switch_channel_get_state(channel) == CS_INIT) && switch_channel_test_flag(channel, CF_ORIGINATING)) {
+		/*outbound initial request*/
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+		a_id = sofia_glue_uuid_to_session_uuid(switch_core_session_get_pool(session), uuid_str);
+		if (!zstr(a_id)) {
+			struct private_object *tech_pvt = switch_core_session_get_private(session);
+			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, a_id);
+			if (tech_pvt && tech_pvt->sofia_private && !tech_pvt->sofia_private->rfc7989_uuid) {
+				tech_pvt->sofia_private->rfc7989_uuid = su_strdup(tech_pvt->nh->nh_home, a_id);
+			}
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+				"Session-ID: Outbound initial request. local-uuid: %s", a_id);
+		if (sofia_test_pflag(profile, PFLAG_RFC7989_FORCE_OLD)) {
+			/*for old (and obsolete) Session-ID RFC7329 */
+			return switch_core_session_sprintf(session, "Session-ID: %s", a_id);
+		}
+
+		b_id = RFC7989_SESSION_UUID_NULL;
+		return switch_core_session_sprintf(session, "Session-ID: %s;remote=%s", a_id, b_id);
+	}
+
+	temp_id = switch_channel_get_variable(channel, SWITCH_RFC7989_REMOTE_SESSION_ID_VARIABLE);
+	if ((switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) && 
+			((switch_channel_get_state(channel) == CS_INIT) || (switch_channel_get_state(channel) == CS_EXECUTE)) &&
+			zstr(temp_id)) {
+		/* fallback to RFC7329 - "old". */
+		/* inbound initial request, no "remote" param. section 11 of RFC7989. */
+		a_id = switch_channel_get_variable(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE);
+		if (zstr(a_id)) {
+			a_id = RFC7989_SESSION_UUID_NULL;
+		} else {
+			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, a_id);
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: Fallback to RFC7329");
+		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
+		return switch_core_session_sprintf(session, "Session-ID: %s", a_id);
+	}
+	if ((switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) &&
+			((switch_channel_get_state(channel) == CS_INIT) || (switch_channel_get_state(channel) == CS_EXECUTE)) && 
+			sofia_glue_is_nil_session_uuid(temp_id)) {
+		/*inbound initial request*/
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+		a_id = sofia_glue_uuid_to_session_uuid(switch_core_session_get_pool(session), uuid_str);
+		if (!zstr(a_id)) {
+			struct private_object *tech_pvt = switch_core_session_get_private(session);
+			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, a_id);
+			if (tech_pvt && tech_pvt->sofia_private) {
+				tech_pvt->sofia_private->rfc7989_uuid = su_strdup(tech_pvt->nh->nh_home, a_id);
+			}
+		}
+		b_id = switch_channel_get_variable(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE);
+		if (zstr(b_id)) {
+			b_id = RFC7989_SESSION_UUID_NULL;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+				"Session-ID: Inbound initial request. local-uuid: %s", a_id);
+		return switch_core_session_sprintf(session, "Session-ID: %s;remote=%s", a_id, b_id);
+	}
+
+	if (zstr(a_id)) {
+		struct private_object *tech_pvt = switch_core_session_get_private(session);
+		/* setting NIL local-uuid should never happen, 
+		 * but in case we don't get to set it properly by here, just set it to NIL */
+		if (tech_pvt && tech_pvt->sofia_private && tech_pvt->sofia_private->rfc7989_uuid) {
+			/* handle BYE after REFER or other cases where the channel is destroyed already and we can't get the chan var */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session-ID: retrieved local-uuid ");
+			a_id = tech_pvt->sofia_private->rfc7989_uuid;
+		} else {
+			a_id = RFC7989_SESSION_UUID_NULL;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session-ID: NIL local-uuid ");
+		}
+	}
+
+	b_id = switch_channel_get_variable(channel, SWITCH_RFC7989_SESSION_ID_VARIABLE);
+
+	if (zstr(b_id) && switch_channel_test_flag(channel, CF_RFC7329_COMPAT)) {
+		/* fallback to RFC7329 , only one uuid*/
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING ,"Session-ID: Fallback to RFC7329, use one uuid");
+		return switch_core_session_sprintf(session, "Session-ID: %s", a_id);
+	} else if (zstr(b_id)) {
+		b_id = RFC7989_SESSION_UUID_NULL;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session-ID: set NIL remote-uuid");
+	}
+
+	/* B2B: handle generic params*/
+	generic = switch_channel_get_variable_partner(channel, SWITCH_RFC7989_GENERIC_PARAM_VARIABLE);
+	if (!zstr(generic)) {
+		/* copy generic param (name and val) */
+		return switch_core_session_sprintf(session, "Session-ID: %s;%s", a_id, generic);
+	}
+	if (switch_channel_test_flag(channel, CF_RFC7329_COMPAT)) {
+		return switch_core_session_sprintf(session, "Session-ID: %s", a_id);
+	}
+	return switch_core_session_sprintf(session, "Session-ID: %s;remote=%s", a_id, b_id);
+}
+
 char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param)
 {
 	const char *param_ptr;
@@ -757,6 +1067,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	int require_timer = 1;
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
+	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
 		switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "sofia_hold_inactive", SWITCH_FALSE, -1))) {
@@ -1326,6 +1638,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		is_t38 = 1;
     }
 
+
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
@@ -1336,6 +1649,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 				   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
+				   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
@@ -1373,6 +1687,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 				   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
+				   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),

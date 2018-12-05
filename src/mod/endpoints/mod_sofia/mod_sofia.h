@@ -192,6 +192,7 @@ struct sofia_private {
 	int is_call;
 	int is_static;
 	switch_time_t ping_sent;
+	char *rfc7989_uuid;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -310,6 +311,8 @@ typedef enum {
 	PFLAG_FIRE_BYE_RESPONSE_EVENTS,
 	PFLAG_AUTO_INVITE_100,
 	PFLAG_UPDATE_REFRESHER,
+	PFLAG_RFC7989_SESSION_ID,
+	PFLAG_RFC7989_FORCE_OLD,
 	PFLAG_AUTH_REQUIRE_USER,
 	PFLAG_AUTH_CALLS_ACL_ONLY,
 	PFLAG_USE_PORT_FOR_ACL_CHECK,
@@ -790,6 +793,7 @@ struct sofia_profile {
 	int bind_attempt_interval;
 	char *proxy_notify_events;
 	char *proxy_info_content_types;
+	char *rfc7989_filter;
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
 };
@@ -988,6 +992,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
+
+#define RFC7989_SESSION_UUID_LEN 32
+#define RFC7989_SESSION_UUID_NULL "00000000000000000000000000000000"
+
+int sofia_glue_is_valid_session_id(const char *session_id);
+void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t is_reply);
+char *sofia_glue_session_id_header(switch_core_session_t *session, sofia_profile_t *profile);
 
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration
