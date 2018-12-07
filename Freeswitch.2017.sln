@@ -576,6 +576,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "48khz", "libs\win32\Sound_F
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "48khz music", "libs\win32\Sound_Files\48khzmusic.2017.vcxproj", "{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_signalwire", "src\mod\applications\mod_signalwire\mod_signalwire.2017.vcxproj", "{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2627,6 +2629,18 @@ Global
 		{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31}.Debug|x64.Build.0 = Debug|x64
 		{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31}.Release|Win32.ActiveCfg = Release|Win32
 		{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31}.Release|x64.ActiveCfg = Release|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.All|Win32.ActiveCfg = Release|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.All|Win32.Build.0 = Release|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.All|x64.ActiveCfg = Release|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.All|x64.Build.0 = Release|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Debug|Win32.Build.0 = Debug|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Debug|x64.ActiveCfg = Debug|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Debug|x64.Build.0 = Debug|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Release|Win32.ActiveCfg = Release|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Release|Win32.Build.0 = Release|Win32
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Release|x64.ActiveCfg = Release|x64
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2836,6 +2850,7 @@ Global
 		{EF62B845-A0CE-44FD-B8E6-475FE87D06C3} = {9388C266-C3FC-468A-92EF-0CBC35941412}
 		{8154C82D-58EE-4145-9DEC-A445A5AA3D6B} = {4F227C26-768F-46A3-8684-1D08A46FB374}
 		{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31} = {4F227C26-768F-46A3-8684-1D08A46FB374}
+		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}

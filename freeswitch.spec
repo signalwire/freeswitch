@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-v8
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #		      and others
 #
@@ -535,6 +535,14 @@ Requires:       %{name} = %{version}-%{release}
 %description application-rss
 Provides FreeSWITCH mod_rss, edisrse and read an XML based RSS feed, then read
 the entries aloud via a TTS engine
+
+%package application-signalwire
+Summary:	FreeSWITCH mod_signalwire
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description application-signalwire
+Provides FreeSWITCH mod_signalwire
 
 %package application-sms
 Summary:	FreeSWITCH mod_sms
@@ -1373,6 +1381,7 @@ Requires:	freeswitch-application-memcache
 Requires:	freeswitch-application-nibblebill
 Requires:	freeswitch-application-redis
 Requires:	freeswitch-application-rss
+Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
 Requires:	freeswitch-application-snom
@@ -1458,7 +1467,7 @@ APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/
 			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
 			applications/mod_redis applications/mod_rss "
 
-APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
+APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
 			applications/mod_spandsp applications/mod_spy applications/mod_stress \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
@@ -2115,6 +2124,9 @@ fi
 %files application-rss
 %{MODINSTDIR}/mod_rss.so*
 
+%files application-signalwire
+%{MODINSTDIR}/mod_signalwire.so*
+
 %files application-sms
 %{MODINSTDIR}/mod_sms.so*
 
@@ -2541,6 +2553,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Dec 11 2018 - Andrey Volk
+- add mod_signalwire
 * Sun Mar 13 2016 - Matthew Vale
 - add perl and python ESL language module packages
 * Thu Jul 09 2015 - Artur Zaprzała

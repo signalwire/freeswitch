@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <signalwire-client-cVersion>1.0.0</signalwire-client-cVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <signalwire-client-cVersionImported>true</signalwire-client-cVersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="signalwire-client-cVersion">
+      <Value>$(signalwire-client-cVersion)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
