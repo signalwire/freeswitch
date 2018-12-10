@@ -151,6 +151,9 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "State", sofia_state_string(gateway->state));
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Ping-Status", sofia_gateway_status_name(gateway->status));
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register-Network-IP", gateway->register_network_ip);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Register-Network-Port", "%d", gateway->register_network_port);
+
 		if (!zstr(phrase)) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Phrase", phrase);
 		}
@@ -2402,6 +2405,11 @@ void sofia_reg_handle_sip_r_register(int status,
 
 	if (sofia_private && gateway) {
 		reg_state_t ostate = gateway->state;
+		char network_ip[80];
+
+		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
+		snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+
 		switch (status) {
 		case 200:
 			if (sip && sip->sip_contact) {

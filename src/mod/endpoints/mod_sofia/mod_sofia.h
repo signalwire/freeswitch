@@ -561,6 +561,8 @@ struct sofia_gateway {
 	sofia_gateway_subscription_t *subscriptions;
 	int distinct_to;
 	sofia_cid_type_t cid_type;
+	char register_network_ip[80];
+	int register_network_port;
 };
 
 typedef enum {
