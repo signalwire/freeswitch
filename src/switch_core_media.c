@@ -10341,6 +10341,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_core_session_get_partner(session, &orig_session);
 
+			if (orig_session) {
+				switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_AUDIO,
+											switch_core_session_remote_media_flow(orig_session, SWITCH_MEDIA_TYPE_AUDIO), sdp_type);
+				switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_VIDEO,
+											switch_core_session_remote_media_flow(orig_session, SWITCH_MEDIA_TYPE_VIDEO), sdp_type);
+			}
+
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				switch_payload_t orig_pt = 0;
