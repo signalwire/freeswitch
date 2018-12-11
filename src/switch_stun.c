@@ -851,6 +851,79 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_stun_ip_lookup(char **external_ip, const char *sourceip, switch_memory_pool_t *external_pool)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *stun_ip = NULL;
+	switch_port_t stun_port = (switch_port_t)SWITCH_STUN_DEFAULT_PORT;
+	char *p;
+	char ip_buf[256] = "";
+	char *ip = NULL;
+	switch_port_t port = 0;
+	switch_memory_pool_t *local_pool = NULL;
+	char *error = "";
+
+	if (!sourceip || !external_pool) {
+		*external_ip = NULL;
+		goto end;
+	}
+
+	ip = ip_buf;
+
+	if (!strncasecmp(sourceip, "host:", 5)) {
+		status = (*external_ip = switch_stun_host_lookup(sourceip + 5, external_pool)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	}
+	else if (!strncasecmp(sourceip, "stun:", 5)) {
+
+		switch_core_new_memory_pool(&local_pool);
+
+		stun_ip = switch_core_strdup(local_pool, sourceip + 5);
+
+		switch_assert(stun_ip);
+
+		if ((p = strchr(stun_ip, ':'))) {
+			int iport;
+			*p++ = '\0';
+			iport = atoi(p);
+			if (iport > 0 && iport < 0xFFFF) {
+				stun_port = (switch_port_t)iport;
+			}
+		}
+		else {
+			p = stun_ip;
+		}
+
+		switch_find_local_ip(ip_buf, sizeof(ip_buf), NULL, AF_INET);
+
+		if (zstr(stun_ip)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! NO STUN SERVER\n");
+		}
+		else {
+			if ((switch_stun_lookup(&ip, &port, stun_ip, stun_port, &error, local_pool)) == SWITCH_STATUS_SUCCESS && ip && port) {
+				*external_ip = switch_core_strdup(external_pool, ip);
+				status = SWITCH_STATUS_SUCCESS;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "External ip address detected using STUN: %s\n", ip);
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! [%s]\n", error);
+			}
+		}
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			*external_ip = "";
+		}
+
+		switch_core_destroy_memory_pool(&local_pool);
+	}
+	else {
+		*external_ip = switch_core_strdup(external_pool, sourceip);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+end:
+
+	return status;
+}
 
 
 
