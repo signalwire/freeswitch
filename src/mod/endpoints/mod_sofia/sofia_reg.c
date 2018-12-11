@@ -2405,8 +2405,12 @@ void sofia_reg_handle_sip_r_register(int status,
 
 	if (sofia_private && gateway) {
 		reg_state_t ostate = gateway->state;
+		char oregister_network_ip[80] = { 0 };
 		char network_ip[80];
 
+		if (!zstr_buf(gateway->register_network_ip)) {
+			strncpy(oregister_network_ip, gateway->register_network_ip, sizeof(oregister_network_ip) - 1);
+		}
 		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 		snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
@@ -2465,7 +2469,9 @@ void sofia_reg_handle_sip_r_register(int status,
 							  gateway->name, switch_str_nil(phrase), status, ++gateway->failures);
 			break;
 		}
-		if (ostate != gateway->state) {
+		if (ostate != gateway->state ||
+			zstr_buf(oregister_network_ip) || strcmp(oregister_network_ip, gateway->register_network_ip)) {
+
 			sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 		}
 	}
