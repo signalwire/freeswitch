@@ -254,10 +254,10 @@ int ws_handshake(wsh_t *wsh)
 	char version[5] = "";
 	char proto[256] = "";
 	char proto_buf[384] = "";
-	char input[256] = "";
+	char input[512] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
-	char respond[512] = "";
+	char respond[1024] = "";
 	ssize_t bytes;
 	char *p, *e = 0;
 
