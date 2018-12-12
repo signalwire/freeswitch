@@ -315,7 +315,7 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
 
 /** Create log stamp */
 void tport_stamp(tport_t const *self, msg_t *msg,
-		 char stamp[128], char const *what,
+		 char stamp[512], char const *what,
 		 size_t n, char const *via,
 		 su_time_t now)
 {
@@ -357,7 +357,7 @@ void tport_stamp(tport_t const *self, msg_t *msg,
 
   su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof(name));
 
-  snprintf(stamp, 128,
+  snprintf(stamp, 144,
 	   "%s "MOD_ZU" bytes %s %s/[%s]:%u%s%s at %02u:%02u:%02u.%06lu:\n",
 	   what, (size_t)n, via, self->tp_name->tpn_proto,
 	   name, ntohs(su->su_port), label[0] ? label : "", comp,

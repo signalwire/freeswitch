@@ -207,19 +207,19 @@ static uint32_t switch_opus_encoder_set_audio_bandwidth(OpusEncoder *encoder_obj
 static switch_bool_t switch_opus_show_audio_bandwidth(int audiobandwidth,char *audiobandwidth_str)
 {
 	if (audiobandwidth == OPUS_BANDWIDTH_NARROWBAND) {
-		strncpy(audiobandwidth_str, "NARROWBAND",10);
+		strncpy(audiobandwidth_str, "NARROWBAND",11);
 		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_MEDIUMBAND) {
-		strncpy(audiobandwidth_str, "MEDIUMBAND",10);
+		strncpy(audiobandwidth_str, "MEDIUMBAND",11);
 		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_WIDEBAND) {
-		strncpy(audiobandwidth_str,"WIDEBAND",8);
+		strncpy(audiobandwidth_str,"WIDEBAND",9);
 		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_SUPERWIDEBAND) {
-		strncpy(audiobandwidth_str, "SUPERWIDEBAND",13);
+		strncpy(audiobandwidth_str, "SUPERWIDEBAND",14);
 		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_FULLBAND) {
-		strncpy(audiobandwidth_str, "FULLBAND",8);
+		strncpy(audiobandwidth_str, "FULLBAND",9);
 		return SWITCH_TRUE;
 	}
 	return SWITCH_FALSE;
