@@ -56,6 +56,7 @@
  */
 
 #include <switch.h>
+#include <switch_stun.h>
 #ifndef WIN32
 #include <sys/wait.h>
 #include <switch_private.h>
@@ -138,6 +139,46 @@ static void preprocess_exec_set(char *keyval)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while executing command: %s\n", val);
 		}
 		switch_safe_free(exec_result.data);
+	}
+}
+
+static void preprocess_stun_set(char *keyval)
+{
+	char *key = keyval;
+	char *val = strchr(key, '=');
+
+	if (val) {
+		char *ve = val++;
+		while (*val && *val == ' ') {
+			val++;
+		}
+		*ve-- = '\0';
+		while (*ve && *ve == ' ') {
+			*ve-- = '\0';
+		}
+	}
+
+	if (key && val) {
+		char *external_ip = NULL;
+		switch_memory_pool_t *pool;
+
+		switch_core_new_memory_pool(&pool);
+
+		if (switch_stun_ip_lookup(&external_ip, val, pool) == SWITCH_STATUS_SUCCESS) {
+			if (!zstr(external_ip)) {
+				char *tmp = external_ip;
+				tmp = &tmp[strlen(tmp) - 1];
+				while (tmp >= external_ip && (tmp[0] == ' ' || tmp[0] == '\n')) {
+					tmp[0] = '\0'; /* remove trailing spaces and newlines */
+					tmp--;
+				}
+				switch_core_set_variable(key, external_ip);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "stun-set failed.\n");
+		}
+
+		switch_core_destroy_memory_pool(&pool);
 	}
 }
 
@@ -1487,6 +1528,8 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 
 			} else if (!strcasecmp(tcmd, "exec-set")) {
 				preprocess_exec_set(targ);
+			} else if (!strcasecmp(tcmd, "stun-set")) {
+				preprocess_stun_set(targ);
 			} else if (!strcasecmp(tcmd, "env-set")) {
 				preprocess_env_set(targ);
 			} else if (!strcasecmp(tcmd, "include")) {
@@ -1549,6 +1592,8 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 
 				} else if (!strcasecmp(cmd, "exec-set")) {
 					preprocess_exec_set(arg);
+				} else if (!strcasecmp(cmd, "stun-set")) {
+					preprocess_stun_set(arg);
 				} else if (!strcasecmp(cmd, "include")) {
 					preprocess_glob(cwd, arg, write_fd, rlevel + 1);
 				} else if (!strcasecmp(cmd, "exec")) {
