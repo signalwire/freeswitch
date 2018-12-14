@@ -416,8 +416,10 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
  *   switch_channel_t *fst_channel;           The outbound null session's channel.
  *
  * @param name the name of this test
+ * @param rate the rate of the channel
  */
-#define FST_SESSION_BEGIN(name) \
+
+#define FST_SESSION_BEGIN_RATE(name, rate) \
 	FCT_TEST_BGN(name) \
 	{ \
 		switch_core_session_t *fst_session = NULL; \
@@ -432,6 +434,7 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 		fst_requires(switch_core_running()); \
 		fst_requires(switch_event_create_plain(&fst_originate_vars, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS); \
 		switch_event_add_header_string(fst_originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", "+15551112222"); \
+		switch_event_add_header(fst_originate_vars, SWITCH_STACK_BOTTOM, "rate", "%d", rate); \
 		if (switch_ivr_originate(NULL, &fst_session, &fst_cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, fst_originate_vars, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS && fst_session) { \
 			switch_memory_pool_t *fst_session_pool = switch_core_session_get_pool(fst_session); \
 			switch_channel_t *fst_channel = switch_core_session_get_channel(fst_session); \
@@ -441,6 +444,13 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 			switch_channel_set_variable(fst_channel, "RECORD_STEREO", "true"); \
 			switch_ivr_record_session(fst_session, (char *)"/tmp/"#name".wav", 0, NULL); \
 			for(;;) {
+
+/**
+ * Define a session test in a test suite.  This can be used to test IVR functions.
+ * See FST_SESSION_BEGIN_RATE
+ */
+
+#define FST_SESSION_BEGIN(name) FST_SESSION_BEGIN_RATE(name, 8000)
 
 /* BODY OF TEST CASE HERE */
 
