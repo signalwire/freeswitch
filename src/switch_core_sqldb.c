@@ -1630,6 +1630,7 @@ struct switch_sql_queue_manager {
 	uint32_t max_trans;
 	uint32_t confirm;
 	uint8_t paused;
+	int skip_wait;
 };
 
 static int qm_wake(switch_sql_queue_manager_t *qm)
@@ -1647,6 +1648,7 @@ static int qm_wake(switch_sql_queue_manager_t *qm)
 		return 1;
 	} else {
 		if (switch_mutex_trylock(qm->cond2_mutex) == SWITCH_STATUS_SUCCESS) {
+			qm->skip_wait++;
 			switch_mutex_unlock(qm->cond2_mutex);
 		} else {
 			if (++tries < 10) {
@@ -2351,7 +2353,11 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		if ((lc = qm_ttl(qm)) == 0) {
 			switch_mutex_lock(qm->cond2_mutex);
-			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+			if (qm->skip_wait > 0) {
+				qm->skip_wait--;
+			} else {
+				switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+			}
 			switch_mutex_unlock(qm->cond2_mutex);
 		}
 
