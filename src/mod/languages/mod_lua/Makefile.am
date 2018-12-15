@@ -23,3 +23,4 @@ mod_lua_wrap.cpp: mod_lua_extra.c
 	echo "#include \"mod_lua_extra.c\"" >> mod_lua_wrap.cpp
 	patch -s -p0 -i hack.diff
 
+SUBDIRS=. test

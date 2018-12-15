@@ -19,7 +19,19 @@
 %}
 
 
+%typemap(in, checkfn="lua_istable") SWIGLUA_TABLE {
+  $1.L = L;
+  $1.idx = $input;
+}
 
+%typemap(typecheck) SWIGLUA_TABLE {
+  $1 = lua_istable(L, $input);
+}
+
+%typemap(out) cJSON * {
+  SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
+  cJSON_Delete(result);
+}
 
 /* Lua function typemap */
 %typemap(in, checkfn = "lua_isfunction") SWIGLUA_FN {
@@ -43,6 +55,11 @@
 %newobject API::execute;
 %newobject API::executeString;
 %newobject CoreSession::playAndDetectSpeech;
+%newobject JSON;
+%newobject JSON::encode;
+%newobject JSON::decode;
+%newobject JSON::execute;
+%newobject JSON::execute2;
 
 %include "typemaps.i"
 %apply int *OUTPUT { int *len };
@@ -105,6 +122,21 @@ class Dbh {
     char *last_error();
     void clear_error();
     int load_extension(const char *extension);
+};
+
+class JSON {
+  private:
+  public:
+    JSON();
+    ~JSON();
+    cJSON *decode(const char *str);
+    char *encode(SWIGLUA_TABLE lua_table);
+    cJSON *execute(const char *);
+    cJSON *execute(SWIGLUA_TABLE table);
+    char *execute2(const char *);
+    char *execute2(SWIGLUA_TABLE table);
+    void encode_empty_table_as_object(bool flag);
+    void return_unformatted_json(bool flag);
 };
 
 }

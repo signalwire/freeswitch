@@ -506,3 +506,234 @@ int Dbh::load_extension(const char *extension)
   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
   return 0;
 }
+
+JSON::JSON()
+{
+	_encode_empty_table_as_object = true;
+}
+
+JSON::~JSON()
+{
+}
+
+void JSON::encode_empty_table_as_object(bool flag)
+{
+	_encode_empty_table_as_object = flag;
+}
+
+void JSON::return_unformatted_json(bool flag)
+{
+	_return_unformatted_json = flag;
+}
+
+cJSON *JSON::decode(const char *str)
+{
+	cJSON *json = cJSON_Parse(str);
+	return json;
+}
+
+#define ADDITEM(json, k, v) do { \
+	if (return_array > 0) { cJSON_AddItemToArray(json, v);} else { cJSON_AddItemToObject(json, k, v); } \
+} while (0)
+
+void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
+{
+	int return_array = -1;
+
+    // Push another reference to the table on top of the stack (so we know
+    // where it is, and this function can work for negative, positive and
+    // pseudo indices
+    lua_pushvalue(L, index);
+    // stack now contains: -1 => table
+    lua_pushnil(L);
+    // stack now contains: -1 => nil; -2 => table
+    while (lua_next(L, -2)) {
+        // stack now contains: -1 => value; -2 => key; -3 => table
+        // copy the key so that lua_tostring does not modify the original
+        lua_pushvalue(L, -2);
+        // stack now contains: -1 => key; -2 => value; -3 => key; -4 => table
+
+        const char *key = lua_tostring(L, -1);
+        // switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "key: %s\n", key);
+
+		if (return_array < 0) {
+			if (lua_isnumber(L, -1) && lua_tonumber(L, -1) == 1) {
+				return_array = 1;
+				*json = cJSON_CreateArray();
+			} else {
+				return_array = 0;
+				*json = cJSON_CreateObject();
+			}
+		}
+
+		switch_assert(*json);
+
+		if (lua_isnumber(L, -2)) {
+			ADDITEM(*json, key, cJSON_CreateNumber(lua_tonumber(L, -2)));
+		} else if (lua_isstring(L, -2)) {
+			ADDITEM(*json, key, cJSON_CreateString(lua_tostring(L, -2)));
+		} else if (lua_isboolean(L, -2)) {
+			ADDITEM(*json, key, cJSON_CreateBool(lua_toboolean(L, -2)));
+		} else if (lua_isnil(L, -2)) {
+			ADDITEM(*json, key, cJSON_CreateNull());
+		} else if (lua_isnone(L, -2)) {
+			// ADDITEM(*json, key, cJSON_CreateNone());
+		} else if (lua_istable(L, -2)) {
+			cJSON *child = NULL;
+			LuaTable2cJSON(L, -2, &child);
+			if (child) {
+				ADDITEM(*json, key, child);
+			} else { // empty table?
+				ADDITEM(*json, key, _encode_empty_table_as_object ? cJSON_CreateObject() : cJSON_CreateArray());
+			}
+		}
+
+        // pop value + copy of key, leaving original key
+        lua_pop(L, 2);
+        // stack now contains: -1 => key; -2 => table
+    }
+
+    // stack now contains: -1 => table (when lua_next returns 0 it pops the key
+    // but does not push anything.)
+    // Pop table
+    lua_pop(L, 1);
+    // Stack is now the same as it was on entry to this function
+}
+
+char *JSON::encode(SWIGLUA_TABLE lua_table)
+{
+	lua_State *L = lua_table.L;
+	cJSON *json = NULL;
+
+	luaL_checktype(L, lua_table.idx, LUA_TTABLE);
+	LuaTable2cJSON(L, -1, &json);
+
+	if (!json) {
+		json = _encode_empty_table_as_object ? cJSON_CreateObject() : cJSON_CreateArray();
+	}
+
+	char *s = _return_unformatted_json ? cJSON_PrintUnformatted(json) : cJSON_Print(json);
+	cJSON_Delete(json);
+	return s;
+}
+
+int JSON::cJSON2LuaTable(lua_State *L, cJSON *json) {
+	cJSON *current = NULL;
+
+	if (!json) return 0;
+
+	lua_newtable(L);
+
+	if (json->type == cJSON_Object) {
+		for (current = json->child; current; current = current->next) {
+			// printf("type: %d %s\n", current->type, current->string);
+			switch (current->type) {
+				case cJSON_String:
+					lua_pushstring(L, current->valuestring);
+					lua_setfield(L, -2, current->string);
+					break;
+				case cJSON_Number:
+					lua_pushnumber(L, current->valuedouble);
+					lua_setfield(L, -2, current->string);
+					break;
+				case cJSON_True:
+					lua_pushboolean(L, 1);
+					lua_setfield(L, -2, current->string);
+					break;
+				case cJSON_False:
+					lua_pushboolean(L, 0);
+					lua_setfield(L, -2, current->string);
+					break;
+				case cJSON_Object:
+					JSON::cJSON2LuaTable(L, current);
+					lua_setfield(L, -2, current->string);
+					break;
+				case cJSON_Array:
+					JSON::cJSON2LuaTable(L, current);
+					lua_setfield(L, -2, current->string);
+					break;
+				default:
+					break;
+			}
+		}
+	} else if (json->type == cJSON_Array) {
+		int i = 1;
+
+		for (current = json->child; current; current = current->next) {
+			// printf("array type: %d %s\n", current->type, current->valuestring);
+			switch (current->type) {
+				case cJSON_String:
+					lua_pushinteger(L, i++);
+					lua_pushstring(L, current->valuestring);
+					lua_settable(L, -3);
+					break;
+				case cJSON_Number:
+					lua_pushinteger(L, i++);
+					lua_pushnumber(L, current->valuedouble);
+					lua_settable(L, -3);
+					break;
+				case cJSON_True:
+					lua_pushinteger(L, i++);
+					lua_pushboolean(L, 1);
+					lua_settable(L, -3);
+					break;
+				case cJSON_False:
+					lua_pushinteger(L, i++);
+					lua_pushboolean(L, 0);
+					lua_settable(L, -3);
+					break;
+				case cJSON_Object:
+					lua_pushinteger(L, i++);
+					JSON::cJSON2LuaTable(L, current);
+					lua_settable(L, -3);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	return 1;
+}
+
+cJSON *JSON::execute(const char *str)
+{
+	cJSON *cmd = cJSON_Parse(str);
+	cJSON *reply = NULL;
+
+	if (cmd) {
+		switch_json_api_execute(cmd, NULL, &reply);
+	}
+
+	cJSON_Delete(cmd);
+
+	return reply;
+}
+
+cJSON *JSON::execute(SWIGLUA_TABLE table)
+{
+	lua_State *L = table.L;
+	cJSON *json = NULL;
+	cJSON *reply = NULL;
+
+	luaL_checktype(L, table.idx, LUA_TTABLE);
+	LuaTable2cJSON(L, -1, &json);
+
+	switch_json_api_execute(json, NULL, &reply);
+	cJSON_Delete(json);
+	return reply;
+}
+
+char *JSON::execute2(const char *str)
+{
+	cJSON *reply = execute(str);
+
+	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+}
+
+char *JSON::execute2(SWIGLUA_TABLE table)
+{
+	cJSON *reply = execute(table);
+
+	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+}

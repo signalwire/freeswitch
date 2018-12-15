@@ -20,6 +20,13 @@ typedef struct{
 
 #define SWIGLUA_FN_GET(fn) {lua_pushvalue(fn.L,fn.idx);}
 
+typedef struct{
+  lua_State* L;
+  int idx;
+}SWIGLUA_TABLE;
+
+#define SWIGLUA_TABLE_GET(fn) {lua_pushvalue(fn.L,fn.idx);}
+
 
 namespace LUA {
 	class Session:public CoreSession {
@@ -73,5 +80,25 @@ namespace LUA {
       void clear_error();
       int load_extension(const char *extension);
   };
+
+  class JSON {
+    private:
+		  bool _encode_empty_table_as_object;
+		  bool _return_unformatted_json;
+    public:
+      JSON();
+      ~JSON();
+      cJSON *decode(const char *);
+      char *encode(SWIGLUA_TABLE table);
+      cJSON *execute(const char *);
+      cJSON *execute(SWIGLUA_TABLE table);
+      char *execute2(const char *);
+      char *execute2(SWIGLUA_TABLE table);
+      void encode_empty_table_as_object(bool flag);
+      void return_unformatted_json(bool flag);
+      static int cJSON2LuaTable(lua_State *L, cJSON *json);
+      void LuaTable2cJSON(lua_State *L, int index, cJSON **json);
+  };
+
 }
 #endif
