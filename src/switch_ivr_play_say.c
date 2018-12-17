@@ -390,6 +390,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!file) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 
 	if (!prefix) {
