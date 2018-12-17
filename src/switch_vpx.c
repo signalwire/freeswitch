@@ -1984,6 +1984,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 	SWITCH_ADD_API(vpx_api_interface, "vpx",
 				   "VPX API", vpx_api_function, VPX_API_SYNTAX);
 
+	switch_console_set_complete("add vpx reload");
+	switch_console_set_complete("add vpx debug");
+	switch_console_set_complete("add vpx debug on");
+	switch_console_set_complete("add vpx debug off");
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
