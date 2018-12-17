@@ -75,7 +75,7 @@ FST_CORE_BEGIN("conf")
 			int packets = 0;
 			switch_status_t encode_status;
 
-			// switch_set_string(codec_settings.video.config_profile_name, "conference");
+			switch_set_string(codec_settings.video.config_profile_name, "conference");
 
 			if (!fctcl_is("--disable-hw")) {
 				codec_settings.video.try_hardware_encoder = 1;
