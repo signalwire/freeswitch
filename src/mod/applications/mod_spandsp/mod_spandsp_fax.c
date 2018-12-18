@@ -59,6 +59,25 @@ typedef enum {
 	T38_MODE_REFUSED = -1,
 } t38_mode_t;
 
+const char * get_t38_status(t38_mode_t mode)
+{
+	const char *str = "off";
+	switch(mode) {
+	case T38_MODE_NEGOTIATED:
+		str = "negotiated";
+		break;
+	case T38_MODE_REQUESTED:
+		str = "requested";
+		break;
+	case T38_MODE_REFUSED:
+		str = "refused";
+		break;
+	default:
+		break;
+	}
+	return str;
+}
+
 
 struct pvt_s {
 	switch_core_session_t *session;
@@ -316,6 +335,7 @@ static int phase_b_handler(void *user_data, int result)
 	}
 
 	switch_channel_set_variable(channel, "fax_ecm_used", (t30_stats.error_correcting_mode) ? "on" : "off");
+	switch_channel_set_variable(channel, "fax_t38_status", get_t38_status(pvt->t38_mode));
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 	switch_channel_set_variable(channel, "fax_remote_country", switch_str_nil(t30_get_rx_country(pvt->t30)));
@@ -328,9 +348,10 @@ static int phase_b_handler(void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t30_stats.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 status         %s\n", get_t38_status(pvt->t38_mode));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:    %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:     %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:      %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
 	if (pvt->app_mode == FUNCTION_TX) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %s\n", fax_document_total_pages);
 	}
@@ -347,6 +368,7 @@ static int phase_b_handler(void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(pvt->t30)));
@@ -546,9 +568,10 @@ static void phase_e_handler(void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 status         %s\n", get_t38_status(pvt->t38_mode));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:    %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:     %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:      %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -564,6 +587,7 @@ static void phase_e_handler(void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_result_text", t30_completion_code_to_str(result));
 
 	switch_channel_set_variable(channel, "fax_ecm_used", (t.error_correcting_mode) ? "on" : "off");
+	switch_channel_set_variable(channel, "fax_t38_status", get_t38_status(pvt->t38_mode));
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 
@@ -616,6 +640,7 @@ static void phase_e_handler(void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
 		switch_event_fire(&event);
