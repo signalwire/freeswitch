@@ -97,6 +97,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	profile->callee_id_name = SWITCH_BLANK_STRING;
 	profile->callee_id_number = SWITCH_BLANK_STRING;
 	switch_set_flag(profile, SWITCH_CPF_SCREEN);
+	if (switch_core_test_flag(SCF_CPF_SOFT_PREFIX)) {
+		switch_set_flag(profile, SWITCH_CPF_SOFT_PREFIX);
+	}
 	profile->pool = pool;
 	return profile;
 }
@@ -399,7 +402,12 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		profile_node_t *pn;
 
 		for (pn = caller_profile->soft; pn; pn = pn->next) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pn->var, pn->val);
+			if (switch_test_flag(caller_profile, SWITCH_CPF_SOFT_PREFIX)) {
+				switch_snprintf(header_name, sizeof(header_name), "%s-%s", prefix, pn->var);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, pn->val);
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pn->var, pn->val);
+			}
 		}
 
 	}
