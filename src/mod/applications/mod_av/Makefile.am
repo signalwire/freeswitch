@@ -9,6 +9,8 @@ mod_av_la_CFLAGS   = $(AM_CFLAGS) $(AVFORMAT_CFLAGS) $(AVCODEC_CFLAGS) $(SWSCALE
 mod_av_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(AVFORMAT_LIBS) $(AVCODEC_LIBS) $(SWSCALE_LIBS)  $(AVUTIL_LIBS) $(AVRESAMPLE_LIBS)
 mod_av_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lm -lz
 
+SUBDIRS=. test
+
 else
 install: error
 all: error

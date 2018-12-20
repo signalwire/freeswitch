@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -129,20 +129,20 @@ struct rayo_component {
 #define RAYO_CALL(x) ((struct rayo_call *)x)
 #define RAYO_MIXER(x) ((struct rayo_mixer *)x)
 
-extern void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, int dup, int reply, const char *file, int line);
-extern void rayo_message_destroy(struct rayo_message *msg);
-extern iks *rayo_message_remove_payload(struct rayo_message *msg);
+SWITCH_DECLARE(void) rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, int dup, int reply, const char *file, int line);
+SWITCH_DECLARE(void) rayo_message_destroy(struct rayo_message *msg);
+SWITCH_DECLARE(iks *) rayo_message_remove_payload(struct rayo_message *msg);
 #define RAYO_SEND_MESSAGE(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 0, 0, __FILE__, __LINE__)
 #define RAYO_SEND_MESSAGE_DUP(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 1, 0, __FILE__, __LINE__)
 #define RAYO_SEND_REPLY(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 0, 1, __FILE__, __LINE__)
 #define RAYO_SEND_REPLY_DUP(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 1, 1, __FILE__, __LINE__)
 
-extern struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line);
-extern struct rayo_actor *rayo_actor_locate_by_id(const char *id, const char *file, int line);
-extern int rayo_actor_seq_next(struct rayo_actor *actor);
-extern void rayo_actor_retain(struct rayo_actor *actor, const char *file, int line);
-extern void rayo_actor_release(struct rayo_actor *actor, const char *file, int line);
-extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line);
+SWITCH_DECLARE(struct rayo_actor *) rayo_actor_locate(const char *jid, const char *file, int line);
+SWITCH_DECLARE(struct rayo_actor *) rayo_actor_locate_by_id(const char *id, const char *file, int line);
+SWITCH_DECLARE(int) rayo_actor_seq_next(struct rayo_actor *actor);
+SWITCH_DECLARE(void) rayo_actor_retain(struct rayo_actor *actor, const char *file, int line);
+SWITCH_DECLARE(void) rayo_actor_release(struct rayo_actor *actor, const char *file, int line);
+SWITCH_DECLARE(void) rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line);
 
 #define RAYO_LOCATE(jid) rayo_actor_locate(jid, __FILE__, __LINE__)
 #define RAYO_LOCATE_BY_ID(id) rayo_actor_locate_by_id(id, __FILE__, __LINE__)
@@ -156,21 +156,21 @@ extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int l
 #define RAYO_DESTROY(x) rayo_actor_destroy(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_SEQ_NEXT(x) rayo_actor_seq_next(RAYO_ACTOR(x))
 
-extern int rayo_call_is_joined(struct rayo_call *call);
-extern int rayo_call_is_faxing(struct rayo_call *call);
-extern void rayo_call_set_faxing(struct rayo_call *call, int faxing);
-extern const char *rayo_call_get_dcp_jid(struct rayo_call *call);
+SWITCH_DECLARE(int) rayo_call_is_joined(struct rayo_call *call);
+SWITCH_DECLARE(int) rayo_call_is_faxing(struct rayo_call *call);
+SWITCH_DECLARE(void) rayo_call_set_faxing(struct rayo_call *call, int faxing);
+SWITCH_DECLARE(const char *) rayo_call_get_dcp_jid(struct rayo_call *call);
 
 #define rayo_mixer_get_name(mixer) RAYO_ID(mixer)
 
 #define rayo_component_init(component, pool, type, subtype, id, parent, client_jid) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, NULL, __FILE__, __LINE__)
 #define rayo_component_init_cleanup(component, pool, type, subtype, id, parent, client_jid, cleanup) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, cleanup, __FILE__, __LINE__)
-extern struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, rayo_actor_cleanup_fn cleanup, const char *file, int line);
-extern switch_bool_t is_component_actor(struct rayo_actor *);
+SWITCH_DECLARE(struct rayo_component *) _rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, rayo_actor_cleanup_fn cleanup, const char *file, int line);
+SWITCH_DECLARE(switch_bool_t) is_component_actor(struct rayo_actor *);
 
 typedef iks *(*rayo_actor_xmpp_handler)(struct rayo_actor *, struct rayo_message *, void *);
-extern void rayo_actor_command_handler_add(const char *type, const char *subtype, const char *name, rayo_actor_xmpp_handler fn);
-extern void rayo_actor_event_handler_add(const char *from_type, const char *from_subtype, const char *to_type, const char *to_subtype, const char *name, rayo_actor_xmpp_handler fn);
+SWITCH_DECLARE(void) rayo_actor_command_handler_add(const char *type, const char *subtype, const char *name, rayo_actor_xmpp_handler fn);
+SWITCH_DECLARE(void) rayo_actor_event_handler_add(const char *from_type, const char *from_subtype, const char *to_type, const char *to_subtype, const char *name, rayo_actor_xmpp_handler fn);
 
 #endif
 

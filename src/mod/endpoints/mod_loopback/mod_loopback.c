@@ -1220,6 +1220,7 @@ struct null_private_object {
 	switch_caller_profile_t *caller_profile;
 	switch_frame_t read_frame;
 	int16_t *null_buf;
+	int rate;
 };
 
 typedef struct null_private_object null_private_t;
@@ -1239,20 +1240,19 @@ static switch_status_t null_channel_kill_channel(switch_core_session_t *session,
 static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_session_t *session)
 {
 	const char *iananame = "L16";
-	uint32_t rate = 8000;
 	uint32_t interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const switch_codec_implementation_t *read_impl;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n", switch_channel_get_name(channel), iananame, rate,
-					  interval);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n",
+		switch_channel_get_name(channel), iananame, tech_pvt->rate, interval);
 
 	status = switch_core_codec_init(&tech_pvt->read_codec,
 					iananame,
 					NULL,
 					NULL,
-					rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+					tech_pvt->rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
 
 	if (status != SWITCH_STATUS_SUCCESS || !tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
 		goto end;
@@ -1262,7 +1262,7 @@ static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_sess
 					iananame,
 					NULL,
 					NULL,
-					rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+					tech_pvt->rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
 
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -1494,6 +1494,19 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 		switch_core_session_add_stream(*new_session, NULL);
 
 		if ((tech_pvt = (null_private_t *) switch_core_session_alloc(*new_session, sizeof(null_private_t))) != 0) {
+			const char *rate_ = switch_event_get_header(var_event, "rate");
+			int rate = 0;
+
+			if (rate_) {
+				rate = atoi(rate_);
+			}
+
+			if (!(rate > 0 && rate % 8000 == 0)) {
+				rate = 8000;
+			}
+
+			tech_pvt->rate = rate;
+
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "null/%s", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);

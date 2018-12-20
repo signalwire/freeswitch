@@ -58,6 +58,11 @@
 #include <priv.h>
 #endif
 
+#ifdef WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
+
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 SWITCH_DECLARE_DATA switch_filenames SWITCH_GLOBAL_filenames = { 0 };
 
@@ -3253,45 +3258,7 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream)
 {
-#ifdef WIN32
-	return switch_system(cmd, SWITCH_TRUE);
-#else
-	int fds[2], pid = 0;
-
-	if (pipe(fds)) {
-		goto end;
-	} else {					/* good to go */
-		pid = switch_fork();
-
-		if (pid < 0) {			/* ok maybe not */
-			close(fds[0]);
-			close(fds[1]);
-			goto end;
-		} else if (pid) {		/* parent */
-			char buf[1024] = "";
-			int bytes;
-			close(fds[1]);
-			while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
-				stream->raw_write_function(stream, (unsigned char *)buf, bytes);
-			}
-			close(fds[0]);
-			waitpid(pid, NULL, 0);
-		} else {				/*  child */
-			switch_close_extra_files(fds, 2);
-			close(fds[0]);
-			dup2(fds[1], STDOUT_FILENO);
-			switch_system(cmd, SWITCH_TRUE);
-			close(fds[1]);
-			exit(0);
-		}
-	}
-
- end:
-
-	return 0;
-
-#endif
-
+	return switch_stream_system(cmd, stream);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max)
@@ -3320,13 +3287,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, s
 
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
-#ifdef WIN32
-	stream->write_function(stream, "Capturing output not supported.\n");
-	return switch_system(cmd, SWITCH_TRUE);
-#else
-	return switch_stream_system_fork(cmd, stream);
-#endif
+	char buffer[128];
+	size_t bytes;
+	FILE* pipe = popen(cmd, "r");
+	if (!pipe) return 1;
 
+	while (!feof(pipe)) {
+		while ((bytes = fread(buffer, 1, 128, pipe)) > 0) {
+			if (stream != NULL) {
+				stream->raw_write_function(stream, (unsigned char *)buffer, bytes);
+			}
+		}
+	}
+
+	if (ferror(pipe)) {
+		pclose(pipe);
+		return 1;
+	}
+
+	pclose(pipe);
+	return 0;
 }
 
 SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()

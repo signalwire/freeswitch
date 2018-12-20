@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -45,15 +45,15 @@ enum srgs_match_type {
 	SMT_MATCH_END
 };
 
-extern int srgs_init(void);
-extern void srgs_destroy(void);
-extern struct srgs_parser *srgs_parser_new(const char *uuid);
-extern struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *document);
-extern const char *srgs_grammar_to_regex(struct srgs_grammar *grammar);
-extern const char *srgs_grammar_to_jsgf(struct srgs_grammar *grammar);
-extern const char *srgs_grammar_to_jsgf_file(struct srgs_grammar *grammar, const char *basedir, const char *ext);
-extern enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input, const char **interpretation);
-extern void srgs_parser_destroy(struct srgs_parser *parser);
+SWITCH_DECLARE(int) srgs_init(void);
+SWITCH_DECLARE(void) srgs_destroy(void);
+SWITCH_DECLARE(struct srgs_parser *) srgs_parser_new(const char *uuid);
+SWITCH_DECLARE(struct srgs_grammar *) srgs_parse(struct srgs_parser *parser, const char *document);
+SWITCH_DECLARE(const char *) srgs_grammar_to_regex(struct srgs_grammar *grammar);
+SWITCH_DECLARE(const char *) srgs_grammar_to_jsgf(struct srgs_grammar *grammar);
+SWITCH_DECLARE(const char *) srgs_grammar_to_jsgf_file(struct srgs_grammar *grammar, const char *basedir, const char *ext);
+SWITCH_DECLARE(enum srgs_match_type) srgs_grammar_match(struct srgs_grammar *grammar, const char *input, const char **interpretation);
+SWITCH_DECLARE(void) srgs_parser_destroy(struct srgs_parser *parser);
 
 #endif
 

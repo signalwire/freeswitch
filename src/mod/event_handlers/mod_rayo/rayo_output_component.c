@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2016, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -53,6 +53,8 @@ struct output_component {
 	const char *renderer;
 	/** optional headers to pass to renderer */
 	const char *headers;
+	/** audio direction */
+	const char *direction;
 };
 
 #define OUTPUT_FINISH "finish", RAYO_OUTPUT_COMPLETE_NS
@@ -79,6 +81,7 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
 		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
 		output_component->renderer = switch_core_strdup(RAYO_POOL(output_component), iks_find_attrib_soft(output, "renderer"));
+		output_component->direction = strcmp(iks_find_attrib_soft(output, "direction"), "in") ? "m" : "mr";
 		output_component->headers = NULL;
 		/* get custom headers */
 		{
@@ -136,7 +139,7 @@ static iks *start_call_output(struct rayo_component *component, switch_core_sess
 	}
 	stream.write_function(&stream, "}fileman://rayo://%s", RAYO_JID(component));
 
-	if (switch_ivr_displace_session(session, stream.data, 0, "m") == SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_displace_session(session, stream.data, 0, OUTPUT_COMPONENT(component)->direction) == SWITCH_STATUS_SUCCESS) {
 		RAYO_RELEASE(component);
 	} else {
 		if (component->complete) {

@@ -1807,6 +1807,7 @@ ac_cv_file_dbd_apr_dbd_mysql_c=no
 
 AC_CONFIG_FILES([Makefile
 		build/Makefile
+		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_abstraction/Makefile
@@ -1861,6 +1862,8 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
 		src/mod/applications/mod_stress/Makefile
+		src/mod/applications/mod_test/Makefile
+		src/mod/applications/mod_test/test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
 		src/mod/applications/mod_vmd/Makefile
@@ -1927,6 +1930,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
+		src/mod/event_handlers/mod_rayo/test/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -1980,6 +1984,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile
+		src/mod/applications/mod_av/test/Makefile
 		src/mod/applications/mod_video_filter/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh

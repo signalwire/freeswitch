@@ -33,10 +33,10 @@
 
 #include "mod_rayo.h"
 
-extern switch_status_t rayo_cpa_detector_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
-extern void rayo_cpa_detector_shutdown(void);
-extern int rayo_cpa_detector_start(const char *call_uuid, const char *signal_ns, const char **error_detail);
-extern void rayo_cpa_detector_stop(const char *call_uuid, const char *signal_ns);
+SWITCH_DECLARE(switch_status_t) rayo_cpa_detector_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+SWITCH_DECLARE(void) rayo_cpa_detector_shutdown(void);
+SWITCH_DECLARE(int) rayo_cpa_detector_start(const char *call_uuid, const char *signal_ns, const char **error_detail);
+SWITCH_DECLARE(void) rayo_cpa_detector_stop(const char *call_uuid, const char *signal_ns);
 
 #endif
 

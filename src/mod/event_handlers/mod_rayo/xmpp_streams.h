@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2015, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -37,22 +37,22 @@ typedef int (* xmpp_stream_ready_callback)(struct xmpp_stream *stream);
 typedef void (* xmpp_stream_recv_callback)(struct xmpp_stream *stream, iks *stanza);
 typedef void (* xmpp_stream_destroy_callback)(struct xmpp_stream *stream);
 
-extern struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_bind_callback bind_cb, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy);
-extern void xmpp_stream_context_add_cert(struct xmpp_stream_context *context, const char *cert_pem_file);
-extern void xmpp_stream_context_add_key(struct xmpp_stream_context *context, const char *key_pem_file);
-extern void xmpp_stream_context_add_user(struct xmpp_stream_context *context, const char *user, const char *password);
-extern void xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream_handle_t *stream);
-extern void xmpp_stream_context_destroy(struct xmpp_stream_context *context);
-extern void xmpp_stream_context_send(struct xmpp_stream_context *context, const char *jid, iks *stanza);
+SWITCH_DECLARE(struct xmpp_stream_context *) xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_bind_callback bind_cb, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy);
+SWITCH_DECLARE(void) xmpp_stream_context_add_cert(struct xmpp_stream_context *context, const char *cert_pem_file);
+SWITCH_DECLARE(void) xmpp_stream_context_add_key(struct xmpp_stream_context *context, const char *key_pem_file);
+SWITCH_DECLARE(void) xmpp_stream_context_add_user(struct xmpp_stream_context *context, const char *user, const char *password);
+SWITCH_DECLARE(void) xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream_handle_t *stream);
+SWITCH_DECLARE(void) xmpp_stream_context_destroy(struct xmpp_stream_context *context);
+SWITCH_DECLARE(void) xmpp_stream_context_send(struct xmpp_stream_context *context, const char *jid, iks *stanza);
 
-extern switch_status_t xmpp_stream_context_listen(struct xmpp_stream_context *context, const char *addr, int port, int is_s2s, const char *acl);
-extern switch_status_t xmpp_stream_context_connect(struct xmpp_stream_context *context, const char *peer_domain, const char *peer_address, int peer_port);
+SWITCH_DECLARE(switch_status_t) xmpp_stream_context_listen(struct xmpp_stream_context *context, const char *addr, int port, int is_s2s, const char *acl);
+SWITCH_DECLARE(switch_status_t) xmpp_stream_context_connect(struct xmpp_stream_context *context, const char *peer_domain, const char *peer_address, int peer_port);
 
-extern int xmpp_stream_is_s2s(struct xmpp_stream *stream);
-extern int xmpp_stream_is_incoming(struct xmpp_stream *stream);
-extern const char *xmpp_stream_get_jid(struct xmpp_stream *stream);
-extern void xmpp_stream_set_private(struct xmpp_stream *stream, void *user_private);
-extern void *xmpp_stream_get_private(struct xmpp_stream *stream);
+SWITCH_DECLARE(int) xmpp_stream_is_s2s(struct xmpp_stream *stream);
+SWITCH_DECLARE(int) xmpp_stream_is_incoming(struct xmpp_stream *stream);
+SWITCH_DECLARE(const char *) xmpp_stream_get_jid(struct xmpp_stream *stream);
+SWITCH_DECLARE(void) xmpp_stream_set_private(struct xmpp_stream *stream, void *user_private);
+SWITCH_DECLARE(void *) xmpp_stream_get_private(struct xmpp_stream *stream);
 
 #endif
 
