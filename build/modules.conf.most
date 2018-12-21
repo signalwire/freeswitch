@@ -38,6 +38,7 @@ applications/mod_prefix
 #applications/mod_rad_auth
 applications/mod_redis
 applications/mod_rss
+applications/mod_signalwire
 applications/mod_sms
 applications/mod_snapshot
 applications/mod_snom

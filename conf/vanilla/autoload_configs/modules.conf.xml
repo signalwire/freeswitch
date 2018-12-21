@@ -50,6 +50,7 @@
     <load module="mod_verto"/>
 
     <!-- Applications -->
+    <load module="mod_signalwire"/>
     <load module="mod_commands"/>
     <load module="mod_conference"/>
     <!-- <load module="mod_curl"/> -->

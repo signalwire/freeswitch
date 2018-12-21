@@ -26,6 +26,7 @@
     <!-- <load module="mod_woomera"/> -->
 
     <!-- Applications -->
+    <!--load module="mod_signalwire"/-->
     <load module="mod_commands"/>
     <load module="mod_dptools"/>
     <load module="mod_expr"/>

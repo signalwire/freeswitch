@@ -1498,6 +1498,14 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
+PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
+  AM_CONDITIONAL([HAVE_KS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
+
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+  AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
@@ -1853,6 +1861,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_redis/Makefile
 		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
+		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
