@@ -151,6 +151,9 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "State", sofia_state_string(gateway->state));
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Ping-Status", sofia_gateway_status_name(gateway->status));
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register-Network-IP", gateway->register_network_ip);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Register-Network-Port", "%d", gateway->register_network_port);
+
 		if (!zstr(phrase)) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Phrase", phrase);
 		}
@@ -2402,6 +2405,15 @@ void sofia_reg_handle_sip_r_register(int status,
 
 	if (sofia_private && gateway) {
 		reg_state_t ostate = gateway->state;
+		char oregister_network_ip[80] = { 0 };
+		char network_ip[80];
+
+		if (!zstr_buf(gateway->register_network_ip)) {
+			strncpy(oregister_network_ip, gateway->register_network_ip, sizeof(oregister_network_ip) - 1);
+		}
+		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
+		snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+
 		switch (status) {
 		case 200:
 			if (sip && sip->sip_contact) {
@@ -2457,7 +2469,9 @@ void sofia_reg_handle_sip_r_register(int status,
 							  gateway->name, switch_str_nil(phrase), status, ++gateway->failures);
 			break;
 		}
-		if (ostate != gateway->state) {
+		if (ostate != gateway->state ||
+			zstr_buf(oregister_network_ip) || strcmp(oregister_network_ip, gateway->register_network_ip)) {
+
 			sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 		}
 	}
@@ -3075,7 +3089,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_assert(call_id);
 
 		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q' AND call_id <> '%q' AND sip_host='%q'",
-							 username, call_id, domain_name);
+							 sip->sip_to->a_url->url_user, call_id, domain_name);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_regcount_callback, &count);
 		free(sql);

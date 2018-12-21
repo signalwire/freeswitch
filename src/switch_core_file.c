@@ -81,10 +81,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	fh->samples_in = 0;
-	fh->samplerate = 0;
-	fh->native_rate = 0;
-	fh->channels = 0;
-	fh->real_channels = 0;
+
+	if (!(flags & SWITCH_FILE_FLAG_WRITE)) {
+		fh->samplerate = 0;
+		fh->native_rate = 0;
+		fh->channels = 0;
+		fh->real_channels = 0;
+	}
 	
 	if (!fh->samplerate) {
 		if (!(fh->samplerate = rate)) {

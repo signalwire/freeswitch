@@ -89,6 +89,7 @@
 	<load module="mod_sndfile"/>
 	<load module="mod_tone_stream"/>
 	<load module="mod_local_stream"/>
+	<!--load module="mod_signalwire"/-->
       </modules>
     </configuration>
 

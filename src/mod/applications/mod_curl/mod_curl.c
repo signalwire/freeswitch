@@ -55,10 +55,19 @@ static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-t
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
 #define HTTP_MAX_APPEND_HEADERS 10
+#define HTTP_DEFAULT_MAX_BYTES 64000
 
 static struct {
 	switch_memory_pool_t *pool;
+	switch_event_node_t *node;
+	int max_bytes;
 } globals;
+
+static switch_xml_config_item_t instructions[] = {
+	/* parameter name        type                 reloadable   pointer                         default value     options structure */
+	SWITCH_CONFIG_ITEM("max-bytes", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.max_bytes, (void *) HTTP_DEFAULT_MAX_BYTES, NULL,NULL, NULL),
+	SWITCH_CONFIG_ITEM_END()
+};
 
 typedef enum {
 	CSO_NONE = (1 << 0),
@@ -173,7 +182,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	memset(http_data, 0, sizeof(http_data_t));
 	http_data->pool = pool;
 
-	http_data->max_bytes = 64000;
+	http_data->max_bytes = globals.max_bytes;
 	SWITCH_STANDARD_STREAM(http_data->stream);
 
 	if (!method) {
@@ -1037,23 +1046,43 @@ SWITCH_STANDARD_API(curl_function)
 	return status;
 }
 
+static void do_config(switch_bool_t reload)
+{
+	globals.max_bytes = HTTP_DEFAULT_MAX_BYTES;
+
+	switch_xml_config_parse_module_settings("curl.conf", reload, instructions);
+}
+
+static void event_handler(switch_event_t *event)
+{
+	do_config(SWITCH_TRUE);
+}
+
 /* Macro expands to: switch_status_t mod_cidlookup_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
+	memset(&globals, 0, sizeof(globals));
+
 	if (switch_event_reserve_subclass(HTTP_SENDFILE_ACK_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", HTTP_SENDFILE_ACK_EVENT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event!\n");
+		switch_event_free_subclass(HTTP_SENDFILE_ACK_EVENT);
 		return SWITCH_STATUS_TERM;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	memset(&globals, 0, sizeof(globals));
-
 	globals.pool = pool;
+
+	do_config(SWITCH_FALSE);
 
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "curl", "Perform a http request", "Perform a http request",
@@ -1073,6 +1102,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown)
 {
 
 	switch_event_free_subclass(HTTP_SENDFILE_ACK_EVENT);
+
+	switch_xml_config_cleanup(instructions);
+
+	switch_event_unbind(&globals.node);
 
 	/* Cleanup dynamically allocated config settings */
 	return SWITCH_STATUS_SUCCESS;

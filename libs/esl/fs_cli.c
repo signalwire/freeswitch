@@ -78,7 +78,7 @@ static int connected = 0;
 static int allow_ctl_c = 0;
 static char bare_prompt_str[514] = "";
 static int bare_prompt_str_len = 0;
-static char prompt_str[512] = "";
+static char prompt_str[1024] = "";
 static char prompt_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char input_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char output_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
@@ -700,7 +700,7 @@ static void redisplay(void)
 			char s1[12], s2[12] = "";
 			
 			putchar('\r');
-			snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);			
+			snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
 			if (pos) snprintf(s2, sizeof(s2), "\033[%dC", pos);
 			printf("%s%s",s1,s2);
 		}
@@ -1418,7 +1418,7 @@ int main(int argc, char *argv[])
 	esl_handle_t handle = {{0}};
 	int count = 0;
 	const char *line = NULL;
-	char cmd_str[1024] = "";
+	char cmd_str[2048] = "";
 	cli_profile_t *profile = NULL;
 	int argv_use_history_file = 1;
 	int use_history_file = 0;

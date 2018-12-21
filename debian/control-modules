@@ -117,7 +117,7 @@ Module: applications/mod_hiredis
 Description: Redis client support
  This module provides a mechanism to use Redis as a datastore.
 Build-Depends: libhiredis-dev
-Depends: libhiredis0.10
+Depends: libhiredis0.10 | libhiredis0.13
 
 Module: applications/mod_httapi
 Description: HT-TAPI Hypertext Telephony API
@@ -205,6 +205,11 @@ Description: RSS browser
 Module: applications/mod_skel
 Description: Adds mod_skel
  Adds mod_skel.
+
+Module: applications/mod_signalwire
+Description: mod_signalwire
+ Adds mod_signalwire.
+Build-Depends: libks, signalwire-client-c
 
 Module: applications/mod_sms
 Description: Astract SMS

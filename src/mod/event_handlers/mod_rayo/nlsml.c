@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2018, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -30,6 +30,7 @@
 #include <iksemel.h>
 
 #include "nlsml.h"
+#include "iks_helpers.h"
 
 struct nlsml_parser;
 
@@ -417,48 +418,60 @@ static int isdtmf(const char digit)
 }
 
 /**
- * Construct an NLSML result for digit match
- * @param digits the matching digits
+ * Construct an NLSML result for match
+ * @param match the matching digits or text
+ * @param interpretation the optional digit interpretation
+ * @param mode dtmf or speech
+ * @param confidence 0-100
+ * @return the NLSML <result>
+ */
+iks *nlsml_create_match(const char *match, const char *interpretation, const char *mode, int confidence)
+{
+	iks *result = iks_new("result");
+	iks_insert_attrib(result, "xmlns", NLSML_NS);
+	iks_insert_attrib(result, "xmlns:xf", "http://www.w3.org/2000/xforms");
+	if (!zstr(match)) {
+		iks *interpretation_node = iks_insert(result, "interpretation");
+		iks *input_node = iks_insert(interpretation_node, "input");
+		iks *instance_node = iks_insert(interpretation_node, "instance");
+		iks_insert_attrib(input_node, "mode", mode);
+		iks_insert_attrib_printf(input_node, "confidence", "%d", confidence);
+		iks_insert_cdata(input_node, match, strlen(match));
+		if (zstr(interpretation)) {
+			iks_insert_cdata(instance_node, match, strlen(match));
+		} else {
+			iks_insert_cdata(instance_node, interpretation, strlen(interpretation));
+		}
+	}
+	return result;
+}
+
+/**
+ * Construct an NLSML result for match
+ * @param match the matching digits or text
  * @param interpretation the optional digit interpretation
  * @return the NLSML <result>
  */
 iks *nlsml_create_dtmf_match(const char *digits, const char *interpretation)
 {
-	iks *result = iks_new("result");
-	iks_insert_attrib(result, "xmlns", NLSML_NS);
-	iks_insert_attrib(result, "xmlns:xf", "http://www.w3.org/2000/xforms");
-	if (!zstr(digits)) {
-		int first = 1;
-		int i;
-		int num_digits = strlen(digits);
-		switch_stream_handle_t stream = { 0 };
-
-		iks *interpretation_node = iks_insert(result, "interpretation");
-		iks *input_node = iks_insert(interpretation_node, "input");
-		iks *instance_node = iks_insert(interpretation_node, "instance");
-		iks_insert_attrib(input_node, "mode", "dtmf");
-		iks_insert_attrib(input_node, "confidence", "100");
-
-		SWITCH_STANDARD_STREAM(stream);
-		for (i = 0; i < num_digits; i++) {
-			if (isdtmf(digits[i])) {
-				if (first) {
-					stream.write_function(&stream, "%c", digits[i]);
-					first = 0;
-				} else {
-					stream.write_function(&stream, " %c", digits[i]);
-				}
+	iks *result = NULL;
+	int first = 1;
+	int i;
+	int num_digits = strlen(digits);
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	for (i = 0; i < num_digits; i++) {
+		if (isdtmf(digits[i])) {
+			if (first) {
+				stream.write_function(&stream, "%c", digits[i]);
+				first = 0;
+			} else {
+				stream.write_function(&stream, " %c", digits[i]);
 			}
 		}
-		iks_insert_cdata(input_node, stream.data, strlen(stream.data));
-
-		if (zstr(interpretation)) {
-			iks_insert_cdata(instance_node, stream.data, strlen(stream.data));
-		} else {
-			iks_insert_cdata(instance_node, interpretation, strlen(interpretation));
-		}
-		switch_safe_free(stream.data);
 	}
+	result = nlsml_create_match((const char *)stream.data, interpretation, "dtmf", 100);
+	switch_safe_free(stream.data);
 	return result;
 }
 

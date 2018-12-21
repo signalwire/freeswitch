@@ -2709,6 +2709,9 @@ switch_status_t conference_api_sub_file_seek(conference_obj_t *conference, switc
 
 switch_status_t conference_api_set_moh(conference_obj_t *conference, const char *what)
 {
+	if (!what) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!strcasecmp(what, "toggle")) {
 		if (conference_utils_test_flag(conference, CFLAG_NO_MOH)) {
@@ -2737,7 +2740,15 @@ switch_status_t conference_api_set_moh(conference_obj_t *conference, const char 
 switch_status_t conference_api_sub_moh(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 
-	conference_api_set_moh(conference, argv[2]);
+	if (conference_api_set_moh(conference, argv[2]) == SWITCH_STATUS_SUCCESS) {
+		if (stream) {
+			stream->write_function(stream, "+OK moh\n");
+		}
+	} else {
+		if (stream) {
+			stream->write_function(stream, "-ERR invalid moh param\n");
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4084,6 +4095,8 @@ switch_status_t conference_api_sub_json_list(conference_obj_t *conference, switc
 	switch_assert(ebuf);
 	stream->write_function(stream, "%s", ebuf);
 	free(ebuf);
+	
+	cJSON_Delete(conferences);
 
 	return SWITCH_STATUS_SUCCESS;
 }

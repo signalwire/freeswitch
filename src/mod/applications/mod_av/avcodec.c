@@ -1089,14 +1089,16 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 	if (context->hw_encoder) {
 		av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
 		av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
+		av_opt_set_int(context->encoder_ctx->priv_data, "delay", 0, 0);
+		av_opt_set(context->encoder_ctx->priv_data, "forced-idr", "true", 0);
 		return;
 	}
 
 	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "intra-refresh", "1", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
-	av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
-	av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
+	//av_opt_set(context->encoder_ctx->priv_data, "sc_threshold", "40", 0);
+	//av_opt_set(context->encoder_ctx->priv_data, "crf", "18", 0);
 
 	if (profile->options) {
 		switch_event_header_t *hp;
@@ -1269,22 +1271,19 @@ GCC_DIAG_ON(deprecated-declarations)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+		if (context->encoder_ctx) {
+			if (avcodec_is_open(context->encoder_ctx)) {
+				avcodec_close(context->encoder_ctx);
+			}
+			av_free(context->encoder_ctx);
+			context->encoder_ctx = NULL;
+		}
 
+		context->encoder = NULL;
 		context->hw_encoder = 0;
-		av_opt_free(context->encoder_ctx->priv_data);
-		set_h264_private_data(context, profile);
-		context->encoder = avcodec_find_encoder(context->av_codec_id);
-
-		if (!context->encoder) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
-			return SWITCH_STATUS_FALSE;
-		}
-
-		if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec %s\n", codec_string);
-			return SWITCH_STATUS_FALSE;
-		}
+		context->codec_settings.video.try_hardware_encoder = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not open hardware codec %s, trying software encoder\n", codec_string);
+		return open_encoder(context, width, height);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec opened: %s\n", codec_string);
@@ -1993,6 +1992,9 @@ static void load_config()
 
 					val = atoi(value);
 
+					ctx->profile = FF_PROFILE_H264_BASELINE;
+					ctx->level = 31;
+					
 					if (!strcmp(name, "dec-threads")) {
 						aprofile->decoder_thread_count = switch_parse_cpu_string(value);
 					} else if (!strcmp(name, "enc-threads")) {

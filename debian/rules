@@ -82,6 +82,8 @@ override_dh_auto_configure: .stamp-configure
 
 .stamp-build: .stamp-configure
 	@$(call show_vars)
+	make -j$(NJOBS) core
+	make iksemel-dep
 	make -j$(NJOBS)
 	make -C libs/esl pymod
 	make -C libs/esl perlmod

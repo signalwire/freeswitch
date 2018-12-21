@@ -14,7 +14,7 @@ SWITCH_DECLARE(void) setOriginateStateHandler(jobject stateHandler)
         if ( stateHandler != NULL && originate_state_handler != NULL ) {
                 const char* errorMessage = "Originate state handler is already registered";
                 jclass exceptionClass = env->FindClass("java/util/TooManyListenersException");
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, errorMessage);
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", errorMessage);
                 env->ThrowNew(exceptionClass, errorMessage);
         } else if ( stateHandler == NULL && originate_state_handler != NULL ) {
                 env->DeleteGlobalRef(originate_state_handler);
@@ -24,7 +24,7 @@ SWITCH_DECLARE(void) setOriginateStateHandler(jobject stateHandler)
                 if ( originate_state_handler == NULL ) {
                         const char* errorMessage = "Unable to create global reference for state handler";
                         jclass exceptionClass = env->FindClass("java/lang/OutOfMemoryError");
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, errorMessage);
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", errorMessage);
                         env->ThrowNew(exceptionClass, errorMessage);
                 }
         }

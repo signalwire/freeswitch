@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libks-version.props" Condition=" '$(libksVersionImported)' == ''"/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <libksPropsImported>true</libksPropsImported>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <libksDir>$(BaseDir)libs\libks-$(libksVersion)</libksDir>
+  </PropertyGroup>
+
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libksBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)/libks-$(libksVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(libksDir)\binaries\$(Platform)\$(Configuration)\ks.dll" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+  <Target Name="libksHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
+      <DownloadPackageTask 
+           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)/libks-$(libksVersion)-headers.zip"
+           expectfileordirectory="$(libksDir)\src\include\libks\ks.h" 
+           outputfolder=""
+           outputfilename="" 
+           extractto="$(BaseDir)libs\"
+      />
+  </Target> 
+
+  <Target Name="libkscopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libksBinariesDownloadTarget">  
+        <Message Text="Copying libks libraries to the freeswitch output folder." Importance="High" />
+        <ItemGroup>  
+             <libksFiles Include="$(libksDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>  
+        </ItemGroup>  
+        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\ks.dll')"
+            SourceFiles="@(libksFiles)"  
+            DestinationFiles="@(libksFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
+        />  
+  </Target>   
+
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(libksDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__PRETTY_FUNCTION__=__FUNCSIG__;WIN32;_WINDOWS;SWCLT_VERSION_MAJOR=1;SWCLT_VERSION_MINOR=0;SWCLT_VERSION_REVISION=0;_WIN32_WINNT=0x0600;_WINSOCK_DEPRECATED_NO_WARNINGS=1;WIN32_LEAN_AND_MEAN=1;KS_PLAT_WIN=1;NOMAXMIN=1;_CRT_SECURE_NO_WARNINGS=1;SWCLT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libksDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ks.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

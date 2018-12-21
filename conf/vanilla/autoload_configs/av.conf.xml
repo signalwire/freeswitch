@@ -9,7 +9,7 @@
     <!-- <param name="key-frame-min-freq" value="250"/> -->
 
     <!-- integer of cpus, or 'auto', or 'cpu/<divisor>/<max> -->
-    <param name="dec-threads" value="cpu/2/4"/>
+    <param name="dec-threads" value="1"/>
     <param name="enc-threads" value="cpu/2/4"/>
     <param name="h263-profile" value="H263"/>
     <param name="h263+-profile" value="H263+"/>

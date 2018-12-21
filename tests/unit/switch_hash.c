@@ -1,11 +1,25 @@
 #include <stdio.h>
 #include <switch.h>
-#include <tap.h>
+#include <test/switch_test.h>
 
 // #define BENCHMARK 1
 
-int main () {
+FST_MINCORE_BEGIN()
 
+FST_SUITE_BEGIN(switch_hash)
+
+FST_SETUP_BEGIN()
+{
+}
+FST_SETUP_END()
+
+FST_TEARDOWN_BEGIN()
+{
+}
+FST_TEARDOWN_END()
+
+FST_TEST_BEGIN(benchmark)
+{
   switch_event_t *event = NULL;
   switch_bool_t verbose = SWITCH_TRUE;
   const char *err = NULL;
@@ -24,23 +38,7 @@ int main () {
   char **index = NULL;
   switch_hash_t *hash = NULL;
 
-#ifndef BENCHMARK
-  plan(2 + ( 5 * loops));
-#else
-  plan(2);
-#endif
-
-  status = switch_core_init(SCF_MINIMAL, verbose, &err);
-  
-  if ( !ok( status == SWITCH_STATUS_SUCCESS, "Initialize FreeSWITCH core\n")) {
-    bail_out(0, "Bail due to failure to initialize FreeSWITCH[%s]", err);
-  }
-
-  status = switch_core_hash_init(&hash);
-
-  if ( !ok(status == SWITCH_STATUS_SUCCESS, "Create a new hash")) {
-    bail_out(0, "Bail due to failure to create hash");
-  }
+  fst_requires(switch_core_hash_init(&hash) == SWITCH_STATUS_SUCCESS);
 
   index = calloc(loops, sizeof(char *));
   for ( x = 0; x < loops; x++) {
@@ -54,7 +52,7 @@ int main () {
 #ifndef BENCHMARK
   for ( x = 0; x < loops; x++) {
     status = switch_core_hash_insert(hash, index[x], (void *) index[x]);
-    ok(status == SWITCH_STATUS_SUCCESS, "Insert into the hash");
+    fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Failed to insert into the hash");
   }
 #else 
   small_start_ts = switch_time_now();
@@ -66,7 +64,7 @@ int main () {
   micro_total = small_end_ts - small_start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  note("switch_hash insert: Total %ldus / %ld loops, %.2f us per loop, %.0f loops per second\n", 
+  printf("switch_hash insert: Total %ldus / %ld loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
 #endif
 
@@ -76,14 +74,14 @@ int main () {
   for ( x = 0; x < loops; x++) {
     char *data = NULL;
     data = switch_core_hash_find(hash, index[x]);
-    ok(data != NULL, "Successful lookup");
-    is( index[x], data, "Returned correct data");
+    fst_xcheck(data != NULL, "Lookup failed");
+    fst_check_string_equals( index[x], data);
   }
 #else
   small_start_ts = switch_time_now();
   for ( x = 0; x < loops; x++) {
     if ( ! switch_core_hash_find(hash, index[x])) {
-      fail("Failed to properly locate one of the values");
+      fst_fail("Failed to properly locate one of the values");
     }
   }
   small_end_ts = switch_time_now();
@@ -91,7 +89,7 @@ int main () {
   micro_total = small_end_ts - small_start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  note("switch_hash find: Total %ldus / %ld loops, %.2f us per loop, %.0f loops per second\n", 
+  printf("switch_hash find: Total %ldus / %ld loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
 #endif
 
@@ -101,14 +99,14 @@ int main () {
   for ( x = 0; x < loops; x++) {
     char *data = NULL;
     data = switch_core_hash_delete(hash, index[x]);
-    ok(data != NULL, "Create a new hash");
-    is( index[x], data, "Returned correct data");
+    fst_xcheck(data != NULL, "Delete from the hash");
+    fst_check_string_equals( index[x], data );
   }
 #else
   small_start_ts = switch_time_now();
   for ( x = 0; x < loops; x++) {
     if ( !switch_core_hash_delete(hash, index[x])) {
-      fail("Failed to delete and return the value");
+      fst_fail("Failed to delete and return the value");
     }
   }
   small_end_ts = switch_time_now();
@@ -116,7 +114,7 @@ int main () {
   micro_total = small_end_ts - small_start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  note("switch_hash delete: Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
+  printf("switch_hash delete: Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
 #endif
 
@@ -133,10 +131,12 @@ int main () {
   micro_total = end_ts - start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  diag("switch_hash Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
+  printf("switch_hash Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
-
-  switch_core_destroy();
-
-  done_testing();
 }
+FST_TEST_END()
+
+FST_SUITE_END()
+
+FST_MINCORE_END()
+

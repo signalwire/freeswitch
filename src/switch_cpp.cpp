@@ -1278,6 +1278,7 @@ SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int
 	this_check(-1);
 	sanity_check(-1);
 
+	if (!file_name) return 0;
 	memset(&local_fh, 0, sizeof(local_fh));
 	fhp = &local_fh;
 	local_fh.thresh = silence_threshold;

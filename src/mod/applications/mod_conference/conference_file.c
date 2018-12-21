@@ -248,7 +248,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
 
-	if (conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+	if (conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO) && conference->conference_video_mode == CONF_VIDEO_MODE_MUX) {
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 	}
 

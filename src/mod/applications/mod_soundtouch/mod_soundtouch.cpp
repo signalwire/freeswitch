@@ -252,7 +252,8 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 	char *argv[6];
 	int argc;
 	char *lbuf = NULL;
-	int x, n;
+	int x;
+	int n=0;
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
 		if (!zstr(data) && !strcasecmp(data, "stop")) {
@@ -334,7 +335,6 @@ SWITCH_STANDARD_API(soundtouch_api_function)
         char *argv[10] = { 0 };
 	char *uuid = NULL;
 	char *action = NULL;
-	char *lbuf = NULL;
 	int x, n;
 
 	if (zstr(cmd)) {

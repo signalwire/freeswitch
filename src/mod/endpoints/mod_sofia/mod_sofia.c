@@ -1993,26 +1993,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-						} else if (update_allowed && ua && switch_stristr("polycom", ua)) {
-							if ( switch_stristr("UA/4", ua) ) {
-								snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
-							} else {
-								snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
-							}
-							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
-							nua_update(tech_pvt->nh,
-									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
-									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
-									   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
-									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if (update_allowed && ua && ((switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
-										  (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)) ||
-										  switch_stristr("cisco/spa30", ua) || switch_stristr("Grandstream GXP", ua) ||
-										  switch_stristr("Yealink", ua) || switch_stristr("Mitel", ua) ||
-										  switch_stristr("Panasonic", ua))) {
+						} else if (update_allowed && ua && (switch_stristr("polycom", ua) ||
+									  (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
+									  (switch_stristr("cisco/spa50", ua) ||
+									  switch_stristr("cisco/spa525", ua)) ||
+									  switch_stristr("cisco/spa30", ua) ||
+									  switch_stristr("Grandstream", ua) ||
+									  switch_stristr("Yealink", ua) ||
+									  switch_stristr("Mitel", ua) ||
+									  switch_stristr("Panasonic", ua))) {
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
@@ -2020,6 +2009,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 									   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
+									   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),

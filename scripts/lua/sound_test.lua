@@ -60,15 +60,15 @@ else
 	-- Looks good, let's play some sound files
 	sound_base = session:getVariable('sounds_dir') .. '/en/us/callie/' .. stype .. '/' .. srate;
 	input_file = '/tmp/filez.txt';
-	res = os.execute('ls -1 ' .. sound_base  .. ' > ' .. input_file);
-	freeswitch.consoleLog("INFO","Result of system call: " .. res .. "\n");
-	if ( res == 0 ) then
+	res, what, code = os.execute('ls -1 ' .. sound_base  .. ' > ' .. input_file);
+	freeswitch.consoleLog("INFO","Result of system call: " .. what .. " " .. code .. "\n");
+	if ( res == true and what == 'exit' and code == 0 ) then
 		for fname in io.lines(input_file) do
 			freeswitch.consoleLog("NOTICE","Playing file: " .. fname .. "\n");
 			session:streamFile(sound_base .. '/' .. fname);
 			session:sleep(100);
 		end
 	else
-		freeswitch.consoleLog("ERR","Result of system call: " .. res .. "\n");			
+		freeswitch.consoleLog("ERR","Result of system call: " .. what .. " " .. code .. "\n");
 	end
 end

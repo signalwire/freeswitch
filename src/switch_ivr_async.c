@@ -1145,6 +1145,7 @@ struct record_helper {
 	uint32_t writes;
 	uint32_t vwrites;
 	const char *completion_cause;
+	int start_event_sent;
 };
 
 /**
@@ -1188,6 +1189,7 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 {
 	switch_event_t *event;
 
+	rh->start_event_sent = 0;
 	if (rh->fh) {
 		switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
 		if (read_impl->actual_samples_per_second) {
@@ -1304,10 +1306,13 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				}
 			}
 
-			if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
-				switch_channel_event_set_data(channel, event);
-				switch_event_fire(&event);
+			if(rh->start_event_sent == 0) {
+				rh->start_event_sent = 1;
+				if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+					switch_event_fire(&event);
+				}
 			}
 
 			rh->silence_time = switch_micro_time_now();
@@ -1316,11 +1321,12 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			rh->completion_cause = NULL;
 
 			switch_core_session_get_read_impl(session, &rh->read_impl);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Record session sample rate: %d -> %d\n", rh->fh->native_rate, rh->read_impl.actual_samples_per_second);
-			rh->fh->native_rate = rh->read_impl.actual_samples_per_second;
-
-			if (rh->fh && switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
-				switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
+			if (rh->fh) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Record session sample rate: %d -> %d\n", rh->fh->native_rate, rh->fh->samplerate);
+				rh->fh->native_rate = rh->read_impl.actual_samples_per_second;
+				if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+					switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
+				}
 			}
 
 		}

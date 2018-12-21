@@ -550,11 +550,6 @@
 		    mandatory: obj.options.videoParams,
 		    optional: opt		
 		};
-          // NOTE: This is a workaround for
-          // https://bugs.chromium.org/p/chromium/issues/detail?id=862325
-          if (!!navigator.userAgent.match(/Android/i)) {
-            delete video.frameRate.min;
-          }
 	    }
 	} else {
 
@@ -715,6 +710,7 @@
         }
 
 	config.bundlePolicy = "max-compat";
+	config.sdpSemantics = "plan-b";
 
         var peer = new window.RTCPeerConnection(config);
 

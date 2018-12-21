@@ -3,29 +3,6 @@ benchmarks testing functionality exposed through libfreeswitch.
 
 Requirements for a new unit tests: 
 
-1. Tests must use TAP(Test Anything Protocol) output format, and must
-print to stderr the summary statistics of the test before exiting.
+1. Tests must use switch_test.h framework
 
-2. Each test must return 0 on successful completion, or a non-zero
-result in case of a failure.
-
-3. Benchmarking stats should be output as a TAP note at the end of the
-test in a human and machine(regex) parsable format
-
-Use libtap from https://github.com/zorgnax/libtap
-cd /usr/local/src/
-git clone https://github.com/zorgnax/libtap.git
-make PREFIX=/usr install
-
-
-
-To run a benchmark version of a unit test, update the loops count, and
-make sure to uncomment the 'BENCHMARK' define line. Then you can run
-the benchmark with:
-
-perf record ./.libs/switch_hash
-
-Once that is completed you can view the results with:
-
-perf report
 

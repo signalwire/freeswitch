@@ -595,7 +595,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
+for luaversion in luajit lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -1498,6 +1498,14 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
+PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
+  AM_CONDITIONAL([HAVE_KS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
+
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+  AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
@@ -1807,6 +1815,7 @@ ac_cv_file_dbd_apr_dbd_mysql_c=no
 
 AC_CONFIG_FILES([Makefile
 		build/Makefile
+		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_abstraction/Makefile
@@ -1852,6 +1861,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_redis/Makefile
 		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
+		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
@@ -1861,6 +1871,8 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
 		src/mod/applications/mod_stress/Makefile
+		src/mod/applications/mod_test/Makefile
+		src/mod/applications/mod_test/test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
 		src/mod/applications/mod_vmd/Makefile
@@ -1927,6 +1939,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
+		src/mod/event_handlers/mod_rayo/test/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -1980,6 +1993,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile
+		src/mod/applications/mod_av/test/Makefile
 		src/mod/applications/mod_video_filter/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh

@@ -118,7 +118,6 @@ int docall(lua_State * L, int narg, int nresults, int perror, int fatal)
 static lua_State *lua_init(void)
 {
 	lua_State *L = luaL_newstate();
-	int error = 0;
 
 	if (L) {
 		const char *buff = "os.exit = function() freeswitch.consoleLog(\"err\", \"Surely you jest! exiting is a bad plan....\\n\") end";
@@ -127,7 +126,7 @@ static lua_State *lua_init(void)
 		luaopen_freeswitch(L);
 		lua_gc(L, LUA_GCRESTART, 0);
 		lua_atpanic(L, panic);
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);
+		luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);
 	}
 	return L;
 }

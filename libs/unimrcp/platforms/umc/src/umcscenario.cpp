@@ -221,7 +221,7 @@ const char* UmcScenario::LoadFileContent(const char* pFileName, apr_size_t& size
 
 	size = (apr_size_t)finfo.size;
 	char* pContent = (char*) apr_palloc(pool,size+1);
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%"APR_SIZE_T_FMT" bytes] %s",size,pFilePath);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%" APR_SIZE_T_FMT" bytes] %s",size,pFilePath);
 	if(apr_file_read(pFile,pContent,&size) != APR_SUCCESS) 
 	{
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Read Content %s",pFilePath);

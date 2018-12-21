@@ -17,3 +17,5 @@ BUILT_SOURCES=$(IKS_LA)
 $(IKS_LA): $(IKS_BUILDDIR) $(IKS_DIR) $(IKS_DIR)/.update
 	@cd $(IKS_BUILDDIR) && $(MAKE)
 	@$(TOUCH_TARGET)
+
+SUBDIRS=. test

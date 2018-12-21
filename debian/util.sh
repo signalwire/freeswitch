@@ -152,7 +152,7 @@ create_orig () {
       hrev="$(get_nightly_revision_human)"
     fi
     local treeish="$1" dver="$(mk_dver "$uver")"
-    local orig="../freeswitch_$dver.orig.tar.xz"
+    local orig="../freeswitch_$dver~$(lsb_release -sc).orig.tar.xz"
     [ -n "$treeish" ] || treeish="HEAD"
     check_repo_clean
     git reset --hard "$treeish"

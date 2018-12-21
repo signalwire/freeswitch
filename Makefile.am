@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = . src build
+SUBDIRS = . src build tests/unit
 AUTOMAKE_OPTIONS = foreign subdir-objects
 NAME = freeswitch
 
@@ -270,6 +270,11 @@ libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
 CORE_LIBS += libs/libzrtp/libzrtp.a
 LIBS += libs/libzrtp/third_party/bnlib/libbn.a
 endif
+
+library_includetestdir = $(includedir)/test
+library_includetest_HEADERS = \
+	src/include/test/switch_fct.h \
+	src/include/test/switch_test.h
 
 library_includedir      = $(includedir)
 library_include_HEADERS = \
@@ -693,6 +698,9 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
+iksemel-dep:
+	make -C src/mod/endpoints/mod_dingaling deps
+
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
@@ -856,17 +864,4 @@ support:
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
 	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
-
-# Using a non-recursive Makefile structure for the automated tests so that the tests have visibility into
-# targets in the rest of the FreeSWITCH tree. This greatly simplifies dependency tracking at the expense
-# of longer test target names. Since the tests are expected to be run easily and rapidly after minor source
-# changes this is the most effective structure.
-
-check_PROGRAMS =
-
-include tests/unit/unit.mk
-
-TESTS = $(check_PROGRAMS)
-
-tests: $(check_PROGRAMS)
 

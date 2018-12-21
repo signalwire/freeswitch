@@ -858,3 +858,8 @@ libsndfile-*/
 libsndfile-*
 opencv-*/
 opencv-*
+libks-*/
+libks*
+signalwire-client-c-*/
+signalwire-client-c-*
+
