@@ -510,6 +510,9 @@ int sofia_glue_transport_has_tls(const sofia_transport_t tp)
 void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port)
 {
 	su_addrinfo_t *addrinfo = msg_addrinfo(msg);
+	if (!addrinfo) {
+		return;
+	}
 
 	if (buf) {
 		get_addr(buf, buflen, addrinfo->ai_addr, (socklen_t)addrinfo->ai_addrlen);
