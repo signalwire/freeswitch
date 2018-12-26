@@ -31,6 +31,12 @@
 #include <sys/utsname.h>
 #endif
 
+#ifdef WIN32
+void sslLoadWindowsCACertificate();
+void sslUnLoadWindowsCACertificate();
+int sslContextFunction(void* curl, void* sslctx, void* userdata);
+#endif
+
 #define SW_KS_JSON_PRINT(_h, _j) do { \
 		char *_json = ks_json_print(_j); \
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "--- %s ---\n%s\n---\n", _h, _json); \
@@ -356,6 +362,9 @@ static ks_status_t mod_signalwire_adoption_post(void)
 	switch_curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 	switch_curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rd);
 	switch_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_data_handler);
+#ifdef WIN32
+	curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, sslContextFunction);
+#endif
 
 	if ((res = switch_curl_easy_perform(curl))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Curl Result %d, Error: %s\n", res, errbuf);
@@ -861,6 +870,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 		ks_global_set_logger(mod_signalwire_kslogger);
 	}
 	
+#ifdef WIN32
+	sslLoadWindowsCACertificate();
+#endif
+
 	// Configuration
 	swclt_config_create(&globals.config);
 	load_config();
@@ -966,6 +979,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_signalwire_shutdown)
 
 	// shutdown libblade (but not libks?)
 	swclt_shutdown();
+
+#ifdef WIN32
+	// free certificate pointers previously loaded
+	sslUnLoadWindowsCACertificate();
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }

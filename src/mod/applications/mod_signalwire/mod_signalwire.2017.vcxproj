@@ -46,6 +46,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\curl.props" />
   <Import Project="$(SolutionDir)\w32\libks.props" Condition=" '$(libksPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\signalwire-client-c.props" Condition=" '$(signalwire-client-cPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
@@ -77,6 +78,9 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -135,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cacert.cpp" />
     <ClCompile Include="mod_signalwire.c" />
   </ItemGroup>
   <ItemGroup>
