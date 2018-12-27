@@ -11,7 +11,18 @@
           }
         }
         preRoute();
-        
+
+        var name = $location.search().name;
+        var email = $location.search().email;
+        var skipPreview = $location.search().skipPreview;
+
+        if (name && email) {
+          verto.data.name = name;
+          verto.data.email = email;
+          $scope.login(true, skipPreview);
+          return;
+        }
+
         verto.data.name = $scope.storage.data.name;
         verto.data.email = $scope.storage.data.email;
 
