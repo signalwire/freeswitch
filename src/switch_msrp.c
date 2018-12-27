@@ -1021,15 +1021,17 @@ static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
 	int len = strlen(to_path);
 	int i;
 	int slash_count = 0;
+	char *uuid_sep = NULL;
 	switch_assert(to_path);
 	for(i=0; i<len; i++){
 		if (*(to_path + i) == '/') {
 			if (++slash_count == 3) break;
 		}
 	}
+	uuid_sep = (char *)switch_stristr(";", to_path + i);
+	if (zstr(uuid_sep)) return  SWITCH_FALSE;
 	if (slash_count < 3) return SWITCH_FALSE;
-	if (len - i++ < 36) return SWITCH_FALSE;
-	switch_snprintf(uuid, 37, to_path + i);
+	switch_snprintf(uuid, uuid_sep - to_path - i, to_path + i + 1);
 	return SWITCH_TRUE;
 }
 
@@ -1260,7 +1262,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_core_session_t *session = NULL;
 
 			while (sanity-- && !(session = switch_core_session_locate(uuid))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "waiting for session\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "waiting for session %s\n", uuid);
 				switch_yield(1000000);
 			}
 
