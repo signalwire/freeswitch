@@ -1530,11 +1530,23 @@ JS_SESSION_GET_PROPERTY_IMPL(GetProperty)
 			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), this->_cause));
 		}
 	} else if (!strcmp(prop, "name")) {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_name(channel)));
+		if (channel) {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_name(channel)));
+		} else {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		}
 	} else if (!strcmp(prop, "uuid")) {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_uuid(channel)));
+		if (channel) {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_uuid(channel)));
+		} else {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		}
 	} else if (!strcmp(prop, "state")) {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_state_name(switch_channel_get_state(channel))));
+		if (channel) {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_state_name(switch_channel_get_state(channel))));
+		} else {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		}
 	} else if (!strcmp(prop, "dialplan")) {
 		if (caller_profile) {
 			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->dialplan));
