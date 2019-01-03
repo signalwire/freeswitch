@@ -83,7 +83,7 @@
         }
 
         if(skipPreview == undefined) {
-          redirect == false;
+          skipPreview = false;
         }
 
         var connectCallback = function(v, connected) {
