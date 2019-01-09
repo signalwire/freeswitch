@@ -96,7 +96,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, const char *text, switch_speech_flag_t *flags)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *param_string = NULL;

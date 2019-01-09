@@ -2644,7 +2644,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
-															 switch_codec_t *codec, switch_timer_t *timer, char *text, switch_input_args_t *args)
+															 switch_codec_t *codec, switch_timer_t *timer, const char *text, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	short abuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -2656,8 +2656,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_size_t extra = 0;
-	char *p, *tmp = NULL;
-	const char *star, *pound;
+	char *tmp = NULL;
+	const char *star, *pound, *p;
 	switch_size_t starlen, poundlen;
 
 	if (!sh) {
@@ -2940,7 +2940,7 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  const char *tts_name, const char *voice_name, char *text, switch_input_args_t *args)
+													  const char *tts_name, const char *voice_name, const char *text, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t rate = 0;

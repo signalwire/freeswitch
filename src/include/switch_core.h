@@ -1992,7 +1992,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(_In_ switch_speech_handl
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, const char *text, switch_speech_flag_t *flags);
 
 /*!
   \brief Flush TTS audio on a given handle

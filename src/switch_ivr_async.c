@@ -2538,7 +2538,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, const char *file, uint32_t limit, switch_file_handle_t *fh)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *p;

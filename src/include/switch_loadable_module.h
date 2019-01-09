@@ -302,7 +302,7 @@ SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core
   \param err pointer to error message
   \return the status
 */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *dir, const char *fname, switch_bool_t runtime, const char **err);
 
 /*!
   \brief Check if a module is loaded
