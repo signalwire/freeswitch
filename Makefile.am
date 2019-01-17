@@ -195,49 +195,55 @@ CORE_LIBS+=libfreeswitch_spandsp.la
 
 if ENABLE_LIBYUV
 libfreeswitch_libyuv_la_SOURCES = \
-    libs/libyuv/source/compare.cc           \
-    libs/libyuv/source/compare_common.cc    \
-    libs/libyuv/source/compare_gcc.cc       \
-    libs/libyuv/source/convert.cc           \
-    libs/libyuv/source/convert_argb.cc      \
-    libs/libyuv/source/convert_from.cc      \
-    libs/libyuv/source/convert_from_argb.cc \
-    libs/libyuv/source/convert_to_argb.cc   \
-    libs/libyuv/source/convert_to_i420.cc   \
-    libs/libyuv/source/cpu_id.cc            \
-    libs/libyuv/source/planar_functions.cc  \
-    libs/libyuv/source/rotate.cc            \
-    libs/libyuv/source/rotate_any.cc        \
-    libs/libyuv/source/rotate_argb.cc       \
-    libs/libyuv/source/rotate_common.cc     \
-    libs/libyuv/source/rotate_gcc.cc        \
-    libs/libyuv/source/rotate_mips.cc       \
-    libs/libyuv/source/row_any.cc           \
-    libs/libyuv/source/row_common.cc        \
-    libs/libyuv/source/row_mips.cc          \
-    libs/libyuv/source/row_gcc.cc           \
-    libs/libyuv/source/scale.cc             \
-    libs/libyuv/source/scale_any.cc         \
-    libs/libyuv/source/scale_argb.cc        \
-    libs/libyuv/source/scale_common.cc      \
-    libs/libyuv/source/scale_gcc.cc         \
-    libs/libyuv/source/scale_mips.cc        \
-    libs/libyuv/source/video_common.cc      \
-    libs/libyuv/source/compare_neon64.cc    \
-    libs/libyuv/source/compare_neon.cc      \
-    libs/libyuv/source/compare_win.cc       \
-    libs/libyuv/source/convert_jpeg.cc      \
-    libs/libyuv/source/mjpeg_decoder.cc     \
-    libs/libyuv/source/mjpeg_validate.cc    \
-    libs/libyuv/source/rotate_neon64.cc     \
-    libs/libyuv/source/rotate_neon.cc       \
-    libs/libyuv/source/rotate_win.cc        \
-    libs/libyuv/source/row_neon64.cc        \
-    libs/libyuv/source/row_neon.cc          \
-    libs/libyuv/source/row_win.cc           \
-    libs/libyuv/source/scale_neon64.cc      \
-    libs/libyuv/source/scale_neon.cc        \
-    libs/libyuv/source/scale_win.cc
+libs/libyuv/source/compare.cc	\
+libs/libyuv/source/compare_common.cc	\
+libs/libyuv/source/compare_gcc.cc	\
+libs/libyuv/source/compare_mmi.cc	\
+libs/libyuv/source/compare_msa.cc	\
+libs/libyuv/source/compare_neon64.cc	\
+libs/libyuv/source/compare_neon.cc	\
+libs/libyuv/source/compare_win.cc	\
+libs/libyuv/source/convert_argb.cc	\
+libs/libyuv/source/convert.cc	\
+libs/libyuv/source/convert_from_argb.cc	\
+libs/libyuv/source/convert_from.cc	\
+libs/libyuv/source/convert_jpeg.cc	\
+libs/libyuv/source/convert_to_argb.cc	\
+libs/libyuv/source/convert_to_i420.cc	\
+libs/libyuv/source/cpu_id.cc	\
+libs/libyuv/source/mjpeg_decoder.cc	\
+libs/libyuv/source/mjpeg_validate.cc	\
+libs/libyuv/source/planar_functions.cc	\
+libs/libyuv/source/rotate_any.cc	\
+libs/libyuv/source/rotate_argb.cc	\
+libs/libyuv/source/rotate.cc	\
+libs/libyuv/source/rotate_common.cc	\
+libs/libyuv/source/rotate_gcc.cc	\
+libs/libyuv/source/rotate_mmi.cc	\
+libs/libyuv/source/rotate_msa.cc	\
+libs/libyuv/source/rotate_neon64.cc	\
+libs/libyuv/source/rotate_neon.cc	\
+libs/libyuv/source/rotate_win.cc	\
+libs/libyuv/source/row_any.cc	\
+libs/libyuv/source/row_common.cc	\
+libs/libyuv/source/row_gcc.cc	\
+libs/libyuv/source/row_mmi.cc	\
+libs/libyuv/source/row_msa.cc	\
+libs/libyuv/source/row_neon64.cc	\
+libs/libyuv/source/row_neon.cc	\
+libs/libyuv/source/row_win.cc	\
+libs/libyuv/source/scale_any.cc	\
+libs/libyuv/source/scale_argb.cc	\
+libs/libyuv/source/scale.cc	\
+libs/libyuv/source/scale_common.cc	\
+libs/libyuv/source/scale_gcc.cc	\
+libs/libyuv/source/scale_mmi.cc	\
+libs/libyuv/source/scale_msa.cc	\
+libs/libyuv/source/scale_neon64.cc	\
+libs/libyuv/source/scale_neon.cc	\
+libs/libyuv/source/scale_win.cc	\
+libs/libyuv/source/video_common.cc	
+
 
 libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/include
 CORE_LIBS+=libfreeswitch_libyuv.la

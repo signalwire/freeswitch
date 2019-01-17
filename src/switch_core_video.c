@@ -384,15 +384,15 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 	}
 
 	if (img->fmt == SWITCH_IMG_FMT_ARGB && IMG->fmt == SWITCH_IMG_FMT_ARGB) {
-		uint8* src_argb0 = img->planes[SWITCH_PLANE_PACKED];
+		uint8_t* src_argb0 = img->planes[SWITCH_PLANE_PACKED];
 		int src_stride_argb0 = img->stride[SWITCH_PLANE_PACKED];
-		uint8* src_argb1 = IMG->planes[SWITCH_PLANE_PACKED];
+		uint8_t* src_argb1 = IMG->planes[SWITCH_PLANE_PACKED];
 		int src_stride_argb1 = IMG->stride[SWITCH_PLANE_PACKED];
-		uint8* dst_argb = IMG->planes[SWITCH_PLANE_PACKED];
+		uint8_t* dst_argb = IMG->planes[SWITCH_PLANE_PACKED];
 		int dst_stride_argb = IMG->stride[SWITCH_PLANE_PACKED];
 		int width = MIN(img->d_w, IMG->d_w - abs(x));
 		int height = MIN(img->d_h, IMG->d_h - abs(y));
-		void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1, uint8* dst_argb, int width) = GetARGBBlend();
+		void (*ARGBBlendRow)(const uint8_t* src_argb, const uint8_t* src_argb1, uint8_t* dst_argb, int width) = GetARGBBlend();
 
 		switch_img_attenuate(img);
 
@@ -3277,10 +3277,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 	}
 
 /*
-	int ConvertToI420(const uint8* src_frame, size_t src_size,
-			uint8* dst_y, int dst_stride_y,
-			uint8* dst_u, int dst_stride_u,
-			uint8* dst_v, int dst_stride_v,
+	int ConvertToI420(const uint8_t* src_frame, size_t src_size,
+			uint8_t* dst_y, int dst_stride_y,
+			uint8_t* dst_u, int dst_stride_u,
+			uint8_t* dst_v, int dst_stride_v,
 			int crop_x, int crop_y,
 			int src_width, int src_height,
 			int crop_width, int crop_height,
