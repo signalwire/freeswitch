@@ -24,7 +24,7 @@ FST_TEST_BEGIN(benchmark)
   switch_bool_t verbose = SWITCH_TRUE;
   const char *err = NULL;
   switch_time_t start_ts, end_ts;
-  unsigned long long micro_total = 0;
+  uint64_t micro_total = 0;
   double micro_per = 0;
   double rate_per_sec = 0;
   int x = 0;
@@ -131,7 +131,7 @@ FST_TEST_BEGIN(benchmark)
   micro_total = end_ts - start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  printf("switch_hash Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
+  printf("switch_hash Total %" SWITCH_UINT64_T_FMT "us / %d loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
 }
 FST_TEST_END()
