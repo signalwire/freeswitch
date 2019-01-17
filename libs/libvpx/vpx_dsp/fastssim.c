@@ -202,6 +202,7 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l, int bit_depth) {
   if (bit_depth == 12) ssim_c1 = SSIM_C1_12;
 #else
   assert(bit_depth == 8);
+  (void)bit_depth;
 #endif
   w = _ctx->level[_l].w;
   h = _ctx->level[_l].h;
@@ -326,6 +327,7 @@ static void fs_calc_structure(fs_ctx *_ctx, int _l, int bit_depth) {
   if (bit_depth == 12) ssim_c2 = SSIM_C2_12;
 #else
   assert(bit_depth == 8);
+  (void)bit_depth;
 #endif
 
   w = _ctx->level[_l].w;

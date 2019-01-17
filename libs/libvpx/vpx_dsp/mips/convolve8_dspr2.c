@@ -1296,9 +1296,11 @@ void copy_horiz_transposed(const uint8_t *src, ptrdiff_t src_stride,
 }
 
 void vpx_convolve8_dspr2(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
-                         ptrdiff_t dst_stride, const int16_t *filter_x,
-                         int x_step_q4, const int16_t *filter_y, int y_step_q4,
+                         ptrdiff_t dst_stride, const InterpKernel *filter,
+                         int x0_q4, int32_t x_step_q4, int y0_q4, int y_step_q4,
                          int w, int h) {
+  const int16_t *const filter_x = filter[x0_q4];
+  const int16_t *const filter_y = filter[y0_q4];
   DECLARE_ALIGNED(32, uint8_t, temp[64 * 135]);
   int32_t intermediate_height = ((h * y_step_q4) >> 4) + 7;
   uint32_t pos = 38;
@@ -1307,6 +1309,7 @@ void vpx_convolve8_dspr2(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
   assert(y_step_q4 == 16);
   assert(((const int32_t *)filter_x)[1] != 0x800000);
   assert(((const int32_t *)filter_y)[1] != 0x800000);
+  (void)x_step_q4;
 
   /* bit positon for extract from acc */
   __asm__ __volatile__("wrdsp      %[pos],     1           \n\t"
@@ -1394,10 +1397,15 @@ void vpx_convolve8_dspr2(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
 
 void vpx_convolve_copy_dspr2(const uint8_t *src, ptrdiff_t src_stride,
                              uint8_t *dst, ptrdiff_t dst_stride,
-                             const int16_t *filter_x, int filter_x_stride,
-                             const int16_t *filter_y, int filter_y_stride,
-                             int w, int h) {
+                             const InterpKernel *filter, int x0_q4,
+                             int x_step_q4, int y0_q4, int y_step_q4, int w,
+                             int h) {
   int x, y;
+  (void)filter;
+  (void)x0_q4;
+  (void)x_step_q4;
+  (void)y0_q4;
+  (void)y_step_q4;
 
   /* prefetch data to cache memory */
   prefetch_load(src);

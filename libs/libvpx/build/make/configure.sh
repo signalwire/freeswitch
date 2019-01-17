@@ -332,20 +332,10 @@ EOF
 }
 
 check_cflags() {
-  log check_cflags "$@"
-
-  case "$CC" in
-    *gcc*|*clang)
-      check_cc -Werror "$@" <<EOF
+ log check_cflags "$@"
+ check_cc -Werror "$@" <<EOF
 int x;
 EOF
-      ;;
-    *)
-      check_cc "$@" <<EOF
-int x;
-EOF
-      ;;
-    esac
 }
 
 check_cxxflags() {
@@ -407,6 +397,23 @@ check_gcc_machine_option() {
   [ -n "$feature" ] || feature="$opt"
 
   if enabled gcc && ! disabled "$feature" && ! check_cflags "-m$opt"; then
+    RTCD_OPTIONS="${RTCD_OPTIONS}--disable-$feature "
+  else
+    soft_enable "$feature"
+  fi
+}
+
+# tests for -m$2, -m$3, -m$4... toggling the feature given in $1.
+check_gcc_machine_options() {
+  feature="$1"
+  shift
+  flags="-m$1"
+  shift
+  for opt in $*; do
+    flags="$flags -m$opt"
+  done
+
+  if enabled gcc && ! disabled "$feature" && ! check_cflags $flags; then
     RTCD_OPTIONS="${RTCD_OPTIONS}--disable-$feature "
   else
     soft_enable "$feature"
@@ -645,7 +652,7 @@ setup_gnu_toolchain() {
   AS=${AS:-${CROSS}as}
   STRIP=${STRIP:-${CROSS}strip}
   NM=${NM:-${CROSS}nm}
-  AS_SFX=.s
+  AS_SFX=.S
   EXE_SFX=
 }
 
@@ -684,7 +691,6 @@ check_xcode_minimum_version() {
 process_common_toolchain() {
   if [ -z "$toolchain" ]; then
     gcctarget="${CHOST:-$(gcc -dumpmachine 2> /dev/null)}"
-
     # detect tgt_isa
     case "$gcctarget" in
       aarch64*)
@@ -706,6 +712,18 @@ process_common_toolchain() {
         ;;
       *sparc*)
         tgt_isa=sparc
+        ;;
+      power*64*-*)
+        tgt_isa=ppc64
+        ;;
+      power*)
+        tgt_isa=ppc
+        ;;
+      *mips64el*)
+        tgt_isa=mips64
+        ;;
+      *mips32el*)
+        tgt_isa=mips32
         ;;
     esac
 
@@ -735,7 +753,14 @@ process_common_toolchain() {
         tgt_isa=x86_64
         tgt_os=darwin15
         ;;
+      *darwin16*)
+        tgt_isa=x86_64
+        tgt_os=darwin16
+        ;;
       x86_64*mingw32*)
+        tgt_os=win64
+        ;;
+      x86_64*cygwin*)
         tgt_os=win64
         ;;
       *mingw32*|*cygwin*)
@@ -784,6 +809,9 @@ process_common_toolchain() {
       ;;
     mips*)
       enable_feature mips
+      ;;
+    ppc*)
+      enable_feature ppc
       ;;
   esac
 
@@ -852,6 +880,10 @@ process_common_toolchain() {
     *-darwin15-*)
       add_cflags  "-mmacosx-version-min=10.11"
       add_ldflags "-mmacosx-version-min=10.11"
+      ;;
+    *-darwin16-*)
+      add_cflags  "-mmacosx-version-min=10.12"
+      add_ldflags "-mmacosx-version-min=10.12"
       ;;
     *-iphonesimulator-*)
       add_cflags  "-miphoneos-version-min=${IOS_VERSION_MIN}"
@@ -936,7 +968,7 @@ EOF
           ;;
         vs*)
           asm_conversion_cmd="${source_path}/build/make/ads2armasm_ms.pl"
-          AS_SFX=.s
+          AS_SFX=.S
           msvs_arch_dir=arm-msvs
           disable_feature multithread
           disable_feature unit_tests
@@ -946,6 +978,7 @@ EOF
             # only "AppContainerApplication" which requires an AppxManifest.
             # Therefore disable the examples, just build the library.
             disable_feature examples
+            disable_feature tools
           fi
           ;;
         rvct)
@@ -1044,7 +1077,7 @@ EOF
           STRIP="$(${XCRUN_FIND} strip)"
           NM="$(${XCRUN_FIND} nm)"
           RANLIB="$(${XCRUN_FIND} ranlib)"
-          AS_SFX=.s
+          AS_SFX=.S
           LD="${CXX:-$(${XCRUN_FIND} ld)}"
 
           # ASFLAGS is written here instead of using check_add_asflags
@@ -1153,9 +1186,19 @@ EOF
         fi
       fi
 
+      if enabled mmi; then
+        tgt_isa=loongson3a
+        check_add_ldflags -march=loongson3a
+      fi
+
       check_add_cflags -march=${tgt_isa}
       check_add_asflags -march=${tgt_isa}
       check_add_asflags -KPIC
+      ;;
+    ppc*)
+      link_with_cc=gcc
+      setup_gnu_toolchain
+      check_gcc_machine_option "vsx"
       ;;
     x86*)
       case  ${tgt_os} in
@@ -1212,6 +1255,13 @@ EOF
           msvs_arch_dir=x86-msvs
           vc_version=${tgt_cc##vs}
           case $vc_version in
+            7|8|9|10|11|12|13|14)
+              echo "${tgt_cc} does not support avx512, disabling....."
+              RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx512 "
+              soft_disable avx512
+              ;;
+          esac
+          case $vc_version in
             7|8|9|10)
               echo "${tgt_cc} does not support avx/avx2, disabling....."
               RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx --disable-avx2 "
@@ -1255,9 +1305,18 @@ EOF
         elif disabled $ext; then
           disable_exts="yes"
         else
-          # use the shortened version for the flag: sse4_1 -> sse4
-          check_gcc_machine_option ${ext%_*} $ext
+          if [ "$ext" = "avx512" ]; then
+            check_gcc_machine_options $ext avx512f avx512cd avx512bw avx512dq avx512vl
+          else
+            # use the shortened version for the flag: sse4_1 -> sse4
+            check_gcc_machine_option ${ext%_*} $ext
+          fi
         fi
+
+        # https://bugs.chromium.org/p/webm/issues/detail?id=1464
+        # The assembly optimizations for vpx_sub_pixel_variance do not link with
+        # gcc 6.
+        enabled sse2 && soft_enable pic
       done
 
       if enabled external_build; then
@@ -1282,7 +1341,6 @@ EOF
         esac
         log_echo "  using $AS"
       fi
-      [ "${AS##*/}" = nasm ] && add_asflags -Ox
       AS_SFX=.asm
       case  ${tgt_os} in
         win32)
@@ -1291,7 +1349,7 @@ EOF
           EXE_SFX=.exe
           ;;
         win64)
-          add_asflags -f x64
+          add_asflags -f win64
           enabled debug && add_asflags -g cv8
           EXE_SFX=.exe
           ;;
@@ -1424,6 +1482,10 @@ EOF
         if enabled msa; then
           echo "msa optimizations are available only for little endian platforms"
           disable_feature msa
+        fi
+        if enabled mmi; then
+          echo "mmi optimizations are available only for little endian platforms"
+          disable_feature mmi
         fi
       fi
       ;;

@@ -57,18 +57,15 @@ extern "C" {
     out;                                                                       \
   })
 
-void vpx_idct32_cols_add_blk_dspr2(int16_t *input, uint8_t *dest,
-                                   int dest_stride);
+void vpx_idct32_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride);
 void vpx_idct4_rows_dspr2(const int16_t *input, int16_t *output);
-void vpx_idct4_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
-                                     int dest_stride);
+void vpx_idct4_columns_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride);
 void iadst4_dspr2(const int16_t *input, int16_t *output);
 void idct8_rows_dspr2(const int16_t *input, int16_t *output, uint32_t no_rows);
-void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
-                                 int dest_stride);
+void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride);
 void iadst8_dspr2(const int16_t *input, int16_t *output);
 void idct16_rows_dspr2(const int16_t *input, int16_t *output, uint32_t no_rows);
-void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride);
+void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride);
 void iadst16_dspr2(const int16_t *input, int16_t *output);
 
 #endif  // #if HAVE_DSPR2

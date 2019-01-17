@@ -15,6 +15,7 @@ void vpx_h_predictor_16x16_dspr2(uint8_t *dst, ptrdiff_t stride,
                                  const uint8_t *above, const uint8_t *left) {
   int32_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
   int32_t tmp9, tmp10, tmp11, tmp12, tmp13, tmp14, tmp15, tmp16;
+  (void)above;
 
   __asm__ __volatile__(
       "lb         %[tmp1],      (%[left])                    \n\t"

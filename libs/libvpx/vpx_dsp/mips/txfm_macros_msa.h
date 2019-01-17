@@ -15,19 +15,24 @@
 
 #define DOTP_CONST_PAIR(reg0, reg1, cnst0, cnst1, out0, out1) \
   {                                                           \
-    v8i16 k0_m = __msa_fill_h(cnst0);                         \
-    v4i32 s0_m, s1_m, s2_m, s3_m;                             \
+    v4i32 s0_m, s1_m, s2_m, s3_m, s4_m, s5_m;                 \
+    v8i16 k0_m, k1_m, k2_m, zero = { 0 };                     \
                                                               \
-    s0_m = (v4i32)__msa_fill_h(cnst1);                        \
-    k0_m = __msa_ilvev_h((v8i16)s0_m, k0_m);                  \
+    k0_m = __msa_fill_h(cnst0);                               \
+    k1_m = __msa_fill_h(cnst1);                               \
+    k2_m = __msa_ilvev_h((v8i16)k1_m, k0_m);                  \
+    k0_m = __msa_ilvev_h((v8i16)zero, k0_m);                  \
+    k1_m = __msa_ilvev_h(k1_m, (v8i16)zero);                  \
                                                               \
-    ILVRL_H2_SW((-reg1), reg0, s1_m, s0_m);                   \
+    ILVRL_H2_SW(reg1, reg0, s5_m, s4_m);                      \
     ILVRL_H2_SW(reg0, reg1, s3_m, s2_m);                      \
-    DOTP_SH2_SW(s1_m, s0_m, k0_m, k0_m, s1_m, s0_m);          \
+    DOTP_SH2_SW(s5_m, s4_m, k0_m, k0_m, s1_m, s0_m);          \
+    s1_m = __msa_dpsub_s_w(s1_m, (v8i16)s5_m, k1_m);          \
+    s0_m = __msa_dpsub_s_w(s0_m, (v8i16)s4_m, k1_m);          \
     SRARI_W2_SW(s1_m, s0_m, DCT_CONST_BITS);                  \
     out0 = __msa_pckev_h((v8i16)s0_m, (v8i16)s1_m);           \
                                                               \
-    DOTP_SH2_SW(s3_m, s2_m, k0_m, k0_m, s1_m, s0_m);          \
+    DOTP_SH2_SW(s3_m, s2_m, k2_m, k2_m, s1_m, s0_m);          \
     SRARI_W2_SW(s1_m, s0_m, DCT_CONST_BITS);                  \
     out1 = __msa_pckev_h((v8i16)s0_m, (v8i16)s1_m);           \
   }

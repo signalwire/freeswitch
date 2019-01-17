@@ -12,10 +12,9 @@
 #include "vp8/common/mips/msa/vp8_macros_msa.h"
 #include "vp8/encoder/block.h"
 
-static int8_t fast_quantize_b_msa(int16_t *coeff_ptr, int16_t *zbin,
-                                  int16_t *round, int16_t *quant,
-                                  int16_t *de_quant, int16_t *q_coeff,
-                                  int16_t *dq_coeff) {
+static int8_t fast_quantize_b_msa(int16_t *coeff_ptr, int16_t *round,
+                                  int16_t *quant, int16_t *de_quant,
+                                  int16_t *q_coeff, int16_t *dq_coeff) {
   int32_t cnt, eob;
   v16i8 inv_zig_zag = { 0, 1, 5, 6, 2, 4, 7, 12, 3, 8, 11, 13, 9, 10, 14, 15 };
   v8i16 round0, round1;
@@ -184,15 +183,14 @@ static int8_t exact_regular_quantize_b_msa(
 
 void vp8_fast_quantize_b_msa(BLOCK *b, BLOCKD *d) {
   int16_t *coeff_ptr = b->coeff;
-  int16_t *zbin_ptr = b->zbin;
   int16_t *round_ptr = b->round;
   int16_t *quant_ptr = b->quant_fast;
   int16_t *qcoeff_ptr = d->qcoeff;
   int16_t *dqcoeff_ptr = d->dqcoeff;
   int16_t *dequant_ptr = d->dequant;
 
-  *d->eob = fast_quantize_b_msa(coeff_ptr, zbin_ptr, round_ptr, quant_ptr,
-                                dequant_ptr, qcoeff_ptr, dqcoeff_ptr);
+  *d->eob = fast_quantize_b_msa(coeff_ptr, round_ptr, quant_ptr, dequant_ptr,
+                                qcoeff_ptr, dqcoeff_ptr);
 }
 
 void vp8_regular_quantize_b_msa(BLOCK *b, BLOCKD *d) {

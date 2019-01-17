@@ -45,8 +45,8 @@ class InvalidFileTest : public ::libvpx_test::DecoderTest,
 
   void OpenResFile(const std::string &res_file_name_) {
     res_file_ = libvpx_test::OpenTestDataFile(res_file_name_);
-    ASSERT_TRUE(res_file_ != NULL) << "Result file open failed. Filename: "
-                                   << res_file_name_;
+    ASSERT_TRUE(res_file_ != NULL)
+        << "Result file open failed. Filename: " << res_file_name_;
   }
 
   virtual bool HandleDecodeResult(
@@ -120,10 +120,23 @@ class InvalidFileTest : public ::libvpx_test::DecoderTest,
 
 TEST_P(InvalidFileTest, ReturnCode) { RunTest(); }
 
+#if CONFIG_VP8_DECODER
+const DecodeParam kVP8InvalidFileTests[] = {
+  { 1, "invalid-bug-1443.ivf" },
+};
+
+VP8_INSTANTIATE_TEST_CASE(InvalidFileTest,
+                          ::testing::ValuesIn(kVP8InvalidFileTests));
+#endif  // CONFIG_VP8_DECODER
+
+#if CONFIG_VP9_DECODER
 const DecodeParam kVP9InvalidFileTests[] = {
   { 1, "invalid-vp90-02-v2.webm" },
 #if CONFIG_VP9_HIGHBITDEPTH
   { 1, "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf" },
+  { 1,
+    "invalid-vp90-2-21-resize_inter_320x180_5_3-4.webm.ivf.s45551_r01-05_b6-."
+    "ivf" },
 #endif
   { 1, "invalid-vp90-03-v3.webm" },
   { 1, "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf" },
@@ -141,10 +154,14 @@ const DecodeParam kVP9InvalidFileTests[] = {
   { 1, "invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf" },
   { 1, "invalid-vp90-2-03-size-224x196.webm.ivf.s44156_r01-05_b6-.ivf" },
   { 1, "invalid-vp90-2-03-size-202x210.webm.ivf.s113306_r01-05_b6-.ivf" },
+  { 1,
+    "invalid-vp90-2-10-show-existing-frame.webm.ivf.s180315_r01-05_b6-.ivf" },
+  { 1, "invalid-crbug-667044.webm" },
 };
 
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
                           ::testing::ValuesIn(kVP9InvalidFileTests));
+#endif  // CONFIG_VP9_DECODER
 
 // This class will include test vectors that are expected to fail
 // peek. However they are still expected to have no fatal failures.
@@ -159,12 +176,12 @@ class InvalidFileInvalidPeekTest : public InvalidFileTest {
 TEST_P(InvalidFileInvalidPeekTest, ReturnCode) { RunTest(); }
 
 #if CONFIG_VP8_DECODER
-const DecodeParam kVP8InvalidFileTests[] = {
+const DecodeParam kVP8InvalidPeekTests[] = {
   { 1, "invalid-vp80-00-comprehensive-018.ivf.2kf_0x6.ivf" },
 };
 
 VP8_INSTANTIATE_TEST_CASE(InvalidFileInvalidPeekTest,
-                          ::testing::ValuesIn(kVP8InvalidFileTests));
+                          ::testing::ValuesIn(kVP8InvalidPeekTests));
 #endif  // CONFIG_VP8_DECODER
 
 #if CONFIG_VP9_DECODER
@@ -184,6 +201,7 @@ const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
     "invalid-vp90-2-08-tile_1x8_frame_parallel.webm.ivf.s288_r01-05_b6-.ivf" },
   { 2, "invalid-vp90-2-09-aq2.webm.ivf.s3984_r01-05_b6-.v2.ivf" },
   { 4, "invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf" },
+  { 2, "invalid-crbug-629481.webm" },
 };
 
 INSTANTIATE_TEST_CASE_P(

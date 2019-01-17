@@ -54,7 +54,7 @@ typedef struct SvcInternal {
   // values extracted from option, quantizers
   vpx_svc_extra_cfg_t svc_params;
   int enable_auto_alt_ref[VPX_SS_MAX_LAYERS];
-  int bitrates[VPX_SS_MAX_LAYERS];
+  int bitrates[VPX_MAX_LAYERS];
 
   // accumulated statistics
   double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];  // total/Y/U/V

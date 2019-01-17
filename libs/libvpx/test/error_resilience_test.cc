@@ -90,8 +90,7 @@ class ErrorResilienceTestLarge
     return frame_flags;
   }
 
-  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder * /*encoder*/) {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video) {
     frame_flags_ &=
         ~(VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF);
     // For temporal layer case.

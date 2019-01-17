@@ -90,7 +90,7 @@ all:
 
 .PHONY: clean
 clean::
-	rm -f $(OBJS-yes) $(OBJS-yes:.o=.d) $(OBJS-yes:.asm.s.o=.asm.s)
+	rm -f $(OBJS-yes) $(OBJS-yes:.o=.d) $(OBJS-yes:.asm.S.o=.asm.S)
 	rm -f $(CLEAN-OBJS)
 
 .PHONY: clean
@@ -124,6 +124,7 @@ ifeq ($(TOOLCHAIN), x86-os2-gcc)
 CFLAGS += -mstackrealign
 endif
 
+# x86[_64]
 $(BUILD_PFX)%_mmx.c.d: CFLAGS += -mmmx
 $(BUILD_PFX)%_mmx.c.o: CFLAGS += -mmmx
 $(BUILD_PFX)%_sse2.c.d: CFLAGS += -msse2
@@ -138,6 +139,12 @@ $(BUILD_PFX)%_avx.c.d: CFLAGS += -mavx
 $(BUILD_PFX)%_avx.c.o: CFLAGS += -mavx
 $(BUILD_PFX)%_avx2.c.d: CFLAGS += -mavx2
 $(BUILD_PFX)%_avx2.c.o: CFLAGS += -mavx2
+$(BUILD_PFX)%_avx512.c.d: CFLAGS += -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl
+$(BUILD_PFX)%_avx512.c.o: CFLAGS += -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl
+
+# POWER
+$(BUILD_PFX)%_vsx.c.d: CFLAGS += -maltivec -mvsx
+$(BUILD_PFX)%_vsx.c.o: CFLAGS += -maltivec -mvsx
 
 $(BUILD_PFX)%.c.d: %.c
 	$(if $(quiet),@echo "    [DEP] $@")
@@ -180,13 +187,13 @@ $(BUILD_PFX)%.asm.o: %.asm
 	$(qexec)$(if $(CONFIG_DEPENDENCY_TRACKING),,mkdir -p $(dir $@))
 	$(qexec)$(AS) $(ASFLAGS) -o $@ $<
 
-$(BUILD_PFX)%.s.d: %.s
+$(BUILD_PFX)%.S.d: %.S
 	$(if $(quiet),@echo "    [DEP] $@")
 	$(qexec)mkdir -p $(dir $@)
 	$(qexec)$(SRC_PATH_BARE)/build/make/gen_asm_deps.sh \
             --build-pfx=$(BUILD_PFX) --depfile=$@ $(ASFLAGS) $< > $@
 
-$(BUILD_PFX)%.s.o: %.s
+$(BUILD_PFX)%.S.o: %.S
 	$(if $(quiet),@echo "    [AS] $@")
 	$(qexec)$(if $(CONFIG_DEPENDENCY_TRACKING),,mkdir -p $(dir $@))
 	$(qexec)$(AS) $(ASFLAGS) -o $@ $<
@@ -198,8 +205,8 @@ $(BUILD_PFX)%.c.S: %.c
 	$(qexec)$(if $(CONFIG_DEPENDENCY_TRACKING),,mkdir -p $(dir $@))
 	$(qexec)$(CC) -S $(CFLAGS) -o $@ $<
 
-.PRECIOUS: %.asm.s
-$(BUILD_PFX)%.asm.s: %.asm
+.PRECIOUS: %.asm.S
+$(BUILD_PFX)%.asm.S: %.asm
 	$(if $(quiet),@echo "    [ASM CONVERSION] $@")
 	$(qexec)mkdir -p $(dir $@)
 	$(qexec)$(ASM_CONVERSION) <$< >$@

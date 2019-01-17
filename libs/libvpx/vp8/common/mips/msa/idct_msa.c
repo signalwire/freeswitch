@@ -90,8 +90,7 @@ static void idct4x4_addblk_msa(int16_t *input, uint8_t *pred,
   v4i32 in0, in1, in2, in3, hz0, hz1, hz2, hz3, vt0, vt1, vt2, vt3;
   v4i32 res0, res1, res2, res3;
   v16i8 zero = { 0 };
-  v16i8 pred0, pred1, pred2, pred3, dest0, dest1, dest2, dest3;
-  v16i8 mask = { 0, 4, 8, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
+  v16i8 pred0, pred1, pred2, pred3;
 
   LD_SH2(input, 8, input0, input1);
   UNPCK_SH_SW(input0, in0, in1);
@@ -111,20 +110,17 @@ static void idct4x4_addblk_msa(int16_t *input, uint8_t *pred,
   res1 = CLIP_SW_0_255(res1);
   res2 = CLIP_SW_0_255(res2);
   res3 = CLIP_SW_0_255(res3);
-  LD_SB4(dest, dest_stride, dest0, dest1, dest2, dest3);
-  VSHF_B2_SB(res0, dest0, res1, dest1, mask, mask, dest0, dest1);
-  VSHF_B2_SB(res2, dest2, res3, dest3, mask, mask, dest2, dest3);
-  ST_SB4(dest0, dest1, dest2, dest3, dest, dest_stride);
+  PCKEV_B2_SW(res0, res1, res2, res3, vt0, vt1);
+  res0 = (v4i32)__msa_pckev_b((v16i8)vt0, (v16i8)vt1);
+  ST4x4_UB(res0, res0, 3, 2, 1, 0, dest, dest_stride);
 }
 
 static void idct4x4_addconst_msa(int16_t in_dc, uint8_t *pred,
                                  int32_t pred_stride, uint8_t *dest,
                                  int32_t dest_stride) {
-  v8i16 vec;
-  v8i16 res0, res1, res2, res3;
+  v8i16 vec, res0, res1, res2, res3, dst0, dst1;
   v16i8 zero = { 0 };
-  v16i8 pred0, pred1, pred2, pred3, dest0, dest1, dest2, dest3;
-  v16i8 mask = { 0, 2, 4, 6, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
+  v16i8 pred0, pred1, pred2, pred3;
 
   vec = __msa_fill_h(in_dc);
   vec = __msa_srari_h(vec, 3);
@@ -133,55 +129,59 @@ static void idct4x4_addconst_msa(int16_t in_dc, uint8_t *pred,
              res2, res3);
   ADD4(res0, vec, res1, vec, res2, vec, res3, vec, res0, res1, res2, res3);
   CLIP_SH4_0_255(res0, res1, res2, res3);
-  LD_SB4(dest, dest_stride, dest0, dest1, dest2, dest3);
-  VSHF_B2_SB(res0, dest0, res1, dest1, mask, mask, dest0, dest1);
-  VSHF_B2_SB(res2, dest2, res3, dest3, mask, mask, dest2, dest3);
-  ST_SB4(dest0, dest1, dest2, dest3, dest, dest_stride);
+  PCKEV_B2_SH(res1, res0, res3, res2, dst0, dst1);
+  dst0 = (v8i16)__msa_pckev_w((v4i32)dst1, (v4i32)dst0);
+  ST4x4_UB(dst0, dst0, 0, 1, 2, 3, dest, dest_stride);
 }
 
 void vp8_short_inv_walsh4x4_msa(int16_t *input, int16_t *mb_dq_coeff) {
-  v8i16 input0, input1;
-  v4i32 in0, in1, in2, in3, a1, b1, c1, d1;
-  v4i32 hz0, hz1, hz2, hz3, vt0, vt1, vt2, vt3;
+  v8i16 input0, input1, tmp0, tmp1, tmp2, tmp3, out0, out1;
+  const v8i16 mask0 = { 0, 1, 2, 3, 8, 9, 10, 11 };
+  const v8i16 mask1 = { 4, 5, 6, 7, 12, 13, 14, 15 };
+  const v8i16 mask2 = { 0, 4, 8, 12, 1, 5, 9, 13 };
+  const v8i16 mask3 = { 3, 7, 11, 15, 2, 6, 10, 14 };
 
   LD_SH2(input, 8, input0, input1);
-  UNPCK_SH_SW(input0, in0, in1);
-  UNPCK_SH_SW(input1, in2, in3);
-  BUTTERFLY_4(in0, in1, in2, in3, a1, b1, c1, d1);
-  BUTTERFLY_4(a1, d1, c1, b1, hz0, hz1, hz3, hz2);
-  TRANSPOSE4x4_SW_SW(hz0, hz1, hz2, hz3, hz0, hz1, hz2, hz3);
-  BUTTERFLY_4(hz0, hz1, hz2, hz3, a1, b1, c1, d1);
-  BUTTERFLY_4(a1, d1, c1, b1, vt0, vt1, vt3, vt2);
-  ADD4(vt0, 3, vt1, 3, vt2, 3, vt3, 3, vt0, vt1, vt2, vt3);
-  SRA_4V(vt0, vt1, vt2, vt3, 3);
-  mb_dq_coeff[0] = __msa_copy_s_h((v8i16)vt0, 0);
-  mb_dq_coeff[16] = __msa_copy_s_h((v8i16)vt1, 0);
-  mb_dq_coeff[32] = __msa_copy_s_h((v8i16)vt2, 0);
-  mb_dq_coeff[48] = __msa_copy_s_h((v8i16)vt3, 0);
-  mb_dq_coeff[64] = __msa_copy_s_h((v8i16)vt0, 2);
-  mb_dq_coeff[80] = __msa_copy_s_h((v8i16)vt1, 2);
-  mb_dq_coeff[96] = __msa_copy_s_h((v8i16)vt2, 2);
-  mb_dq_coeff[112] = __msa_copy_s_h((v8i16)vt3, 2);
-  mb_dq_coeff[128] = __msa_copy_s_h((v8i16)vt0, 4);
-  mb_dq_coeff[144] = __msa_copy_s_h((v8i16)vt1, 4);
-  mb_dq_coeff[160] = __msa_copy_s_h((v8i16)vt2, 4);
-  mb_dq_coeff[176] = __msa_copy_s_h((v8i16)vt3, 4);
-  mb_dq_coeff[192] = __msa_copy_s_h((v8i16)vt0, 6);
-  mb_dq_coeff[208] = __msa_copy_s_h((v8i16)vt1, 6);
-  mb_dq_coeff[224] = __msa_copy_s_h((v8i16)vt2, 6);
-  mb_dq_coeff[240] = __msa_copy_s_h((v8i16)vt3, 6);
+  input1 = (v8i16)__msa_sldi_b((v16i8)input1, (v16i8)input1, 8);
+  tmp0 = input0 + input1;
+  tmp1 = input0 - input1;
+  VSHF_H2_SH(tmp0, tmp1, tmp0, tmp1, mask0, mask1, tmp2, tmp3);
+  out0 = tmp2 + tmp3;
+  out1 = tmp2 - tmp3;
+  VSHF_H2_SH(out0, out1, out0, out1, mask2, mask3, input0, input1);
+  tmp0 = input0 + input1;
+  tmp1 = input0 - input1;
+  VSHF_H2_SH(tmp0, tmp1, tmp0, tmp1, mask0, mask1, tmp2, tmp3);
+  tmp0 = tmp2 + tmp3;
+  tmp1 = tmp2 - tmp3;
+  ADD2(tmp0, 3, tmp1, 3, out0, out1);
+  out0 >>= 3;
+  out1 >>= 3;
+  mb_dq_coeff[0] = __msa_copy_s_h(out0, 0);
+  mb_dq_coeff[16] = __msa_copy_s_h(out0, 4);
+  mb_dq_coeff[32] = __msa_copy_s_h(out1, 0);
+  mb_dq_coeff[48] = __msa_copy_s_h(out1, 4);
+  mb_dq_coeff[64] = __msa_copy_s_h(out0, 1);
+  mb_dq_coeff[80] = __msa_copy_s_h(out0, 5);
+  mb_dq_coeff[96] = __msa_copy_s_h(out1, 1);
+  mb_dq_coeff[112] = __msa_copy_s_h(out1, 5);
+  mb_dq_coeff[128] = __msa_copy_s_h(out0, 2);
+  mb_dq_coeff[144] = __msa_copy_s_h(out0, 6);
+  mb_dq_coeff[160] = __msa_copy_s_h(out1, 2);
+  mb_dq_coeff[176] = __msa_copy_s_h(out1, 6);
+  mb_dq_coeff[192] = __msa_copy_s_h(out0, 3);
+  mb_dq_coeff[208] = __msa_copy_s_h(out0, 7);
+  mb_dq_coeff[224] = __msa_copy_s_h(out1, 3);
+  mb_dq_coeff[240] = __msa_copy_s_h(out1, 7);
 }
 
 static void dequant_idct4x4_addblk_msa(int16_t *input, int16_t *dequant_input,
                                        uint8_t *dest, int32_t dest_stride) {
   v8i16 input0, input1, dequant_in0, dequant_in1, mul0, mul1;
-  v8i16 in0, in1, in2, in3;
-  v8i16 hz0_h, hz1_h, hz2_h, hz3_h;
-  v16i8 dest0, dest1, dest2, dest3;
-  v4i32 hz0_w, hz1_w, hz2_w, hz3_w;
-  v4i32 vt0, vt1, vt2, vt3, res0, res1, res2, res3;
+  v8i16 in0, in1, in2, in3, hz0_h, hz1_h, hz2_h, hz3_h;
+  v16u8 dest0, dest1, dest2, dest3;
+  v4i32 hz0_w, hz1_w, hz2_w, hz3_w, vt0, vt1, vt2, vt3, res0, res1, res2, res3;
   v2i64 zero = { 0 };
-  v16i8 mask = { 0, 4, 8, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
 
   LD_SH2(input, 8, input0, input1);
   LD_SH2(dequant_input, 8, dequant_in0, dequant_in1);
@@ -196,7 +196,7 @@ static void dequant_idct4x4_addblk_msa(int16_t *input, int16_t *dequant_input,
   VP8_IDCT_1D_W(hz0_w, hz1_w, hz2_w, hz3_w, vt0, vt1, vt2, vt3);
   SRARI_W4_SW(vt0, vt1, vt2, vt3, 3);
   TRANSPOSE4x4_SW_SW(vt0, vt1, vt2, vt3, vt0, vt1, vt2, vt3);
-  LD_SB4(dest, dest_stride, dest0, dest1, dest2, dest3);
+  LD_UB4(dest, dest_stride, dest0, dest1, dest2, dest3);
   ILVR_B4_SW(zero, dest0, zero, dest1, zero, dest2, zero, dest3, res0, res1,
              res2, res3);
   ILVR_H4_SW(zero, res0, zero, res1, zero, res2, zero, res3, res0, res1, res2,
@@ -206,19 +206,17 @@ static void dequant_idct4x4_addblk_msa(int16_t *input, int16_t *dequant_input,
   res1 = CLIP_SW_0_255(res1);
   res2 = CLIP_SW_0_255(res2);
   res3 = CLIP_SW_0_255(res3);
-  VSHF_B2_SB(res0, dest0, res1, dest1, mask, mask, dest0, dest1);
-  VSHF_B2_SB(res2, dest2, res3, dest3, mask, mask, dest2, dest3);
-  ST_SB4(dest0, dest1, dest2, dest3, dest, dest_stride);
+  PCKEV_B2_SW(res0, res1, res2, res3, vt0, vt1);
+  res0 = (v4i32)__msa_pckev_b((v16i8)vt0, (v16i8)vt1);
+  ST4x4_UB(res0, res0, 3, 2, 1, 0, dest, dest_stride);
 }
 
 static void dequant_idct4x4_addblk_2x_msa(int16_t *input,
                                           int16_t *dequant_input, uint8_t *dest,
                                           int32_t dest_stride) {
   v16u8 dest0, dest1, dest2, dest3;
-  v8i16 in0, in1, in2, in3;
-  v8i16 mul0, mul1, mul2, mul3, dequant_in0, dequant_in1;
-  v8i16 hz0, hz1, hz2, hz3, vt0, vt1, vt2, vt3;
-  v8i16 res0, res1, res2, res3;
+  v8i16 in0, in1, in2, in3, mul0, mul1, mul2, mul3, dequant_in0, dequant_in1;
+  v8i16 hz0, hz1, hz2, hz3, vt0, vt1, vt2, vt3, res0, res1, res2, res3;
   v4i32 hz0l, hz1l, hz2l, hz3l, hz0r, hz1r, hz2r, hz3r;
   v4i32 vt0l, vt1l, vt2l, vt3l, vt0r, vt1r, vt2r, vt3r;
   v16i8 zero = { 0 };
@@ -247,11 +245,8 @@ static void dequant_idct4x4_addblk_2x_msa(int16_t *input,
              res2, res3);
   ADD4(res0, vt0, res1, vt1, res2, vt2, res3, vt3, res0, res1, res2, res3);
   CLIP_SH4_0_255(res0, res1, res2, res3);
-  PCKEV_B4_SH(res0, res0, res1, res1, res2, res2, res3, res3, res0, res1, res2,
-              res3);
-  PCKOD_D2_UB(dest0, res0, dest1, res1, dest0, dest1);
-  PCKOD_D2_UB(dest2, res2, dest3, res3, dest2, dest3);
-  ST_UB4(dest0, dest1, dest2, dest3, dest, dest_stride);
+  PCKEV_B2_SW(res1, res0, res3, res2, vt0l, vt1l);
+  ST8x4_UB(vt0l, vt1l, dest, dest_stride);
 
   __asm__ __volatile__(
       "sw   $zero,    0(%[input])  \n\t"
@@ -276,10 +271,9 @@ static void dequant_idct4x4_addblk_2x_msa(int16_t *input,
 
 static void dequant_idct_addconst_2x_msa(int16_t *input, int16_t *dequant_input,
                                          uint8_t *dest, int32_t dest_stride) {
-  v8i16 input_dc0, input_dc1, vec;
+  v8i16 input_dc0, input_dc1, vec, res0, res1, res2, res3;
   v16u8 dest0, dest1, dest2, dest3;
   v16i8 zero = { 0 };
-  v8i16 res0, res1, res2, res3;
 
   input_dc0 = __msa_fill_h(input[0] * dequant_input[0]);
   input_dc1 = __msa_fill_h(input[16] * dequant_input[0]);
@@ -292,11 +286,8 @@ static void dequant_idct_addconst_2x_msa(int16_t *input, int16_t *dequant_input,
              res2, res3);
   ADD4(res0, vec, res1, vec, res2, vec, res3, vec, res0, res1, res2, res3);
   CLIP_SH4_0_255(res0, res1, res2, res3);
-  PCKEV_B4_SH(res0, res0, res1, res1, res2, res2, res3, res3, res0, res1, res2,
-              res3);
-  PCKOD_D2_UB(dest0, res0, dest1, res1, dest0, dest1);
-  PCKOD_D2_UB(dest2, res2, dest3, res3, dest2, dest3);
-  ST_UB4(dest0, dest1, dest2, dest3, dest, dest_stride);
+  PCKEV_B2_SH(res1, res0, res3, res2, res0, res1);
+  ST8x4_UB(res0, res1, dest, dest_stride);
 }
 
 void vp8_short_idct4x4llm_msa(int16_t *input, uint8_t *pred_ptr,

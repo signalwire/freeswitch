@@ -12,7 +12,7 @@
 # ARM assembly files are written in RVCT-style. We use some make magic to
 # filter those files to allow GCC compilation
 ifeq ($(ARCH_ARM),yes)
-  ASM:=$(if $(filter yes,$(CONFIG_GCC)$(CONFIG_MSVS)),.asm.s,.asm)
+  ASM:=$(if $(filter yes,$(CONFIG_GCC)$(CONFIG_MSVS)),.asm.S,.asm)
 else
   ASM:=.asm
 endif
@@ -106,9 +106,6 @@ ifeq ($(CONFIG_VP9_DECODER),yes)
   CODEC_DOC_SECTIONS += vp9 vp9_decoder
 endif
 
-VP9_PREFIX=vp9/
-$(BUILD_PFX)$(VP9_PREFIX)%.c.o:
-
 ifeq ($(CONFIG_ENCODERS),yes)
   CODEC_DOC_SECTIONS += encoder
 endif
@@ -116,6 +113,12 @@ ifeq ($(CONFIG_DECODERS),yes)
   CODEC_DOC_SECTIONS += decoder
 endif
 
+# Suppress -Wextra warnings in third party code.
+$(BUILD_PFX)third_party/googletest/%.cc.o: CXXFLAGS += -Wno-missing-field-initializers
+# Suppress -Wextra warnings in first party code pending investigation.
+# https://bugs.chromium.org/p/webm/issues/detail?id=1069
+$(BUILD_PFX)vp8/encoder/onyx_if.c.o: CFLAGS += -Wno-unknown-warning-option -Wno-clobbered
+$(BUILD_PFX)vp8/decoder/onyxd_if.c.o: CFLAGS += -Wno-unknown-warning-option -Wno-clobbered
 
 ifeq ($(CONFIG_MSVS),yes)
 CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd)
@@ -146,6 +149,7 @@ CODEC_SRCS-yes += $(BUILD_PFX)vpx_config.c
 INSTALL-SRCS-no += $(BUILD_PFX)vpx_config.c
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += third_party/x86inc/x86inc.asm
+INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += vpx_dsp/x86/bitdepth_conversion_sse2.asm
 endif
 CODEC_EXPORTS-yes += vpx/exports_com
 CODEC_EXPORTS-$(CONFIG_ENCODERS) += vpx/exports_enc
@@ -184,6 +188,13 @@ libvpx_srcs.txt:
 	@echo $(CODEC_SRCS) | xargs -n1 echo | LC_ALL=C sort -u > $@
 CLEAN-OBJS += libvpx_srcs.txt
 
+# Assembly files that are included, but don't define symbols themselves.
+# Filtered out to avoid Windows build warnings.
+ASM_INCLUDES := \
+    third_party/x86inc/x86inc.asm \
+    vpx_config.asm \
+    vpx_ports/x86_abi_support.asm \
+    vpx_dsp/x86/bitdepth_conversion_sse2.asm \
 
 ifeq ($(CONFIG_EXTERNAL_BUILD),yes)
 ifeq ($(CONFIG_MSVS),yes)
@@ -194,13 +205,6 @@ vpx.def: $(call enabled,CODEC_EXPORTS)
             --name=vpx\
             --out=$@ $^
 CLEAN-OBJS += vpx.def
-
-# Assembly files that are included, but don't define symbols themselves.
-# Filtered out to avoid Visual Studio build warnings.
-ASM_INCLUDES := \
-    third_party/x86inc/x86inc.asm \
-    vpx_config.asm \
-    vpx_ports/x86_abi_support.asm \
 
 vpx.$(VCPROJ_SFX): $(CODEC_SRCS) vpx.def
 	@echo "    [CREATE] $@"
@@ -224,12 +228,12 @@ vpx.$(VCPROJ_SFX): $(RTCD)
 
 endif
 else
-LIBVPX_OBJS=$(call objs,$(CODEC_SRCS))
+LIBVPX_OBJS=$(call objs, $(filter-out $(ASM_INCLUDES), $(CODEC_SRCS)))
 OBJS-yes += $(LIBVPX_OBJS)
 LIBS-$(if yes,$(CONFIG_STATIC)) += $(BUILD_PFX)libvpx.a $(BUILD_PFX)libvpx_g.a
 $(BUILD_PFX)libvpx_g.a: $(LIBVPX_OBJS)
 
-SO_VERSION_MAJOR := 4
+SO_VERSION_MAJOR := 5
 SO_VERSION_MINOR := 0
 SO_VERSION_PATCH := 0
 ifeq ($(filter darwin%,$(TGT_OS)),$(TGT_OS))
@@ -363,7 +367,7 @@ endif
 #
 # Add assembler dependencies for configuration.
 #
-$(filter %.s.o,$(OBJS-yes)):     $(BUILD_PFX)vpx_config.asm
+$(filter %.S.o,$(OBJS-yes)):     $(BUILD_PFX)vpx_config.asm
 $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
 
 
@@ -388,7 +392,7 @@ LIBVPX_TEST_SRCS=$(addprefix test/,$(call enabled,LIBVPX_TEST_SRCS))
 LIBVPX_TEST_BIN=./test_libvpx$(EXE_SFX)
 LIBVPX_TEST_DATA=$(addprefix $(LIBVPX_TEST_DATA_PATH)/,\
                      $(call enabled,LIBVPX_TEST_DATA))
-libvpx_test_data_url=http://downloads.webmproject.org/test_data/libvpx/$(1)
+libvpx_test_data_url=https://storage.googleapis.com/downloads.webmproject.org/test_data/libvpx/$(1)
 
 TEST_INTRA_PRED_SPEED_BIN=./test_intra_pred_speed$(EXE_SFX)
 TEST_INTRA_PRED_SPEED_SRCS=$(addprefix test/,$(call enabled,TEST_INTRA_PRED_SPEED_SRCS))
@@ -401,8 +405,16 @@ CLEAN-OBJS += libvpx_test_srcs.txt
 
 $(LIBVPX_TEST_DATA): $(SRC_PATH_BARE)/test/test-data.sha1
 	@echo "    [DOWNLOAD] $@"
-	$(qexec)trap 'rm -f $@' INT TERM &&\
-            curl -L -o $@ $(call libvpx_test_data_url,$(@F))
+	# Attempt to download the file using curl, retrying once if it fails for a
+	# partial file (18).
+	$(qexec)( \
+	  trap 'rm -f $@' INT TERM; \
+	  curl="curl --retry 1 -L -o $@ $(call libvpx_test_data_url,$(@F))"; \
+	  $$curl; \
+	  case "$$?" in \
+	    18) $$curl -C -;; \
+	  esac \
+	)
 
 testdata:: $(LIBVPX_TEST_DATA)
 	$(qexec)[ -x "$$(which sha1sum)" ] && sha1sum=sha1sum;\

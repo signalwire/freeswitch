@@ -292,15 +292,13 @@ INSTANTIATE_TEST_CASE_P(
     NEON, SixtapPredictTest,
     ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_neon),
                       make_tuple(8, 8, &vp8_sixtap_predict8x8_neon),
-                      make_tuple(8, 4, &vp8_sixtap_predict8x4_neon)));
+                      make_tuple(8, 4, &vp8_sixtap_predict8x4_neon),
+                      make_tuple(4, 4, &vp8_sixtap_predict4x4_neon)));
 #endif
 #if HAVE_MMX
 INSTANTIATE_TEST_CASE_P(
     MMX, SixtapPredictTest,
-    ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_mmx),
-                      make_tuple(8, 8, &vp8_sixtap_predict8x8_mmx),
-                      make_tuple(8, 4, &vp8_sixtap_predict8x4_mmx),
-                      make_tuple(4, 4, &vp8_sixtap_predict4x4_mmx)));
+    ::testing::Values(make_tuple(4, 4, &vp8_sixtap_predict4x4_mmx)));
 #endif
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(
@@ -324,6 +322,15 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(8, 8, &vp8_sixtap_predict8x8_msa),
                       make_tuple(8, 4, &vp8_sixtap_predict8x4_msa),
                       make_tuple(4, 4, &vp8_sixtap_predict4x4_msa)));
+#endif
+
+#if HAVE_MMI
+INSTANTIATE_TEST_CASE_P(
+    MMI, SixtapPredictTest,
+    ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_mmi),
+                      make_tuple(8, 8, &vp8_sixtap_predict8x8_mmi),
+                      make_tuple(8, 4, &vp8_sixtap_predict8x4_mmi),
+                      make_tuple(4, 4, &vp8_sixtap_predict4x4_mmi)));
 #endif
 
 class BilinearPredictTest : public PredictTestBase {};
@@ -352,9 +359,7 @@ INSTANTIATE_TEST_CASE_P(
 #if HAVE_MMX
 INSTANTIATE_TEST_CASE_P(
     MMX, BilinearPredictTest,
-    ::testing::Values(make_tuple(16, 16, &vp8_bilinear_predict16x16_mmx),
-                      make_tuple(8, 8, &vp8_bilinear_predict8x8_mmx),
-                      make_tuple(8, 4, &vp8_bilinear_predict8x4_mmx),
+    ::testing::Values(make_tuple(8, 4, &vp8_bilinear_predict8x4_mmx),
                       make_tuple(4, 4, &vp8_bilinear_predict4x4_mmx)));
 #endif
 #if HAVE_SSE2

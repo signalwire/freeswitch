@@ -489,27 +489,19 @@ static uint32_t sse_64width_msa(const uint8_t *src_ptr, int32_t src_stride,
 
 uint32_t vpx_get4x4sse_cs_msa(const uint8_t *src_ptr, int32_t src_stride,
                               const uint8_t *ref_ptr, int32_t ref_stride) {
-  uint32_t err = 0;
   uint32_t src0, src1, src2, src3;
   uint32_t ref0, ref1, ref2, ref3;
   v16i8 src = { 0 };
   v16i8 ref = { 0 };
-  v16u8 src_vec0, src_vec1;
-  v8i16 diff0, diff1;
   v4i32 err0 = { 0 };
-  v4i32 err1 = { 0 };
 
   LW4(src_ptr, src_stride, src0, src1, src2, src3);
   LW4(ref_ptr, ref_stride, ref0, ref1, ref2, ref3);
   INSERT_W4_SB(src0, src1, src2, src3, src);
   INSERT_W4_SB(ref0, ref1, ref2, ref3, ref);
-  ILVRL_B2_UB(src, ref, src_vec0, src_vec1);
-  HSUB_UB2_SH(src_vec0, src_vec1, diff0, diff1);
-  DPADD_SH2_SW(diff0, diff1, diff0, diff1, err0, err1);
-  err = HADD_SW_S32(err0);
-  err += HADD_SW_S32(err1);
+  CALC_MSE_B(src, ref, err0);
 
-  return err;
+  return HADD_SW_S32(err0);
 }
 
 #define VARIANCE_4Wx4H(sse, diff) VARIANCE_WxH(sse, diff, 4);
