@@ -1933,7 +1933,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 		if (pkt_seq < max_seq) {
 			stats->cycle++;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats:[cycle change] pkt_seq[%d] cycle[%d] max_seq[%d] stats_ssrc[%u] local_ts[%u]\n",
-					pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->write_timer.samplecount);
+					pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->timer.samplecount);
 		}
 		pkt_extended_seq = stats->cycle << 16 | pkt_seq; /* getting the extended packet extended sequence ID */
 		if (pkt_extended_seq > stats->high_ext_seq_recv) {
@@ -1963,7 +1963,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 			stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->write_timer.samplecount);
 #endif
 	/* Interarrival jitter calculation */
-	pkt_tsdiff = abs((int32_t)(rtp_session->write_timer.samplecount - ntohl(hdr->ts)));  /* relative transit times for this packet */
+	pkt_tsdiff = abs((int32_t)(rtp_session->timer.samplecount - ntohl(hdr->ts)));  /* relative transit times for this packet */
 	if (stats->pkt_count < 2) { /* Can not compute Jitter with only one packet */
 		stats->last_pkt_tsdiff = pkt_tsdiff;
 	} else {
@@ -1976,7 +1976,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 
 #ifdef DEBUG_RTCP
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "rtcp_stats: pkt_ts[%d]local_ts[%d]diff[%d]pkt_spacing[%d]inter_jitter[%f]seq[%d]stats_ssrc[%d]",
-			ntohl(hdr->ts), rtp_session->write_timer.samplecount, pkt_tsdiff, packet_spacing_diff, stats->inter_jitter, ntohs(hdr->seq), stats->ssrc);
+			ntohl(hdr->ts), rtp_session->timer.samplecount, pkt_tsdiff, packet_spacing_diff, stats->inter_jitter, ntohs(hdr->seq), stats->ssrc);
 #endif
 	return 1;
 }
