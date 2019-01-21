@@ -150,7 +150,7 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
    */
 
   do {
-    if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
+    if(!strncasecmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
   } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
 
