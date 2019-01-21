@@ -724,6 +724,8 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(_In_ switch_core_sessi
 
 SWITCH_DECLARE(char *) switch_core_perform_strdup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup, _In_z_ const char *file,
 												  _In_z_ const char *func, _In_ int line);
+SWITCH_DECLARE(char *) switch_core_perform_strndup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup, size_t len, _In_z_ const char *file,
+												  _In_z_ const char *func, _In_ int line);
 
 /*!
   \brief Copy a string using memory allocation from a given pool
@@ -732,6 +734,8 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(_In_ switch_memory_pool_t *poo
   \return a pointer to the newly duplicated string
 */
 #define switch_core_strdup(_pool, _todup)  switch_core_perform_strdup(_pool, _todup, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+#define switch_core_strndup(_pool, _todup, _len)  switch_core_perform_strndup(_pool, _todup, _len, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief printf-style style printing routine.  The data is output to a string allocated from the session

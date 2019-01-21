@@ -270,8 +270,12 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 
 SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, const char *todup, const char *file, const char *func, int line)
 {
+	return switch_core_perform_strndup(pool, todup, todup ? strlen(todup) + 1 : 0, file, func, line);
+}
+
+SWITCH_DECLARE(char *) switch_core_perform_strndup(switch_memory_pool_t *pool, const char *todup, size_t len, const char *file, const char *func, int line)
+{
 	char *duped = NULL;
-	switch_size_t len;
 	switch_assert(pool != NULL);
 
 	if (!todup) {
@@ -286,8 +290,6 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
 #endif
-
-	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
 	if (len > DEBUG_ALLOC_CUTOFF)
