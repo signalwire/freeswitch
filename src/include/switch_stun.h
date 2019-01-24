@@ -259,6 +259,15 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_priority(switch_stun_pa
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
 
+/*!
+  \brief Perform a stun ip lookup
+  \param external_ip replaced with stun results
+  \param sourceip stun:, host: or an ip
+  \param external_pool the memory pool to use
+  \return SUCCESS or FAIL
+*/
+SWITCH_DECLARE(switch_status_t) switch_stun_ip_lookup(char **external_ip, const char *sourceip, switch_memory_pool_t *external_pool);
+
 
 /*!
   \brief Obtain the padded length of an attribute's value

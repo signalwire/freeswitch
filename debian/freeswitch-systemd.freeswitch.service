@@ -2,8 +2,9 @@
 
 [Unit]
 Description=freeswitch
+Wants=network-online.target
 Requires=syslog.socket network.target local-fs.target
-After=syslog.socket network.target local-fs.target
+After=syslog.socket network.target network-online.target local-fs.target
 
 [Service]
 ; service
@@ -11,6 +12,7 @@ Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
 Environment="DAEMON_OPTS=-nonat"
 EnvironmentFile=-/etc/default/freeswitch
+ExecStartPre=/bin/chown -R freeswitch:freeswitch /var/lib/freeswitch /var/log/freeswitch /etc/freeswitch /usr/share/freeswitch /var/run/freeswitch
 ExecStart=/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait $DAEMON_OPTS
 TimeoutSec=45s
 Restart=always
@@ -28,6 +30,7 @@ IOSchedulingPriority=2
 CPUSchedulingPolicy=rr
 CPUSchedulingPriority=89
 UMask=0007
+NoNewPrivileges=false
 
 ; alternatives which you can enforce by placing a unit drop-in into
 ; /etc/systemd/system/freeswitch.service.d/*.conf:

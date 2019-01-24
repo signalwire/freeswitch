@@ -95,7 +95,7 @@ struct switch_loadable_module_container {
 static struct switch_loadable_module_container loadable_modules;
 static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy,
 								   const char **err);
-static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
+static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
 
 static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
@@ -1544,12 +1544,12 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	return SWITCH_STATUS_SUCCESS;
 
 }
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *dir, const char *fname, switch_bool_t runtime, const char **err)
 {
 	return switch_loadable_module_load_module_ex(dir, fname, runtime, SWITCH_FALSE, err);
 }
 
-static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err)
+static switch_status_t switch_loadable_module_load_module_ex(const char *dir, const char *fname, switch_bool_t runtime, switch_bool_t global, const char **err)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -1902,7 +1902,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (path && zstr(path)) {
 					path = SWITCH_GLOBAL_dirs.mod_dir;
 				}
-				if (switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_GENERR) {
+				if (switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_GENERR) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
 						abort();
@@ -1935,7 +1935,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (path && zstr(path)) {
 					path = SWITCH_GLOBAL_dirs.mod_dir;
 				}
-				switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err);
+				switch_loadable_module_load_module_ex(path, val, SWITCH_FALSE, global, &err);
 				count++;
 			}
 		}
@@ -1975,7 +1975,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				continue;
 			}
 
-			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname, SWITCH_FALSE, &err);
+			switch_loadable_module_load_module(SWITCH_GLOBAL_dirs.mod_dir, fname, SWITCH_FALSE, &err);
 		}
 		apr_dir_close(module_dir_handle);
 	}

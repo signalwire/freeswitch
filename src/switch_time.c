@@ -692,7 +692,6 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	timer->start = switch_micro_time_now();
 
 	if (timer->interval == 1) {
-		runtime.microseconds_per_tick = 10000;
 		switch_mutex_lock(globals.mutex);
 		globals.timer_count++;
 		switch_mutex_unlock(globals.mutex);

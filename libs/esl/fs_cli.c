@@ -1420,8 +1420,10 @@ int main(int argc, char *argv[])
 	const char *line = NULL;
 	char cmd_str[2048] = "";
 	cli_profile_t *profile = NULL;
+#ifdef HAVE_LIBEDIT
 	int argv_use_history_file = 1;
 	int use_history_file = 0;
+#endif
 #ifndef WIN32
 	char hfile[512] = "/tmp/fs_cli_history";
 	char cfile[512] = "/etc/fs_cli.conf";
@@ -1581,7 +1583,9 @@ int main(int argc, char *argv[])
 				argv_batch = 1;
 				break;
 			case 'Q':
+#ifdef HAVE_LIBEDIT
 				argv_use_history_file = 0;
+#endif
 				break;
 			case 'i':
 				allow_ctl_c = 1;
@@ -1645,9 +1649,11 @@ int main(int argc, char *argv[])
 		profile->batch_mode = 1;
 		feature_level=0;
 	}
+#ifdef HAVE_LIBEDIT
 	if (argv_use_history_file && profile->use_history_file) {
 		use_history_file = 1;
 	}
+#endif
 	if (*argv_loglevel) {
 		esl_set_string(profile->loglevel, argv_loglevel);
 		profile->quiet = 0;

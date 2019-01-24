@@ -1708,7 +1708,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
-	int file_flags = SWITCH_FILE_DATA_SHORT;
+	int file_flags = SWITCH_FILE_DATA_SHORT | (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? SWITCH_FILE_FLAG_VIDEO : 0);
 
 	if (handle->params) {
 		context->profile = url_cache_http_profile_find(&gcache, switch_event_get_header(handle->params, "profile"));

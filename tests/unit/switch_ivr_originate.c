@@ -42,6 +42,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_assert(session);
 	reporting++;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "session reporting %d\n", reporting);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t my_on_destroy(switch_core_session_t *session)
@@ -49,6 +51,8 @@ static switch_status_t my_on_destroy(switch_core_session_t *session)
 	switch_assert(session);
 	destroy++;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "session destroy %d\n", destroy);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_state_handler_table_t state_handlers = {

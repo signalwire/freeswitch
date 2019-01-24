@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(swit
   \param fh file handle to use (NULL for builtin one)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, const char *file, uint32_t limit, switch_file_handle_t *fh);
 SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session);
 
 
@@ -471,7 +471,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
-															 switch_codec_t *codec, switch_timer_t *timer, char *text, switch_input_args_t *args);
+															 switch_codec_t *codec, switch_timer_t *timer, const char *text, switch_input_args_t *args);
 SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *session);
 /*!
   \brief Speak given text with given tts engine
@@ -483,7 +483,7 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  const char *tts_name, const char *voice_name, char *text, switch_input_args_t *args);
+													  const char *tts_name, const char *voice_name, const char *text, switch_input_args_t *args);
 
 /*!
   \brief Make an outgoing call

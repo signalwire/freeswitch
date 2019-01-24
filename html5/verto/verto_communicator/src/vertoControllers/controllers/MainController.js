@@ -77,10 +77,15 @@
        * Login the user to verto server and
        * redirects him to dialpad page.
        */
-      $scope.login = function(redirect) {
+      $rootScope.login = function(redirect, skipPreview) {
         if(redirect == undefined) {
           redirect = true;
         }
+
+        if(skipPreview == undefined) {
+          skipPreview = false;
+        }
+
         var connectCallback = function(v, connected) {
           $scope.$apply(function() {
           verto.data.connecting = false;
@@ -97,7 +102,7 @@
               verto.testSpeed();
             }
 
-            if (redirect && storage.data.preview) {
+            if (redirect && storage.data.preview && !skipPreview) {
               $location.path('/loading');
             } else if (redirect) {
               $location.path('/dialpad');

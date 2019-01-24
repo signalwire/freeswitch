@@ -31,6 +31,7 @@
  */
 #include <switch.h>
 #include <switch_json.h>
+#include <switch_stun.h>
 
 
 /* Prototypes */
@@ -4824,7 +4825,7 @@ static switch_status_t parse_config(const char *cf)
 					if (zstr(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid External RTP IP.\n");
 					} else {
-						profile->extrtpip = switch_core_strdup(profile->pool, val);
+						switch_stun_ip_lookup(&profile->extrtpip, val, profile->pool);
 					}
 				} else if (!strcasecmp(var, "debug")) {
 					if (val) {
