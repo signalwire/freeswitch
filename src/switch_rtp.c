@@ -1800,20 +1800,28 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 			);
 }
 
+static inline uint32_t calc_local_lsr_now() 
+{
+	switch_time_t now;
+	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
+	now = switch_micro_time_now();
+	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
+	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
+	ntp_usec = (uint32_t)(now - ((switch_time_t) sec*1000000)); /* remove seconds to keep only the microseconds */
+
+	lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; /* 0.065536 is used for convertion from useconds to fraction of 65536 (x65536/1000000) */
+
+	return lsr_now;
+}
+
 //#define DEBUG_RTCP
 static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_rtcp_report_block *rtcp_report_block){
 #ifdef DEBUG_RTCP
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 #endif
 	switch_rtcp_numbers_t * stats=&rtp_session->stats.rtcp;
-	switch_time_t now;
-	uint32_t expected_pkt, dlsr;
+	uint32_t expected_pkt, dlsr = 0;
 	int32_t pkt_lost;
-	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
-	now = switch_micro_time_now();
-	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
-	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
-	ntp_usec = (uint32_t)(now - (sec*1000000)); /* remove seconds to keep only the microseconds */
 
 	/* Packet loss */
 	if (stats->rtcp_rtp_count == 0) {
@@ -1850,12 +1858,12 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	rtcp_report_block->jitter = htonl((uint32_t)stats->inter_jitter);
 
 	/* Delay since Last Sender Report (DLSR) : 32bits, 1/65536 seconds */
-	lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; /* 0.065536 is used for convertion from useconds to fraction of 65536 (x65536/1000000) */
-
 	if (stats->last_recv_lsr_local) {
-		dlsr = lsr_now - stats->last_recv_lsr_local;
-	} else {
-		dlsr = 0;
+		uint32_t lsr_now = calc_local_lsr_now();
+		/* check lsr_now: what we just read from clock may be in the past (race cond), don't send huge dlsr due to uint wrap around */
+		if (lsr_now > stats->last_recv_lsr_local) {
+			dlsr = lsr_now - stats->last_recv_lsr_local;
+		}
 	}
 	rtcp_report_block->lsr = stats->last_recv_lsr_peer;
 	rtcp_report_block->dlsr = htonl(dlsr);
@@ -6523,9 +6531,11 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		struct switch_rtcp_report_block *report;
 
 		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR) {
-			switch_time_t now;
-			switch_time_exp_t now_hr;
-			uint32_t sec, ntp_sec, ntp_usec, lsr_now;
+			int i;
+#ifdef DEBUG_RTCP
+			switch_time_t now = switch_micro_time_now();
+#endif 
+			uint32_t lsr_now;
 			uint32_t lsr;
 			uint32_t packet_ssrc;
 			double rtt_now = 0;
@@ -6536,11 +6546,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			//	rtp_session->send_rr = 1;
 			//}
 
-			now = switch_micro_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
-			sec = (uint32_t)(now/1000000);              /* converted to second (NTP most significant bits) */
-			ntp_sec = sec+NTP_TIME_OFFSET;  /* 32bits most significant */
-			ntp_usec = (uint32_t)(now - (((switch_time_t) sec) * 1000000)); /* micro seconds */
-			lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; // 0.065536 is used for convertion from useconds
+			lsr_now = calc_local_lsr_now();
 
 			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
 				struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)msg->body;
@@ -6620,30 +6626,31 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				
 				if (rtp_session->rtcp_frame.reports[i].lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 
-					switch_time_exp_gmt(&now_hr,now);
-						
 					/* Calculating RTT = A - DLSR - LSR */
 					rtt_now = ((double)(((int64_t)lsr_now) - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr))/65536;
 
 					/* Only account RTT if it didn't overflow. */
 					if (lsr_now > rtp_session->rtcp_frame.reports[i].dlsr + rtp_session->rtcp_frame.reports[i].lsr) {
-
-						rtt_valid = 1;
-
+#ifdef DEBUG_RTCP
+						switch_time_exp_t now_hr;
+						switch_time_exp_gmt(&now_hr,now);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
 								"Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
 								"RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
 								1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
 								rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
 								lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
+#endif 
+						rtt_valid = 1;
 						if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
 							rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
 						} else {
 							rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
 						}
 					} else {
-
 #ifdef DEBUG_RTCP
+						switch_time_exp_t now_hr;
+						switch_time_exp_gmt(&now_hr,now);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 								"Receiving RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
 								"Ignoring erroneous RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
