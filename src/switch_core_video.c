@@ -579,7 +579,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 
 	if (*new_img) {
 		if ((*new_img)->fmt != SWITCH_IMG_FMT_I420 && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB) return;
-		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w ) {
+		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_h ) {
 			new_fmt = (*new_img)->fmt;
 			switch_img_free(new_img);
 		}
