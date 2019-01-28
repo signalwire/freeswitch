@@ -2033,7 +2033,7 @@ static int using_ice(switch_rtp_t *rtp_session)
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
-	int rtcp_ok = 0, rtcp_fb = 0, force_send_rr = 0;
+	int rtcp_ok = 0, rtcp_cyclic = 0, rtcp_fb = 0, force_send_rr = 0;
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
@@ -2093,6 +2093,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	if (!rtcp_ok && (!rtp_session->rtcp_last_sent || (int)((now - rtp_session->rtcp_last_sent) / 1000) > rate)) {
 		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "TIME UP\n");
+		rtcp_cyclic = 1;
 		rtcp_ok = 1;
 	}
 
@@ -2110,7 +2111,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "WTF %d %d %d %d\n", rate, rtp_session->rtcp_sent_packets, rtcp_ok, nack_ttl);
 
-	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && (rtcp_ok || rtcp_fb)) {
+	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && rtcp_ok) {
 		switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
 		struct switch_rtcp_receiver_report *rr;
 		struct switch_rtcp_sender_report *sr;
@@ -2153,7 +2154,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_sender_info = &sr->sender_info;
 			rtcp_generate_sender_info(rtp_session, rtcp_sender_info);
 			rtcp_bytes += sizeof(struct switch_rtcp_sender_info);
-			if (!rtcp_ok && rtcp_fb) {
+			if (!rtcp_cyclic && rtcp_fb) {
 				 /* rtcp-fb only, don't send receive report block */
 				rtp_session->rtcp_send_msg.header.count = 0;
 			} else {
@@ -8239,6 +8240,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
+		this_ts = rtp_session->ts_norm.ts;
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
