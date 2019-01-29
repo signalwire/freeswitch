@@ -478,6 +478,7 @@ struct switch_rtp {
 	uint8_t clean;
 	uint32_t last_max_vb_frames;
 	int skip_timer;
+	uint32_t prev_nacks_inflight;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1815,7 +1816,10 @@ static inline uint32_t calc_local_lsr_now()
 }
 
 //#define DEBUG_RTCP
-static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_rtcp_report_block *rtcp_report_block){
+/* extra param is for duplicates (received NACKed packets) */ 
+static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_rtcp_report_block *rtcp_report_block, 
+		int16_t extra_expected)
+{
 #ifdef DEBUG_RTCP
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 #endif
@@ -1827,7 +1831,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	if (stats->rtcp_rtp_count == 0) {
 		expected_pkt = stats->high_ext_seq_recv - stats->base_seq + 1;
 	} else {
-		expected_pkt = stats->high_ext_seq_recv - stats->last_rpt_ext_seq;
+		expected_pkt = stats->high_ext_seq_recv - stats->last_rpt_ext_seq + extra_expected;
 	}
 
 	pkt_lost = expected_pkt - stats->period_pkt_count;
@@ -2035,7 +2039,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	int ret = 0;
 	int rtcp_ok = 0, rtcp_cyclic = 0, rtcp_fb = 0, force_send_rr = 0;
 	switch_time_t now = switch_micro_time_now();
-	int rate = 0, nack_ttl = 0;
+	int rate = 0, nack_ttl = 0, nack_dup = 0; 
 	uint32_t cur_nack[MAX_NACK] = { 0 };
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
@@ -2129,9 +2133,14 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtp_session->rtcp_sent_packets++;
 		}
 
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+				rtp_session->vb && rtcp_cyclic) {
+				nack_dup = rtp_session->prev_nacks_inflight;
+				rtp_session->prev_nacks_inflight = 0;
+		}
+
 		rtp_session->rtcp_send_msg.header.version = 2;
 		rtp_session->rtcp_send_msg.header.p = 0;
-
 
 		if ((switch_core_session_media_flow(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO) == SWITCH_MEDIA_FLOW_RECVONLY) ||
 				switch_core_session_media_flow(rtp_session->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
@@ -2143,7 +2152,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rr->ssrc = htonl(rtp_session->ssrc);
 			rtcp_report_block = &rr->report_block;
 			rtcp_bytes += sizeof(struct switch_rtcp_report_block);
-			rtcp_generate_report_block(rtp_session, rtcp_report_block);
+			rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 			rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP RR");
 		} else {
@@ -2160,7 +2169,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			} else {
 				rtcp_report_block = &sr->report_block;
 				rtcp_bytes += sizeof(struct switch_rtcp_report_block);
-				rtcp_generate_report_block(rtp_session, rtcp_report_block);
+				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR");
@@ -2211,13 +2220,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 					nack = (uint32_t *) p;
 					*nack = cur_nack[n];
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP NACK %u\n",
-									  ntohs(*nack & 0xFFFF));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP NACK %u [%d]\n",
+									  ntohs(*nack & 0xFFFF), rtp_session->rtcp_vstats.video_in.nack_count);
 
 					rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(cur_nack[n]);
 					cur_nack[n] = 0;
 				}
-
+				rtp_session->prev_nacks_inflight = n;
 				nack_ttl = 0;
 			}
 
@@ -2247,7 +2256,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				ext_hdr->pt = _RTCP_PT_PSFB;
 
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
-				ext_hdr->recv_ssrc = 0;
+				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
 
 				fir->ssrc = htonl(rtp_session->remote_ssrc);
 				fir->seq = rtp_session->fir_seq;
