@@ -915,7 +915,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	}
 
 
-	if (!strcmp(login, "root")) {
+	if (!strcmp(login, "root") && jsock->profile->root_passwd) {
 		if (!(r = !strcmp(passwd, jsock->profile->root_passwd))) {
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Authentication Failure");
