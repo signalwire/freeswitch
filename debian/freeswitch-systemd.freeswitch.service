@@ -3,8 +3,8 @@
 [Unit]
 Description=freeswitch
 Wants=network-online.target
-Requires=syslog.socket network.target local-fs.target
-After=syslog.socket network.target network-online.target local-fs.target
+Requires=network.target local-fs.target
+After=network.target network-online.target local-fs.target
 
 [Service]
 ; service
