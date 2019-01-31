@@ -1542,12 +1542,6 @@ static void init_vp9(my_vpx_cfg_t *my_cfg)
 	my_cfg->tune_content = VP9E_CONTENT_SCREEN;
 }
 
-static void init_vp10(my_vpx_cfg_t *my_cfg)
-{
-	// vpx_codec_enc_config_default(vpx_codec_vp9_cx(), &cfg->enc_cfg, 0);
-	my_cfg->cpuused = -6;
-}
-
 static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig)
 {
 	int i;
@@ -1563,8 +1557,6 @@ static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig)
 				init_vp8(vpx_globals.profiles[i]);
 			} else if (!strcmp(name, "vp9")) {
 				init_vp9(vpx_globals.profiles[i]);
-			} else if (!strcmp(name, "vp10")) {
-				init_vp10(vpx_globals.profiles[i]);
 			} else {
 				init_vp8(vpx_globals.profiles[i]);
 			}
@@ -1895,14 +1887,6 @@ static void load_config()
 		if (!my_cfg->enc_cfg.g_threads) my_cfg->enc_cfg.g_threads = 1;
 		if (!my_cfg->dec_cfg.threads) my_cfg->dec_cfg.threads = switch_parse_cpu_string("cpu/2/4");
 	}
-
-	my_cfg = find_cfg_profile("vp10", SWITCH_FALSE);
-
-	if (my_cfg) {
-		if (!my_cfg->enc_cfg.g_threads) my_cfg->enc_cfg.g_threads = 1;
-		if (!my_cfg->dec_cfg.threads) my_cfg->dec_cfg.threads = switch_parse_cpu_string("cpu/2/4");
-	}
-
 }
 
 #define VPX_API_SYNTAX "<reload|debug <on|off>>"

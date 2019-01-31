@@ -117,9 +117,6 @@
       <param name="vp9e-tune-content" value="SCREEN"/>
     </profile>
 
-    <profile name="vp10">
-    </profile>
-
     <profile name="conference">
       <param name="dec-threads" value="4"/>
       <param name="enc-threads" value="4"/>
