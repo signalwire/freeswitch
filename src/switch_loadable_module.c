@@ -1628,7 +1628,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, switch_bool_t force, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(const char *dir, const char *fname, switch_bool_t force, const char **err)
 {
 	switch_loadable_module_t *module = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
