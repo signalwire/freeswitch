@@ -1517,6 +1517,8 @@ static void init_vp8(my_vpx_cfg_t *my_cfg)
 
 	my_cfg->dec_cfg.threads = vpx_globals.dec_threads;
 	my_cfg->enc_cfg.g_threads = vpx_globals.enc_threads;
+	my_cfg->static_thresh = 100;
+	my_cfg->noise_sensitivity = 1;
 
 	my_cfg->cpuused = -6;
 	my_cfg->enc_cfg.g_profile = 2;
@@ -1541,9 +1543,11 @@ static void init_vp9(my_vpx_cfg_t *my_cfg)
 
 	my_cfg->dec_cfg.threads = vpx_globals.dec_threads;
 	my_cfg->enc_cfg.g_threads = vpx_globals.enc_threads;
+	my_cfg->static_thresh = 1000;
 
-	my_cfg->cpuused = -6;
+	my_cfg->cpuused = -8;
 	my_cfg->enc_cfg.g_profile = 0;
+	my_cfg->enc_cfg.g_lag_in_frames = 0;
 	my_cfg->enc_cfg.g_timebase.den = 1000;
 	my_cfg->enc_cfg.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
 	my_cfg->enc_cfg.rc_resize_allowed = 1;
