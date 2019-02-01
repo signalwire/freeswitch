@@ -563,6 +563,10 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "config: %s\n", my_cfg->name);
 
+	if (context->is_vp9) {
+		my_cfg->enc_cfg.g_profile = 0; // default build of VP9 only support 0, TODO: remove this
+	}
+
 	if (my_cfg->codecs) {
 		parse_codec_specific_profile(my_cfg, codec_name);
 	}

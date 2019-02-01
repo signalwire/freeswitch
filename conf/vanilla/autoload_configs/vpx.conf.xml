@@ -97,7 +97,7 @@
       <!-- <param name="dec-threads" value="cpu/2/4"/> -->
       <!-- <param name="enc-threads" value="1"/> -->
 
-      <!-- <param name="g-profile" value="0"/> -->
+      <param name="g-profile" value="0"/>
       <!-- DEFAULT | PARTITIONS -->
       <!-- <param name="g-error-resilient" value="PARTITIONS"/> -->
       <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
