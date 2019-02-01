@@ -70,12 +70,12 @@ typedef struct my_vpx_cfg_s {
 	switch_event_t *codecs;
 } my_vpx_cfg_t;
 
-#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field)
+#define SHOW(cfg, field) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "    %-28s = %d\n", #field, cfg->field)
 
 static void show_config(my_vpx_cfg_t *my_cfg, vpx_codec_enc_cfg_t *cfg)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %s\n", "name", my_cfg->name);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "    %-28s = %d\n", "decoder.threads", my_cfg->dec_cfg.threads);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "    %-28s = %d\n", "decoder.threads", my_cfg->dec_cfg.threads);
 
 	SHOW(my_cfg, lossless);
 	SHOW(my_cfg, cpuused);
