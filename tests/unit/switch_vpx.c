@@ -11,10 +11,15 @@ FST_CORE_BEGIN("./conf")
 	{
 		FST_SETUP_BEGIN()
 		{
+			switch_stream_handle_t stream = { 0 };
+			SWITCH_STANDARD_STREAM(stream);
+
+			switch_api_execute("vpx", "debug on", NULL, &stream);
+			switch_safe_free(stream.data);
 		}
 		FST_SETUP_END()
 
-		FST_TEST_BEGIN(avcodec_test)
+		FST_TEST_BEGIN(vp8_test)
 		{
 			switch_status_t status;
 			switch_codec_t codec = { 0 };
