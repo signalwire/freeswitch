@@ -1573,6 +1573,8 @@ static my_vpx_cfg_t *find_cfg_profile(const char *name, switch_bool_t reconfig)
 				init_vp8(vpx_globals.profiles[i]);
 			}
 
+			vpx_globals.profiles[i]->token_parts = switch_core_cpu_count() > 1 ? 3 : 0;
+
 			return vpx_globals.profiles[i];
 		}
 
@@ -1782,7 +1784,7 @@ static void parse_profile(my_vpx_cfg_t *my_cfg, switch_xml_t profile, int codec_
 				_VPX_CHECK_MIN_MAX(my_cfg->cpuused, val, -8, 8);
 			}
 		} else if (!strcmp(name, "token-parts")) {
-			_VPX_CHECK_MIN_MAX(my_cfg->token_parts, val, VP8_ONE_TOKENPARTITION, VP8_EIGHT_TOKENPARTITION);
+			_VPX_CHECK_MIN_MAX(my_cfg->token_parts, switch_parse_cpu_string(value), VP8_ONE_TOKENPARTITION, VP8_EIGHT_TOKENPARTITION);
 		} else if (!strcmp(name, "static-thresh")) {
 			_VPX_CHECK_MIN(my_cfg->static_thresh, val, 0);
 		} else if (!strcmp(name, "noise-sensitivity")) {
