@@ -3959,6 +3959,43 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			default:
 				break;
 		}
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			switch(direction) {
+			case SWITCH_RTP_CRYPTO_SEND:
+				switch_channel_set_variable(channel, "srtp_local_video_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV:
+				switch_channel_set_variable(channel, "srtp_remote_video_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_SEND_RTCP:
+				switch_channel_set_variable(channel, "srtcp_local_video_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV_RTCP:
+				switch_channel_set_variable(channel, "srtcp_remote_video_crypto_key", (const char *)b64_key);
+				break;
+			default:
+				break;
+			}
+
+		} else {
+			switch(direction) {
+			case SWITCH_RTP_CRYPTO_SEND:
+				switch_channel_set_variable(channel, "srtp_local_audio_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV:
+				switch_channel_set_variable(channel, "srtp_remote_audio_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_SEND_RTCP:
+				switch_channel_set_variable(channel, "srtcp_local_audio_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV_RTCP:
+				switch_channel_set_variable(channel, "srtcp_remote_audio_crypto_key", (const char *)b64_key);
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	crypto_key = switch_core_alloc(rtp_session->pool, sizeof(*crypto_key));
