@@ -5360,7 +5360,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 				return;
 			}
 
-			if (rtp_session->write_timer.samplecount >= rtp_session->max_next_write_samplecount) {
+			if (rtp_session->timer.samplecount >= rtp_session->max_next_write_samplecount) {
 				rtp_session->queue_delay = 0;
 			}
 
