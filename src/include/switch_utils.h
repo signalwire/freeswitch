@@ -1425,7 +1425,8 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_push(switch_frame_buffer_t *
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypush(switch_frame_buffer_t *fb, void *ptr);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_pop(switch_frame_buffer_t *fb, void **ptr);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypop(switch_frame_buffer_t *fb, void **ptr);
-
+SWITCH_DECLARE(int) switch_frame_buffer_size(switch_frame_buffer_t *fb);
+								
 typedef struct {
 	int64_t userms;
 	int64_t kernelms;

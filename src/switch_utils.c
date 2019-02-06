@@ -265,6 +265,11 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypop(switch_frame_buffer_t
 	return switch_queue_trypop(fb->queue, ptr);
 }
 
+SWITCH_DECLARE(int) switch_frame_buffer_size(switch_frame_buffer_t *fb)
+{
+	return switch_queue_size(fb->queue);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP)
 {
 	switch_frame_buffer_t *fb = *fbP;
