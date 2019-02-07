@@ -2176,6 +2176,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
+				stats->sent_pkt_count = 0;
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
 		}
@@ -2355,12 +2356,12 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		rtcp_bytes += sdes_bytes;
 
 		/* Prepare next report */
-
-		stats->last_rpt_cycle = stats->cycle;
-		stats->last_rpt_ext_seq = stats->high_ext_seq_recv;
-		stats->last_rpt_ts = rtp_session->write_timer.samplecount;
-		stats->period_pkt_count = 0;
-		stats->sent_pkt_count = 0;
+		if (rtp_session->rtcp_send_msg.header.count) {
+			stats->last_rpt_cycle = stats->cycle;
+			stats->last_rpt_ext_seq = stats->high_ext_seq_recv;
+			stats->last_rpt_ts = rtp_session->write_timer.samplecount;
+			stats->period_pkt_count = 0;
+		}
 
 
 
