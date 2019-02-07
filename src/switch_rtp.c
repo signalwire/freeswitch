@@ -808,6 +808,11 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	switch_socket_t *sock_output = rtp_session->sock_output;
 	switch_time_t now = switch_micro_time_now();
 
+	if (ice->type & ICE_LITE) {
+		// no connectivity checks for ICE-Lite
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (ice->next_run && ice->next_run > now) {
 		return SWITCH_STATUS_BREAK;
 	}

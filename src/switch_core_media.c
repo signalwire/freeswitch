@@ -4008,6 +4008,21 @@ static switch_call_direction_t switch_ice_direction(switch_rtp_engine_t *engine,
 	return r;
 }
 
+static switch_core_media_ice_type_t switch_determine_ice_type(switch_rtp_engine_t *engine, switch_core_session_t *session) {
+	switch_core_media_ice_type_t ice_type = ICE_VANILLA;
+
+	if (switch_channel_var_true(session->channel, "ice_lite")) {
+		ice_type |= ICE_CONTROLLED;
+		ice_type |= ICE_LITE;
+	} else {
+		switch_call_direction_t direction = switch_ice_direction(engine, session);
+		if (direction == SWITCH_CALL_DIRECTION_INBOUND) {
+			ice_type |= ICE_CONTROLLED;
+		}
+	}
+
+	return ice_type;
+}
 
 //?
 static switch_status_t ip_choose_family(switch_media_handle_t *smh, const char *ip)
@@ -4405,8 +4420,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(engine, smh->session) ==
-									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+									switch_determine_ice_type(engine, smh->session),
 									&engine->ice_in
 #endif
 									);
@@ -4460,8 +4474,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 										ICE_GOOGLE_JINGLE,
 										NULL
 #else
-										switch_ice_direction(engine, smh->session) ==
-										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+										switch_determine_ice_type(engine, smh->session),
 										&engine->ice_in
 #endif
 										);
@@ -8699,8 +8712,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(a_engine, session) ==
-									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+									switch_determine_ice_type(a_engine, session),
 									&a_engine->ice_in
 #endif
 									);
@@ -8753,8 +8765,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(a_engine, session) ==
-											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											switch_determine_ice_type(a_engine, session),
 											&a_engine->ice_in
 #endif
 										);
@@ -9065,8 +9076,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(t_engine, session) ==
-											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											switch_determine_ice_type(t_engine, session),
 											&t_engine->ice_in
 #endif
 											);
@@ -9117,8 +9127,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													ICE_GOOGLE_JINGLE,
 													NULL
 #else
-													switch_ice_direction(t_engine, session) ==
-													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+													switch_determine_ice_type(t_engine, session),
 													&t_engine->ice_in
 #endif
 													);
@@ -9393,8 +9402,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(v_engine, session) ==
-											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											switch_determine_ice_type(v_engine, session),
 											&v_engine->ice_in
 #endif
 											);
@@ -9446,8 +9454,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													ICE_GOOGLE_JINGLE,
 													NULL
 #else
-													switch_ice_direction(v_engine, session) ==
-													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+													switch_determine_ice_type(v_engine, session),
 													&v_engine->ice_in
 #endif
 													);
@@ -10364,6 +10371,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					"%s",
 					username, smh->owner_id, smh->session_id, family, ip, username, family, ip, srbuf);
 
+	if (switch_channel_test_flag(smh->session->channel, CF_ICE) && switch_channel_var_true(session->channel, "ice_lite")) {
+		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-lite\r\n");
+	}
 
 	if (a_engine->rmode == SWITCH_MEDIA_FLOW_DISABLED) {
 		goto video;
@@ -10580,9 +10590,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=end-of-candidates\r\n");
-			if (switch_true(switch_channel_get_variable(session->channel, "ice_lite"))) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-lite\r\n");
-			}
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\r\n", a_engine->ssrc, smh->cname);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s a0\r\n", a_engine->ssrc, smh->msid);
