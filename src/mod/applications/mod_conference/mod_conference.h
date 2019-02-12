@@ -1135,7 +1135,9 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 								   char *cid_num,
 								   char *profile,
 								   switch_call_cause_t *cause,
-								   switch_call_cause_t *cancel_cause, switch_event_t *var_event);
+								   switch_call_cause_t *cancel_cause,
+								   switch_event_t *var_event,
+								   char** peer_uuid);
 switch_status_t conference_outcall_bg(conference_obj_t *conference,
 									  char *conference_name,
 									  switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
