@@ -3274,11 +3274,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, s
 	switch_status_t status;
 
 	if ((status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language)) != SWITCH_STATUS_SUCCESS) {
-		const char *str_language_dup = strdup(str_language);
+		char *str_language_dup = strdup(str_language);
 		char *secondary;
-		if ((secondary=strchr(str_language_dup, '-')) != NULL) {
+		if ((secondary = strchr(str_language_dup, '-'))) {
 			*secondary++ = '\0';
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "language %s not found. trying %s by removing %s\n", str_language, str_language_dup, secondary);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "language %s not found. trying %s by removing %s\n", str_language, str_language_dup, secondary);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "lang", str_language_dup);
 			status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language_dup);
 		}
