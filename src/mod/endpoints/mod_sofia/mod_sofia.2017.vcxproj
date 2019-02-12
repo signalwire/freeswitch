@@ -167,6 +167,7 @@
     <ClCompile Include="sip-dig.c" />
     <ClCompile Include="sofia.c" />
     <ClCompile Include="sofia_glue.c" />
+    <ClCompile Include="sofia_json_api.c" />
     <ClCompile Include="sofia_media.c" />
     <ClCompile Include="sofia_presence.c" />
     <ClCompile Include="sofia_reg.c" />
