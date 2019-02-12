@@ -1163,6 +1163,11 @@ void sofia_glue_restart_all_profiles(void);
 const char *sofia_state_string(int state);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
 
+/* sofia api */
+switch_status_t cmd_json_status(char **argv, int argc, switch_stream_handle_t *stream);
+uint32_t sofia_profile_reg_count(sofia_profile_t *profile);
+void add_sofia_json_apis(switch_loadable_module_interface_t **module_interface);
+
 /*
  * Logging control functions
  */
