@@ -741,10 +741,12 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
+	switch_event_merge(event, conference->variables);
 
 	return status;
 }

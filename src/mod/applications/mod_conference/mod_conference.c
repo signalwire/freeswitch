@@ -1133,7 +1133,8 @@ switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *valu
 void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off)
 {
 	conference_member_t *member = NULL;
-	switch_xml_t x_member = NULL, x_members = NULL, x_flags;
+	switch_xml_t x_member = NULL, x_members = NULL, x_flags, x_variables;
+	switch_event_header_t *hp;
 	int moff = 0;
 	char i[30] = "";
 	char *ival = i;
@@ -1217,6 +1218,13 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
 	switch_xml_set_attr_d(x_conference, "run_time", ival);
+
+	x_variables = switch_xml_add_child_d(x_conference, "variables", 0);
+	for (hp = conference->variables->headers; hp; hp = hp->next) {
+		switch_xml_t x_variable = switch_xml_add_child_d(x_variables, "variable", 0);
+		switch_xml_set_attr_d(x_variable, "name", hp->name);
+		switch_xml_set_attr_d(x_variable, "value", hp->value);
+	}
 
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
 	switch_assert(x_members);
@@ -1339,7 +1347,8 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 {
 	conference_member_t *member = NULL;
-	static cJSON *json_conference, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+	static cJSON *json_conference, *json_conference_variables, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+	switch_event_header_t *hp;
 
 	switch_assert(conference != NULL);
 	json_conference = cJSON_CreateObject();
@@ -1377,6 +1386,11 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 
 	if (conference->max_members > 0) {
 		cJSON_AddNumberToObject(json_conference, "max_members", conference->max_members);
+	}
+
+	cJSON_AddItemToObject(json_conference, "variables", json_conference_variables = cJSON_CreateObject());
+	for (hp = conference->variables->headers; hp; hp = hp->next) {
+		cJSON_AddStringToObject(json_conference_variables, hp->name, hp->value);
 	}
 
 	cJSON_AddItemToObject(json_conference, "members", json_conference_members = cJSON_CreateArray());
@@ -3748,10 +3762,22 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
+	if (cfg.profile) {
+		switch_xml_t xml_profile_variables;
+		if ((xml_profile_variables = switch_xml_child(cfg.profile, "variables")) != NULL) {
+			for (xml_kvp = switch_xml_child(xml_profile_variables, "variable"); xml_kvp; xml_kvp = xml_kvp->next) {
+				char *var = (char *) switch_xml_attr_soft(xml_kvp, "name");
+				char *val = (char *) switch_xml_attr_soft(xml_kvp, "value");
+				if (var && val) {
+					conference_set_variable(conference, var, val);
+				}
+			}
+		}
+	}
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 	conference_event_add_data(conference, event);
-	if(conference->verbose_events && channel) {
+	if (conference->verbose_events && channel) {
 		switch_channel_event_set_data(channel, event);
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
