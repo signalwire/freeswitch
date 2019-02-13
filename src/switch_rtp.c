@@ -435,6 +435,8 @@ struct switch_rtp {
 	switch_jb_t *vbw;
 	uint32_t max_missed_packets;
 	uint32_t missed_count;
+	switch_time_t last_media;
+	uint32_t media_timeout;
 	rtp_msg_t write_msg;
 	switch_rtp_crypto_key_t *crypto_keys[SWITCH_RTP_CRYPTO_MAX];
 	int reading;
@@ -2869,6 +2871,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_media_timeout(switch_rtp_t *rtp_session, uint32_t ms)
+{
+	if (!switch_rtp_ready(rtp_session) || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
+					  "%s MEDIA TIMEOUT %s set to %u", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), ms);
+	rtp_session->media_timeout = ms;
+	switch_rtp_reset_media_timer(rtp_session);
+}
+
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max)
 {
 	if (!switch_rtp_ready(rtp_session) || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
@@ -2937,6 +2951,7 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session)
 {
 	rtp_session->missed_count = 0;
+	rtp_session->last_media = switch_micro_time_now();
 }
 
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session)
@@ -5632,6 +5647,10 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 				if (bytes) {
 					int do_cng = 0;
 
+					if (rtp_session->media_timeout) {
+						rtp_session->last_media = switch_micro_time_now();
+					}
+
 					/* Make sure to handle RFC2833 packets, even if we're flushing the packets */
 					if (bytes > rtp_header_len && rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 						rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
@@ -5802,6 +5821,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 		/* version 2 probably rtp, zrtp cookie present means zrtp */
 		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2 || ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE);
+
+		if (rtp_session->media_timeout) {
+			rtp_session->last_media = switch_micro_time_now();
+		}
 
 		if ((*b >= 20) && (*b <= 64)) {
 			if (rtp_session->dtls) {
@@ -7087,6 +7110,31 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	return status;
 }
 
+static void check_timeout(switch_rtp_t *rtp_session)
+{
+
+	switch_time_t now = switch_micro_time_now();
+	uint32_t elapsed = 0;
+
+	if (now >= rtp_session->last_media) {
+		elapsed = (now - rtp_session->last_media) / 1000;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10,
+					  "%s MEDIA TIMEOUT %s %d/%d", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
+					  elapsed, rtp_session->media_timeout);
+
+	if (elapsed > rtp_session->media_timeout) {
+
+		if (rtp_session->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+
+			switch_channel_execute_on(channel, "execute_on_media_timeout");
+			switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+		}
+	}
+}
+
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type,
 						   payload_map_t **pmapP, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
@@ -7293,6 +7341,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
+			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && poll_status != SWITCH_STATUS_SUCCESS && rtp_session->media_timeout && rtp_session->last_media) {
+				check_timeout(rtp_session);
+			}
+
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();
 			}
@@ -7332,9 +7384,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 					if (bytes && status == SWITCH_STATUS_SUCCESS) {
 						rtp_session->missed_count = 0;
-					} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
-						ret = -2;
-						goto end;
+					} else {
+						if (rtp_session->media_timeout && rtp_session->last_media) {
+							check_timeout(rtp_session);
+						} else {
+							if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
+								ret = -2;
+								goto end;
+							}
+						}
 					}
 				}
 
@@ -7385,7 +7443,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->missed_count += (poll_sec * 1000) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20);
 				bytes = 0;
 
-				if (rtp_session->max_missed_packets) {
+				if (rtp_session->media_timeout && rtp_session->last_media) {
+					check_timeout(rtp_session);
+				} else if (rtp_session->max_missed_packets) {
 					if (rtp_session->missed_count >= rtp_session->max_missed_packets) {
 						ret = -2;
 						goto end;
@@ -7743,7 +7803,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	result_continue:
 	timer_check:
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_MUTE]) {
+		if (!rtp_session->media_timeout && rtp_session->flags[SWITCH_RTP_FLAG_MUTE]) {
 			do_cng++;
 		}
 
@@ -7783,6 +7843,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s timeout\n",
 									  rtp_session_name(rtp_session), rtp_type(rtp_session));
+
+					if (rtp_session->media_timeout && rtp_session->last_media) {
+						check_timeout(rtp_session);
+					}
 
 					if (rtp_session->stats.inbound.error_log) {
 						rtp_session->stats.inbound.error_log->flaws++;
@@ -9165,4 +9229,3 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-

@@ -5195,11 +5195,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						int v = atoi(val);
 						if (v >= 0) {
 							profile->rtp_timeout_sec = v;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+											  "rtp-timeout-sec deprecated use media_timeout variable.\n"); 
 						}
 					} else if (!strcasecmp(var, "rtp-hold-timeout-sec") && !zstr(val)) {
 						int v = atoi(val);
 						if (v >= 0) {
 							profile->rtp_hold_timeout_sec = v;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+											  "rtp-hold-timeout-sec deprecated use media_hold_timeout variable.\n"); 
 						}
 					} else if (!strcasecmp(var, "disable-transfer")) {
 						if (switch_true(val)) {

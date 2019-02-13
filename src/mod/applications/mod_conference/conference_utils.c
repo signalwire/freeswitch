@@ -368,15 +368,24 @@ void conference_utils_member_set_flag_locked(conference_member_t *member, member
 	switch_mutex_unlock(member->flag_mutex);
 }
 
+static void check_cleared_flag(conference_member_t *member, member_flag_t flag)
+{
+	if (flag == MFLAG_RUNNING && member->session) {
+		switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
+	}
+}
+
 void conference_utils_member_clear_flag(conference_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 0;
+	check_cleared_flag(member, flag);
 }
 void conference_utils_member_clear_flag_locked(conference_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
 	member->flags[flag] = 0;
 	switch_mutex_unlock(member->flag_mutex);
+	check_cleared_flag(member, flag);
 }
 switch_bool_t conference_utils_member_test_flag(conference_member_t *member, member_flag_t flag)
 {

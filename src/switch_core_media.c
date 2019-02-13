@@ -131,6 +131,8 @@ typedef struct switch_rtp_engine_s {
 	uint8_t codec_reinvites;
 	uint32_t max_missed_packets;
 	uint32_t max_missed_hold_packets;
+	uint32_t media_timeout;
+	uint32_t media_hold_timeout;
 	uint32_t ssrc;
 	uint32_t remote_ssrc;
 	switch_port_t remote_rtcp_port;
@@ -2815,6 +2817,45 @@ static void *get_rtt_payload(void *data, switch_size_t datalen, switch_payload_t
 }
 
 //?
+
+static void check_media_timeout_params(switch_core_session_t *session, switch_rtp_engine_t *engine)
+{
+	switch_media_type_t type = engine->type;
+	const char *val;
+
+	if ((val = switch_channel_get_variable(session->channel, "media_hold_timeout"))) {
+		engine->media_hold_timeout = atoi(val);
+	}
+
+	if ((val = switch_channel_get_variable(session->channel, "media_timeout"))) {
+		engine->media_timeout = atoi(val);
+	}
+
+	if (type == SWITCH_MEDIA_TYPE_VIDEO) {
+		if ((val = switch_channel_get_variable(session->channel, "media_hold_timeout_video"))) {
+			engine->media_hold_timeout = atoi(val);
+		}
+
+		if ((val = switch_channel_get_variable(session->channel, "media_timeout_video"))) {
+			engine->media_timeout = atoi(val);
+		}
+	} else {
+
+		if ((val = switch_channel_get_variable(session->channel, "media_hold_timeout_audio"))) {
+			engine->media_hold_timeout = atoi(val);
+		}
+
+		if ((val = switch_channel_get_variable(session->channel, "media_timeout_audio"))) {
+			engine->media_timeout = atoi(val);
+		}
+	}
+
+	if (switch_rtp_ready(engine->rtp_session) && engine->media_timeout) {
+		switch_rtp_set_media_timeout(engine->rtp_session, engine->media_timeout);
+	}
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 															 switch_io_flag_t flags, int stream_id, switch_media_type_t type)
 {
@@ -2924,9 +2965,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			engine->reset_codec = 0;
 
 			if (switch_rtp_ready(engine->rtp_session)) {
+
+				check_media_timeout_params(session, engine);
+
 				if (type == SWITCH_MEDIA_TYPE_VIDEO) {
 					switch_core_media_set_video_codec(session, 1);
 				} else {
+
 					if (switch_core_media_set_codec(session, 1, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 						*frame = NULL;
 						switch_goto_status(SWITCH_STATUS_GENERR, end);
@@ -2937,6 +2982,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 						int v = atoi(val);
 						if (v >= 0) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+											  "rtp_timeout_sec deprecated use media_timeout variable.\n"); 
 							rtp_timeout_sec = v;
 						}
 					}
@@ -2944,6 +2991,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
 						int v = atoi(val);
 						if (v >= 0) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+											  "rtp_hold_timeout_sec deprecated use media_timeout variable.\n"); 
 							rtp_hold_timeout_sec = v;
 						}
 					}
@@ -5300,11 +5349,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
 					recvonly = 1;
 
+					a_engine->media_timeout = 0;
+					a_engine->media_hold_timeout = 0;
+
 					if (switch_rtp_ready(a_engine->rtp_session)) {
 						switch_rtp_set_max_missed_packets(a_engine->rtp_session, 0);
 						a_engine->max_missed_hold_packets = 0;
 						a_engine->max_missed_packets = 0;
+						switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_timeout);
 					} else {
+						switch_channel_set_variable(session->channel, "media_timeout_audio", "0");
+						switch_channel_set_variable(session->channel, "media_hold_timeout_audio", "0");
 						switch_channel_set_variable(session->channel, "rtp_timeout_sec", "0");
 						switch_channel_set_variable(session->channel, "rtp_hold_timeout_sec", "0");
 					}
@@ -6483,6 +6538,15 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_hold_packets);
 			}
 
+			if (a_engine->media_hold_timeout) {
+				switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_hold_timeout);
+			}
+
+			if (v_engine->media_hold_timeout) {
+				switch_rtp_set_media_timeout(v_engine->rtp_session, v_engine->media_hold_timeout);
+			}
+
+
 			if (!(stream = switch_channel_get_hold_music(session->channel))) {
 				stream = "local_stream://moh";
 			}
@@ -6543,9 +6607,24 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				switch_ivr_bg_media(switch_core_session_get_uuid(session), SMF_REBRIDGE, SWITCH_FALSE, SWITCH_TRUE, 200);
 			}
 
-			if (a_engine->max_missed_packets && a_engine->rtp_session) {
+			if (a_engine->rtp_session) {
 				switch_rtp_reset_media_timer(a_engine->rtp_session);
-				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);
+
+				if (a_engine->max_missed_packets) {
+					switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);
+				}
+
+				if (a_engine->media_hold_timeout) {
+					switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_timeout);
+				}
+			}
+
+			if (v_engine->rtp_session) {
+				switch_rtp_reset_media_timer(v_engine->rtp_session);
+
+				if (v_engine->media_hold_timeout) {
+					switch_rtp_set_media_timeout(v_engine->rtp_session, v_engine->media_timeout);
+				}
 			}
 
 			if (b_channel) {
@@ -8469,6 +8548,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
 		switch_rtp_reset_media_timer(a_engine->rtp_session);
+		check_media_timeout_params(session, a_engine);
+		check_media_timeout_params(session, v_engine);
 	}
 
 	if (a_engine->crypto_type != CRYPTO_INVALID) {
@@ -8702,6 +8783,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_rtp_set_remote_ssrc(a_engine->rtp_session, a_engine->remote_ssrc);
 		}
 
+		check_media_timeout_params(session, a_engine);
+
 		switch_channel_set_flag(session->channel, CF_FS_RTP);
 
 		switch_channel_set_variable_printf(session->channel, "rtp_use_pt", "%d", a_engine->cur_payload_map->pt);
@@ -8855,6 +8938,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+								  "rtp_timeout_sec deprecated use media_timeout variable.\n"); 
 				smh->mparams->rtp_timeout_sec = v;
 			}
 		}
@@ -8862,6 +8947,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+								  "rtp_hold_timeout_sec deprecated use media_hold_timeout variable.\n"); 
 				smh->mparams->rtp_hold_timeout_sec = v;
 			}
 		}
@@ -9449,6 +9536,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				if (v_engine->remote_ssrc) {
 					switch_rtp_set_remote_ssrc(v_engine->rtp_session, v_engine->remote_ssrc);
 				}
+
+				check_media_timeout_params(session, v_engine);
 
 				if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 
@@ -12432,6 +12521,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		{
 			if (a_engine && a_engine->rtp_session) {
 				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_hold_packets);
+				switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_hold_timeout);
+			}
+
+			if (v_engine && v_engine->rtp_session) {
+				switch_rtp_set_media_timeout(v_engine->rtp_session, v_engine->media_hold_timeout);
 			}
 		}
 		break;
@@ -12440,6 +12534,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		{
 			if (a_engine && a_engine->rtp_session) {
 				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);
+				switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_timeout);
+			}
+
+			if (v_engine && v_engine->rtp_session) {
+				switch_rtp_set_media_timeout(v_engine->rtp_session, v_engine->media_timeout);
 			}
 		}
 		break;
@@ -16135,4 +16234,3 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-
