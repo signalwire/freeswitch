@@ -38,6 +38,7 @@
 #endif
 #include <openssl/crypto.h>
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/conf.h>
 #include <openssl/x509v3.h>
 #ifndef OPENSSL_NO_ENGINE
