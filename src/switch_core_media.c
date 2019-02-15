@@ -4923,13 +4923,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			switch(m->m_type) {
 			case sdp_media_audio:
 				smh->rejected_streams[smh->rej_idx++] = sdp_media_audio;
-				break;
+				continue;
 			case sdp_media_video:
 				smh->rejected_streams[smh->rej_idx++] = sdp_media_video;
-				break;
+				continue;
 			case sdp_media_image:
 				smh->rejected_streams[smh->rej_idx++] = sdp_media_image;
-				break;
+				continue;
 			default:
 				break;
 			}
