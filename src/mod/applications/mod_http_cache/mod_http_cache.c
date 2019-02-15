@@ -1733,6 +1733,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 		}
 	}
 
+	context->fh.pre_buffer_datalen = handle->pre_buffer_datalen;
 	if ((status = switch_core_file_open(&context->fh,
 			context->local_path,
 			handle->channels,
@@ -1754,6 +1755,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	handle->interval = context->fh.interval;
 	handle->channels = context->fh.channels;
 	handle->flags |= SWITCH_FILE_NOMUX;
+	handle->pre_buffer_datalen = 0;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
 		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
