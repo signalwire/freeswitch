@@ -940,12 +940,12 @@ static int nua_session_client_response(nua_client_request_t *cr,
   char const *received = NULL;
 
 #define LOG3(m) \
-  SU_DEBUG_3(("nua(%p): %s: %s %s in %u %s\n", \
+  SU_DEBUG_3(("nua(%p): %s: %s %s in %u %s (%u)\n", \
 	      (void *)nh, cr->cr_method_name, (m), \
-	      received ? received : "SDP", status, phrase))
+			  received ? received : "SDP", status, phrase, cr->cr_answer_recv))
 #define LOG5(m) \
-  SU_DEBUG_5(("nua(%p): %s: %s %s in %u %s\n", \
-	      (void *)nh, cr->cr_method_name, (m), received, status, phrase))
+  SU_DEBUG_5(("nua(%p): %s: %s %s in %u %s (%u)\n", \
+			  (void *)nh, cr->cr_method_name, (m), received, status, phrase, cr->cr_answer_recv))
 
  retry:
 
@@ -954,12 +954,16 @@ static int nua_session_client_response(nua_client_request_t *cr,
   else if (!session_get_description(sip, &sdp, &len))
     /* No SDP */;
   else if (cr->cr_answer_recv) {
-    /* Ignore spurious answers after completing O/A */
-	  //LOG3("ignoring duplicate");
-	  //sdp = NULL;
-	  // we need to make sure its *actually* a dup, so we can't assume for now.
-	  cr->cr_answer_recv = 0;
-	  goto retry;
+    if (cr->cr_answer_recv > status) {
+      LOG3("status is older than previous answer, ignoring");
+      sdp = NULL;
+      return 0;
+    } else {
+      // we need to make sure its *actually* a dup, so we can't assume for now.
+      LOG3("multiple answers received, processing");
+      cr->cr_answer_recv = 0;
+      goto retry;
+    }
   }
   else if (cr->cr_offer_sent) {
     /* case 1: answer to our offer */
