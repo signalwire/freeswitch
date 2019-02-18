@@ -378,7 +378,8 @@ typedef enum {
 	SCF_API_EXPANSION = (1 << 22),
 	SCF_SESSION_THREAD_POOL = (1 << 23),
 	SCF_DIALPLAN_TIMESTAMPS = (1 << 24),
-	SCF_CPF_SOFT_PREFIX = (1 << 25)
+	SCF_CPF_SOFT_PREFIX = (1 << 25),
+	SCF_CPF_SOFT_LOOKUP = (1 << 26)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -580,7 +581,8 @@ typedef enum {
 	SWITCH_CPF_SCREEN = (1 << 0),
 	SWITCH_CPF_HIDE_NAME = (1 << 1),
 	SWITCH_CPF_HIDE_NUMBER = (1 << 2),
-	SWITCH_CPF_SOFT_PREFIX = (1 << 3)
+	SWITCH_CPF_SOFT_PREFIX = (1 << 3),
+	SWITCH_CPF_SOFT_LOOKUP = (1 << 4)
 } switch_caller_profile_flag_enum_t;
 typedef uint32_t switch_caller_profile_flag_t;
 

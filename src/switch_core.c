@@ -2347,6 +2347,13 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_CPF_SOFT_PREFIX);
 					}
+				} else if (!strcasecmp(var, "caller-profile-soft-lookup-values") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					} else {
+						switch_clear_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					}
 				}
 			}
 		}

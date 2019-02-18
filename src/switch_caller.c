@@ -100,6 +100,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	if (switch_core_test_flag(SCF_CPF_SOFT_PREFIX)) {
 		switch_set_flag(profile, SWITCH_CPF_SOFT_PREFIX);
 	}
+	if (switch_core_test_flag(SCF_CPF_SOFT_LOOKUP)) {
+		switch_set_flag(profile, SWITCH_CPF_SOFT_LOOKUP);
+	}
 	profile->pool = pool;
 	return profile;
 }
@@ -304,6 +307,14 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
 	}
 
+	if (caller_profile->soft && switch_test_flag(caller_profile, SWITCH_CPF_SOFT_LOOKUP)) {
+		profile_node_t *pn;
+		for (pn = caller_profile->soft; pn; pn = pn->next) {
+			if (!strcasecmp(name, pn->var)) {
+				return pn->val;
+			}
+		}
+	}
 
 	return NULL;
 }
