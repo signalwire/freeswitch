@@ -1188,6 +1188,11 @@ GCC_DIAG_ON(deprecated-declarations)
 				handle->duration = av_rescale_q(context->video_st.st->duration != AV_NOPTS_VALUE ? context->video_st.st->duration : context->fc->duration / AV_TIME_BASE * 1000,
 					context->video_st.st->time_base, AV_TIME_BASE_Q);
 			}
+
+			if (context->fc->bit_rate) {
+				handle->mm.source_kps = context->fc->bit_rate / 1024;
+			}
+
 			if (context->video_st.st->avg_frame_rate.num) {
 				handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
 			} else {
