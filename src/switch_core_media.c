@@ -6840,12 +6840,13 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_rtp_engine_t *v_engine;
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_timer_t timer = { 0 };
-	switch_video_read_flag_t read_flags = SVR_BLOCK;
+	switch_video_read_flag_t read_flags = SVR_FLUSH;
 	switch_core_session_t *b_session = NULL;
 	switch_fps_t fps_data = { 0 };
 	float fps;
 	switch_image_t *last_frame = NULL;
-	
+	int last_w = 0, last_h = 0, kps = 0;
+
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
@@ -6888,11 +6889,36 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, switch_core_session_get_pool(session));
 
+	if (smh->video_write_fh && smh->video_write_fh->mm.source_kps) {
+		int min = 0, max = 10000000;
+		const char *var;
+
+		kps = smh->video_write_fh->mm.source_kps;
+
+		if ((var = switch_channel_get_variable(session->channel, "video_file_min_kps"))) {
+			min = atoi(var);
+			if (min < 0) min = 0;
+		}
+
+		if ((var = switch_channel_get_variable(session->channel, "video_file_max_kps"))) {
+			max = atoi(var);
+			if (max < 0) max = 10000000;
+		}
+
+		if (min && kps < min) kps = min;
+		if (max != 10000000 && kps > max) kps = max;
+		
+		switch_core_media_set_outgoing_bitrate(session, SWITCH_MEDIA_TYPE_VIDEO, kps);
+	}
+
 	while (smh->video_write_thread_running > 0 &&
 		   switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
 		switch_status_t wstatus = SWITCH_STATUS_FALSE;
 
+
+
 		switch_core_timer_next(&timer);
+
 		switch_mutex_lock(v_engine->mh.file_write_mutex);
 
 		//if (smh->video_write_fh && smh->video_write_fh->mm.source_fps && smh->video_write_fh->mm.source_fps != fps) {
@@ -6903,15 +6929,25 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 		if (smh->video_write_fh && !switch_test_flag(smh->video_write_fh, SWITCH_FILE_FLAG_VIDEO_EOF)) {
 			wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, read_flags);
+			if (wstatus == SWITCH_STATUS_BREAK) {
+				switch_core_timer_sync(&timer);
+			}
 
 			if (wstatus == SWITCH_STATUS_SUCCESS) {
+				if (!kps && fr.img && (last_w != fr.img->d_w || last_h != fr.img->d_h)) {
+					kps = switch_calc_bitrate(fr.img->d_w, fr.img->d_h, 1, fps);
+					switch_core_media_set_outgoing_bitrate(session, SWITCH_MEDIA_TYPE_VIDEO, kps);
+					last_w = fr.img->d_w;
+					last_h = fr.img->d_h;
+				}
+				
 				fr.timestamp = timer.samplecount;
 				fr.flags = SFF_USE_VIDEO_TIMESTAMP|SFF_RAW_RTP|SFF_RAW_RTP_PARSE_FRAME;
 				
-				if (smh->vid_params.d_width && smh->vid_params.d_height) {
+				if (fr.img && smh->vid_params.d_width && smh->vid_params.d_height) {
 					switch_img_fit(&fr.img, smh->vid_params.d_width, smh->vid_params.d_height, SWITCH_FIT_SIZE);
 				}
-				
+
 				switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_FORCE, 0);
 
 				switch_img_free(&last_frame);

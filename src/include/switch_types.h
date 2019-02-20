@@ -2816,6 +2816,7 @@ typedef struct switch_mm_s {
 	int cbr;
 	float fps;
 	float source_fps;
+	int source_kps;
 	int vbuf;
 	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;
