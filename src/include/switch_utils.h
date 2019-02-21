@@ -590,7 +590,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *s
 SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_in6 *sa, socklen_t salen);
 
 SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa);
-SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2, switch_bool_t ip_only);
 SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
 
 /*!
