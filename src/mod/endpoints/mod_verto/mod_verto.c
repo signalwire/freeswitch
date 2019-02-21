@@ -2613,10 +2613,14 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ANSWERED");
+		switch_channel_mark_pre_answered(tech_pvt->channel);
 		r = verto_send_media_indication(session, "verto.answer");
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		r = verto_send_media_indication(session, "verto.media");
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
+		switch_channel_mark_pre_answered(tech_pvt->channel);
 		break;
 	default:
 		break;

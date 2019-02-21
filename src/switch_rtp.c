@@ -1255,7 +1255,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			port = switch_sockaddr_get_port(from_addr);
 			host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
 			port2 = switch_sockaddr_get_port(ice->addr);
-			cmp = switch_cmp_addr(from_addr, ice->addr);
+			cmp = switch_cmp_addr(from_addr, ice->addr, SWITCH_FALSE);
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG4,
 							  "STUN from %s:%d %s\n", host, port, cmp ? "EXPECTED" : "IGNORED");
@@ -1265,7 +1265,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				rtp_session->wrong_addrs = 0;
 			} else {
 				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready) &&
-					rtp_session->wrong_addrs > 2 && rtp_session->ice_adj == 0) {
+					(rtp_session->wrong_addrs > 2 || switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) && rtp_session->ice_adj == 0) {
 					do_adj++;
 					rtp_session->ice_adj = 1;
 					rtp_session->wrong_addrs = 0;
@@ -7159,7 +7159,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 	/* RTCP Auto ADJ */
 	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] &&  switch_sockaddr_get_port(rtp_session->rtcp_from_addr)) {
-			if (!switch_cmp_addr(rtp_session->rtcp_from_addr, rtp_session->rtcp_remote_addr)) {
+		if (!switch_cmp_addr(rtp_session->rtcp_from_addr, rtp_session->rtcp_remote_addr, SWITCH_FALSE)) {
 				if (++rtp_session->rtcp_autoadj_tally >= rtp_session->rtcp_autoadj_threshold) {
 					const char *err;
 					uint32_t old = rtp_session->remote_rtcp_port;
@@ -7735,13 +7735,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto recvfrom;
 
 				}
-			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				goto recvfrom;
 			}
 		}
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
-			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
 					const char *err;
 					uint32_t old = rtp_session->remote_port;

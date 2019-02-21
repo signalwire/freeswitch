@@ -2344,7 +2344,7 @@ SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
 	return ntohs((unsigned short) s->sin_addr.s_addr);
 }
 
-SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2, switch_bool_t ip_only)
 {
 	struct sockaddr_in *s1;
 	struct sockaddr_in *s2;
@@ -2372,17 +2372,21 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 
 	switch (ss1->sa_family) {
 	case AF_INET:
-		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
+		if (ip_only) {
+			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr);
+		} else {
+			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
+		}
 	case AF_INET6:
 		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
 			int i;
 
-			if (s16->sin6_port != s26->sin6_port)
-				return 0;
+			if (!ip_only) {
+				if (s16->sin6_port != s26->sin6_port) return 0;
+			}
 
 			for (i = 0; i < 4; i++) {
-				if (*((int32_t *) s16->sin6_addr.s6_addr + i) != *((int32_t *) s26->sin6_addr.s6_addr + i))
-					return 0;
+				if (*((int32_t *) s16->sin6_addr.s6_addr + i) != *((int32_t *) s26->sin6_addr.s6_addr + i)) return 0;
 			}
 
 			return 1;
