@@ -265,6 +265,7 @@ typedef struct {
 	uint8_t sending;
 	uint8_t ready;
 	uint8_t rready;
+	uint8_t init;
 	int missed_count;
 	char last_sent_id[13];
 	switch_time_t last_ok;
@@ -964,7 +965,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		rtp_session->first_stun = rtp_session->last_stun;
 	}
 
-	if (ice->last_ok) {
+	if (ice->last_ok && (!rtp_session->dtls || rtp_session->dtls->state == DS_READY)) {
 		ref_point = ice->last_ok;
 	} else {
 		ref_point = rtp_session->first_stun;
@@ -1257,19 +1258,29 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			port2 = switch_sockaddr_get_port(ice->addr);
 			cmp = switch_cmp_addr(from_addr, ice->addr, SWITCH_FALSE);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG4,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2,
 							  "STUN from %s:%d %s\n", host, port, cmp ? "EXPECTED" : "IGNORED");
 
+			if (ice->init && !cmp && switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) {
+				do_adj++;
+				rtp_session->ice_adj++;
+				rtp_session->wrong_addrs = 0;
+				ice->init = 0;
+			}
+			
 			if (cmp) {
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			} else {
-				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready) &&
-					(rtp_session->wrong_addrs > 2 || switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) && rtp_session->ice_adj == 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10, "ICE %d dt:%d i:%d i2:%d w:%d cmp:%d adj:%d\n", elapsed, (rtp_session->dtls && rtp_session->dtls->state != DS_READY), !ice->ready, !ice->rready, rtp_session->wrong_addrs, switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE), rtp_session->ice_adj);
+
+				if ((rtp_session->dtls && rtp_session->dtls->state != DS_READY) ||
+					((!ice->ready || !ice->rready) && (rtp_session->wrong_addrs > 2 || switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) &&
+					 rtp_session->ice_adj < 10)) {
 					do_adj++;
-					rtp_session->ice_adj = 1;
+					rtp_session->ice_adj++;
 					rtp_session->wrong_addrs = 0;
-				} else if (rtp_session->wrong_addrs > 10 || elapsed >= 10000) {
+				} else if (rtp_session->wrong_addrs > 10 || elapsed >= 5000) {
 					do_adj++;
 				}
 
@@ -4949,6 +4960,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	ice->pass = "";
 	ice->rpass = "";
 	ice->next_run = switch_micro_time_now();
+	ice->init = 1;
 
 	if (password) {
 		ice->pass = switch_core_strdup(rtp_session->pool, password);
