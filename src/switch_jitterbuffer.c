@@ -1140,8 +1140,8 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 		seq = ntohs(*((uint16_t *) var));
 		then = (intptr_t) val;
 
-		if (then != 1 && switch_time_now() - then < RENACK_TIME) {
-			//jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
+		if (then != 1 && ((uint32_t)(switch_time_now() - then)) < RENACK_TIME) {
+			jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
 			continue;
 		}
 
