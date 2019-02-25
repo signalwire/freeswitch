@@ -3214,7 +3214,7 @@ SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switc
 	}
 
 	tv.tv_sec = ms / 1000;
-	tv.tv_usec = (ms % 1000) * ms;
+	tv.tv_usec = (ms % 1000) * 1000;
 
 	s = select(sock + 1, (flags & SWITCH_POLL_READ) ? rfds : NULL, (flags & SWITCH_POLL_WRITE) ? wfds : NULL, (flags & SWITCH_POLL_ERROR) ? efds : NULL, &tv);
 
@@ -3320,7 +3320,7 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 	}
 
 	tv.tv_sec = ms / 1000;
-	tv.tv_usec = (ms % 1000) * ms;
+	tv.tv_usec = (ms % 1000) * 1000;
 
 	s = select(max_fd + 1, (flags & SWITCH_POLL_READ) ? rfds : NULL, (flags & SWITCH_POLL_WRITE) ? wfds : NULL, (flags & SWITCH_POLL_ERROR) ? efds : NULL, &tv);
 
