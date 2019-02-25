@@ -740,7 +740,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 
 	if (errmsg) {
 		if (!switch_stristr("already exists", errmsg) && !switch_stristr("duplicate key name", errmsg)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s SQL ERR [%s]\n%s\n", (type ? type : "Unknown"), errmsg, sql);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s] %s SQL ERR [%s]\n%s\n", dbh->name, (type ? type : "Unknown"), errmsg, sql);
 		}
 		if (err) {
 			*err = errmsg;
@@ -2263,7 +2263,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	}
 
 	if (errmsg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ERROR [%s]\n", errmsg);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ERROR [%s], [%s]\n", errmsg, qm->event_db->name);
 		switch_safe_free(errmsg);
 		goto end;
 	}
