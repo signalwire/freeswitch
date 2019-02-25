@@ -699,7 +699,11 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "VPX VER:%s VPX_IMAGE_ABI_VERSION:%d VPX_CODEC_ABI_VERSION:%d\n",
 		vpx_codec_version_str(), VPX_IMAGE_ABI_VERSION, VPX_CODEC_ABI_VERSION);
 
-	context->picture_id =  13; // picture Id may start from random value and must be incremented on each frame
+	if (!context->is_vp9) {
+		context->picture_id =  13; // picture Id may start from random value and must be incremented on each frame
+	} else {
+		context->vp9.picture_id = 13;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -708,7 +712,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 {
 	vpx_payload_descriptor_t *payload_descriptor;
 	uint8_t *body, *c = NULL;
-	uint32_t hdrlen = 0, payload_size = 0, packet_size = 0, start = 0, key = 0;
+	uint32_t hdrlen = 0, payload_size = 0, max_payload_size = 0, start = 0, key = 0;
 	switch_size_t remaining_bytes = 0;
 	switch_status_t status;
 
@@ -755,11 +759,6 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	}
 
 	body = ((uint8_t *)frame->data) + hdrlen;
-	packet_size = vpx_globals.rtp_slice_size;
-	payload_size = packet_size - hdrlen;
-	// else add extended TBD
-
-	frame->datalen = hdrlen;
 
 	if (context->is_vp9) {
 		payload_descriptor->vp9.start = start;
@@ -769,28 +768,14 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 			payload_descriptor->vp9.have_pid = 1;
 
 			if (payload_descriptor->vp9.have_pid) {
-
-				if (context->vp9.picture_id < 0) context->vp9.picture_id = 0;
-
 				if (context->vp9.picture_id > 0x7f) {
 					*body++ = (context->vp9.picture_id >> 8) | 0x80;
 					*body++ = context->vp9.picture_id & 0xff;
-					payload_size--;
-					frame->datalen++;
+					hdrlen += 2;
 				} else {
 					*body++ = context->vp9.picture_id;
+					hdrlen++;
 				}
-
-
-				payload_size--;
-				frame->datalen++;
-			}
-
-			if (start) {
-				context->vp9.picture_id++;
-#ifdef DEBUG_VP9
-				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sending pid: %d\n", context->vp9.picture_id);
-#endif
 			}
 
 			if (key) {
@@ -803,8 +788,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 				ss->y = 0;
 				ss->zero = 0;
 				body++;
-				payload_size--;
-				frame->datalen++;
+				hdrlen++;
 
 				if (0) { // y ?
 					uint16_t *w;
@@ -820,19 +804,16 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 					*w = (uint16_t)context->codec_settings.video.width;
 					*h = (uint16_t)context->codec_settings.video.height;
 
-					payload_size-= (ss->n_s + 1) * 4;
-					frame->datalen+= (ss->n_s + 1) * 4;
+					hdrlen += (ss->n_s + 1) * 4;
 				}
 			} else {
 				payload_descriptor->vp9.have_p_layer = 1;
 			}
 		}
-
-	} else {
-		payload_descriptor->vp8.start = start;
 	}
 
 	if (!context->is_vp9) {
+		payload_descriptor->vp8.start = start;
 		
 		payload_descriptor->vp8.extended = 1;	/* REQUIRED header. */
 		
@@ -853,21 +834,39 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		payload_descriptor->vp8.KEYIDX = 0;
 	}
 
+	/*
+		Try to split payload to packets evenly(with largest at the end) up to vpx_globals.rtp_slice_size,
+		(assume hdrlen constant across all packets of the same picture).
+		It keeps packets being transmitted in order.
+		Without it last (and thus the smallest one) packet usually arrive out of order
+		(before the previous one)
+	*/
+	max_payload_size = vpx_globals.rtp_slice_size - hdrlen;
+	payload_size = remaining_bytes / ((remaining_bytes + max_payload_size - 1) / max_payload_size);
+
 	if (remaining_bytes <= payload_size) {
 		switch_buffer_read(context->pbuffer, body, remaining_bytes);
 		context->pkt = NULL;
-		frame->datalen += remaining_bytes;
+		frame->datalen = hdrlen + remaining_bytes;
 		frame->m = 1;
-		if (!context->is_vp9) {
+
+		// increment and wrap picture_id (if needed) after the last picture's packet
+		if (context->is_vp9) {
+			context->vp9.picture_id++;
+			if ((uint16_t)context->vp9.picture_id > 0x7fff) {
+				context->vp9.picture_id = 0;
+			}
+		} else {
 			context->picture_id++;
-			if (context->picture_id > 0x7fff) {
+			if ((uint16_t)context->picture_id > 0x7fff) {
 				context->picture_id = 0;
 			}
 		}
+
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_buffer_read(context->pbuffer, body, payload_size);
-		frame->datalen += payload_size;
+		frame->datalen = hdrlen + payload_size;
 		frame->m = 0;
 		status = SWITCH_STATUS_MORE_DATA;
 	}
