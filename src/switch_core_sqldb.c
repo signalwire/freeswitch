@@ -380,7 +380,7 @@ SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn()
+SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_database_interface_t *database_interface;

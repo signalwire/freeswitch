@@ -2668,7 +2668,7 @@ SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_dat
 /*!
 \brief Returns error if no suitable database interface found to serve core db dsn.
 */
-SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn();
+SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn(void);
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
