@@ -133,6 +133,8 @@
     <ClCompile Include="..\..\libyuv\source\compare.cc" />
     <ClCompile Include="..\..\libyuv\source\compare_common.cc" />
     <ClCompile Include="..\..\libyuv\source\compare_gcc.cc" />
+    <ClCompile Include="..\..\libyuv\source\compare_mmi.cc" />
+    <ClCompile Include="..\..\libyuv\source\compare_msa.cc" />
     <ClCompile Include="..\..\libyuv\source\compare_neon.cc" />
     <ClCompile Include="..\..\libyuv\source\compare_neon64.cc" />
     <ClCompile Include="..\..\libyuv\source\compare_win.cc" />
@@ -152,14 +154,15 @@
     <ClCompile Include="..\..\libyuv\source\rotate_argb.cc" />
     <ClCompile Include="..\..\libyuv\source\rotate_common.cc" />
     <ClCompile Include="..\..\libyuv\source\rotate_gcc.cc" />
-    <ClCompile Include="..\..\libyuv\source\rotate_mips.cc" />
+    <ClCompile Include="..\..\libyuv\source\rotate_mmi.cc" />
+    <ClCompile Include="..\..\libyuv\source\rotate_msa.cc" />
     <ClCompile Include="..\..\libyuv\source\rotate_neon.cc" />
     <ClCompile Include="..\..\libyuv\source\rotate_neon64.cc" />
     <ClCompile Include="..\..\libyuv\source\rotate_win.cc" />
     <ClCompile Include="..\..\libyuv\source\row_any.cc" />
     <ClCompile Include="..\..\libyuv\source\row_common.cc" />
     <ClCompile Include="..\..\libyuv\source\row_gcc.cc" />
-    <ClCompile Include="..\..\libyuv\source\row_mips.cc" />
+    <ClCompile Include="..\..\libyuv\source\row_mmi.cc" />
     <ClCompile Include="..\..\libyuv\source\row_msa.cc" />
     <ClCompile Include="..\..\libyuv\source\row_neon.cc" />
     <ClCompile Include="..\..\libyuv\source\row_neon64.cc" />
@@ -168,7 +171,8 @@
     <ClCompile Include="..\..\libyuv\source\scale_any.cc" />
     <ClCompile Include="..\..\libyuv\source\scale_argb.cc" />
     <ClCompile Include="..\..\libyuv\source\scale_common.cc" />
-    <ClCompile Include="..\..\libyuv\source\scale_mips.cc" />
+    <ClCompile Include="..\..\libyuv\source\scale_mmi.cc" />
+    <ClCompile Include="..\..\libyuv\source\scale_msa.cc" />
     <ClCompile Include="..\..\libyuv\source\scale_neon.cc" />
     <ClCompile Include="..\..\libyuv\source\scale_neon64.cc" />
     <ClCompile Include="..\..\libyuv\source\scale_win.cc" />
