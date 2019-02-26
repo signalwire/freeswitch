@@ -1610,7 +1610,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 						}
 					}
 
-					r = result;
+					r = (result == SWITCH_STATUS_SUCCESS);
 				}
 			}
 		}
