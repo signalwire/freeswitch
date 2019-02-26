@@ -2340,6 +2340,20 @@ static void switch_load_core_config(const char *file)
 										  "rtp-retain-crypto-keys enabled. Could be used to decrypt secure media.\n");
 					}
 					switch_core_set_variable("rtp_retain_crypto_keys", val);
+				} else if (!strcasecmp(var, "caller-profile-soft-variables-uses-prefix") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_CPF_SOFT_PREFIX);
+					} else {
+						switch_clear_flag((&runtime), SCF_CPF_SOFT_PREFIX);
+					}
+				} else if (!strcasecmp(var, "caller-profile-soft-lookup-values") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					} else {
+						switch_clear_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					}
 				}
 			}
 		}
