@@ -13,5 +13,7 @@ vpx_config.h
 vpx_dsp_rtcd.h
 vpx_scale_rtcd.h
 vpx_version.h
+tools-generic-gnu.mk
+tools/tiny_ssim
 
 !build/make/Makefile

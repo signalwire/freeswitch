@@ -81,3 +81,7 @@ codecs/mod_g723_1/Win32/
 codecs/mod_g729/Win32/
 directories/mod_ldap/Win32/
 languages/mod_managed/Win32/
+/applications/mod_av/test/Makefile
+/applications/mod_av/test/Makefile.in
+/event_handlers/mod_rayo/test/Makefile
+/event_handlers/mod_rayo/test/Makefile.in
