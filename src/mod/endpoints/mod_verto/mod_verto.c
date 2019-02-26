@@ -1798,7 +1798,13 @@ done:
 		*wsh->buffer = '\0';
 
 		while(jsock->profile->running) {
-			int pflags = switch_wait_sock(jsock->client_socket, 3000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+			int pflags;
+
+			if (wsh->ssl && SSL_pending(wsh->ssl) > 0) {
+				pflags = SWITCH_POLL_READ;
+			} else {
+				pflags = switch_wait_sock(jsock->client_socket, 3000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+			}
 
 			if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 			if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
@@ -1867,7 +1873,13 @@ static void client_run(jsock_t *jsock)
 	}
 
 	while(jsock->profile->running) {
-		int pflags = switch_wait_sock(jsock->client_socket, 50, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+		int pflags;
+
+		if (jsock->ws.ssl && SSL_pending(jsock->ws.ssl) > 0) {
+			pflags = SWITCH_POLL_READ;
+		} else {
+			pflags = switch_wait_sock(jsock->client_socket, 50, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+		}
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
