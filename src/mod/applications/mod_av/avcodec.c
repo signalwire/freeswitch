@@ -2052,7 +2052,7 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 #ifdef AV_CODEC_FLAG_PASS2
 						flags |= AV_CODEC_FLAG_PASS2;
 #endif
-					} else if (!strcasecmp(argv[i], "FILTER")) {
+					} else if (!strcasecmp(argv[i], "LOOP_FILTER")) {
 #ifdef AV_CODEC_FLAG_LOOP_FILTER
 						flags |= AV_CODEC_FLAG_LOOP_FILTER;
 #endif
