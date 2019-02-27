@@ -579,10 +579,10 @@ libs/libedit/src/.libs/libedit.a:
 libs/libzrtp/libzrtp.a:
 	cd libs/libzrtp && $(MAKE)
 
-libs/libvpx/Makefile:
+libs/libvpx/Makefile: libs/libvpx/.update
 	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384 --extra-cflags="$(VISIBILITY_FLAG)"
 
-libs/libvpx/libvpx.a: libs/libvpx/Makefile
+libs/libvpx/libvpx.a: libs/libvpx/Makefile libs/libvpx/.update
 	@cd libs/libvpx && $(MAKE)
 
 libs/sofia-sip/Makefile:
