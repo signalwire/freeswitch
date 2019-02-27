@@ -24,7 +24,6 @@
       </timezones>
     </configuration>
 
-    <X-PRE-PROCESS cmd="include" data="./vpx.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="./av.conf.xml"/>
   </section>
 
