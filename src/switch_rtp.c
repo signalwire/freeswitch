@@ -6146,6 +6146,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						stat = 0;
 						sbytes = 0;
 						*bytes = 0;
+						if (rtp_session->stats.rtcp.pkt_count) {
+							rtp_session->stats.rtcp.period_pkt_count--;
+							rtp_session->stats.rtcp.pkt_count--;
+						}
 						switch_mutex_unlock(rtp_session->ice_mutex);
 						goto more;
 					}
