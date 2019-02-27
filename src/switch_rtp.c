@@ -2073,6 +2073,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 			cur_nack[nack_ttl++] = nack;
 		}
+		if (nack_ttl) {
+			rtcp_ok = 1;
+			rtcp_fb = 1;
+		}
 	}
 
 
@@ -2080,7 +2084,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	if (rtp_session->rtcp_sent_packets < 4) {
 		rate = 4000;
 	} else  {
-		if (rtp_session->pli_count || rtp_session->fir_count || nack_ttl || rtp_session->tmmbr || rtp_session->tmmbn) {
+		if (rtp_session->pli_count || rtp_session->fir_count || rtp_session->tmmbr || rtp_session->tmmbn) {
 			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MARK BW/FIR ETC %d %d\n", rtp_session->pli_count, rtp_session->fir_count);
 			rtcp_ok = 1;
 			rtcp_fb = 1;
