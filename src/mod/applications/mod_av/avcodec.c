@@ -435,7 +435,9 @@ const char *get_profile_name(int codec_id)
 		case AV_CODEC_ID_H263: return "H263";
 		case AV_CODEC_ID_H263P: return "H263+";
 		case AV_CODEC_ID_H264: return "H264";
+#ifdef AV_CODEC_ID_H265
 		case AV_CODEC_ID_H265: return "H265";
+#endif
 	}
 
 	return "NONE";
