@@ -8,12 +8,12 @@ mod_opusfile_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_opusfile_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 if HAVE_OPUSFILE_DECODE
-mod_opusfile_la_CFLAGS += -I$(OPUSFILE_DECODE_CFLAGS)
+mod_opusfile_la_CFLAGS += $(OPUSFILE_DECODE_CFLAGS)
 mod_opusfile_la_LIBADD += $(OPUSFILE_DECODE_LIBS)
 endif
 
 if HAVE_OPUSFILE_ENCODE
-mod_opusfile_la_CFLAGS += -I$(OPUSFILE_ENCODE_CFLAGS) -DHAVE_OPUSFILE_ENCODE
+mod_opusfile_la_CFLAGS += $(OPUSFILE_ENCODE_CFLAGS) -DHAVE_OPUSFILE_ENCODE
 mod_opusfile_la_LIBADD += $(OPUSFILE_ENCODE_LIBS)
 endif
 
