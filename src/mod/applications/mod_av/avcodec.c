@@ -520,7 +520,7 @@ static void init_profile(avcodec_profile_t *aprofile, const char *name)
 
 	if (!strcasecmp(name, "H264")) {
 		aprofile->ctx.profile = FF_PROFILE_H264_BASELINE;
-		aprofile->ctx.level = 41;
+		aprofile->ctx.level = 31;
 #ifdef AV_CODEC_FLAG_PSNR
 		aprofile->ctx.flags |= AV_CODEC_FLAG_PSNR;
 #endif
