@@ -162,8 +162,8 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 	my_dump_int(me_range);
 	my_dump_uint(slice_flags);
 	my_dump_int(mb_decision);
-	my_dump_int(scenechange_threshold);
-	my_dump_int(noise_reduction);
+	// my_dump_int(scenechange_threshold);
+	// my_dump_int(noise_reduction);
 	// my_dump_int(me_threshold);
 	// my_dump_int(mb_threshold);
 	my_dump_int(intra_dc_precision);
@@ -171,14 +171,14 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 	my_dump_int(skip_bottom);
 	my_dump_int(mb_lmin);
 	my_dump_int(mb_lmax);
-	my_dump_int(me_penalty_compensation);
+	// my_dump_int(me_penalty_compensation);
 	my_dump_int(bidir_refine);
-	my_dump_int(brd_scale);
+	// my_dump_int(brd_scale);
 	my_dump_int(keyint_min);
 	my_dump_int(refs);
-	my_dump_int(chromaoffset);
+	// my_dump_int(chromaoffset);
 	my_dump_int(mv0_threshold);
-	my_dump_int(b_sensitivity);
+	// my_dump_int(b_sensitivity);
 	my_dump_enum(color_primaries);
 	my_dump_enum(color_trc);
 	my_dump_enum(colorspace);
@@ -253,9 +253,9 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 	my_dump_int(debug_mv);
 	my_dump_int(sub_text_format);
 	my_dump_int(trailing_padding);
-	my_dump_int64(max_pixels);
-	my_dump_int(hwaccel_flags);
-	my_dump_int(apply_cropping);
+	// my_dump_int64(max_pixels);
+	// my_dump_int(hwaccel_flags);
+	// my_dump_int(apply_cropping);
 
 #if 0
 	// depracated
