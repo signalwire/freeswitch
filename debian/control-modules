@@ -621,6 +621,11 @@ Module: formats/mod_webm
 Description: Adds mod_webm
  Adds mod_webm.
 
+Module: formats/mod_opusfile
+Description: mod_opusfile
+ Adds mod_opusfile.
+Build-Depends: libopusfile-dev
+
 ## mod/languages
 
 Module: languages/mod_basic
