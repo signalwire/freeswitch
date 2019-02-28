@@ -2178,15 +2178,19 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	*/
 	switch_core_hash_init(&event_hash);
 
+	/* 
+		Pre-load core modules.
+		Do not pre-load modules which may use databases,
+		use appropriate section.
+	*/
 	switch_loadable_module_load_module_ex("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
 	switch_loadable_module_load_module_ex("", "CORE_PCM_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
 	switch_loadable_module_load_module_ex("", "CORE_SPEEX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
-#ifdef SWITCH_HAVE_YUV
-#ifdef SWITCH_HAVE_VPX
-	switch_loadable_module_load_module_ex("", "CORE_VPX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
-#endif
-#endif
 
+	/*
+		Loading pre-load modules.
+		Database modules must be loaded here.
+	*/
 	if ((xml = switch_xml_open_cfg(precf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
 		if ((mods = switch_xml_child(cfg, "modules"))) {
@@ -2252,6 +2256,18 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	switch_core_hash_destroy(&event_hash);
 
+	/*
+		To perevent locking.
+		Core modules which may use databases should be pre-loaded here
+		(databases are loaded already).
+	*/
+#ifdef SWITCH_HAVE_YUV
+#ifdef SWITCH_HAVE_VPX
+	switch_loadable_module_load_module_ex("", "CORE_VPX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
+#endif
+#endif
+
+	/* Loading common modules */
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
 		if ((mods = switch_xml_child(cfg, "modules"))) {
