@@ -384,6 +384,11 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 		break;
 	}
 
+	if (say_date) {
+		say_dow = say_day = say_month = say_year = 1;
+		say_today = say_yesterday = 0;
+	}
+
 	if (say_today) {
 		say_file("time/today.wav");
 	}
@@ -406,11 +411,6 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
     if (say_year) {
         say_args->gender = SSG_NEUTER;
         say_num(tm.tm_year + 1900, SSM_PRONOUNCED_YEAR);
-    }
-
-    if (say_date) {
-        say_dow = say_day = say_month = say_year = 1;
-        say_today = say_yesterday = 0;
     }
 
 	if (say_time) {
