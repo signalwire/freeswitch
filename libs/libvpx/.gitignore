@@ -15,5 +15,13 @@ vpx_scale_rtcd.h
 vpx_version.h
 tools-generic-gnu.mk
 tools/tiny_ssim
-
+.install-bins
+.install-docs
+.install-libs
+.install-srcs
+tools-x86_64-linux-gcc.mk
+tools.dox
+tools.doxy
+tools/tiny_ssim.dox
+								
 !build/make/Makefile
