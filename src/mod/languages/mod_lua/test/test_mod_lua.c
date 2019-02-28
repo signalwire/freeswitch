@@ -49,7 +49,7 @@ FST_CORE_BEGIN("conf")
 			switch_api_execute("lua", "test_json.lua", NULL, &stream);
 
 			if (stream.data) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "LUA DATA: %s\n", stream.data);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "LUA DATA: %s\n", (char *)stream.data);
 				fst_check(strstr(stream.data, "+OK") == stream.data);
 				free(stream.data);
 			}
