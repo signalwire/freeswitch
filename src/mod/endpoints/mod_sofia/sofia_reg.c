@@ -1394,11 +1394,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			}
 		}
 
-		if (!is_wss && !is_ws && uparams && switch_stristr("transport=ws", uparams)) {
-			is_nat = "ws";
-			is_ws += 1;
-		}
-
 		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
 			is_tls += 2;
