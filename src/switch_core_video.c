@@ -578,6 +578,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 	if (img->fmt != SWITCH_IMG_FMT_I420 && img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
 	if (*new_img) {
+		new_fmt = (*new_img)->fmt;
 		if ((*new_img)->fmt != SWITCH_IMG_FMT_I420 && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB) return;
 		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_h ) {
 			new_fmt = (*new_img)->fmt;
@@ -2731,6 +2732,149 @@ end:
 
 #endif
 
+static void my_png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+	switch_buffer_t *data_buffer = (switch_buffer_t *)png_get_io_ptr(png_ptr);
+	switch_buffer_write(data_buffer, data, length);
+}
+
+static void my_png_flush(png_structp png_ptr)
+{
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, char **urlP)
+{
+	int width, height;
+	png_byte color_type;
+	png_byte bit_depth;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_bytep *row_pointers = NULL;
+	int row_bytes;
+	int y;
+	png_byte *buffer = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_buffer_t *data_buffer = NULL;
+	unsigned char *head;
+
+	width = img->d_w;
+	height = img->d_h;
+	bit_depth = 8;
+	color_type = PNG_COLOR_TYPE_RGB;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		color_type = PNG_COLOR_TYPE_RGBA;
+	}
+
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+	if (!png_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_write_struct failed");
+		goto end;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_info_struct failed");
+		goto end;
+	}
+	
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during init_io");
+		goto end;
+	}
+
+	switch_buffer_create_dynamic(&data_buffer, 1024, 1024, 0);
+	png_set_write_fn(png_ptr, data_buffer, my_png_write_data, my_png_flush);
+	//png_init_io(png_ptr, fp);
+	
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during writing header");
+		goto end;
+	}
+
+	png_set_IHDR(png_ptr, info_ptr, width, height,
+				 bit_depth, color_type, PNG_INTERLACE_NONE,
+				 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	png_write_info(png_ptr, info_ptr);
+
+	row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "size: %dx%d row_bytes:%d color_type:%d bit_dept:%d\n", width, height, row_bytes, color_type, bit_depth);
+
+	buffer = (png_byte *)malloc(row_bytes * height);
+	switch_assert(buffer);
+
+	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+	switch_assert(row_pointers);
+
+	for (y = 0; y < height; y++) {
+		row_pointers[y] = buffer + row_bytes * y;
+	}
+
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+					img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+					img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+					buffer, width * 3,
+					width, height);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		ARGBToABGR(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+			buffer, row_bytes, width, height);
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during writing bytes");
+		goto end;
+	}
+
+	//png_set_rows(png_ptr, info_ptr, row_pointers);	
+	//png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);	
+	png_write_image(png_ptr, row_pointers);
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during end of write");
+		goto end;
+	}
+
+	png_write_end(png_ptr, info_ptr);
+
+	if ((head = (unsigned char *) switch_buffer_get_head_pointer(data_buffer))) {
+		switch_size_t olen = 0, blen = 0;
+		unsigned char *out = NULL;
+		const char *header = "data:image/png;base64,";
+		
+		blen = switch_buffer_len(data_buffer);
+		olen = blen * 4;
+		
+		if (olen > strlen(header) + 1) {
+			switch_zmalloc(out, olen);
+
+			switch_snprintf((char *)out, strlen(header) + 1, header);
+			switch_b64_encode(head, blen, out + strlen(header), olen - strlen(header));
+			*urlP = (char *)out;
+		} else {
+			status = SWITCH_STATUS_MEMERR;
+			goto end;
+		}
+	}
+
+	status = SWITCH_STATUS_SUCCESS;
+
+end:
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		*urlP = NULL;
+	}
+
+	switch_buffer_destroy(&data_buffer);
+	switch_safe_free(buffer);
+	switch_safe_free(row_pointers);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	return status;
+}
 
 #ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED /* available from libpng 1.6.0 */
 
@@ -2777,6 +2921,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 
 #else
 
+
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
 {
 	int width, height;
@@ -2795,6 +2940,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 	height = img->d_h;
 	bit_depth = 8;
 	color_type = PNG_COLOR_TYPE_RGB;
+
+	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		color_type = PNG_COLOR_TYPE_RGBA;
+	}
 
 	fp = fopen(file_name, "wb");
 	if (!fp) {
@@ -2845,15 +2994,15 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 		row_pointers[y] = buffer + row_bytes * y;
 	}
 
-	I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
-				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
-				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
-				buffer, width * 3,
-				width, height);
-
-	for(y = height - 1; y > 0; y--) {
-		// todo, check overlaps
-		memcpy(row_pointers[y], buffer + row_bytes * y, width * 3);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+					img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+					img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+					buffer, width * 3,
+					width, height);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		ARGBToABGR(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+			buffer, row_bytes, width, height);
 	}
 
 	if (setjmp(png_jmpbuf(png_ptr))) {

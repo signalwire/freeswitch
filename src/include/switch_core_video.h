@@ -393,7 +393,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char *file_name, swit
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char *file_name);
 SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name);
 SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
-
+SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, char **urlP);
+																
 /*!\brief put a small img over a big IMG at position x,y, with alpha transparency
 *
 * Both IMG and img must be non-NULL
