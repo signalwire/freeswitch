@@ -189,7 +189,7 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			profile->suffix++;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started: %s\n", profile->logfile);
 
 		goto end;
 	}
