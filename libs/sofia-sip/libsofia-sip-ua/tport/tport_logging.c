@@ -386,7 +386,7 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
     size_t len = iov[i].mv_len;
     if (len > n)
       len = n;
-    if (fwrite(iov[i].mv_base, len, 1, mr->mr_dump_file) != len)
+    if (fwrite(iov[i].mv_base, len, 1, mr->mr_dump_file) != 1)
       break;
     n -= len;
   }
