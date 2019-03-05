@@ -10017,6 +10017,46 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 
 }
 
+switch_status_t sofia_locate_user(char* user, switch_core_session_t *session, sip_t const *sip, switch_xml_t* x_user)
+{
+	char *username, *domain;
+	switch_event_t *v_event = NULL;
+	switch_status_t result = SWITCH_STATUS_FALSE;
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(user)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(username = switch_core_session_strdup(session, user))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(domain = strchr(username, '@'))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*domain++ = '\0';
+
+	if (switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS) == SWITCH_STATUS_SUCCESS) {
+		sip_unknown_t *un;
+		for (un = sip->sip_unknown; un; un = un->un_next) {
+			switch_event_add_header_string(v_event, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
+		};
+	}
+
+	result = switch_xml_locate_user_merged("id", username, domain, NULL, x_user, v_event);
+
+	if (v_event) {
+		switch_event_destroy(&v_event);
+	}
+
+	return result;
+}
+
 void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[])
 {
 	char key[128] = "";
@@ -10345,7 +10385,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if (!is_auth && sofia_test_pflag(profile, PFLAG_AUTH_CALLS) && sofia_test_pflag(profile, PFLAG_BLIND_AUTH)) {
-		char *user;
+		char *user = NULL;
 		switch_status_t blind_result = SWITCH_STATUS_FALSE;
 
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
@@ -10354,15 +10394,14 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		if (sip && sip->sip_from) {
 			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
-			switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS);
-			for (un = sip->sip_unknown; un; un = un->un_next) {
-				switch_event_add_header_string(v_event, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
-			};
-			blind_result = switch_ivr_set_user_extended(session, user, v_event);
-			switch_event_destroy(&v_event);
+			blind_result = sofia_locate_user(user, session, sip, &x_user);
 		}
-		if(!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
+		if (!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
 			is_auth++;
+		} else if (sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "blind auth enforce result enabled and couldn't find user %s, rejecting call\n", user);
+			nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
+			goto fail;
 		}
 	}
 
@@ -10406,21 +10445,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (*acl_token) {
 		switch_channel_set_variable(channel, "acl_token", acl_token);
-		if (strchr(acl_token, '@')) {
-			switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS);
-			for (un = sip->sip_unknown; un; un = un->un_next) {
-				switch_event_add_header_string(v_event, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
-			};
-			if (switch_ivr_set_user_extended(session, acl_token, v_event) == SWITCH_STATUS_SUCCESS) {
-				switch_event_destroy(&v_event);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
-			} else {
-				switch_event_destroy(&v_event);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
-				if(sofia_test_pflag(profile, PFLAG_AUTH_REQUIRE_USER)) {
-					nua_respond(nh, SIP_480_TEMPORARILY_UNAVAILABLE, TAG_END());
-					goto fail;
-				}
+		if (sofia_locate_user(acl_token, session, sip, &x_user) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
+			if (sofia_test_pflag(profile, PFLAG_AUTH_REQUIRE_USER)) {
+				nua_respond(nh, SIP_480_TEMPORARILY_UNAVAILABLE, TAG_END());
+				goto fail;
 			}
 		}
 	}
