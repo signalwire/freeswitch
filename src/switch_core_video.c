@@ -3211,6 +3211,90 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, co
 	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
+typedef struct data_url_context_s {
+	const char *type;
+	char **urlP;
+} data_url_context_t;
+
+static void data_url_write_func(void *context, void *data, int size)
+{
+	switch_buffer_t *buffer = (switch_buffer_t *)context;
+	switch_buffer_write(buffer, data, size);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_data_url(switch_image_t *img, char **urlP, const char *type, int quality)
+{
+	int comp = STBI_rgb;
+	unsigned char *data = NULL;
+	int stride_in_bytes = 0;
+	int ret = 0;
+	switch_buffer_t *buffer = NULL;
+	const char *header = NULL;
+	int header_len = 0;
+
+	if (!type) return SWITCH_STATUS_FALSE;
+
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		comp = STBI_rgb;
+		stride_in_bytes = img->d_w * 3;
+
+		data = malloc(stride_in_bytes * img->d_h);
+		switch_assert(data);
+
+		I420ToRAW(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+			img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+			img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+			data, stride_in_bytes,
+			img->d_w, img->d_h);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		comp = STBI_rgb_alpha;
+		stride_in_bytes = img->d_w * 4;
+
+		data = malloc(stride_in_bytes * img->d_h);
+		switch_assert(data);
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+		ARGBToRGBA(img->planes[SWITCH_PLANE_PACKED], stride_in_bytes, data, stride_in_bytes, img->d_w, img->d_h);
+#else
+		ARGBToABGR(img->planes[SWITCH_PLANE_PACKED], stride_in_bytes, data, stride_in_bytes, img->d_w, img->d_h);
+#endif
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_buffer_create_dynamic(&buffer, 1024, 1024, 0);
+
+	if (!strcmp(type, "png")) {
+		header = "data:image/png;base64,";
+		ret = stbi_write_png_to_func(data_url_write_func, (void *)buffer, img->d_w, img->d_h, comp, (const void *)data, stride_in_bytes);
+	} else if (!strcmp(type, "jpeg") || !strcmp(type, "jpeg")) {
+		header = "data:image/jpeg;base64,";
+		ret = stbi_write_jpg_to_func(data_url_write_func, (void *)buffer, img->d_w, img->d_h, comp, (const void *)data, quality);
+	} else {
+		ret = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported file format [%s]\n", type);
+	}
+
+	if (ret && switch_buffer_inuse(buffer) > 0) {
+		switch_size_t blen = switch_buffer_inuse(buffer);
+		switch_size_t olen = blen * 4 + strlen(header) + 1;
+		uint8_t *data = switch_buffer_get_head_pointer(buffer);
+		unsigned char *out = NULL;
+
+		switch_zmalloc(out, olen);
+		header_len = strlen(header);
+		memcpy(out, header, header_len);
+		switch_b64_encode(data, blen, out + header_len, olen - header_len);
+		*urlP = (char *)out;
+	}
+
+	free(data);
+	switch_buffer_destroy(&buffer);
+
+	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color)
 {
 	int img_w = 0, img_h = 0;

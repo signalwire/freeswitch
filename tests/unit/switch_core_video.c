@@ -200,6 +200,32 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(stb_data_url)
+		{
+			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 120, 60, 1);
+			switch_image_t *argb_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, 120, 60, 1);
+			switch_rgb_color_t color = { 0 };
+			color.r = 255;
+			// color.g = 255;
+			// color.b = 255;
+			char *data_url = NULL;
+
+			switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
+			switch_img_add_text(img->planes[0], img->d_w, 10, 10, "-1234567890");
+
+			switch_img_data_url(img, &data_url, "png", 0);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "PNG: %s\n", data_url);
+			free(data_url);
+			data_url = NULL;
+
+			switch_img_data_url(img, &data_url, "jpeg", 50);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "JPG: %s\n", data_url);
+
+			free(data_url);
+			switch_img_free(&img);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(read_from_file)
 		{
 			switch_image_t *img;
