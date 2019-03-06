@@ -822,7 +822,12 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	top:
 
 		switch_assert(context->eh.video_queue);
-
+		while(switch_queue_size(context->eh.video_queue) > 1) {
+			switch_image_t *tmp_img;
+			switch_queue_pop(context->eh.video_queue, &pop);
+			tmp_img = (switch_image_t *) pop;
+			switch_img_free(&tmp_img);
+		}
 		if (switch_queue_pop(context->eh.video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
             switch_img_free(&img);
 
@@ -910,7 +915,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		} else {
 			uint64_t delta_tmp;
 
-			switch_core_timer_sync(context->eh.video_timer);
+			switch_core_timer_next(context->eh.video_timer);
 			delta_tmp = (context->eh.video_timer->samplecount * 90) - context->eh.last_ts;
 
 			if (delta_tmp != 0) {
@@ -1757,6 +1762,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		}
 
 		if (context->has_video) {
+			switch_fps_t fps_data = { 0 };
 			switch_queue_create(&context->eh.video_queue, context->read_fps, handle->memory_pool);
 			context->no_video_decode = handle->params && switch_true(switch_event_get_header(handle->params, "no_video_decode"));
 			if (context->no_video_decode) {
@@ -1764,7 +1770,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 				switch_queue_create(&context->video_pkt_queue, 120 * 5, handle->memory_pool);
 			}
 			switch_mutex_init(&context->eh.mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-			switch_core_timer_init(&context->video_timer, "soft", (int)(1000.0f / context->read_fps), 1, context->pool);
+			switch_calc_video_fps(&fps_data, context->read_fps);
+			switch_core_timer_init(&context->video_timer, "soft", fps_data.ms, fps_data.samples, context->pool);
 		}
 
 		{
