@@ -6843,7 +6843,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_video_read_flag_t read_flags = SVR_FLUSH;
 	switch_core_session_t *b_session = NULL;
 	switch_fps_t fps_data = { 0 };
-	float fps;
+	float fps = 15.0f;
 	switch_image_t *last_frame = NULL;
 	int last_w = 0, last_h = 0, kps = 0;
 
@@ -6878,12 +6878,14 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_core_media_gen_key_frame(session);
 
 
-	if (smh->video_write_fh && smh->video_write_fh->mm.source_fps) {
-		fps = smh->video_write_fh->mm.source_fps;
+	if (smh->video_write_fh) {
+		if (smh->video_write_fh->mm.fps) {
+			fps = smh->video_write_fh->mm.fps;
+		} else if (smh->video_write_fh->mm.source_fps) {
+			fps = smh->video_write_fh->mm.source_fps;
+		}
 	} else if (video_globals.fps) {
 		fps = video_globals.fps;
-	} else {
-		fps = 15;
 	}
 	switch_calc_video_fps(&fps_data, fps);
 
@@ -6929,6 +6931,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 		if (smh->video_write_fh && !switch_test_flag(smh->video_write_fh, SWITCH_FILE_FLAG_VIDEO_EOF)) {
 			wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, read_flags);
+
 			if (wstatus == SWITCH_STATUS_BREAK) {
 				switch_core_timer_sync(&timer);
 			}
