@@ -810,10 +810,16 @@ switch_status_t conference_api_sub_hup(conference_member_t *member, switch_strea
 	switch_event_t *event;
 
 	if (member == NULL) {
+		if (stream != NULL) {
+			stream->write_function(stream, "-ERR Invalid member!\n");
+		}
 		return SWITCH_STATUS_GENERR;
 	}
 
 	conference_utils_member_clear_flag(member, MFLAG_RUNNING);
+	if (stream != NULL) {
+		stream->write_function(stream, "+OK hup %u\n", member->id);
+	}
 
 	if (member->conference && test_eflag(member->conference, EFLAG_HUP_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
