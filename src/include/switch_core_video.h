@@ -398,7 +398,13 @@ SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, cha
 
 /*!\brief Read an image file to switch_image_t */
 SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char *file_name, switch_img_fmt_t img_fmt);
-																
+/*!\brief Write an image file, supported formats png,jpg,bmp,tga,hdr
+* \param[in]    img       The image descriptor
+* \param[in]    file_name The file_name to write
+* \param[in]    quality   Only used in jpg, 0 ~ 100
+*/
+SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, const char* file_name, int quality);
+
 /*!\brief put a small img over a big IMG at position x,y, with alpha transparency
 *
 * Both IMG and img must be non-NULL

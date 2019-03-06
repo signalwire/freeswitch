@@ -51,6 +51,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libs/stb/stb_image.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../libs/stb/stb_image_write.h"
+
 #ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
 #endif
@@ -3105,7 +3108,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, cha
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char* file_name, switch_img_fmt_t img_fmt)
 {
-	int width = 0, height = 0, channels = 8;
+	int width = 0, height = 0, channels = 0;
 	int comp = STBI_rgb;
 	unsigned char *data = NULL;
 
@@ -3146,6 +3149,66 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char* file_name
 	}
 
 	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, const char* file_name, int quality)
+{
+	int comp = STBI_rgb;
+	unsigned char *data = NULL;
+	const char *ext = strrchr(file_name, '.');
+	int stride_in_bytes = 0;
+	int ret = 0;
+
+	if (!ext) return SWITCH_STATUS_FALSE;
+
+	ext++;
+
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		comp = STBI_rgb;
+		stride_in_bytes = img->d_w * 3;
+
+		data = malloc(stride_in_bytes * img->d_h);
+		switch_assert(data);
+
+		I420ToRAW(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+			img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+			img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+			data, stride_in_bytes,
+			img->d_w, img->d_h);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		comp = STBI_rgb_alpha;
+		stride_in_bytes = img->d_w * 4;
+
+		data = malloc(stride_in_bytes * img->d_h);
+		switch_assert(data);
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+		ARGBToRGBA(img->planes[SWITCH_PLANE_PACKED], stride_in_bytes, data, stride_in_bytes, img->d_w, img->d_h);
+#else
+		ARGBToABGR(img->planes[SWITCH_PLANE_PACKED], stride_in_bytes, data, stride_in_bytes, img->d_w, img->d_h);
+#endif
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!strcasecmp(ext, "png")) {
+		ret = stbi_write_png(file_name, img->d_w, img->d_h, comp, (const void *)data, stride_in_bytes);
+	} else if (!strcasecmp(ext, "jpg") || !strcasecmp(ext, "jpeg")) {
+		ret = stbi_write_jpg(file_name, img->d_w, img->d_h, comp, (const void *)data, quality);
+	} else if (!strcasecmp(ext, "bmp")) {
+		ret = stbi_write_bmp(file_name, img->d_w, img->d_h, comp, (const void *)data);
+	} else if (!strcasecmp(ext, "tga")) {
+		ret = stbi_write_tga(file_name, img->d_w, img->d_h, comp, (const void *)data);
+	} else if (!strcasecmp(ext, "hdr")) {
+		ret = stbi_write_hdr(file_name, img->d_w, img->d_h, comp, (const float *)data);
+	} else {
+		ret = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported file format [%s]", ext);
+	}
+
+	free(data);
+
+	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color)
