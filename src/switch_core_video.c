@@ -48,6 +48,9 @@
 #include <gd.h>
 #endif
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../libs/stb/stb_image.h"
+
 #ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
 #endif
@@ -3099,6 +3102,51 @@ SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, cha
 }
 
 #endif
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char* file_name, switch_img_fmt_t img_fmt)
+{
+	int width = 0, height = 0, channels = 8;
+	int comp = STBI_rgb;
+	unsigned char *data = NULL;
+
+	if (img_fmt == SWITCH_IMG_FMT_I420) {
+		comp = STBI_rgb;
+	} else if (img_fmt == SWITCH_IMG_FMT_ARGB) {
+		comp = STBI_rgb_alpha;
+	} else {
+		return NULL;
+	}
+
+	data = stbi_load(file_name, &width, &height, &channels, comp);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%dx%d channels=%d\n", width, height, channels);
+
+	if (data && width > 0 && height > 0) {
+		switch_image_t *img = switch_img_alloc(NULL, img_fmt, width, height, 1);
+		switch_assert(img);
+
+		if (img_fmt == SWITCH_IMG_FMT_I420) {
+			RAWToI420(data, width * 3,
+					img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+					img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+					img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+					width, height);
+		} else if (img_fmt == SWITCH_IMG_FMT_ARGB) {
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+			RGBAToARGB(data, width * 4, img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], width, height);
+#else
+			ABGRToARGB(data, width * 4, img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED], width, height);
+#endif
+		}
+
+		stbi_image_free(data);
+
+		return img;
+	} else if (data) {
+		stbi_image_free(data);
+	}
+
+	return NULL;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color)
 {
