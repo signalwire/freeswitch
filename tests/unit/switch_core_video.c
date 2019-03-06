@@ -220,6 +220,31 @@ FST_CORE_BEGIN("./conf")
 			switch_img_free(&img);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(write_to_file)
+		{
+			switch_image_t *img;
+			switch_status_t status;
+
+			img = switch_img_read_from_file("../../images/cluecon.png", SWITCH_IMG_FMT_I420);
+			fst_requires(img);
+			status = switch_img_write_to_file(img, "cluecon-rgb-write.png", 0);
+			switch_img_free(&img);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			img = switch_img_read_from_file("../../images/cluecon.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(img);
+			status = switch_img_write_to_file(img, "cluecon-argb-write.png", 0);
+			switch_img_free(&img);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			img = switch_img_read_from_file("../../images/cluecon.jpg", SWITCH_IMG_FMT_I420);
+			fst_requires(img);
+			status = switch_img_write_to_file(img, "cluecon-jpg-write.jpg", 100);
+			switch_img_free(&img);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
