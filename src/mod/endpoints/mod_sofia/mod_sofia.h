@@ -964,6 +964,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 switch_status_t sofia_proxy_sip_i_message(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 										  sofia_dispatch_event_t *de, tagi_t tags[]);
 void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[]);
+void sofia_handle_sip_i_invite_replaces(switch_core_session_t *session, switch_channel_t *channel, switch_channel_t *b_channel, char* uuid, private_object_t *tech_pvt, sip_call_info_t *call_info, sofia_profile_t *profile, char *is_nat, sip_t const *sip);
 
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t **sofia_private, sip_t const *sip,
