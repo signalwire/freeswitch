@@ -108,15 +108,21 @@ SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t 
 	switch_log_node_t *newnode = switch_log_node_alloc();
 
 	*newnode = *node;
+	newnode->content = NULL;
 
-	if (!zstr(node->data)) {
+	if (node->data) {
 		newnode->data = strdup(node->data);
-		switch_assert(node->data);
+		switch_assert(newnode->data);
+
+		// content is a pointer inside data; need to calculate the new pointer
+		if (node->content && node->content >= node->data) {
+			newnode->content = newnode->data + (node->content - node->data);
+		}
 	}
 
-	if (!zstr(node->userdata)) {
+	if (node->userdata) {
 		newnode->userdata = strdup(node->userdata);
-		switch_assert(node->userdata);
+		switch_assert(newnode->userdata);
 	}
 
 	return newnode;
