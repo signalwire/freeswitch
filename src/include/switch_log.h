@@ -65,6 +65,7 @@ SWITCH_BEGIN_EXTERN_C
 	/* To maintain abi, only add new elements to the end of this struct and do not delete any elements */
 	switch_text_channel_t channel;
 	switch_log_level_t slevel;
+	switch_event_t *tags;
 } switch_log_node_t;
 
 typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node, switch_log_level_t level);

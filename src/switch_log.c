@@ -125,6 +125,10 @@ SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t 
 		switch_assert(newnode->userdata);
 	}
 
+	if (node->tags) {
+		switch_event_dup(&newnode->tags, node->tags);
+	}
+
 	return newnode;
 }
 
@@ -141,6 +145,9 @@ SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
 	if (node) {
 		switch_safe_free(node->userdata);
 		switch_safe_free(node->data);
+		if (node->tags) {
+			switch_event_destroy(&node->tags);
+		}
 #ifdef SWITCH_LOG_RECYCLE
 		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node);
@@ -490,9 +497,13 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
+		node->tags = NULL;
 		if (channel == SWITCH_CHANNEL_ID_SESSION) {
 			switch_core_session_t *session = (switch_core_session_t *) userdata;
 			node->userdata = userdata ? strdup(switch_core_session_get_uuid(session)) : NULL;
+			if (session) {
+				switch_channel_get_log_tags(switch_core_session_get_channel(session), &node->tags);
+			}
 		} else {
 			node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
 		}
