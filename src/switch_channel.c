@@ -1440,6 +1440,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_log_tags(switch_channel_t *ch
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_assert(channel != NULL);
+	if (!channel->log_tags) {
+		return status;
+	}
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->log_tags && log_tags) {
 		status = switch_event_dup(log_tags, channel->log_tags);
