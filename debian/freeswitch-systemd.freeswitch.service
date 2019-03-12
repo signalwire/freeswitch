@@ -10,17 +10,17 @@ After=network.target network-online.target local-fs.target
 ; service
 Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
-Environment="DAEMON_OPTS=-ncwait -nonat"
+Environment="DAEMON_OPTS=-nonat"
 Environment="USER=freeswitch"
 Environment="GROUP=freeswitch"
 EnvironmentFile=-/etc/default/freeswitch
 ExecStartPre=/bin/chown -R ${USER}:${GROUP} /var/lib/freeswitch /var/log/freeswitch /etc/freeswitch /usr/share/freeswitch /var/run/freeswitch
-ExecStart=/usr/bin/freeswitch ${DAEMON_OPTS}
+ExecStart=/usr/bin/freeswitch -u ${USER} -g ${GROUP} -ncwait ${DAEMON_OPTS}
 TimeoutSec=45s
 Restart=always
 ; exec
-User=${USER}
-Group=${GROUP}
+;User=${USER}
+;Group=${GROUP}
 LimitCORE=infinity
 LimitNOFILE=100000
 LimitNPROC=60000
