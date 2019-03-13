@@ -1858,7 +1858,12 @@ switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_
 	}
 
 	if (canvas_w < 320 || canvas_h < 180) {
-		stream->write_function(stream, "-ERR Invalid size\n");
+		stream->write_function(stream, "-ERR Invalid size, [%dx%d] is too small\n", canvas_w, canvas_h);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (canvas_w > 7680 || canvas_h > 4320) {
+		stream->write_function(stream, "-ERR Invalid size, [%dx%d] is too large.\n", canvas_w, canvas_h);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1883,7 +1888,11 @@ switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_
 		id = 1;
 	}
 
-	conference_video_change_res(conference, canvas_w, canvas_h, id - 1);
+	if (conference_video_change_res(conference, canvas_w, canvas_h, id - 1) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Resolution set to [%dx%d]\n", canvas_w, canvas_h);
+	} else {
+		stream->write_function(stream, "-ERR Resolution not set\n");
+	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
