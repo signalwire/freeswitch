@@ -6295,7 +6295,12 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_core_session_send_dtmf_string(psession, (const char *) dtmf_data);
+	if (switch_core_session_send_dtmf_string(psession, (const char *) dtmf_data) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK %s sent DTMF %s.\n", uuid, dtmf_data);
+	} else {
+		stream->write_function(stream, "-ERR Operation failed\n");
+	}
+
 	goto done;
 
   usage:
@@ -6343,7 +6348,12 @@ SWITCH_STANDARD_API(uuid_recv_dtmf_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_channel_queue_dtmf_string(switch_core_session_get_channel(psession), dtmf_data);
+    if (switch_channel_queue_dtmf_string(switch_core_session_get_channel(psession), dtmf_data) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK %s received DTMF %s.\n", uuid, dtmf_data);
+	} else {
+		stream->write_function(stream, "-ERR Operation failed\n");
+	}
+
 	goto done;
 
   usage:
