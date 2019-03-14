@@ -279,14 +279,39 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 	switch_assert(channels < 11);
 
 	if (orig_channels > channels) {
-		for (i = 0; i < samples; i++) {
-			int32_t z = 0;
-			for (j = 0; j < orig_channels; j++) {
-				z += data[i * orig_channels + j];
+		if (channels == 1) {
+			for (i = 0; i < samples; i++) {
+				int32_t z = 0; int16_t y, last = 0;
+				for (j = 0; j < orig_channels; j++) {
+					y = (int16_t) data[i * orig_channels + j];
+					if (y != last) z += y;
+					last = y;
+				}
 				switch_normalize_to_16bit(z);
 				data[i] = (int16_t) z;
 			}
-		}
+		} else if (channels == 2) {
+			int mark_buf = 0;
+			for (i = 0; i < samples; i++) {
+				int32_t z_left = 0, z_right = 0; int16_t y_left, y_right, last_left = 0, last_right = 0;
+				for (j = 0; j < orig_channels; j++) {
+					if (j % 2) {
+						y_left = (int16_t) data[i * orig_channels + j];
+						if (y_left != last_left) z_left += y_left;
+						last_left = y_left;
+					} else {
+						y_right = (int16_t) data[i * orig_channels + j];
+						if (y_right != last_right) z_right += y_right;
+						last_right = y_right;
+					}
+				}
+				/* mark_buf will always be smaller than the size of data in bytes because orig_channels > channels */
+				switch_normalize_to_16bit(z_left);
+				data[mark_buf++] = (int16_t) z_left;
+				switch_normalize_to_16bit(z_right);
+				data[mark_buf++] = (int16_t) z_right;
+			}
+		} 
 	} else if (orig_channels < channels) {
 
 		/* interesting problem... take a give buffer and double up every sample in the buffer without using any other buffer.....
