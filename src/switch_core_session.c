@@ -2810,11 +2810,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 
 	if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
-					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
+					  session->stack_count, switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
-					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
+					  session->stack_count, switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	}
 
 	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
@@ -2928,8 +2928,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 
 	if (session->stack_count > SWITCH_MAX_STACKS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n",
-						  switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions [depth=%d]\n",
+						  switch_channel_get_name(session->channel), session->stack_count);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2997,7 +2997,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 
 	while (switch_channel_ready(channel) && extension->current_application) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Execute [depth=%d] %s(%s)\n",
+						  session->stack_count,
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 
 		if (switch_core_session_execute_application(session,

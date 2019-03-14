@@ -623,8 +623,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			for (x = 0; x < loops || loops < 0; x++) {
 				switch_time_t b4, aftr;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
-								  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute [depth=%d] %s(%s)\n",
+								  switch_channel_get_name(channel), switch_core_session_stack_count(session, 0), app_name, switch_str_nil(app_arg));
 				b4 = switch_micro_time_now();
 
 				if (event_uuid) {
@@ -901,12 +901,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_signal_data(switch_core_se
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
 {
-	int x = 0;
 	switch_channel_t *channel;
-
 	if (switch_core_session_stack_count(session, 0) > SWITCH_MAX_STACKS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n",
-						  switch_core_session_get_name(session));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions [depth=%d]\n",
+						  switch_core_session_get_name(session), switch_core_session_stack_count(session, 0));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -924,9 +922,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 		}
 	}
 
-	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS) {
-		x++;
-	}
+	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS) {}
 
  done:
 	switch_core_session_stack_count(session, -1);

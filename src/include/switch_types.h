@@ -556,7 +556,7 @@ struct switch_filenames {
 typedef struct switch_filenames switch_filenames;
 SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 
-#define SWITCH_MAX_STACKS 16
+#define SWITCH_MAX_STACKS 32
 #define SWITCH_THREAD_STACKSIZE 240 * 1024
 #define SWITCH_SYSTEM_THREAD_STACKSIZE 8192 * 1024
 #define SWITCH_MAX_INTERVAL 120	/* we only do up to 120ms */
