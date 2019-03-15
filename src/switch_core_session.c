@@ -2811,10 +2811,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
-					  session->stack_count, switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+					  switch_core_session_stack_count(session, 0), switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
-					  session->stack_count, switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+					  switch_core_session_stack_count(session, 0), switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	}
 
 	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
@@ -2905,10 +2905,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 SWITCH_DECLARE(uint32_t) switch_core_session_stack_count(switch_core_session_t *session, int x)
 {
+	uint32_t stack_count = 0;
+	switch_mutex_lock(session->mutex);
 	if (x > 0) session->stack_count++;
 	else if (x < 0) session->stack_count--;
 
-	return session->stack_count;
+	stack_count = session->stack_count;
+	switch_mutex_unlock(session->mutex);
+	return stack_count;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, const char *exten, const char *dialplan,
@@ -2917,6 +2921,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	char *dp[25];
 	char *dpstr;
 	int argc, x, count = 0;
+	uint32_t stack_count = 0;
 	switch_caller_profile_t *profile, *new_profile, *pp = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_dialplan_interface_t *dialplan_interface = NULL;
@@ -2927,13 +2932,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (session->stack_count > SWITCH_MAX_STACKS) {
+	if ((stack_count = switch_core_session_stack_count(session, 0)) > SWITCH_MAX_STACKS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions [depth=%d]\n",
-						  switch_channel_get_name(session->channel), session->stack_count);
+						  switch_channel_get_name(session->channel), stack_count);
 		return SWITCH_STATUS_FALSE;
 	}
 
-	session->stack_count++;
+	switch_core_session_stack_count(session, 1);
 
 	new_profile = switch_caller_profile_clone(session, profile);
 	new_profile->destination_number = switch_core_strdup(new_profile->pool, exten);
@@ -2998,7 +3003,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 	while (switch_channel_ready(channel) && extension->current_application) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Execute [depth=%d] %s(%s)\n",
-						  session->stack_count,
+						  switch_core_session_stack_count(session, 0),
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 
 		if (switch_core_session_execute_application(session,
@@ -3013,7 +3018,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
   done:
 	switch_channel_set_hunt_caller_profile(channel, NULL);
 
-	session->stack_count--;
+	switch_core_session_stack_count(session, -1);
 	return status;
 }
 

@@ -902,14 +902,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_signal_data(switch_core_se
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
-	if (switch_core_session_stack_count(session, 0) > SWITCH_MAX_STACKS) {
+	uint32_t stack_count = 0;
+	if ((stack_count = switch_core_session_stack_count(session, 0)) > SWITCH_MAX_STACKS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions [depth=%d]\n",
-						  switch_core_session_get_name(session), switch_core_session_stack_count(session, 0));
+						  switch_core_session_get_name(session), stack_count);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_core_session_stack_count(session, 1);
-	
+
 	switch_ivr_parse_all_messages(session);
 
 	channel = switch_core_session_get_channel(session);
