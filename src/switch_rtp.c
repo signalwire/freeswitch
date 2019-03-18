@@ -3201,7 +3201,7 @@ static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		case SSL_ERROR_NONE:
 			break;
 		default:
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Handshake failure %d\n", rtp_type(rtp_session), ret);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Handshake failure %d. This may happen when you use legacy DTLS v1.0 (legacyDTLS channel var is set) but endpoint requires DTLS v1.2.\n", rtp_type(rtp_session), ret);
 			dtls_set_state(dtls, DS_FAIL);
 			return -1;
 		}
@@ -3634,7 +3634,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type)
+SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type, uint8_t want_DTLSv1_2)
 {
 	switch_dtls_t *dtls;
 	const char *var;
@@ -3695,7 +3695,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
 	dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method());
 #else
-	dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method());
+    #ifdef HAVE_OPENSSL_DTLSv1_2_method
+	        dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method()));
+    #else
+            dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method());
+    #endif // HAVE_OPENSSL_DTLSv1_2_method
 #endif
 	switch_assert(dtls->ssl_ctx);
 

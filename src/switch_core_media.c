@@ -8388,6 +8388,13 @@ static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engin
 	if (switch_channel_test_flag(session->channel, CF_REINVITE) && engine->new_dtls) {
 
 		if (!zstr(engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(session)) {
+
+#ifdef HAVE_OPENSSL_DTLSv1_2_method
+			uint8_t want_DTLSv1_2 = 1;
+#else
+			uint8_t want_DTLSv1_2 = 0;
+#endif // HAVE_OPENSSL_DTLSv1_2_method
+
 			dtls_type_t xtype, dtype = engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "RE-SETTING %s DTLS\n", type2str(engine->type));
@@ -8395,11 +8402,16 @@ static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engin
 			xtype = DTLS_TYPE_RTP;
 			if (engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
 
-			switch_rtp_add_dtls(engine->rtp_session, &engine->local_dtls_fingerprint, &engine->remote_dtls_fingerprint, dtype | xtype);
+			if (switch_channel_var_true(session->channel, "legacyDTLS")) {
+				switch_channel_clear_flag(session->channel, CF_WANT_DTLSv1_2);
+				want_DTLSv1_2 = 0;
+			}
+
+			switch_rtp_add_dtls(engine->rtp_session, &engine->local_dtls_fingerprint, &engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 
 			if (engine->rtcp_mux < 1) {
 				xtype = DTLS_TYPE_RTCP;
-				switch_rtp_add_dtls(engine->rtp_session, &engine->local_dtls_fingerprint, &engine->remote_dtls_fingerprint, dtype | xtype);
+				switch_rtp_add_dtls(engine->rtp_session, &engine->local_dtls_fingerprint, &engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 			}
 
 		}
@@ -8421,6 +8433,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_media_handle_t *smh;
 	int is_reinvite = 0;
+
+#ifdef HAVE_OPENSSL_DTLSv1_2_method
+			uint8_t want_DTLSv1_2 = 1;
+#else
+			uint8_t want_DTLSv1_2 = 0;
+#endif
 
 	switch_assert(session);
 
@@ -8449,6 +8467,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	if (a_engine->crypto_type != CRYPTO_INVALID) {
 		switch_channel_set_flag(session->channel, CF_SECURE);
+	}
+	
+	if (want_DTLSv1_2) {
+		switch_channel_set_flag(session->channel, CF_WANT_DTLSv1_2);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -8806,11 +8828,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			xtype = DTLS_TYPE_RTP;
 			if (a_engine->rtcp_mux > 0 && smh->mparams->rtcp_audio_interval_msec) xtype |= DTLS_TYPE_RTCP;
 
-			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+			if (switch_channel_var_true(session->channel, "legacyDTLS")) {
+				switch_channel_clear_flag(session->channel, CF_WANT_DTLSv1_2);
+				want_DTLSv1_2 = 0;
+			}
+
+			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 
 			if (a_engine->rtcp_mux < 1 && smh->mparams->rtcp_audio_interval_msec) {
 				xtype = DTLS_TYPE_RTCP;
-				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 			}
 
 		}
@@ -9166,12 +9193,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						dtype = t_engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 					xtype = DTLS_TYPE_RTP;
 					if (t_engine->rtcp_mux > 0 && smh->mparams->rtcp_text_interval_msec) xtype |= DTLS_TYPE_RTCP;
+			
+					if (switch_channel_var_true(session->channel, "legacyDTLS")) {
+						switch_channel_clear_flag(session->channel, CF_WANT_DTLSv1_2);
+						want_DTLSv1_2 = 0;
+					}
 
-					switch_rtp_add_dtls(t_engine->rtp_session, &t_engine->local_dtls_fingerprint, &t_engine->remote_dtls_fingerprint, dtype | xtype);
+					switch_rtp_add_dtls(t_engine->rtp_session, &t_engine->local_dtls_fingerprint, &t_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 
 					if (t_engine->rtcp_mux < 1 && smh->mparams->rtcp_text_interval_msec) {
 						xtype = DTLS_TYPE_RTCP;
-						switch_rtp_add_dtls(t_engine->rtp_session, &t_engine->local_dtls_fingerprint, &t_engine->remote_dtls_fingerprint, dtype | xtype);
+						switch_rtp_add_dtls(t_engine->rtp_session, &t_engine->local_dtls_fingerprint, &t_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 					}
 				}
 
@@ -9493,12 +9525,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						dtype = v_engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 					xtype = DTLS_TYPE_RTP;
 					if (v_engine->rtcp_mux > 0 && smh->mparams->rtcp_video_interval_msec) xtype |= DTLS_TYPE_RTCP;
+			
 
-					switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+					if (switch_channel_var_true(session->channel, "legacyDTLS")) {
+						switch_channel_clear_flag(session->channel, CF_WANT_DTLSv1_2);
+						want_DTLSv1_2 = 0;
+					}
+
+					switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 
 					if (v_engine->rtcp_mux < 1 && smh->mparams->rtcp_video_interval_msec) {
 						xtype = DTLS_TYPE_RTCP;
-						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype, want_DTLSv1_2);
 					}
 				}
 
