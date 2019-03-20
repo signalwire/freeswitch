@@ -2404,6 +2404,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	session->enc_read_frame.buflen = sizeof(session->enc_read_buf);
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->stack_count_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
@@ -2906,12 +2907,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 SWITCH_DECLARE(uint32_t) switch_core_session_stack_count(switch_core_session_t *session, int x)
 {
 	uint32_t stack_count = 0;
-	switch_mutex_lock(session->mutex);
+	switch_mutex_lock(session->stack_count_mutex);
 	if (x > 0) session->stack_count++;
 	else if (x < 0) session->stack_count--;
 
 	stack_count = session->stack_count;
-	switch_mutex_unlock(session->mutex);
+	switch_mutex_unlock(session->stack_count_mutex);
 	return stack_count;
 }
 
