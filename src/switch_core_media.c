@@ -4105,7 +4105,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	for (attr_idx = 0; attr_idx < 2 && !(ice_seen && cand_seen); attr_idx++) {
 		for (attr = attrs[attr_idx]; attr; attr = attr->a_next) {
 			char *data;
-			char *fields[15];
+			char *fields[32] = {0};
 			int argc = 0, j = 0;
 
 			if (zstr(attr->a_name)) {
@@ -4220,13 +4220,13 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
 					continue;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
 				}
 
 
@@ -4239,7 +4239,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				j = 6;
 
-				while(j < argc && fields[j+1]) {
+				while(j < argc && j <= sizeof(fields)/sizeof(char*) && fields[j+1] && engine->ice_in.cand_idx[cid] < MAX_CAND - 1) {
 					if (!strcasecmp(fields[j], "typ")) {
 						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);
 					} else if (!strcasecmp(fields[j], "raddr")) {
