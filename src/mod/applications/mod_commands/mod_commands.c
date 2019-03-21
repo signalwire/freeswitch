@@ -3886,8 +3886,11 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 			flags = SMF_ECHO_ALEG | SMF_HOLD_BLEG;
 		}
 
-		switch_ivr_broadcast(argv[0], argv[1], flags);
-		stream->write_function(stream, "+OK Message sent\n");
+		if (switch_ivr_broadcast(argv[0], argv[1], flags) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK Message sent\n");
+		} else {
+			stream->write_function(stream, "-ERR invalid uuid\n");
+		}
 	}
 
 	switch_safe_free(mycmd);
