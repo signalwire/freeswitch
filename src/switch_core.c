@@ -1992,8 +1992,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_channel_global_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
-		apr_terminate();
-		return SWITCH_STATUS_MEMERR;
+		/* allow missing configuration if MINIMAL */
+		if (!(flags & SCF_MINIMAL)) {
+			apr_terminate();
+			return SWITCH_STATUS_MEMERR;
+		}
 	}
 
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {

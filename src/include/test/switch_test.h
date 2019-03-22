@@ -66,7 +66,7 @@ static char *fst_getenv_default(const char *env, char *default_value, switch_boo
 /**
  * initialize FS core from optional configuration dir
  */
-static void fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal)
+static switch_status_t fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal)
 {
 	const char *err;
 	// Let FreeSWITCH core pick these
@@ -112,12 +112,12 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 	switch_core_set_globals();
 
 	if (!minimal) {
-		switch_core_init_and_modload(0, SWITCH_TRUE, &err);
+		switch_status_t status = switch_core_init_and_modload(0, SWITCH_TRUE, &err);
 		switch_sleep(1 * 1000000);
 		switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
-	} else {
-		switch_core_init(SCF_MINIMAL, SWITCH_TRUE, &err);
+		return status;
 	}
+	return switch_core_init(SCF_MINIMAL, SWITCH_TRUE, &err);
 }
 
 /**
@@ -248,12 +248,17 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 #define FST_CORE_BEGIN(confdir) \
 	FCT_BGN() \
 	{ \
-		int fst_core = 2; \
+		int fst_core = 0; \
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		fst_init_core_and_modload(confdir, NULL, 0); \
+		if (fst_init_core_and_modload(confdir, NULL, 0) == SWITCH_STATUS_SUCCESS) { \
+			fst_core = 2; \
+		} else { \
+			fprintf(stderr, "Failed to load FS core\n"); \
+			exit(1); \
+		} \
 		{
 
 
@@ -276,12 +281,17 @@ static void fst_init_core_and_modload(const char *confdir, const char *basedir, 
 #define FST_MINCORE_BEGIN() \
 	FCT_BGN() \
 	{ \
-		int fst_core = 1; \
+		int fst_core = 0; \
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		fst_init_core_and_modload(".", NULL, 1); /* minimal load */ \
+		if (fst_init_core_and_modload(".", NULL, 1) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
+			fst_core = 1; \
+		} else { \
+			fprintf(stderr, "Failed to load FS core\n"); \
+			exit(1); \
+		} \
 		{
 
 #define FST_MINCORE_END FST_CORE_END
