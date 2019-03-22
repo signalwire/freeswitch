@@ -1386,6 +1386,34 @@ SWITCH_STANDARD_APP(wait_for_answer_function)
 	}
 }
 
+#define WAIT_FOR_VIDEO_READY_SYNTAX "[<ms, 1..10000>]"
+SWITCH_STANDARD_APP(wait_for_video_ready_function)
+{
+	uint32_t delay = 0, delay_def = 10000;
+	switch_status_t res;
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (zstr(data) || ((delay = atoi(data)) < 1) || (delay > 10000)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "wait_for_video_ready: Invalid Timeout. Use default %d ms.\n", delay_def);
+		delay = delay_def;
+	}
+
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Starting to wait %d ms until video stream is ready\n", delay);
+		res = switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, delay, NULL);
+		if (res == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Video stream is ready\n");
+		} else if (res == SWITCH_STATUS_TIMEOUT) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Video stream is not ready after %d ms. Abort waiting.\n", delay);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error (%d) waiting for video stream to be ready\n", res);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Cannot wait for video stream on a non video call\n");
+	}
+}
+
 SWITCH_STANDARD_APP(presence_function)
 {
 	char *argv[6] = { 0 };
@@ -6449,6 +6477,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "wait_for_answer", "Wait for call to be answered", "Wait for call to be answered.", wait_for_answer_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "wait_for_video_ready", "Wait for video stream to be ready", "Wait for video stream to be ready.", wait_for_video_ready_function, WAIT_FOR_VIDEO_READY_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set_name", "Name the channel", "Name the channel", set_name_function, "<name>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "presence", "Send Presence", "Send Presence.", presence_function, "<rpid> <status> [<id>]",
