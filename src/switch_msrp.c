@@ -497,6 +497,12 @@ static switch_status_t msrp_socket_recv(switch_msrp_client_socket_t *csock, char
 		status = switch_socket_recv(csock->sock, buf, len);
 	}
 
+	if (globals.debug && status != SWITCH_STATUS_SUCCESS) {
+		char err[1024] = { 0 };
+		switch_strerror(status, err, sizeof(err) - 1);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "msrp socket recv status = %d, %s\n", status, err);
+	}
+
 	return status;
 }
 
@@ -512,7 +518,7 @@ static switch_status_t msrp_socket_send(switch_msrp_client_socket_t *csock, char
 	}
 }
 
-void dump_buffer(const char *buf, switch_size_t len, int line)
+void dump_buffer(const char *buf, switch_size_t len, int line, int is_send)
 {
 	int i, j, k = 0;
 	char buff[MSRP_BUFF_SIZE * 2];
@@ -538,7 +544,8 @@ void dump_buffer(const char *buf, switch_size_t len, int line)
 	}
 
 	buff[j] = '\0';
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d: [%" SWITCH_SIZE_T_FMT "] ::DUMP::%s::DUMP::\n", line, len, buff);
+	switch_log_printf(SWITCH_CHANNEL_LOG, is_send ? SWITCH_LOG_NOTICE: SWITCH_LOG_INFO,
+		"%d: %s [%" SWITCH_SIZE_T_FMT "] bytes [\n%s]\n", line, is_send? "SEND" : "RECV", len, buff);
 }
 
 char *find_delim(char *buf, int len, const char *delim)
@@ -765,7 +772,7 @@ switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *m
 							msrp_msg->payload_bytes = msrp_msg->byte_end + 1 - msrp_msg->byte_start;
 						}
 
-						if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%" SWITCH_SIZE_T_FMT " payload bytes\n", msrp_msg->payload_bytes);
+						if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%" SWITCH_SIZE_T_FMT " payload bytes\n", msrp_msg->payload_bytes);
 
 						/*Fixme sanity check to avoid large byte-range attack*/
 						if (!msrp_msg->range_star && msrp_msg->payload_bytes > msrp_msg->bytes) {
@@ -837,8 +844,8 @@ switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp
 	}
 
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse state: %d\n", msrp_msg->state);
-		dump_buffer(buf, len, __LINE__);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "parse state: %d\n", msrp_msg->state);
+		dump_buffer(buf, len, __LINE__, 0);
 	}
 
 	if (msrp_msg->state == MSRP_ST_WAIT_HEADER) {
@@ -927,7 +934,7 @@ switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp
 			if (msrp_msg->payload_bytes == len - dlen - 5) {
 				msrp_msg->last_p = buf + len;
 
-				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "payload bytes:%d\n", (int)msrp_msg->payload_bytes);
+				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "payload bytes:%d\n", (int)msrp_msg->payload_bytes);
 
 				return msrp_msg; /*Fixme: assuming \r\ndelimiter$\r\n present*/
 			}
@@ -976,7 +983,7 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 		msrp_msg->delimiter);
 	len = strlen(buf);
 
-	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "report: %" SWITCH_SIZE_T_FMT " bytes\n%s", len, buf);
+	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "report: %" SWITCH_SIZE_T_FMT " bytes [\n%s]\n", len, buf);
 
 	return msrp_socket_send(csock, buf, &len);
 }
@@ -1244,10 +1251,15 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	last_p = buf;
 	if (msrp_msg) switch_msrp_msg_destroy(&msrp_msg);
 
-	while (msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS && len > 0) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes:%" SWITCH_SIZE_T_FMT "\n", len);
+	while (msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS) {
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
 
-		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__);
+		if (len == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
+			continue;
+		}
+
+		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__, 0);
 
 		msrp_msg = msrp_parse_buffer(last_p, p - last_p + len, msrp_msg, pool);
 
@@ -1259,7 +1271,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		}
 
 		if (helper->debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "state:%d, len:%" SWITCH_SIZE_T_FMT " payload_bytes:%" SWITCH_SIZE_T_FMT "\n", msrp_msg->state, len, msrp_msg->payload_bytes);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "state:%d, len:%" SWITCH_SIZE_T_FMT " payload_bytes:%" SWITCH_SIZE_T_FMT "\n", msrp_msg->state, len, msrp_msg->payload_bytes);
 			// {
 			// 	char bbb[MSRP_BUFF_SIZE * 2];
 			// 	msrp_msg_serialize(switch_msrp_msg_tmp, bbb),
@@ -1465,6 +1477,11 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *
 	const char *to_path = msrp_h_to_path ? msrp_h_to_path : ms->remote_path;
 	const char *from_path = msrp_h_from_path ? msrp_h_from_path: ms->local_path;
 
+	if (msrp_msg->payload_bytes == 2 && msrp_msg->payload && !strncmp(msrp_msg->payload, "\r\n", 2)) {
+		// discard \r\n appended in uuid_send_text
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!ms->running) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_WARNING, "MSRP not ready! Discard one message\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -1502,7 +1519,8 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *
 	sprintf(buf + len, "\r\n-------%s$\r\n", transaction_id);
 	len += (12 + strlen(transaction_id));
 
-	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "---------------------send: %" SWITCH_SIZE_T_FMT " bytes---------------------\n%s\n", len, buf);
+	if (globals.debug) dump_buffer(buf, len, __LINE__, 1);
+
 	return ms->csock ? msrp_socket_send(ms->csock, buf, &len) : SWITCH_STATUS_FALSE;
 }
 
