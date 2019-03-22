@@ -4941,6 +4941,8 @@ SWITCH_STANDARD_API(break_function)
 		}
 	}
 
+	stream->write_function(stream, "+OK\n");
+
   done:
 
 	if (psession) {
