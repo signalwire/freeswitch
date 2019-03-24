@@ -404,6 +404,18 @@ typedef enum {
 	SWITCH_DATABASE_INTERFACE,
 } switch_module_interface_name_t;
 
+/*!
+  \enum switch_database_flag_t
+  \brief Database flags
+<pre>
+SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT = (1 <<  0) - Indicates that database has got row-size limit for the combined sizes of all columns.
+</pre>
+ */
+typedef enum {
+	SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT = (1 << 0)
+} switch_database_flag_enum_t;
+typedef uint32_t switch_database_flag_t;
+
 typedef enum {
 	SUF_NONE = 0,
 	SUF_THREAD_RUNNING = (1 << 0),

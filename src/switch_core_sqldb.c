@@ -1559,6 +1559,12 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_create_schema(switch_cache_db_ha
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql)
 {
+	return switch_cache_db_test_reactive_ex(dbh, test_sql, drop_sql, reactive_sql, NULL);
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_handle_t *dbh,
+															const char *test_sql, const char *drop_sql, const char *reactive_sql, const char *row_size_limited_reactive_sql)
+{
 	switch_bool_t r = SWITCH_TRUE;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
 
@@ -1596,6 +1602,12 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 					if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
 						char tmp[100];
 						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
+
+						if (row_size_limited_reactive_sql && switch_test_flag(database_interface, SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT)) {
+							if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, row_size_limited_reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+								switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with row_size_limited_reactive_sql", result);
+							}
+						}
 					}
 
 					r = result;
@@ -3041,6 +3053,48 @@ static char create_channels_sql[] =
 	"   initial_context  VARCHAR(128)\n"
 	");\n";
 
+static char create_row_size_limited_channels_sql[] =
+	"CREATE TABLE channels (\n"
+	"   uuid  VARCHAR(256),\n"
+	"   direction  VARCHAR(32),\n"
+	"   created  VARCHAR(128),\n"
+	"   created_epoch  INTEGER,\n"
+	"   name  VARCHAR(1024),\n"
+	"   state  VARCHAR(64),\n"
+	"   cid_name  VARCHAR(1024),\n"
+	"   cid_num  VARCHAR(256),\n"
+	"   ip_addr  VARCHAR(256),\n"
+	"   dest  VARCHAR(1024),\n"
+	"   application  VARCHAR(128),\n"
+	"   application_data  VARCHAR(4096),\n"
+	"   dialplan VARCHAR(128),\n"
+	"   context VARCHAR(128),\n"
+	"   read_codec  VARCHAR(128),\n"
+	"   read_rate  VARCHAR(32),\n"
+	"   read_bit_rate  VARCHAR(32),\n"
+	"   write_codec  VARCHAR(128),\n"
+	"   write_rate  VARCHAR(32),\n"
+	"   write_bit_rate  VARCHAR(32),\n"
+	"   secure VARCHAR(64),\n"
+	"   hostname VARCHAR(256),\n"
+	"   presence_id VARCHAR(4096),\n"
+	"   presence_data TEXT,\n"
+	"   accountcode VARCHAR(256),\n"
+	"   callstate  VARCHAR(64),\n"
+	"   callee_name  VARCHAR(1024),\n"
+	"   callee_num  VARCHAR(256),\n"
+	"   callee_direction  VARCHAR(5),\n"
+	"   call_uuid  VARCHAR(256),\n"
+	"   sent_callee_name  VARCHAR(1024),\n"
+	"   sent_callee_num  VARCHAR(256),\n"
+	"   initial_cid_name  VARCHAR(1024),\n"
+	"   initial_cid_num  VARCHAR(256),\n"
+	"   initial_ip_addr  VARCHAR(256),\n"
+	"   initial_dest  VARCHAR(1024),\n"
+	"   initial_dialplan  VARCHAR(128),\n"
+	"   initial_context  VARCHAR(128)\n"
+");\n";
+
 static char create_calls_sql[] =
 	"CREATE TABLE calls (\n"
 	"   call_uuid  VARCHAR(255),\n"
@@ -3758,7 +3812,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			char *err;
 			int result = 0;
 
-			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context, accountcode from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive_ex(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context, accountcode from channels", "DROP TABLE channels", create_channels_sql, create_row_size_limited_channels_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
