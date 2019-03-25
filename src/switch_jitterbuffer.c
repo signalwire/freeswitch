@@ -880,18 +880,17 @@ SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_
 {
 	const char *var;
 
-	jb->session = session;
-	jb->channel = switch_core_session_get_channel(session);
-
-	if (jb->type == SJB_VIDEO && !switch_test_flag(jb, SJB_QUEUE_ONLY) && 
-		(var = switch_channel_get_variable_dup(jb->channel, "jb_video_low_bitrate", SWITCH_FALSE, -1))) {
-		int tmp = atoi(var);
-
-		if (tmp >= 128 && tmp <= 10240) {
-			jb->video_low_bitrate = (uint32_t)tmp;
+	if (session) {
+		jb->session = session;
+		jb->channel = switch_core_session_get_channel(session);
+		if (jb->type == SJB_VIDEO && !switch_test_flag(jb, SJB_QUEUE_ONLY) && 
+			(var = switch_channel_get_variable_dup(jb->channel, "jb_video_low_bitrate", SWITCH_FALSE, -1))) {
+			int tmp = atoi(var);
+			if (tmp >= 128 && tmp <= 10240) {
+				jb->video_low_bitrate = (uint32_t)tmp;
+			}
 		}
 	}
-
 }
 
 SWITCH_DECLARE(void) switch_jb_set_flag(switch_jb_t *jb, switch_jb_flag_t flag)
