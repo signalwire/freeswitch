@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2019, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1050,6 +1050,19 @@ SWITCH_DECLARE(switch_event_t *) switch_dial_handle_get_global_vars(switch_dial_
 SWITCH_DECLARE(switch_event_t *) switch_dial_leg_get_vars(switch_dial_leg_t *leg);
 SWITCH_DECLARE(int) switch_dial_handle_get_total(switch_dial_handle_t *handle);
 SWITCH_DECLARE(void) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh);
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_session_t *session,
+															const char *prompt,
+															const char *recognizer_mod_name,
+															const char *recognizer_grammar,
+															int min_digits,
+															int max_digits,
+															const char *terminators,
+															uint32_t digit_timeout,
+															cJSON **recognition_result,
+															char **digits_collected,
+															char *terminator_collected,
+															switch_input_args_t *args);
 
 /** @} */
 
