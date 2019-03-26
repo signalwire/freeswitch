@@ -4657,14 +4657,16 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SESS_REC_SYNTAX "<uuid> [start|stop|mask|unmask] <path> [<limit>]"
+#define SESS_REC_SYNTAX "<uuid> [start|stop|mask|unmask] <path> [<limit>] [<recording_vars>]"
 SWITCH_STANDARD_API(session_record_function)
 {
 	switch_core_session_t *rsession = NULL;
-	char *mycmd = NULL, *argv[4] = { 0 };
+	char *mycmd = NULL, *argv[5] = { 0 };
 	char *uuid = NULL, *action = NULL, *path = NULL;
 	int argc = 0;
 	uint32_t limit = 0;
+	switch_event_t *vars = NULL;
+	char *new_fp = NULL;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -4693,11 +4695,16 @@ SWITCH_STANDARD_API(session_record_function)
 	}
 
 	if (!strcasecmp(action, "start")) {
-		if (switch_ivr_record_session(rsession, path, limit, NULL) != SWITCH_STATUS_SUCCESS) {
+		if(argc > 3) {
+			switch_url_decode(argv[4]);
+			switch_event_create_brackets(argv[4], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
+		}
+		if (switch_ivr_record_session_event(rsession, path, limit, NULL, vars) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Cannot record session!\n");
 		} else {
 			stream->write_function(stream, "+OK Success\n");
 		}
+		switch_event_safe_destroy(vars);
 	} else if (!strcasecmp(action, "stop")) {
 		if (switch_ivr_stop_record_session(rsession, path) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Cannot stop record session!\n");

@@ -3234,40 +3234,43 @@ SWITCH_STANDARD_APP(record_session_unmask_function)
 
 SWITCH_STANDARD_APP(record_session_function)
 {
+	char *array[5] = {0};
+	char *args = NULL;
+	int argc;
+
 	char *path = NULL;
-	char *path_end;
 	uint32_t limit = 0;
+	switch_event_t *vars = NULL;
+	char *new_fp = NULL;
 
 	if (zstr(data)) {
 		return;
 	}
 
-	path = switch_core_session_strdup(session, data);
+	args = switch_core_session_strdup(session, data);
+	argc = switch_split(args, ' ', array);
 
-	/* Search for a space then a plus followed by only numbers at the end of the path,
-	   if found trim any spaces to the left/right of the plus use the left side as the
-	   path and right side as a time limit on the recording
-	 */
+	if (argc == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "usage: <path> [+<timeout>] [{var1=x,var2=y}]\n");
+	}
 
-	/* if we find a + and the character before it is a space */
-	if ((path_end = strrchr(path, '+')) && path_end > path && *(path_end - 1) == ' ') {
-		char *limit_start = path_end + 1;
+	path = array[0];
 
-		/* not at the end and the rest is numbers lets parse out the limit and fix up the path */
-		if (*limit_start != '\0' && switch_is_number(limit_start) == SWITCH_TRUE) {
-			limit = atoi(limit_start);
-			/* back it off by one character to the char before the + */
-			path_end--;
-
-			/* trim spaces to the left of the plus */
-			while (path_end > path && *path_end == ' ') {
-				path_end--;
+	if (argc > 1) {
+		if (*array[1] == '+') {
+			limit = atoi(++array[1]);
+			if (argc > 2) {
+				switch_url_decode(array[2]);
+				switch_event_create_brackets(array[2], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
 			}
-
-			*(path_end + 1) = '\0';
+		} else {
+			switch_url_decode(array[1]);
+			switch_event_create_brackets(array[1], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
 		}
 	}
-	switch_ivr_record_session(session, path, limit, NULL);
+
+	switch_ivr_record_session_event(session, path, limit, NULL, vars);
+	switch_event_safe_destroy(vars);
 }
 
 SWITCH_STANDARD_APP(stop_record_session_function)
@@ -5690,7 +5693,7 @@ void *SWITCH_THREAD_FUNC page_thread(switch_thread_t *thread, void *obj)
 		switch_mutex_unlock(pd->mutex);
 	}
 
-	switch_event_safe_destroy(&pd->var_event);
+	switch_event_safe_destroy(pd->var_event);
 
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
