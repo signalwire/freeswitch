@@ -46,6 +46,16 @@ SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
+#define MAX_NETWORK_PORTS 10
+
+struct switch_network_port_range {
+	int port;
+	int ports[MAX_NETWORK_PORTS];
+	int min_port;
+	int max_port;
+};
+typedef struct switch_network_port_range switch_network_port_range_t;
+typedef switch_network_port_range_t* switch_network_port_range_p;
 
 static inline char *switch_get_hex_bytes(switch_byte_t *buf, switch_size_t datalen, char *new_buf, switch_size_t new_datalen)
 {
@@ -1270,6 +1280,12 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 
 SWITCH_DECLARE(char *) switch_network_ipv4_mapped_ipv6_addr(const char* ip_str);
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok);
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_port_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token, switch_network_port_range_p port);
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_port_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok, switch_network_port_range_p port);
+
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_port_token(switch_network_list_t *list, uint32_t ip, int port, const char **token);
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_port_token(switch_network_list_t *list, ip_t ip, int port, const char **token);
 SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token);
 SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_network_list_t *list, ip_t ip, const char **token);
 #define switch_network_list_validate_ip(_list, _ip) switch_network_list_validate_ip_token(_list, _ip, NULL);
