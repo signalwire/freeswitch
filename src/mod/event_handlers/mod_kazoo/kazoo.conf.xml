@@ -66,34 +66,31 @@
             <field name="Metaflow-Control" type="reference" />
         </definition>
 
+        <definition name="Privacy">
+                    <field name="Caller-Privacy-Hide-Number" as="Hide-Number" serialize-as="boolean" />
+                    <field name="Caller-Privacy-Hide-Name" as="Hide-Name" serialize-as="boolean" />
+                    <field name="Caller-Screen-Bit" as="Screen-Bit" serialize-as="boolean" />
+        </definition>
+
         <definition name="Custom-Channel-Vars">
             <field name="Custom-Channel-Vars" type="static" serialize-as="object">
                 <fields verbose="false">
+                    <field name="X-ecallmgr_" type="prefix"
+                        exclude-prefix="true" />
                     <field name="variable_sip_h_X-ecallmgr_" type="prefix"
                         exclude-prefix="true" />
                     <field name="variable_ecallmgr_" type="prefix"
                         exclude-prefix="true" />
 
-                    <!-- special case for booleans -->
-                    <field name="variable_ecallmgr_Caller-Privacy-Hide-Number"
-                        as="Caller-Privacy-Hide-Number" serialize-as="boolean" />
-                    <field name="variable_ecallmgr_Caller-Privacy-Hide-Name" as="Caller-Privacy-Hide-Name"
-                        serialize-as="boolean" />
-                    <field name="variable_ecallmgr_Caller-Screen-Bit" as="Caller-Screen-Bit"
-                        serialize-as="boolean" />
-
-                    <field name="Caller-Privacy-Hide-Number" serialize-as="boolean" />
-                    <field name="Caller-Privacy-Hide-Name" serialize-as="boolean" />
-                    <field name="Caller-Screen-Bit" serialize-as="boolean" />
-
                     <field name="Fetch-UUID" as="Fetch-ID" />
+
                     <field name="Referred-To" type="expand"
-                        value="${regex(${url_decode(${variable_sip_refer_to})}|&lt;sips?:(.*)&gt;|%1)}">
+                        value="sip:${regex(${url_decode(${variable_sip_refer_to})}|&lt;sips?:(.*)&gt;|%1)}">
                         <filters>
                             <filter name="variable_sip_refer_to" type="include" compare="exists" />
                         </filters>
                     </field>
-                    <field name="Referred-By" type="expand" value="${regex(${variable_sip_h_Referred-By}|&lt;sips?:(.*)&gt;|%1)}">
+                    <field name="Referred-By" type="expand" value="sip:${regex(${variable_sip_h_Referred-By}|&lt;sips?:(.*)&gt;|%1)}">
                         <filters>
                             <filter name="variable_sip_h_Referred-By" type="include" compare="exists" />
                         </filters>
@@ -119,7 +116,7 @@
                             <filter name="variable_sip_redirected_by" type="include" compare="exists" />
                         </filters>
                         <fields verbose="false">
-                            <field name="Redirected-By" type="expand" value="${regex(${variable_sip_redirected_by}|&lt;sips?:(.*)&gt;|%1)}"/>
+                            <field name="Redirected-By" type="expand" value="sip:${regex(${variable_sip_redirected_by}|&lt;sips?:(.*)&gt;|%1)}"/>
                             <field name="Redirected-Reason" type="expand" value="${regex(${variable_sip_redirected_by}|reason=(.*)|%1)}"/>
                         </fields>
                     </field>
@@ -258,10 +255,18 @@
             <field name="Hunt-Context" />
             <field name="Hunt-Dialplan" />
             <field name="Hunt-Destination-Number" />
+            <!-- 
             <field name="Request" type="expand"
-                value="${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host)}" />
+                value="${first-of(variable_sip_to_uri|variable_sip_req_uri|#${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host|variable_ecallmgr_Realm)})}" />
             <field name="To" type="expand"
-                value="${first-of(variable_sip_to_uri|variable_sip_req_uri|#${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host)})}" />
+                value="${first-of(variable_sip_to_uri|variable_sip_req_uri|#${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host|variable_ecallmgr_Realm)})}" />
+            -->
+            <field name="Request" type="expand"
+                value="${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host|variable_ecallmgr_Realm)}" />
+            <field name="To" type="expand"
+                value="${Hunt-Destination-Number}@${first-of(variable_sip_invite_domain|variable_sip_to_host|variable_sip_req_host|variable_ecallmgr_Realm)}" />
+            <field name="From" type="expand"
+                value="${first-of(Hunt-Caller-ID-Number|origination_callee_id_number|variable_sip_from_user)}@${first-of(variable_sip_invite_domain|variable_sip_from_host|variable_sip_req_host|variable_ecallmgr_Realm)}" />
         </definition>
 
         <definition name="sip-tags">
@@ -322,7 +327,7 @@
             <field name="user-agent" type="reference" />
             <field name="Custom-Channel-Vars" type="reference" />
             <field name="Custom-Application-Vars" type="reference" />
-            <field name="Control" type="reference" />
+            <field name="Control" type="reference" />           
         </definition>
 
         <definition name="fetch-info">
@@ -344,6 +349,8 @@
             <field name="Custom-Application-Vars" type="reference" />
             <field name="freeswitch-url" type="reference" />
             <field name="Control" type="reference" />
+            <field name="Privacy" type="reference" />
+            
         </definition>
 
         <definition name="destination-number">
@@ -353,7 +360,7 @@
 
         <definition name="from-to">
             <field name="Request" type="first-of"
-                value="variable_sip_req_uri|variable_sip_loopback_req_uri" />
+                value="variable_sip_req_uri|variable_sip_loopback_req_uri|variable_sip_to_uri" />
             <field name="To" type="first-of"
                 value="variable_sip_to_uri|variable_sip_req_uri|variable_sip_loopback_req_uri" />
             <field name="variable_sip_to_uri" as="To-URI" />
@@ -448,6 +455,7 @@
                 serialize-as="object">
                 <fields verbose="false">
                     <field name="Conference-" type="prefix" exclude-prefix="true" />
+                    <field name="Account-ID" type="first-of" value="Account-ID|Conference-Account-ID|variable_ecallmgr_Account-ID" />
                 </fields>
             </field>
         </definition>
@@ -529,14 +537,15 @@
             <field name="Application-Name" type="static" value="record" />
             <field name="Application-Response" type="first-of"
                 value="Record-File-Path|kazoo_application_response" />
-            <field name="recording_vars" type="reference" />
+          <field name="recording_vars" type="reference" />
         </definition>
 
         <definition name="fax_data">
             <field name="variable_fax_success" as="Fax-Success" serialize-as="boolean" />
             <field name="variable_has_t38" as="Fax-T38-Used" serialize-as="boolean" />
-            <field name="variable_fax_ecm_used" as="Fax-ECM-Used" serialize-as="boolean" />
             <field name="variable_fax_t38_status" as="Fax-T38-Status" />
+            <field name="variable_fax_ecm_used" as="Fax-ECM-Used" serialize-as="boolean" />
+            <field name="variable_fax_ecm_requested" as="Fax-ECM-Requested" serialize-as="boolean" />
             <field name="variable_fax_document_transferred_pages" as="Fax-Transferred-Pages" serialize-as="number" />
             <field name="variable_fax_document_total_pages" as="Fax-Total-Pages" serialize-as="number" />
             <field name="variable_fax_bad_rows" as="Fax-Bad-Rows" serialize-as="number" />
@@ -575,7 +584,6 @@
             <field name="Custom-Application-Vars" type="reference" />
         </definition>
 
-
         <definition name="voice_dialplan">
                 <field name="fetch-info" type="reference" />
                 <field name="Timestamp" type="expand"
@@ -589,6 +597,7 @@
                 <field name="user-agent" type="reference" />
                 <field name="from-to" type="reference" />
                 <field name="to-did" type="reference" />
+                <field name="loopback" type="reference" />
                 <field name="sip-tags" type="reference" />
                 <field name="freeswitch-url" type="reference" />
                 <field name="destination-number" type="reference" />
@@ -601,7 +610,6 @@
                 <field name="Event-Name" type="static" value="route_req" />
                 <field name="Hunt-Context" as="Fetch-Key-Value" />
         </definition>
-
         <definition name="metaflow_dialplan">
                 <field name="metaflow" type="group">
                     <filters>
@@ -621,7 +629,7 @@
                             serialize-as="object">
                             <fields verbose="false">
                                 <field name="Metaflow-Request-Type" type="static" value="in-call" />
-                                <field name="Other-Leg-Call-ID" type="first-of" value="variable_Application-Other-Leg-UUID|Other-Leg-Unique-ID" />
+                                <field name="Other-Leg-Unique-ID" as="Other-Leg-Call-ID" />
                                 <field name="Hunt-Destination-Number" as="Metaflow-Request" />
                             </fields>
                         </field>
@@ -630,8 +638,8 @@
                 </field>        
         </definition>
 
-
     </definitions>
+
 
 	<event-handlers>
 		<profile name="default">

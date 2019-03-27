@@ -350,7 +350,7 @@ SWITCH_STANDARD_API(kz_http_put)
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-kazoo/1.0");
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, stream->param_event);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, body_callback);

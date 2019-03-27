@@ -74,6 +74,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	/* add our modified dptools */
 	add_kz_dptools(module_interface, app_interface);
 
+	/* add our endpoints */
+	add_kz_endpoints(module_interface);
+
 	/* add tweaks */
 	kz_tweaks_start();
 

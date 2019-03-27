@@ -36,15 +36,21 @@ void add_cli_api(switch_loadable_module_interface_t **module_interface, switch_a
 void remove_cli_api();
 
 /* kazoo_utils.c */
+SWITCH_DECLARE(switch_status_t) kz_switch_core_merge_variables(switch_event_t *event);
+SWITCH_DECLARE(switch_status_t) kz_switch_core_base_headers_for_expand(switch_event_t **event);
 void kz_check_set_profile_var(switch_channel_t *channel, char* var, char *val);
 char *kazoo_expand_header(switch_memory_pool_t *pool, switch_event_t *event, char *val);
-char* switch_event_get_first_of(switch_event_t *event, const char *list[]);
-SWITCH_DECLARE(switch_status_t) switch_event_add_variable_name_printf(switch_event_t *event, switch_stack_t stack, const char *val, const char *fmt, ...);
+char* kz_switch_event_get_first_of(switch_event_t *event, const char *list[]);
+SWITCH_DECLARE(switch_status_t) kz_switch_event_add_variable_name_printf(switch_event_t *event, switch_stack_t stack, const char *val, const char *fmt, ...);
 void kz_xml_process(switch_xml_t cfg);
 void kz_event_decode(switch_event_t *event);
 char * kz_expand_vars(char *xml_str);
 char * kz_expand_vars_pool(char *xml_str, switch_memory_pool_t *pool);
 SWITCH_DECLARE(char *) kz_event_expand_headers(switch_event_t *event, const char *in);
+
+/* kazoo_endpoints.c */
+void add_kz_endpoints(switch_loadable_module_interface_t **module_interface);
+
 
 /* kazoo_tweaks.c */
 void kz_tweaks_start();
