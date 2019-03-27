@@ -519,7 +519,9 @@ switch_status_t create_acceptor() {
     char ipbuf[48];
     const char *ip_addr;
 
+#if ERLANG_MAJOR >= 10
     ei_init();
+#endif
 
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
 	if (kazoo_globals.ei_compat_rel) {
