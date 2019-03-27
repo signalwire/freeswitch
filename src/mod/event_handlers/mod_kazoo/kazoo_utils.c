@@ -34,6 +34,17 @@
  */
 #include "mod_kazoo.h"
 
+#define kz_resize(l) {\
+char *dp;\
+olen += (len + l + block);\
+cpos = c - data;\
+if ((dp = realloc(data, olen))) {\
+	data = dp;\
+	c = data + cpos;\
+	memset(c, 0, olen - cpos);\
+ }}                           \
+
+
 void kz_check_set_profile_var(switch_channel_t *channel, char* var, char *val)
 {
 	int idx = 0;
@@ -45,6 +56,27 @@ void kz_check_set_profile_var(switch_channel_t *channel, char* var, char *val)
 		}
 		idx++;
 	}
+}
+
+SWITCH_DECLARE(switch_status_t) kz_switch_core_merge_variables(switch_event_t *event)
+{
+	switch_event_t *global_vars;
+	switch_status_t status = switch_core_get_variables(&global_vars);
+	if(status == SWITCH_STATUS_SUCCESS) {
+		switch_event_merge(event, global_vars);
+		switch_event_destroy(&global_vars);
+	}
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) kz_switch_core_base_headers_for_expand(switch_event_t **event)
+{
+	switch_status_t status = SWITCH_STATUS_GENERR;
+	*event = NULL;
+	if(switch_event_create(event, SWITCH_EVENT_GENERAL) == SWITCH_STATUS_SUCCESS) {
+		status = kz_switch_core_merge_variables(*event);
+	}
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) kz_expand_api_execute(const char *cmd, const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
@@ -87,15 +119,6 @@ SWITCH_DECLARE(switch_status_t) kz_expand_api_execute(const char *cmd, const cha
 	return status;
 }
 
-#define resize(l) {\
-char *dp;\
-olen += (len + l + block);\
-cpos = c - data;\
-if ((dp = realloc(data, olen))) {\
-	data = dp;\
-	c = data + cpos;\
-	memset(c, 0, olen - cpos);\
- }}                           \
 
 SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur)
 {
@@ -146,7 +169,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 					continue;
 				} else if (*(p + 1) == '\\') {
 					if (len + 1 >= olen) {
-						resize(1);
+						kz_resize(1);
 					}
 
 					*c++ = *p++;
@@ -174,7 +197,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 
 			if (nv) {
 				if (len + 1 >= olen) {
-					resize(1);
+					kz_resize(1);
 				}
 
 				*c++ = *p;
@@ -362,7 +385,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
 					if (len + nlen >= olen) {
-						resize(nlen);
+						kz_resize(nlen);
 					}
 
 					len += nlen;
@@ -381,7 +404,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 
 			if (sp) {
 				if (len + 1 >= olen) {
-					resize(1);
+					kz_resize(1);
 				}
 
 				*c++ = ' ';
@@ -393,7 +416,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 				p--;
 			} else {
 				if (len + 1 >= olen) {
-					resize(1);
+					kz_resize(1);
 				}
 
 				*c++ = *p;
@@ -412,6 +435,16 @@ SWITCH_DECLARE(char *) kz_event_expand_headers(switch_event_t *event, const char
 	return kz_event_expand_headers_check(event, in, NULL, NULL, 0);
 }
 
+SWITCH_DECLARE(char *) kz_event_expand(const char *in)
+{
+	switch_event_t *event = NULL;
+	char *ret = NULL;
+	kz_switch_core_base_headers_for_expand(&event);
+	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
+	switch_event_destroy(&event);
+	return ret;
+}
+
 char *kazoo_expand_header(switch_memory_pool_t *pool, switch_event_t *event, char *val)
 {
 	char *expanded;
@@ -427,7 +460,7 @@ char *kazoo_expand_header(switch_memory_pool_t *pool, switch_event_t *event, cha
 	return dup;
 }
 
-char* switch_event_get_first_of(switch_event_t *event, const char *list[])
+char* kz_switch_event_get_first_of(switch_event_t *event, const char *list[])
 {
 	switch_event_header_t *header = NULL;
 	int i = 0;
@@ -443,7 +476,7 @@ char* switch_event_get_first_of(switch_event_t *event, const char *list[])
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_add_variable_name_printf(switch_event_t *event, switch_stack_t stack, const char *val, const char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) kz_switch_event_add_variable_name_printf(switch_event_t *event, switch_stack_t stack, const char *val, const char *fmt, ...)
 {
 	int ret = 0;
 	char *varname;

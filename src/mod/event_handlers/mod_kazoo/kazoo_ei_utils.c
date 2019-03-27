@@ -519,6 +519,8 @@ switch_status_t create_acceptor() {
     char ipbuf[48];
     const char *ip_addr;
 
+    ei_init();
+
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
 	if (kazoo_globals.ei_compat_rel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", kazoo_globals.ei_compat_rel);

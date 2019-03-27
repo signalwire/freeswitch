@@ -98,7 +98,7 @@ static void base_set (switch_core_session_t *session, const char *data, int urld
 			expanded = switch_channel_expand_variables(channel, val);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s] => [%s]\n", switch_channel_get_name(channel), var, val,
 						  expanded ? expanded : "UNDEF");
 		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 		kz_check_set_profile_var(channel, var, expanded);
@@ -458,6 +458,124 @@ SWITCH_STANDARD_APP(noop_function)
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, response);
 }
 
+SWITCH_STANDARD_APP(kz_restore_caller_id_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
+	cp->caller_id_name = cp->orig_caller_id_name;
+	cp->caller_id_number = cp->orig_caller_id_number;
+}
+
+SWITCH_STANDARD_APP(kz_audio_bridge_function)
+{
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_core_session_t *peer_session = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(data)) {
+		return;
+	}
+
+	status = switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+
+		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(cause));
+		switch_channel_set_variable(caller_channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, switch_channel_cause2str(cause));
+		switch_channel_handle_cause(caller_channel, cause);
+
+		return;
+	} else {
+		const char* uuid = switch_core_session_get_uuid(session);
+		const char* peer_uuid = switch_core_session_get_uuid(peer_session);
+
+
+		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+		}
+
+		while(1) {
+			const char *xfer_uuid;
+			switch_channel_state_t a_state , a_running_state;
+			switch_channel_state_t b_state , b_running_state;
+			status = switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BRIDGE RESULT %i\n", status);
+			if(status  != 0) {
+				break;
+			}
+
+			a_state = switch_channel_get_state(caller_channel);
+			a_running_state = switch_channel_get_running_state(caller_channel);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "A STATE %s  %s =>  %s , %s\n", switch_channel_state_name(a_running_state), switch_channel_state_name(a_state), uuid, peer_uuid);
+
+			if(a_state >= CS_HANGUP) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "A HANGUP =  %s , %s\n", uuid, peer_uuid);
+				break;
+			}
+
+			b_state = switch_channel_get_state(peer_channel);
+			b_running_state = switch_channel_get_running_state(peer_channel);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "B STATE %s  %s =>  %s , %s\n", switch_channel_state_name(b_running_state), switch_channel_state_name(b_state), uuid, peer_uuid);
+
+			if(b_state >= CS_HANGUP) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "B HANGUP = %s , %s\n", uuid, peer_uuid);
+				switch_channel_set_variable(caller_channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, switch_channel_cause2str(switch_channel_get_cause(peer_channel)));
+				break;
+			}
+
+			if(!(xfer_uuid=switch_channel_get_variable(caller_channel, "att_xfer_peer_uuid"))) {
+				if(!(xfer_uuid=switch_channel_get_variable(peer_channel, "att_xfer_peer_uuid"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "XFER UUID NULL\n");
+					break;
+				}
+			}
+
+			switch_channel_set_variable(caller_channel, "att_xfer_peer_uuid", NULL);
+			switch_channel_set_variable(peer_channel, "att_xfer_peer_uuid", NULL);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "WAIT 1\n");
+
+			switch_channel_clear_flag(peer_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_set_state(peer_channel, CS_RESET);
+			switch_channel_wait_for_state(peer_channel, NULL, CS_RESET);
+			switch_channel_clear_state_handler(peer_channel, NULL);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "WAIT 3\n");
+
+			switch_channel_set_flag(caller_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_clear_flag(caller_channel, CF_TRANSFER);
+			switch_channel_clear_flag(caller_channel, CF_REDIRECT);
+			switch_channel_set_flag(peer_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_clear_flag(peer_channel, CF_TRANSFER);
+			switch_channel_clear_flag(peer_channel, CF_REDIRECT);
+
+			if(!switch_channel_media_up(caller_channel)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "A MEDIA DOWN HANGUP = %s, %s , %s\n", xfer_uuid, uuid, peer_uuid);
+			}
+			if(!switch_channel_media_up(peer_channel)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "B MEDIA DOWN HANGUP = %s, %s , %s\n", xfer_uuid, uuid, peer_uuid);
+			}
+			switch_channel_set_state(caller_channel, CS_EXECUTE);
+			switch_channel_set_state(peer_channel, CS_EXECUTE);
+
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "XFER LOOP %s %s , %s\n", xfer_uuid, uuid, peer_uuid);
+
+		}
+
+		if (peer_session) {
+			switch_core_session_rwunlock(peer_session);
+		}
+	}
+}
+
 void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switch_application_interface_t *app_interface) {
 	SWITCH_ADD_APP(app_interface, "kz_set", SET_SHORT_DESC, SET_LONG_DESC, set_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_set_encoded", SET_SHORT_DESC, SET_LONG_DESC, set_encoded_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
@@ -471,5 +589,7 @@ void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switc
 	SWITCH_ADD_APP(app_interface, "kz_uuid_multiset", UUID_MULTISET_SHORT_DESC, UUID_MULTISET_LONG_DESC, uuid_multiset_function, UUID_MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_uuid_multiset_encoded", UUID_MULTISET_SHORT_DESC, UUID_MULTISET_LONG_DESC, uuid_multiset_encoded_function, UUID_MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_endless_playback", KZ_ENDLESS_PLAYBACK_SHORT_DESC, KZ_ENDLESS_PLAYBACK_LONG_DESC, kz_endless_playback_function, KZ_ENDLESS_PLAYBACK_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "kz_restore_caller_id", NOOP_SHORT_DESC, NOOP_LONG_DESC, kz_restore_caller_id_function, NOOP_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "noop", NOOP_SHORT_DESC, NOOP_LONG_DESC, noop_function, NOOP_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "kz_bridge", "Bridge Audio", "Bridge the audio between two sessions", kz_audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
 }
