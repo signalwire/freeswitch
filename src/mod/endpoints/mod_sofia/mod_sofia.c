@@ -2241,6 +2241,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
 			const char *session_id_header = sofia_glue_session_id_header(tech_pvt->session, tech_pvt->profile);
+
 			if (switch_channel_test_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE)) {
 				switch_channel_clear_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE);
 
