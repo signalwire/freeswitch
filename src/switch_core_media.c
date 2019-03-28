@@ -185,6 +185,7 @@ typedef struct switch_rtp_engine_s {
 	uint8_t tmmbr;
 	uint8_t no_crypto;
 	uint8_t dtls_controller;
+	uint8_t pass_codecs;
 	switch_codec_settings_t codec_settings;
 	switch_media_flow_t rmode;
 	switch_media_flow_t smode;
@@ -4708,12 +4709,14 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 	old_smode = engine->smode;
 
 	engine->smode = smode;
-	
+
 	switch_channel_set_variable(session->channel, varname, smode_str);
 
-	if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_reinvite")) {
+	if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_reinvite") || engine->pass_codecs) {
 		pass_codecs = 1;
 	}
+
+	engine->pass_codecs = 0;
 	
 	if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_stream_change")) {
 		if (sdp_type == SDP_TYPE_REQUEST && switch_channel_test_flag(session->channel, CF_REINVITE) && 
@@ -4745,14 +4748,19 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 	varname = remote_media_flow_varname(type);
 	media_flow_get_mode(rmode, &rmode_str, &opp_rmode);
 
+	if (engine->rmode != rmode) {
+		engine->pass_codecs = 1;
+	}
+	
 	engine->rmode = rmode;
 
 	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 
 		if (!switch_channel_media_up(session->channel) && sdp_type == SDP_TYPE_REQUEST) {
 			engine->rmode = switch_core_session_remote_media_flow(other_session, type);
+			
 			media_flow_get_mode(engine->rmode, &rmode_str, &opp_rmode);
-		} else if (sdp_type == SDP_TYPE_RESPONSE) {
+		} else if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 			switch_core_media_set_smode(other_session, type, rmode, sdp_type);
 		}
 
