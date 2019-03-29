@@ -928,7 +928,10 @@
     <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)$(Revision)$(SnapshotName)-$(UserFriendlyPlatform)-$(Configuration).msi">
       <Output TaskParameter="Value" PropertyName="DestinationFileName" />
     </CreateProperty>
-    <CreateProperty Value="$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Major).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Minor).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Bld)">
+    <CreateProperty Value="$(VCToolsRedistVersion)">
+      <Output TaskParameter="Value" PropertyName="VCLibVersion" />
+    </CreateProperty>
+    <CreateProperty Condition="'$(VCLibVersion)' == ''" Value="$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Major).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Minor).$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64@Bld)">
       <Output TaskParameter="Value" PropertyName="VCLibVersion" />
     </CreateProperty>
     <CreateProperty Value="$(VSInstallDir)\VC\Redist\MSVC\$(VCLibVersion)\MergeModules\">
