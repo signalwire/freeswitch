@@ -1013,7 +1013,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
 		return SWITCH_STATUS_FALSE;
@@ -1029,7 +1029,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	switch_buffer_create_dynamic(&audio_buffer, 512, 1024, 0);
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
 	ts.rate = read_impl.actual_samples_per_second;
-	ts.channels = 1;
+	ts.channels = read_impl.number_of_channels;
 	teletone_run(&ts, script);
 
 	if (loops) {
