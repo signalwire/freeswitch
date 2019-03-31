@@ -445,16 +445,28 @@ SWITCH_DECLARE(char *) kz_event_expand(const char *in)
 	return ret;
 }
 
-char *kazoo_expand_header(switch_memory_pool_t *pool, switch_event_t *event, char *val)
+SWITCH_DECLARE(char *) kz_expand(const char *in)
+{
+	switch_event_t *event = NULL;
+	char *ret = NULL;
+	kz_switch_core_base_headers_for_expand(&event);
+	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
+	switch_event_destroy(&event);
+	return ret;
+}
+
+SWITCH_DECLARE(char *) kz_expand_pool(switch_memory_pool_t *pool, const char *in)
 {
 	char *expanded;
 	char *dup = NULL;
 
-	expanded = kz_event_expand_headers(event, val);
+	if(!(expanded = kz_expand(in))) {
+		return NULL;
+	}
 	dup = switch_core_strdup(pool, expanded);
 
-	if (expanded != val) {
-		free(expanded);
+	if (expanded != in) {
+		switch_safe_free(expanded);
 	}
 
 	return dup;
@@ -607,6 +619,17 @@ char * kz_expand_vars_pool(char *xml_str, switch_memory_pool_t *pool) {
 		return buff;
 	}
 
+}
+
+switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	cJSON *req = cJSON_CreateObject();
+	cJSON_AddItemToObject(req, "command", cJSON_CreateString(command));
+	cJSON_AddItemToObject(req, "data", args ? args : cJSON_CreateObject());
+	status = switch_json_api_execute(req, NULL, res);
+	cJSON_Delete(req);
+	return status;
 }
 
 /* For Emacs:

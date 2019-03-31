@@ -12,6 +12,7 @@ mod_kazoo_la_SOURCES  += kazoo_message.c
 mod_kazoo_la_SOURCES  += kazoo_ei_config.c kazoo_ei_utils.c kazoo_event_stream.c
 mod_kazoo_la_SOURCES  += kazoo_fetch_agent.c kazoo_node.c
 mod_kazoo_la_SOURCES  += kazoo_endpoints.c
+mod_kazoo_la_SOURCES  += kz_node.c
 
 mod_kazoo_la_CFLAGS   = $(AM_CFLAGS) @ERLANG_CFLAGS@ -D_REENTRANT -DERLANG_VERSION=@ERLANG_VERSION@ -DERLANG_MAJOR=@ERLANG_MAJOR@ -DERLANG_MINOR=@ERLANG_MINOR@
 mod_kazoo_la_LIBADD   = $(KAZOO_DEFS) $(switch_builddir)/libfreeswitch.la
