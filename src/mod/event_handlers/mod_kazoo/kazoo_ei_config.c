@@ -113,7 +113,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.port = 0;
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
-	kazoo_globals.enable_legacy = SWITCH_TRUE;
+	kazoo_globals.enable_legacy = SWITCH_FALSE;
 
 
 	if ((child = switch_xml_child(cfg, "settings"))) {
@@ -306,6 +306,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 switch_status_t kazoo_config_handlers(switch_xml_t cfg)
 {
 		switch_xml_t def = NULL;
+		switch_xml_t child, param;
 		char* xml = NULL;
 		kazoo_config_ptr definitions = NULL, fetch_handlers = NULL, event_handlers = NULL;
 		kazoo_event_profile_ptr events = NULL;
@@ -316,19 +317,49 @@ switch_status_t kazoo_config_handlers(switch_xml_t cfg)
 		kz_xml_process(def);
 		kz_xml_process(cfg);
 
+		if ((child = switch_xml_child(cfg, "variables"))) {
+			for (param = switch_xml_child(child, "variable"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if(var && val) {
+					switch_core_set_variable(var, val);
+				}
+			}
+		} else if ((child = switch_xml_child(def, "variables"))) {
+			for (param = switch_xml_child(child, "variable"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if(var && val) {
+					switch_core_set_variable(var, val);
+				}
+			}
+		}
+
 		definitions = kazoo_config_definitions(cfg);
 		if(definitions == NULL) {
-			definitions = kazoo_config_definitions(def);
+			if(kazoo_globals.definitions == NULL) {
+				definitions = kazoo_config_definitions(def);
+			} else {
+				definitions = kazoo_globals.definitions;
+			}
 		}
 
 		fetch_handlers = kazoo_config_fetch_handlers(definitions, cfg);
 		if(fetch_handlers == NULL) {
-			fetch_handlers = kazoo_config_fetch_handlers(definitions, def);
+			if(kazoo_globals.fetch_handlers == NULL) {
+				fetch_handlers = kazoo_config_fetch_handlers(definitions, def);
+			} else {
+				fetch_handlers = kazoo_globals.fetch_handlers;
+			}
 		}
 
 		event_handlers = kazoo_config_event_handlers(definitions, cfg);
 		if(event_handlers == NULL) {
-			event_handlers = kazoo_config_event_handlers(definitions, def);
+			if(kazoo_globals.event_handlers == NULL) {
+				event_handlers = kazoo_config_event_handlers(definitions, def);
+			} else {
+				event_handlers = kazoo_globals.event_handlers;
+			}
 		}
 
 		if(event_handlers != NULL) {
@@ -337,26 +368,37 @@ switch_status_t kazoo_config_handlers(switch_xml_t cfg)
 
 		if(events == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get default handler for events\n");
-			destroy_config(&event_handlers);
-			destroy_config(&fetch_handlers);
-			destroy_config(&definitions);
+			if(kazoo_globals.event_handlers != event_handlers) destroy_config(&event_handlers);
+			if(kazoo_globals.fetch_handlers != fetch_handlers) destroy_config(&fetch_handlers);
+			if(kazoo_globals.definitions != definitions) destroy_config(&definitions);
 			switch_xml_free(def);
 			switch_safe_free(xml);
 			return SWITCH_STATUS_GENERR;
 		}
 
-		bind_event_profiles(events->events);
-		kazoo_globals.events = events;
+		if(kazoo_globals.events != events) {
+			bind_event_profiles(events->events);
+			kazoo_globals.events = events;
+		}
 
-		destroy_config(&kazoo_globals.event_handlers);
-		kazoo_globals.event_handlers = event_handlers;
+		if(kazoo_globals.event_handlers != event_handlers) {
+			kazoo_config_ptr tmp = kazoo_globals.event_handlers;
+			kazoo_globals.event_handlers = event_handlers;
+			destroy_config(&tmp);
+		}
 
-		rebind_fetch_profiles(fetch_handlers);
-		destroy_config(&kazoo_globals.fetch_handlers);
-		kazoo_globals.fetch_handlers = fetch_handlers;
+		if(kazoo_globals.fetch_handlers != fetch_handlers) {
+			kazoo_config_ptr tmp = kazoo_globals.fetch_handlers;
+			kazoo_globals.fetch_handlers = fetch_handlers;
+			rebind_fetch_profiles(fetch_handlers);
+			destroy_config(&tmp);
+		}
 
-		destroy_config(&kazoo_globals.definitions);
-		kazoo_globals.definitions = definitions;
+		if(kazoo_globals.definitions != definitions) {
+			kazoo_config_ptr tmp = kazoo_globals.definitions;
+			kazoo_globals.definitions = definitions;
+			destroy_config(&tmp);
+		}
 
 
 		switch_xml_free(def);

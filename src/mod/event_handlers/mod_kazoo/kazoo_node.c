@@ -799,8 +799,10 @@ static switch_status_t handle_request_bind(ei_node_t *ei_node, erlang_pid *pid, 
 	switch(section) {
 	case SWITCH_XML_SECTION_CONFIG:
 		add_fetch_handler(ei_node, pid, kazoo_globals.config_fetch_binding);
-		if(!kazoo_globals.config_fetched)
+		if(!kazoo_globals.config_fetched) {
+			kazoo_globals.config_fetched = 1;
 			fetch_config();
+		}
 		break;
 	case SWITCH_XML_SECTION_DIRECTORY:
 		add_fetch_handler(ei_node, pid, kazoo_globals.directory_fetch_binding);

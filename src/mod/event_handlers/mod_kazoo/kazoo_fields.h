@@ -78,7 +78,9 @@ typedef enum {
 	FILTER_COMPARE_LIST,
 	FILTER_COMPARE_VALUE,
 	FILTER_COMPARE_PREFIX,
-	FILTER_COMPARE_EXISTS
+	FILTER_COMPARE_EXISTS,
+	FILTER_COMPARE_FIELD
+
 } kazoo_filter_compare_type;
 
 typedef enum {
@@ -115,7 +117,7 @@ typedef enum {
 	FIELD_PREFIX,
 	FIELD_OBJECT,
 	FIELD_GROUP,
-	FIELD_REFERENCE,
+	FIELD_REFERENCE
 
 } kazoo_field_type;
 

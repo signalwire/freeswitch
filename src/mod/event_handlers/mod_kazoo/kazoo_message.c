@@ -49,7 +49,7 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 {
 	switch_event_header_t *header;
 	int hasValue = 0, n;
-	char *value;
+	char *value = NULL, *expr = NULL;
 
 	switch(filter->compare) {
 
@@ -58,8 +58,21 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 		break;
 
 	case FILTER_COMPARE_VALUE:
-		value = switch_event_get_header_nil(evt, filter->name);
-		hasValue = !strcmp(value, filter->value);
+		if (*filter->name == '$') {
+			value = expr = kz_event_expand_headers(evt, filter->name);
+		} else {
+			value = switch_event_get_header(evt, filter->name);
+		}
+		hasValue = value ? !strcmp(value, filter->value) : 0;
+		break;
+
+	case FILTER_COMPARE_FIELD:
+		if (*filter->name == '$') {
+			value = expr = kz_event_expand_headers(evt, filter->name);
+		} else {
+			value = switch_event_get_header(evt, filter->name);
+		}
+		hasValue = value ? !strcmp(value, switch_event_get_header_nil(evt, filter->value)) : 0;
 		break;
 
 	case FILTER_COMPARE_PREFIX:
@@ -72,7 +85,11 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 		break;
 
 	case FILTER_COMPARE_LIST:
-		value = switch_event_get_header(evt, filter->name);
+		if (*filter->name == '$') {
+			value = expr = kz_event_expand_headers(evt, filter->name);
+		} else {
+			value = switch_event_get_header(evt, filter->name);
+		}
 		if(value) {
 			for(n = 0; n < filter->list.size; n++) {
 				if(!strncmp(value, filter->list.value[n], strlen(filter->list.value[n]))) {
@@ -89,6 +106,8 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 	default:
 		break;
 	}
+
+	switch_safe_free(expr);
 
 	return hasValue;
 }

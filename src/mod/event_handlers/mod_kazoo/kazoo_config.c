@@ -217,6 +217,8 @@ switch_status_t kazoo_config_filters(switch_memory_pool_t *pool, switch_xml_t cf
 						cur->compare = FILTER_COMPARE_EXISTS;
 				} else if (!strncmp(compare, "regex", 5)) {
 						cur->compare = FILTER_COMPARE_REGEX;
+				} else if (!strncmp(compare, "field", 5)) {
+						cur->compare = FILTER_COMPARE_FIELD;
 				}
 			}
 
@@ -400,11 +402,11 @@ kazoo_config_ptr kazoo_config_event_handlers(kazoo_config_ptr definitions, switc
 				kazoo_config_event_handler(definitions, profiles, xml_profile, NULL);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to locate a event-handler profile for kazoo\n" );
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to locate a event-handler profile for kazoo\n" );
 		}
 	} else {
 		destroy_config(&profiles);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate event-handlers section for kazoo\n" );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unable to locate event-handlers section for kazoo, using default\n" );
 	}
 
 	return profiles;
@@ -437,11 +439,11 @@ kazoo_config_ptr kazoo_config_fetch_handlers(kazoo_config_ptr definitions, switc
 				kazoo_config_fetch_handler(definitions, profiles, xml_profile, NULL);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to locate a fetch-handler profile for kazoo\n" );
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to locate a fetch-handler profile for kazoo\n" );
 		}
 	} else {
 		destroy_config(&profiles);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate fetch-handlers section for kazoo\n" );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unable to locate fetch-handlers section for kazoo, using default\n" );
 	}
 
 	return profiles;
@@ -455,7 +457,7 @@ switch_status_t kazoo_config_definition(kazoo_config_ptr root, switch_xml_t cfg)
 	char *name = (char *) switch_xml_attr_soft(cfg, "name");
 
 	if (zstr(name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load kazoo profile. Check definition missing name attr\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to load kazoo profile, check definition missing name attr\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -466,11 +468,11 @@ switch_status_t kazoo_config_definition(kazoo_config_ptr root, switch_xml_t cfg)
 	kazoo_config_fields_loop(root, root->pool, cfg, &definition->head);
 
 	if ( switch_core_hash_insert(root->hash, name, (void *) definition) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to insert new definition [%s] into kazoo definitions hash\n", name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to insert new definition [%s] into kazoo definitions hash\n", name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Definition[%s] Successfully configured\n", definition->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "definition[%s] successfully configured\n", definition->name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -499,7 +501,7 @@ kazoo_config_ptr kazoo_config_definitions(switch_xml_t cfg)
 		}
 	} else {
 		destroy_config(&definitions);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "no definitions section for kazoo\n" );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unable to locate definitions section for kazoo, using default\n" );
 	}
 
 	return definitions;
