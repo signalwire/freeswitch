@@ -185,10 +185,6 @@ struct globals_s {
 	kazoo_json_term  json_encoding;
 
 	int enable_legacy;
-//	char *profile_vars_prefixes[KZ_MAX_SEPARATE_STRINGS];
-//	char *kazoo_var_prefixes[KZ_MAX_SEPARATE_STRINGS];
-//	char *profile_vars_prefixes;
-//	char *kazoo_var_prefixes;
 	char **profile_vars_prefixes;
 	char **kazoo_var_prefixes;
 

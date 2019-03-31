@@ -21,8 +21,6 @@
 
 	</settings>
 
-	<X-PRE-PROCESS cmd="set" data="UNIX_EPOCH_IN_GREGORIAN=62167219200" />
-
     <variables>
         <variable name="UNIX_EPOCH_IN_GREGORIAN" value="62167219200"/>
     </variables>
@@ -30,10 +28,34 @@
     <definitions>
         <definition name="debug-call">
             <filters>
-                <filter name="variable_debug_call" type="exclude" value="true" />
+                <filter name="${first-of(variable_debug_call|Call-Debug|#$${Call-Debug})}" type="include" value="true" />
             </filters>
             <field name="Call-Debug" type="static" serialize-as="object">
                 <fields verbose="true" />
+            </field>
+        </definition>
+
+        <definition name="transfer-history">
+            <filters>
+                <filter name="variable_transfer_history" type="include" compare="exists" />
+            </filters>
+            <field name="Transfer-History" type="expand" value="${kz_json_history(${variable_transfer_history})}" serialize-as="raw"/>
+        </definition>
+
+        <definition name="transfer-source">
+            <filters>
+                <filter name="variable_transfer_source" type="include" compare="exists" />
+            </filters>
+            <field name="Transfer-Source" type="expand" value="${kz_json_history(variable_transfer_source)}" serialize-as="raw"/>
+        </definition>
+
+        <definition name="interaction-id">
+            <field name="variable_Call-Interaction-ID" as="Call-Interaction-ID" />
+            <field name="Call-Interaction-Is-Root" type="static" value="true" serialize-as="boolean">
+	            <filters>
+                   <filter name="variable_Call-Interaction-ID" type="include" compare="field" value="variable_Original-Call-Interaction-ID" />
+	               <field name="${first-of(Event-Subclass|Event-Name|#none)}" type="include" compare="list" value="CHANNEL_DESTROY|KZ_CDR"/>
+	            </filters>
             </field>
         </definition>
 
@@ -96,18 +118,9 @@
                         </filters>
                     </field>
 
-                    <field name="Call-Interaction-ID" type="expand"
-                        value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + $${UNIX_EPOCH_IN_GREGORIAN}))}-${regex(${create_uuid()}|^([^-]*)|%1)}">
-                        <filters>
-                            <filter name="Unique-ID" type="include" compare="exists" />
-                            <filter name="ecallmgr_Call-Interaction-ID" type="exclude"
-                                compare="exists" />
-                            <filter name="variable_ecallmgr_Call-Interaction-ID" type="exclude"
-                                compare="exists" />
-                            <filter name="variable_sip_h_X-ecallmgr_Call-Interaction-ID"
-                                type="exclude" compare="exists" />
-                        </filters>
-                    </field>
+                    <!-- <field name="variable_Call-Interaction-ID" as="Call-Interaction-ID" /> -->
+                    <field name="interaction-id" type="reference" />
+
                     <field name="variable_presence_id" as="Presence-ID" />
 
                     <field name="redirect" type="group">
@@ -671,6 +684,7 @@
 						<field name="hangup-fields" type="reference" />
 						<field name="variable_Media-Recordings" as="Media-Recordings" />
 						<field name="debug-call" type="reference" />
+                        <field name="transfer-history" type="reference" />
 						
 					</fields>
 					<filters>
@@ -1078,8 +1092,6 @@
 				<log name="info" value="SWITCH_LOG_INFO" />
 				<log name="success" value="SWITCH_LOG_INFO" />
 				<log name="time" value="SWITCH_LOG_INFO" />
-				<log name="filtered-event" value="SWITCH_LOG_INFO" />
-				<log name="filtered-field" value="SWITCH_LOG_INFO" />
 			</logging>
 
 		</profile>
@@ -1157,8 +1169,6 @@
 				<log name="info" value="SWITCH_LOG_INFO" />
 				<log name="success" value="SWITCH_LOG_INFO" />
 				<log name="time" value="SWITCH_LOG_INFO" />
-				<log name="filtered-event" value="SWITCH_LOG_INFO" />
-				<log name="filtered-field" value="SWITCH_LOG_INFO" />
 			</logging>
 
 		</profile>

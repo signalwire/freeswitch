@@ -48,6 +48,103 @@
 
 #define MAX_FIRST_OF 25
 
+#define MAX_HISTORY 50
+#define HST_ARRAY_DELIM "|:"
+#define HST_ITEM_DELIM ':'
+
+static void process_history_item(char* value, cJSON *json)
+{
+	char *argv[4] = { 0 };
+	char *item = strdup(value);
+	int argc = switch_separate_string(item, HST_ITEM_DELIM, argv, (sizeof(argv) / sizeof(argv[0])));
+	cJSON *jitem = cJSON_CreateObject();
+	char *epoch = NULL, *callid = NULL, *type = NULL;
+	int add = 0;
+	if(argc == 4) {
+		add = 1;
+		epoch = argv[0];
+		callid = argv[1];
+		type = argv[2];
+
+		if(!strncmp(type, "bl_xfer", 7)) {
+			char *split = strchr(argv[3], '/');
+			if(split) *(split++) = '\0';
+			cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
+			cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("blind"));
+			cJSON_AddItemToObject(jitem, "Extension", cJSON_CreateString(argv[3]));
+		} else if(!strncmp(type, "att_xfer", 8)) {
+			char *split = strchr(argv[3], '/');
+			if(split) {
+				*(split++) = '\0';
+				cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
+				cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("attended"));
+				cJSON_AddItemToObject(jitem, "Transferee", cJSON_CreateString(argv[3]));
+				cJSON_AddItemToObject(jitem, "Transferer", cJSON_CreateString(split));
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE '%s' NOT HANDLED => %s\n", type, item);
+				add = 0;
+			}
+		} else if(!strncmp(type, "uuid_br", 7)) {
+			cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
+			cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("bridge"));
+			cJSON_AddItemToObject(jitem, "Other-Leg", cJSON_CreateString(argv[3]));
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE '%s' NOT HANDLED => %s\n", type, item);
+			add = 0;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE SPLIT ERROR %i => %s\n", argc, item);
+	}
+	if(add) {
+		cJSON_AddItemToObject(json, epoch, jitem);
+	} else {
+		cJSON_Delete(jitem);
+	}
+	switch_safe_free(item);
+}
+
+SWITCH_STANDARD_API(kz_json_history) {
+	char *mycmd = NULL, *argv[MAX_HISTORY] = { 0 };
+	int n, argc = 0;
+	cJSON *json = cJSON_CreateObject();
+	char* output = NULL;
+	switch_event_header_t *header = NULL;
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		if (!strncmp(mycmd, "ARRAY::", 7)) {
+			mycmd += 7;
+			argc = switch_separate_string_string(mycmd, HST_ARRAY_DELIM, argv, (sizeof(argv) / sizeof(argv[0])));
+			for(n=0; n < argc; n++) {
+				process_history_item(argv[n], json);
+			}
+		} else if (strchr(mycmd, HST_ITEM_DELIM)) {
+			process_history_item(mycmd, json);
+		} else if (stream->param_event) {
+			header = switch_event_get_header_ptr(stream->param_event, mycmd);
+			if (header != NULL) {
+				if(header->idx) {
+					for(n = 0; n < header->idx; n++) {
+						process_history_item(header->array[n], json);
+					}
+				} else {
+					process_history_item(header->value, json);
+				}
+
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER HISTORY HEADER NOT FOUND => %s\n", mycmd);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER HISTORY NOT PARSED => %s\n", mycmd);
+		}
+	}
+	output = cJSON_PrintUnformatted(json);
+	stream->write_function(stream, "%s", output);
+	switch_safe_free(output);
+	cJSON_Delete(json);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(kz_first_of) {
 	char delim = '|';
 	char *mycmd = NULL, *argv[MAX_FIRST_OF] = { 0 };
@@ -413,5 +510,6 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface, swit
 	switch_console_set_complete("add kz_uuid_setvar_encoded ::console::list_uuid");
 	SWITCH_ADD_API(api_interface, "kz_http_put", KZ_HTTP_PUT_DESC, kz_http_put, KZ_HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api_interface, "first-of", KZ_FIRST_OF_DESC, kz_first_of, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_json_history", KZ_FIRST_OF_DESC, kz_json_history, KZ_FIRST_OF_SYNTAX);
 }
 

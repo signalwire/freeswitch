@@ -77,6 +77,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	/* add our endpoints */
 	add_kz_endpoints(module_interface);
 
+	/* add our kz_node api */
+	add_kz_node(module_interface);
+
 	/* add tweaks */
 	kz_tweaks_start();
 
