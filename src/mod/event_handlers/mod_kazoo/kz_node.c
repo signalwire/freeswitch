@@ -39,7 +39,9 @@ void kz_nodes_collect_runtime(cJSON *container)
 	cJSON *retval = NULL;
 	if(kz_json_api("status", NULL, &retval) == SWITCH_STATUS_SUCCESS) {
 		if(retval != NULL && (!(retval->type & cJSON_NULL))) {
-			cJSON_AddItemToObject(container, "Runtime-Info", cJSON_Duplicate(retval, 1));
+			cJSON *val = cJSON_Duplicate(retval, 1);
+			cJSON_AddItemToObject(val, "Core-UUID", cJSON_CreateString(switch_core_get_uuid()));
+			cJSON_AddItemToObject(container, "Runtime-Info", val);
 		}
 	}
 	if(retval) {
