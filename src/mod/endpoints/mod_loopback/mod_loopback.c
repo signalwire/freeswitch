@@ -100,6 +100,7 @@ static struct {
 	switch_call_cause_t bowout_hangup_cause;
 	int bowout_controlled_hangup;
 	int bowout_transfer_recordings;
+	int bowout_disable_on_inner_bridge;
 } loopback_globals;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
@@ -859,6 +860,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		tech_pvt->other_tech_pvt &&
 		switch_test_flag(tech_pvt, TFLAG_BRIDGE) &&
 		!switch_test_flag(tech_pvt, TFLAG_BLEG) &&
+		(!loopback_globals.bowout_disable_on_inner_bridge || !switch_channel_test_flag(tech_pvt->channel, CF_INNER_BRIDGE)) &&
 		switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_BRIDGE) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
@@ -1684,6 +1686,8 @@ switch_status_t load_loopback_configuration(switch_bool_t reload)
 					loopback_globals.bowout_controlled_hangup = switch_true(value);
 				} else if (!strcmp(name, "bowout-transfer-recording")) {
 					loopback_globals.bowout_transfer_recordings = switch_true(value);
+				} else if (!strcmp(name, "bowout-disable-on-inner-bridge")) {
+					loopback_globals.bowout_disable_on_inner_bridge = switch_true(value);
 				}
 
 			}
