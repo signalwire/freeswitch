@@ -6848,6 +6848,9 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	rtcp_msg_t *msg = rtp_session->rtcp_recv_msg_p;
 
+	if (remain < sizeof(switch_rtcp_ext_hdr_t) || remain > sizeof(rtcp_msg_t)) {
+		return status;
+	}
 	if (msg->header.version != 2) {
 		if (msg->header.version == 0) {
 			if (rtp_session->ice.ice_user) {
