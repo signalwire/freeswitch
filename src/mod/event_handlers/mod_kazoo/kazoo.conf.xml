@@ -903,7 +903,7 @@
 							value="Application-Response|variable_originate_disposition|variable_endpoint_disposition|#NONE" />
 						<field name="Disposition" type="first-of"
 							value="variable_originate_disposition|variable_endpoint_disposition" />
-						<field name="variable_last_bridge_hangup_cause" as="Bridge-Hangup-Cause" />
+						<field name="Bridge-Hangup-Cause" type="first-of" value="variable_last_bridge_hangup_cause|variable_bridge_hangup_cause" />
 						<field name="debug-call" type="reference" />
 					</fields>
 
