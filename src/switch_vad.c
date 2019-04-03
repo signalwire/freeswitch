@@ -122,6 +122,8 @@ SWITCH_DECLARE(int) switch_vad_set_mode(switch_vad_t *vad, int mode)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "libfvad started, mode = %d\n", mode);
 	return ret;
 #else
+	if (vad->debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "set vad mode = %d\n", mode);
+
 	return 0;
 #endif
 }
@@ -155,6 +157,10 @@ SWITCH_DECLARE(void) switch_vad_set_param(switch_vad_t *vad, const char *key, in
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "listen_hits is deprecated, setting voice_ms to %d\n", 20 * val);
 		switch_vad_set_param(vad, "voice_ms", 20 * val);
 	}
+
+	if (vad->debug) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "set %s to %d\n", key, val);
+	}
 }
 
 SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad)
@@ -167,6 +173,8 @@ SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad)
 	vad->vad_state = SWITCH_VAD_STATE_NONE;
 	vad->voice_samples = 0;
 	vad->silence_samples = 0;
+
+	if (vad->debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "reset vad state\n");
 }
 
 SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t *data, unsigned int samples)
@@ -199,6 +207,10 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	}
 #endif
 
+	if (vad->debug > 9) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "score: %d\n", score);
+	}
+
 	// clear the STOP/START TALKING events
 	if (vad->vad_state == SWITCH_VAD_STATE_STOP_TALKING) {
 		vad->vad_state = SWITCH_VAD_STATE_NONE;
@@ -218,9 +230,13 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	// check for state transitions
 	if (vad->vad_state == SWITCH_VAD_STATE_TALKING && vad->silence_samples > vad->silence_samples_thresh) {
 		vad->vad_state = SWITCH_VAD_STATE_STOP_TALKING;
+		if (vad->debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "vad state STOP_TALKING\n");
 	} else if (vad->vad_state == SWITCH_VAD_STATE_NONE && vad->voice_samples > vad->voice_samples_thresh) {
 		vad->vad_state = SWITCH_VAD_STATE_START_TALKING;
+		if (vad->debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "vad state START_TALKING\n");
 	}
+
+	if (vad->debug > 9) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "vad state %s\n", switch_vad_state2str(vad->vad_state));
 
 	return vad->vad_state;
 }
