@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <libksVersion>0.1.1</libksVersion>
+    <libksVersion>1.2.0</libksVersion>
   </PropertyGroup>
   <PropertyGroup>
     <libksVersionImported>true</libksVersionImported>
