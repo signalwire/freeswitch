@@ -188,6 +188,7 @@ struct globals_s {
 	char **profile_vars_prefixes;
 	char **kazoo_var_prefixes;
 
+	int tweaks_restore_caller_id;
 };
 typedef struct globals_s globals_t;
 extern globals_t kazoo_globals;

@@ -114,6 +114,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
 	kazoo_globals.enable_legacy = SWITCH_FALSE;
+	kazoo_globals.tweaks_restore_caller_id = SWITCH_TRUE;
 
 
 	if ((child = switch_xml_child(cfg, "settings"))) {
@@ -188,6 +189,9 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "enable-legacy")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set enable-legacy: %s\n", val);
 				kazoo_globals.enable_legacy = switch_true(val);
+			} else if (!strcmp(var, "tweaks-restore-caller-id")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweaks-restore-caller-id: %s\n", val);
+				kazoo_globals.tweaks_restore_caller_id = switch_true(val);
 			}
 		}
 	}
