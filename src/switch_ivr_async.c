@@ -4564,7 +4564,7 @@ done:
 	if (recognizing && !(state.done & PLAY_AND_DETECT_DONE_RECOGNIZING)) {
 		switch_ivr_pause_detect_speech(session);
 	}
-	if (recognizing && switch_true(switch_channel_get_variable(channel, "play_and_detect_speech_close_asr"))) {
+	if (recognizing && switch_channel_var_true(channel, "play_and_detect_speech_close_asr")) {
 		switch_ivr_stop_detect_speech(session);
 	}
 
@@ -4854,6 +4854,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 
 	if (sth) {
+		switch_channel_audio_sync(channel);
 		switch_core_asr_resume(sth->ah);
 		return SWITCH_STATUS_SUCCESS;
 	}
