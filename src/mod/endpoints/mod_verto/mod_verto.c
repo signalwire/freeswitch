@@ -2456,7 +2456,7 @@ static switch_status_t verto_set_media_options(verto_pvt_t *tech_pvt, verto_prof
 	tech_pvt->mparams->inbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->inbound_codec_string);
 	tech_pvt->mparams->outbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->outbound_codec_string);
 
-	tech_pvt->mparams->jb_msec = "1p:50p";
+	tech_pvt->mparams->jb_msec = profile->jb_msec;
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
 	//tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;
@@ -4784,6 +4784,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "outbound-codec-string") && !zstr(val)) {
 					profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
+				} else if (!strcasecmp(var, "auto-jitterbuffer-msec") && !zstr(val)) {
+					profile->jb_msec = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "blind-reg") && !zstr(val)) {
 					profile->blind_reg = switch_true(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
@@ -4853,6 +4855,10 @@ static switch_status_t parse_config(const char *cf)
 
 			if (zstr(profile->inbound_codec_string)) {
 				profile->inbound_codec_string = profile->outbound_codec_string;
+			}
+
+			if (zstr(profile->jb_msec)) {
+				profile->jb_msec = "1p:50p";
 			}
 
 			if (zstr(profile->timer_name)) {

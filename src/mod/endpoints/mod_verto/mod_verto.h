@@ -271,6 +271,8 @@ struct verto_profile_s {
 	char *inbound_codec_string;
 	char *outbound_codec_string;
 
+	char *jb_msec;
+
 	char *timer_name;
 	char *local_network;
 
