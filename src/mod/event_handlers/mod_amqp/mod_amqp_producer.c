@@ -175,7 +175,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 	char *format_fields[MAX_ROUTING_KEY_FORMAT_FIELDS+1];
 	int format_fields_size = 0;
 
-	memset(format_fields, 0, MAX_ROUTING_KEY_FORMAT_FIELDS + 1);
+	memset(format_fields, 0, (MAX_ROUTING_KEY_FORMAT_FIELDS + 1) * sizeof(char *));
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		goto err;
