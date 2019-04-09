@@ -398,7 +398,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	} else if (exec) {
 		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(exec));
 		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString((char *)stream.data));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT,"RES [%s][%s]\n", exec, (char *)stream.data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"RES [%s][%s]\n", exec, (char *)stream.data);
 	} else {
 		cJSON_AddItemToObject(jdata, "error", cJSON_CreateString("Invalid Command"));
 	}
