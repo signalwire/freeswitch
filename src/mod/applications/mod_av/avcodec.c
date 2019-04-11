@@ -1764,6 +1764,12 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 
 	switch(cmd) {
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			mod_av_globals.debug = level;
+		}
+		break;
 	case SCC_VIDEO_GEN_KEYFRAME:
 		context->need_key_frame = 1;
 		break;
