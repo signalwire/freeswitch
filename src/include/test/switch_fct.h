@@ -79,7 +79,7 @@ with a standard logger. */
 #include <ctype.h>
 
 #define FCT_MAX_NAME           256
-#define FCT_MAX_LOG_LINE       256
+#define FCT_MAX_LOG_LINE       2048
 
 #define nbool_t int
 #define FCT_TRUE   1
