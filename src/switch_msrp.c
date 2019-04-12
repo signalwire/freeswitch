@@ -656,7 +656,7 @@ SWITCH_DECLARE(const char *) switch_msrp_msg_get_header(switch_msrp_msg_t *msrp_
 	return v;
 }
 
-char *msrp_parse_header(char *start, int skip, const char *end, switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype, switch_memory_pool_t *pool)
+static char *msrp_parse_header(char *start, int skip, const char *end, switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype, switch_memory_pool_t *pool)
 {
 	char *p = start + skip;
 	char *q;
@@ -672,7 +672,7 @@ char *msrp_parse_header(char *start, int skip, const char *end, switch_msrp_msg_
 	return start;
 }
 
-switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
+static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *p = start;
 	char *q = p;
@@ -844,7 +844,7 @@ done:
 	return msrp_msg;
 }
 
-switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
+static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *start;
 
@@ -898,7 +898,9 @@ switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp
 				}
 				return msrp_msg;
 			} else if ((delim_pos = find_delim(buf, len, msrp_msg->delimiter))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "=======================================delimiter: %s\n", delim_pos);
+				if (globals.debug) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "=======================================delimiter: %s\n", delim_pos);
+				}
 				payload_bytes = delim_pos - buf - 2;
 				switch_assert(payload_bytes >= 0);
 				switch_msrp_msg_set_payload(msrp_msg, buf, payload_bytes);
@@ -941,10 +943,10 @@ switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp
 			msrp_msg->state = MSRP_ST_DONE;
 			msrp_msg->last_p = buf + msrp_msg->payload_bytes;
 
-			if (msrp_msg->payload_bytes == len - dlen - 5) {
-				msrp_msg->last_p = buf + len;
+			if (msrp_msg->payload_bytes <= len - dlen - 5) {
+				msrp_msg->last_p = buf + msrp_msg->payload_bytes + dlen + 5;
 
-				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "payload bytes:%d\n", (int)msrp_msg->payload_bytes);
+				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "payload bytes: %" SWITCH_SIZE_T_FMT " len: %d dlen: %d delimiter: %s\n", msrp_msg->payload_bytes, len, dlen, msrp_msg->delimiter);
 
 				return msrp_msg; /*Fixme: assuming \r\ndelimiter$\r\n present*/
 			}
@@ -1271,6 +1273,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__, 0);
 
+	again:
 		msrp_msg = msrp_parse_buffer(last_p, p - last_p + len, msrp_msg, pool);
 
 		switch_assert(msrp_msg);
@@ -1321,6 +1324,12 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 				p = buf + rest_len;
 				len = MSRP_BUFF_SIZE - rest_len;
 				last_p = buf;
+
+				if (rest_len > 10) { // might have a complete msg in buffer, try parse again
+					len = 0;
+					goto again;
+				}
+
 				continue;
 			}
 
