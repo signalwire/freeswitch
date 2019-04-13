@@ -149,14 +149,34 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 #define fst_check_int_equals fct_chk_eq_int
 
 /**
- * test strings for equality - continue test execution on failure
+ * test string for equality - continue test execution on failure
  */
 #define fst_check_string_equals fct_chk_eq_str
 
 /**
- * test strings for inequality - continue test execution on failure
+ * test string for inequality - continue test execution on failure
  */
 #define fst_check_string_not_equals fct_chk_neq_str
+
+/**
+ * Test string for matching prefix
+*/
+#define fst_check_string_starts_with fct_chk_startswith_str
+
+/**
+ * Test string for matching suffix
+*/
+#define fst_check_string_ends_with fct_chk_endswith_str
+
+/**
+ * Test string for substring
+ */
+#define fst_check_string_has fct_chk_incl_str
+
+/**
+ * Test string for exclusion of substring
+ */
+#define fst_check_string_does_not_have fct_chk_excl_str
 
 /**
  * Mark reference for time measure
