@@ -11858,7 +11858,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			strncpy(q, p, 7);
 			p += 7;
 			q += 7;
-			strncpy(q, strchr(a_engine->adv_sdp_ip, ':') ? "6 " : "4 ", 2);
+			memcpy(q, strchr(a_engine->adv_sdp_ip, ':') ? "6 " : "4 ", 2);
 			p +=2;
 			q +=2;
 			strncpy(q, a_engine->adv_sdp_ip, strlen(a_engine->adv_sdp_ip));
