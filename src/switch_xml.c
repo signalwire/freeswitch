@@ -2942,6 +2942,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 	return switch_xml_insert(child, xml, off);
 }
 
+/* Adds a child tag. off is the offset of the child tag relative to the start
+   of the parent tag's character content. Returns the child tag */
+SWITCH_DECLARE(switch_xml_t) switch_xml_add_child_d(switch_xml_t xml, const char *name, switch_size_t off)
+{
+	if (!xml) return NULL;
+	return switch_xml_set_flag(switch_xml_add_child(xml, strdup(name), off), SWITCH_XML_NAMEM);
+}
+
 /* sets the character content for the given tag and returns the tag */
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt)
 {
@@ -2952,6 +2960,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *tx
 	xml->flags &= ~SWITCH_XML_TXTM;
 	xml->txt = (char *) txt;
 	return xml;
+}
+
+/* sets the character content for the given tag and returns the tag */
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt_d(switch_xml_t xml, const char *txt)
+{
+	if (!xml) return NULL;
+	return switch_xml_set_flag(switch_xml_set_txt(xml, strdup(txt)), SWITCH_XML_TXTM);
 }
 
 /* Sets the given tag attribute or adds a new attribute if not found. A value
@@ -3003,6 +3018,22 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
 
 	return xml;
+}
+
+/* Sets the given tag attribute or adds a new attribute if not found. A value
+   of NULL will remove the specified attribute.  Returns the tag given */
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d(switch_xml_t xml, const char *name, const char *value)
+{
+	if (!xml) return NULL;
+	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(switch_str_nil(value)));
+}
+
+/* Sets the given tag attribute or adds a new attribute if not found. A value
+   of NULL will remove the specified attribute.  Returns the tag given */
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d_buf(switch_xml_t xml, const char *name, const char *value)
+{
+	if (!xml) return NULL;
+	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(value));
 }
 
 /* sets a flag for the given tag and returns the tag */

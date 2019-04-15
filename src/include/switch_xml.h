@@ -266,8 +266,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(_In_ switch_xml_t xml, _In_z_ 
 ///\param xml the xml node
 ///\param name the name of the child
 ///\param off the offset
-#define switch_xml_add_child_d(xml, name, off) \
-    switch_xml_set_flag(switch_xml_add_child(xml, strdup(name), off), SWITCH_XML_NAMEM)
+SWITCH_DECLARE(switch_xml_t) switch_xml_add_child_d(_In_ switch_xml_t xml, _In_z_ const char *name, _In_ switch_size_t off);
 
 ///\brief sets the character content for the given tag and returns the tag
 ///\param xml the xml node
@@ -280,8 +279,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *tx
 ///\param xml the xml node
 ///\param txt the text
 ///\return an xml node or NULL
-#define switch_xml_set_txt_d(xml, txt) \
-    switch_xml_set_flag(switch_xml_set_txt(xml, strdup(txt)), SWITCH_XML_TXTM)
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt_d(switch_xml_t xml, const char *txt);
 
 ///\brief Sets the given tag attribute or adds a new attribute if not found. A value
 ///\ of NULL will remove the specified attribute.
@@ -296,11 +294,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 ///\param name the attribute name
 ///\param value the attribute value
 ///\return an xml node or NULL
-#define switch_xml_set_attr_d(xml, name, value) \
-    switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(switch_str_nil(value)))
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d(switch_xml_t xml, const char *name, const char *value);
 
-#define switch_xml_set_attr_d_buf(xml, name, value) \
-    switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(value))
+///\brief Wrapper for switch_xml_set_attr() that strdup()s name/value. Value cannot be NULL
+///\param xml the xml node
+///\param name the attribute name
+///\param value the attribute value
+///\return an xml node or NULL
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d_buf(switch_xml_t xml, const char *name, const char *value);
 
 ///\brief sets a flag for the given tag and returns the tag
 ///\param xml the xml node
