@@ -256,7 +256,9 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 				int32_t s = teletone_dds_state_modulate_sample(&tones[i], 0);
 				sample += s;
 			}
-			sample /= freqlen;
+			if (freqlen) {
+				sample /= freqlen;
+			}
 			ts->buffer[ts->samples] = (teletone_audio_t)sample;
 			
 			for (c = 1; c < ts->channels; c++) {
