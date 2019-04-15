@@ -5044,6 +5044,8 @@ SWITCH_STANDARD_API(originate_function)
 	cid_name = argv[i++];
 	cid_num = argv[i++];
 
+	switch_assert(exten);
+
 	if (!dp) {
 		dp = "XML";
 	}
