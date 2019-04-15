@@ -317,11 +317,10 @@ TELETONE_API(teletone_hit_type_t) teletone_dtmf_detect (teletone_dtmf_detect_sta
 	int sample;
 	int best_row;
 	int best_col;
-	char hit;
+	char hit = 0;
 	int limit;
 	teletone_hit_type_t r = 0;
 
-	hit = 0;
 	for (sample = 0;  sample < samples;	 sample = limit) {
 		/* BLOCK_LEN is optimised to meet the DTMF specs. */
 		if ((samples - sample) >= (BLOCK_LEN - dtmf_detect_state->current_sample)) {
