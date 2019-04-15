@@ -1512,8 +1512,6 @@ SWITCH_STANDARD_API(stun_function)
 		if (iport > 0 && iport < 0xFFFF) {
 			stun_port = (switch_port_t) iport;
 		}
-	} else {
-		p = stun_ip;
 	}
 
 	if (!zstr(src_ip) && (p = strchr(src_ip, ':'))) {
@@ -3117,7 +3115,6 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		} else {
 			if ((to = atoi(argv[4])) < switch_epoch_time_now(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID Timeout!\n");
-				to = 0;
 				goto done;
 			}
 		}
