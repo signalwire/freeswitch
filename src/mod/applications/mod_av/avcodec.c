@@ -1213,7 +1213,6 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
-	int fps = 15;
 	avcodec_profile_t *aprofile = NULL;
 	char codec_string[1024];
 
@@ -1301,10 +1300,6 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 
 	context->bandwidth *= 3;
 
-	fps = context->codec_settings.video.fps;
-
-	if (!fps) fps = 20;
-		
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_min_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_max_rate = context->encoder_ctx->bit_rate;
