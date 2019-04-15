@@ -5743,7 +5743,7 @@ SWITCH_STANDARD_API(show_function)
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
 				switch_snprintfv(sql, sizeof(sql), "select count(*) from basic_calls where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
-				if (argv[3] && !strcasecmp(argv[2], "as")) {
+				if (argv[2] && argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
 			}
@@ -5752,7 +5752,7 @@ SWITCH_STANDARD_API(show_function)
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
 				switch_snprintfv(sql, sizeof(sql), "select count(*) from registrations where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
-				if (argv[3] && !strcasecmp(argv[2], "as")) {
+				if (argv[2] && argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
 			}
@@ -5784,7 +5784,7 @@ SWITCH_STANDARD_API(show_function)
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
 				switch_snprintfv(sql, sizeof(sql), "select count(*) from channels where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
-				if (argv[3] && !strcasecmp(argv[2], "as")) {
+				if (argv[2] && argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
 			}
