@@ -478,21 +478,20 @@ GCC_DIAG_ON(deprecated-declarations)
 
 	case AVMEDIA_TYPE_VIDEO:
 
-		if (mm) {
-			if (mm->vbuf) {
-				buffer_bytes = mm->vbuf;
-			}
-			if (mm->fps) {
-				fps = mm->fps;
-			} else {
-				mm->fps = fps;
-			}
+		switch_assert(mm);
 
-			if (mm->vw && mm->vh) {
-				mst->width = mm->vw;
-				mst->height = mm->vh;
-			}
+		if (mm->vbuf) {
+			buffer_bytes = mm->vbuf;
+		}
+		if (mm->fps) {
+			fps = mm->fps;
+		} else {
+			mm->fps = fps;
+		}
 
+		if (mm->vw && mm->vh) {
+			mst->width = mm->vw;
+			mst->height = mm->vh;
 		}
 
 		c->codec_id = codec_id;
@@ -558,9 +557,6 @@ GCC_DIAG_ON(deprecated-declarations)
 				break;
 			}
 		}
-
-
-		switch_assert(mm);
 
 		if (mm->cbr) {
 			c->rc_min_rate = c->bit_rate;
@@ -923,7 +919,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		if (got_packet) {
 			switch_mutex_lock(context->eh.mutex);
 GCC_DIAG_OFF(deprecated-declarations)
-			ret = write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
+			write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
 GCC_DIAG_ON(deprecated-declarations) 
 			switch_mutex_unlock(context->eh.mutex);
 			av_packet_unref(&pkt);
@@ -2515,7 +2511,6 @@ GCC_DIAG_ON(deprecated-declarations)
 				switch_yield(1000);
 			}
 			frame->img = img;
-			do_fl = 0;
 		} else {
 			if (switch_micro_time_now() - mst->next_pts > -10000) {
 				frame->img = img;
