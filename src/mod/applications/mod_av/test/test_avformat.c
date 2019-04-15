@@ -88,8 +88,8 @@ FST_CORE_BEGIN("conf")
 				switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
 				switch_img_patch(img, ccimg, i * 10, i * 10);
 
-				status = switch_core_file_write(&fh, data, &len);
-				status = switch_core_file_write_video(&fh, &frame);
+				switch_core_file_write(&fh, data, &len);
+				switch_core_file_write_video(&fh, &frame);
 				switch_yield(100000);
 			}
 
@@ -145,8 +145,8 @@ FST_CORE_BEGIN("conf")
 				switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
 				switch_img_patch(img, ccimg, i * 10, i * 10);
 
-				status = switch_core_file_write(&fh, data, &len);
-				status = switch_core_file_write_video(&fh, &frame);
+				switch_core_file_write(&fh, data, &len);
+				switch_core_file_write_video(&fh, &frame);
 				switch_yield(100000);
 			}
 
