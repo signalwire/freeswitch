@@ -2682,31 +2682,32 @@ SWIG_Lua_dostring(lua_State *L, const char *str) {
 #define SWIGTYPE_p_EventConsumer swig_types[4]
 #define SWIGTYPE_p_IVRMenu swig_types[5]
 #define SWIGTYPE_p_LUA__Dbh swig_types[6]
-#define SWIGTYPE_p_LUA__Session swig_types[7]
-#define SWIGTYPE_p_SWIGLUA_FN swig_types[8]
-#define SWIGTYPE_p_Stream swig_types[9]
-#define SWIGTYPE_p_input_callback_state swig_types[10]
-#define SWIGTYPE_p_int swig_types[11]
-#define SWIGTYPE_p_lua_State swig_types[12]
-#define SWIGTYPE_p_p_switch_event_node_t swig_types[13]
-#define SWIGTYPE_p_session_flag_t swig_types[14]
-#define SWIGTYPE_p_switch_call_cause_t swig_types[15]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[16]
-#define SWIGTYPE_p_switch_channel_t swig_types[17]
-#define SWIGTYPE_p_switch_core_session_t swig_types[18]
-#define SWIGTYPE_p_switch_event_t swig_types[19]
-#define SWIGTYPE_p_switch_event_types_t swig_types[20]
-#define SWIGTYPE_p_switch_input_args_t swig_types[21]
-#define SWIGTYPE_p_switch_input_type_t swig_types[22]
-#define SWIGTYPE_p_switch_priority_t swig_types[23]
-#define SWIGTYPE_p_switch_queue_t swig_types[24]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[25]
-#define SWIGTYPE_p_switch_status_t swig_types[26]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[27]
-#define SWIGTYPE_p_uint32_t swig_types[28]
-#define SWIGTYPE_p_void swig_types[29]
-static swig_type_info *swig_types[31];
-static swig_module_info swig_module = {swig_types, 30, 0, 0, 0, 0};
+#define SWIGTYPE_p_LUA__JSON swig_types[7]
+#define SWIGTYPE_p_LUA__Session swig_types[8]
+#define SWIGTYPE_p_SWIGLUA_FN swig_types[9]
+#define SWIGTYPE_p_Stream swig_types[10]
+#define SWIGTYPE_p_input_callback_state swig_types[11]
+#define SWIGTYPE_p_int swig_types[12]
+#define SWIGTYPE_p_lua_State swig_types[13]
+#define SWIGTYPE_p_p_switch_event_node_t swig_types[14]
+#define SWIGTYPE_p_session_flag_t swig_types[15]
+#define SWIGTYPE_p_switch_call_cause_t swig_types[16]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[17]
+#define SWIGTYPE_p_switch_channel_t swig_types[18]
+#define SWIGTYPE_p_switch_core_session_t swig_types[19]
+#define SWIGTYPE_p_switch_event_t swig_types[20]
+#define SWIGTYPE_p_switch_event_types_t swig_types[21]
+#define SWIGTYPE_p_switch_input_args_t swig_types[22]
+#define SWIGTYPE_p_switch_input_type_t swig_types[23]
+#define SWIGTYPE_p_switch_priority_t swig_types[24]
+#define SWIGTYPE_p_switch_queue_t swig_types[25]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[26]
+#define SWIGTYPE_p_switch_status_t swig_types[27]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[28]
+#define SWIGTYPE_p_uint32_t swig_types[29]
+#define SWIGTYPE_p_void swig_types[30]
+static swig_type_info *swig_types[32];
+static swig_module_info swig_module = {swig_types, 31, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -9216,6 +9217,7 @@ static int _wrap_Dbh_test_reactive__SWIG_0(lua_State* L) {
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
+  switch_assert(arg1);
   result = (bool)(arg1)->test_reactive(arg2,arg3,arg4);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -9403,6 +9405,7 @@ static int _wrap_Dbh_query(lua_State* L) {
       (&arg3)->idx = 3;
     }
   }
+  switch_assert(arg1);
   result = (bool)(arg1)->query(arg2,arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -9426,7 +9429,7 @@ static int _wrap_Dbh_affected_rows(lua_State* L) {
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
     SWIG_fail_ptr("Dbh_affected_rows",1,SWIGTYPE_p_LUA__Dbh);
   }
-  
+  switch_assert(arg1);
   result = (int)(arg1)->affected_rows();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -9450,7 +9453,7 @@ static int _wrap_Dbh_last_error(lua_State* L) {
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
     SWIG_fail_ptr("Dbh_last_error",1,SWIGTYPE_p_LUA__Dbh);
   }
-  
+  switch_assert(arg1);
   result = (char *)(arg1)->last_error();
   lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
@@ -9473,7 +9476,7 @@ static int _wrap_Dbh_clear_error(lua_State* L) {
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
     SWIG_fail_ptr("Dbh_clear_error",1,SWIGTYPE_p_LUA__Dbh);
   }
-  
+  switch_assert(arg1);
   (arg1)->clear_error();
   
   return SWIG_arg;
@@ -9501,6 +9504,7 @@ static int _wrap_Dbh_load_extension(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
   result = (int)(arg1)->load_extension((char const *)arg2);
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -9568,6 +9572,424 @@ static swig_lua_class *swig_Dbh_bases[] = {0};
 static const char *swig_Dbh_base_names[] = {0};
 static swig_lua_class _wrap_class_Dbh = { "Dbh", "Dbh", &SWIGTYPE_p_LUA__Dbh,_proxy__wrap_new_Dbh, swig_delete_Dbh, swig_Dbh_methods, swig_Dbh_attributes, &swig_Dbh_Sf_SwigStatic, swig_Dbh_meta, swig_Dbh_bases, swig_Dbh_base_names };
 
+static int _wrap_new_JSON(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::JSON",0,0)
+  result = (LUA::JSON *)new LUA::JSON();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__JSON,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_decode(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  char *arg2 = (char *) 0 ;
+  cJSON *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::decode",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::decode",1,"LUA::JSON *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LUA::JSON::decode",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_decode",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
+  result = (cJSON *)(arg1)->decode((char const *)arg2);
+  {
+    SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
+    cJSON_Delete(result);
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_encode(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  SWIGLUA_TABLE arg2 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::encode",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::encode",1,"LUA::JSON *");
+  if(!lua_istable(L,2)) SWIG_fail_arg("LUA::JSON::encode",2,"SWIGLUA_TABLE");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_encode",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  {
+    (&arg2)->L = L;
+    (&arg2)->idx = 2;
+  }
+  switch_assert(arg1);
+  result = (char *)(arg1)->encode(arg2);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_execute__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  char *arg2 = (char *) 0 ;
+  cJSON *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::execute",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::execute",1,"LUA::JSON *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LUA::JSON::execute",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_execute",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
+  result = (cJSON *)(arg1)->execute((char const *)arg2);
+  {
+    SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
+    cJSON_Delete(result);
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_execute__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  SWIGLUA_TABLE arg2 ;
+  cJSON *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::execute",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::execute",1,"LUA::JSON *");
+  if(!lua_istable(L,2)) SWIG_fail_arg("LUA::JSON::execute",2,"SWIGLUA_TABLE");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_execute",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  {
+    (&arg2)->L = L;
+    (&arg2)->idx = 2;
+  }
+  switch_assert(arg1);
+  result = (cJSON *)(arg1)->execute(arg2);
+  {
+    SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
+    cJSON_Delete(result);
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_execute(lua_State* L) {
+  int argc;
+  int argv[3]={
+    1,2,3
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__JSON, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_JSON_execute__SWIG_0(L);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__JSON, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_istable(L, argv[1]);
+      }
+      if (_v) {
+        return _wrap_JSON_execute__SWIG_1(L);
+      }
+    }
+  }
+  
+  SWIG_Lua_pusherrstring(L,"Wrong arguments for overloaded function 'JSON_execute'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LUA::JSON::execute(char const *)\n"
+    "    LUA::JSON::execute(SWIGLUA_TABLE)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_JSON_execute2__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::execute2",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::execute2",1,"LUA::JSON *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LUA::JSON::execute2",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_execute2",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
+  result = (char *)(arg1)->execute2((char const *)arg2);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_execute2__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  SWIGLUA_TABLE arg2 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("LUA::JSON::execute2",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::execute2",1,"LUA::JSON *");
+  if(!lua_istable(L,2)) SWIG_fail_arg("LUA::JSON::execute2",2,"SWIGLUA_TABLE");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_execute2",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  {
+    (&arg2)->L = L;
+    (&arg2)->idx = 2;
+  }
+  switch_assert(arg1);
+  result = (char *)(arg1)->execute2(arg2);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_execute2(lua_State* L) {
+  int argc;
+  int argv[3]={
+    1,2,3
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__JSON, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_JSON_execute2__SWIG_0(L);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__JSON, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_istable(L, argv[1]);
+      }
+      if (_v) {
+        return _wrap_JSON_execute2__SWIG_1(L);
+      }
+    }
+  }
+  
+  SWIG_Lua_pusherrstring(L,"Wrong arguments for overloaded function 'JSON_execute2'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LUA::JSON::execute2(char const *)\n"
+    "    LUA::JSON::execute2(SWIGLUA_TABLE)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_JSON_encode_empty_table_as_object(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  bool arg2 ;
+  
+  SWIG_check_num_args("LUA::JSON::encode_empty_table_as_object",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::encode_empty_table_as_object",1,"LUA::JSON *");
+  if(!lua_isboolean(L,2)) SWIG_fail_arg("LUA::JSON::encode_empty_table_as_object",2,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_encode_empty_table_as_object",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  arg2 = (lua_toboolean(L, 2)!=0);
+  switch_assert(arg1);
+  (arg1)->encode_empty_table_as_object(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_JSON_return_unformatted_json(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::JSON *arg1 = (LUA::JSON *) 0 ;
+  bool arg2 ;
+  
+  SWIG_check_num_args("LUA::JSON::return_unformatted_json",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::JSON::return_unformatted_json",1,"LUA::JSON *");
+  if(!lua_isboolean(L,2)) SWIG_fail_arg("LUA::JSON::return_unformatted_json",2,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__JSON,0))){
+    SWIG_fail_ptr("JSON_return_unformatted_json",1,SWIGTYPE_p_LUA__JSON);
+  }
+  
+  arg2 = (lua_toboolean(L, 2)!=0);
+  switch_assert(arg1);
+  (arg1)->return_unformatted_json(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_JSON(void *obj) {
+LUA::JSON *arg1 = (LUA::JSON *) obj;
+delete arg1;
+}
+static int _proxy__wrap_new_JSON(lua_State *L) {
+    assert(lua_istable(L,1));
+    lua_pushcfunction(L,_wrap_new_JSON);
+    assert(!lua_isnil(L,-1));
+    lua_replace(L,1); /* replace our table with real constructor */
+    lua_call(L,lua_gettop(L)-1,1);
+    return 1;
+}
+static swig_lua_attribute swig_JSON_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_method swig_JSON_methods[]= {
+    { "decode", _wrap_JSON_decode},
+    { "encode", _wrap_JSON_encode},
+    { "execute", _wrap_JSON_execute},
+    { "execute2", _wrap_JSON_execute2},
+    { "encode_empty_table_as_object", _wrap_JSON_encode_empty_table_as_object},
+    { "return_unformatted_json", _wrap_JSON_return_unformatted_json},
+    {0,0}
+};
+static swig_lua_method swig_JSON_meta[] = {
+    {0,0}
+};
+
+static swig_lua_attribute swig_JSON_Sf_SwigStatic_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_const_info swig_JSON_Sf_SwigStatic_constants[]= {
+    {0,0,0,0,0,0}
+};
+static swig_lua_method swig_JSON_Sf_SwigStatic_methods[]= {
+    {0,0}
+};
+static swig_lua_class* swig_JSON_Sf_SwigStatic_classes[]= {
+    0
+};
+
+static swig_lua_namespace swig_JSON_Sf_SwigStatic = {
+    "JSON",
+    swig_JSON_Sf_SwigStatic_methods,
+    swig_JSON_Sf_SwigStatic_attributes,
+    swig_JSON_Sf_SwigStatic_constants,
+    swig_JSON_Sf_SwigStatic_classes,
+    0
+};
+static swig_lua_class *swig_JSON_bases[] = {0};
+static const char *swig_JSON_base_names[] = {0};
+static swig_lua_class _wrap_class_JSON = { "JSON", "JSON", &SWIGTYPE_p_LUA__JSON,_proxy__wrap_new_JSON, swig_delete_JSON, swig_JSON_methods, swig_JSON_attributes, &swig_JSON_Sf_SwigStatic, swig_JSON_meta, swig_JSON_bases, swig_JSON_base_names };
+
 static swig_lua_attribute swig_SwigModule_attributes[] = {
     {0,0,0}
 };
@@ -9605,6 +10027,7 @@ static swig_lua_class* swig_SwigModule_classes[]= {
 &_wrap_class_CoreSession,
 &_wrap_class_Session,
 &_wrap_class_Dbh,
+&_wrap_class_JSON,
     0
 };
 static swig_lua_namespace* swig_SwigModule_namespaces[] = {
@@ -9635,6 +10058,7 @@ static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)&_w
 static swig_type_info _swigt__p_EventConsumer = {"_p_EventConsumer", "EventConsumer *", 0, 0, (void*)&_wrap_class_EventConsumer, 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)&_wrap_class_IVRMenu, 0};
 static swig_type_info _swigt__p_LUA__Dbh = {"_p_LUA__Dbh", "LUA::Dbh *", 0, 0, (void*)&_wrap_class_Dbh, 0};
+static swig_type_info _swigt__p_LUA__JSON = {"_p_LUA__JSON", "LUA::JSON *", 0, 0, (void*)&_wrap_class_JSON, 0};
 static swig_type_info _swigt__p_LUA__Session = {"_p_LUA__Session", "LUA::Session *", 0, 0, (void*)&_wrap_class_Session, 0};
 static swig_type_info _swigt__p_SWIGLUA_FN = {"_p_SWIGLUA_FN", "SWIGLUA_FN *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)&_wrap_class_Stream, 0};
@@ -9667,6 +10091,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_EventConsumer,
   &_swigt__p_IVRMenu,
   &_swigt__p_LUA__Dbh,
+  &_swigt__p_LUA__JSON,
   &_swigt__p_LUA__Session,
   &_swigt__p_SWIGLUA_FN,
   &_swigt__p_Stream,
@@ -9699,6 +10124,7 @@ static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 
 static swig_cast_info _swigc__p_EventConsumer[] = {  {&_swigt__p_EventConsumer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_LUA__Dbh[] = {  {&_swigt__p_LUA__Dbh, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_LUA__JSON[] = {  {&_swigt__p_LUA__JSON, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_LUA__Session[] = {  {&_swigt__p_LUA__Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_SWIGLUA_FN[] = {  {&_swigt__p_SWIGLUA_FN, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
@@ -9731,6 +10157,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_EventConsumer,
   _swigc__p_IVRMenu,
   _swigc__p_LUA__Dbh,
+  _swigc__p_LUA__JSON,
   _swigc__p_LUA__Session,
   _swigc__p_SWIGLUA_FN,
   _swigc__p_Stream,
