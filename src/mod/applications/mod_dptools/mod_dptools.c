@@ -160,7 +160,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_status_t status;
 	int exec = 0;
 	int api = 0;
-	char *string = act->string;
+	char *string = NULL;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
 	int x = 0;
@@ -3532,7 +3532,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				camping = 0;
 				break;
 			} else {
 				fail = 1;
@@ -3554,7 +3553,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 				if (camp_loops++) {
 					if (--campon_retries <= 0 || stake.do_xfer) {
-						camping = 0;
 						stake.do_xfer = 1;
 						break;
 					}
@@ -5824,7 +5822,7 @@ void *SWITCH_THREAD_FUNC call_monitor_thread(switch_thread_t *thread, void *obj)
 		data++;
 	}
 
-	while (*data == '<') {
+	while (data && *data == '<') {
 		char *parsed = NULL;
 
 		if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
@@ -6026,7 +6024,7 @@ SWITCH_STANDARD_API(page_api_function)
 	char *oexten = NULL;
 	const char *context = NULL;
 	const char *dp = "inline";
-	const char *pdata = data;
+	const char *pdata = NULL;
 	const char *l;
 	uint32_t chunk_size = 10;
 	const char *path;
@@ -6044,7 +6042,7 @@ SWITCH_STANDARD_API(page_api_function)
 		data++;
 	}
 
-	while (*data == '(') {
+	while (data && *data == '(') {
 		char *parsed = NULL;
 
 		if (switch_event_create_brackets(data, '(', ')', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
