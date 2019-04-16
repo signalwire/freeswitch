@@ -219,12 +219,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	int16_t *bptr;
 	uint32_t x = 0;
 	int32_t z = 0;
-	int divisor = 0;
 	conference_cdr_node_t *np;
-
-	if (!(divisor = conference->rate / 8000)) {
-		divisor = 1;
-	}
 
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -620,6 +615,10 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					memset(write_frame, 255, bytes);
 					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
 					switch_mutex_unlock(omember->audio_out_mutex);
+					if (!ok) {
+						switch_mutex_unlock(conference->mutex);
+						goto end;
+					}
 					continue;
 				}
 
@@ -2755,7 +2754,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
 	char *recording_metadata = NULL;
-	int auto_record_canvas = 0;
 	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
@@ -3075,13 +3073,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				auto_record = val;
 			} else if (!strcasecmp(var, "recording-metadata") && !zstr(val)) {
 				recording_metadata = val;
-			} else if (!strcasecmp(var, "auto-record-canvas-id") && !zstr(val)) {
-				auto_record_canvas = atoi(val);
-				if (auto_record_canvas) {
-					auto_record_canvas--;
-
-					if (auto_record_canvas < 1) auto_record_canvas = 0;
-				}
 			} else if (!strcasecmp(var, "min-required-recording-participants") && !zstr(val)) {
 				if (!strcmp(val, "1")) {
 					min_recording_participants = 1;

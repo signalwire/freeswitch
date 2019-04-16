@@ -570,11 +570,10 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
-				file_data_len = file_sample_len * 2 * member->fnode->fh.channels;
-					if (member->fnode->fh.vol) {
-						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * member->fnode->fh.channels,
-														  member->fnode->fh.vol);
-					}
+				if (member->fnode->fh.vol) {
+					switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * member->fnode->fh.channels,
+													  member->fnode->fh.vol);
+				}
 
 			}
 

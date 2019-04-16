@@ -621,7 +621,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
-		switch_frame_geometry_t *use_geometry = &layer->auto_geometry;
+		switch_frame_geometry_t *use_geometry = NULL;
 		img_w = layer->screen_w = (uint32_t)(IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
 		img_h = layer->screen_h = (uint32_t)(IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
 
