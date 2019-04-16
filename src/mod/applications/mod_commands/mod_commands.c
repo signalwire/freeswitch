@@ -4441,7 +4441,7 @@ SWITCH_STANDARD_API(uuid_video_bitrate_function)
 }
 
 
-#define VIDEO_BITRATE_SYNTAX "<uuid> <bitrate>"
+#define VIDEO_BANDWIDTH_SYNTAX "<uuid> <bitrate>"
 SWITCH_STANDARD_API(uuid_video_bandwidth_function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -7560,7 +7560,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_set_media_stats", "Set media stats", uuid_set_media_stats, UUID_MEDIA_STATS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_bitrate", "Send video bitrate req.", uuid_video_bitrate_function, VIDEO_BITRATE_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_video_bandwidth", "Send video bandwidth", uuid_video_bandwidth_function, VIDEO_BITRATE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_video_bandwidth", "Send video bandwidth", uuid_video_bandwidth_function, VIDEO_BANDWIDTH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer outgoing channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
