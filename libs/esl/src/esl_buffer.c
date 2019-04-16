@@ -176,6 +176,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_read(esl_buffer_t *buffer, void *data, esl_si
 
 	esl_assert(buffer != NULL);
 	esl_assert(data != NULL);
+	esl_assert(buffer->head != NULL);
 
 
 	if (buffer->used < 1) {

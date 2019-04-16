@@ -1459,7 +1459,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 					}
 				}
 			
-				if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
+				if (beg && (cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
 					handle->last_ievent->body = strdup(beg);
 				}
 			
