@@ -213,6 +213,7 @@ extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_s
 			if (! session->event_hooks._NAME ) {						\
 				session->event_hooks._NAME = hook;						\
 			} else {													\
+				switch_assert(ptr);                                     \
 				ptr->next = hook;										\
 			}															\
 			return SWITCH_STATUS_SUCCESS;								\
