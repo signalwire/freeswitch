@@ -300,6 +300,7 @@ switch_status_t conference_api_sub_syntax(char **syntax)
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't realloc\n");
+			switch_safe_free(p);
 			return SWITCH_STATUS_TERM;
 		}
 	}

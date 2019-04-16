@@ -315,8 +315,6 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 
 	switch_mutex_unlock(conference->member_mutex);
 
-	off1 = off2 = off3 = off4 = 0;
-
 	xml_text = switch_xml_toxml(xml, SWITCH_TRUE);
 	switch_xml_free(xml);
 
@@ -741,7 +739,6 @@ void conference_cdr_render(conference_obj_t *conference)
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
 				wrote++;
 				close(fd);
-				fd = -1;
 			} else {
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
