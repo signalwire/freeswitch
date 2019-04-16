@@ -1215,7 +1215,9 @@ switch_status_t conference_api_sub_energy(conference_member_t *member, switch_st
 
 	if (member->auto_energy_level && member->energy_level > member->auto_energy_level) {
 		member->auto_energy_level  = 0;
-		stream->write_function(stream, "Auto-Energy level exceeded, Auto-Energy mode disabled\n", SWITCH_VA_NONE);
+		if (stream != NULL) {
+			stream->write_function(stream, "Auto-Energy level exceeded, Auto-Energy mode disabled\n", SWITCH_VA_NONE);
+		}
 	}
 
 
@@ -1273,7 +1275,7 @@ void conference_api_set_agc(conference_member_t *member, const char *data)
 	}
 
 
-	if (argv[2]) {
+	if (argv[0]) {
 		tmp = atoi(argv[0]);
 
 		if (tmp > 0) {
@@ -2076,10 +2078,15 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 
 
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		stream->write_function(stream, "+OK Change personal canvas set to layout [%s]\n", vlayout->name);
-		switch_mutex_lock(conference->member_mutex);
-		conference->new_personal_vlayout = vlayout;
-		switch_mutex_unlock(conference->member_mutex);
+		if (vlayout) {
+			stream->write_function(stream, "+OK Change personal canvas set to layout [%s]\n", vlayout->name);
+			switch_mutex_lock(conference->member_mutex);
+			conference->new_personal_vlayout = vlayout;
+			switch_mutex_unlock(conference->member_mutex);
+		} else {
+			stream->write_function(stream, "-ERR no layout for personal canvas\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
 	} else {
 
 		switch_mutex_lock(conference->canvases[idx]->mutex);
