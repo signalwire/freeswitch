@@ -1490,6 +1490,7 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 {
 	char transaction_id[MSRP_TRANS_ID_LEN + 1] = { 0 };
 	char buf[MSRP_BUFF_SIZE];
+	char message_id[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
 	switch_size_t len;
 	const char *msrp_h_to_path = switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH);
 	const char *msrp_h_from_path = switch_msrp_msg_get_header(msrp_msg, MSRP_H_FROM_PATH);
@@ -1507,13 +1508,16 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	}
 
 	random_string(transaction_id, MSRP_TRANS_ID_LEN);
+	switch_uuid_str(message_id, sizeof(message_id));
 
 	sprintf(buf, "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
+		"Message-ID: %s\r\n"
 		"Content-Type: %s\r\n"
 		"Byte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT "%s",
 		transaction_id,
 		to_path,
 		from_path,
+		message_id,
 		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE)),
 		msrp_msg->payload ? msrp_msg->payload_bytes : 0,
 		msrp_msg->payload ? msrp_msg->payload_bytes : 0,
