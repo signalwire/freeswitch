@@ -49,7 +49,8 @@
 %{?with_mod_shout:%define build_mod_shout 1 }
 %{?with_mod_opusfile:%define build_mod_opusfile 1 }
 
-%define version 1.7.0
+%define nonparsedversion 1.7.0
+%define version %(echo '%{nonparsedversion}' | sed 's/-//g')
 %define release 1
 
 ######################################################################################################################
@@ -118,7 +119,7 @@ Vendor:       	http://www.freeswitch.org/
 #					Source files and where to get them
 #
 ######################################################################################################################
-Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
+Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 Source2:	http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
@@ -1430,7 +1431,7 @@ Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 ######################################################################################################################
 
 %prep
-%setup -b0 -q
+%setup -b0 -q -n %{name}-%{nonparsedversion}
 cp %{SOURCE1} libs/
 cp %{SOURCE2} libs/
 cp %{SOURCE3} libs/
