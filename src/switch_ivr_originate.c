@@ -1364,6 +1364,11 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 			}
 			SWITCH_IVR_VERIFY_SILENCE_DIVISOR(ringback->silence);
 		} else {
+			if (ringback->audio_buffer) {
+				switch_buffer_destroy(&ringback->audio_buffer);
+				teletone_destroy_session(&ringback->ts);
+			}
+
 			switch_buffer_create_dynamic(&ringback->audio_buffer, 512, 1024, 0);
 			switch_buffer_set_loops(ringback->audio_buffer, -1);
 
