@@ -930,8 +930,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 							switch_channel_event_set_data(tech_pvt->other_channel, event);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->channel));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_a));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_a));
 							switch_event_fire(&event);
 						}
 					}
