@@ -576,6 +576,321 @@ SWITCH_STANDARD_APP(kz_audio_bridge_function)
 	}
 }
 
+SWITCH_STANDARD_APP(kz_audio_bridge_uuid_function)
+{
+	switch_core_session_t *peer_session = NULL;
+	const char * peer_uuid = NULL;
+
+	if (zstr(data)) {
+		return;
+	}
+
+	peer_uuid = switch_core_session_strdup(session, data);
+	if (peer_uuid && (peer_session = switch_core_session_locate(peer_uuid))) {
+		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+	}
+
+	if (peer_session) {
+		switch_core_session_rwunlock(peer_session);
+	}
+}
+
+
+struct kz_att_keys {
+	const char *attxfer_cancel_key;
+	const char *attxfer_hangup_key;
+	const char *attxfer_conf_key;
+};
+
+static switch_status_t kz_att_xfer_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	switch_core_session_t *peer_session = (switch_core_session_t *) buf;
+	if (!buf || !peer_session) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+		{
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			struct kz_att_keys *keys = switch_channel_get_private(channel, "__kz_keys");
+
+			if (dtmf->digit == *keys->attxfer_hangup_key) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (dtmf->digit == *keys->attxfer_cancel_key) {
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (dtmf->digit == *keys->attxfer_conf_key) {
+				switch_caller_extension_t *extension = NULL;
+				const char *app = "three_way";
+				const char *app_arg = switch_core_session_get_uuid(session);
+				const char *holding = switch_channel_get_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
+				switch_core_session_t *b_session;
+
+				if (holding && (b_session = switch_core_session_locate(holding))) {
+					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+					if (!switch_channel_ready(b_channel)) {
+						app = "intercept";
+					}
+					switch_core_session_rwunlock(b_session);
+				}
+
+				if ((extension = switch_caller_extension_new(peer_session, app, app_arg)) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+					abort();
+				}
+
+				switch_caller_extension_add_application(peer_session, extension, app, app_arg);
+				switch_channel_set_caller_extension(peer_channel, extension);
+				switch_channel_set_state(peer_channel, CS_RESET);
+				switch_channel_wait_for_state(peer_channel, channel, CS_RESET);
+				switch_channel_set_state(peer_channel, CS_EXECUTE);
+				switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, NULL);
+				return SWITCH_STATUS_FALSE;
+			}
+
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t kz_att_xfer_tmp_hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if (state == CS_HANGUP || state == CS_ROUTING) {
+		const char *bond = switch_channel_get_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
+
+		if (!zstr(bond)) {
+			switch_core_session_t *b_session;
+
+			if ((b_session = switch_core_session_locate(bond))) {
+				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+				if (switch_channel_up(b_channel)) {
+					switch_channel_set_flag(b_channel, CF_REDIRECT);
+				}
+				switch_core_session_rwunlock(b_session);
+			}
+		}
+
+		switch_core_event_hook_remove_state_change(session, kz_att_xfer_tmp_hanguphook);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t kz_att_xfer_hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+	const char *id = NULL;
+
+	if (state == CS_HANGUP || state == CS_ROUTING) {
+		if ((id = switch_channel_get_variable(channel, "xfer_uuids"))) {
+			switch_stream_handle_t stream = { 0 };
+			SWITCH_STANDARD_STREAM(stream);
+			switch_api_execute("uuid_bridge", id, NULL, &stream);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nHangup Command uuid_bridge(%s):\n%s\n", id,
+							  switch_str_nil((char *) stream.data));
+			switch_safe_free(stream.data);
+		}
+
+		switch_core_event_hook_remove_state_change(session, kz_att_xfer_hanguphook);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static void kz_att_xfer_set_result(switch_channel_t *channel, switch_status_t status)
+{
+	switch_channel_set_variable(channel, SWITCH_ATT_XFER_RESULT_VARIABLE, status == SWITCH_STATUS_SUCCESS ? "success" : "failure");
+}
+
+struct kz_att_obj {
+	switch_core_session_t *session;
+	const char *data;
+	int running;
+};
+
+void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
+{
+	struct kz_att_obj *att = (struct kz_att_obj *) obj;
+	struct kz_att_keys *keys = NULL;
+	switch_core_session_t *session = att->session;
+	switch_core_session_t *peer_session = NULL;
+	const char *data = att->data;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_channel_t *channel = switch_core_session_get_channel(session), *peer_channel = NULL;
+	const char *bond = NULL;
+	switch_core_session_t *b_session = NULL;
+	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
+	const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
+
+	att->running = 1;
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
+	bond = switch_channel_get_partner_uuid(channel);
+	if ((b_session = switch_core_session_locate(bond)) == NULL) {
+		switch_core_session_rwunlock(peer_session);
+		return NULL;
+	}
+
+	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
+	switch_core_event_hook_add_state_change(session, kz_att_xfer_tmp_hanguphook);
+
+	if (follow_recording && (b_session = switch_core_session_locate(bond))) {
+		switch_ivr_transfer_recordings(b_session, session);
+		switch_core_session_rwunlock(b_session);
+	}
+
+	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL)
+		!= SWITCH_STATUS_SUCCESS || !peer_session) {
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+		goto end;
+	}
+
+	peer_channel = switch_core_session_get_channel(peer_session);
+	switch_channel_set_flag(peer_channel, CF_INNER_BRIDGE);
+	switch_channel_set_flag(channel, CF_INNER_BRIDGE);
+
+	if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
+		if (!(attxfer_cancel_key = switch_channel_get_variable(peer_channel, "attxfer_cancel_key"))) {
+			attxfer_cancel_key = "#";
+		}
+	}
+
+	if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
+		if (!(attxfer_hangup_key = switch_channel_get_variable(peer_channel, "attxfer_hangup_key"))) {
+			attxfer_hangup_key = "*";
+		}
+	}
+
+	if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
+		if (!(attxfer_conf_key = switch_channel_get_variable(peer_channel, "attxfer_conf_key"))) {
+			attxfer_conf_key = "0";
+		}
+	}
+
+	keys = switch_core_session_alloc(session, sizeof(*keys));
+	keys->attxfer_cancel_key = switch_core_session_strdup(session, attxfer_cancel_key);
+	keys->attxfer_hangup_key = switch_core_session_strdup(session, attxfer_hangup_key);
+	keys->attxfer_conf_key = switch_core_session_strdup(session, attxfer_conf_key);
+	switch_channel_set_private(channel, "__kz_keys", keys);
+
+	switch_channel_set_variable(channel, "att_xfer_peer_uuid", switch_core_session_get_uuid(peer_session));
+
+	switch_ivr_multi_threaded_bridge(session, peer_session, kz_att_xfer_on_dtmf, peer_session, NULL);
+
+	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
+	switch_channel_clear_flag(channel, CF_INNER_BRIDGE);
+
+	if (zstr(bond) && switch_channel_down(peer_channel)) {
+		switch_core_session_rwunlock(peer_session);
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+		goto end;
+	}
+
+	if (bond) {
+		int br = 0;
+
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+
+		if (!switch_channel_down(peer_channel)) {
+			/*
+			 * we're emiting the transferee event so that callctl can update
+			 */
+			switch_event_t *event = NULL;
+			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sofia::transferee") == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(b_channel, event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(peer_session));
+				switch_event_fire(&event);
+			}
+			if (!switch_channel_ready(channel)) {
+				switch_status_t status;
+
+				if (follow_recording) {
+					switch_ivr_transfer_recordings(session, peer_session);
+				}
+				status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				kz_att_xfer_set_result(peer_channel, status);
+				br++;
+			} else {
+				switch_channel_set_variable_printf(b_channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
+				switch_channel_set_variable_printf(channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), bond);
+
+				switch_core_event_hook_add_state_change(session, kz_att_xfer_hanguphook);
+				switch_core_event_hook_add_state_change(b_session, kz_att_xfer_hanguphook);
+			}
+		}
+
+/*
+ * this was commented so that the existing bridge
+ * doesn't end
+ *
+		if (!br) {
+			switch_status_t status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), bond);
+			att_xfer_set_result(channel, status);
+		}
+*/
+
+	}
+
+	switch_core_session_rwunlock(peer_session);
+
+  end:
+
+	switch_core_event_hook_remove_state_change(session, kz_att_xfer_tmp_hanguphook);
+
+	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, NULL);
+	switch_channel_clear_flag(channel, CF_XFER_ZOMBIE);
+
+	switch_core_session_rwunlock(b_session);
+	switch_core_session_rwunlock(session);
+	att->running = 0;
+
+	return NULL;
+}
+
+SWITCH_STANDARD_APP(kz_att_xfer_function)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
+	struct kz_att_obj *att;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_detach_set(thd_attr, 1);
+
+	att = switch_core_session_alloc(session, sizeof(*att));
+	att->running = -1;
+	att->session = session;
+	att->data = switch_core_session_strdup(session, data);
+	switch_thread_create(&thread, thd_attr, kz_att_thread_run, att, pool);
+
+	while(att->running && switch_channel_up(channel)) {
+		switch_yield(100000);
+	}
+}
+
 void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switch_application_interface_t *app_interface) {
 	SWITCH_ADD_APP(app_interface, "kz_set", SET_SHORT_DESC, SET_LONG_DESC, set_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_set_encoded", SET_SHORT_DESC, SET_LONG_DESC, set_encoded_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
@@ -592,4 +907,6 @@ void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switc
 	SWITCH_ADD_APP(app_interface, "kz_restore_caller_id", NOOP_SHORT_DESC, NOOP_LONG_DESC, kz_restore_caller_id_function, NOOP_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "noop", NOOP_SHORT_DESC, NOOP_LONG_DESC, noop_function, NOOP_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "kz_bridge", "Bridge Audio", "Bridge the audio between two sessions", kz_audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
+	SWITCH_ADD_APP(app_interface, "kz_bridge_uuid", "Bridge Audio", "Bridge the audio between two sessions", kz_audio_bridge_uuid_function, "<channel_url>", SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
+	SWITCH_ADD_APP(app_interface, "kz_att_xfer", "Attended Transfer", "Attended Transfer", kz_att_xfer_function, "<channel_url>", SAF_NONE);
 }
