@@ -191,7 +191,7 @@ BuildRequires: broadvoice-devel
 BuildRequires: flite-devel
 BuildRequires: ilbc2-devel 
 BuildRequires: g722_1-devel
-BuildRequires: libcodec2-devel
+BuildRequires: codec2-devel
 BuildRequires: libsilk-devel
 BuildRequires: libyuv-devel >= 0.0.1280
 BuildRequires: lua-devel
