@@ -113,8 +113,22 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.port = 0;
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
-	kazoo_globals.enable_legacy = SWITCH_FALSE;
-	kazoo_globals.tweaks_restore_caller_id = SWITCH_TRUE;
+
+	kazoo_globals.legacy_events = SWITCH_FALSE;
+
+	kz_set_tweak(KZ_TWEAK_INTERACTION_ID);
+	kz_set_tweak(KZ_TWEAK_EXPORT_VARS);
+	kz_set_tweak(KZ_TWEAK_SWITCH_URI);
+	kz_set_tweak(KZ_TWEAK_REPLACES_CALL_ID);
+	kz_set_tweak(KZ_TWEAK_LOOPBACK_VARS);
+	kz_set_tweak(KZ_TWEAK_CALLER_ID);
+	kz_set_tweak(KZ_TWEAK_TRANSFERS);
+	kz_set_tweak(KZ_TWEAK_BRIDGE);
+	kz_set_tweak(KZ_TWEAK_BRIDGE_REPLACES_ALEG);
+	kz_set_tweak(KZ_TWEAK_BRIDGE_REPLACES_CALL_ID);
+	kz_set_tweak(KZ_TWEAK_BRIDGE_VARIABLES);
+	kz_set_tweak(KZ_TWEAK_RESTORE_CALLER_ID_ON_BLIND_XFER);
+
 
 
 	if ((child = switch_xml_child(cfg, "settings"))) {
@@ -186,12 +200,24 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 				if(!strcmp(val, "map")) {
 					kazoo_globals.json_encoding = ERLANG_MAP;
 				}
-			} else if (!strcmp(var, "enable-legacy")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set enable-legacy: %s\n", val);
-				kazoo_globals.enable_legacy = switch_true(val);
-			} else if (!strcmp(var, "tweaks-restore-caller-id")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweaks-restore-caller-id: %s\n", val);
-				kazoo_globals.tweaks_restore_caller_id = switch_true(val);
+			} else if (!strcmp(var, "legacy-events")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set legacy-events: %s\n", val);
+				kazoo_globals.legacy_events = switch_true(val);
+			}
+		}
+	}
+
+	if ((child = switch_xml_child(cfg, "tweaks"))) {
+		for (param = switch_xml_child(child, "tweak"); param; param = param->next) {
+			kz_tweak_t tweak = KZ_TWEAK_MAX;
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if(var && val && kz_name_tweak(var, &tweak) == SWITCH_STATUS_SUCCESS) {
+				if(switch_true(val)) {
+					kz_set_tweak(tweak);
+				} else {
+					kz_clear_tweak(tweak);
+				}
 			}
 		}
 	}

@@ -64,7 +64,8 @@ static char *REQUEST_ATOMS[] = {
 	"fetch_reply",
 	"config",
 	"bgapi4",
-	"api4"
+	"api4",
+	"json_api"
 };
 
 typedef enum {
@@ -86,6 +87,7 @@ typedef enum {
 	REQUEST_CONFIG,
 	REQUEST_BGAPI4,
 	REQUEST_API4,
+	REQUEST_JSON_API,
 	REQUEST_MAX
 } request_atoms_t;
 
@@ -925,10 +927,10 @@ static switch_status_t handle_request_api4(ei_node_t *ei_node, erlang_pid *pid, 
 		status = api_exec_stream(cmd, arg, &stream, &reply);
 
 		if (status == SWITCH_STATUS_SUCCESS) {
-			ei_x_encode_tuple_header(buf, 2);
+			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
-			ei_x_encode_tuple_header(buf, (stream.param_event ? 3 : 2));
+			ei_x_encode_tuple_header(rbuf, (stream.param_event ? 3 : 2));
 			ei_x_encode_atom(rbuf, "error");
 		}
 
@@ -951,6 +953,61 @@ static switch_status_t handle_request_api4(ei_node_t *ei_node, erlang_pid *pid, 
         return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t handle_request_json_api(ei_node_t *ei_node, erlang_pid *pid, ei_x_buff *buf, ei_x_buff *rbuf)
+{
+    char *arg;
+	cJSON *jcmd = NULL;
+	switch_core_session_t *session = NULL;
+	const char *uuid = NULL;
+	char *response = NULL;
+	const char *parse_end = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+    if (ei_decode_string_or_binary(buf->buff, &buf->index, &arg)) {
+            return erlang_response_badarg(rbuf);
+    }
+
+    jcmd = cJSON_ParseWithOpts(arg, &parse_end, 0);
+
+	if (!jcmd) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "json api error: %s\n", parse_end);
+   		ei_x_encode_tuple_header(rbuf, 2);
+   		ei_x_encode_atom(rbuf, "error");
+   		ei_x_encode_tuple_header(rbuf, 2);
+   		ei_x_encode_atom(rbuf, "parse_error");
+   		_ei_x_encode_string(rbuf, parse_end);
+   		return status;
+	}
+
+	if ((uuid = cJSON_GetObjectCstr(jcmd, "uuid"))) {
+		if (!(session = switch_core_session_locate(uuid))) {
+			return erlang_response_baduuid(rbuf);
+		}
+	}
+
+	status = switch_json_api_execute(jcmd, session, NULL);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "json api (%i): %s\n", status , arg);
+
+   	response = cJSON_PrintUnformatted(jcmd);
+	ei_x_encode_tuple_header(rbuf, 2);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		ei_x_encode_atom(rbuf, "ok");
+	} else {
+		ei_x_encode_atom(rbuf, "error");
+	}
+	_ei_x_encode_string(rbuf, response);
+	switch_safe_free(response);
+
+    cJSON_Delete(jcmd);
+    switch_safe_free(arg);
+
+	if (session) {
+		switch_core_session_rwunlock(session);
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t handle_request_api(ei_node_t *ei_node, erlang_pid *pid, ei_x_buff *buf, ei_x_buff *rbuf) {
 	char cmd[MAXATOMLEN + 1];
 	char *arg;
@@ -963,7 +1020,7 @@ static switch_status_t handle_request_api(ei_node_t *ei_node, erlang_pid *pid, e
 		return erlang_response_badarg(rbuf);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "exec: %s(%s)\n", cmd, arg);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exec: %s(%s)\n", cmd, arg);
 
 	if (rbuf) {
 		char *reply;
@@ -1100,12 +1157,12 @@ static switch_status_t handle_kazoo_request(ei_node_t *ei_node, erlang_pid *pid,
 	}
 
 	if (ei_decode_atom_safe(buf->buff, &buf->index, atom)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Recieved mod_kazoo message that did not contain a command (ensure you are using Kazoo v2.14+).\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received mod_kazoo message that did not contain a command (ensure you are using Kazoo v2.14+).\n");
 		return erlang_response_badarg(rbuf);
 	}
 
 	if (find_request(atom, &request) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Recieved mod_kazoo message for unimplemented feature (ensure you are using Kazoo v2.14+): %s\n", atom);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received mod_kazoo message for unimplemented feature (ensure you are using Kazoo v2.14+): %s\n", atom);
 		return erlang_response_badarg(rbuf);
 	}
 
@@ -1146,6 +1203,8 @@ static switch_status_t handle_kazoo_request(ei_node_t *ei_node, erlang_pid *pid,
 		return handle_request_bgapi4(ei_node, pid, buf, rbuf);
 	case REQUEST_API4:
 		return handle_request_api4(ei_node, pid, buf, rbuf);
+	case REQUEST_JSON_API:
+		return handle_request_json_api(ei_node, pid, buf, rbuf);
 	default:
 		return erlang_response_notimplemented(rbuf);
 	}
@@ -1168,7 +1227,7 @@ static switch_status_t handle_mod_kazoo_request(ei_node_t *ei_node, erlang_msg *
 	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
 
 	if (ei_decode_atom_safe(buf->buff, &buf->index, atom)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Recieved erlang message tuple that did not start with an atom (ensure you are using Kazoo v2.14+).\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received erlang message tuple that did not start with an atom (ensure you are using Kazoo v2.14+).\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1224,7 +1283,7 @@ static switch_status_t handle_mod_kazoo_request(ei_node_t *ei_node, erlang_msg *
 
 		return status;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Recieved inappropriate erlang message (ensure you are using Kazoo v2.14+)\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received inappropriate erlang message (ensure you are using Kazoo v2.14+)\n");
 		return SWITCH_STATUS_GENERR;
 	}
 }
@@ -1547,7 +1606,7 @@ switch_status_t new_kazoo_node(int nodefd, ErlConnect *conn) {
 	ei_node->nodefd = nodefd;
 	ei_node->peer_nodename = switch_core_strdup(ei_node->pool, conn->nodename);
 	ei_node->created_time = switch_micro_time_now();
-	ei_node->legacy = kazoo_globals.enable_legacy;
+	ei_node->legacy = kazoo_globals.legacy_events;
 	ei_node->event_stream_framing = kazoo_globals.event_stream_framing;
 
 	/* store the IP and node name we are talking with */

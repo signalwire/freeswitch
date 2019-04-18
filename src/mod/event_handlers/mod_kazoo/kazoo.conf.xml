@@ -112,11 +112,13 @@
                             <filter name="variable_sip_refer_to" type="include" compare="exists" />
                         </filters>
                     </field>
-                    <field name="Referred-By" type="expand" value="sip:${regex(${variable_sip_h_Referred-By}|&lt;sips?:(.*)&gt;|%1)}">
+                    <field name="variable_sip_h_Referred-By" as="Referred-By"/>
+                    <!-- <field name="Referred-By" type="expand" value="sip:${regex(${variable_sip_h_Referred-By}|&lt;sips?:(.*)&gt;|%1)}">
                         <filters>
                             <filter name="variable_sip_h_Referred-By" type="include" compare="exists" />
                         </filters>
                     </field>
+                    -->
 
                     <!-- <field name="variable_Call-Interaction-ID" as="Call-Interaction-ID" /> -->
                     <field name="interaction-id" type="reference" />
@@ -882,6 +884,7 @@
 							name="variable_Call-Control-Queue" />
                         <filter type="include" compare="exists"
                             name="Application-UUID-Name" />
+                        <filter type="exclude" name="Application-UUID-Name" value="set" />
 						<filter type="exclude" name="Application" value="set" />
                         <filter name="Application" value="park" />
                         <filter name="Application" value="export" />
@@ -903,7 +906,7 @@
 							value="Application-Response|variable_originate_disposition|variable_endpoint_disposition|#NONE" />
 						<field name="Disposition" type="first-of"
 							value="variable_originate_disposition|variable_endpoint_disposition" />
-						<field name="Bridge-Hangup-Cause" type="first-of" value="variable_last_bridge_hangup_cause|variable_bridge_hangup_cause" />
+						<field name="Bridge-Hangup-Cause" type="first-of" value="variable_bridge_hangup_cause|variable_last_bridge_hangup_cause" />
 						<field name="debug-call" type="reference" />
 					</fields>
 
@@ -1033,6 +1036,8 @@
                         <field name="Resigning-Peer-UUID"/>
                         <field name="Acquired-UUID"/>
                         <field name="Acquired-UUID" as="Replaced-By"/>
+                        <field name="Connecting-Leg-A-UUID" />
+                        <field name="Connecting-Leg-B-UUID" />
                     </fields>
                 </event>
 
@@ -1070,6 +1075,15 @@
 						<field name="Custom-Channel-Vars" type="reference" />
 					</fields>
 				</event>
+
+                <event name="CHANNEL_METAFLOW">
+                    <fields verbose="false">
+                        <field name="call_event" type="reference" />
+		                <field name="from-to" type="reference" />                        
+                        <field name="user-agent" type="reference" />
+                        <field name="Metaflow-Collected-Digits"/>
+                    </fields>
+                </event>
 
 			</events>
 		</profile>

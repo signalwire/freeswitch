@@ -139,6 +139,24 @@ struct ei_xml_agent_s {
 
 };
 
+typedef enum {
+	KZ_TWEAK_INTERACTION_ID,
+	KZ_TWEAK_EXPORT_VARS,
+	KZ_TWEAK_SWITCH_URI,
+	KZ_TWEAK_REPLACES_CALL_ID,
+	KZ_TWEAK_LOOPBACK_VARS,
+	KZ_TWEAK_CALLER_ID,
+	KZ_TWEAK_TRANSFERS,
+	KZ_TWEAK_BRIDGE,
+	KZ_TWEAK_BRIDGE_REPLACES_ALEG,
+	KZ_TWEAK_BRIDGE_REPLACES_CALL_ID,
+	KZ_TWEAK_BRIDGE_VARIABLES,
+	KZ_TWEAK_RESTORE_CALLER_ID_ON_BLIND_XFER,
+
+	/* No new flags below this line */
+	KZ_TWEAK_MAX
+} kz_tweak_t;
+
 struct globals_s {
 	switch_memory_pool_t *pool;
 	switch_atomic_t threads;
@@ -164,8 +182,6 @@ struct globals_s {
 	char *hostname;
 	char *ei_cookie;
 	char *ei_nodename;
-//	char *kazoo_var_prefix;
-//	int var_prefix_length;
 	uint32_t flags;
 	int send_all_headers;
 	int send_all_private_headers;
@@ -184,11 +200,13 @@ struct globals_s {
 	kazoo_config_ptr fetch_handlers;
 	kazoo_json_term  json_encoding;
 
-	int enable_legacy;
 	char **profile_vars_prefixes;
 	char **kazoo_var_prefixes;
 
-	int tweaks_restore_caller_id;
+	int legacy_events;
+	uint8_t tweaks[KZ_TWEAK_MAX];
+
+
 };
 typedef struct globals_s globals_t;
 extern globals_t kazoo_globals;
@@ -253,6 +271,12 @@ switch_status_t kazoo_config_handlers(switch_xml_t cfg);
 
 /* runtime */
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime);
+
+
+
+#define kz_test_tweak(flag) (kazoo_globals.tweaks[flag] ? 1 : 0)
+#define kz_set_tweak(flag) kazoo_globals.tweaks[flag] = 1
+#define kz_clear_tweak(flag) kazoo_globals.tweaks[flag] = 0
 
 #endif /* KAZOO_EI_H */
 
