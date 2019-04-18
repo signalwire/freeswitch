@@ -1641,6 +1641,8 @@ else
    ./rebootstrap.sh
 fi
 
+autoreconf --force --install
+
 %configure -C \
 --prefix=%{PREFIX} \
 --exec-prefix=%{EXECPREFIX} \
