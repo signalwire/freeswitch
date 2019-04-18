@@ -542,6 +542,7 @@ the entries aloud via a TTS engine
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libks signalwire-client-c
 
 %description application-signalwire
 Provides FreeSWITCH mod_signalwire
