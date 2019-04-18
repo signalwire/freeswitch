@@ -37,7 +37,7 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_shout 0
+%define build_mod_shout 1
 %define build_mod_opusfile 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
@@ -1148,10 +1148,10 @@ a soundcard, etc.
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	libshout >= 2.3.1
+Requires:	libshout >= 2.2.2
 Requires:	libmpg123 >= 1.20.1
 Requires:	lame
-BuildRequires:	libshout-devel >= 2.3.1
+BuildRequires:	libshout-devel >= 2.2.2
 BuildRequires:	libmpg123-devel >= 1.20.1
 BuildRequires:	lame-devel
 
