@@ -7236,7 +7236,9 @@ static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Text thread started.\n", switch_channel_get_name(session->channel));
 
-	switch_core_session_write_text_frame(session, &cr_frame, 0, 0);
+	if (!switch_channel_test_flag(channel, CF_MSRP)) {
+		switch_core_session_write_text_frame(session, &cr_frame, 0, 0);
+	}
 
 	while (switch_channel_up_nosig(channel)) {
 
@@ -11268,6 +11270,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
+			switch_channel_set_flag(session->channel, CF_TEXT_LINE_BASED);
 			switch_channel_set_flag(session->channel, CF_MSRP);
 
 			if (want_msrps) {
