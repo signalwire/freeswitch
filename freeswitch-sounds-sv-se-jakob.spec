@@ -2,7 +2,7 @@
 # Copyright and license
 ##############################################################################
 #
-# Spec file for package freeswitch-sounds-sv-se-jakob (version 1.0.18-1)
+# Spec file for package freeswitch-sounds-sv-se-jakob (version 1.0.50-1)
 #
 # Copyright (c) 2009 Patrick Laimbock 
 # Copied and modified for mod_say_sv (c) 2013 Jakob Sundberg

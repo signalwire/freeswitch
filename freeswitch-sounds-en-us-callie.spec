@@ -2,7 +2,7 @@
 # Copyright and license
 ##############################################################################
 #
-# Spec file for package freeswitch-sounds-en-us-callie (version 1.0.18-1)
+# Spec file for package freeswitch-sounds-en-us-callie (version 1.0.52-1)
 #
 # Copyright (c) 2009 Patrick Laimbock 
 # Some fixes and additions (c) 2011 Michal Bielicki
@@ -20,7 +20,7 @@
 # Set variables
 ##############################################################################
 
-%define version 1.0.50
+%define version 1.0.52
 %define release 1
 
 %define fsname  freeswitch
@@ -316,6 +316,8 @@ popd
 ##############################################################################
 
 %changelog
+* Fri Apr 19 2019 Andrey Volk <andrey@signalwire.com> - 1.0.52-1
+- bump up version
 * Sun Mar 05 2012 Ken Rice <krice@freeswitch.org> - 1.0.18-1
 - update to FHS Layout for FreeSWITCH
 - bump up version

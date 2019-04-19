@@ -1,7 +1,7 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
-declare -a specfiles=('freeswitch-sounds-en-ca-june.spec' 'freeswitch-sounds-fr-ca-june.spec' 'freeswitch-sounds-ru-RU-elena.spec' 'freeswitch-sounds-en-us-callie.spec' 'freeswitch-sounds-sv-se-jakob.spec')
+declare -a specfiles=('freeswitch-sounds-en-ca-june.spec' 'freeswitch-sounds-en-us-allison.spec' 'freeswitch-sounds-fr-ca-june.spec' 'freeswitch-sounds-music.spec' 'freeswitch-sounds-pt-BR-karina.spec' 'freeswitch-sounds-ru-RU-elena.spec' 'freeswitch-sounds-en-us-callie.spec' 'freeswitch-sounds-sv-se-jakob.spec')
 
 sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
@@ -15,17 +15,17 @@ basedir=$(pwd);
 
 if [ ! -d "$basedir/../freeswitch-sounds" ]; then
 	cd $basedir/..
-	git clone https://freeswitch.org/stash/scm/fs/freeswitch-sounds.git 
+	git clone https://freeswitch.org/stash/scm/fs/freeswitch-sounds.git
 else
 	cd $basedir/../freeswitch-sounds
 	git clean -fdx
-        git pull
+	git pull
 fi
 
 for i in "${specfiles[@]}"
 do
 
-cd $basedir/../freeswitch-sounds/sounds/trunk
+cd $basedir/../freeswitch-sounds/
 
 ./dist.pl `echo $i|sed -e 's/freeswitch-sounds-//g' -e 's/\.spec//g' -e 's/-/\//g'`
 

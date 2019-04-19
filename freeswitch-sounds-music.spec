@@ -35,8 +35,8 @@
 
 Summary:	FreeSWITCH Music on Hold soundfiles
 Name:		freeswitch-sounds-music
-Version:	1.0.50
-Release:	2%{?dist}
+Version:	1.0.52
+Release:	1%{?dist}
 License:	MPL
 Group:		Productivity/Telephony/Servers
 Packager:	Joseph L. Casale <jcasale@activenetwerx.com>
@@ -153,6 +153,8 @@ FreeSWITCH 48kHz Music On Hold soundfiles
 
 
 %changelog
+* Fri Apr 19 2019 Andrey Volk <andrey@signalwire.com> - 1.0.52-1
+- bump up version
 * Sat Jul 16 2011 Joseph Casale <jcasale@activenetwerx.com> 1.0.8-2
 - Fix up for FreeSWITCH FHS and AutoBuild System
 * Sat Jul 16 2011 Joseph Casale <jcasale@activenetwerx.com> 1.0.8-1
