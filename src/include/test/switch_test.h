@@ -281,7 +281,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, NULL, 0) == SWITCH_STATUS_SUCCESS) { \
+		if (fst_init_core_and_modload(confdir, confdir, 0) == SWITCH_STATUS_SUCCESS) { \
 			fst_core = 2; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
