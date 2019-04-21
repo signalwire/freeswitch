@@ -68,6 +68,7 @@ static char *fst_getenv_default(const char *env, char *default_value, switch_boo
  */
 static switch_status_t fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal)
 {
+	switch_status_t status;
 	const char *err;
 	// Let FreeSWITCH core pick these
 	//SWITCH_GLOBAL_dirs.base_dir = strdup("/usr/local/freeswitch");
@@ -112,12 +113,19 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	switch_core_set_globals();
 
 	if (!minimal) {
-		switch_status_t status = switch_core_init_and_modload(0, SWITCH_TRUE, &err);
+		status = switch_core_init_and_modload(0, SWITCH_TRUE, &err);
 		switch_sleep(1 * 1000000);
 		switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
+		if (status != SWITCH_STATUS_SUCCESS && err) {
+			fprintf(stderr, "%s", err);
+		}
 		return status;
 	}
-	return switch_core_init(SCF_MINIMAL, SWITCH_TRUE, &err);
+	status = switch_core_init(SCF_MINIMAL, SWITCH_TRUE, &err);
+	if (status != SWITCH_STATUS_SUCCESS && err) {
+		fprintf(stderr, "%s", err);
+	}
+	return status;
 }
 
 /**
