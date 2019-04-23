@@ -1043,7 +1043,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *holdstr = "";
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	uint32_t session_timeout = 0;
+	uint32_t session_timeout = tech_pvt->profile->session_timeout;
 	const char *val;
 	const char *rep;
 	const char *call_id = NULL;
@@ -1556,8 +1556,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
-
-	session_timeout = tech_pvt->profile->session_timeout;
 
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
 		int v_session_timeout = atoi(val);
