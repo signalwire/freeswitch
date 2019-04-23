@@ -4426,10 +4426,6 @@ SWITCH_STANDARD_API(sofia_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_command_t func = NULL;
 	int lead = 1;
-    const char *errorptr;
-    int erroffset;
-    const unsigned char *tables = 0;
-    uint32_t flags = 0;
 	static const char usage_string[] = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia global siptrace <on|off>\n"
@@ -4474,29 +4470,6 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_xml_status;
 	} else if (!strcasecmp(argv[0], "jsonstatus")) {
 		func = cmd_json_status;
-	} else if (!strcasecmp(argv[0], "filter")) {
-	    if (argc > 1) {
-	        if (!strcasecmp(argv[1],"off")) {
-	            mod_sofia_globals.filtering = SWITCH_FALSE;
-	            switch_regex_free(mod_sofia_globals.filter_re);
-	        } else {
-	        	mod_sofia_globals.filtering = SWITCH_TRUE;
-	            strncpy( mod_sofia_globals.filter_expression, argv[1], sizeof(mod_sofia_globals.filter_expression) );
-	        	mod_sofia_globals.filter_re = switch_regex_compile( argv[1], flags, &errorptr, &erroffset, tables );
-	        	if (errorptr) {
-	        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s][%s]\n", erroffset, errorptr, argv[1]);
-	        		stream->write_function(stream, "Couldn't compile that regex: %s\n", argv[1]);
-	        		switch_regex_free(mod_sofia_globals.filter_re);
-	        		goto done;
-	        	}
-
-	        }
-	        stream->write_function(stream, "+OK %s filtering sofia log for %s\n", mod_sofia_globals.filtering ? "enabled" : "disabled", mod_sofia_globals.filter_expression );
-	    } else {
-	        stream->write_function(stream, "%s%s", "sofia filter is ", mod_sofia_globals.filtering ? "enabled. " : "disabled. ", mod_sofia_globals.filter_expression);
-	        stream->write_function(stream, "%s", " (sofia filter <filter-regex|off>) - Enable, disable filtering, set 'filter-regex' to use as filter. Set 'filter-expression' to 'off' to stop filtering\n");
-	    }
-        goto done;
 	} else if (!strcasecmp(argv[0], "tracelevel")) {
 		if (argv[1]) {
 			mod_sofia_globals.tracelevel = switch_log_str2level(argv[1]);
@@ -6397,7 +6370,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia ::[help:status");
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
- 	switch_console_set_complete("add sofia filter");
+
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 

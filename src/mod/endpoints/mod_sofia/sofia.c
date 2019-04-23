@@ -35,7 +35,6 @@
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * William King <william.king@quentustech.com>
  * David Knell <david.knell@telng.com>
- * David Villasmil <david.villasmil@gmail.com>
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
  *
@@ -3542,64 +3541,12 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 	switch_thread_create(&profile->thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
 }
 
-static int is_packet_begin_or_end(char *mybuf)
-{
-	if (!strncasecmp( mybuf, "recv ", 3) || !strncasecmp( mybuf, "send ", 3) ) {
-		// Buffer starts with "recv" or "send", this means it's a new packet
-		if (strstr(mybuf, "------------------------------------------------------------------------") != NULL) {
-			// Buffer also contains the dahsed line, this is good, the complete "header" so to speak
-			return 1;
-		}
-	} else if (!strcmp(mybuf, "   ------------------------------------------------------------------------\n")) {
-		// Buffer only has the dashed line, this means it is the end of a packet
-		return 2;
-	}
-	return 0;
-}
-
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
-	filter_packet_state_t filter_packet_state;
-    char buf[1024];
-    static switch_stream_handle_t packetstream = { 0 };
-    static switch_bool_t print_this_packet = SWITCH_FALSE;
-    static int ovector[30];
+	if (!fmt) return;
 
-    va_list temp_ap;
-    va_copy(temp_ap,ap);
-
-    if (!fmt) return;
-
-    vsnprintf( buf, 1024, fmt, temp_ap);
-	buf[sizeof(buf)-1] = '\0';
-
-    if (mod_sofia_globals.filtering) {
-    	if (switch_regex_perform( buf, mod_sofia_globals.filter_expression, &mod_sofia_globals.filter_re, ovector, sizeof(ovector) / sizeof(ovector[0]) ) > 0) {
-    		print_this_packet = SWITCH_TRUE;
-    	}
-
-    	filter_packet_state = is_packet_begin_or_end(buf);
-
-		if ( filter_packet_state == FILTER_BEGIN ) {
-			print_this_packet = SWITCH_FALSE;
-			SWITCH_STANDARD_STREAM(packetstream);
-			packetstream.write_function(&packetstream, "%s", buf);
-
-    	} else if ( filter_packet_state == FILTER_END ) {
-			if ( print_this_packet == SWITCH_TRUE ) {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "\nFILTER REGEX (%s) FOUND IN: \n <<<%s>>>\n", mod_sofia_globals.filter_expression, (char *)packetstream.data );
-			}
-			switch_safe_free(packetstream.data);
-
-    	} else {
-			packetstream.write_function(&packetstream, "%s", buf);
-    	}
-    } else {
-    	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "%s", buf	);
-    }
-	buf[0] = '\0';
+	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
 }
-
 
 static su_log_t *sofia_get_logger(const char *name)
 {

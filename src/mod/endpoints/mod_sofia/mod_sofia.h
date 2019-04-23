@@ -155,12 +155,6 @@ typedef enum {
 	SOFIA_CONFIG_RESPAWN
 } sofia_config_t;
 
-typedef enum {
-	FILTER_UNKOWN = 0,
-	FILTER_BEGIN = 1,
-	FILTER_END = 2
-} filter_packet_state_t;
-
 typedef struct sofia_dispatch_event_s {
 	nua_saved_event_t event[1];
 	nua_handle_t *nh;
@@ -411,9 +405,6 @@ struct mod_sofia_globals {
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
-	char filter_expression[100];
-	switch_regex_t *filter_re;
-	switch_bool_t filtering;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
