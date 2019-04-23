@@ -165,6 +165,8 @@ FreeSWITCH rayo server implementation.
 #
 ######################################################################################################################
 %changelog
+* Tue Apr 23 2019 - Andrey Volk
+- Fix build for Stack 20.x
 * Tue Jun 10 2014 crienzo@grasshopper.com
 - Remove dependency to high resolution music and sounds files
 - Remove dependency to specific FreeSWITCH package version

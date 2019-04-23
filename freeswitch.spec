@@ -39,6 +39,7 @@
 %define build_mod_ssml 1
 %define build_mod_shout 1
 %define build_mod_opusfile 0
+%define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -48,6 +49,7 @@
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_shout:%define build_mod_shout 1 }
 %{?with_mod_opusfile:%define build_mod_opusfile 1 }
+%{?with_mod_v8:%define build_mod_v8 1 }
 
 %define nonparsedversion 1.7.0
 %define version %(echo '%{nonparsedversion}' | sed 's/-//g')
@@ -1218,12 +1220,14 @@ Requires:	python
 
 %description    python
 
+%if %{build_mod_v8}
 %package v8
 Summary:	JavaScript support for the FreeSWITCH open source telephony platform, using Google V8 JavaScript engine
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 
 %description v8
+%endif
 
 ######################################################################################################################
 #				FreeSWITCH Say Modules
@@ -1572,7 +1576,9 @@ FORMATS_MODULES+=" formats/mod_opusfile"
 #
 ######################################################################################################################
 LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
-#LANGUAGES_MODULES+="languages/mod_v8"
+%if %{build_mod_v8}
+LANGUAGES_MODULES+="languages/mod_v8"
+%endif
 
 ######################################################################################################################
 #
@@ -2421,12 +2427,14 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
+%if %{build_mod_v8}
 %files v8
-#%{MODINSTDIR}/mod_v8*.so*
-#%{LIBDIR}/libv8.so
-#%{LIBDIR}/libicui18n.so
-#%{LIBDIR}/libicuuc.so
-#%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
+%{MODINSTDIR}/mod_v8*.so*
+%{LIBDIR}/libv8.so
+%{LIBDIR}/libicui18n.so
+%{LIBDIR}/libicuuc.so
+%endif
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
 
 ######################################################################################################################
@@ -2577,6 +2585,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Apr 23 2019 - Andrey Volk
+- Fix build for Stack 20.x
 * Tue Dec 11 2018 - Andrey Volk
 - add mod_signalwire
 * Sun Mar 13 2016 - Matthew Vale
