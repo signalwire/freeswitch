@@ -402,8 +402,6 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 		return SWITCH_FALSE;
 	}
 
-	nb_silk_frames  = 0;
-
 	if ((payload[0] >> 3 ) < 12) { /* config in silk-only : NB,MB,WB */
 		nb_silk_frames = (payload[0] >> 3) & 0x3;
 		if(nb_silk_frames  == 0) {
@@ -582,9 +580,9 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		 * then it should start the encoder at sample rate: min(R1, R4) and the decoder at sample rate: min(R3, R2)*/
 			if (codec_fmtp.private_info) {
 				opus_codec_settings_t *settings = codec_fmtp_only_remote.private_info;
-				if (opus_codec_settings.sprop_maxcapturerate || settings->maxplaybackrate) {
+				if (opus_codec_settings.sprop_maxcapturerate || (settings && settings->maxplaybackrate)) {
 					enc_samplerate = opus_codec_settings.sprop_maxcapturerate; /*R4*/
-					if (settings->maxplaybackrate < enc_samplerate && settings->maxplaybackrate) {
+					if (settings && settings->maxplaybackrate < enc_samplerate && settings->maxplaybackrate) {
 						enc_samplerate = settings->maxplaybackrate; /*R1*/
 						context->enc_frame_size = enc_samplerate * (codec->implementation->microseconds_per_packet / 1000) / 1000;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder will be created at sample rate %d hz\n",enc_samplerate);
@@ -644,7 +642,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 		if (opus_codec_settings.useinbandfec) {
 			/* FEC on the encoder: start the call with a preconfigured packet loss percentage */
-			int fec_bitrate = opus_codec_settings.maxaveragebitrate;
+			int fec_bitrate;
 			int loss_percent = opus_prefs.plpct ;
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(opus_codec_settings.useinbandfec));
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(loss_percent));
@@ -676,9 +674,9 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		if (opus_prefs.asymmetric_samplerates) {
 			if (codec_fmtp.private_info) {
 				opus_codec_settings_t *settings = codec_fmtp_only_remote.private_info;
-				if (opus_codec_settings.maxplaybackrate || settings->sprop_maxcapturerate) {
+				if (opus_codec_settings.maxplaybackrate || (settings && settings->sprop_maxcapturerate)) {
 					dec_samplerate = opus_codec_settings.maxplaybackrate; /* R3 */
-					if (dec_samplerate > settings->sprop_maxcapturerate && settings->sprop_maxcapturerate) {
+					if (settings && dec_samplerate > settings->sprop_maxcapturerate && settings->sprop_maxcapturerate) {
 						dec_samplerate = settings->sprop_maxcapturerate; /* R2 */
 						context->dec_frame_size = dec_samplerate*(codec->implementation->microseconds_per_packet / 1000) / 1000;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus decoder will be created at sample rate %d hz\n",dec_samplerate);
