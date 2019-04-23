@@ -1266,7 +1266,7 @@ int exprInternalParseFunction(exprObj * obj, exprNode * node, exprToken * tokens
 							}
 
 							/* Set reference item */
-							reftmp[refcur] = addr;
+							if (reftmp) reftmp[refcur] = addr; // the 'if' shuts up scan-build
 
 							/* increase ref arg number and lv position */
 							refcur++;
@@ -1330,7 +1330,7 @@ int exprInternalParseFunction(exprObj * obj, exprNode * node, exprToken * tokens
 			}
 
 			/* Set reference item */
-			reftmp[refcur] = addr;
+			if (reftmp) reftmp[refcur] = addr; // the 'if' shuts up scan-build
 		} else {
 			err = exprInternalParse(obj, &(tmp[cur]), tokens, lv, p2 - 1);
 			if (err != EXPR_ERROR_NOERROR)
