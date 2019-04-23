@@ -688,7 +688,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				if (echo_on) {
 					switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-					echo_on = 0;
 				}
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
@@ -918,7 +917,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		if (echo_on) {
 			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-			echo_on = 0;
 		}
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
@@ -1042,13 +1040,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 		switch_status_t status;
 
 		if (!switch_channel_ready(channel)) {
-			status = SWITCH_STATUS_FALSE;
 			break;
 		}
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
-			status = SWITCH_STATUS_BREAK;
 			break;
 		}
 
@@ -1079,7 +1075,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			 */
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf && !args->dmachine) {
-					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
@@ -1435,7 +1430,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		if (!abuf) {
-			buflen = write_frame.buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels;
+			write_frame.buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels;
 			switch_zmalloc(abuf, write_frame.buflen);
 			write_frame.data = abuf;
 		}
@@ -1736,7 +1731,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (test_native != last_native) {
 					if (test_native) {
 						write_frame.codec = switch_core_session_get_read_codec(session);
-						samples = read_impl.samples_per_packet;
 						framelen = read_impl.encoded_bytes_per_packet;
 						if (framelen == 0) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
@@ -1745,7 +1739,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						}
 					} else {
 						write_frame.codec = &codec;
-						samples = codec.implementation->samples_per_packet;
 						framelen = codec.implementation->decoded_bytes_per_packet;
 					}
 					switch_buffer_zero(fh->audio_buffer);
@@ -1823,7 +1816,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (wrote < newlen) {
 					switch_size_t r = newlen - wrote;
 					switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
-					wrote += r;
 				}
 				last_speed = fh->speed;
 				continue;
@@ -2653,7 +2645,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	uint32_t len = 0;
 	switch_size_t ilen = 0;
 	switch_frame_t write_frame = { 0 };
-	int done = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_size_t extra = 0;
@@ -2769,7 +2760,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
-					done = 1;
 					break;
 				}
 				if (args->buf && !strcasecmp(args->buf, "_break_")) {
@@ -2804,7 +2794,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			}
 
 			if (status != SWITCH_STATUS_SUCCESS) {
-				done = 1;
 				break;
 			}
 		}
@@ -2850,10 +2839,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			if (status == SWITCH_STATUS_BREAK) {
 				status = SWITCH_STATUS_SUCCESS;
 			}
-			done = 1;
-		}
-
-		if (done) {
 			break;
 		}
 
@@ -2863,11 +2848,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			write_frame.timestamp = timer->samplecount;
 		}
 		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-			done = 1;
-			break;
-		}
-
-		if (done) {
 			break;
 		}
 
