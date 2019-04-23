@@ -473,7 +473,6 @@ void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t sel
 
 		if (locked) {
 			switch_core_session_rwunlock(target_session);
-			locked = 0;
 		}
 	}
 }

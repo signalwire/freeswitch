@@ -464,7 +464,6 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 				switch_resample_process(pvt->resampler, dp, (int) datalen / 2 / 1);
 				memcpy(dp, pvt->resampler->to, pvt->resampler->to_len * 2 * 1);
 				samples = pvt->resampler->to_len;
-				datalen = pvt->resampler->to_len * 2 * 1;
 			}
 
 			dtmf_rx(pvt->dtmf_detect, dp, samples);

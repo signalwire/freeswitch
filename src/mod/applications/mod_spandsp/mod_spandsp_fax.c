@@ -2061,12 +2061,10 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 
 	if (read_fd != FAX_INVALID_SOCKET) {
 		close(read_fd);
-		read_fd = FAX_INVALID_SOCKET;
 	}
 
 	if (write_fd != FAX_INVALID_SOCKET) {
 		close(write_fd);
-		write_fd = FAX_INVALID_SOCKET;
 	}
 
 
