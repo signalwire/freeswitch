@@ -3377,7 +3377,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
-	char *vm_email = NULL;
 	switch_cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
 	const char *operator_ext = switch_channel_get_variable(channel, "vm_operator_extension");
@@ -3414,7 +3413,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	if (id) {
 		int ok = 1;
 		switch_event_t *locate_params = NULL;
-		const char *email_addr = NULL;
 
 		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(locate_params);
@@ -3429,12 +3427,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
-					if (!strcasecmp(var, "vm-mailto")) {
-						vm_email = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-skip-instructions")) {
+					if (!strcasecmp(var, "vm-skip-instructions")) {
 						skip_instructions = switch_true(val);
-					} else if (!strcasecmp(var, "email-addr")) {
-						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
