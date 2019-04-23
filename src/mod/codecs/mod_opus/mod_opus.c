@@ -642,12 +642,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 		if (opus_codec_settings.useinbandfec) {
 			/* FEC on the encoder: start the call with a preconfigured packet loss percentage */
-			int fec_bitrate;
 			int loss_percent = opus_prefs.plpct ;
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(opus_codec_settings.useinbandfec));
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(loss_percent));
 			if (opus_prefs.keep_fec){
-				fec_bitrate = switch_opus_get_fec_bitrate(enc_samplerate,loss_percent);
+				int fec_bitrate = switch_opus_get_fec_bitrate(enc_samplerate,loss_percent);
 				 /* keep a bitrate for which the encoder will always add FEC */
 				if (fec_bitrate != SWITCH_STATUS_FALSE) {
 					opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(fec_bitrate));
