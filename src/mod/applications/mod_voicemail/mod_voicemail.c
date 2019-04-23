@@ -3378,7 +3378,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
 	char *vm_email = NULL;
-	char *vm_notify_email = NULL;
 	switch_cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
 	const char *operator_ext = switch_channel_get_variable(channel, "vm_operator_extension");
@@ -3394,8 +3393,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	char *vm_storage_dir = NULL;
 	char *storage_dir = NULL;
 	char *record_macro = VM_RECORD_MESSAGE_MACRO;
-	int send_main = 0;
-	int send_notify = 0;
 	const char *read_id = NULL;
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
@@ -3434,8 +3431,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 					if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-notify-mailto")) {
-						vm_notify_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-skip-instructions")) {
 						skip_instructions = switch_true(val);
 					} else if (!strcasecmp(var, "email-addr")) {
@@ -3466,23 +3461,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "User [%s@%s] have voicemail disabled\n", id, domain_name);
 				ok = 0;
 			}
-
-			if (send_main && zstr(vm_email) && !zstr(email_addr)) {
-				vm_email = switch_core_session_strdup(session, email_addr);
-				if (zstr(vm_email)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No email address, not going to send email.\n");
-					send_main = 0;
-				}
-			}
-
-			if (send_notify && zstr(vm_notify_email)) {
-				vm_notify_email = vm_email;
-				if (zstr(vm_notify_email)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No notify email address, not going to notify.\n");
-					send_notify = 0;
-				}
-			}
-
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain_name);
 			ok = 0;
