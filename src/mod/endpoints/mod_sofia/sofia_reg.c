@@ -3410,7 +3410,10 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 
 	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key) && !switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
-		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, pkey, gateway);
+		status |= switch_core_hash_insert(mod_sofia_globals.gateway_hash, pkey, gateway);
+		if (status != SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_FALSE;
+		}
 	} else {
 		status = SWITCH_STATUS_FALSE;
 	}

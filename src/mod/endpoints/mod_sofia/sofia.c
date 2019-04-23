@@ -830,7 +830,8 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 				su_free(nua_handle_home(nh), tmp);
 				cur_len = cur_len + tmp_len + 2;
 			}
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "Call-Info", hold);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Call-Info", hold);
+			switch_safe_free(hold);
 		}
 		switch_event_fire(&s_event);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
@@ -1883,7 +1884,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_refer:
 		if (session) {
 			sofia_handle_sip_i_refer(nua, profile, nh, session, sip, de, tags);
-		} else {
+		} else if (sip) {
 			const char *req_user = NULL, *req_host = NULL, *action = NULL, *ref_by_user = NULL, *ref_to_user = NULL, *ref_to_host = NULL;
 			char *refer_to = NULL, *referred_by = NULL, *method = NULL, *full_url = NULL;
 			char *params = NULL, *iparams = NULL;
@@ -1923,6 +1924,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			if (!method) {
 				method = strdup("INVITE");
+				switch_assert(method);
 			}
 
 			if (!strcasecmp(method, "INVITE")) {
@@ -1974,7 +1976,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 
 
-			if (sip) {
+			{
 				char *sql;
 				sofia_nat_parse_t np = { { 0 } };
 				char *contact_str;
@@ -1988,7 +1990,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				np.fs_path = 1;
 				contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
 
-				call_id = sip->sip_call_id->i_id;
+				call_id = sip->sip_call_id ? sip->sip_call_id->i_id : "";
 				full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
 				full_to = sip_header_as_string(nh->nh_home, (void *) sip->sip_to);
 				full_via = sip_header_as_string(nh->nh_home, (void *) sip->sip_via);
@@ -7964,6 +7966,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_early:
 		if (answer_recv) {
 			uint8_t match = 0;
+			switch_assert(tech_pvt);
 			sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_channel_mark_pre_answered(channel);
 			sofia_set_flag(tech_pvt, TFLAG_SDP);
@@ -8046,7 +8049,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 										if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 											switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-											status = SWITCH_STATUS_FALSE;
 											switch_core_session_rwunlock(other_session);
 											switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 											goto done;
@@ -8057,7 +8059,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 								if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 									switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
-									if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
+									if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 										switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 										switch_core_session_rwunlock(other_session);
 										goto done;
@@ -8152,7 +8154,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 										  "Re-INVITE to a no-media channel that is not in a bridge.\n");
-						is_ok = 0;
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					goto done;
@@ -9269,7 +9270,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			} else {		/* the other channel is on a different box, we have to go find them */
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
-					switch_channel_t *channel = switch_core_session_get_channel(session);
+					switch_channel_t *channel;
 
 					if ((a_session = switch_core_session_locate(br_a))) {
 						const char *port = NULL;
@@ -9300,7 +9301,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-host", refer_to->r_url->url_host);
 							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-params", refer_to->r_url->url_params ? refer_to->r_url->url_params : "");
 							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-headers", refer_to->r_url->url_headers ? refer_to->r_url->url_headers : "");
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "replaces-call-id", replaces->rp_call_id);
+							if (replaces) {
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "replaces-call-id", replaces->rp_call_id);
+							}
 							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-from-channel-id", switch_core_session_get_uuid(session));
 							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-for-channel-id", br_a);
 
@@ -10270,7 +10273,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	profile->ib_calls++;
 
-	if (sip->sip_payload && sip->sip_payload->pl_data) {
+	if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 		r_sdp = sip->sip_payload->pl_data;
 	}
 
@@ -11712,6 +11715,7 @@ void sofia_handle_sip_i_options(int status,
 			(sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound())) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 	} else {
+		switch_assert(sip);
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg),
 					TAG_IF(sip->sip_record_route, SIPTAG_RECORD_ROUTE(sip->sip_record_route)), TAG_END());
 	}

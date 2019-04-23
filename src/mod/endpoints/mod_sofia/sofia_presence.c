@@ -2111,11 +2111,11 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 #define SOFIA_PRESENCE_ROLLOVER_YEAR (86400 * 365 * SOFIA_PRESENCE_COLLISION_DELTA)
 static uint32_t check_presence_epoch(void)
 {
-	struct tm tm = {0};
 	time_t now = switch_epoch_time_now(NULL);
 	uint32_t callsequence = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
 
 	if (!mod_sofia_globals.presence_year || callsequence >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
+		struct tm tm;
 		switch_mutex_lock(mod_sofia_globals.mutex);
 		tm = *(localtime(&now));
 
@@ -2181,7 +2181,6 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	sip_cseq_t *cseq = NULL;
 	uint32_t callsequence;
 	uint32_t now = (uint32_t) switch_epoch_time_now(NULL);
-	char *our_contact = profile->url, *our_contact_dup = NULL;
 
 	sofia_destination_t *dst = NULL;
 	char *contact_str, *contact, *user_via = NULL, *send_contact = NULL;
@@ -2229,13 +2228,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		tp = "udp";
 	}
 
-	if (!switch_stristr("transport=", our_contact)) {
-		our_contact_dup = switch_mprintf("<%s;transport=%s>", our_contact, tp);
-		our_contact = our_contact_dup;
-	}
-
-
-   	if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
+	if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
 		sofia_transport_t transport = sofia_glue_str2transport(tp);
 
 		switch (transport) {
@@ -2372,7 +2365,6 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	switch_safe_free(user_via);
 	switch_safe_free(o_contact_dup);
 	switch_safe_free(send_contact);
-	switch_safe_free(our_contact_dup);
 	switch_safe_free(path);
 }
 
@@ -4029,7 +4021,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	if (status < 200) {
 		char *sticky = NULL;
-		char *contactstr = profile->url, *cs = NULL;
+		char *contactstr, *cs = NULL;
 		char *p = NULL, *new_contactstr = NULL;
 		sofia_transport_t transport;
 

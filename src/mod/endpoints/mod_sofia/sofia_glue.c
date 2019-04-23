@@ -1174,8 +1174,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			url = tech_pvt->dest;
 		}
 
-		url_str = url;
-
 		if (!tech_pvt->from_str) {
 			const char *sipip;
 			const char *format;
