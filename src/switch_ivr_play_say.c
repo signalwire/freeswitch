@@ -2748,10 +2748,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			break;
 		}
 
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			switch_ivr_parse_event(session, event);
-			switch_event_destroy(&event);
-		}
+		switch_ivr_parse_all_events(session);
 
 		if (args) {
 			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback
