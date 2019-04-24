@@ -570,13 +570,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 {
 	char *p;
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0), 0, SWITCH_DTMF_APP };
-	int sent = 0, dur;
+	int sent = 0, dur, bad_input = 0;
 	char *string;
 	int i, argc;
 	char *argv[256];
 
 	if (zstr(dtmf_string)) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_GENERR;
 	}
 
 
@@ -619,12 +619,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
 				}
+			} else {
+				bad_input++;
 			}
 		}
 
 	}
-
-	return sent ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	if (sent) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return bad_input ? SWITCH_STATUS_GENERR : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf)

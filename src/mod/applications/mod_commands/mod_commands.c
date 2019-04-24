@@ -6347,11 +6347,10 @@ SWITCH_STANDARD_API(uuid_recv_dtmf_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-    if (switch_channel_queue_dtmf_string(switch_core_session_get_channel(psession), dtmf_data) == SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "+OK %s received DTMF %s.\n", uuid, dtmf_data);
-	} else {
-		stream->write_function(stream, "-ERR Operation failed\n");
+	if (switch_channel_queue_dtmf_string(switch_core_session_get_channel(psession), dtmf_data) == SWITCH_STATUS_GENERR) {
+		goto usage;
 	}
+	stream->write_function(stream, "+OK %s received DTMF %s.\n", uuid, dtmf_data);
 
 	goto done;
 
