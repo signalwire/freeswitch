@@ -1538,10 +1538,12 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 		}
 		memcpy(buf + len, msrp_msg->payload, msrp_msg->payload_bytes);
 		len += msrp_msg->payload_bytes;
+		sprintf(buf + len, "\r\n");
+		len += 2;
 	}
 
-	sprintf(buf + len, "\r\n-------%s$\r\n", transaction_id);
-	len += (12 + strlen(transaction_id));
+	sprintf(buf + len, "-------%s$\r\n", transaction_id);
+	len += (10 + strlen(transaction_id));
 
 	if (globals.debug) dump_buffer(buf, len, __LINE__, 1);
 
