@@ -1496,6 +1496,7 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	const char *msrp_h_from_path = switch_msrp_msg_get_header(msrp_msg, MSRP_H_FROM_PATH);
 	const char *to_path = msrp_h_to_path ? msrp_h_to_path : ms->remote_path;
 	const char *from_path = msrp_h_from_path ? msrp_h_from_path: ms->local_path;
+	const char *content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
 
 	if (msrp_msg->payload_bytes == 2 && msrp_msg->payload && !strncmp(msrp_msg->payload, "\r\n", 2)) {
 		// discard \r\n appended in uuid_send_text
@@ -1507,20 +1508,25 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (zstr(content_type)) {
+		content_type = "text/plain";
+	}
+
 	random_string(transaction_id, MSRP_TRANS_ID_LEN);
 	switch_uuid_str(message_id, sizeof(message_id));
 
 	sprintf(buf, "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"Message-ID: %s\r\n"
-		"Content-Type: %s\r\n"
-		"Byte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT "%s",
+		"Byte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT "\r\n"
+		"%s%s%s",
 		transaction_id,
 		to_path,
 		from_path,
 		message_id,
-		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE)),
 		msrp_msg->payload ? msrp_msg->payload_bytes : 0,
 		msrp_msg->payload ? msrp_msg->payload_bytes : 0,
+		msrp_msg->payload ? "Content-Type: " : "",
+		msrp_msg->payload ? content_type : "",
 		msrp_msg->payload ? "\r\n\r\n" : "");
 
 	len = strlen(buf);
