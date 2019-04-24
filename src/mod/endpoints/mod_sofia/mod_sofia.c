@@ -1045,7 +1045,7 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 			if (msrp_h_content_type && !strcasecmp(msrp_h_content_type, "message/cpim")) {
 				char *stripped_text = switch_html_strip((char *)rframe->data);
 				memcpy(rframe->data, stripped_text, strlen(stripped_text)+1);
-				rframe->datalen = strlen(stripped_text)+1;
+				rframe->datalen = strlen(stripped_text);
 				free(stripped_text);
 			}
 
