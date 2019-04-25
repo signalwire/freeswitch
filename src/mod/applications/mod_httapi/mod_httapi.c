@@ -2473,7 +2473,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	if (!(client = client_create(NULL, profile_name, NULL))) {
 		if (err_msg) {
-			*err_msg = "httapi profile configuration not found"
+			*err_msg = "httapi profile configuration not found";
 		}
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2652,7 +2652,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 		if (err_msg) {
 			*err_msg = "response code != 200";
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caching: url:%s to %s failed with HTTP response code %s\n", url, code);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caching: url:%s to %s failed with HTTP response code %d\n", url, save_path, (int)code);
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
