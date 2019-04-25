@@ -2448,7 +2448,7 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 
 
 
-static switch_status_t fetch_cache_data(http_file_context_t *context, const char *url, switch_event_t **headers, const char *save_path)
+static switch_status_t fetch_cache_data(http_file_context_t *context, const char *url, switch_event_t **headers, const char *save_path, const char **err_msg)
 {
 	switch_CURL *curl_handle = NULL;
 	client_t *client = NULL;
@@ -2472,6 +2472,9 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	}
 
 	if (!(client = client_create(NULL, profile_name, NULL))) {
+		if (err_msg) {
+			*err_msg = "httapi profile configuration not found"
+		}
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2484,6 +2487,9 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 		if (client->fd < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ERROR OPENING FILE %s [%s]\n", save_path, strerror(errno));
+			if (err_msg) {
+				*err_msg = "Failed to open cache save file";
+			}
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -2637,9 +2643,16 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	case 404:
 		status = SWITCH_STATUS_NOTFOUND;
+		if (err_msg) {
+			*err_msg = "response code = 404";
+		}
 		break;
 
 	default:
+		if (err_msg) {
+			*err_msg = "response code != 200";
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caching: url:%s to %s failed with HTTP response code %s\n", url, code);
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
@@ -2751,6 +2764,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	time_t now = switch_epoch_time_now(NULL);
 	char *metadata;
 	const char *ext = NULL;
+	const char *err_msg = NULL;
 
 	load_cache_data(context, url);
 
@@ -2770,7 +2784,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		const char *ct = NULL;
 		const char *newext = NULL;
 
-		if ((status = fetch_cache_data(context, url, &headers, NULL)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = fetch_cache_data(context, url, &headers, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
 			if (status == SWITCH_STATUS_NOTFOUND) {
 				unreachable = 2;
 				if (now - context->expires < globals.not_found_expires) {
@@ -2816,8 +2830,8 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 
-	if ((status = fetch_cache_data(context, url, &headers, context->cache_file)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error checking file cache (check permissions)\n");
+	if ((status = fetch_cache_data(context, url, &headers, context->cache_file, &err_msg)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error fetching file at URL \"%s\" (%s)\n", url, err_msg ? err_msg : "");
 		goto end;
 	}
 
