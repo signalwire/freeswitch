@@ -34,9 +34,11 @@
  */
 
 #include <switch.h>
-#include <switch_event.h>
-#include "tpl.h"
 #include "private/switch_core_pvt.h"
+#include <switch_event.h>
+#ifdef HAVE_LIBTPL
+#include <tpl.h>
+#endif
 
 //#define SWITCH_EVENT_RECYCLE
 #define DISPATCH_QUEUE_LEN 10000
@@ -1408,6 +1410,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, s
 
 SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t **eventp, void **data, switch_size_t len, switch_bool_t destroy)
 {
+#ifdef HAVE_LIBTPL
 	switch_event_t *event;
 	tpl_node *tn;
 	switch_serial_event_t e;
@@ -1436,7 +1439,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t *
 	event->body = e.body;
 
 
-	while(tpl_unpack(tn, 1)) {
+	while (tpl_unpack(tn, 1)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, sh.name, sh.value);
 	}
 
@@ -1451,11 +1454,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t *
 	*data = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_binary_serialize(switch_event_t *event, void **data, switch_size_t *len)
 {
+#ifdef HAVE_LIBTPL
 	tpl_node *tn;
 	switch_serial_event_t e;
 	switch_serial_event_header_t sh;
@@ -1492,6 +1499,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_binary_serialize(switch_event_t *ev
 	tpl_free(tn);
 
 	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 
 

@@ -1,2 +1,0 @@
-fmt: S(iscsiu)
-pi: 1, ps: hello, pc: ^, pt: world, pi: 2

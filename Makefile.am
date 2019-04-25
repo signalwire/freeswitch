@@ -125,7 +125,6 @@ install-recursive: install-libLTLIBRARIES install-binPROGRAMS
 
 CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 if ENABLE_LIBYUV
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
@@ -245,9 +244,9 @@ CORE_LIBS+=libfreeswitch_libyuv.la
 endif
 
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -325,7 +324,6 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
-	libs/libtpl-1.5/src/tpl.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
 	src/include/switch_pgsql.h \
@@ -407,7 +405,6 @@ libfreeswitch_la_SOURCES = \
 	src/switch_msrp.c \
 	src/switch_vad.c \
 	src/switch_vpx.c \
-	libs/libtpl-1.5/src/tpl.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
 	libs/miniupnpc/miniwget.c \

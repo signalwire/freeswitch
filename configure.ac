@@ -1302,6 +1302,10 @@ PKG_CHECK_MODULES([FVAD], [libfvad >= 1.0],[
   AM_CONDITIONAL([HAVE_FVAD],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FVAD],[false])])
 
+PKG_CHECK_MODULES([TPL], [libtpl >= 1.5],[
+  AC_DEFINE([HAVE_LIBTPL],[1],[Define to 1 if you have libtpl])],[
+  AC_MSG_RESULT([no])])
+
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])

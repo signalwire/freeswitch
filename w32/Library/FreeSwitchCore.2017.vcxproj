@@ -290,26 +290,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libs\libtpl-1.5\src\tpl.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\libtpl-1.5\src\win\mmap.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
-    </ClCompile>
     <ClCompile Include="..\..\src\g711.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -727,7 +707,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libs\libtpl-1.5\src\tpl.h" />
     <ClInclude Include="..\..\libs\miniupnpc\declspec.h" />
     <ClInclude Include="..\..\src\include\g711.h" />
     <ClInclude Include="..\..\src\include\SimpleGlob.h" />
