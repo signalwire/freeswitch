@@ -452,23 +452,26 @@ SWITCH_DECLARE(switch_msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_sessi
 	return m;
 }
 
-switch_status_t msrp_msg_serialize(switch_msrp_msg_t *msrp_msg, char *buf)
+char *msrp_msg_serialize(switch_msrp_msg_t *msrp_msg)
 {
 	char *code_number_str = switch_mprintf("%d", msrp_msg->code_number);
+	const char *content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
 	char method[10];
+	char *result = NULL;
 
 	switch(msrp_msg->method) {
 		case MSRP_METHOD_SEND: sprintf(method, "SEND"); break;
-		case MSRP_METHOD_AUTH: sprintf(method, "REPORT"); break;
+		case MSRP_METHOD_AUTH: sprintf(method, "AUTH"); break;
+		case MSRP_METHOD_REPLY: sprintf(method, "REPLY"); break;
 		case MSRP_METHOD_REPORT: sprintf(method, "REPORT"); break;
-		default: sprintf(method, "%d", msrp_msg->method); break;
+		default: sprintf(method, "??%d", msrp_msg->method); break;
 	}
 
-	sprintf(buf, "=================================\n"
-		"MSRP %s %s%s\nFrom: %s\nTo: %s\nMessage-ID: %s\n"
-		"Content-Type: %s\n"
-		"Byte-Range: %" SWITCH_SIZE_T_FMT "-%" SWITCH_SIZE_T_FMT"/%" SWITCH_SIZE_T_FMT "\n"
-		"Payload:\n%s\n%s\n"
+	result = switch_mprintf("\n=================================\n"
+		"MSRP %s %s%s\r\nFrom: %s\r\nTo: %s\r\nMessage-ID: %s\r\n"
+		"Byte-Range: %" SWITCH_SIZE_T_FMT "-%" SWITCH_SIZE_T_FMT"/%" SWITCH_SIZE_T_FMT "\r\n"
+		"%s%s%s" /* Content-Type */
+		"%s%s%s%s$\r\n"
 		"=================================\n",
 		msrp_msg->transaction_id ? msrp_msg->transaction_id : code_number_str,
 		msrp_msg->transaction_id ? "" : " ",
@@ -476,14 +479,20 @@ switch_status_t msrp_msg_serialize(switch_msrp_msg_t *msrp_msg, char *buf)
 		switch_msrp_msg_get_header(msrp_msg, MSRP_H_FROM_PATH),
 		switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH),
 		switch_msrp_msg_get_header(msrp_msg, MSRP_H_MESSAGE_ID),
-		switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE),
 		msrp_msg->byte_start,
 		msrp_msg->byte_end,
 		msrp_msg->bytes,
-		msrp_msg->payload,
+		content_type ? "Content-Type: " : "",
+		content_type ? content_type : "",
+		content_type ? "\r\n" : "",
+		msrp_msg->payload ? "\r\n" : "",
+		msrp_msg->payload ? msrp_msg->payload : "",
+		msrp_msg->payload ? "\r\n" : "",
 		msrp_msg->delimiter);
+
 	switch_safe_free(code_number_str)
-	return SWITCH_STATUS_SUCCESS;
+
+	return result;
 }
 
 static switch_status_t msrp_socket_recv(switch_msrp_client_socket_t *csock, char *buf, switch_size_t *len)
@@ -1216,8 +1225,12 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		}
 
 		if (helper->debug) {
-			msrp_msg_serialize(msrp_msg, buf);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", buf);
+			char *data = msrp_msg_serialize(msrp_msg);
+
+			if (data) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", data);
+				free(data);
+			}
 		}
 
 		if (msrp_msg->state == MSRP_ST_DONE && msrp_msg->method == MSRP_METHOD_SEND) {
@@ -1285,10 +1298,6 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 		if (helper->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "state:%d, len:%" SWITCH_SIZE_T_FMT " payload_bytes:%" SWITCH_SIZE_T_FMT "\n", msrp_msg->state, len, msrp_msg->payload_bytes);
-			// {
-			// 	char bbb[MSRP_BUFF_SIZE * 2];
-			// 	msrp_msg_serialize(switch_msrp_msg_tmp, bbb),
-			// }
 		}
 
 		if (msrp_msg->state == MSRP_ST_DONE && msrp_msg->method == MSRP_METHOD_SEND) {
