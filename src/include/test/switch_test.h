@@ -294,7 +294,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  * Define the end of a freeswitch core test driver.
  */
 #define FST_CORE_END() \
-		/*switch_core_destroy();*/ \
+		switch_core_destroy(); \
 		} \
 		if (fst_time_start) { \
 			/* shut up compiler */ \
