@@ -333,7 +333,7 @@ AM_CONDITIONAL([GDOI],[test "SRTP_GDOI" = "1"])
 
 AC_CONFIG_HEADERS(crypto/include/config.h:config_in.h)
 
-AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile srtp-1.42.pc)
+AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile libsrtp2.pc)
 
 # This is needed when building outside the source dir.
 AS_MKDIR_P(crypto/cipher)

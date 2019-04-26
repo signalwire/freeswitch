@@ -1,4 +1,4 @@
-# Makefile for libcryptomodule.a
+# Makefile for crypto test suite
 #
 # David A. McGrew
 # Cisco Systems, Inc.
@@ -9,14 +9,14 @@ top_builddir = @top_builddir@
 VPATH = @srcdir@
 
 CC	= @CC@
-INCDIR	= -Iinclude -I$(srcdir)/include 
+INCDIR	= -Iinclude -I$(srcdir)/include -I$(top_srcdir)/include
 DEFS	= @DEFS@
 CPPFLAGS= @CPPFLAGS@
 CFLAGS	= @CFLAGS@
 LIBS	= @LIBS@
 LDFLAGS	= @LDFLAGS@ -L. -L..
 COMPILE = $(CC) $(DEFS) $(INCDIR) $(CPPFLAGS) $(CFLAGS)
-CRYPTOLIB = -lsrtp
+CRYPTOLIB = -lsrtp2
 
 RANLIB	= @RANLIB@
 
@@ -37,16 +37,16 @@ endif
 
 .PHONY: dummy all runtest clean superclean
 
-dummy : all runtest 
+dummy : all runtest
 
-# test applications 
+# test applications
 ifneq (1, $(USE_OPENSSL))
 AES_CALC = test/aes_calc$(EXE)
 endif
 
 testapp = test/cipher_driver$(EXE) test/datatypes_driver$(EXE) \
 	  test/stat_driver$(EXE) test/sha1_driver$(EXE) \
-	  test/kernel_driver$(EXE) $(AES_CALC) test/rand_gen$(EXE) \
+	  test/kernel_driver$(EXE) $(AES_CALC) \
 	  test/env$(EXE)
 
 # data values used to test the aes_calc application for AES-128
@@ -73,7 +73,6 @@ endif
 	test/stat_driver$(EXE) >/dev/null
 	test/sha1_driver$(EXE) -v >/dev/null
 	test/kernel_driver$(EXE) -v >/dev/null
-	test/rand_gen$(EXE) -n 256 >/dev/null
 	@echo "crypto test applications passed."
 
 
@@ -82,30 +81,20 @@ endif
 %.o: %.c
 	$(COMPILE) -c $< -o $@
 
-%$(EXE): %.c  
-	$(COMPILE) $(LDFLAGS) $< -o $@ $(CRYPTOLIB) $(LIBS)
+%$(EXE): %.c $(srcdir)/../test/getopt_s.c
+	$(COMPILE) $(LDFLAGS) $< $(srcdir)/../test/getopt_s.c -o $@ $(CRYPTOLIB) $(LIBS)
 
 all: $(testapp)
 
 # housekeeping functions
 
 clean:
-	rm -f libcryptomodule.a
-	rm -f $(testapp) *.o */*.o 
+	rm -f $(testapp) *.o */*.o
 	for a in * .* */*; do if [ -f "$$a~" ] ; then rm $$a~; fi; done;
 	rm -f `find . -name "*.[ch]~*~"`
 	rm -rf latex
 
 superclean: clean
 	rm -f *core TAGS ktrace.out
-
-
-# the target 'package' builds a compressed tar archive of the source code
-
-distname = crypto-$(shell cat VERSION)
-
-package: superclean
-	cd ..; tar cvzf $(distname).tgz crypto/
-
 
 # EOF

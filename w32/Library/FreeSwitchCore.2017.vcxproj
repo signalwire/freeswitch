@@ -112,6 +112,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\libs\apr\include\arch\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_WINSOCK2_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\vanilla\*.*" "$(OutDir)conf\" /C /D /Y /S

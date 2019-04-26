@@ -34,7 +34,8 @@ libsrtp_la_SOURCES += gdoi/srtp+gdoi.c
 endif
 
 library_includedir =  $(prefix)/include/srtp
-library_include_HEADERS = include/rtp.h include/srtp.h include/ut_sim.h crypto/include/auth.h \
+library_include_HEADERS = include/srtp.h include/ut_sim.h crypto/include/auth.h \
+          crypto/include/cipher_types.h \
           crypto/include/datatypes.h crypto/include/integers.h crypto/include/null_cipher.h \
           crypto/include/rdbx.h crypto/include/aes_icm.h crypto/include/cipher.h crypto/include/crypto_types.h  \
           crypto/include/err.h crypto/include/sha1.h \
@@ -43,4 +44,4 @@ library_include_HEADERS = include/rtp.h include/srtp.h include/ut_sim.h crypto/i
           crypto/include/hmac.h crypto/include/null_auth.h crypto/include/rdb.h
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = srtp-1.42.pc
+pkgconfig_DATA = libsrtp2.pc

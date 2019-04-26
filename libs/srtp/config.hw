@@ -181,5 +181,4 @@ typedef __int64		int64_t;
 
 #ifdef _MSC_VER
 #pragma warning(disable:4311)
-#define OPENSSL
 #endif
