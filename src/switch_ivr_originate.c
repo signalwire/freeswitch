@@ -2182,10 +2182,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		|| switch_true(switch_core_get_variable("origination_nested_vars")) || switch_stristr("origination_nested_vars=true", data)) {
 		oglobals.check_vars = SWITCH_FALSE;
 	}
-	
+
 	if (dh) {
 		switch_event_t *vp = switch_dial_handle_get_global_vars(dh);
 		if (vp) {
+			if (var_event && var_event != ovars) {
+				switch_event_destroy(&var_event);
+			}
 			switch_event_dup(&var_event, vp);
 		}
 	}
