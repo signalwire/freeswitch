@@ -253,6 +253,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
+		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_core) { \
 			fst_init_core_and_modload(NULL, NULL, 0); /* shuts up compiler */ \
@@ -280,6 +281,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
+		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_init_core_and_modload(confdir, confdir, 0) == SWITCH_STATUS_SUCCESS) { \
 			fst_core = 2; \
@@ -313,6 +315,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_time_t fst_time_start = 0; \
 		switch_timer_t fst_timer = { 0 }; \
 		switch_memory_pool_t *fst_pool = NULL; \
+		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_init_core_and_modload(".", NULL, 1) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
 			fst_core = 1; \
@@ -387,7 +390,14 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 /**
  * Define the test suite setup.  This is run before each test or session test.
  */
-#define FST_SETUP_BEGIN FCT_SETUP_BGN
+#define FST_SETUP_BEGIN() \
+	FCT_SETUP_BGN() \
+		if (fst_core) { \
+			switch_core_new_memory_pool(&fst_pool); \
+			if (fst_core > 1) { \
+				fst_timer_started = (switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+			} \
+		}
 
 /**
  * Define the end of test suite setup.
@@ -401,9 +411,9 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 #define FST_TEARDOWN_BEGIN() \
 	FCT_TEARDOWN_BGN() \
 		if (fst_core) { \
-			switch_core_destroy_memory_pool(&fst_pool); \
+			if (fst_pool) switch_core_destroy_memory_pool(&fst_pool); \
 			if (fst_core > 1) { \
-				switch_core_timer_destroy(&fst_timer); \
+				if (fst_timer_started) switch_core_timer_destroy(&fst_timer); \
 			} \
 		}
 
@@ -422,10 +432,9 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 #define FST_TEST_BEGIN(name) \
 	FCT_TEST_BGN(name) \
 		if (fst_core) { \
-			switch_core_new_memory_pool(&fst_pool); \
 			fst_requires(fst_pool != NULL); \
 			if (fst_core > 1) { \
-				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+				fst_requires(fst_timer_started); \
 			} \
 			fst_time_mark(); \
 		} \
@@ -460,10 +469,9 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	FCT_TEST_BGN(name) \
 	{ \
 		if (fst_core) { \
-			switch_core_new_memory_pool(&fst_pool); \
 			fst_requires(fst_pool != NULL); \
 			if (fst_core > 1) { \
-				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+				fst_requires(fst_timer_started); \
 			} \
 			fst_time_mark(); \
 		} \
