@@ -387,16 +387,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 /**
  * Define the test suite setup.  This is run before each test or session test.
  */
-#define FST_SETUP_BEGIN() \
-	FCT_SETUP_BGN() \
-		if (fst_core) { \
-			switch_core_new_memory_pool(&fst_pool); \
-			fst_requires(fst_pool != NULL); \
-			if (fst_core > 1) { \
-				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
-			} \
-			fst_time_mark(); \
-		}
+#define FST_SETUP_BEGIN FCT_SETUP_BGN
 
 /**
  * Define the end of test suite setup.
@@ -430,6 +421,14 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  */
 #define FST_TEST_BEGIN(name) \
 	FCT_TEST_BGN(name) \
+		if (fst_core) { \
+			switch_core_new_memory_pool(&fst_pool); \
+			fst_requires(fst_pool != NULL); \
+			if (fst_core > 1) { \
+				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+			} \
+			fst_time_mark(); \
+		} \
 		if (fst_test_module) { \
 			fst_requires_module(fst_test_module); \
 		}
@@ -459,6 +458,16 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 
 #define FST_SESSION_BEGIN_RATE(name, rate) \
 	FCT_TEST_BGN(name) \
+	{ \
+		if (fst_core) { \
+			switch_core_new_memory_pool(&fst_pool); \
+			fst_requires(fst_pool != NULL); \
+			if (fst_core > 1) { \
+				fst_requires(switch_core_timer_init(&fst_timer, "soft", 20, 160, fst_pool) == SWITCH_STATUS_SUCCESS); \
+			} \
+			fst_time_mark(); \
+		} \
+	} \
 	{ \
 		switch_core_session_t *fst_session = NULL; \
 		switch_event_t *fst_originate_vars = NULL; \
