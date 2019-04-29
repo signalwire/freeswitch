@@ -303,6 +303,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			}
 		}
 
+		if (read_frame && args && (args->read_frame_callback)) {
+			if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
 		if (sval && write_frame.datalen) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, imp.number_of_channels, sval);
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
