@@ -1580,6 +1580,17 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 		}
 	}
 
+	if ((*session)->event_queue) {
+		switch_status_t status;
+		void *pop;
+		while ((status = (switch_status_t) switch_queue_trypop((*session)->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				switch_event_t *event = (switch_event_t *) pop;
+				switch_event_destroy(&event);
+			}
+		}
+	}
+
 	pool = (*session)->pool;
 	//#ifndef NDEBUG
 	//memset(*session, 0, sizeof(switch_core_session_t));
