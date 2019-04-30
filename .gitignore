@@ -260,6 +260,3 @@ libs/libsilk-*/
 libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
 libs/ffmpeg-*/
-libs/srtp/COPYING
-libs/srtp/INSTALL
-
