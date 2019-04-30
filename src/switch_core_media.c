@@ -4641,6 +4641,7 @@ static void check_stream_changes(switch_core_session_t *session, const char *r_s
 			if (sdp_type == SDP_TYPE_REQUEST && r_sdp) {
 				const char *filter_codec_string = switch_channel_get_variable(session->channel, "filter_codec_string");
 				
+				switch_channel_set_variable(session->channel, "codec_string", NULL);
 				switch_core_media_merge_sdp_codec_string(session, r_sdp, sdp_type, filter_codec_string);
 			}
 			switch_core_session_check_outgoing_crypto(other_session);
