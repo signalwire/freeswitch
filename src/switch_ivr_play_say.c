@@ -2032,6 +2032,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 								  file,
 								  read_impl.number_of_channels,
 								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failure opening playback file %s.\n", file);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			return SWITCH_STATUS_NOTFOUND;
 		}
@@ -2050,6 +2051,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to initialize L16 codec.\n");
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -2066,6 +2068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read frame.\n");
 			break;
 		}
 
@@ -2075,7 +2078,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 				switch_channel_set_variable(channel, "wait_for_silence_timeout", "true");
 				switch_channel_set_variable_printf(channel, "wait_for_silence_listenhits", "%d", listening);
 				switch_channel_set_variable_printf(channel, "wait_for_silence_silence_hits", "%d", silence_hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_silence: TIMEOUT %d\n", countdown);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+				  "switch_ivr_wait_for_silence: TIMEOUT after %d ms at %d listen hits, %d silence hits, %d countdown\n",
+				  timeout_ms, listening, (org_silence_hits - silence_hits), countdown);
 				break;
 			}
 		}
@@ -2084,12 +2089,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 			switch_size_t olen = raw_codec.implementation->samples_per_packet;
 
 			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read file %s.\n", file);
 				break;
 			}
 
 			write_frame.samples = (uint32_t) olen;
 			write_frame.datalen = (uint32_t) (olen * sizeof(int16_t) * fh.channels);
 			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to write frame from file %s.\n", file);
 				break;
 			}
 		}
@@ -2169,6 +2176,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 								  file,
 								  read_impl.number_of_channels,
 								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failure opening playback file %s.\n", file);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			return SWITCH_STATUS_NOTFOUND;
 		}
@@ -2187,6 +2195,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to initialize L16 codec.\n");
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -2203,6 +2212,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read frame.\n");
 			break;
 		}
 
@@ -2211,7 +2221,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 			if (sample_count <= 0) {
 				switch_channel_set_variable(channel, "detect_audio_timeout", "true");
 				switch_channel_set_variable_printf(channel, "detect_audio_hits", "%d", hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_audio: TIMEOUT %d hits\n", hits);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+				  "switch_ivr_detect_audio: TIMEOUT after %d ms at %d hits\n",
+				  timeout_ms, hits);
 				break;
 			}
 		}
@@ -2220,12 +2232,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 			switch_size_t olen = raw_codec.implementation->samples_per_packet;
 
 			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read file %s.\n", file);
 				break;
 			}
 
 			write_frame.samples = (uint32_t) olen;
 			write_frame.datalen = (uint32_t) (olen * sizeof(int16_t) * fh.channels);
 			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to write frame from file %s.\n", file);
 				break;
 			}
 		}
@@ -2296,6 +2310,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 								  file,
 								  read_impl.number_of_channels,
 								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failure opening playback file %s.\n", file);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			return SWITCH_STATUS_NOTFOUND;
 		}
@@ -2314,6 +2329,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to initialize L16 codec.\n");
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -2330,6 +2346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read frame.\n");
 			break;
 		}
 
@@ -2338,7 +2355,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 			if (sample_count <= 0) {
 				switch_channel_set_variable(channel, "detect_silence_timeout", "true");
 				switch_channel_set_variable_printf(channel, "detect_silence_hits", "%d", hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_silence: TIMEOUT %d hits\n", hits);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+				  "switch_ivr_detect_silence: TIMEOUT after %d ms at %d hits\n",
+				  timeout_ms, hits);
 				break;
 			}
 		}
@@ -2347,12 +2366,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 			switch_size_t olen = raw_codec.implementation->samples_per_packet;
 
 			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to read file %s.\n", file);
 				break;
 			}
 
 			write_frame.samples = (uint32_t) olen;
 			write_frame.datalen = (uint32_t) (olen * sizeof(int16_t) * fh.channels);
 			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to write frame from file %s.\n", file);
 				break;
 			}
 		}
