@@ -340,6 +340,17 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 		return 487;
 	case SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR:
 		return 483;
+	/* Custom mappings not part of RFC */
+	case SWITCH_CAUSE_BUSY_EVERYWHERE:
+		return 600;
+	case SWITCH_CAUSE_DECLINE:
+		return 603;
+	case SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE:
+		return 604;
+	case SWITCH_CAUSE_NOT_ACCEPTABLE:
+		return 606;
+	case SWITCH_CAUSE_UNWANTED:
+		return 607;
 	default:
 		return 480;
 	}

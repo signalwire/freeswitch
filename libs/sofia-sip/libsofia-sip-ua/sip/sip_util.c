@@ -1422,6 +1422,15 @@ int sip_response_terminates_dialog(int response_code,
     */
     *return_graceful_terminate_usage = 0;
     return 0;
+
+  case 607: /** @par 607 Unwanted
+
+      This response is similar to 603, except it informs the caller
+      that the call is unwanted and may be blacklisted.  Added by
+      RFC-8197
+    */
+    *return_graceful_terminate_usage = 0;
+    return 0;
   }
 
   /* Do not change graceful_terminate */

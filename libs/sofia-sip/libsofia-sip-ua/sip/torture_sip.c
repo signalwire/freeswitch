@@ -1511,6 +1511,7 @@ static int response_phrase_test(void)
        	{ SIP_603_DECLINE },
        	{ SIP_604_DOES_NOT_EXIST_ANYWHERE },
        	{ SIP_606_NOT_ACCEPTABLE },
+	{ SIP_607_UNWANTED },
 	{ 0, NULL }
       };
     int i;
