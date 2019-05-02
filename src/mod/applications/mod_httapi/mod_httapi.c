@@ -955,8 +955,6 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	const char *sub_action = NULL;
 	const char *digit_timeout_ = switch_xml_attr(tag, "digit-timeout");
 	const char *terminators = switch_xml_attr(tag, "terminators");
-	char *loops_ = (char *) switch_xml_attr(tag, "loops");
-	int loops = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_ivr_dmachine_t *dmachine = NULL;
 	switch_input_args_t *args = NULL, myargs = { 0 };
@@ -991,6 +989,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		}
 	}
 
+	switch_assert(fname != NULL);
 	if ((p = strrchr(fname, '.'))) {
 		*p++ = '\0';
 		ext = p;
@@ -1025,14 +1024,6 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	if ((v = switch_xml_attr(tag, "threshold"))) {
 		if ((rtmp = atoi(v)) > -1) {
 			thresh = rtmp;
-		}
-	}
-
-	if (loops_) {
-		loops = atoi(loops_);
-
-		if (loops < 0) {
-			loops = -1;
 		}
 	}
 
