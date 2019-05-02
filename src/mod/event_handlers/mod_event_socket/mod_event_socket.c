@@ -1275,7 +1275,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			if (crcount == 2) {
 				char *next;
 				char *cur = mbuf;
-				bytes = 0;
 				while (cur) {
 					if ((next = strchr(cur, '\r')) || (next = strchr(cur, '\n'))) {
 						while (*next == '\r' || *next == '\n') {
@@ -1841,7 +1840,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					switch_core_hash_init(&listener->allowed_event_hash);
 
 					edup = strdup(allowed_events);
-					cur = edup;
 
 					switch_assert(edup);
 					
@@ -1898,7 +1896,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					switch_core_hash_init(&listener->allowed_api_hash);
 
 					edup = strdup(allowed_api);
-					cur = edup;
 
 					if (strchr(edup, ' ')) {
 						delim = ' ';
@@ -2063,8 +2060,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						if (fmt) {
 							switch_snprintf(reply, reply_len, "-ERR invalid uuid");
 							goto done;
-						} else {
-							fmt = uuid;
 						}
 					}
 
