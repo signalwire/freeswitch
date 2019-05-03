@@ -1240,7 +1240,7 @@ int main(int argc, char *argv[])
 		int j = 0;
 
 		switch_sleep(1000000);
-		if (!argv || execv(argv[0], argv) == -1) {
+		if (!argv || !argv[0] || execv(argv[0], argv) == -1) {
 			fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 			for (j = 0; j < argc; j++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);

@@ -43,6 +43,8 @@ static switch_status_t get_file_size(switch_file_handle_t *fh, const char **stri
 	switch_file_t *newfile;
 	switch_size_t size = 0;
 
+	switch_assert(string);
+
 	status = switch_file_open(&newfile, fh->spool_path ? fh->spool_path : fh->file_path, SWITCH_FOPEN_READ, SWITCH_FPROT_OS_DEFAULT, fh->memory_pool);
 
 	if (status != SWITCH_STATUS_SUCCESS) {

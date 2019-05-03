@@ -270,19 +270,7 @@ SWITCH_DECLARE(void) switch_core_screen_size(int *x, int *y)
 
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 {
-	FILE *handle = stdout;
-
-	switch (channel) {
-	case SWITCH_CHANNEL_ID_LOG:
-	case SWITCH_CHANNEL_ID_LOG_CLEAN:
-		handle = runtime.console;
-		break;
-	default:
-		handle = runtime.console;
-		break;
-	}
-
-	return handle;
+	return runtime.console;
 }
 
 
@@ -2880,7 +2868,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_DEBUG_LEVEL:
 		if (oldintval > -1) {
 			if (oldintval > 10)
-				newintval = 10;
+				oldintval = 10;
 			runtime.debug_level = oldintval;
 		}
 		newintval = runtime.debug_level;

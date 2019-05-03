@@ -3679,6 +3679,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 		}
 	}
 
+	switch_assert(app != NULL);
 	if (!strncasecmp(app, "perl", 4)) {
 		bg++;
 	}
