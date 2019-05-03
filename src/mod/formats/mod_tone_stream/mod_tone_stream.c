@@ -176,7 +176,6 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 			teletone_run(&ts, buf);
 		}
 		close(fd);
-		fd = -1;
 	} else {
 		teletone_run(&ts, tonespec);
 	}
