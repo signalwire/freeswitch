@@ -292,7 +292,6 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 				}
 				wrote++;
 				close(fd);
-				fd = -1;
 			} else {
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
@@ -462,7 +461,6 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 				}
 				wrote++;
 				close(fd);
-				fd = -1;
 			} else {
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n",

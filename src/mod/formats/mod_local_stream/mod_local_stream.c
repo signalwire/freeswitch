@@ -496,7 +496,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (source->hup) {
 					source->hup = 0;
 					if (is_open) {
-						is_open = 0;
 
 						switch_core_file_close(use_fh);
 						flush_video_queue(source->video_q);
@@ -560,7 +559,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
-							use_fh = &fh;
 						} else {
 							is_open = 0;
 						}
