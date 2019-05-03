@@ -187,11 +187,11 @@ static inline void free_context(shout_context_t *context)
 			len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
 
 			if (len) {
-				ret = fwrite(mp3buffer, 1, len, context->fp);
+				fwrite(mp3buffer, 1, len, context->fp);
 			}
 
 			while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
-				ret = fwrite(mp3buffer, 1, len, context->fp);
+				fwrite(mp3buffer, 1, len, context->fp);
 			}
 
 			lame_mp3_tags_fid(context->gfp, context->fp);
@@ -605,7 +605,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 			}
 		} else {
 			memset(mp3buf, 0, 128);
-			ret = shout_send(context->shout, mp3buf, 128);
+			shout_send(context->shout, mp3buf, 128);
 		}
 
 		shout_sync(context->shout);
