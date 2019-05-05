@@ -763,7 +763,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_in_level = id;
@@ -771,7 +771,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_out", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_out_level = id;
@@ -780,15 +780,15 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_energy_level", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
-			if (id > -5 && id < 5) {
+			if (id > -2 && id < 1801) {
 				member->energy_level = id;
 			}
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			int id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
 				member->canvas_id = id;
 				member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
@@ -796,7 +796,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			int id = atoi(var) - 1;
 
 			if (id == 0) {
 				id = conference->canvas_count;
