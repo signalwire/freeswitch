@@ -438,7 +438,7 @@ src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 ##
 ## Applications
 ##
-bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode
+bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode fs_tts
 
 ##
 ## fs_cli ()
@@ -464,6 +464,13 @@ if HAVE_ODBC
 fs_encode_LDADD += $(ODBC_LIB_FLAGS)
 endif
 
+##
+## fs_tts ()
+##
+fs_tts_SOURCES = src/fs_tts.c
+fs_tts_CFLAGS  = $(AM_CFLAGS)
+fs_tts_LDFLAGS = $(AM_LDFLAGS)
+fs_tts_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 ##
 ## tone2wav ()

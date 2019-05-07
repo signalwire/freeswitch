@@ -73,6 +73,7 @@ TAGS
 /freeswitch
 /fs_cli
 /fs_encode
+/fs_tts
 /fs_ivrd
 /libtool
 /Makefile
