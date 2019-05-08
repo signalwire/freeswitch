@@ -6182,6 +6182,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				vmatch = 1;
 				v_engine->codec_negotiated = 1;
+				v_engine->payload_map = NULL;
 
 				for(j = 0; j < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session,
