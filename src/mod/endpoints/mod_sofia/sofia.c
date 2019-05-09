@@ -4591,6 +4591,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_clear_pflag(profile, PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE);
 					sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
 					sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+					sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_REPLY_403);
 					sofia_clear_pflag(profile, PFLAG_AUTH_REQUIRE_USER);
 					sofia_clear_pflag(profile, PFLAG_AUTH_CALLS_ACL_ONLY);
 					sofia_clear_pflag(profile, PFLAG_USE_PORT_FOR_ACL_CHECK);
@@ -5909,6 +5910,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+						}
+					} else if (!strcasecmp(var, "blind-auth-reply-403")) {
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_BLIND_AUTH_REPLY_403);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_REPLY_403);
 						}
 					} else if (!strcasecmp(var, "auth-calls-acl-only")) {
 						if(switch_true(val)) {
@@ -10398,8 +10405,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 		if (!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
 			is_auth++;
-		} else if (sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "blind auth enforce result enabled and couldn't find user %s, rejecting call\n", user);
+		} else if (sofia_test_pflag(profile, PFLAG_BLIND_AUTH_REPLY_403)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "blind auth enforce 403 enabled and couldn't find user %s, rejecting call\n", user);
 			nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
 			goto fail;
 		}
