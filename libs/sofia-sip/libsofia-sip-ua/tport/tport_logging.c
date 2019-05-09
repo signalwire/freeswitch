@@ -732,7 +732,7 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
     /* Capture ID */
     hg->capt_id.chunk.vendor_id = htons(0x0000);
     hg->capt_id.chunk.type_id   = htons(0x000c);
-    hg->capt_id.data = htons(mr->mr_agent_id);
+    hg->capt_id.data = htonl(mr->mr_agent_id);
     hg->capt_id.chunk.length = htons(sizeof(hg->capt_id));
 
 
