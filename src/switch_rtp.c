@@ -617,7 +617,6 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 
 		if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
 			packet += 4;
-			len -= 4;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
 		}
 
@@ -653,6 +652,9 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			}
 		}
 #ifdef DEBUG_2833
+		if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
+			len -= 4;
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned char) packet[0], (unsigned char) packet[1], (unsigned char) packet[2], (unsigned char) packet[3]);
 #endif
 
@@ -2234,7 +2236,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 					cur_nack[n] = 0;
 				}
 				rtp_session->prev_nacks_inflight = n;
-				nack_ttl = 0;
 			}
 
 			if (rtp_session->fir_count) {
@@ -6211,7 +6212,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == srtp_err_status_replay_fail) {
 						/* false alarm nack */
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "REPLAY ERR, FALSE NACK\n");
-						stat = 0;
 						sbytes = 0;
 						*bytes = 0;
 						if (rtp_session->stats.rtcp.pkt_count) {
@@ -9135,7 +9135,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 	WRITE_INC(rtp_session);
 
 	if (process_encryption) {
-		process_encryption = SWITCH_FALSE;
 #ifdef ENABLE_SRTP
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 
