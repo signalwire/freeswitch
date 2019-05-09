@@ -833,12 +833,14 @@ SWITCH_STANDARD_API(enum_function)
 		if (!strcasecmp(dest, "reload")) {
 			do_load();
 			stream->write_function(stream, "+OK ENUM Reloaded.\n");
+			switch_safe_free(mydata);
 			return SWITCH_STATUS_SUCCESS;
 
 		}
 
 		if (enum_lookup(root, dest, &results, NULL, session) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
+			switch_safe_free(mydata);
 			return SWITCH_STATUS_SUCCESS;
 		}
 
