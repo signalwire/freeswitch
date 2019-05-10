@@ -17,7 +17,7 @@
 		<param name="receive-msg-preallocate" value="8192" />
 		<param name="node-worker-threads" value="5" />
 		<param name="receive-timeout" value="1" />
-		<param name="event-stream-framing" value="2" />
+		<param name="event-stream-framing" value="4" />
 
 	</settings>
 
@@ -33,6 +33,18 @@
             <field name="Call-Debug" type="static" serialize-as="object">
                 <fields verbose="true" />
             </field>
+        </definition>
+
+        <definition name="originated-legs">
+            <filters>
+                <filter name="variable_originated_legs" type="include" compare="exists" />
+            </filters>
+            <field name="Other-Legs" type="static" serialize-as="object">
+                <fields verbose="false">
+                    <field name="variable_originated_legs" as="Callee" />
+                    <field name="variable_originate_causes" as="Causes" />
+                </fields>
+            </field>            
         </definition>
 
         <definition name="transfer-history">
@@ -54,7 +66,7 @@
             <field name="Call-Interaction-Is-Root" type="static" value="true" serialize-as="boolean">
 	            <filters>
                    <filter name="variable_Call-Interaction-ID" type="include" compare="field" value="variable_Original-Call-Interaction-ID" />
-	               <field name="${first-of(Event-Subclass|Event-Name|#none)}" type="include" compare="list" value="CHANNEL_DESTROY|KZ_CDR"/>
+	               <filter name="${first-of(Event-Subclass|Event-Name|#none)}" type="include" compare="list" value="CHANNEL_DESTROY|KZ_CDR"/>
 	            </filters>
             </field>
         </definition>
@@ -89,9 +101,13 @@
         </definition>
 
         <definition name="Privacy">
-                    <field name="Caller-Privacy-Hide-Number" as="Hide-Number" serialize-as="boolean" />
-                    <field name="Caller-Privacy-Hide-Name" as="Hide-Name" serialize-as="boolean" />
-                    <field name="Caller-Screen-Bit" as="Screen-Bit" serialize-as="boolean" />
+            <field name="Privacy" type="static" serialize-as="object">
+                <fields verbose="false">
+		            <field name="Caller-Privacy-Hide-Number" as="Hide-Number" serialize-as="boolean" />
+		            <field name="Caller-Privacy-Hide-Name" as="Hide-Name" serialize-as="boolean" />
+		            <field name="Caller-Screen-Bit" as="Screen-Bit" serialize-as="boolean" />
+                </fields>
+            </field>
         </definition>
 
         <definition name="Custom-Channel-Vars">
@@ -135,6 +151,9 @@
                             <field name="Redirected-Reason" type="expand" value="${regex(${variable_sip_redirected_by}|reason=(.*)|%1)}"/>
                         </fields>
                     </field>
+
+                    <field name="Caller-Privacy-Hide-Number" as="Privacy-Hide-Number" serialize-as="boolean" />
+                    <field name="Caller-Privacy-Hide-Name" as="Privacy-Hide-Name" serialize-as="boolean" />
 
                 </fields>
             </field>
@@ -205,14 +224,14 @@
 
         <definition name="application">
             <field name="Application-Name" type="first-of"
-                value="kazoo_application_name|Application-UUID-Name|Application|Event-Subclass" />
+                value="Application-UUID-Name|kazoo_application_name|Application|Event-Subclass" />
             <field name="Application-Response" type="first-of"
                 value="kazoo_application_response|Application-Response" />
         </definition>
 
         <definition name="raw-application">
             <field name="Raw-Application-Name" type="first-of"
-                value="Application|kazoo_application_name|Event-Subclass" />
+                value="kazoo_application_name|Application|Event-Subclass" />
             <field name="Application-Data" as="Raw-Application-Data" />
         </definition>
 
@@ -342,7 +361,8 @@
             <field name="user-agent" type="reference" />
             <field name="Custom-Channel-Vars" type="reference" />
             <field name="Custom-Application-Vars" type="reference" />
-            <field name="Control" type="reference" />           
+            <field name="Control" type="reference" />
+            <field name="debug-call" type="reference" />
         </definition>
 
         <definition name="fetch-info">
@@ -365,6 +385,7 @@
             <field name="freeswitch-url" type="reference" />
             <field name="Control" type="reference" />
             <field name="Privacy" type="reference" />
+            <field name="debug-call" type="reference" />
             
         </definition>
 
@@ -625,33 +646,6 @@
                 <field name="Event-Name" type="static" value="route_req" />
                 <field name="Hunt-Context" as="Fetch-Key-Value" />
         </definition>
-        <definition name="metaflow_dialplan">
-                <field name="metaflow" type="group">
-                    <filters>
-                        <filter name="Hunt-Context" type="include" compare="value"
-                            value="metaflow" />
-                    </filters>
-                    <fields verbose="false">
-                        <field name="Hunt-Context" as="Context" />
-                        <field name="Resource-Type" type="static" value="metaflow" />
-                        <!--
-                        <field name="variable_Call-Control-Queue" as="Metaflow-Control-Queue" />
-                        <field name="variable_Call-Control-PID" as="Metaflow-Control-PID" />
-                        -->
-                        <field name="variable_Metaflow-Control-Queue" as="Metaflow-Control-Queue" />
-                        <field name="variable_Metaflow-Control-PID" as="Metaflow-Control-PID" />
-                        <field name="Custom-Routing-Headers" type="static"
-                            serialize-as="object">
-                            <fields verbose="false">
-                                <field name="Metaflow-Request-Type" type="static" value="in-call" />
-                                <field name="Other-Leg-Unique-ID" as="Other-Leg-Call-ID" />
-                                <field name="Hunt-Destination-Number" as="Metaflow-Request" />
-                            </fields>
-                        </field>
-                    </fields>
-
-                </field>        
-        </definition>
 
     </definitions>
 
@@ -687,6 +681,7 @@
 						<field name="variable_Media-Recordings" as="Media-Recordings" />
 						<field name="debug-call" type="reference" />
                         <field name="transfer-history" type="reference" />
+                        <field name="originated-legs" type="reference" />
 						
 					</fields>
 					<filters>
@@ -695,6 +690,14 @@
 					</filters>
 
 				</event>
+
+                <event name="CHANNEL_PROGRESS">
+                    <fields verbose="false">
+                        <field name="call_event" type="reference" />
+                        <field name="from-to" type="reference" />
+                        <field name="debug-call" type="reference" />
+                    </fields>
+                </event>
 
 				<event name="CHANNEL_PROGRESS_MEDIA">
 					<fields verbose="false">
@@ -863,16 +866,22 @@
 				</event>
 
 				<event name="kazoo::masquerade">
+				<!-- 
 					<filters>
 						<filter type="exclude" name="kazoo_event_name" compare="value"
 							value="CHANNEL_EXECUTE_COMPLETE" />
 					</filters>
+			    -->
 					<fields verbose="false">
 						<field name="call_event" type="reference" />
+						<field name="application-uuid" type="reference" />
 						<field name="Application-Response" type="first-of"
-							value="variable_originate_disposition|#FAIL" />
+							value="variable_endpoint_disposition|variable_originate_disposition|#FAIL" />
 						<field name="Disposition" type="first-of"
 							value="variable_originate_disposition|variable_endpoint_disposition" />
+                        <field name="Bridge-Hangup-Cause" type="first-of" value="variable_bridge_hangup_cause|variable_last_bridge_hangup_cause" />
+                        <field name="variable_endpoint_disposition" as="Endpoint-Disposition" />
+                        <field name="variable_transfer_disposition" as="Transfer-Disposition" />
 					</fields>
 				</event>
 
@@ -897,6 +906,7 @@
                         <filter name="Application" value="ring_ready" />
                         <filter name="Application" value="log" />
                         <filter name="Application" value="execute_extension" />
+                        <filter name="Application" value="bridge" />
 					</filters>
 
 					<fields verbose="false">
@@ -907,6 +917,9 @@
 						<field name="Disposition" type="first-of"
 							value="variable_originate_disposition|variable_endpoint_disposition" />
 						<field name="Bridge-Hangup-Cause" type="first-of" value="variable_bridge_hangup_cause|variable_last_bridge_hangup_cause" />
+                        <field name="variable_endpoint_disposition" as="Endpoint-Disposition" />
+                        <field name="variable_transfer_disposition" as="Transfer-Disposition" />
+						
 						<field name="debug-call" type="reference" />
 					</fields>
 
@@ -992,6 +1005,7 @@
 						<field name="call_event" type="reference" />
 						<field name="Custom-Channel-Vars" type="reference" />
 						<field name="Custom-Application-Vars" type="reference" />
+						<field name="debug-call" type="reference" />
 					</fields>
 				</event>
 
@@ -1114,7 +1128,6 @@
 
             <fields verbose="false">
                 <field name="voice_dialplan" type="reference" />
-                <field name="metaflow_dialplan" type="reference" />
                 <field name="debug-call" type="reference" />
             </fields>
 
