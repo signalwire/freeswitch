@@ -722,6 +722,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_co
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		}
+		switch_channel_execute_on(session->channel, "execute_on_audio_change");
 	}
 
 	switch_core_media_copy_t38_options(t38_options, other_session);
@@ -5202,6 +5203,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							}
 
 							switch_core_media_check_autoadj(session);
+							switch_channel_execute_on(session->channel, "execute_on_audio_change");
 						}
 
 
@@ -8566,6 +8568,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->remote_sdp_port);
 			switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->cur_payload_map->remote_sdp_ip);
 			switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+			switch_channel_execute_on(session->channel, "execute_on_audio_change");
 		}
 	}
 
