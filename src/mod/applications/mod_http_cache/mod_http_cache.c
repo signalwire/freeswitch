@@ -1864,6 +1864,17 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 	return status;
 }
 
+static switch_status_t http_cache_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+    struct http_context *context = (struct http_context *)handle->private_info;
+
+    if (!handle->seekable) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+        return SWITCH_STATUS_NOTIMPL;
+    }
+    return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+}
+
 static char *http_supported_formats[] = { "http", NULL };
 static char *https_supported_formats[] = { "https", NULL };
 static char *http_cache_supported_formats[] = { "http_cache", NULL };
@@ -1907,6 +1918,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	file_interface->file_write = http_file_write;
 	file_interface->file_read_video = http_file_read_video;
 	file_interface->file_write_video = http_file_write_video;
+    file_interface->file_seek = http_cache_file_seek;
 
 	if (gcache.enable_file_formats) {
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -1918,6 +1930,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_write = http_file_write;
 		file_interface->file_read_video = http_file_read_video;
 		file_interface->file_write_video = http_file_write_video;
+        file_interface->file_seek = http_cache_file_seek;
 
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 		file_interface->interface_name = modname;
@@ -1928,6 +1941,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_write = http_file_write;
 		file_interface->file_read_video = http_file_read_video;
 		file_interface->file_write_video = http_file_write_video;
+        file_interface->file_seek = http_cache_file_seek;
 	}
 
 	/* create the queue from configuration */
