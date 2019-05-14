@@ -8431,7 +8431,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 #ifdef DEBUG_TS_ROLLOVER
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WRITE TS LAST:%u THIS:%u DELTA:%u\n", rtp_session->last_write_ts, this_ts, ts_delta);
 #endif
-		if (ts_delta == 0 || !switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf) {
+		if ((!(flags && *flags & SFF_RFC2833) && ts_delta == 0) || !switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf) {
 			send = 0;
 		}
 	}
