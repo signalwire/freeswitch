@@ -349,8 +349,9 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 
 	/* clear and destroy any remaining queued events */
 	while (switch_queue_trypop(event_stream->queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *event = (switch_event_t *) pop;
-		switch_event_destroy(&event);
+		ei_x_buff *ebuf = (ei_x_buff *) pop;
+		ei_x_free(ebuf);
+		switch_safe_free(ebuf);
 	}
 
 	/* remove the acceptor pollset */
