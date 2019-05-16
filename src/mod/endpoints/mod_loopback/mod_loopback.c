@@ -1748,6 +1748,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown)
 
 	switch_event_free_subclass("loopback::bowout");
 	switch_event_free_subclass("loopback::direct");
+	switch_event_unbind_callback(loopback_reload_xml_event_handler);
 
 	return SWITCH_STATUS_SUCCESS;
 }
