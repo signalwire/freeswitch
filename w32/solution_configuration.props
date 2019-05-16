@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SolutionConfigurationPropsImported>true</SolutionConfigurationPropsImported>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SolutionConfiguration Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='Debug'">$(Configuration)</SolutionConfiguration>
+    <SolutionConfiguration Condition="'$(Configuration)'=='Debug-openh264'">Debug</SolutionConfiguration>
+    <SolutionConfiguration Condition="'$(Configuration)'=='Release-openh264'">Release</SolutionConfiguration>
+    <SolutionConfiguration Condition="'$(Configuration)'=='Debug-x264'">Debug</SolutionConfiguration>
+    <SolutionConfiguration Condition="'$(Configuration)'=='Release-x264'">Release</SolutionConfiguration>
+  </PropertyGroup>
+</Project>

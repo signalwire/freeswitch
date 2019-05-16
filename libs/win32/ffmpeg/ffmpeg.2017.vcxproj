@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
+    <ProjectConfiguration Include="Debug-openh264|x64">
+      <Configuration>Debug-openh264</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
+    <ProjectConfiguration Include="Debug-x264|x64">
+      <Configuration>Debug-x264</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-openh264|x64">
+      <Configuration>Release-openh264</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-x264|x64">
+      <Configuration>Release-x264</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -16,39 +24,55 @@
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}</ProjectGuid>
   </PropertyGroup>
-  <Import Project="$(CUDA_PATH)\extras\visual_studio_integration\MSBuildExtensions\CUDA *.props" />
+  <Import Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Project="$(CUDA_PATH)\extras\visual_studio_integration\MSBuildExtensions\CUDA *.props" />
   <Import Project="$(SolutionDir)w32\zlib.props" Condition=" '$(zlibImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\download_ffmpeg.props" Condition=" '$(downloadFfmpegPropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\download_openh264.props" Condition=" '$(downloadOpenh264PropsImported)' == '' AND ('$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264')" />
   <Import Project="$(SolutionDir)\w32\ffmpeg.props" Condition=" '$(ffmpegPropsImported)' == '' " />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-x264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_x64\config.asm</YasmCommand>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_x64\config.asm</YasmCommand>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-openh264|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_openh264_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_openh264_x64\config.asm</YasmCommand>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-openh264|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_openh264_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_openh264_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-x264|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-openh264|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-openh264|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
@@ -57,7 +81,7 @@
       <PreprocessorDefinitions>BUILDING_avdevice;BUILDING_avfilter;BUILDING_avformat;BUILDING_avcodec;BUILDING_avresample;BUILDING_swresample;BUILDING_swscale;BUILDING_avutil;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
@@ -75,12 +99,48 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-openh264|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>"..\..\ffmpeg-$(ffmpegVersion)\include_openh264_x64";"..\..\ffmpeg-$(ffmpegVersion)";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4267;4334;4101;4018;4146;4244;4305;4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-x264|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>"..\..\ffmpeg-$(ffmpegVersion)\include_x64";"..\..\ffmpeg-$(ffmpegVersion)";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <SDLCheck>false</SDLCheck>
+      <DisableSpecificWarnings>4267;4334;4101;4018;4146;4244;4305;4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Full</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-openh264|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>"..\..\ffmpeg-$(ffmpegVersion)\include_openh264_x64";"..\..\ffmpeg-$(ffmpegVersion)";"..\..\libx264";"..\..\libx264\SMP";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -551,7 +611,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cscd.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cuviddec.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cuviddec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cyuv.c">
@@ -1292,7 +1352,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ljpegenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\libx264.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\libopenh264.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Condition=" '$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\libopenh264dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Condition=" '$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\libopenh264enc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\libx264.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\loco.c">
@@ -1628,40 +1697,40 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nuv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_h264.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_h264.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_hevc.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_hevc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mjpeg.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mjpeg.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg12.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg12.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg4.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg4.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vc1.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vc1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp8.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp8.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp9.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp9.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_h264.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_h264.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_hevc.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_hevc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\on2avc.c">
@@ -3182,7 +3251,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blackdetect.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blackframe.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blackframe.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blend.c">
@@ -3191,7 +3260,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bm3d.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_boxblur.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_boxblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bwdif.c">
@@ -3221,7 +3290,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorlevels.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colormatrix.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colormatrix.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorspace.c">
@@ -3236,13 +3305,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_copy.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_cover_rect.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_cover_rect.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_crop.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_cropdetect.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_cropdetect.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_curves.c">
@@ -3269,7 +3338,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dejudder.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_delogo.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_delogo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_deshake.c">
@@ -3296,7 +3365,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_entropy.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_eq.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_eq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_extractplanes.c">
@@ -3326,7 +3395,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fillborders.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_find_rect.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_find_rect.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_floodfill.c">
@@ -3347,13 +3416,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_framestep.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fspp.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fspp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_gblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_geq.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_geq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_gradfun.c">
@@ -3362,13 +3431,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hflip.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_histeq.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_histeq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_histogram.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hqdn3d.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hqdn3d.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hqx.c">
@@ -3386,7 +3455,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwupload.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwupload_cuda.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwupload_cuda.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hysteresis.c">
@@ -3398,7 +3467,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_il.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_kerndeint.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_kerndeint.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_lenscorrection.c">
@@ -3425,7 +3494,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_maskedmerge.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mcdeint.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mcdeint.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mergeplanes.c">
@@ -3443,7 +3512,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mix.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mpdecimate.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mpdecimate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_neighbor.c">
@@ -3452,7 +3521,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_nlmeans.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_nnedi.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_nnedi.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_noise.c">
@@ -3467,7 +3536,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_overlay.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_owdenoise.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_owdenoise.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pad.c">
@@ -3479,19 +3548,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_paletteuse.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_perspective.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_perspective.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_phase.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_phase.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pixdesctest.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pp.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pp7.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pp7.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_premultiply.c">
@@ -3503,7 +3572,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_psnr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pullup.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pullup.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_qp.c">
@@ -3527,22 +3596,22 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_removelogo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_repeatfields.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_repeatfields.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_rotate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_sab.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_sab.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scale.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scale_cuda.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scale_cuda.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_scale_cuda.ptx.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_scale_cuda.ptx.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_selectivecolor.c">
@@ -3569,13 +3638,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_signalstats.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_signature.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_signature.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_smartblur.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_smartblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_spp.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_spp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_sr.c">
@@ -3587,10 +3656,10 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_stack.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_stereo3d.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_stereo3d.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_super2xsai.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_super2xsai.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_swaprect.c">
@@ -3608,16 +3677,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_thumbnail.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_thumbnail_cuda.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_thumbnail_cuda.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_thumbnail_cuda.ptx.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_thumbnail_cuda.ptx.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tile.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tinterlace.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tinterlace.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tonemap.c">
@@ -3629,10 +3698,10 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_unsharp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_uspp.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_uspp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vaguedenoiser.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vaguedenoiser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vectorscope.c">
@@ -3668,10 +3737,10 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yadif.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yadif_cuda.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yadif_cuda.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_yadif_cuda.ptx.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_yadif_cuda.ptx.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_zoompan.c">
@@ -3692,7 +3761,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_mandelbrot.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_mptestsrc.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_mptestsrc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_testsrc.c">
@@ -5246,7 +5315,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_cuda.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_cuda.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_d3d11va.c">
@@ -6027,7 +6096,7 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_interlace.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_interlace.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6173,11 +6242,17 @@
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\libx264\libx264.2017.vcxproj">
-      <Project>{20179127-853b-4fe9-b7c0-9e817e6a3a72}</Project>
-    </ProjectReference>
-  </ItemGroup>
+  <Choose>
+     <When Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'">
+     <ItemGroup>
+        <ProjectReference Include="..\libx264\libx264.2017.vcxproj">
+          <Project>{20179127-853b-4fe9-b7c0-9e817e6a3a72}</Project>
+        </ProjectReference>
+     </ItemGroup>
+     </When>
+     <Otherwise>
+     </Otherwise>
+  </Choose>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

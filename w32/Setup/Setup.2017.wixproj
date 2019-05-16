@@ -101,6 +101,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_av\mod_av.2017.vcxproj">
+      <Name>mod_av</Name>
+      <Project>{7aee504b-23b6-4b05-829e-7cd34855f146}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_blacklist\mod_blacklist.2017.vcxproj">
       <Name>mod_blacklist</Name>
       <Project>{50aac2ce-bfc9-4912-87cc-c6381850d735}</Project>
@@ -896,6 +904,14 @@
     <ProjectReference Include="..\Console\FreeSwitchConsole.2017.vcxproj">
       <Name>FreeSwitchConsole</Name>
       <Project>{1af3a893-f7be-43dd-b697-8ab2397c0d67}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="CustomActions\Setup.CA.DownloadOpenH264\Setup.CA.DownloadOpenH264.csproj">
+      <Name>Setup.CA.DownloadOpenH264</Name>
+      <Project>{ebfdcfca-8095-4ecc-98be-b494bcb4e042}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
