@@ -2698,9 +2698,9 @@ SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *chann
 }
 
 struct switch_event_channel_sub_node_head_s;
-
 typedef struct switch_event_channel_sub_node_s {
 	switch_event_channel_func_t func;
+	void *user_data;
 	switch_event_channel_id_t id;
 	struct switch_event_channel_sub_node_head_s *head;
 	struct switch_event_channel_sub_node_s *next;
@@ -2712,7 +2712,7 @@ typedef struct switch_event_channel_sub_node_head_s {
 	char *event_channel;
 } switch_event_channel_sub_node_head_t;
 
-static uint32_t switch_event_channel_unsub_head(switch_event_channel_func_t func, switch_event_channel_sub_node_head_t *head)
+static uint32_t switch_event_channel_unsub_head(switch_event_channel_func_t func, switch_event_channel_sub_node_head_t *head, void *user_data)
 {
 	uint32_t x = 0;
 
@@ -2725,7 +2725,7 @@ static uint32_t switch_event_channel_unsub_head(switch_event_channel_func_t func
 		thisnp = np;
 		np = np->next;
 
-		if (!func || thisnp->func == func) {
+		if (!(func) || (thisnp->func == func && (thisnp->user_data == user_data || user_data == NULL))) {
 			x++;
 
 			if (last) {
@@ -2769,7 +2769,7 @@ static void unsub_all_switch_event_channel(void)
 	while ((hi = switch_core_hash_first_iter( event_channel_manager.hash, hi))) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		head = (switch_event_channel_sub_node_head_t *) val;
-		switch_event_channel_unsub_head(NULL, head);
+		switch_event_channel_unsub_head(NULL, head, NULL);
 		switch_core_hash_delete(event_channel_manager.hash, head->event_channel);
 		free(head->event_channel);
 		free(head);
@@ -2779,7 +2779,7 @@ static void unsub_all_switch_event_channel(void)
 	switch_thread_rwlock_unlock(event_channel_manager.rwlock);
 }
 
-static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t func, const char *event_channel)
+static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t func, const char *event_channel, void *user_data)
 {
 	switch_event_channel_sub_node_head_t *head;
 	uint32_t x = 0;
@@ -2795,13 +2795,13 @@ static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t f
 
 			if (val) {
 				head = (switch_event_channel_sub_node_head_t *) val;
-				x += switch_event_channel_unsub_head(func, head);
+				x += switch_event_channel_unsub_head(func, head, user_data);
 			}
 		}
 
 	} else {
 		if ((head = switch_core_hash_find(event_channel_manager.hash, event_channel))) {
-			x += switch_event_channel_unsub_head(func, head);
+			x += switch_event_channel_unsub_head(func, head, user_data);
 		}
 	}
 
@@ -2810,7 +2810,7 @@ static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t f
 	return x;
 }
 
-static switch_status_t switch_event_channel_sub_channel(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t id)
+static switch_status_t switch_event_channel_sub_channel(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t id, void *user_data)
 
 {
 	switch_event_channel_sub_node_t *node, *np;
@@ -2826,6 +2826,7 @@ static switch_status_t switch_event_channel_sub_channel(const char *event_channe
 
 		switch_zmalloc(node, sizeof(*node));
 		node->func = func;
+		node->user_data = user_data;
 		node->id = id;
 
 		node->head = head;
@@ -2836,7 +2837,7 @@ static switch_status_t switch_event_channel_sub_channel(const char *event_channe
 		int exist = 0;
 
 		for (np = head->node; np; np = np->next) {
-			if (np->func == func) {
+			if (np->func == func && np->user_data == user_data) {
 				exist = 1;
 				break;
 			}
@@ -2846,6 +2847,7 @@ static switch_status_t switch_event_channel_sub_channel(const char *event_channe
 			switch_zmalloc(node, sizeof(*node));
 
 			node->func = func;
+			node->user_data = user_data;
 			node->id = id;
 			node->head = head;
 
@@ -2889,7 +2891,7 @@ static uint32_t _switch_event_channel_broadcast(const char *event_channel, const
 				continue;
 			}
 
-			np->func(broadcast_channel, json, key, id);
+			np->func(broadcast_channel, json, key, id, np->user_data);
 			x++;
 		}
 	}
@@ -3034,13 +3036,29 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 	return status;
 }
 
-SWITCH_DECLARE(uint32_t) switch_event_channel_unbind(const char *event_channel, switch_event_channel_func_t func)
+SWITCH_DECLARE(switch_status_t) switch_event_channel_deliver(const char *event_channel, cJSON **json, const char *key, switch_event_channel_id_t id)
 {
-	return switch_event_channel_unsub_channel(func, event_channel);
+	event_channel_data_t *ecd = NULL;
+	switch_zmalloc(ecd, sizeof(*ecd));
+
+	ecd->event_channel = strdup(event_channel);
+	ecd->json = *json;
+	ecd->key = strdup(key);
+	ecd->id = id;
+
+	*json = NULL;
+
+	ecd_deliver(&ecd);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t *id)
+SWITCH_DECLARE(uint32_t) switch_event_channel_unbind(const char *event_channel, switch_event_channel_func_t func, void *user_data)
+{
+	return switch_event_channel_unsub_channel(func, event_channel, user_data);
+}
 
+SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t *id, void *user_data)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -3052,7 +3070,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_chan
 		switch_thread_rwlock_unlock(event_channel_manager.rwlock);
 	}
 
-	status = switch_event_channel_sub_channel(event_channel, func, *id);
+	status = switch_event_channel_sub_channel(event_channel, func, *id, user_data);
 
 	return status;
 }

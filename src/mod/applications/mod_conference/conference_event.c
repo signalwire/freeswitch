@@ -57,7 +57,8 @@ static cJSON *get_canvas_info(mcu_canvas_t *canvas)
 	return obj;
 }
 
-void conference_event_mod_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+
+void conference_event_mod_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data)
 {
 	cJSON *data, *addobj = NULL;
 	const char *action = NULL;
@@ -413,7 +414,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 }
 
-void conference_event_chat_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+void conference_event_chat_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data)
 {
 	cJSON *data;
 	cJSON *jid = 0;
@@ -475,12 +476,12 @@ void conference_event_chat_channel_handler(const char *event_channel, cJSON *jso
 	switch_safe_free(conference_name);
 }
 
-void conference_event_la_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+void conference_event_la_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data)
 {
 	switch_live_array_parse_json(json, conference_globals.event_channel_id);
 }
 
-void conference_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+void conference_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data)
 {
 	char *domain = NULL, *name = NULL;
 	conference_obj_t *conference = NULL;

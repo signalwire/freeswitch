@@ -2621,7 +2621,7 @@ struct switch_media_handle_s;
 typedef struct switch_media_handle_s switch_media_handle_t;
 
 typedef uint32_t switch_event_channel_id_t;
-typedef void (*switch_event_channel_func_t)(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
+typedef void (*switch_event_channel_func_t)(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data);
 
 struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;

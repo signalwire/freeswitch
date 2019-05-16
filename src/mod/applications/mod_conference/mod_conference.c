@@ -3934,10 +3934,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	switch_console_add_complete_func("::conference::conference_list_conferences", conference_list_conferences);
 
 
-	switch_event_channel_bind("conference", conference_event_channel_handler, &conference_globals.event_channel_id);
-	switch_event_channel_bind("conference-liveArray", conference_event_la_channel_handler, &conference_globals.event_channel_id);
-	switch_event_channel_bind("conference-mod", conference_event_mod_channel_handler, &conference_globals.event_channel_id);
-	switch_event_channel_bind("conference-chat", conference_event_chat_channel_handler, &conference_globals.event_channel_id);
+	switch_event_channel_bind("conference", conference_event_channel_handler, &conference_globals.event_channel_id, NULL);
+	switch_event_channel_bind("conference-liveArray", conference_event_la_channel_handler, &conference_globals.event_channel_id, NULL);
+	switch_event_channel_bind("conference-mod", conference_event_mod_channel_handler, &conference_globals.event_channel_id, NULL);
+	switch_event_channel_bind("conference-chat", conference_event_chat_channel_handler, &conference_globals.event_channel_id, NULL);
 
 	if ( conference_api_sub_syntax(&api_syntax) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
@@ -3991,10 +3991,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 		/* signal all threads to shutdown */
 		conference_globals.running = 0;
 
-		switch_event_channel_unbind(NULL, conference_event_channel_handler);
-		switch_event_channel_unbind(NULL, conference_event_la_channel_handler);
-		switch_event_channel_unbind(NULL, conference_event_mod_channel_handler);
-		switch_event_channel_unbind(NULL, conference_event_chat_channel_handler);
+		switch_event_channel_unbind(NULL, conference_event_channel_handler, NULL);
+		switch_event_channel_unbind(NULL, conference_event_la_channel_handler, NULL);
+		switch_event_channel_unbind(NULL, conference_event_mod_channel_handler, NULL);
+		switch_event_channel_unbind(NULL, conference_event_chat_channel_handler, NULL);
 
 		switch_console_del_complete_func("::conference::conference_list_conferences");
 

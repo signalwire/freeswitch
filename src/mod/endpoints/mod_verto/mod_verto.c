@@ -171,7 +171,7 @@ static void close_socket(ws_socket_t *sock)
 	}
 }
 
-void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
+void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data);
 
 static int verto_init_ssl(verto_profile_t *profile)
 {
@@ -5570,7 +5570,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 	return cause;
 }
 
-void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id, void *user_data)
 {
 	if (verto_globals.debug > 9) {
 		char *json_text;
@@ -6113,7 +6113,7 @@ static void event_handler(switch_event_t *event)
 
 	/* comment broadcasting globally and change to only within the module cos FS events are heavy */
 	//switch_event_channel_broadcast(event_channel, &msg, __FILE__, NO_EVENT_CHANNEL_ID);
-	verto_broadcast(event_channel, msg, __FILE__, NO_EVENT_CHANNEL_ID);cJSON_Delete(msg);
+	verto_broadcast(event_channel, msg, __FILE__, NO_EVENT_CHANNEL_ID, NULL);cJSON_Delete(msg);
 
 	free(event_channel);
 
@@ -6185,7 +6185,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 
 
-	switch_event_channel_bind(SWITCH_EVENT_CHANNEL_GLOBAL, verto_broadcast, &verto_globals.event_channel_id);
+	switch_event_channel_bind(SWITCH_EVENT_CHANNEL_GLOBAL, verto_broadcast, &verto_globals.event_channel_id, NULL);
 
 
 	r = init();
@@ -6243,7 +6243,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	json_cleanup();
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
 
-	switch_event_channel_unbind(NULL, verto_broadcast);
+	switch_event_channel_unbind(NULL, verto_broadcast, NULL);
 	switch_event_unbind_callback(presence_event_handler);
 	switch_event_unbind_callback(event_handler);
 
