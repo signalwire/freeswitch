@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup>
+    <downloadSharpZipLibPropsImported>true</downloadSharpZipLibPropsImported>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+
+       archivecontains: Default value is "tarball", if empty.
+                        Any different non-empty value will disable double archive extraction
+   -->
+
+  <Target Name="SharpZipLibDownloadTarget" BeforeTargets="Build" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://files.freeswitch.org/downloads/libs/ICSharpCode.SharpZipLib.dll.bz2"
+           expectfileordirectory="$(BaseDir)w32\Setup\CustomActions\Setup.CA.DownloadOpenH264\ICSharpCode.SharpZipLib.dll"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)w32\Setup\CustomActions\Setup.CA.DownloadOpenH264\"
+           archivecontains="binary"
+      />
+  </Target>
+
+</Project>

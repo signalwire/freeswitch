@@ -6,6 +6,7 @@
 
  <!-- <xsl:key name="unusedcomponent-search" match="wix:Component[not (contains(wix:File/@Source, '.dll')) or contains(wix:File/@Source, 'mod')]" use="@Id"/> -->
  <xsl:key name="unusedcomponent-search" match="wix:Component[not (contains(wix:File/@Source, '.dll'))]" use="@Id"/>
+ <xsl:key name="unusedcomponent-openh264" match="wix:Component[contains(wix:File/@Source, 'openh264.dll')]" use="@Id"/>
 
   <!-- strip all extraneous whitespace -->
   <xsl:strip-space  elements="*"/>
@@ -20,6 +21,8 @@
 
   <!-- Exclude all File elements that are not a .dll file -->
   <xsl:template match="wix:Component[not(contains(wix:File/@Source, '.dll'))]" />
+  <!-- Exclude openh264.dll (See https://www.openh264.org/BINARY_LICENSE.txt) -->
+  <xsl:template match="wix:Component[contains(wix:File/@Source, 'openh264.dll')]" />
 
   <!-- Exclude Directory elements -->
   <!--<xsl:template match="wix:Directory[not(contains(*/@Source, '.pdb'))]"/>-->
@@ -33,5 +36,6 @@
   
   <!-- Remove ComponentRefs. --> 
   <xsl:template match="wix:ComponentRef[key('unusedcomponent-search', @Id)]"/>
+  <xsl:template match="wix:ComponentRef[key('unusedcomponent-openh264', @Id)]"/>
 
 </xsl:stylesheet>
