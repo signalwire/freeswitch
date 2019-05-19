@@ -70,6 +70,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,6 +84,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -103,6 +105,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -116,38 +119,39 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libvpx\vpx\src\vpx_decoder.c">
-      <ObjectFileName>$(IntDir)vpx_src_vpx_decoder.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx\src\vpx_encoder.c">
-      <ObjectFileName>$(IntDir)vpx_src_vpx_encoder.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx\src\vpx_codec.c">
-      <ObjectFileName>$(IntDir)vpx_src_vpx_codec.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx\src\vpx_image.c">
-      <ObjectFileName>$(IntDir)vpx_src_vpx_image.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_mem\vpx_mem.c">
-      <ObjectFileName>$(IntDir)vpx_mem_vpx_mem.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_scale\generic\vpx_scale.c">
-      <ObjectFileName>$(IntDir)vpx_scale_generic_vpx_scale.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_scale\generic\yv12config.c">
-      <ObjectFileName>$(IntDir)vpx_scale_generic_yv12config.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_scale\generic\yv12extend.c">
-      <ObjectFileName>$(IntDir)vpx_scale_generic_yv12extend.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_scale\generic\gen_scalers.c">
-      <ObjectFileName>$(IntDir)vpx_scale_generic_gen_scalers.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_scale\vpx_scale_rtcd.c">
-      <ObjectFileName>$(IntDir)vpx_scale_vpx_scale_rtcd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_ports\emms.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -164,25 +168,25 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_ports_emms_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\prob.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_prob.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitwriter.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_bitwriter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitwriter_buffer.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_bitwriter_buffer.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\psnr.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_psnr.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitreader.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_bitreader.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitreader_buffer.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_bitreader_buffer.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\intrapred.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_intrapred.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\intrapred_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -227,10 +231,10 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\add_noise.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_add_noise.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\deblock.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_deblock.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\add_noise_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -261,10 +265,10 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\vpx_convolve.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_vpx_convolve.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_asm_stubs.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_vpx_asm_stubs.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -309,11 +313,11 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_intrin_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_intrin_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_intrin_ssse3.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_intrin_ssse3.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_convolve_copy_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -330,20 +334,20 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\loopfilter.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_loopfilter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\loopfilter_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_loopfilter_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\loopfilter_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_loopfilter_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\fwd_txfm.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_fwd_txfm.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_fwd_txfm_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_ssse3_x86_64.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -354,14 +358,14 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_fwd_txfm_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\inv_txfm.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_inv_txfm.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\inv_txfm_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_inv_txfm_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\inv_wht_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -386,10 +390,10 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_inv_txfm_ssse3_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\quantize.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_quantize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\quantize_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_quantize_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\quantize_ssse3_x86_64.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -408,10 +412,10 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_quantize_avx_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\avg.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_avg.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\avg_intrin_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_avg_intrin_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\avg_ssse3_x86_64.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -422,16 +426,16 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\sad.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_sad.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\subtract.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_subtract.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\sum_squares.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_sum_squares.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sum_squares_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_sum_squares_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_sse3.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -476,11 +480,11 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sad4d_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_sad4d_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sad_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_sad_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad4d_sse2.asm">
@@ -526,17 +530,17 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\variance.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_variance.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\variance_sse2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_variance_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\variance_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_variance_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\variance_impl_avx2.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_x86_variance_impl_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\ssim_opt_x86_64.asm">
@@ -562,100 +566,100 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vpx_dsp\vpx_dsp_rtcd.c">
-      <ObjectFileName>$(IntDir)vpx_dsp_vpx_dsp_rtcd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_util\vpx_thread.c">
-      <ObjectFileName>$(IntDir)vpx_util_vpx_thread.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\alloccommon.c">
-      <ObjectFileName>$(IntDir)vp8_common_alloccommon.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\blockd.c">
-      <ObjectFileName>$(IntDir)vp8_common_blockd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\copy_c.c">
-      <ObjectFileName>$(IntDir)vp8_common_copy_c.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\dequantize.c">
-      <ObjectFileName>$(IntDir)vp8_common_dequantize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\entropy.c">
-      <ObjectFileName>$(IntDir)vp8_common_entropy.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\entropymode.c">
-      <ObjectFileName>$(IntDir)vp8_common_entropymode.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\entropymv.c">
-      <ObjectFileName>$(IntDir)vp8_common_entropymv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\extend.c">
-      <ObjectFileName>$(IntDir)vp8_common_extend.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\filter.c">
-      <ObjectFileName>$(IntDir)vp8_common_filter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\findnearmv.c">
-      <ObjectFileName>$(IntDir)vp8_common_findnearmv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\generic\systemdependent.c">
-      <ObjectFileName>$(IntDir)vp8_common_generic_systemdependent.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\idct_blk.c">
-      <ObjectFileName>$(IntDir)vp8_common_idct_blk.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\idctllm.c">
-      <ObjectFileName>$(IntDir)vp8_common_idctllm.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\rtcd.c">
-      <ObjectFileName>$(IntDir)vp8_common_rtcd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\vp8_loopfilter.c">
-      <ObjectFileName>$(IntDir)vp8_common_vp8_loopfilter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\loopfilter_filters.c">
-      <ObjectFileName>$(IntDir)vp8_common_loopfilter_filters.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\mbpitch.c">
-      <ObjectFileName>$(IntDir)vp8_common_mbpitch.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\modecont.c">
-      <ObjectFileName>$(IntDir)vp8_common_modecont.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\quant_common.c">
-      <ObjectFileName>$(IntDir)vp8_common_quant_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\reconinter.c">
-      <ObjectFileName>$(IntDir)vp8_common_reconinter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\reconintra.c">
-      <ObjectFileName>$(IntDir)vp8_common_reconintra.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\reconintra4x4.c">
-      <ObjectFileName>$(IntDir)vp8_common_reconintra4x4.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\setupintrarecon.c">
-      <ObjectFileName>$(IntDir)vp8_common_setupintrarecon.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\swapyv12buffer.c">
-      <ObjectFileName>$(IntDir)vp8_common_swapyv12buffer.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\treecoder.c">
-      <ObjectFileName>$(IntDir)vp8_common_treecoder.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\x86\filter_x86.c">
-      <ObjectFileName>$(IntDir)vp8_common_x86_filter_x86.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\x86\vp8_asm_stubs.c">
-      <ObjectFileName>$(IntDir)vp8_common_x86_vp8_asm_stubs.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\x86\loopfilter_x86.c">
-      <ObjectFileName>$(IntDir)vp8_common_x86_loopfilter_x86.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\mfqe.c">
-      <ObjectFileName>$(IntDir)vp8_common_mfqe.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\common\postproc.c">
-      <ObjectFileName>$(IntDir)vp8_common_postproc.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\common\x86\dequantize_mmx.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -672,7 +676,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\common\x86\idct_blk_mmx.c">
-      <ObjectFileName>$(IntDir)vp8_common_x86_idct_blk_mmx.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_mmx.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -759,7 +763,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_copy_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\common\x86\idct_blk_sse2.c">
-      <ObjectFileName>$(IntDir)vp8_common_x86_idct_blk_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -882,76 +886,76 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\vp8_cx_iface.c">
-      <ObjectFileName>$(IntDir)vp8_vp8_cx_iface.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\bitstream.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_bitstream.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\boolhuff.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_boolhuff.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\dct.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_dct.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\encodeframe.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_encodeframe.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\encodeintra.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_encodeintra.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\encodemb.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_encodemb.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\encodemv.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_encodemv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\ethreading.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_ethreading.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\firstpass.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_firstpass.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\denoising.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_denoising.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\lookahead.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_lookahead.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\mcomp.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_mcomp.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\modecosts.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_modecosts.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\onyx_if.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_onyx_if.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\pickinter.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_pickinter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\picklpf.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_picklpf.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\vp8_quantize.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_vp8_quantize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\ratectrl.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_ratectrl.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\rdopt.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_rdopt.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\segmentation.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_segmentation.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\tokenize.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_tokenize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\treewriter.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_treewriter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\temporal_filter.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_temporal_filter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\dct_mmx.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -968,7 +972,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_dct_mmx_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\vp8_enc_stubs_mmx.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_vp8_enc_stubs_mmx.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\dct_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -999,16 +1003,16 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\vp8_quantize_sse2.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_vp8_quantize_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\quantize_ssse3.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_quantize_ssse3.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\quantize_sse4.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_quantize_sse4.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\denoising_sse2.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_denoising_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\temporal_filter_apply_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -1025,7 +1029,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\vp8_enc_stubs_sse2.c">
-      <ObjectFileName>$(IntDir)vp8_encoder_x86_vp8_enc_stubs_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\quantize_mmx.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -1056,199 +1060,199 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_encodeopt_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp8\vp8_dx_iface.c">
-      <ObjectFileName>$(IntDir)vp8_vp8_dx_iface.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\dboolhuff.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_dboolhuff.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\decodemv.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_decodemv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\decodeframe.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_decodeframe.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\detokenize.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_detokenize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\onyxd_if.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_onyxd_if.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\threading.c">
-      <ObjectFileName>$(IntDir)vp8_decoder_threading.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_alloccommon.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_alloccommon.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_blockd.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_blockd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_entropy.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_entropy.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_entropymode.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_entropymode.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_entropymv.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_entropymv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_frame_buffers.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_frame_buffers.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_idct.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_idct.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_filter.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_filter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_pred_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_pred_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_rtcd.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_rtcd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_scale.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_scale.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_seg_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_seg_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_tile_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_tile_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_loopfilter.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_loopfilter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_thread_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_thread_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_mvref_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_mvref_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_quant_common.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_quant_common.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_reconinter.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_reconinter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_reconintra.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_reconintra.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_common_data.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_common_data.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_scan.c">
-      <ObjectFileName>$(IntDir)vp9_common_vp9_scan.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\x86\vp9_idct_intrin_sse2.c">
-      <ObjectFileName>$(IntDir)vp9_common_x86_vp9_idct_intrin_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\vp9_cx_iface.c">
-      <ObjectFileName>$(IntDir)vp9_vp9_cx_iface.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_bitstream.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_bitstream.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_context_tree.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_context_tree.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_cost.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_cost.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_dct.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_dct.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_encodeframe.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_encodeframe.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_encodemb.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_encodemb.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_encodemv.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_encodemv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_ethread.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_ethread.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_extend.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_extend.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_firstpass.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_firstpass.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_lookahead.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_lookahead.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_mcomp.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_mcomp.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_encoder.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_encoder.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_picklpf.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_picklpf.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_quantize.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_quantize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_ratectrl.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_ratectrl.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_rd.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_rd.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_rdopt.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_rdopt.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_pickmode.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_pickmode.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_segmentation.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_segmentation.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_speed_features.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_speed_features.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_subexp.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_subexp.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_svc_layercontext.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_svc_layercontext.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_resize.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_resize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_tokenize.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_tokenize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_treewriter.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_treewriter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_aq_variance.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_aq_variance.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_aq_360.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_aq_360.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_aq_cyclicrefresh.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_aq_cyclicrefresh.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_aq_complexity.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_aq_complexity.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_alt_ref_aq.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_alt_ref_aq.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_skin_detection.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_skin_detection.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_noise_estimate.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_noise_estimate.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_temporal_filter.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_mbgraph.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_vp9_mbgraph.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_temporal_filter_apply_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -1265,10 +1269,10 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_temporal_filter_apply_sse2_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_sse2.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_quantize_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_diamond_search_sad_avx.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_diamond_search_sad_avx.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_sse2.asm">
@@ -1308,41 +1312,41 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
     </CustomBuild>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_intrin_sse2.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_dct_intrin_sse2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_ssse3.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_dct_ssse3.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_frame_scale_ssse3.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_frame_scale_ssse3.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_error_intrin_avx2.c">
-      <ObjectFileName>$(IntDir)vp9_encoder_x86_vp9_error_intrin_avx2.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\vp9_dx_iface.c">
-      <ObjectFileName>$(IntDir)vp9_vp9_dx_iface.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_decodemv.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_decodemv.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_decodeframe.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_decodeframe.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_detokenize.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_detokenize.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_dthread.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_dthread.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_decoder.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_decoder.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\decoder\vp9_dsubexp.c">
-      <ObjectFileName>$(IntDir)vp9_decoder_vp9_dsubexp.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="include_x86\vpx_config.c">
-      <ObjectFileName>$(IntDir)vpx_config.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <None Include="vpx.def" />
   </ItemGroup>
