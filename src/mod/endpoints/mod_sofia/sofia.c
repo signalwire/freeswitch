@@ -8028,6 +8028,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				goto done;
 			}
 
+			switch_channel_set_flag(channel, CF_NOSDP_REINVITE);
+
 			if (switch_channel_var_true(channel, "sip_unhold_nosdp")) {
 				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, "sendrecv",
 												zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
@@ -8035,6 +8037,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL,
 											zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
 			}
+
+			switch_channel_clear_flag(channel, CF_NOSDP_REINVITE);
 
 			if (zstr(tech_pvt->mparams.local_sdp_str)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot find a SDP\n");
