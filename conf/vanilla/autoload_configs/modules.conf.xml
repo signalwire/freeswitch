@@ -102,7 +102,7 @@
     <load module="mod_opus"/>
 
     <!-- File Format Interfaces -->
-    <!--<load module="mod_av"/>-->
+    <load module="mod_av"/>
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
     <!--<load module="mod_opusfile"/>-->
