@@ -5,6 +5,8 @@
 #include <switch.h>
 #include <hiredis/hiredis.h>
 
+#define MOD_HIREDIS_MAX_ARGS 64
+
 typedef struct mod_hiredis_global_s {
 	switch_memory_pool_t *pool;
 	switch_hash_t *profiles;
@@ -25,6 +27,8 @@ typedef struct hiredis_request_s {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 	struct hiredis_request_s *next;
+	size_t argc;
+	char *argv[MOD_HIREDIS_MAX_ARGS];
 } hiredis_request_t;
 
 typedef struct mod_hiredis_context_s {

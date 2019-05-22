@@ -304,7 +304,12 @@ static switch_status_t hiredis_context_execute_requests(hiredis_context_t *conte
 			/* eval needs special formatting to work properly */
 			redisAppendCommand(context->context, "eval %s %d %s", cur_request->request, cur_request->num_keys, cur_request->keys ? cur_request->keys : "");
 		} else {
-			redisAppendCommand(context->context, cur_request->request);
+			if (cur_request->argc == 0) {
+				cur_request->argc = switch_separate_string(cur_request->request, ' ', cur_request->argv, MOD_HIREDIS_MAX_ARGS);
+			}
+			if (cur_request->argc > 0) {
+				redisAppendCommandArgv(context->context, cur_request->argc, (const char **)cur_request->argv, NULL);
+			}
 		}
 	}
 
