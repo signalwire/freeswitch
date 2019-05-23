@@ -186,6 +186,7 @@ static switch_status_t hiredis_profile_execute_pipeline(hiredis_profile_t *profi
 	request->status = SWITCH_STATUS_SUCCESS;
 	request->next = NULL;
 	request->session_uuid = NULL;
+	request->argc = 0;
 	if ( resp ) {
 		/* will block, no need to dup memory */
 		request->request = (char *)request_string;
@@ -232,6 +233,7 @@ switch_status_t hiredis_profile_eval_pipeline(hiredis_profile_t *profile, switch
 	request->status = SWITCH_STATUS_SUCCESS;
 	request->next = NULL;
 	request->session_uuid = NULL;
+	request->argc = 0;
 	if ( resp ) {
 		/* will block, no need to dup memory */
 		request->request = (char *)script;
