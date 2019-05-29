@@ -1,13 +1,13 @@
 include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_com_g729
-VERSION=201506221434
+VERSION=latest
 
 if ISLINUX
 
 G729INSTALLER = $(top_srcdir)/libs/fs-$(VERSION)-installer
-LICSERVER=/usr/sbin/freeswitch_licence_server
-VALIDATOR=$(bindir)/validator
+LICSERVER=/usr/sbin/freeswitch-license-server
+VALIDATOR=$(bindir)/freeswitch-license-validator
 MOD=$(moddir)/mod_com_g729.so
 BUILT_SOURCES = $(G729INSTALLER)
 
