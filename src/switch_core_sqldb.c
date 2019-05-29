@@ -3380,13 +3380,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (runtime.odbc_dsn) {
-			runtime.odbc_dsn = NULL;
-			runtime.odbc_dbtype = DBTYPE_DEFAULT;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to core_db.\n");
-			goto top;
-		}
-
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CORE DATABASE INITIALIZATION FAILURE! CHECK `core-db-dsn`!\n");
 
 		switch_clear_flag((&runtime), SCF_USE_SQL);
 		return SWITCH_STATUS_FALSE;
