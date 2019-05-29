@@ -2915,24 +2915,53 @@ static void destroy_ecd(event_channel_data_t **ecdP)
 	free(ecd);
 }
 
+#ifndef SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS
+#define SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS 10
+#endif
+
 static void ecd_deliver(event_channel_data_t **ecdP)
 {
 	event_channel_data_t *ecd = *ecdP;
-	char *p;
+	char *key;
+	uint32_t t = 0;
 
 	*ecdP = NULL;
 
-	_switch_event_channel_broadcast(ecd->event_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+	t = _switch_event_channel_broadcast(ecd->event_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
 
-	if ((p = strchr(ecd->event_channel, '.'))) {
-		char *main_channel = strdup(ecd->event_channel);
-		switch_assert(main_channel);
-		p = strchr(main_channel, '.');
-		*p = '\0';
-		_switch_event_channel_broadcast(main_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
-		free(main_channel);
+	key = strdup(ecd->event_channel);
+	if (switch_core_test_flag(SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY)) {
+		const char *sep = switch_core_get_event_channel_key_separator();
+		char *x_argv[SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS] = { 0 };
+		int x_argc = switch_separate_string_string(key, (char*) sep, x_argv, SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS);
+		char buf[512];
+		int i;
+		for(i=x_argc - 1; i > 0; i--) {
+			int z;
+			memset(buf, 0, 512);
+			sprintf(buf, "%s", x_argv[0]);
+			for(z=1; z < i; z++) {
+				strcat(buf, sep);
+				strcat(buf, x_argv[z]);
+			}
+			t += _switch_event_channel_broadcast(buf, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+		}
+	} else {
+		char *p = NULL;
+		if ((p = strchr(key, '.'))) {
+			*p = '\0';
+			t += _switch_event_channel_broadcast(key, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+		}
 	}
-	_switch_event_channel_broadcast(SWITCH_EVENT_CHANNEL_GLOBAL, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+	switch_safe_free(key);
+
+	t += _switch_event_channel_broadcast(SWITCH_EVENT_CHANNEL_GLOBAL, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+
+	if(t == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s\n", ecd->event_channel, ecd->key);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "delivered to %u subscribers for %s\n", t, ecd->event_channel);
+	}
 
 	destroy_ecd(&ecd);
 }

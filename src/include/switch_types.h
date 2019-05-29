@@ -386,7 +386,8 @@ typedef enum {
 	SCF_SESSION_THREAD_POOL = (1 << 23),
 	SCF_DIALPLAN_TIMESTAMPS = (1 << 24),
 	SCF_CPF_SOFT_PREFIX = (1 << 25),
-	SCF_CPF_SOFT_LOOKUP = (1 << 26)
+	SCF_CPF_SOFT_LOOKUP = (1 << 26),
+	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

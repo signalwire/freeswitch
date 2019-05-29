@@ -2360,8 +2360,21 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
 					}
+				} else if (!strcasecmp(var, "event-channel-key-separator") && !zstr(val)) {
+					runtime.event_channel_key_separator = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "event-channel-enable-hierarchy-deliver") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
+					}
 				}
 			}
+		}
+
+		if (runtime.event_channel_key_separator == NULL) {
+			runtime.event_channel_key_separator = switch_core_strdup(runtime.memory_pool, ".");
 		}
 
 		if ((settings = switch_xml_child(cfg, "variables"))) {
@@ -3373,6 +3386,11 @@ SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port()
 	end_port = (uint16_t)switch_rtp_set_end_port((switch_port_t)end_port);
 
 	return end_port;
+}
+
+SWITCH_DECLARE(const char *) switch_core_get_event_channel_key_separator(void)
+{
+	return runtime.event_channel_key_separator;
 }
 
 /* For Emacs:

@@ -2817,6 +2817,7 @@ SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_core_session_t *session);
 
+SWITCH_DECLARE(const char *) switch_core_get_event_channel_key_separator(void);
 
 SWITCH_END_EXTERN_C
 #endif
