@@ -59,6 +59,8 @@ static struct {
 	switch_event_t *session_fields;
 	/** If true, byte header for uncompressed GELF is sent.  Might be required if using logstash */
 	int send_uncompressed_header;
+	/** GELF JSON Format */
+	switch_log_json_format_t gelf_format;
 } globals;
 
 /**
@@ -84,109 +86,10 @@ static int to_graylog2_level(switch_log_level_t level)
 static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level)
 {
 	char *gelf_text = NULL;
-	cJSON *gelf = cJSON_CreateObject();
-	char *hostname;
-	char timestamp[32];
-	char *full_message = node->content;
-	char short_message[151];
-	char *short_message_end = NULL;
-	char *parsed_full_message = NULL;
-	char *field_name = NULL;
-	switch_event_t *log_fields = NULL;
-	switch_core_session_t *session = NULL;
-
-	cJSON_AddItemToObject(gelf, "version", cJSON_CreateString("1.1"));
-	if ((hostname = switch_core_get_variable("hostname")) && !zstr(hostname)) {
-		cJSON_AddItemToObject(gelf, "host", cJSON_CreateString(hostname));
-	} else if ((hostname = switch_core_get_variable("local_ip_v4")) && !zstr(hostname)) {
-		cJSON_AddItemToObject(gelf, "host", cJSON_CreateString(hostname));
-	}
-	switch_snprintf(timestamp, 32, "%"SWITCH_UINT64_T_FMT".%d", (uint64_t)(node->timestamp / 1000000), (node->timestamp % 1000000) / 1000);
-	cJSON_AddItemToObject(gelf, "timestamp", cJSON_CreateString(timestamp));
+	cJSON *gelf = switch_log_node_to_json(node, to_graylog2_level(log_level), &globals.gelf_format, globals.session_fields);
 	cJSON_AddItemToObject(gelf, "_microtimestamp", cJSON_CreateNumber(node->timestamp));
-	cJSON_AddItemToObject(gelf, "level", cJSON_CreateNumber(to_graylog2_level(log_level)));
-	cJSON_AddItemToObject(gelf, "_ident", cJSON_CreateString("freeswitch"));
-	cJSON_AddItemToObject(gelf, "_pid", cJSON_CreateNumber((int)getpid()));
-	if (!zstr(node->userdata)) {
-		cJSON_AddItemToObject(gelf, "_uuid", cJSON_CreateString(node->userdata));
-	}
-	if (!zstr_buf(node->file)) {
-		cJSON_AddItemToObject(gelf, "_file", cJSON_CreateString(node->file));
-		cJSON_AddItemToObject(gelf, "_line", cJSON_CreateNumber(node->line));
-	}
-	if (!zstr_buf(node->func)) {
-		cJSON_AddItemToObject(gelf, "_function", cJSON_CreateString(node->func));
-	}
-
-	/* skip initial space and new line */
-	if (*full_message == ' ') {
-		full_message++;
-	}
-	if (*full_message == '\n') {
-		full_message++;
-	}
-
-	/* get fields from log tags */
-	if (node->tags) {
-		switch_event_dup(&log_fields, node->tags);
-	}
-
-	/* get fields from channel data, if configured */
-	if (!zstr(node->userdata) && globals.session_fields->headers && (session = switch_core_session_locate(node->userdata))) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		switch_event_header_t *hp;
-		/* session_fields name mapped to variable name */
-		for (hp = globals.session_fields->headers; hp; hp = hp->next) {
-			if (!zstr(hp->name) && !zstr(hp->value)) {
-				const char *val = switch_channel_get_variable(channel, hp->value);
-				if (!zstr(val)) {
-					if (!log_fields) {
-						switch_event_create_plain(&log_fields, SWITCH_EVENT_CHANNEL_DATA);
-					}
-					switch_event_add_header_string(log_fields, SWITCH_STACK_BOTTOM, hp->name, val);
-				}
-			}
-		}
-		switch_core_session_rwunlock(session);
-	}
-
-	/* parse list of fields from message text, if any */
-	if (strncmp(full_message, "LOG_FIELDS", 10) == 0) {
-		switch_event_create_brackets(full_message+10, '[', ']', ',', &log_fields, &parsed_full_message, SWITCH_TRUE);
-		full_message = parsed_full_message;
-	}
-
-	/* add additional fields */
-	if (log_fields) {
-		switch_event_header_t *hp;
-		for (hp = log_fields->headers; hp; hp = hp->next) {
-			if (!zstr(hp->name) && !zstr(hp->value)) {
-				if (strncmp(hp->name, "@#", 2) == 0) {
-					field_name = switch_mprintf("_%s", hp->name + 2);
-					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateNumber(strtod(hp->value, NULL)));
-				} else {
-					field_name = switch_mprintf("_%s", hp->name);
-					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateString(hp->value));
-				}
-				free(field_name);
-			}
-		}
-		switch_event_destroy(&log_fields);
-	}
-
-	cJSON_AddItemToObject(gelf, "full_message", cJSON_CreateString(full_message));
-
-	switch_snprintf(short_message, sizeof(short_message) - 1, "%s", full_message);
-	if ((short_message_end = strchr(short_message, '\n'))) {
-		*short_message_end = '\0';
-	}
-	cJSON_AddItemToObject(gelf, "short_message", cJSON_CreateString(short_message));
-
 	gelf_text = cJSON_PrintUnformatted(gelf);
 	cJSON_Delete(gelf);
-
-	switch_safe_free(parsed_full_message);
-
 	return gelf_text;
 }
 
@@ -411,6 +314,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+
+	// define GELF JSON format mappings
+	globals.gelf_format.version.name = "version";
+	globals.gelf_format.version.value = "1.1";
+	globals.gelf_format.host.name = "host";
+	globals.gelf_format.timestamp.name = "timestamp";
+	globals.gelf_format.timestamp_divisor = 1000000; // convert microseconds to seconds
+	globals.gelf_format.level.name = "level";
+	globals.gelf_format.ident.name = "_ident";
+	globals.gelf_format.ident.value = "freeswitch";
+	globals.gelf_format.pid.name = "_pid";
+	globals.gelf_format.pid.value = switch_core_sprintf(pool, "%d", (int)getpid());
+	globals.gelf_format.uuid.name = "_uuid";
+	globals.gelf_format.file.name = "_file";
+	globals.gelf_format.line.name = "_line";
+	globals.gelf_format.function.name = "_function";
+	globals.gelf_format.full_message.name = "full_message";
+	globals.gelf_format.short_message.name = "short_message";
+	globals.gelf_format.custom_field_prefix = "_";
 
 	switch_event_create_plain(&globals.session_fields, SWITCH_EVENT_CHANNEL_DATA);
 

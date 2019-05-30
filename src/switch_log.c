@@ -85,6 +85,144 @@ static const char *
 SWITCH_SEQ_FYELLOW };
 
 
+SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, int log_level, switch_log_json_format_t *json_format, switch_event_t *chan_vars)
+{
+	cJSON *json = cJSON_CreateObject();
+	char *hostname;
+	char *full_message = node->content;
+	char *parsed_full_message = NULL;
+	char *field_name = NULL;
+	switch_event_t *log_fields = NULL;
+	switch_core_session_t *session = NULL;
+
+	if (json_format->version.name && json_format->version.value) {
+		cJSON_AddItemToObject(json, json_format->version.name, cJSON_CreateString(json_format->version.value));
+	}
+	if (json_format->host.name) {
+		if (json_format->host.value) {
+			cJSON_AddItemToObject(json, json_format->host.name, cJSON_CreateString(json_format->host.value));
+		} else if ((hostname = switch_core_get_variable("hostname")) && !zstr(hostname)) {
+			cJSON_AddItemToObject(json, json_format->host.name, cJSON_CreateString(hostname));
+		} else if ((hostname = switch_core_get_variable("local_ip_v4")) && !zstr(hostname)) {
+			cJSON_AddItemToObject(json, json_format->host.name, cJSON_CreateString(hostname));
+		}
+	}
+	if (json_format->timestamp.name) {
+		double timestamp = node->timestamp;
+		double divisor = 0.0;
+		if (json_format->timestamp_divisor > 1.0) {
+			timestamp = timestamp / divisor;
+		}
+		cJSON_AddItemToObject(json, json_format->timestamp.name, cJSON_CreateNumber(timestamp));
+	}
+	if (json_format->level.name) {
+		cJSON_AddItemToObject(json, json_format->level.name, cJSON_CreateNumber(log_level));
+	}
+	if (json_format->ident.name) {
+		if (json_format->ident.value) {
+			cJSON_AddItemToObject(json, json_format->ident.name, cJSON_CreateString(json_format->ident.value));
+		} else {
+			cJSON_AddItemToObject(json, json_format->ident.name, cJSON_CreateString("freeswitch"));
+		}
+	}
+	if (json_format->pid.name) {
+		if (json_format->pid.value) {
+			cJSON_AddItemToObject(json, json_format->pid.name, cJSON_CreateNumber(atoi(json_format->pid.value)));
+		} else {
+			cJSON_AddItemToObject(json, json_format->pid.name, cJSON_CreateNumber((int)getpid()));
+		}
+	}
+	if (json_format->uuid.name && !zstr(node->userdata)) {
+		cJSON_AddItemToObject(json, json_format->uuid.name, cJSON_CreateString(node->userdata));
+	}
+	if (json_format->file.name && !zstr_buf(node->file)) {
+		cJSON_AddItemToObject(json, json_format->file.name, cJSON_CreateString(node->file));
+		if (json_format->line.name) {
+			cJSON_AddItemToObject(json, json_format->line.name, cJSON_CreateNumber(node->line));
+		}
+	}
+	if (json_format->function.name && !zstr_buf(node->func)) {
+		cJSON_AddItemToObject(json, json_format->function.name, cJSON_CreateString(node->func));
+	}
+
+	/* skip initial space and new line */
+	if (*full_message == ' ') {
+		full_message++;
+	}
+	if (*full_message == '\n') {
+		full_message++;
+	}
+
+	/* get fields from log tags */
+	if (node->tags) {
+		switch_event_dup(&log_fields, node->tags);
+	}
+
+	/* get fields from channel data, if configured */
+	if (!zstr(node->userdata) && chan_vars && chan_vars->headers && (session = switch_core_session_locate(node->userdata))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_event_header_t *hp;
+		/* session_fields name mapped to variable name */
+		for (hp = chan_vars->headers; hp; hp = hp->next) {
+			if (!zstr(hp->name) && !zstr(hp->value)) {
+				const char *val = switch_channel_get_variable(channel, hp->value);
+				if (!zstr(val)) {
+					if (!log_fields) {
+						switch_event_create_plain(&log_fields, SWITCH_EVENT_CHANNEL_DATA);
+					}
+					switch_event_add_header_string(log_fields, SWITCH_STACK_BOTTOM, hp->name, val);
+				}
+			}
+		}
+		switch_core_session_rwunlock(session);
+	}
+
+	/* parse list of fields from message text, if any */
+	if (strncmp(full_message, "LOG_FIELDS", 10) == 0) {
+		switch_event_create_brackets(full_message+10, '[', ']', ',', &log_fields, &parsed_full_message, SWITCH_TRUE);
+		full_message = parsed_full_message;
+	}
+
+	/* add additional fields */
+	if (log_fields) {
+		switch_event_header_t *hp;
+		const char *prefix = json_format->custom_field_prefix ? json_format->custom_field_prefix : "";
+		for (hp = log_fields->headers; hp; hp = hp->next) {
+			if (!zstr(hp->name) && !zstr(hp->value)) {
+				if (strncmp(hp->name, "@#", 2) == 0) {
+					field_name = switch_mprintf("%s%s", prefix, hp->name + 2);
+					cJSON_AddItemToObject(json, field_name, cJSON_CreateNumber(strtod(hp->value, NULL)));
+				} else {
+					field_name = switch_mprintf("%s%s", prefix, hp->name);
+					cJSON_AddItemToObject(json, field_name, cJSON_CreateString(hp->value));
+				}
+				free(field_name);
+			}
+		}
+		switch_event_destroy(&log_fields);
+	}
+
+	if (json_format->full_message.name) {
+		cJSON_AddItemToObject(json, json_format->full_message.name, cJSON_CreateString(full_message));
+	} else {
+		cJSON_AddItemToObject(json, "message", cJSON_CreateString(full_message));
+	}
+
+	if (json_format->short_message.name) {
+		char short_message[151];
+		char *short_message_end = NULL;
+		switch_snprintf(short_message, sizeof(short_message) - 1, "%s", full_message);
+		if ((short_message_end = strchr(short_message, '\n'))) {
+			*short_message_end = '\0';
+		}
+		cJSON_AddItemToObject(json, json_format->short_message.name, cJSON_CreateString(short_message));
+	}
+
+	switch_safe_free(parsed_full_message);
+
+	return json;
+}
+
 static switch_log_node_t *switch_log_node_alloc()
 {
 	switch_log_node_t *node = NULL;

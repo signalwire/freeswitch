@@ -68,8 +68,44 @@ SWITCH_BEGIN_EXTERN_C
 	switch_event_t *tags;
 } switch_log_node_t;
 
+///\{
+/*! \brief JSON Log formatting data item
+ */
+typedef struct {
+	const char *name;
+	const char *value;
+} switch_log_json_format_item_t;
+
+///\{
+/*! \brief JSON Log formatting data
+ */
+typedef struct {
+	switch_log_json_format_item_t version;
+	switch_log_json_format_item_t host;
+	switch_log_json_format_item_t timestamp;
+	switch_log_json_format_item_t level;
+	switch_log_json_format_item_t ident;
+	switch_log_json_format_item_t pid;
+	switch_log_json_format_item_t uuid;
+	switch_log_json_format_item_t file;
+	switch_log_json_format_item_t line;
+	switch_log_json_format_item_t function;
+	switch_log_json_format_item_t full_message;
+	switch_log_json_format_item_t short_message;
+	const char *custom_field_prefix;
+	double timestamp_divisor;
+} switch_log_json_format_t;
+
 typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node, switch_log_level_t level);
 
+/*!
+  \brief Convert a log node to JSON object.  Destroy JSON object when finished.
+  \param node the node
+  \param log_level the log level
+  \param json_format the output format definition
+  \param char_vars optional channel variables to add to logs
+*/
+SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, int log_level, switch_log_json_format_t *json_format, switch_event_t *chan_vars);
 
 /*!
   \brief Initilize the logging engine

@@ -62,6 +62,33 @@ static uint32_t all_level = 0;
 static int32_t hard_log_level = SWITCH_LOG_DEBUG;
 static switch_bool_t log_uuid = SWITCH_FALSE;
 //static int32_t failed_write = 0;
+static switch_bool_t json_log = SWITCH_FALSE;
+static switch_log_json_format_t json_format = {
+	{ NULL, NULL }, // version
+	{ "host", NULL }, // host
+	{ "timestamp", NULL }, // timestamp
+	{ "level", NULL }, // level
+	{ "ident", NULL }, // ident
+	{ "pid", NULL }, // pid
+	{ "session", NULL }, // uuid
+	{ "file", NULL }, // file
+	{ "line", NULL }, // line
+	{ "function", NULL }, // function
+	{ "message", NULL }, // full_message
+	{ NULL, NULL }, // short_message
+	"", // custom_field_prefix
+	0.0 // timestamp_divisor
+};
+
+static char *to_json_string(const switch_log_node_t *node)
+{
+	char *json_text = NULL;
+	cJSON *json = switch_log_node_to_json(node, node->level, &json_format, NULL);
+	json_text = cJSON_PrintUnformatted(json);
+	cJSON_Delete(json);
+	return json_text;
+}
+
 static void del_mapping(char *var)
 {
 	switch_core_hash_insert(log_hash, var, NULL);
@@ -122,6 +149,47 @@ static switch_status_t config_logger(void)
 		}
 	}
 
+	// Customize field names or remove fields
+	// To remove a field, set its name to empty string
+	if ((settings = switch_xml_child(cfg, "json-log-format"))) {
+		for (param = switch_xml_child(settings, "format"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "field");
+			char *val = (char *) switch_xml_attr_soft(param, "name");
+			if (!strcasecmp(var, "host")) {
+				json_format.host.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "timestamp")) {
+				json_format.timestamp.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "level")) {
+				json_format.level.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "ident")) {
+				json_format.ident.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "pid")) {
+				json_format.pid.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "uuid")) {
+				json_format.uuid.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "file")) {
+				json_format.file.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "line")) {
+				json_format.line.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "function")) {
+				json_format.function.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "message")) {
+				json_format.full_message.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "short-message")) {
+				json_format.short_message.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			}
+		}
+		for (param = switch_xml_child(settings, "config"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcasecmp(var, "custom-field-prefix")) {
+				json_format.custom_field_prefix = switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "timestamp-divisor") && switch_is_number(val)) {
+				json_format.timestamp_divisor = strtod(val, NULL);
+			}
+		}
+	}
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -141,6 +209,8 @@ static switch_status_t config_logger(void)
 				hard_log_level = switch_log_str2level(val);
 			} else if (!strcasecmp(var, "uuid") && switch_true(val)) {
 				log_uuid = SWITCH_TRUE;
+			} else if (!strcasecmp(var, "json") && switch_true(val)) {
+				json_log = SWITCH_TRUE;
 			}
 		}
 	}
@@ -242,7 +312,13 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 			}
 #endif
 
-			if (COLORIZE) {
+			if (json_log) {
+				char *json_log_str = to_json_string(node);
+				if (json_log_str) {
+					fprintf(handle, "%s\n", json_log_str);
+					switch_safe_free(json_log_str);
+				}
+			} else if (COLORIZE) {
 #ifdef WIN32
 				DWORD len = (DWORD) strlen(node->data);
 				DWORD outbytes = 0;
@@ -281,6 +357,7 @@ SWITCH_STANDARD_API(console_api_function)
 		"console help\n"
 		"console loglevel [[0-7] | <loglevel_string>]\n"
 		"console uuid [on|off|toggle]\n"
+		"console json [on|off|toggle]\n"
 		"console colorize [on|off|toggle]\n" "--------------------------------------------------------------------------------\n";
 	const char *loglevel_usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
@@ -363,7 +440,19 @@ SWITCH_STANDARD_API(console_api_function)
 			}
 		}
 		stream->write_function(stream, "+OK console uuid %s\n", log_uuid ? "enabled" : "disabled");
-
+	} else if (!strcasecmp(argv[0], "json")) {
+		if (argc > 1) {
+			if (!strcasecmp(argv[1], "toggle")) {
+				if (json_log) {
+					json_log = SWITCH_FALSE;
+				} else {
+					json_log = SWITCH_TRUE;
+				}
+			} else {
+				json_log = switch_true(argv[1]);
+			}
+		}
+		stream->write_function(stream, "+OK console json %s\n", json_log ? "enabled" : "disabled");
 	} else {					/* if (!strcasecmp(argv[0], "help")) { */
 		stream->write_function(stream, "%s", usage_string);
 	}
@@ -383,7 +472,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "loglevel [level]|colorize [on|toggle|off]");
+	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "loglevel [level]|colorize [on|toggle|off]|uuid [on|toggle|off]|json [on|toggle|off]");
 	switch_console_set_complete("add console help");
 	switch_console_set_complete("add console loglevel");
 	switch_console_set_complete("add console loglevel help");
@@ -400,6 +489,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 	switch_console_set_complete("add console colorize on");
 	switch_console_set_complete("add console colorize off");
 	switch_console_set_complete("add console colorize toggle");
+	switch_console_set_complete("add console uuid on");
+	switch_console_set_complete("add console uuid off");
+	switch_console_set_complete("add console uuid toggle");
+	switch_console_set_complete("add console json on");
+	switch_console_set_complete("add console json off");
+	switch_console_set_complete("add console json toggle");
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG, SWITCH_TRUE);
