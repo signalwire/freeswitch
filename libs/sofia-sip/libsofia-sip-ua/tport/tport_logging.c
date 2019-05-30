@@ -45,6 +45,8 @@
 #include <errno.h>
 #include <limits.h>
 
+#define TPORT_STAMP_SIZE 144
+
 /**@var TPORT_LOG
  *
  * Environment variable determining if parsed message contents are logged.
@@ -315,7 +317,7 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
 
 /** Create log stamp */
 void tport_stamp(tport_t const *self, msg_t *msg,
-		 char stamp[512], char const *what,
+		 char *stamp, char const *what,
 		 size_t n, char const *via,
 		 su_time_t now)
 {
@@ -357,7 +359,7 @@ void tport_stamp(tport_t const *self, msg_t *msg,
 
   su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof(name));
 
-  snprintf(stamp, 144,
+  snprintf(stamp, TPORT_STAMP_SIZE,
 	   "%s "MOD_ZU" bytes %s %s/[%s]:%u%s%s at %02u:%02u:%02u.%06lu:\n",
 	   what, (size_t)n, via, self->tp_name->tpn_proto,
 	   name, ntohs(su->su_port), label[0] ? label : "", comp,
@@ -370,7 +372,7 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
 		      char const *what, char const *how)
 {
   tport_master_t *mr;
-  char stamp[128];
+  char stamp[TPORT_STAMP_SIZE];
   size_t i;
 
   assert(self); assert(msg);
@@ -814,95 +816,89 @@ done:
    if(hg) free(hg);  
    return 0;
 }
-  
+
 
 /** Log the message. */
 void tport_log_msg(tport_t *self, msg_t *msg,
 		   char const *what, char const *via,
 		   su_time_t now)
 {
-  char stamp[128];
   msg_iovec_t iov[80];
   size_t i, iovlen = msg_iovec(msg, iov, 80);
-  size_t linelen = 0, n, logged = 0, truncated = 0;
+  size_t n;
   int skip_lf = 0;
-  int j, unprintable = 0;
+  char *buffer = NULL;
+  size_t buffer_size = 0;
+  size_t buffer_pos = 0;
+  size_t bytes_written = 0;
 
 #define MSG_SEPARATOR \
   "------------------------------------------------------------------------\n"
-#define MAX_LINELEN 2047
 
   for (i = n = 0; i < iovlen && i < 80; i++)
     n += iov[i].mv_len;
 
-  tport_stamp(self, msg, stamp, what, n, via, now);
-  su_log("%s   " MSG_SEPARATOR, stamp);
+  buffer_size = sizeof(char) * n + 1 + TPORT_STAMP_SIZE + sizeof(MSG_SEPARATOR);
+  if (buffer_size > 16000) {
+    buffer_size = 16000;
+  }
 
-  for (i = 0; truncated == 0 && i < iovlen && i < 80; i++) {
-    char *s = iov[i].mv_base, *end = s + iov[i].mv_len;
+  buffer = malloc(buffer_size);
+  buffer[0] = '\0';
 
-    if (skip_lf && s < end && s[0] == '\n') { s++; logged++; skip_lf = 0; }
-
-    while (s < end) {
-		if (s[0] == '\0') {
-			truncated = logged;
-			break;
-		}
-
-		n = su_strncspn(s, end - s, "\r\n");
-
-		if (linelen + n > MAX_LINELEN) {
-			n = MAX_LINELEN - linelen;
-			truncated = logged + n;
-		}
-		
-		if (!unprintable) {
-			for (j = 0; j < 4; j++) {
-				if (s[j] == 0) break;
-				if (s[j] != 9 && s[j] != 10 && s[j] != 13 && (s[j] < 32 || s[j] > 126)) {
-					unprintable++;
-				}
-			}
-		}
-
-		if (unprintable) {
-			if (unprintable == 1)
-				su_log("\n   <ENCODED DATA>");
-			unprintable++;
-		} else {
-			su_log("%s%.*s", linelen > 0 ? "" : "   ", (int)n, s);
-		}
-
-		s += n, linelen += n, logged += n;
-
-		if (truncated)
-			break;
-		if (s == end)
-			break;
-		
-		linelen = 0;
-		su_log("\n");
-		
-		/* Skip eol */
-		if (s[0] == '\r') {
-			s++, logged++;
-			if (s == end) {
-				skip_lf = 1;
-				continue;
-			}
-		}
-
-		if (s[0] == '\n') {
-			s++, logged++;
-		}
+  tport_stamp(self, msg, buffer, what, n, via, now);
+  buffer_pos = strlen(buffer);
+  if (buffer_pos < buffer_size) {
+    bytes_written = snprintf(buffer + buffer_pos, buffer_size - buffer_pos, "%s", MSG_SEPARATOR);
+    if (bytes_written > 0) {
+      buffer_pos += bytes_written;
     }
   }
 
-  su_log("%s   " MSG_SEPARATOR, linelen > 0 ? "\n" : "");
+  for (i = 0; buffer_pos < buffer_size && i < iovlen && i < 80; i++) {
+    char *s = iov[i].mv_base, *end = s + iov[i].mv_len;
 
-  if (!truncated && i == 80)
-    truncated = logged;
+    if (skip_lf && s < end && s[0] == '\n') { s++; skip_lf = 0; }
 
-  if (truncated)
-    su_log("   *** message truncated at "MOD_ZU" ***\n", truncated);
+    while (s < end) {
+      if (s[0] == '\0') {
+        break;
+      }
+
+      n = su_strncspn(s, end - s, "\r\n");
+
+      bytes_written = snprintf(buffer + buffer_pos, buffer_size - buffer_pos, "%.*s", (int)n, s);
+      if (bytes_written > 0) {
+        buffer_pos += bytes_written;
+      }
+
+      s += n;
+
+      if (s == end)
+        break;
+
+      if (buffer_pos < buffer_size) {
+        buffer[buffer_pos++] = '\n';
+      }
+      /* Skip eol */
+      if (s[0] == '\r') {
+        s++;
+        if (s == end) {
+          skip_lf = 1;
+          continue;
+        }
+      }
+
+      if (s[0] == '\n') {
+        s++;
+      }
+    }
+  }
+
+  if (buffer_pos >= buffer_size) {
+    buffer_pos = buffer_size - 1;
+  }
+  buffer[buffer_pos] = '\0';
+  su_log("%s", buffer);
+  free(buffer);
 }
