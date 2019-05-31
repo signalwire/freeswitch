@@ -109,9 +109,8 @@ SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, i
 	}
 	if (json_format->timestamp.name) {
 		double timestamp = node->timestamp;
-		double divisor = 0.0;
 		if (json_format->timestamp_divisor > 1.0) {
-			timestamp = timestamp / divisor;
+			timestamp = timestamp / json_format->timestamp_divisor;
 		}
 		cJSON_AddItemToObject(json, json_format->timestamp.name, cJSON_CreateNumber(timestamp));
 	}
