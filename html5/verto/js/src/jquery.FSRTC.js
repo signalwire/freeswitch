@@ -767,7 +767,13 @@
         };
 
         // attachStream = MediaStream;
-        if (options.attachStream) peer.addStream(options.attachStream);
+        if (options.attachStream) {
+          // FreeSWITCH currently orders its answer SDP such that audio m-lines
+          // always come first, adding the tracks to the peer in that order
+          // prevents possible m-line ordering validation errors on the client.
+          options.attachStream.getAudioTracks().forEach(function(track) { peer.addTrack(track, options.attachStream) });
+          options.attachStream.getVideoTracks().forEach(function(track) { peer.addTrack(track, options.attachStream) });
+        }
 
         // attachStreams[0] = audio-stream;
         // attachStreams[1] = video-stream;
