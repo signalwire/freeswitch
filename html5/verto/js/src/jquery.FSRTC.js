@@ -778,7 +778,7 @@
         // attachStreams[0] = audio-stream;
         // attachStreams[1] = video-stream;
         // attachStreams[2] = screen-capturing-stream;
-        if (options.attachStreams && options.attachStream.length) {
+        if (options.attachStreams && options.attachStreams.length) {
             var streams = options.attachStreams;
             for (var i = 0; i < streams.length; i++) {
                 peer.addStream(streams[i]);
