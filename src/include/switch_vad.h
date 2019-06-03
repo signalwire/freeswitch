@@ -49,6 +49,7 @@ SWITCH_DECLARE(switch_vad_t *) switch_vad_init(int sample_rate, int channels);
 SWITCH_DECLARE(int) switch_vad_set_mode(switch_vad_t *vad, int mode);
 SWITCH_DECLARE(void) switch_vad_set_param(switch_vad_t *vad, const char *key, int val);
 SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t *data, unsigned int samples);
+SWITCH_DECLARE(switch_vad_state_t) switch_vad_get_state(switch_vad_t *vad);
 SWITCH_DECLARE(void) switch_vad_reset(switch_vad_t *vad);
 SWITCH_DECLARE(void) switch_vad_destroy(switch_vad_t **vad);
 

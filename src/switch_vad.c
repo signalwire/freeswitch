@@ -241,6 +241,12 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	return vad->vad_state;
 }
 
+SWITCH_DECLARE(switch_vad_state_t) switch_vad_get_state(switch_vad_t *vad) 
+{
+
+	return vad->vad_state;
+}
+
 SWITCH_DECLARE(void) switch_vad_destroy(switch_vad_t **vad)
 {
 	if (*vad) {
