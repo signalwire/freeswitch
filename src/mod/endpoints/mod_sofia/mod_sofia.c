@@ -502,7 +502,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh,
-				        TAG_IF(tech_pvt->record_route, NUTAG_PROXY(tech_pvt->record_route)),
+				        TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 						SIPTAG_CONTACT(SIP_NONE),
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
