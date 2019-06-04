@@ -5223,9 +5223,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
-
 				/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
-				if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE)) {
+				if (switch_channel_wait_for_app_flag(channel, CF_APP_T38_POSSIBLE, "T38", SWITCH_TRUE, 2000)) {
 					fmatch = 1;
 				} else {
 

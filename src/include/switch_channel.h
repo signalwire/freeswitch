@@ -101,6 +101,9 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *oth
 SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel,
 															 switch_channel_flag_t want_flag,
 															 switch_bool_t pres, uint32_t to, switch_channel_t *super_channel);
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_app_flag(switch_channel_t *channel,
+																 uint32_t app_flag,
+																 const char *key, switch_bool_t pres, uint32_t to);
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);
