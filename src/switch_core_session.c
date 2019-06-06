@@ -2822,10 +2822,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 
 	if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "EXECUTE [depth=%d] %s %s(%s)\n",
 					  switch_core_session_stack_count(session, 0), switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE [depth=%d] %s %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_INFO, "EXECUTE [depth=%d] %s %s(%s)\n",
 					  switch_core_session_stack_count(session, 0), switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	}
 
