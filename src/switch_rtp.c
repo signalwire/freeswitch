@@ -445,6 +445,7 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
+	switch_rtcp_video_stats_t rtcp_vstats;
 	uint32_t clean_stream;
 	uint32_t bad_stream;
 	uint32_t recovering_stream;
@@ -2195,9 +2196,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP PLI %u %u\n",
-								  rtp_session->ssrc, rtp_session->remote_ssrc);
+				rtp_session->rtcp_vstats.video_in.pli_count++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP PLI %u %u [%u]\n",
+								  rtp_session->ssrc, rtp_session->remote_ssrc, rtp_session->rtcp_vstats.video_in.pli_count);
 
 				ext_hdr->length = htons((uint8_t)(sizeof(switch_rtcp_ext_hdr_t) / 4) - 1);
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t);
@@ -2207,6 +2208,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && nack_ttl > 0) {
 				int n = 0;
 
+				rtp_session->rtcp_vstats.video_in.nack_count++;
 				for (n = 0; n < nack_ttl; n++) {
 					switch_rtcp_ext_hdr_t *ext_hdr;
 					uint32_t *nack;
@@ -2266,7 +2268,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				fir->seq = rtp_session->fir_seq;
 				fir->r1 = fir->r2 = fir->r3 = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP FIR SEQ %d\n", rtp_session->fir_seq);
+				rtp_session->rtcp_vstats.video_in.fir_count++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP FIR SEQ %d [%u]\n", rtp_session->fir_seq, rtp_session->rtcp_vstats.video_in.fir_count);
 
 				rtp_session->fir_seq++;
 
@@ -6504,7 +6507,6 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t *msg, switch_size_t bytes)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int i;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
 					  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d pad %d\n",

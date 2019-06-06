@@ -718,6 +718,21 @@ typedef struct {
 } switch_rtcp_numbers_t;
 
 typedef struct {
+	uint16_t nack_count; 
+	uint16_t fir_count;
+	uint16_t pli_count;
+	uint16_t sr_count;
+	uint16_t rr_count;
+} switch_rtcp_video_counters_t;
+
+typedef struct {
+	/* counters and stats for the incoming video stream and outgoing RTCP*/
+	switch_rtcp_video_counters_t video_in;
+	/* counters and stats for the outgoing video stream and incoming RTCP*/
+	switch_rtcp_video_counters_t video_out;
+} switch_rtcp_video_stats_t;
+
+typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
 	switch_rtcp_numbers_t rtcp;
