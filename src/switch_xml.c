@@ -3213,7 +3213,7 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	return time_match;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language) {
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_language_ex(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language) {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_xml_locate("languages", NULL, NULL, NULL, root, node, params, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
@@ -3267,6 +3267,25 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, s
 	status = SWITCH_STATUS_SUCCESS;
 
 done:
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language) {
+	switch_status_t status;
+
+	if ((status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language)) != SWITCH_STATUS_SUCCESS) {
+		char *str_language_dup = strdup(str_language);
+		char *secondary;
+		if ((secondary = strchr(str_language_dup, '-'))) {
+			*secondary++ = '\0';
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "language %s not found. trying %s by removing %s\n", str_language, str_language_dup, secondary);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "lang", str_language_dup);
+			status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language_dup);
+		}
+		switch_safe_free(str_language_dup);
+	}
+
 	return status;
 }
 

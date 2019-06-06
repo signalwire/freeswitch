@@ -190,6 +190,18 @@ AC_ARG_ENABLE(test-suites,
     [enable_test_suites="$enableval"],
     [enable_test_suites="no"])
 
+#  Enable clang address sanitizer bit build
+AC_ARG_ENABLE(address_sanitizer,
+  [AC_HELP_STRING([--enable-address-sanitizer],[build with address sanitizer])],
+  [enable_address_sanitizer="$enable_address_sanitizer"],
+  [enable_address_sanitizer="no"])
+
+if test "${enable_address_sanitizer}" = "yes"; then
+  APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+  APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+  APR_ADDTO(LDFLAGS, -fsanitize=address)
+fi
+
 AM_CONDITIONAL([TEST_SUITES],[test "${enable_test_suites}" != "no"])
 
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])

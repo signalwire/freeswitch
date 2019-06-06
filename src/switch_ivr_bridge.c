@@ -1259,7 +1259,20 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
 	} else {
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		int hup = 1;
+		const char *var;
+		
+		if (switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+			switch_ivr_park_session(session);
+			hup = 0;
+		} else if ((var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+			transfer_after_bridge(session, var);
+			hup = 0;
+		}
+		
+		if (hup) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		}
 	}
 
  done:

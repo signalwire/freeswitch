@@ -154,11 +154,6 @@ AC_FUNC_VPRINTF
 AC_FUNC_MEMCMP
 AC_FUNC_MEMMOVE
 
-if test "${ax_cv_c_compiler_vendor}" = "gnu"
-  then
-    AC_FUNC_REALLOC
-    AC_FUNC_MALLOC
-fi
 AC_FUNC_SELECT_ARGTYPES
 
 AX_C99_FUNC_LRINT

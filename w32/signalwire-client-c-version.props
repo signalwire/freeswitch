@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <signalwire-client-cVersion>1.0.0</signalwire-client-cVersion>
+    <signalwire-client-cVersion>1.2.0</signalwire-client-cVersion>
   </PropertyGroup>
   <PropertyGroup>
     <signalwire-client-cVersionImported>true</signalwire-client-cVersionImported>

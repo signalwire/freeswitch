@@ -377,7 +377,9 @@ typedef enum {
 	SCF_DEBUG_SQL = (1 << 21),
 	SCF_API_EXPANSION = (1 << 22),
 	SCF_SESSION_THREAD_POOL = (1 << 23),
-	SCF_DIALPLAN_TIMESTAMPS = (1 << 24)
+	SCF_DIALPLAN_TIMESTAMPS = (1 << 24),
+	SCF_CPF_SOFT_PREFIX = (1 << 25),
+	SCF_CPF_SOFT_LOOKUP = (1 << 26)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -554,7 +556,7 @@ struct switch_filenames {
 typedef struct switch_filenames switch_filenames;
 SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 
-#define SWITCH_MAX_STACKS 16
+#define SWITCH_MAX_STACKS 32
 #define SWITCH_THREAD_STACKSIZE 240 * 1024
 #define SWITCH_SYSTEM_THREAD_STACKSIZE 8192 * 1024
 #define SWITCH_MAX_INTERVAL 120	/* we only do up to 120ms */
@@ -578,7 +580,9 @@ typedef enum {
 	SWITCH_CPF_NONE = 0,
 	SWITCH_CPF_SCREEN = (1 << 0),
 	SWITCH_CPF_HIDE_NAME = (1 << 1),
-	SWITCH_CPF_HIDE_NUMBER = (1 << 2)
+	SWITCH_CPF_HIDE_NUMBER = (1 << 2),
+	SWITCH_CPF_SOFT_PREFIX = (1 << 3),
+	SWITCH_CPF_SOFT_LOOKUP = (1 << 4)
 } switch_caller_profile_flag_enum_t;
 typedef uint32_t switch_caller_profile_flag_t;
 
@@ -712,6 +716,21 @@ typedef struct {
 	uint32_t last_recv_lsr_peer;  /* RTT calculation, When receiving an SR we extract the middle 32bits of the remote NTP timestamp to include it in the next SR LSR */
 	uint32_t init;
 } switch_rtcp_numbers_t;
+
+typedef struct {
+	uint16_t nack_count; 
+	uint16_t fir_count;
+	uint16_t pli_count;
+	uint16_t sr_count;
+	uint16_t rr_count;
+} switch_rtcp_video_counters_t;
+
+typedef struct {
+	/* counters and stats for the incoming video stream and outgoing RTCP*/
+	switch_rtcp_video_counters_t video_in;
+	/* counters and stats for the outgoing video stream and incoming RTCP*/
+	switch_rtcp_video_counters_t video_out;
+} switch_rtcp_video_stats_t;
 
 typedef struct {
 	switch_rtp_numbers_t inbound;
@@ -1573,6 +1592,7 @@ typedef enum {
 	CF_STREAM_CHANGED,
 	CF_ARRANGED_BRIDGE,
 	CF_STATE_REPEAT,
+	CF_WANT_DTLSv1_2,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -2170,7 +2190,13 @@ typedef enum {
 	SWITCH_CAUSE_INVALID_URL = 610,
 	SWITCH_CAUSE_INVALID_PROFILE = 611,
 	SWITCH_CAUSE_NO_PICKUP = 612,
-	SWITCH_CAUSE_SRTP_READ_ERROR = 613
+	SWITCH_CAUSE_SRTP_READ_ERROR = 613,
+	SWITCH_CAUSE_BOWOUT = 614,
+	SWITCH_CAUSE_BUSY_EVERYWHERE = 615,
+	SWITCH_CAUSE_DECLINE = 616,
+	SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
+	SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
+	SWITCH_CAUSE_UNWANTED = 619
 } switch_call_cause_t;
 
 typedef enum {
@@ -2642,7 +2668,8 @@ typedef enum {
 typedef enum {
 	ICE_GOOGLE_JINGLE = (1 << 0),
 	ICE_VANILLA = (1 << 1),
-	ICE_CONTROLLED = (1 << 2)
+	ICE_CONTROLLED = (1 << 2),
+	ICE_LITE = (1 << 3)
 } switch_core_media_ice_type_t;
 
 typedef enum {

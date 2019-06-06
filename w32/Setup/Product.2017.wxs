@@ -29,6 +29,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product Id="b004a325-1272-47e5-a415-a74e9fc99865" Name="$(var.ProductName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="FreeSWITCH" UpgradeCode="3af7020b-1348-45e8-a0cf-80909d4eb421">
 		<Package InstallerVersion="405" Compressed="yes" />
+		<WixVariable Id="WixUILicenseRtf" Value="..\..\docs\COPYING.rtf" />
 
 		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
@@ -42,15 +43,37 @@
 		  </DirectorySearch>
 		</Property>
 
+		<Binary Id="CustomActionDownloadOpenH264" SourceFile="CustomActions\Setup.CA.DownloadOpenH264\bin\Setup.CA.DownloadOpenH264.CA.dll" />
+		<CustomAction Id="SetForCustomActionDownloadOpenH264" Return="check" Property="CustomActionDownloadOpenH264" Value="location=[INSTALLLOCATION]"/>
+		<CustomAction Id="CustomActionDownloadOpenH264" BinaryKey="CustomActionDownloadOpenH264" DllEntry="DownloadOpenH264" Execute="deferred" Impersonate="no" Return="check" HideTarget="yes"/>
+
+		<CustomAction Id="SetForCustomActionRemoveOpenH264Binary" Return="check" Property="CustomActionRemoveOpenH264Binary" Value="location=[INSTALLLOCATION]"/>
+		<CustomAction Id="CustomActionRemoveOpenH264Binary" BinaryKey="CustomActionDownloadOpenH264" DllEntry="RemoveOpenH264Binary" Execute="deferred" Impersonate="no" Return="check" HideTarget="yes"/>
+
+		<UI>
+		  <ProgressText Action="CustomActionDownloadOpenH264">Downloading OpenH264 Video Codec provided by Cisco Systems, Inc.</ProgressText>
+		</UI>
+
 		<InstallExecuteSequence>
 		  <Custom Action='CheckForUCRT' Before='LaunchConditions'>
 			<![CDATA[Not REMOVE="ALL" AND UCRTINSTALLED = ""]]>
 		  </Custom>
+		  <Custom Action="SetForCustomActionDownloadOpenH264" Before="CustomActionDownloadOpenH264" />
+		  <Custom Action="CustomActionDownloadOpenH264" Before="InstallFinalize"> <![CDATA[&DownloadOpenH264TaskFeature=3]]> AND ((NOT (REMOVE="ALL")) OR (REINSTALL="ALL"))
+		  </Custom>
+
+		  <Custom Action="SetForCustomActionRemoveOpenH264Binary" Before="CustomActionRemoveOpenH264Binary" />
+		  <Custom Action="CustomActionRemoveOpenH264Binary" After="InstallInitialize"> (<![CDATA[&DownloadOpenH264TaskFeature=2]]> AND (Installed OR MaintenanceMode="Modify")) OR ((NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL"))
+		  </Custom>
+
 		</InstallExecuteSequence>
 
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
 				<Directory Id="INSTALLLOCATION" Name="FreeSWITCH">
+					<Component Id="openh264licence" Guid="CF3DBA7A-5DDB-45DC-823B-54C52D4A6188">
+						<File Id="openh264licence" KeyPath="yes" Source="..\..\docs\OPENH264_BINARY_LICENSE.txt" />
+					</Component>
 					 <Directory Id="MODLOCATION" Name="mod">
 					 </Directory>
 					 <Directory Id="CONFLOCATION" Name="conf">
@@ -120,6 +143,11 @@
 			<?if $(var.Platform) = x64 ?>
 			  <MergeRef Id="CrtFiles_x64"/>
 			<?endif ?>
+		</Feature>
+		<Feature Id="DownloadOpenH264TaskFeature" Title="Download OpenH264 Binary" Level="1" Absent="allow"
+				Description="OpenH264 Video Codec provided by Cisco Systems, Inc. (This is required for mod_av, but you can always disable that module later and not download OpenH264 codec now)"
+		>
+			<ComponentRef Id="openh264licence" />
 		</Feature>
 		<Feature Id="ProductFeatureFreeSWITCH" Title="FreeSWITCH" Level="1"
 				Description = "FreeSWITCH Console Application Shortcut"

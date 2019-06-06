@@ -270,6 +270,9 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t *channel, const char *name, const char *val);
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_log_tag(switch_channel_t *channel, const char *tagname, const char *tagvalue);
+SWITCH_DECLARE(switch_status_t) switch_channel_get_log_tags(switch_channel_t *channel, switch_event_t **log_tags);
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,

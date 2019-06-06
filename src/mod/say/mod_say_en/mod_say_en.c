@@ -355,6 +355,11 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		break;
 	}
 
+	if (say_date) {
+		say_year = say_month = say_day = say_dow = 1;
+		say_today = say_yesterday = 0;
+	}
+
 	if (say_today) {
 		switch_say_file(sh, "time/today");
 	}
@@ -364,12 +369,6 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	if (say_dow) {
 		switch_say_file(sh, "time/day-%d", tm.tm_wday);
 	}
-
-	if (say_date) {
-		say_year = say_month = say_day = say_dow = 1;
-		say_today = say_yesterday = 0;
-	}
-
 	if (say_month) {
 		switch_say_file(sh, "time/mon-%d", tm.tm_mon);
 	}

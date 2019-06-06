@@ -318,7 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod);
   \param err pointer to error message
   \return the status
 */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, switch_bool_t force, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(const char *dir, const char *fname, switch_bool_t force, const char **err);
 
 /* Prototypes of module interface functions */
 
@@ -328,7 +328,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(switch_loadable_module_interface_t ** module_interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(switch_loadable_module_interface_t ** module_interface, const char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 
 /*!

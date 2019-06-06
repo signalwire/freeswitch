@@ -15,6 +15,7 @@ audio/mpg					mp3
 audio/x-mpegaudio				mp3
 audio/x-wave					wav
 audio/wave					wav
+audio/wav					wav
 #
 # The section below was taken from Apache httpd Project at
 # <https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <Import Project="solution_configuration.props" Condition=" '$(SolutionConfigurationPropsImported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup>
+    <downloadOpenh264PropsImported>true</downloadOpenh264PropsImported>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+
+       archivecontains: Default value is "tarball", if empty.
+                        Any different non-empty value will disable double archive extraction
+   -->
+
+  <Target Name="openh264DownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2"
+           expectfileordirectory="$(BaseDir)$(Platform)\$(SolutionConfiguration)\openh264.dll"
+           outputfolder=""
+           outputfilename="openh264.dll.bz2"
+           extractto="$(BaseDir)$(Platform)\$(SolutionConfiguration)\"
+           archivecontains="binary"
+      />
+  </Target>
+
+</Project>

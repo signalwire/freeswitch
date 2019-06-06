@@ -124,6 +124,12 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{"INVALID_PROFILE", SWITCH_CAUSE_INVALID_PROFILE},
 	{"NO_PICKUP", SWITCH_CAUSE_NO_PICKUP},
 	{"SRTP_READ_ERROR", SWITCH_CAUSE_SRTP_READ_ERROR},
+	{"BOWOUT", SWITCH_CAUSE_BOWOUT},
+	{"BUSY_EVERYWHERE", SWITCH_CAUSE_BUSY_EVERYWHERE},
+	{"DECLINE", SWITCH_CAUSE_DECLINE},
+	{"DOES_NOT_EXIST_ANYWHERE", SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE},
+	{"NOT_ACCEPTABLE", SWITCH_CAUSE_NOT_ACCEPTABLE},
+	{"UNWANTED", SWITCH_CAUSE_UNWANTED},
 	{NULL, 0}
 };
 
@@ -176,6 +182,7 @@ struct switch_channel {
 	switch_hold_record_t *hold_record;
 	switch_device_node_t *device_node;
 	char *device_id;
+	switch_event_t *log_tags;
 };
 
 static void process_device_hup(switch_channel_t *channel);
@@ -741,6 +748,9 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 	switch_event_destroy(&channel->api_list);
 	switch_event_destroy(&channel->var_list);
 	switch_event_destroy(&channel->app_list);
+	if (channel->log_tags) {
+		switch_event_destroy(&channel->log_tags);
+	}
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
@@ -1412,6 +1422,40 @@ SWITCH_DECLARE(void) switch_channel_set_presence_data_vals(switch_channel_t *cha
 	switch_safe_free(data_copy);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_log_tag(switch_channel_t *channel, const char *tagname, const char *tagvalue)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_assert(channel != NULL);
+	switch_mutex_lock(channel->profile_mutex);
+	if (!zstr(tagname)) {
+		if (!channel->log_tags) {
+			switch_event_create_plain(&channel->log_tags, SWITCH_EVENT_CHANNEL_DATA);
+		}
+		if (zstr(tagvalue)) {
+			switch_event_del_header(channel->log_tags, tagname);
+		} else {
+			switch_event_add_header_string(channel->log_tags, SWITCH_STACK_BOTTOM, tagname, tagvalue);
+		}
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_get_log_tags(switch_channel_t *channel, switch_event_t **log_tags)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_assert(channel != NULL);
+	if (!channel->log_tags) {
+		return status;
+	}
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->log_tags && log_tags) {
+		status = switch_event_dup(log_tags, channel->log_tags);
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check)

@@ -32,6 +32,8 @@
  */
 #include "mod_kazoo.h"
 
+#define MAX_FRAMING 4
+
 /* Blatantly repurposed from switch_eventc */
 static char *my_dup(const char *s) {
 	size_t len = strlen(s) + 1;
@@ -48,11 +50,26 @@ static char *my_dup(const char *s) {
 static const char* private_headers[] = {"variable_sip_h_", "sip_h_", "P-", "X-"};
 
 static int is_private_header(const char *name) {
-	for(int i=0; i < 4; i++) {
+	int i;
+	for(i=0; i < 4; i++) {
 		if(!strncmp(name, private_headers[i], strlen(private_headers[i]))) {
 			return 1;
 		}
 	}
+	return 0;
+}
+
+static int is_kazoo_var(char* header)
+{
+	int idx = 0;
+	while(kazoo_globals.kazoo_var_prefixes[idx] != NULL) {
+		char *prefix = kazoo_globals.kazoo_var_prefixes[idx];
+		if(!strncasecmp(header, prefix, strlen(prefix))) {
+			return 1;
+		}
+		idx++;
+	}
+
 	return 0;
 }
 
@@ -73,7 +90,7 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
 			continue;
 		}
 
-		if (strncmp(header->name, kazoo_globals.kazoo_var_prefix, kazoo_globals.var_prefix_length)
+		if (!is_kazoo_var(header->name)
 			&& filter
 			&& !switch_core_hash_find(filter, header->name)
 			&& (!kazoo_globals.send_all_headers)
@@ -102,51 +119,115 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
     return SWITCH_STATUS_SUCCESS;
 }
 
-static void event_handler(switch_event_t *event) {
+static int encode_event_old(switch_event_t *event, ei_x_buff *ebuf) {
 	switch_event_t *clone = NULL;
-	ei_event_stream_t *event_stream = (ei_event_stream_t *) event->bind_user_data;
+
+	if (kazoo_event_dup(&clone, event, kazoo_globals.event_filter) != SWITCH_STATUS_SUCCESS) {
+		return 0;
+	}
+
+	ei_encode_switch_event(ebuf, clone);
+
+	switch_event_destroy(&clone);
+
+	return 1;
+}
+
+static int encode_event_new(switch_event_t *event, ei_x_buff *ebuf) {
+	kazoo_message_ptr msg = NULL;
+	ei_event_binding_t *event_binding = (ei_event_binding_t *) event->bind_user_data;
+
+	msg =  kazoo_message_create_event(event, event_binding->event, kazoo_globals.events);
+
+	if(msg == NULL) {
+		return 0;
+	}
+
+	ei_x_encode_tuple_header(ebuf, 3);
+	ei_x_encode_atom(ebuf, "event");
+	if(kazoo_globals.json_encoding == ERLANG_TUPLE) {
+		ei_x_encode_atom(ebuf, "json");
+	} else {
+		ei_x_encode_atom(ebuf, "map");
+	}
+	ei_encode_json(ebuf, msg->JObj);
+
+	kazoo_message_destroy(&msg);
+
+	return 1;
+}
+
+/*
+ * event_handler is duplicated when there are 2+ nodes connected
+ * with the same bindings
+ * we should maintain a list of event_streams in event_binding struct
+ * and build a ref count in the message
+ *
+ */
+static void event_handler(switch_event_t *event) {
+	ei_event_binding_t *event_binding = (ei_event_binding_t *) event->bind_user_data;
+	ei_event_stream_t *event_stream = event_binding->stream;
+	ei_x_buff *ebuf = NULL;
+	int res = 0;
 
 	/* if mod_kazoo or the event stream isn't running dont push a new event */
 	if (!switch_test_flag(event_stream, LFLAG_RUNNING) || !switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
 		return;
 	}
 
-	if (event->event_id == SWITCH_EVENT_CUSTOM) {
-		ei_event_binding_t *event_binding = event_stream->bindings;
-		unsigned short int found = 0;
+	kz_event_decode(event);
 
-		if (!event->subclass_name) {
-			return;
-		}
-
-		while(event_binding != NULL) {
-			if (event_binding->type == SWITCH_EVENT_CUSTOM) {
-				if(event_binding->subclass_name
-				   && !strcmp(event->subclass_name, event_binding->subclass_name)) {
-					found = 1;
-					break;
-				}
-			}
-			event_binding = event_binding->next;
-		}
-
-		if (!found) {
-			return;
-		}
+	switch_malloc(ebuf, sizeof(*ebuf));
+	if(ebuf == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate erlang buffer for mod_kazoo message\n");
+		return;
 	}
+	memset(ebuf, 0, sizeof(*ebuf));
 
-	/* try to clone the event and push it to the event stream thread */
-	/* TODO: someday maybe the filter comes from the event_stream (set during init only)
-	 * and is per-binding so we only send headers that a process requests */
-	if (kazoo_event_dup(&clone, event, kazoo_globals.event_filter) == SWITCH_STATUS_SUCCESS) {
-		if (switch_queue_trypush(event_stream->queue, clone) != SWITCH_STATUS_SUCCESS) {
-			/* if we couldn't place the cloned event into the listeners */
-			/* event queue make sure we destroy it, real good like */
-			switch_event_destroy(&clone);
+	if(kazoo_globals.event_stream_preallocate > 0) {
+		ebuf->buff = malloc(kazoo_globals.event_stream_preallocate);
+		ebuf->buffsz = kazoo_globals.event_stream_preallocate;
+		ebuf->index = 0;
+		if(ebuf->buff == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not pre-allocate memory for mod_kazoo message\n");
+			switch_safe_free(ebuf);
+			return;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory error: Have a good trip? See you next fall!\n");
+		ei_x_new(ebuf);
 	}
+
+	ebuf->index = MAX_FRAMING;
+
+	ei_x_encode_version(ebuf);
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Node", event_binding->stream->node->peer_nodename);
+
+	if(event_stream->node->legacy) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+		res = encode_event_old(event, ebuf);
+	} else {
+		res = encode_event_new(event, ebuf);
+	}
+
+	if(!res) {
+		ei_x_free(ebuf);
+		switch_safe_free(ebuf);
+		return;
+	}
+
+	if (kazoo_globals.event_stream_preallocate > 0 && ebuf->buffsz > kazoo_globals.event_stream_preallocate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased event stream buffer size to %d\n", ebuf->buffsz);
+	}
+
+	if (switch_queue_trypush(event_stream->queue, ebuf) != SWITCH_STATUS_SUCCESS) {
+			/* if we couldn't place the cloned event into the listeners */
+			/* event queue make sure we destroy it, real good like */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error placing the event in the listeners queue\n");
+		ei_x_free(ebuf);
+		switch_safe_free(ebuf);
+	}
+
 }
 
 static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void *obj) {
@@ -157,11 +238,14 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
     char ipbuf[48];
     const char *ip_addr;
 	void *pop;
-	short event_stream_framing = kazoo_globals.event_stream_framing;
+	short event_stream_framing;
+	short ok = 1;
 
 	switch_atomic_inc(&kazoo_globals.threads);
 
 	switch_assert(event_stream != NULL);
+
+	event_stream_framing = event_stream->event_stream_framing;
 
 	/* figure out what socket we just opened */
 	switch_socket_addr_get(&sa, SWITCH_FALSE, event_stream->acceptor);
@@ -172,13 +256,14 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 					  ,(void *)event_stream, ip_addr, port, event_stream->pid.node, event_stream->pid.creation
 					  ,event_stream->pid.num, event_stream->pid.serial);
 
-	while (switch_test_flag(event_stream, LFLAG_RUNNING) && switch_test_flag(&kazoo_globals, LFLAG_RUNNING)) {
+	while (switch_test_flag(event_stream, LFLAG_RUNNING) && switch_test_flag(&kazoo_globals, LFLAG_RUNNING) && ok) {
 		const switch_pollfd_t *fds;
 		int32_t numfds;
 
 		/* check if a new connection is pending */
 		if (switch_pollset_poll(event_stream->pollset, 0, &numfds, &fds) == SWITCH_STATUS_SUCCESS) {
-			for (int32_t i = 0; i < numfds; i++) {
+			int32_t i;
+			for (i = 0; i < numfds; i++) {
 				switch_socket_t *newsocket;
 
 				/* accept the new client connection */
@@ -201,11 +286,11 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 					event_stream->socket = newsocket;
 
 					switch_socket_addr_get(&sa, SWITCH_TRUE, newsocket);
-					event_stream->local_port = switch_sockaddr_get_port(sa);
+					event_stream->remote_port = switch_sockaddr_get_port(sa);
 					switch_get_addr(event_stream->remote_ip, sizeof (event_stream->remote_ip), sa);
 
 					switch_socket_addr_get(&sa, SWITCH_FALSE, newsocket);
-					event_stream->remote_port = switch_sockaddr_get_port(sa);
+					event_stream->local_port = switch_sockaddr_get_port(sa);
 					switch_get_addr(event_stream->local_ip, sizeof (event_stream->local_ip), sa);
 
 					event_stream->connected = SWITCH_TRUE;
@@ -217,46 +302,38 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 		}
 
 		/* if there was an event waiting in our queue send it to the client */
-		if (switch_queue_pop_timeout(event_stream->queue, &pop, 500000) == SWITCH_STATUS_SUCCESS) {
-			switch_event_t *event = (switch_event_t *) pop;
+		if (switch_queue_pop_timeout(event_stream->queue, &pop, 200000) == SWITCH_STATUS_SUCCESS) {
+			ei_x_buff *ebuf = (ei_x_buff *) pop;
 
 			if (event_stream->socket) {
-				ei_x_buff ebuf;
-				char byte;
-				short i = event_stream_framing;
-				switch_size_t size = 1;
+				switch_size_t size = 1, expected = 0;
+				switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-				if(kazoo_globals.event_stream_preallocate > 0) {
-					ebuf.buff = malloc(kazoo_globals.event_stream_preallocate);
-					ebuf.buffsz = kazoo_globals.event_stream_preallocate;
-					ebuf.index = 0;
-					if(ebuf.buff == NULL) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not pre-allocate memory for mod_kazoo message\n");
-						break;
-					}
-					ei_x_encode_version(&ebuf);
+				if(ebuf->index >= pow(2, 8 * event_stream_framing)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sending frame size %d with insufficient frame capacity, change event_stream_framing here and tcp_packet_type in ecallmgr\n", ebuf->index);
 				} else {
-					ei_x_new_with_version(&ebuf);
+					if(event_stream_framing) {
+						int index = ebuf->index - MAX_FRAMING;
+						char byte;
+						short i = event_stream_framing;
+						while (i) {
+							byte = index >> (8 * --i);
+							ebuf->buff[MAX_FRAMING - i - 1] = byte;
+						}
+					}
+					expected = size = (switch_size_t)ebuf->index - MAX_FRAMING + event_stream_framing;
+					if((status = switch_socket_send(event_stream->socket, ebuf->buff + (MAX_FRAMING - event_stream_framing), &size)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error %d sending event stream\n", status);
+						ok = 0;
+					} else if(expected != size) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error sending event stream, sent bytes is different of expected\n");
+						ok = 0;
+					}
 				}
-
-				ei_encode_switch_event(&ebuf, event);
-
-				if (kazoo_globals.event_stream_preallocate > 0 && ebuf.buffsz > kazoo_globals.event_stream_preallocate) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased event stream buffer size to %d\n", ebuf.buffsz);
-				}
-
-				while (i) {
-					byte = ebuf.index >> (8 * --i);
-					switch_socket_send(event_stream->socket, &byte, &size);
-				}
-
-				size = (switch_size_t)ebuf.index;
-				switch_socket_send(event_stream->socket, ebuf.buff, &size);
-
-				ei_x_free(&ebuf);
 			}
 
-			switch_event_destroy(&event);
+			ei_x_free(ebuf);
+			switch_safe_free(ebuf);
 		}
 	}
 
@@ -272,8 +349,9 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 
 	/* clear and destroy any remaining queued events */
 	while (switch_queue_trypop(event_stream->queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *event = (switch_event_t *) pop;
-		switch_event_destroy(&event);
+		ei_x_buff *ebuf = (ei_x_buff *) pop;
+		ei_x_free(ebuf);
+		switch_safe_free(ebuf);
 	}
 
 	/* remove the acceptor pollset */
@@ -297,11 +375,12 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 	return NULL;
 }
 
-ei_event_stream_t *new_event_stream(ei_event_stream_t **event_streams, const erlang_pid *from) {
+ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool = NULL;
 	ei_event_stream_t *event_stream;
+	ei_event_stream_t **event_streams = &ei_node->event_streams;
 
 	/* create memory pool for this event stream */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -320,6 +399,8 @@ ei_event_stream_t *new_event_stream(ei_event_stream_t **event_streams, const erl
 	event_stream->bindings = NULL;
 	event_stream->pool = pool;
 	event_stream->connected = SWITCH_FALSE;
+	event_stream->node = ei_node;
+	event_stream->event_stream_framing = ei_node->event_stream_framing;
 	memcpy(&event_stream->pid, from, sizeof(erlang_pid));
 	switch_queue_create(&event_stream->queue, MAX_QUEUE_LEN, pool);
 
@@ -443,17 +524,68 @@ switch_status_t remove_event_streams(ei_event_stream_t **event_streams) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t add_event_binding(ei_event_stream_t *event_stream, const switch_event_types_t event_type, const char *subclass_name) {
+void bind_event_profile(ei_event_binding_t *event_binding, kazoo_event_ptr event)
+{
+	switch_event_types_t event_type;
+	while(event != NULL) {
+	   	if (switch_name_event(event->name, &event_type) != SWITCH_STATUS_SUCCESS) {
+	   		event_type = SWITCH_EVENT_CUSTOM;
+	   	}
+	   	if(event_binding->type != SWITCH_EVENT_CUSTOM
+				&& event_binding->type == event_type) {
+				break;
+		}
+		if (event_binding->type == SWITCH_EVENT_CUSTOM
+				&& event_binding->type == event_type
+				&& !strcasecmp(event_binding->subclass_name, event->name)) {
+				break;
+		}
+		event = event->next;
+	}
+	event_binding->event = event;
+	if(event == NULL && (!event_binding->stream->node->legacy)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "event binding to an event without profile in non legacy mode => %s - %s\n",switch_event_name(event_binding->type), event_binding->subclass_name);
+	}
+}
+
+void bind_event_profiles(kazoo_event_ptr event)
+{
+	ei_node_t *ei_node = kazoo_globals.ei_nodes;
+	while(ei_node) {
+		ei_event_stream_t *event_streams = ei_node->event_streams;
+		while(event_streams) {
+			ei_event_binding_t *bindings = event_streams->bindings;
+			while(bindings) {
+				bind_event_profile(bindings, event);
+				bindings = bindings->next;
+			}
+			event_streams = event_streams->next;
+		}
+		ei_node = ei_node->next;
+	}
+}
+
+switch_status_t add_event_binding(ei_event_stream_t *event_stream, const char *event_name) {
 	ei_event_binding_t *event_binding = event_stream->bindings;
+	switch_event_types_t event_type;
+
+	if(!strcasecmp(event_name, "CUSTOM")) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+   	if (switch_name_event(event_name, &event_type) != SWITCH_STATUS_SUCCESS) {
+   		event_type = SWITCH_EVENT_CUSTOM;
+   	}
 
 	/* check if the event binding already exists, ignore if so */
 	while(event_binding != NULL) {
 		if (event_binding->type == SWITCH_EVENT_CUSTOM) {
-			if(subclass_name
-			   && event_binding->subclass_name
-			   && !strcmp(subclass_name, event_binding->subclass_name)) {
-				return SWITCH_STATUS_SUCCESS;
-			}
+			if(event_type == SWITCH_EVENT_CUSTOM
+				&& event_name
+				&& event_binding->subclass_name
+				&& !strcasecmp(event_name, event_binding->subclass_name)) {
+					return SWITCH_STATUS_SUCCESS;
+				}
 		} else if (event_binding->type == event_type) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -467,18 +599,21 @@ switch_status_t add_event_binding(ei_event_stream_t *event_stream, const switch_
 	}
 
 	/* prepare the event binding struct */
+	event_binding->stream = event_stream;
 	event_binding->type = event_type;
-	if (!subclass_name || zstr(subclass_name)) {
-		event_binding->subclass_name = NULL;
+	if(event_binding->type == SWITCH_EVENT_CUSTOM) {
+		event_binding->subclass_name = switch_core_strdup(event_stream->pool, event_name);
 	} else {
-		/* TODO: free strdup? */
-		event_binding->subclass_name = strdup(subclass_name);
+		event_binding->subclass_name = SWITCH_EVENT_SUBCLASS_ANY;
 	}
 	event_binding->next = NULL;
 
+	bind_event_profile(event_binding, kazoo_globals.events->events);
+
+
 	/* bind to the event with a unique ID and capture the event_node pointer */
 	switch_uuid_str(event_binding->id, sizeof(event_binding->id));
-	if (switch_event_bind_removable(event_binding->id, event_type, subclass_name, event_handler, event_stream, &event_binding->node) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind_removable(event_binding->id, event_type, event_binding->subclass_name, event_handler, event_binding, &event_binding->node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to bind to event %s %s!\n"
 						  ,switch_event_name(event_binding->type), event_binding->subclass_name ? event_binding->subclass_name : "");
 		return SWITCH_STATUS_GENERR;

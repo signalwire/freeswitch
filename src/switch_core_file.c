@@ -404,6 +404,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 
 	if (fh->real_channels != fh->channels && (flags & SWITCH_FILE_FLAG_READ) && !(fh->flags & SWITCH_FILE_NOMUX)) {
+		fh->cur_channels = fh->real_channels;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to %d channel%s will occur.\n", fh->real_channels, fh->channels, fh->channels == 1 ? "" : "s");
 	}
 
@@ -639,6 +640,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 	if (fh->pre_buffer) {
 		switch_size_t rlen, blen;
+		switch_size_t datalen_adj = fh->pre_buffer_datalen;
 		switch_status_t status = SWITCH_STATUS_SUCCESS;
 		int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
@@ -646,8 +648,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 		rlen = switch_buffer_inuse(fh->pre_buffer);
 
-		if (rlen >= fh->pre_buffer_datalen) {
-			if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
+		if (fh->pre_buffer_datalen % fh->channels) {
+			datalen_adj = fh->pre_buffer_datalen - (fh->pre_buffer_datalen % fh->channels);
+		}
+
+		if (rlen >= datalen_adj) {
+			if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, datalen_adj))) {
 				if (!asis)
 					blen /= 2;
 				if (fh->channels > 1)

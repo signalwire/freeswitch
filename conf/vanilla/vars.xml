@@ -256,8 +256,8 @@
        127 - BV32
 
   -->
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,VP8"/>
-  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
 
   <!--
       xmpp_client_profile and xmpp_server_profile
@@ -298,7 +298,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
+  <X-PRE-PROCESS cmd="stun-set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
 
   <!-- external_sip_ip
       Used as the public IP address for SDP.
@@ -311,7 +311,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
+  <X-PRE-PROCESS cmd="stun-set" data="external_sip_ip=stun:stun.freeswitch.org"/>
 
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
@@ -431,8 +431,8 @@
 
   <!-- Video Settings -->
   <!-- Setting the max bandwdith -->
-  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=1mb"/>
-  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=1mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=3mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=3mb"/>
 
   <!-- WebRTC Video -->
   <!-- Suppress CNG for WebRTC Audio -->

@@ -94,7 +94,14 @@ typedef struct loopback_private_object loopback_private_t;
 
 static struct {
 	int debug;
-} globals;
+	int early_set_loopback_id;
+	int fire_bowout_event_bridge;
+	int ignore_channel_ready;
+	switch_call_cause_t bowout_hangup_cause;
+	int bowout_controlled_hangup;
+	int bowout_transfer_recordings;
+	int bowout_disable_on_inner_bridge;
+} loopback_globals;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -263,6 +270,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
+		if (loopback_globals.early_set_loopback_id) {
+			switch_channel_set_variable(channel, "loopback_leg", "B");
+			switch_channel_set_variable(channel, "is_loopback", "1");
+		}
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_core_session_destroy(&b_session);
@@ -320,7 +331,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 					if (!zstr(argv[i])) {
 						const char *val = switch_channel_get_variable(channel, argv[i]);
 
-						if(!zstr(val)) {
+						if (!zstr(val)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer variable [%s]=[%s] %s -> %s\n",
 											  argv[i], val, switch_channel_get_name(channel), switch_channel_get_name(tech_pvt->other_channel));
 
@@ -338,6 +349,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		switch_channel_set_variable(channel, "other_loopback_leg_uuid", switch_channel_get_uuid(b_channel));
 		switch_channel_set_variable(b_channel, "other_loopback_leg_uuid", switch_channel_get_uuid(channel));
+		switch_channel_set_variable(b_channel, "other_loopback_from_uuid", switch_channel_get_variable(channel, "loopback_from_uuid"));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(b_session), SWITCH_LOG_DEBUG, "setting other_loopback_from_uuid on b leg to %s\n", switch_channel_get_variable(channel, "loopback_from_uuid"));
 
 		if (switch_core_session_thread_launch(b_session) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error spawning thread\n");
@@ -474,6 +487,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::bowout") == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(channel));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Acquired-UUID", switch_channel_get_uuid(other_channel));
 				switch_event_fire(&event);
 			}
@@ -485,12 +499,14 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 				switch_channel_set_caller_profile(other_channel, clone);
 			}
 
+			switch_channel_set_variable(channel, "loopback_hangup_cause", "bowout");
+			switch_channel_set_variable(tech_pvt->channel, "loopback_bowout_other_uuid", switch_channel_get_uuid(other_channel));
 			switch_channel_caller_extension_masquerade(channel, other_channel, 0);
 			switch_channel_set_state(other_channel, CS_RESET);
 			switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
 			switch_channel_set_state(other_channel, CS_EXECUTE);
 			switch_core_session_rwunlock(other_session);
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+			switch_channel_hangup(channel, loopback_globals.bowout_hangup_cause);
 		}
 	}
 
@@ -588,6 +604,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	case SWITCH_SIG_BREAK:
 		break;
 	case SWITCH_SIG_KILL:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
 		switch_mutex_lock(tech_pvt->mutex);
@@ -599,8 +616,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	default:
 		break;
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -700,7 +715,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	*frame = NULL;
 
 	if (!switch_channel_ready(channel)) {
-		goto end;
+		if (loopback_globals.ignore_channel_ready) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL NOT READY - IGNORED\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL NOT READY\n");
+			goto end;
+		}
 	}
 
 	switch_core_timer_next(&tech_pvt->timer);
@@ -840,6 +860,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		tech_pvt->other_tech_pvt &&
 		switch_test_flag(tech_pvt, TFLAG_BRIDGE) &&
 		!switch_test_flag(tech_pvt, TFLAG_BLEG) &&
+		(!loopback_globals.bowout_disable_on_inner_bridge || !switch_channel_test_flag(tech_pvt->channel, CF_INNER_BRIDGE)) &&
 		switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_BRIDGE) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
@@ -889,8 +910,47 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
 
+					if (loopback_globals.bowout_transfer_recordings) {
+						switch_ivr_transfer_recordings(session, br_a);
+						switch_ivr_transfer_recordings(tech_pvt->other_session, br_b);
+					}
+
+					if (loopback_globals.fire_bowout_event_bridge) {
+						switch_event_t *event = NULL;
+						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::direct") == SWITCH_STATUS_SUCCESS) {
+							switch_channel_event_set_data(tech_pvt->channel, event);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->channel));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_a));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_fire(&event);
+						}
+
+						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::direct") == SWITCH_STATUS_SUCCESS) {
+							switch_channel_event_set_data(tech_pvt->other_channel, event);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->channel));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_a));
+							switch_event_fire(&event);
+						}
+					}
+
 					/* channel_masquerade eat your heart out....... */
 					switch_ivr_uuid_bridge(a_uuid, b_uuid);
+
+					switch_channel_set_variable(tech_pvt->channel, "loopback_hangup_cause", "bridge");
+					switch_channel_set_variable(tech_pvt->channel, "loopback_bowout_other_uuid", switch_channel_get_uuid(ch_a));
+					switch_channel_set_variable(tech_pvt->other_channel, "loopback_hangup_cause", "bridge");
+					switch_channel_set_variable(tech_pvt->other_channel, "loopback_bowout_other_uuid", switch_channel_get_uuid(ch_b));
+
+					if (loopback_globals.bowout_controlled_hangup) {
+						switch_channel_set_flag(tech_pvt->channel, CF_INTERCEPTED);
+						switch_channel_set_flag(tech_pvt->other_channel, CF_INTERCEPTED);
+						switch_channel_hangup(tech_pvt->channel, loopback_globals.bowout_hangup_cause);
+						switch_channel_hangup(tech_pvt->other_channel, loopback_globals.bowout_hangup_cause);
+					}
+
 					good_to_go = 1;
 					switch_mutex_unlock(tech_pvt->mutex);
 				}
@@ -971,6 +1031,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			switch_set_flag_locked(tech_pvt, TFLAG_BRIDGE);
+			if (switch_test_flag(tech_pvt, TFLAG_BLEG)) {
+				if (msg->string_arg) {
+					switch_core_session_t *bridged_session;
+					switch_channel_t *bridged_channel;
+					if ((bridged_session = switch_core_session_force_locate(msg->string_arg)) != NULL) {
+						bridged_channel = switch_core_session_get_channel(bridged_session);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(bridged_session), SWITCH_LOG_DEBUG, "setting other_leg_true_id to %s\n", switch_channel_get_variable(channel, "other_loopback_from_uuid"));
+						switch_channel_set_variable(bridged_channel, "other_leg_true_id", switch_channel_get_variable(channel, "other_loopback_from_uuid"));
+						switch_core_session_rwunlock(bridged_session);
+					}
+				}
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
@@ -1092,6 +1164,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "loopback/%s-a", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);
+			if (loopback_globals.early_set_loopback_id) {
+				switch_channel_set_variable(channel, "loopback_leg", "A");
+				switch_channel_set_variable(channel, "is_loopback", "1");
+			}
 			if (tech_init(tech_pvt, *new_session, session ? switch_core_session_get_read_codec(session) : NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_core_session_destroy(new_session);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1104,6 +1180,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (switch_event_dup(&clone, var_event) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_private(channel, "__loopback_vars__", clone);
+		}
+
+		if (ochannel) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "setting loopback_from_uuid to %s\n", switch_channel_get_uuid(ochannel));
+			switch_channel_set_variable(channel, "loopback_from_uuid", switch_channel_get_uuid(ochannel));
 		}
 
 		if (outbound_profile) {
@@ -1566,6 +1647,62 @@ static switch_io_routines_t null_channel_io_routines = {
 	/*.receive_message */ null_channel_receive_message
 };
 
+switch_status_t load_loopback_configuration(switch_bool_t reload)
+{
+	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	memset(&loopback_globals, 0, sizeof(loopback_globals));
+
+	loopback_globals.bowout_hangup_cause = SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+
+	if ((xml = switch_xml_open_cfg("loopback.conf", &cfg, NULL))) {
+		status = SWITCH_STATUS_SUCCESS;
+
+		if ((x_lists = switch_xml_child(cfg, "settings"))) {
+			for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
+				const char *name = switch_xml_attr(x_list, "name");
+				const char *value = switch_xml_attr(x_list, "value");
+
+				if (zstr(name)) {
+					continue;
+				}
+
+				if (zstr(value)) {
+					continue;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s = %s\n", name, value);
+
+				if (!strcmp(name, "early-set-loopback-id")) {
+					loopback_globals.early_set_loopback_id = switch_true(value);
+				} else if (!strcmp(name, "fire-bowout-on-bridge")) {
+					loopback_globals.fire_bowout_event_bridge = switch_true(value);
+				} else if (!strcmp(name, "ignore-channel-ready")) {
+					loopback_globals.ignore_channel_ready = switch_true(value);
+				} else if (!strcmp(name, "bowout-hangup-cause")) {
+					loopback_globals.bowout_hangup_cause = switch_channel_str2cause(value);
+				} else if (!strcmp(name, "bowout-controlled-hangup")) {
+					loopback_globals.bowout_controlled_hangup = switch_true(value);
+				} else if (!strcmp(name, "bowout-transfer-recording")) {
+					loopback_globals.bowout_transfer_recordings = switch_true(value);
+				} else if (!strcmp(name, "bowout-disable-on-inner-bridge")) {
+					loopback_globals.bowout_disable_on_inner_bridge = switch_true(value);
+				}
+
+			}
+		}
+
+		switch_xml_free(xml);
+	}
+
+	return status;
+}
+
+static void loopback_reload_xml_event_handler(switch_event_t *event)
+{
+	load_loopback_configuration(1);
+}
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
@@ -1576,8 +1713,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	if (switch_event_reserve_subclass("loopback::direct") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "loopback::direct");
+		return SWITCH_STATUS_TERM;
+	}
 
-	memset(&globals, 0, sizeof(globals));
+	load_loopback_configuration(0);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1593,6 +1734,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 
 	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
 
+	if ((switch_event_bind(modname, SWITCH_EVENT_RELOADXML, NULL, loopback_reload_xml_event_handler, NULL) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our reloadxml handler!\n");
+		/* Not such severe to prevent loading */
+	}
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1601,6 +1747,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown)
 {
 
 	switch_event_free_subclass("loopback::bowout");
+	switch_event_free_subclass("loopback::direct");
+	switch_event_unbind_callback(loopback_reload_xml_event_handler);
 
 	return SWITCH_STATUS_SUCCESS;
 }

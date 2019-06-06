@@ -2,7 +2,7 @@
 # Copyright and license
 ##############################################################################
 #
-# Spec file for package freeswitch-sounds-en-us-allison (version 1.0.0-1)
+# Spec file for package freeswitch-sounds-en-us-allison (version 1.0.1-1)
 #
 # Copyright (c) 2009 Patrick Laimbock 
 # Some fixes and additions (c) 2011 Michal Bielicki
@@ -20,7 +20,7 @@
 # Set variables
 ##############################################################################
 
-%define version 1.0.0
+%define version 1.0.1
 %define release 1
 
 %define fsname  freeswitch
@@ -203,6 +203,7 @@ popd
 
 %files -n freeswitch-sounds-en-us-allison-8000
 %defattr(-,root,root,-)
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/alt/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ascii/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/base256/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/conference/8000
@@ -211,10 +212,10 @@ popd
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/en/us/allison/directory/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ivr/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/misc/8000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/phonetic-ascii/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/time/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/voicemail/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/zrtp/8000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/alt/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ascii/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/base256/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/conference/8000/*.wav
@@ -223,13 +224,13 @@ popd
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/en/us/allison/directory/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ivr/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/misc/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/phonetic-ascii/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/time/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/voicemail/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/zrtp/8000/*.wav
 
 %files -n freeswitch-sounds-en-us-allison-16000
 %defattr(-,root,root,-)
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/alt/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ascii/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/base256/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/conference/16000
@@ -238,10 +239,10 @@ popd
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/en/us/allison/directory/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ivr/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/misc/16000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/phonetic-ascii/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/time/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/voicemail/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/zrtp/16000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/alt/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ascii/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/base256/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/conference/16000/*.wav
@@ -250,13 +251,13 @@ popd
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/en/us/allison/directory/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ivr/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/misc/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/phonetic-ascii/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/time/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/voicemail/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/zrtp/16000/*.wav
 
 %files -n freeswitch-sounds-en-us-allison-32000
 %defattr(-,root,root,-)
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/alt/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ascii/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/base256/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/conference/32000
@@ -265,10 +266,10 @@ popd
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/en/us/allison/directory/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ivr/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/misc/32000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/phonetic-ascii/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/time/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/voicemail/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/zrtp/32000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/alt/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ascii/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/base256/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/conference/32000/*.wav
@@ -277,13 +278,13 @@ popd
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/en/us/allison/directory/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ivr/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/misc/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/phonetic-ascii/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/time/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/voicemail/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/zrtp/32000/*.wav
 
 %files -n freeswitch-sounds-en-us-allison-48000
 %defattr(-,root,root,-)
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/alt/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ascii/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/base256/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/conference/48000
@@ -292,10 +293,10 @@ popd
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/en/us/allison/directory/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/ivr/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/misc/48000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/phonetic-ascii/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/time/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/voicemail/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/en/us/allison/zrtp/48000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/alt/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ascii/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/base256/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/conference/48000/*.wav
@@ -304,7 +305,6 @@ popd
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/en/us/allison/directory/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/ivr/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/misc/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/phonetic-ascii/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/time/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/voicemail/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/en/us/allison/zrtp/48000/*.wav
@@ -316,6 +316,9 @@ popd
 ##############################################################################
 
 %changelog
+* Fri Apr 19 2019 Andrey Volk <andrey@signalwire.com> - 1.0.1-1
+- add missing alt folder and remove non-existing items
+- bump up version
 * Tue Jul 25 2017 Mike Jerris <mike@freeswitch.org> - 1.0.0-1
 - update to FHS Layout for FreeSWITCH
 - bump up version

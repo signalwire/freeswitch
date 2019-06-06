@@ -66,7 +66,6 @@ AC_CHECK_TYPES([int8_t,uint8_t,int16_t,uint16_t,int32_t,uint32_t,uint64_t,int64_
 AC_C_CONST
 
 # Checks for library functions.
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset memcpy malloc free]) 
 AC_CHECK_FUNCS([usleep nanosleep])
 AC_CHECK_FUNCS([fopen fread])

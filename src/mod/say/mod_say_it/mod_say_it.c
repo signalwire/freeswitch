@@ -390,7 +390,7 @@ static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, 
 	}
 
 	if (say_date) {
-		say_year = say_month = say_day = say_dow = 1;
+		say_year = say_month = say_day = say_dow = 0;
 		say_today = say_yesterday = 0;
 
 		say_file("time/day-%d.wav", tm.tm_wday);

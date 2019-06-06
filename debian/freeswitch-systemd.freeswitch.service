@@ -3,22 +3,24 @@
 [Unit]
 Description=freeswitch
 Wants=network-online.target
-Requires=syslog.socket network.target local-fs.target
-After=syslog.socket network.target network-online.target local-fs.target
+Requires=network.target local-fs.target
+After=network.target network-online.target local-fs.target
 
 [Service]
 ; service
 Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
 Environment="DAEMON_OPTS=-nonat"
+Environment="USER=freeswitch"
+Environment="GROUP=freeswitch"
 EnvironmentFile=-/etc/default/freeswitch
-ExecStartPre=/bin/chown -R freeswitch:freeswitch /var/lib/freeswitch /var/log/freeswitch /etc/freeswitch /usr/share/freeswitch /var/run/freeswitch
-ExecStart=/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait $DAEMON_OPTS
+ExecStartPre=/bin/chown -R ${USER}:${GROUP} /var/lib/freeswitch /var/log/freeswitch /etc/freeswitch /usr/share/freeswitch /var/run/freeswitch
+ExecStart=/usr/bin/freeswitch -u ${USER} -g ${GROUP} -ncwait ${DAEMON_OPTS}
 TimeoutSec=45s
 Restart=always
 ; exec
-User=root
-Group=daemon
+;User=${USER}
+;Group=${GROUP}
 LimitCORE=infinity
 LimitNOFILE=100000
 LimitNPROC=60000

@@ -435,6 +435,7 @@ static struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
+	int agent_originate_timeout;
 } globals;
 
 #define CC_QUEUE_CONFIGITEM_COUNT 100
@@ -1495,6 +1496,8 @@ static switch_status_t load_config(void)
 				globals.global_database_lock = switch_true(val);
 			} else if (!strcasecmp(var, "cc-instance-id")) {
 				globals.cc_instance_id = strdup(val);
+			} else if (!strcasecmp(var, "agent-originate-timeout")) {
+				globals.agent_originate_timeout = atoi(val);
 			}
 		}
 	}
@@ -1511,8 +1514,10 @@ static switch_status_t load_config(void)
 	}
 
 	if (!globals.global_database_lock) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disabling global database lock\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disabling global database lock\n");
 	}
+
+	if (!globals.agent_originate_timeout) globals.agent_originate_timeout = 60;
 
 	/* Initialize database */
 	if (!(dbh = cc_get_db_handle())) {
@@ -1707,7 +1712,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
 		switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, globals.agent_originate_timeout, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
 
 		/* Search for loopback agent */
 		if (status == SWITCH_STATUS_SUCCESS) {

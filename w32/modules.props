@@ -2,10 +2,11 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="winlibs.props" Condition=" '$(WinlibsPropsImported)' == '' " />
+    <Import Project="solution_configuration.props" Condition=" '$(SolutionConfigurationPropsImported)' == '' " />
   </ImportGroup>
   <PropertyGroup>
-    <OutDir>$(SolutionDir)$(PlatformName)\$(Configuration)\mod\</OutDir>
-    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(PlatformName)\$(SolutionConfiguration)\mod\</OutDir>
+    <IntDir>$(PlatformName)\$(SolutionConfiguration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

@@ -50,11 +50,14 @@ int main(void) {
     hints.ai_socktype = SOCK_STREAM;
     error = getaddrinfo("127.0.0.1", NULL, &hints, &ai);
     if (error) {
+        freeaddrinfo(ai);
         exit(1);
     }
     if (ai->ai_addr->sa_family != AF_INET) {
+        freeaddrinfo(ai);
         exit(1);
     }
+    freeaddrinfo(ai);
     exit(0);
 }
 ],[
@@ -92,12 +95,15 @@ AC_DEFUN([APR_CHECK_GETADDRINFO_ADDRCONFIG], [
 
 int main(int argc, char **argv) {
     struct addrinfo hints, *ai;
+    int ret;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_ADDRCONFIG;
-    return getaddrinfo("localhost", NULL, &hints, &ai) != 0;
+    ret = getaddrinfo("localhost", NULL, &hints, &ai) != 0;
+    freeaddrinfo(ai);
+    return ret;
 }], [apr_cv_gai_addrconfig=yes], 
     [apr_cv_gai_addrconfig=no],
     [apr_cv_gai_addrconfig=no])])

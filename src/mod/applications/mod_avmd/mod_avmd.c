@@ -644,11 +644,11 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 
         case SWITCH_ABC_TYPE_CLOSE:
             avmd_session_close(avmd_session);
-            switch_mutex_lock(avmd_globals.mutex);
+			switch_mutex_lock(avmd_globals.mutex);
             if (avmd_globals.session_n > 0) {
                 --avmd_globals.session_n;
             }
-            switch_mutex_unlock(avmd_globals.mutex);
+			switch_mutex_unlock(avmd_globals.mutex);
             break;
 
         default:
@@ -1151,7 +1151,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No memory pool assigned!\n");
         return SWITCH_STATUS_TERM;
     }
-    switch_mutex_init(&avmd_globals.mutex, SWITCH_MUTEX_DEFAULT, pool);
+    switch_mutex_init(&avmd_globals.mutex, SWITCH_MUTEX_NESTED, pool);
     avmd_globals.pool = pool;
 
     if (avmd_load_xml_configuration(NULL) != SWITCH_STATUS_SUCCESS) {

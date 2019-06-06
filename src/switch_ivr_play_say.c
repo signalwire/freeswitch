@@ -957,9 +957,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	}
 
-	if (read_impl.actual_samples_per_second) {
+	if (read_impl.actual_samples_per_second && fh->native_rate >= 1000) {
 		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / fh->native_rate);
-		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (fh->native_rate/ 1000));
+		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (fh->native_rate / 1000));
 
 	}
 
@@ -1664,7 +1664,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
-			buflen = (FILE_STARTSAMPLES * sizeof(*abuf) * fh->cur_channels) > 0 ? fh->cur_channels : fh->channels;
+			buflen = FILE_STARTSAMPLES * sizeof(*abuf) * (fh->cur_channels > 0 ? fh->cur_channels : fh->channels); 
 
 			if (buflen > write_frame.buflen) {
 				abuf = realloc(abuf, buflen);
@@ -1682,9 +1682,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
 				if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
 					if (eof) {
-						continue;
-					} else {
 						break;
+					} else {
+						continue;
 					}
 				}
 
@@ -1941,10 +1941,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file %s\n", file);
 		switch_channel_set_variable_printf(channel, "playback_last_offset_pos", "%d", fh->offset_pos);
 
-		if (read_impl.samples_per_second) {
+		if (read_impl.samples_per_second && fh->native_rate >= 1000) {
 			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / fh->native_rate);
 			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / (fh->native_rate / 1000));
 		}
+
 		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
 
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_STOP) == SWITCH_STATUS_SUCCESS) {
@@ -2082,7 +2083,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 				switch_channel_set_variable(channel, "wait_for_silence_timeout", "true");
 				switch_channel_set_variable_printf(channel, "wait_for_silence_listenhits", "%d", listening);
 				switch_channel_set_variable_printf(channel, "wait_for_silence_silence_hits", "%d", silence_hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_wait_for_silence: TIMEOUT %d\n", countdown);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_silence: TIMEOUT %d\n", countdown);
 				break;
 			}
 		}
@@ -2104,7 +2105,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		if (countdown) {
 			if (!--countdown) {
 				switch_channel_set_variable(channel, "wait_for_silence_timeout", "false");
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_wait_for_silence: SILENCE DETECTED\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_silence: SILENCE DETECTED\n");
 				break;
 			} else {
 				continue;
@@ -2218,7 +2219,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 			if (sample_count <= 0) {
 				switch_channel_set_variable(channel, "detect_audio_timeout", "true");
 				switch_channel_set_variable_printf(channel, "detect_audio_hits", "%d", hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_detect_audio: TIMEOUT %d hits\n", hits);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_audio: TIMEOUT %d hits\n", hits);
 				break;
 			}
 		}
@@ -2254,7 +2255,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_audio(switch_core_session_t *s
 
 		if (hits > audio_hits) {
 			switch_channel_set_variable(channel, "detect_audio_timeout", "false");
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_detect_audio: AUDIO DETECTED\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_audio: AUDIO DETECTED\n");
 			break;
 		}
 	}
@@ -2345,7 +2346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 			if (sample_count <= 0) {
 				switch_channel_set_variable(channel, "detect_silence_timeout", "true");
 				switch_channel_set_variable_printf(channel, "detect_silence_hits", "%d", hits);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_detect_silence: TIMEOUT %d hits\n", hits);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_silence: TIMEOUT %d hits\n", hits);
 				break;
 			}
 		}
@@ -2381,7 +2382,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_silence(switch_core_session_t 
 
 		if (hits > silence_hits) {
 			switch_channel_set_variable(channel, "detect_silence_timeout", "false");
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_detect_silence: SILENCE DETECTED\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_detect_silence: SILENCE DETECTED\n");
 			break;
 		}
 	}

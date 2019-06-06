@@ -810,10 +810,16 @@ switch_status_t conference_api_sub_hup(conference_member_t *member, switch_strea
 	switch_event_t *event;
 
 	if (member == NULL) {
+		if (stream != NULL) {
+			stream->write_function(stream, "-ERR Invalid member!\n");
+		}
 		return SWITCH_STATUS_GENERR;
 	}
 
 	conference_utils_member_clear_flag(member, MFLAG_RUNNING);
+	if (stream != NULL) {
+		stream->write_function(stream, "+OK hup %u\n", member->id);
+	}
 
 	if (member->conference && test_eflag(member->conference, EFLAG_HUP_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -1852,7 +1858,12 @@ switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_
 	}
 
 	if (canvas_w < 320 || canvas_h < 180) {
-		stream->write_function(stream, "-ERR Invalid size\n");
+		stream->write_function(stream, "-ERR Invalid size, [%dx%d] is too small\n", canvas_w, canvas_h);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (canvas_w > 7680 || canvas_h > 4320) {
+		stream->write_function(stream, "-ERR Invalid size, [%dx%d] is too large.\n", canvas_w, canvas_h);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1877,7 +1888,11 @@ switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_
 		id = 1;
 	}
 
-	conference_video_change_res(conference, canvas_w, canvas_h, id - 1);
+	if (conference_video_change_res(conference, canvas_w, canvas_h, id - 1) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Resolution set to [%dx%d]\n", canvas_w, canvas_h);
+	} else {
+		stream->write_function(stream, "-ERR Resolution not set\n");
+	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3556,9 +3571,9 @@ switch_status_t conference_api_sub_dial(conference_obj_t *conference, switch_str
 	}
 
 	if (conference) {
-		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL);
+		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL, NULL);
 	} else {
-		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL);
+		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL, NULL);
 	}
 	stream->write_function(stream, "+OK Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
 

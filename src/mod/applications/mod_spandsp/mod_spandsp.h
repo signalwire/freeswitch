@@ -110,7 +110,7 @@ typedef enum {
  * TONE DETECTION WITH CADENCE
  */
 
-#define MAX_TONES 32
+#define MAX_TONES 128
 #define STRLEN 128
 /**
  * Tone descriptor

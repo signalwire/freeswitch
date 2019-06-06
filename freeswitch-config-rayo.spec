@@ -28,7 +28,8 @@
 #
 ######################################################################################################################
 
-%define version 1.7.0
+%define nonparsedversion 1.7.0
+%define version %(echo '%{nonparsedversion}' | sed 's/-//g')
 %define release 1
 
 %define fsname freeswitch
@@ -74,7 +75,7 @@ Summary: Rayo configuration for the FreeSWITCH Open Source telephone platform.
 Group: System/Libraries
 Packager: Chris Rienzo
 URL: http://www.freeswitch.org/
-Source0: freeswitch-%{version}.tar.bz2
+Source0: freeswitch-%{nonparsedversion}.tar.bz2
 Requires: freeswitch
 Requires: freeswitch-application-conference
 Requires: freeswitch-application-esf
@@ -103,7 +104,7 @@ BuildRoot:    %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 FreeSWITCH rayo server implementation.
 
 %prep
-%setup -b0 -q -n freeswitch-%{version}
+%setup -b0 -q -n freeswitch-%{nonparsedversion}
 
 %build
 
@@ -164,6 +165,8 @@ FreeSWITCH rayo server implementation.
 #
 ######################################################################################################################
 %changelog
+* Tue Apr 23 2019 - Andrey Volk
+- Fix build for Stack 20.x
 * Tue Jun 10 2014 crienzo@grasshopper.com
 - Remove dependency to high resolution music and sounds files
 - Remove dependency to specific FreeSWITCH package version

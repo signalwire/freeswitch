@@ -468,6 +468,8 @@ static const char *switch_cause_to_rayo_cause(switch_call_cause_t cause)
 		case SWITCH_CAUSE_NO_PICKUP:
 		case SWITCH_CAUSE_SRTP_READ_ERROR:
 			return RAYO_END_REASON_ERROR;
+		default:
+			break;
 	}
 	return RAYO_END_REASON_HANGUP;
 }

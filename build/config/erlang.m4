@@ -75,10 +75,15 @@ then
 				[AC_MSG_ERROR([ei.h is unusable - are the erlang development headers installed?])]
 			)
 		else
+		    ERLANG_MAJOR="`echo "$ERLANG_VER" | sed 's/\([[^.]][[^.]]*\).*/\1/'`"
+            ERLANG_MINOR="`echo "$ERLANG_VER" | sed 's/[[^.]][[^.]]*.\([[^.]][[^.]]*\).*/\1/'`"
 			ERLANG_LDFLAGS="$ERLANG_LDFLAGS -lei"
 			AC_MSG_NOTICE([Your erlang seems OK, do not forget to enable mod_erlang_event in modules.conf])
 			AC_SUBST([ERLANG_CFLAGS],  [$ERLANG_CFLAGS])
 			AC_SUBST([ERLANG_LDFLAGS], [$ERLANG_LDFLAGS])
+            AC_SUBST([ERLANG_VERSION], [$ERLANG_VER])
+            AC_SUBST([ERLANG_MAJOR], [$ERLANG_MAJOR])
+            AC_SUBST([ERLANG_MINOR], [$ERLANG_MINOR])
 			AM_CONDITIONAL([HAVE_ERLANG],[true])
 		fi
 

@@ -76,6 +76,7 @@ void conference_member_bind_controls(conference_member_t *member, const char *co
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Profile", member->conference->profile_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Controls", controls);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(member->session));
 
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", mod_conference_cf_name);
@@ -762,7 +763,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_in_level = id;
@@ -770,7 +771,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_out", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_out_level = id;
@@ -779,15 +780,15 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_energy_level", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var);
+			int id = atoi(var);
 
-			if (id > -5 && id < 5) {
+			if (id > -2 && id < 1801) {
 				member->energy_level = id;
 			}
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			int id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
 				member->canvas_id = id;
 				member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
@@ -795,7 +796,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			int id = atoi(var) - 1;
 
 			if (id == 0) {
 				id = conference->canvas_count;

@@ -54,6 +54,7 @@ struct switch_network_node {
 	switch_bool_t ok;
 	char *token;
 	char *str;
+	switch_network_port_range_t port_range;
 	struct switch_network_node *next;
 };
 typedef struct switch_network_node switch_network_node_t;
@@ -467,7 +468,8 @@ SWITCH_DECLARE(switch_bool_t) switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _ma
 			else return SWITCH_TRUE;
 		}
 }
-SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_network_list_t *list, ip_t ip, const char **token)
+
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_port_token(switch_network_list_t *list, ip_t ip, int port, const char **token)
 {
 	switch_network_node_t *node;
 	switch_bool_t ok = list->default_type;
@@ -494,7 +496,29 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_netw
 	return ok;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token)
+SWITCH_DECLARE(switch_bool_t) is_port_in_node(int port, switch_network_node_t *node)
+{
+	if(port == 0)
+		return SWITCH_TRUE;
+	if(node->port_range.port != 0 && node->port_range.port != port)
+		return SWITCH_FALSE;
+	if(node->port_range.ports[0] != 0) {
+		int i;
+		for(i=0; i < MAX_NETWORK_PORTS && node->port_range.ports[i] != 0; i++) {
+			if(port == node->port_range.ports[i])
+				return SWITCH_TRUE;
+		}
+		return SWITCH_FALSE;
+	}
+	if(node->port_range.min_port != 0 || node->port_range.max_port != 0) {
+		if(port >= node->port_range.min_port && port <= node->port_range.max_port)
+			return SWITCH_TRUE;
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_port_token(switch_network_list_t *list, uint32_t ip, int port, const char **token)
 {
 	switch_network_node_t *node;
 	switch_bool_t ok = list->default_type;
@@ -502,7 +526,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 
 	for (node = list->node_head; node; node = node->next) {
 		if (node->family == AF_INET6) continue; /* want AF_INET */
-		if (node->bits >= bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
+		if (node->bits >= bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4) && is_port_in_node(port, node)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {
@@ -520,6 +544,16 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 	return ok;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_network_list_t *list, ip_t ip, const char **token)
+{
+	return switch_network_list_validate_ip6_port_token(list, ip, 0, token);
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token)
+{
+	return switch_network_list_validate_ip_port_token(list, ip, 0, token);
+}
+
 SWITCH_DECLARE(char *) switch_network_ipv4_mapped_ipv6_addr(const char* ip_str)
 {
 	/* ipv4 mapped ipv6 address */
@@ -531,22 +565,52 @@ SWITCH_DECLARE(char *) switch_network_ipv4_mapped_ipv6_addr(const char* ip_str)
 	return strdup(ip_str + 7);
 }
 
+SWITCH_DECLARE(char*) switch_network_port_range_to_string(switch_network_port_range_p port)
+{
+	if (!port) {
+		return NULL;
+	}
+
+	if (port->port != 0) {
+		return switch_mprintf("port: %i ", port->port);
+	}
+
+	if (port->ports[0] != 0) {
+		int i, written = 0;
+		char buf[MAX_NETWORK_PORTS * 6];
+	    for (i = 0; i < MAX_NETWORK_PORTS && port->ports[i] != 0; i++) {
+	    	written += snprintf(buf + written, sizeof(buf) - written, (i != 0 ? ", %u" : "%u"), port->ports[i]);
+	    }
+		return switch_mprintf("ports: [%s] ", buf);
+	}
+
+	if (port->min_port != 0 || port->max_port != 0) {
+		return switch_mprintf("port range: [%i-%i] ", port->min_port, port->max_port);
+	}
+
+	return NULL;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok,
-																		   const char *token)
+																		   const char *token, switch_network_port_range_p port)
 {
 	ip_t ip, mask;
 	uint32_t bits;
 	switch_network_node_t *node;
 	char *ipv4 = NULL;
+	char *ports = NULL;
 
 	if ((ipv4 = switch_network_ipv4_mapped_ipv6_addr(cidr_str))) {
 		cidr_str = ipv4;
 	}
 
+	ports = switch_network_port_range_to_string(port);
+
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-						  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s %s(%s) [%s] to list %s\n",
+						  cidr_str, ports ? ports : "", ok ? "allow" : "deny", switch_str_nil(token), list->name);
 		switch_safe_free(ipv4);
+		switch_safe_free(ports);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -557,6 +621,10 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switc
 	node->ok = ok;
 	node->bits = bits;
 	node->str = switch_core_strdup(list->pool, cidr_str);
+	if(port) {
+		memcpy(&node->port_range, port, sizeof(switch_network_port_range_t));
+	}
+
 
 	if (strchr(cidr_str,':')) {
 		node->family = AF_INET6;
@@ -571,14 +639,15 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switc
 	node->next = list->node_head;
 	list->node_head = node;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n",
-					  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s %s(%s) [%s] to list %s\n",
+					  cidr_str, ports ? ports : "", ok ? "allow" : "deny", switch_str_nil(token), list->name);
 
 	switch_safe_free(ipv4);
+	switch_safe_free(ports);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_port_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token, switch_network_port_range_p port)
 {
 	char *cidr_str_dup = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -592,20 +661,25 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 		if ((argc = switch_separate_string(cidr_str_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			for (i = 0; i < argc; i++) {
 				switch_status_t this_status;
-				if ((this_status = switch_network_list_perform_add_cidr_token(list, argv[i], ok, token)) != SWITCH_STATUS_SUCCESS) {
+				if ((this_status = switch_network_list_perform_add_cidr_token(list, argv[i], ok, token, port)) != SWITCH_STATUS_SUCCESS) {
 					status = this_status;
 				}
 			}
 		}
 	} else {
-		status = switch_network_list_perform_add_cidr_token(list, cidr_str, ok, token);
+		status = switch_network_list_perform_add_cidr_token(list, cidr_str, ok, token, port);
 	}
 
 	switch_safe_free(cidr_str_dup);
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
+{
+	return switch_network_list_add_cidr_port_token(list, cidr_str, ok, token, NULL);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_port_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok, switch_network_port_range_p port)
 {
 	ip_t ip, mask;
 	switch_network_node_t *node;
@@ -618,6 +692,9 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 	node->ip.v4 = ntohl(ip.v4);
 	node->mask.v4 = ntohl(mask.v4);
 	node->ok = ok;
+	if(port) {
+		memcpy(&node->port_range, port, sizeof(switch_network_port_range_t));
+	}
 
 	/* http://graphics.stanford.edu/~seander/bithacks.html */
 	mask.v4 = mask.v4 - ((mask.v4 >> 1) & 0x55555555);
@@ -630,6 +707,11 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 	list->node_head = node;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
+{
+	return switch_network_list_add_host_port_mask(list, host, mask_str, ok, NULL);
 }
 
 

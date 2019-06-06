@@ -340,6 +340,17 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 		return 487;
 	case SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR:
 		return 483;
+	/* Custom mappings not part of RFC */
+	case SWITCH_CAUSE_BUSY_EVERYWHERE:
+		return 600;
+	case SWITCH_CAUSE_DECLINE:
+		return 603;
+	case SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE:
+		return 604;
+	case SWITCH_CAUSE_NOT_ACCEPTABLE:
+		return 606;
+	case SWITCH_CAUSE_UNWANTED:
+		return 607;
 	default:
 		return 480;
 	}
@@ -502,7 +513,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh,
-				        TAG_IF(tech_pvt->record_route, NUTAG_PROXY(tech_pvt->record_route)),
+				        TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 						SIPTAG_CONTACT(SIP_NONE),
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
@@ -2172,7 +2183,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
-
+			printf("WHAT THE FUCKING HELL? %d\n", switch_channel_test_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE));
 			if (switch_channel_test_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE)) {
 				switch_channel_clear_flag(tech_pvt->channel, CF_AWAITING_STREAM_CHANGE);
 
@@ -2627,7 +2638,7 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 
 typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
-static const char *sofia_state_names[] = {
+const char *sofia_state_names[] = {
 	"UNREGED",
 	"TRYING",
 	"REGISTER",
@@ -2755,7 +2766,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-static uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
+uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
 {
 	struct cb_helper_sql2str cb;
 	char reg_count[80] = "";
@@ -4363,6 +4374,8 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
+	} else if (!strcasecmp(argv[0], "jsonstatus")) {
+		func = cmd_json_status;
 	} else if (!strcasecmp(argv[0], "filter")) {
 	    if (argc > 1) {
 	        if (!strcasecmp(argv[1],"off")) {
@@ -6264,6 +6277,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
 	management_interface->relative_oid = "1001";
 	management_interface->management_function = sofia_manage;
+
+	add_sofia_json_apis(module_interface);
 
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function",
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);

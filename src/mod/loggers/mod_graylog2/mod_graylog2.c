@@ -126,8 +126,13 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 		full_message++;
 	}
 
+	/* get fields from log tags */
+	if (node->tags) {
+		switch_event_dup(&log_fields, node->tags);
+	}
+
 	/* get fields from channel data, if configured */
-	if (!zstr(node->userdata) && (session = switch_core_session_locate(node->userdata))) {
+	if (!zstr(node->userdata) && globals.session_fields->headers && (session = switch_core_session_locate(node->userdata))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_event_header_t *hp;
 		/* session_fields name mapped to variable name */

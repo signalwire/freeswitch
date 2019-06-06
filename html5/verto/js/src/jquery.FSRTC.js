@@ -455,9 +455,11 @@
                     audio: false,
                     video: { deviceId: params.useCamera },
 		},
-		localVideo: self.options.localVideo,
+        localVideo: self.options.localVideo,
+        useCameraLabel: self.options.useCameraLabel,
+        useMicLabel: self.options.useMicLabel,
 		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
-		onerror: function(e) {console.error("local video error!");}
+		onerror: function(e) {console.error("local video error!", e);}
             });
 	}
 
@@ -477,6 +479,8 @@
           video: mediaParams.video
         },
         video: mediaParams.useVideo,
+        useCameraLabel: self.options.useCameraLabel,
+        useMicLabel: self.options.useMicLabel,
         onsuccess: onSuccess,
         onerror: onError
       });
@@ -504,7 +508,7 @@
 
 	    if (obj.options.useMic !== "any") {
 		//audio.optional = [{sourceId: obj.options.useMic}];
-		audio.deviceId = {exact: obj.options.useMic};
+		audio.deviceId = assignMediaIdToConstraint(obj.options.useMic);
 	    }
 	}
 
@@ -514,9 +518,11 @@
                     audio: false,
                     video: { deviceId: obj.options.useCamera },
 		},
-		localVideo: obj.options.localVideo,
+        localVideo: obj.options.localVideo,
+        useCameraLabel: obj.options.useCameraLabel,
+        useMicLabel: obj.options.useMicLabel,
 		onsuccess: function(e) {obj.options.localVideoStream = e; console.log("local video ready");},
-		onerror: function(e) {console.error("local video error!");}
+		onerror: function(e) {console.error("local video error!", e); }
             });
 	}
 
@@ -571,9 +577,7 @@
 		
 		if (obj.options.useCamera !== "any") {
 		    //video.optional.push({sourceId: obj.options.useCamera});
-        video.deviceId = {
-          exact: obj.options.useCamera,
-        };
+        video = assignMediaIdToConstraint(obj.options.useCamera, video);
 		}
 
 		if (bestFrameRate) {
@@ -661,7 +665,6 @@
       onSuccess(self.options.useStream);
     }
     else if (mediaParams.audio || mediaParams.video) {
-
             getUserMedia({
 		constraints: {
                     audio: mediaParams.audio,
@@ -669,7 +672,9 @@
 		},
 		video: mediaParams.useVideo,
 		onsuccess: onSuccess,
-		onerror: onError
+        onerror: onError,
+        useCameraLabel: self.options.useCameraLabel,
+        useMicLabel: self.options.useMicLabel,
             });
 
 	} else {
@@ -762,12 +767,18 @@
         };
 
         // attachStream = MediaStream;
-        if (options.attachStream) peer.addStream(options.attachStream);
+        if (options.attachStream) {
+          // FreeSWITCH currently orders its answer SDP such that audio m-lines
+          // always come first, adding the tracks to the peer in that order
+          // prevents possible m-line ordering validation errors on the client.
+          options.attachStream.getAudioTracks().forEach(function(track) { peer.addTrack(track, options.attachStream) });
+          options.attachStream.getVideoTracks().forEach(function(track) { peer.addTrack(track, options.attachStream) });
+        }
 
         // attachStreams[0] = audio-stream;
         // attachStreams[1] = video-stream;
         // attachStreams[2] = screen-capturing-stream;
-        if (options.attachStreams && options.attachStream.length) {
+        if (options.attachStreams && options.attachStreams.length) {
             var streams = options.attachStreams;
             for (var i = 0; i < streams.length; i++) {
                 peer.addStream(streams[i]);
@@ -977,32 +988,77 @@
     el.style.display = 'none';
   }
 
-    function getUserMedia(options) {
-        var n = navigator,
-        media;
-        n.getMedia = n.getUserMedia;
-        n.getMedia(options.constraints || {
-            audio: true,
-            video: video_constraints
-        },
-        streaming, options.onerror ||
-        function(e) {
-            console.error(e);
-        });
+    function assureConstraintByLabel(constraint, fallbackLabel) {
+        if (fallbackLabel === undefined && constraint === undefined) {
+            return Promise.resolve(constraint);
+        }
 
-        function streaming(stream) {
+        if (typeof(assureMediaInputId) !== 'function') {
+            console.warn('Tried to use constraint fallbacks but did not found vendor function `assureMediaInputId` on window scope. Did you forget to import `vendor/media-device-id.js` before Verto?');
+            return Promise.resolve(constraint);
+        }
+
+        if (typeof(constraint) === 'object' && !constraint.deviceId) {
+            return Promise.resolve(constraint);
+        }
+
+        if (constraint.deviceId) {
+            if (typeof(constraint.deviceId) === 'string') {
+                return new Promise(function(resolve) {
+                    assureMediaInputId(fallbackLabel, constraint.deviceId).then(function(id) {
+                        resolve(Object.assign({}, constraint, { deviceId: id }));
+                    }).catch(function() {
+                        resolve(constraint);
+                    });
+                });
+            }
+
+            if (typeof(constraint.deviceId) === 'object' && typeof(constraint.deviceId.exact) === 'string') {
+                return new Promise(function(resolve) {
+                    assureMediaInputId(fallbackLabel, constraint.deviceId.exact).then(function(id) {
+                        resolve(assignMediaIdToConstraint(id, constraint));
+                    }).catch(function() {
+                        resolve(constraint);
+                    });
+                });
+            }
+        }
+
+        return Promise.resolve(constraint);
+    }
+
+    function trustyGetUserMedia(options, constraints) {
+        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
             if (options.localVideo) {
-        activateLocalVideo(options.localVideo, stream);
+                activateLocalVideo(options.localVideo, stream);
             }
 
             if (options.onsuccess) {
                 options.onsuccess(stream);
             }
+        }).catch(options.onerror || function(e) {
+            console.error(e);
+        });
+    }
 
-            media = stream;
-        }
+    function assignMediaIdToConstraint(mediaId, rest) {
+        return Object.assign({}, rest || {}, { deviceId: { exact: mediaId } });
+    }
 
-        return media;
+    function getUserMedia(options) {
+        var constraints = options.constraints || {
+            audio: true,
+            video: video_constraints,
+        };
+
+        Promise.all([
+            assureConstraintByLabel(constraints.audio, options.useMicLabel),
+            assureConstraintByLabel(constraints.video, options.useCameraLabel),
+        ]).then(function(assurances) {
+            trustyGetUserMedia(options, { audio: assurances[0], video: assurances[1] });
+        }).catch(function(error) {
+            console.error('Unexpected error on media id assurance attempts:', error, 'Options:', options);
+        });
     }
 
     $.FSRTC.resSupported = function(w, h) {
@@ -1056,9 +1112,7 @@
 	};
 
   if (cam !== "any") {
-    video.deviceId = {
-      exact: cam,
-    };
+    video = assignMediaIdToConstraint(cam, video);
   }
 
 	getUserMedia({

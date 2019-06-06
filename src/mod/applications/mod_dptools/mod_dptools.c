@@ -587,6 +587,23 @@ SWITCH_STANDARD_APP(sched_heartbeat_function)
 
 }
 
+#define FILTER_CODECS_SYNTAX "<codec string>"
+SWITCH_STANDARD_APP(filter_codecs_function)
+{
+	const char *r_sdp;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	
+	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+	
+	if (data && r_sdp) {
+		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST, data);
+		switch_channel_set_variable(channel, "filter_codec_string", data);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Incomplete data\n");
+	}
+}
+
 
 #define HEARTBEAT_SYNTAX "[0|<seconds>]"
 SWITCH_STANDARD_APP(heartbeat_function)
@@ -2913,6 +2930,50 @@ SWITCH_STANDARD_APP(phrase_function)
 }
 
 
+SWITCH_STANDARD_APP(broadcast_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char * uuid = switch_channel_get_uuid(channel);
+	switch_media_flag_t flags = SMF_ECHO_ALEG | SMF_ECHO_BLEG;
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid args for broadcast app\n");
+		return;
+	}
+
+	mycmd = switch_core_session_strdup(session, data);
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc > 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid args for broadcast app [%s]\n", data);
+		return;
+	} else {
+		if (argv[1]) {
+			if (switch_stristr("both", (argv[1]))) {
+				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+			}
+
+			if (switch_stristr("aleg", argv[1])) {
+				flags |= SMF_ECHO_ALEG;
+			}
+
+			if (switch_stristr("bleg", argv[1])) {
+				flags &= ~SMF_HOLD_BLEG;
+				flags |= SMF_ECHO_BLEG;
+			}
+
+			if (switch_stristr("holdb", argv[1])) {
+				flags &= ~SMF_ECHO_BLEG;
+				flags |= SMF_HOLD_BLEG;
+			}
+		}
+		switch_ivr_broadcast(uuid, argv[0], flags);
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "BROADCAST_SENT");
+	}
+}
+
 SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
@@ -3190,40 +3251,43 @@ SWITCH_STANDARD_APP(record_session_unmask_function)
 
 SWITCH_STANDARD_APP(record_session_function)
 {
+	char *array[5] = {0};
+	char *args = NULL;
+	int argc;
+
 	char *path = NULL;
-	char *path_end;
 	uint32_t limit = 0;
+	switch_event_t *vars = NULL;
+	char *new_fp = NULL;
 
 	if (zstr(data)) {
 		return;
 	}
 
-	path = switch_core_session_strdup(session, data);
+	args = switch_core_session_strdup(session, data);
+	argc = switch_split(args, ' ', array);
 
-	/* Search for a space then a plus followed by only numbers at the end of the path,
-	   if found trim any spaces to the left/right of the plus use the left side as the
-	   path and right side as a time limit on the recording
-	 */
+	if (argc == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "usage: <path> [+<timeout>] [{var1=x,var2=y}]\n");
+	}
 
-	/* if we find a + and the character before it is a space */
-	if ((path_end = strrchr(path, '+')) && path_end > path && *(path_end - 1) == ' ') {
-		char *limit_start = path_end + 1;
+	path = array[0];
 
-		/* not at the end and the rest is numbers lets parse out the limit and fix up the path */
-		if (*limit_start != '\0' && switch_is_number(limit_start) == SWITCH_TRUE) {
-			limit = atoi(limit_start);
-			/* back it off by one character to the char before the + */
-			path_end--;
-
-			/* trim spaces to the left of the plus */
-			while (path_end > path && *path_end == ' ') {
-				path_end--;
+	if (argc > 1) {
+		if (*array[1] == '+') {
+			limit = atoi(++array[1]);
+			if (argc > 2) {
+				switch_url_decode(array[2]);
+				switch_event_create_brackets(array[2], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
 			}
-
-			*(path_end + 1) = '\0';
+		} else {
+			switch_url_decode(array[1]);
+			switch_event_create_brackets(array[1], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
 		}
 	}
-	switch_ivr_record_session(session, path, limit, NULL);
+
+	switch_ivr_record_session_event(session, path, limit, NULL, vars);
+	switch_event_safe_destroy(vars);
 }
 
 SWITCH_STANDARD_APP(stop_record_session_function)
@@ -5646,7 +5710,7 @@ void *SWITCH_THREAD_FUNC page_thread(switch_thread_t *thread, void *obj)
 		switch_mutex_unlock(pd->mutex);
 	}
 
-	switch_event_safe_destroy(&pd->var_event);
+	switch_event_safe_destroy(pd->var_event);
 
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
@@ -6460,6 +6524,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
+	SWITCH_ADD_APP(app_interface, "filter_codecs", "Filter Codecs", "Filter Codecs", filter_codecs_function, FILTER_CODECS_SYNTAX, SAF_SUPPORT_NOMEDIA);
+
 	SWITCH_ADD_APP(app_interface, "enable_keepalive", "Enable Keepalive", "Enable Keepalive",
 				   keepalive_function, KEEPALIVE_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
@@ -6495,6 +6561,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "park_state", "Park State", "Park State", park_state_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "gentones", "Generate Tones", "Generate tones to the channel", gentones_function, "<tgml_script>[|<loops>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "broadcast", "Broadcast File", "Broadcast a file to the session", broadcast_function, "<path> <leg>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "loop_playback", "Playback File looply", "Playback a file to the channel looply for limted times",

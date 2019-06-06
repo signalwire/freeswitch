@@ -398,7 +398,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	} else if (exec) {
 		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(exec));
 		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString((char *)stream.data));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT,"RES [%s][%s]\n", exec, (char *)stream.data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"RES [%s][%s]\n", exec, (char *)stream.data);
 	} else {
 		cJSON_AddItemToObject(jdata, "error", cJSON_CreateString("Invalid Command"));
 	}
@@ -741,10 +741,12 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
+	switch_event_merge(event, conference->variables);
 
 	return status;
 }

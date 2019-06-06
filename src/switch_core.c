@@ -1370,7 +1370,7 @@ typedef struct {
 
 static switch_ip_list_t IP_LIST = { 0 };
 
-SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token)
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_port_token(const char *ip_str, int port, const char *list_name, const char **token)
 {
 	switch_network_list_t *list;
 	ip_t  ip, mask, net;
@@ -1398,9 +1398,9 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
 		if (ipv6) {
-			ok = switch_network_list_validate_ip6_token(list, ip, token);
+			ok = switch_network_list_validate_ip6_port_token(list, ip, port, token);
 		} else {
-			ok = switch_network_list_validate_ip_token(list, ip.v4, token);
+			ok = switch_network_list_validate_ip_port_token(list, ip.v4, port, token);
 		}
 	} else if (strchr(list_name, '/')) {
 		if (strchr(list_name, ',')) {
@@ -1443,6 +1443,10 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 	return ok;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token)
+{
+	return switch_check_network_list_ip_port_token(ip_str, 0, list_name, token);
+}
 
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 {
@@ -1589,9 +1593,12 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 
 				for (x_node = switch_xml_child(x_list, "node"); x_node; x_node = x_node->next) {
-					const char *cidr = NULL, *host = NULL, *mask = NULL, *domain = NULL;
+					const char *cidr = NULL, *host = NULL, *mask = NULL, *domain = NULL, *port = NULL;
 					switch_bool_t ok = default_type;
 					const char *type = switch_xml_attr(x_node, "type");
+					switch_network_port_range_t port_range;
+					char *argv[MAX_NETWORK_PORTS] = { 0 };
+					int argc = 0, i;
 
 					if (type) {
 						ok = switch_true(type);
@@ -1601,6 +1608,25 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 					host = switch_xml_attr(x_node, "host");
 					mask = switch_xml_attr(x_node, "mask");
 					domain = switch_xml_attr(x_node, "domain");
+
+					memset(&port_range, 0, sizeof(switch_network_port_range_t));
+
+					if( (port = switch_xml_attr(x_node, "port")) != NULL) {
+						port_range.port = atoi(port);
+					}
+
+					if( (port = switch_xml_attr(x_node, "ports")) != NULL) {
+						argc = switch_separate_string((char*)port, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+						for(i=0; i < argc; i++) {
+							port_range.ports[i] = atoi(argv[i]);
+						}
+					}
+					if( (port = switch_xml_attr(x_node, "port-min")) != NULL) {
+						port_range.min_port = atoi(port);
+					}
+					if( (port = switch_xml_attr(x_node, "port-max")) != NULL) {
+						port_range.max_port = atoi(port);
+					}
 
 					if (domain) {
 						switch_event_t *my_params = NULL;
@@ -1646,7 +1672,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 										if (id && user_cidr) {
 											char *token = switch_mprintf("%s@%s", id, domain);
 											switch_assert(token);
-											switch_network_list_add_cidr_token(list, user_cidr, ok, token);
+											switch_network_list_add_cidr_port_token(list, user_cidr, ok, token, &port_range);
 											free(token);
 										}
 									}
@@ -1656,13 +1682,13 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 						switch_xml_free(xml_root);
 					} else if (cidr) {
-						switch_network_list_add_cidr(list, cidr, ok);
+						switch_network_list_add_cidr_port_token(list, cidr, ok, NULL, &port_range);
 					} else if (host && mask) {
-						switch_network_list_add_host_mask(list, host, mask, ok);
+						switch_network_list_add_host_port_mask(list, host, mask, ok, &port_range);
 					}
-
-					switch_core_hash_insert(IP_LIST.hash, name, list);
 				}
+
+				switch_core_hash_insert(IP_LIST.hash, name, list);
 			}
 		}
 
@@ -2340,6 +2366,20 @@ static void switch_load_core_config(const char *file)
 										  "rtp-retain-crypto-keys enabled. Could be used to decrypt secure media.\n");
 					}
 					switch_core_set_variable("rtp_retain_crypto_keys", val);
+				} else if (!strcasecmp(var, "caller-profile-soft-variables-uses-prefix") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_CPF_SOFT_PREFIX);
+					} else {
+						switch_clear_flag((&runtime), SCF_CPF_SOFT_PREFIX);
+					}
+				} else if (!strcasecmp(var, "caller-profile-soft-lookup-values") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					} else {
+						switch_clear_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
+					}
 				}
 			}
 		}

@@ -303,12 +303,16 @@ typedef enum {
 	PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE,
 	PFLAG_FIRE_TRANFER_EVENTS,
 	PFLAG_BLIND_AUTH_ENFORCE_RESULT,
+	PFLAG_BLIND_AUTH_REPLY_403,
 	PFLAG_PROXY_HOLD,
 	PFLAG_PROXY_INFO,
 	PFLAG_PROXY_MESSAGE,
 	PFLAG_FIRE_BYE_RESPONSE_EVENTS,
 	PFLAG_AUTO_INVITE_100,
 	PFLAG_UPDATE_REFRESHER,
+	PFLAG_AUTH_REQUIRE_USER,
+	PFLAG_AUTH_CALLS_ACL_ONLY,
+	PFLAG_USE_PORT_FOR_ACL_CHECK,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -786,6 +790,8 @@ struct sofia_profile {
 	int bind_attempt_interval;
 	char *proxy_notify_events;
 	char *proxy_info_content_types;
+	char *acl_inbound_x_token_header;
+	char *acl_proxy_x_token_header;
 };
 
 
@@ -964,6 +970,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 switch_status_t sofia_proxy_sip_i_message(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 										  sofia_dispatch_event_t *de, tagi_t tags[]);
 void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[]);
+void sofia_handle_sip_i_invite_replaces(switch_core_session_t *session, switch_channel_t *channel, switch_channel_t *b_channel, char* uuid, private_object_t *tech_pvt, sip_call_info_t *call_info, sofia_profile_t *profile, char *is_nat, sip_t const *sip);
 
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t **sofia_private, sip_t const *sip,
@@ -1162,6 +1169,11 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const c
 void sofia_glue_restart_all_profiles(void);
 const char *sofia_state_string(int state);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
+
+/* sofia api */
+switch_status_t cmd_json_status(char **argv, int argc, switch_stream_handle_t *stream);
+uint32_t sofia_profile_reg_count(sofia_profile_t *profile);
+void add_sofia_json_apis(switch_loadable_module_interface_t **module_interface);
 
 /*
  * Logging control functions

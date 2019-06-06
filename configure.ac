@@ -449,19 +449,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     fi
 fi
 
-#  Enable clang address sanitizer bit build
-AC_ARG_ENABLE(address_sanitizer,
-  [AC_HELP_STRING([--enable-address-sanitizer],[build with address sanitizer])],
-  [enable_address_sanitizer="$enable_address_sanitizer"],
-  [enable_address_sanitizer="no"])
-
-if test "${enable_address_sanitizer}" = "yes"; then
-  APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer)
-  APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer)
-  APR_ADDTO(LDFLAGS, -fsanitize=address)
-fi
-
-
 case "${ax_cv_c_compiler_vendor}" in
 sun)
 	VISIBILITY_FLAG=-xldscope=hidden
@@ -1389,6 +1376,14 @@ PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
 
+PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
+   AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
+   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[false])])
+PKG_CHECK_MODULES([OPUSFILE_ENCODE], [libopusenc >= 0.1],[
+   AM_CONDITIONAL([HAVE_OPUSFILE_ENCODE],[true])],[
+   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUSFILE_ENCODE],[false])])
+
+
 PKG_CHECK_MODULES([MAGICK], [ImageMagick >= 6.0.0],[
   AM_CONDITIONAL([HAVE_MAGICK],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MAGICK],[false])])
@@ -1599,6 +1594,7 @@ if test x$HAVE_OPENSSL = x1; then
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
 	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required]))
 	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	AC_CHECK_LIB(ssl, DTLSv1_2_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLSv1_2_method, 1, [DTLS version 1.2 is available]))
 else
 	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required])
 fi
@@ -1810,6 +1806,18 @@ AC_SUBST(SNMP_LIBS)
 
 CHECK_ERLANG
 
+#  Enable clang address sanitizer bit build
+AC_ARG_ENABLE(address_sanitizer,
+  [AC_HELP_STRING([--enable-address-sanitizer],[build with address sanitizer])],
+  [enable_address_sanitizer="$enable_address_sanitizer"],
+  [enable_address_sanitizer="no"])
+
+if test "${enable_address_sanitizer}" = "yes"; then
+  APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+  APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+  APR_ADDTO(LDFLAGS, -fsanitize=address)
+fi
+
 # we never use this, and hard setting it will make cross compile work better
 ac_cv_file_dbd_apr_dbd_mysql_c=no
 
@@ -1946,6 +1954,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
+		src/mod/formats/mod_opusfile/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile

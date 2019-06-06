@@ -104,6 +104,7 @@ char const
   sip_603_Decline[] =                  "Decline",
   sip_604_Does_not_exist_anywhere[] =  "Does Not Exist Anywhere",
   sip_606_Not_acceptable[] =           "Not Acceptable",
+  sip_607_Unwanted[] =                 "Unwanted",
   sip_687_Dialog_terminated[] =        "Dialog Terminated"
   ;
 
@@ -191,6 +192,7 @@ char const *sip_status_phrase(int status)
   case 603: return sip_603_Decline;
   case 604: return sip_604_Does_not_exist_anywhere;
   case 606: return sip_606_Not_acceptable;
+  case 607: return sip_607_Unwanted;
   case 687: return sip_687_Dialog_terminated;
   }
 

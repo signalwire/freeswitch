@@ -169,6 +169,8 @@ SOFIAPUBFUN char const *sip_status_phrase(int status);
 #define SIP_604_DOES_NOT_EXIST_ANYWHERE 604, sip_604_Does_not_exist_anywhere
 /** 606 Not Acceptable @HIDE */
 #define SIP_606_NOT_ACCEPTABLE          606, sip_606_Not_acceptable
+/** 607 Unwanted @HIDE */
+#define SIP_607_UNWANTED                607, sip_607_Unwanted
 /** 687 Dialog terminated @HIDE */
 #define SIP_687_DIALOG_TERMINATED       687, sip_687_Dialog_terminated
 
@@ -238,6 +240,7 @@ SOFIAPUBVAR char const sip_600_Busy_everywhere[];
 SOFIAPUBVAR char const sip_603_Decline[];
 SOFIAPUBVAR char const sip_604_Does_not_exist_anywhere[];
 SOFIAPUBVAR char const sip_606_Not_acceptable[];
+SOFIAPUBVAR char const sip_607_Unwanted[];
 SOFIAPUBVAR char const sip_687_Dialog_terminated[];
 
 SOFIA_END_DECLS

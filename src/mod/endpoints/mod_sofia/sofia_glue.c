@@ -926,12 +926,21 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			rpid_domain = "cluecon.com";
 		}
 
+		if (!zstr(tech_pvt->dest)) {
+			dst = sofia_glue_get_destination(tech_pvt->dest);
+		}
+
 		/*
 		 * Ignore transport chanvar and uri parameter for gateway connections
 		 * since all of them have been already taken care of in mod_sofia.c:sofia_outgoing_channel()
 		 */
 		if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN && zstr(tech_pvt->gateway_name)) {
-			if ((p = (char *) switch_stristr("port=", url))) {
+			if (dst && dst->route_uri) {
+				p = dst->route_uri;
+			} else {
+				p = url;
+			}
+			if ((p = (char *) switch_stristr("port=", p))) {
 				p += 5;
 				tech_pvt->transport = sofia_glue_str2transport(p);
 			} else {
@@ -1079,7 +1088,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
 			sofia_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
-			route_uri = tech_pvt->record_route;
+			if (!dst || !dst->route_uri) {
+				route_uri = tech_pvt->record_route;
+			}
 			session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
@@ -1251,7 +1262,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (!zstr(tech_pvt->dest)) {
-		dst = sofia_glue_get_destination(tech_pvt->dest);
+		if (!dst) {
+			dst = sofia_glue_get_destination(tech_pvt->dest);
+		}
 
 		if (dst->route_uri) {
 			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, tech_pvt->transport, SWITCH_TRUE, NULL, NULL);
@@ -1449,6 +1462,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 	case 403:
 	case 407:
 	case 603:
+	case 607:
 		return SWITCH_CAUSE_CALL_REJECTED;
 	case 404:
 		return SWITCH_CAUSE_UNALLOCATED_NUMBER;

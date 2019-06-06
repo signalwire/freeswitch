@@ -23,10 +23,10 @@
       <param name="mcast-ip" value="224.1.1.1"/>
       <param name="mcast-port" value="1337"/>
       <param name="rtp-ip" value="$${local_ip_v4}"/>
-      <!--  <param name="ext-rtp-ip" value=""/> -->
+      <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
       <param name="local-network" value="localnet.auto"/>
-      <param name="outbound-codec-string" value="opus,vp8"/>
-      <param name="inbound-codec-string" value="opus,vp8"/>
+      <param name="outbound-codec-string" value="opus,h264,vp8"/>
+      <param name="inbound-codec-string" value="opus,h264,vp8"/>
 
       <param name="apply-candidate-acl" value="localnet.auto"/>
       <param name="apply-candidate-acl" value="wan_v4.auto"/>
@@ -47,8 +47,8 @@
       <param name="blind-reg" value="false"/>
       <param name="rtp-ip" value="$${local_ip_v6}"/>
       <!--  <param name="ext-rtp-ip" value=""/> -->
-      <param name="outbound-codec-string" value="opus,vp8"/>
-      <param name="inbound-codec-string" value="opus,vp8"/>
+      <param name="outbound-codec-string" value="opus,h264,vp8"/>
+      <param name="inbound-codec-string" value="opus,h264,vp8"/>
 
       <param name="apply-candidate-acl" value="wan_v6.auto"/>
       <param name="apply-candidate-acl" value="rfc1918.auto"/>

@@ -14,6 +14,7 @@
                 <outputfilename />   
                 <extractto />   
                 <moveafter />
+                <archivecontains />
              </ParameterGroup>  
              <Task>  
                 <Reference Include="Microsoft.Build" />
@@ -56,6 +57,7 @@ using System.Diagnostics;
         public string outputfilename { get; set; }
         public string extractto { get; set; }
         public string moveafter { get; set; }
+        public string archivecontains { get; set; }
 
         internal static bool FileOrDirectoryExists(string name)
         {
@@ -148,7 +150,10 @@ using System.Diagnostics;
                             Log.LogMessage(MessageImportance.High,
                                 "Filename \"" + filename + "\".");
 
-                            if (File.Exists(filename))
+                            if (archivecontains == null || archivecontains.Trim() == "")
+                                archivecontains = "tarball";
+
+                            if (File.Exists(filename) && archivecontains.ToLower() == "tarball")
                             {
                                 Extract(filename, extracttofolder);
                                 File.Delete(filename);

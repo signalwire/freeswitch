@@ -42,6 +42,12 @@
 	<action application="transfer" data="$1 XML default"/>
       </condition>
     </extension>
+
+    <extension name="public_conference_extensions">
+      <condition field="destination_number" expression="^(3[5-8][01][0-9])$">
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
     
     <!--
 	You can place files in the public directory to get included.

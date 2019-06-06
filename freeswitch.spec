@@ -37,7 +37,9 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_shout 0
+%define build_mod_shout 1
+%define build_mod_opusfile 0
+%define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -46,8 +48,11 @@
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_shout:%define build_mod_shout 1 }
+%{?with_mod_opusfile:%define build_mod_opusfile 1 }
+%{?with_mod_v8:%define build_mod_v8 1 }
 
-%define version 1.7.0
+%define nonparsedversion 1.7.0
+%define version %(echo '%{nonparsedversion}' | sed 's/-//g')
 %define release 1
 
 ######################################################################################################################
@@ -116,7 +121,7 @@ Vendor:       	http://www.freeswitch.org/
 #					Source files and where to get them
 #
 ######################################################################################################################
-Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
+Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 Source2:	http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
@@ -189,7 +194,7 @@ BuildRequires: broadvoice-devel
 BuildRequires: flite-devel
 BuildRequires: ilbc2-devel 
 BuildRequires: g722_1-devel
-BuildRequires: libcodec2-devel
+BuildRequires: codec2-devel
 BuildRequires: libsilk-devel
 BuildRequires: libyuv-devel >= 0.0.1280
 BuildRequires: lua-devel
@@ -540,6 +545,7 @@ the entries aloud via a TTS engine
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libks signalwire-client-c
 
 %description application-signalwire
 Provides FreeSWITCH mod_signalwire
@@ -1145,16 +1151,28 @@ a soundcard, etc.
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	libshout >= 2.3.1
+Requires:	libshout >= 2.2.2
 Requires:	libmpg123 >= 1.20.1
 Requires:	lame
-BuildRequires:	libshout-devel >= 2.3.1
+BuildRequires:	libshout-devel >= 2.2.2
 BuildRequires:	libmpg123-devel >= 1.20.1
 BuildRequires:	lame-devel
 
 %description format-mod-shout
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
+%endif
+
+%if %{build_mod_opusfile}
+%package format-mod-opusfile
+Summary:	Plays Opus encoded files
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+Requires:	opusfile >= 0.5
+BuildRequires:	opusfile-devel >= 0.5
+
+%description format-mod-opusfile
+Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
 %endif
 
 %if %{build_mod_ssml}
@@ -1202,12 +1220,14 @@ Requires:	python
 
 %description    python
 
+%if %{build_mod_v8}
 %package v8
 Summary:	JavaScript support for the FreeSWITCH open source telephony platform, using Google V8 JavaScript engine
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 
 %description v8
+%endif
 
 ######################################################################################################################
 #				FreeSWITCH Say Modules
@@ -1415,7 +1435,7 @@ Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 ######################################################################################################################
 
 %prep
-%setup -b0 -q
+%setup -b0 -q -n %{name}-%{nonparsedversion}
 cp %{SOURCE1} libs/
 cp %{SOURCE2} libs/
 cp %{SOURCE3} libs/
@@ -1546,6 +1566,9 @@ FORMATS_MODULES+=" formats/mod_shout "
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
 %endif
+%if %{build_mod_opusfile}
+FORMATS_MODULES+=" formats/mod_opusfile"
+%endif
 
 ######################################################################################################################
 #
@@ -1553,7 +1576,9 @@ FORMATS_MODULES+=" formats/mod_ssml"
 #
 ######################################################################################################################
 LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
-#LANGUAGES_MODULES+="languages/mod_v8"
+%if %{build_mod_v8}
+LANGUAGES_MODULES+="languages/mod_v8"
+%endif
 
 ######################################################################################################################
 #
@@ -1622,6 +1647,8 @@ then
 else
    ./rebootstrap.sh
 fi
+
+autoreconf --force --install
 
 %configure -C \
 --prefix=%{PREFIX} \
@@ -1911,6 +1938,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amrwb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amqp.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/av.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/avmd.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/callcenter.conf.xml
@@ -1923,6 +1951,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/console.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dingaling.conf.xml 
@@ -1979,6 +2008,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/vpx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_cdr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_rpc.conf.xml
@@ -2397,12 +2427,14 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
+%if %{build_mod_v8}
 %files v8
-#%{MODINSTDIR}/mod_v8*.so*
-#%{LIBDIR}/libv8.so
-#%{LIBDIR}/libicui18n.so
-#%{LIBDIR}/libicuuc.so
-#%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
+%{MODINSTDIR}/mod_v8*.so*
+%{LIBDIR}/libv8.so
+%{LIBDIR}/libicui18n.so
+%{LIBDIR}/libicuuc.so
+%endif
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
 
 ######################################################################################################################
@@ -2553,6 +2585,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Apr 23 2019 - Andrey Volk
+- Fix build for Stack 20.x
 * Tue Dec 11 2018 - Andrey Volk
 - add mod_signalwire
 * Sun Mar 13 2016 - Matthew Vale

@@ -1140,8 +1140,8 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 		seq = ntohs(*((uint16_t *) var));
 		then = (intptr_t) val;
 
-		if (then != 1 && switch_time_now() - then < RENACK_TIME) {
-			//jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
+		if (then != 1 && ((uint32_t)(switch_time_now() - then)) < RENACK_TIME) {
+			jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
 			continue;
 		}
 
@@ -1251,8 +1251,11 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 
 	add_node(jb, packet, len);
 
-	if (switch_test_flag(jb, SJB_QUEUE_ONLY) && jb->complete_frames > jb->max_frame_len) {
-		drop_oldest_frame(jb);
+	if (switch_test_flag(jb, SJB_QUEUE_ONLY) && jb->max_packet_len 
+			&& jb->allocated_nodes > jb->max_frame_len * 2 - 1) {
+		while ((jb->max_frame_len * 2 - jb->visible_nodes) < jb->max_packet_len) {
+			drop_oldest_frame(jb);
+		}
 	}
 
 	switch_mutex_unlock(jb->mutex);

@@ -611,7 +611,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			for (omember = conference->members; omember; omember = omember->next) {
 				switch_size_t ok = 1;
 
-				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING)) {
+				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING) || !switch_channel_test_flag(omember->channel, CF_AUDIO)) {
 					continue;
 				}
 
@@ -667,13 +667,14 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					write_frame[x] = (int16_t) z;
 				}
 
-				switch_mutex_lock(omember->audio_out_mutex);
-				ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
-				switch_mutex_unlock(omember->audio_out_mutex);
-
-				if (!ok) {
-					switch_mutex_unlock(conference->mutex);
-					goto end;
+				if (switch_channel_test_flag(omember->channel, CF_AUDIO)) {
+					switch_mutex_lock(omember->audio_out_mutex);
+					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+					switch_mutex_unlock(omember->audio_out_mutex);
+					if (!ok) {
+						switch_mutex_unlock(conference->mutex);
+						goto end;
+					}
 				}
 			}
 		} else { /* There is no source audio.  Push silence into all of the buffers */
@@ -688,7 +689,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			for (omember = conference->members; omember; omember = omember->next) {
 				switch_size_t ok = 1;
 
-				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING)) {
+				if (!conference_utils_member_test_flag(omember, MFLAG_RUNNING) || !switch_channel_test_flag(omember->channel, CF_AUDIO)) {
 					continue;
 				}
 
@@ -1133,7 +1134,8 @@ switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *valu
 void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off)
 {
 	conference_member_t *member = NULL;
-	switch_xml_t x_member = NULL, x_members = NULL, x_flags;
+	switch_xml_t x_member = NULL, x_members = NULL, x_flags, x_variables;
+	switch_event_header_t *hp;
 	int moff = 0;
 	char i[30] = "";
 	char *ival = i;
@@ -1217,6 +1219,13 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
 	switch_xml_set_attr_d(x_conference, "run_time", ival);
+
+	x_variables = switch_xml_add_child_d(x_conference, "variables", 0);
+	for (hp = conference->variables->headers; hp; hp = hp->next) {
+		switch_xml_t x_variable = switch_xml_add_child_d(x_variables, "variable", 0);
+		switch_xml_set_attr_d(x_variable, "name", hp->name);
+		switch_xml_set_attr_d(x_variable, "value", hp->value);
+	}
 
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
 	switch_assert(x_members);
@@ -1339,7 +1348,8 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 {
 	conference_member_t *member = NULL;
-	static cJSON *json_conference, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+	static cJSON *json_conference, *json_conference_variables, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+	switch_event_header_t *hp;
 
 	switch_assert(conference != NULL);
 	json_conference = cJSON_CreateObject();
@@ -1377,6 +1387,11 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 
 	if (conference->max_members > 0) {
 		cJSON_AddNumberToObject(json_conference, "max_members", conference->max_members);
+	}
+
+	cJSON_AddItemToObject(json_conference, "variables", json_conference_variables = cJSON_CreateObject());
+	for (hp = conference->variables->headers; hp; hp = hp->next) {
+		cJSON_AddStringToObject(json_conference_variables, hp->name, hp->value);
 	}
 
 	cJSON_AddItemToObject(json_conference, "members", json_conference_members = cJSON_CreateArray());
@@ -1498,7 +1513,10 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 								   char *cid_num,
 								   char *profile,
 								   switch_call_cause_t *cause,
-								   switch_call_cause_t *cancel_cause, switch_event_t *var_event)
+								   switch_call_cause_t *cancel_cause,
+								   switch_event_t *var_event,
+								   char** peer_uuid
+								   )
 {
 	switch_core_session_t *peer_session = NULL;
 	switch_channel_t *peer_channel;
@@ -1608,6 +1626,10 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_caller_extension_t *extension = NULL;
 
+		if(peer_uuid) {
+			*peer_uuid = switch_channel_get_uuid(peer_channel);
+		}
+
 		/* build an extension name object */
 		if ((extension = switch_caller_extension_new(peer_session, conference_name, conference_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -1654,6 +1676,7 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *obj)
 {
 	struct bg_call *call = (struct bg_call *) obj;
+	char* peer_uuid = NULL;
 
 	if (call) {
 		switch_call_cause_t cause;
@@ -1662,7 +1685,7 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 
 		conference_outcall(call->conference, call->conference_name,
 						   call->session, call->bridgeto, call->timeout,
-						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event);
+						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event, &peer_uuid);
 
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -1670,6 +1693,7 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Peer-UUID", peer_uuid);
 			switch_event_fire(&event);
 		}
 
@@ -1715,6 +1739,8 @@ switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	if (var_event) {
 		call->var_event = *var_event;
 		var_event = NULL;
+	} else {
+		switch_event_create_plain(&call->var_event, SWITCH_EVENT_GENERAL);
 	}
 
 	if (conference) {
@@ -1743,6 +1769,9 @@ switch_status_t conference_outcall_bg(conference_obj_t *conference,
 
 	if (call_uuid) {
 		call->uuid = strdup(call_uuid);
+		if (call->var_event) {
+			switch_event_add_header_string(call->var_event, SWITCH_STACK_BOTTOM, "conference_bgdial_jobid", call->uuid);
+		}
 	}
 
 	if (profile) {
@@ -1986,6 +2015,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conference_name", conference_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
@@ -2340,7 +2370,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
-		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {
@@ -3748,10 +3778,22 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
+	if (cfg.profile) {
+		switch_xml_t xml_profile_variables;
+		if ((xml_profile_variables = switch_xml_child(cfg.profile, "variables")) != NULL) {
+			for (xml_kvp = switch_xml_child(xml_profile_variables, "variable"); xml_kvp; xml_kvp = xml_kvp->next) {
+				char *var = (char *) switch_xml_attr_soft(xml_kvp, "name");
+				char *val = (char *) switch_xml_attr_soft(xml_kvp, "value");
+				if (var && val) {
+					conference_set_variable(conference, var, val);
+				}
+			}
+		}
+	}
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 	conference_event_add_data(conference, event);
-	if(conference->verbose_events && channel) {
+	if (conference->verbose_events && channel) {
 		switch_channel_event_set_data(channel, event);
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");

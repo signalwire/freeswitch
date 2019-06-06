@@ -2427,6 +2427,7 @@ SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name);
 SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len, switch_time_t thetime);
 SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_time_exp_t *tm, switch_time_t thetime);
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_port_token(const char *ip_str, int port, const char *list_name, const char **token);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token);
 #define switch_check_network_list_ip(_ip_str, _list_name) switch_check_network_list_ip_token(_ip_str, _list_name, NULL)
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);

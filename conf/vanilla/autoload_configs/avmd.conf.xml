@@ -62,6 +62,12 @@
             <!-- determines the mode of detection, default is both amplitude and frequency -->
             <param name="detection_mode" value="2"/>
 
+            <!-- number of detection threads running per each avmd session -->
+            <param name="detectors_n" value="36"/>
+
+            <!-- number of lagged detection threads running per each avmd session -->
+            <param name="detectors_lagged_n" value="1"/>
+
         <!-- Per call settings end -->
     </settings>
 </configuration>
