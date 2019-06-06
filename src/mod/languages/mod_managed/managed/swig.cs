@@ -9486,6 +9486,19 @@ else
     freeswitchPINVOKE.switch_load_network_lists((int)reload);
   }
 
+  public static switch_bool_t switch_check_network_list_ip_port_token(string ip_str, int port, string list_name, out string token) {
+var token_ptr = global::System.IntPtr.Zero;
+    try {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_check_network_list_ip_port_token(ip_str, port, list_name, ref token_ptr);
+      return ret;
+    } finally {
+if(token_ptr != global::System.IntPtr.Zero)
+	token = global::System.Runtime.InteropServices.Marshal.PtrToStringAnsi(token_ptr);
+else
+	token = null;
+    }
+  }
+
   public static switch_bool_t switch_check_network_list_ip_token(string ip_str, string list_name, out string token) {
 var token_ptr = global::System.IntPtr.Zero;
     try {
@@ -10895,6 +10908,43 @@ else
     return ret;
   }
 
+  public static switch_status_t switch_network_list_add_cidr_port_token(SWIGTYPE_p_switch_network_list list, string cidr_str, switch_bool_t ok, string token, switch_network_port_range port) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_network_list_add_cidr_port_token(SWIGTYPE_p_switch_network_list.getCPtr(list), cidr_str, (int)ok, token, switch_network_port_range.getCPtr(port));
+    return ret;
+  }
+
+  public static switch_status_t switch_network_list_add_host_port_mask(SWIGTYPE_p_switch_network_list list, string host, string mask_str, switch_bool_t ok, switch_network_port_range port) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_network_list_add_host_port_mask(SWIGTYPE_p_switch_network_list.getCPtr(list), host, mask_str, (int)ok, switch_network_port_range.getCPtr(port));
+    return ret;
+  }
+
+  public static switch_bool_t switch_network_list_validate_ip_port_token(SWIGTYPE_p_switch_network_list list, uint ip, int port, out string token) {
+var token_ptr = global::System.IntPtr.Zero;
+    try {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip_port_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip, port, ref token_ptr);
+      return ret;
+    } finally {
+if(token_ptr != global::System.IntPtr.Zero)
+	token = global::System.Runtime.InteropServices.Marshal.PtrToStringAnsi(token_ptr);
+else
+	token = null;
+    }
+  }
+
+  public static switch_bool_t switch_network_list_validate_ip6_port_token(SWIGTYPE_p_switch_network_list list, ip_t ip, int port, out string token) {
+var token_ptr = global::System.IntPtr.Zero;
+    try {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip6_port_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip_t.getCPtr(ip), port, ref token_ptr);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } finally {
+if(token_ptr != global::System.IntPtr.Zero)
+	token = global::System.Runtime.InteropServices.Marshal.PtrToStringAnsi(token_ptr);
+else
+	token = null;
+    }
+  }
+
   public static switch_bool_t switch_network_list_validate_ip_token(SWIGTYPE_p_switch_network_list list, uint ip, out string token) {
 var token_ptr = global::System.IntPtr.Zero;
     try {
@@ -11272,6 +11322,16 @@ else
 
   public static switch_status_t switch_channel_set_profile_var(SWIGTYPE_p_switch_channel channel, string name, string val) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_profile_var(SWIGTYPE_p_switch_channel.getCPtr(channel), name, val);
+    return ret;
+  }
+
+  public static switch_status_t switch_channel_set_log_tag(SWIGTYPE_p_switch_channel channel, string tagname, string tagvalue) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_log_tag(SWIGTYPE_p_switch_channel.getCPtr(channel), tagname, tagvalue);
+    return ret;
+  }
+
+  public static switch_status_t switch_channel_get_log_tags(SWIGTYPE_p_switch_channel channel, SWIGTYPE_p_p_switch_event log_tags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_get_log_tags(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_p_switch_event.getCPtr(log_tags));
     return ret;
   }
 
@@ -12567,6 +12627,11 @@ else
     return ret;
   }
 
+  public static switch_status_t switch_ivr_record_session_event(SWIGTYPE_p_switch_core_session session, string file, uint limit, switch_file_handle fh, switch_event variables) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_record_session_event(SWIGTYPE_p_switch_core_session.getCPtr(session), file, limit, switch_file_handle.getCPtr(fh), switch_event.getCPtr(variables));
+    return ret;
+  }
+
   public static switch_status_t switch_ivr_transfer_recordings(SWIGTYPE_p_switch_core_session orig_session, SWIGTYPE_p_switch_core_session new_session) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_transfer_recordings(SWIGTYPE_p_switch_core_session.getCPtr(orig_session), SWIGTYPE_p_switch_core_session.getCPtr(new_session));
     return ret;
@@ -13642,8 +13707,8 @@ else
     freeswitchPINVOKE.switch_rtp_set_interdigit_delay(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), delay);
   }
 
-  public static switch_status_t switch_rtp_add_dtls(SWIGTYPE_p_switch_rtp rtp_session, dtls_fingerprint_t local_fp, dtls_fingerprint_t remote_fp, dtls_type_t type) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_dtls(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), dtls_fingerprint_t.getCPtr(local_fp), dtls_fingerprint_t.getCPtr(remote_fp), (int)type);
+  public static switch_status_t switch_rtp_add_dtls(SWIGTYPE_p_switch_rtp rtp_session, dtls_fingerprint_t local_fp, dtls_fingerprint_t remote_fp, dtls_type_t type, byte want_DTLSv1_2) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_dtls(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), dtls_fingerprint_t.getCPtr(local_fp), dtls_fingerprint_t.getCPtr(remote_fp), (int)type, want_DTLSv1_2);
     return ret;
   }
 
@@ -14511,6 +14576,7 @@ else
   public static readonly int CACHE_DB_LEN = freeswitchPINVOKE.CACHE_DB_LEN_get();
   public static readonly int SWITCH_CMD_CHUNK_LEN = freeswitchPINVOKE.SWITCH_CMD_CHUNK_LEN_get();
   public static readonly string SWITCH_URL_UNSAFE = freeswitchPINVOKE.SWITCH_URL_UNSAFE_get();
+  public static readonly int MAX_NETWORK_PORTS = freeswitchPINVOKE.MAX_NETWORK_PORTS_get();
   public static readonly int SWITCH_SMAX = freeswitchPINVOKE.SWITCH_SMAX_get();
   public static readonly int SWITCH_SMIN = freeswitchPINVOKE.SWITCH_SMIN_get();
   public static readonly int NO_EVENT_CHANNEL_ID = freeswitchPINVOKE.NO_EVENT_CHANNEL_ID_get();
@@ -18736,6 +18802,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_load_network_lists___")]
   public static extern void switch_load_network_lists(int jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_check_network_list_ip_port_token___")]
+  public static extern int switch_check_network_list_ip_port_token(string jarg1, int jarg2, string jarg3, ref global::System.IntPtr jarg4);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_check_network_list_ip_token___")]
   public static extern int switch_check_network_list_ip_token(string jarg1, string jarg2, ref global::System.IntPtr jarg3);
 
@@ -19462,6 +19531,39 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_URL_UNSAFE_get___")]
   public static extern string SWITCH_URL_UNSAFE_get();
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_MAX_NETWORK_PORTS_get___")]
+  public static extern int MAX_NETWORK_PORTS_get();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_port_set___")]
+  public static extern void switch_network_port_range_port_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_port_get___")]
+  public static extern int switch_network_port_range_port_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_ports_set___")]
+  public static extern void switch_network_port_range_ports_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_ports_get___")]
+  public static extern global::System.IntPtr switch_network_port_range_ports_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_min_port_set___")]
+  public static extern void switch_network_port_range_min_port_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_min_port_get___")]
+  public static extern int switch_network_port_range_min_port_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_max_port_set___")]
+  public static extern void switch_network_port_range_max_port_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_port_range_max_port_get___")]
+  public static extern int switch_network_port_range_max_port_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_switch_network_port_range___")]
+  public static extern global::System.IntPtr new_switch_network_port_range();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_delete_switch_network_port_range___")]
+  public static extern void delete_switch_network_port_range(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_get_hex_bytes___")]
   public static extern string switch_get_hex_bytes(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, string jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
@@ -19827,6 +19929,18 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_add_host_mask___")]
   public static extern int switch_network_list_add_host_mask(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_add_cidr_port_token___")]
+  public static extern int switch_network_list_add_cidr_port_token(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3, string jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_add_host_port_mask___")]
+  public static extern int switch_network_list_add_host_port_mask(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_validate_ip_port_token___")]
+  public static extern int switch_network_list_validate_ip_port_token(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2, int jarg3, ref global::System.IntPtr jarg4);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_validate_ip6_port_token___")]
+  public static extern int switch_network_list_validate_ip6_port_token(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, int jarg3, ref global::System.IntPtr jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_network_list_validate_ip_token___")]
   public static extern int switch_network_list_validate_ip_token(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2, ref global::System.IntPtr jarg3);
@@ -23266,6 +23380,12 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_set_profile_var___")]
   public static extern int switch_channel_set_profile_var(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_set_log_tag___")]
+  public static extern int switch_channel_set_log_tag(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_get_log_tags___")]
+  public static extern int switch_channel_get_log_tags(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_set_variable_var_check___")]
   public static extern int switch_channel_set_variable_var_check(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
@@ -24424,6 +24544,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_record_session___")]
   public static extern int switch_ivr_record_session(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, uint jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_record_session_event___")]
+  public static extern int switch_ivr_record_session_event(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, uint jarg3, global::System.Runtime.InteropServices.HandleRef jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_transfer_recordings___")]
   public static extern int switch_ivr_transfer_recordings(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
@@ -25304,7 +25427,7 @@ class freeswitchPINVOKE {
   public static extern void switch_rtp_set_interdigit_delay(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_add_dtls___")]
-  public static extern int switch_rtp_add_dtls(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, int jarg4);
+  public static extern int switch_rtp_add_dtls(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, int jarg4, byte jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_del_dtls___")]
   public static extern int switch_rtp_del_dtls(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
@@ -25386,6 +25509,12 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_log_node_t_slevel_get___")]
   public static extern int switch_log_node_t_slevel_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_log_node_t_tags_set___")]
+  public static extern void switch_log_node_t_tags_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_log_node_t_tags_get___")]
+  public static extern global::System.IntPtr switch_log_node_t_tags_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_switch_log_node_t___")]
   public static extern global::System.IntPtr new_switch_log_node_t();
@@ -29582,7 +29711,13 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_INVALID_URL = 610,
   SWITCH_CAUSE_INVALID_PROFILE = 611,
   SWITCH_CAUSE_NO_PICKUP = 612,
-  SWITCH_CAUSE_SRTP_READ_ERROR = 613
+  SWITCH_CAUSE_SRTP_READ_ERROR = 613,
+  SWITCH_CAUSE_BOWOUT = 614,
+  SWITCH_CAUSE_BUSY_EVERYWHERE = 615,
+  SWITCH_CAUSE_DECLINE = 616,
+  SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
+  SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
+  SWITCH_CAUSE_UNWANTED = 619
 }
 
 }
@@ -30311,7 +30446,9 @@ namespace FreeSWITCH.Native {
   SWITCH_CPF_NONE = 0,
   SWITCH_CPF_SCREEN = (1 << 0),
   SWITCH_CPF_HIDE_NAME = (1 << 1),
-  SWITCH_CPF_HIDE_NUMBER = (1 << 2)
+  SWITCH_CPF_HIDE_NUMBER = (1 << 2),
+  SWITCH_CPF_SOFT_PREFIX = (1 << 3),
+  SWITCH_CPF_SOFT_LOOKUP = (1 << 4)
 }
 
 }
@@ -30566,6 +30703,7 @@ public enum switch_channel_flag_t {
   CF_STREAM_CHANGED,
   CF_ARRANGED_BRIDGE,
   CF_STATE_REPEAT,
+  CF_WANT_DTLSv1_2,
   CF_FLAG_MAX
 }
 
@@ -32316,7 +32454,9 @@ namespace FreeSWITCH.Native {
   SCF_DEBUG_SQL = (1 << 21),
   SCF_API_EXPANSION = (1 << 22),
   SCF_SESSION_THREAD_POOL = (1 << 23),
-  SCF_DIALPLAN_TIMESTAMPS = (1 << 24)
+  SCF_DIALPLAN_TIMESTAMPS = (1 << 24),
+  SCF_CPF_SOFT_PREFIX = (1 << 25),
+  SCF_CPF_SOFT_LOOKUP = (1 << 26)
 }
 
 }
@@ -32335,7 +32475,8 @@ namespace FreeSWITCH.Native {
 public enum switch_core_media_ice_type_t {
   ICE_GOOGLE_JINGLE = (1 << 0),
   ICE_VANILLA = (1 << 1),
-  ICE_CONTROLLED = (1 << 2)
+  ICE_CONTROLLED = (1 << 2),
+  ICE_LITE = (1 << 3)
 }
 
 }
@@ -39673,6 +39814,17 @@ public class switch_log_node_t : global::System.IDisposable {
     } 
   }
 
+  public switch_event tags {
+    set {
+      freeswitchPINVOKE.switch_log_node_t_tags_set(swigCPtr, switch_event.getCPtr(value));
+    } 
+    get {
+      global::System.IntPtr cPtr = freeswitchPINVOKE.switch_log_node_t_tags_get(swigCPtr);
+      switch_event ret = (cPtr == global::System.IntPtr.Zero) ? null : new switch_event(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_log_node_t() : this(freeswitchPINVOKE.new_switch_log_node_t(), true) {
   }
 
@@ -40219,6 +40371,95 @@ public enum switch_module_interface_name_t {
   SWITCH_LIMIT_INTERFACE,
   SWITCH_CHAT_APPLICATION_INTERFACE,
   SWITCH_JSON_API_INTERFACE
+}
+
+}
+//------------------------------------------------------------------------------
+// <auto-generated />
+//
+// This file was automatically generated by SWIG (http://www.swig.org).
+// Version 3.0.10
+//
+// Do not make changes to this file unless you know what you are doing--modify
+// the SWIG interface file instead.
+//------------------------------------------------------------------------------
+
+namespace FreeSWITCH.Native {
+
+public class switch_network_port_range : global::System.IDisposable {
+  private global::System.Runtime.InteropServices.HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_network_port_range(global::System.IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new global::System.Runtime.InteropServices.HandleRef(this, cPtr);
+  }
+
+  internal static global::System.Runtime.InteropServices.HandleRef getCPtr(switch_network_port_range obj) {
+    return (obj == null) ? new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_network_port_range() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != global::System.IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_network_port_range(swigCPtr);
+        }
+        swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
+      }
+      global::System.GC.SuppressFinalize(this);
+    }
+  }
+
+  public int port {
+    set {
+      freeswitchPINVOKE.switch_network_port_range_port_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_network_port_range_port_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_int ports {
+    set {
+      freeswitchPINVOKE.switch_network_port_range_ports_set(swigCPtr, SWIGTYPE_p_int.getCPtr(value));
+    } 
+    get {
+      global::System.IntPtr cPtr = freeswitchPINVOKE.switch_network_port_range_ports_get(swigCPtr);
+      SWIGTYPE_p_int ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_int(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public int min_port {
+    set {
+      freeswitchPINVOKE.switch_network_port_range_min_port_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_network_port_range_min_port_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int max_port {
+    set {
+      freeswitchPINVOKE.switch_network_port_range_max_port_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_network_port_range_max_port_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_network_port_range() : this(freeswitchPINVOKE.new_switch_network_port_range(), true) {
+  }
+
 }
 
 }
