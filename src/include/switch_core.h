@@ -2479,14 +2479,12 @@ typedef enum {
 typedef enum {
 	SCDB_TYPE_CORE_DB,
 	SCDB_TYPE_ODBC,
-	SCDB_TYPE_PGSQL,
 	SCDB_TYPE_DATABASE_INTERFACE
 } switch_cache_db_handle_type_t;
 
 typedef union {
 	switch_core_db_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
-	switch_pgsql_handle_t *pgsql_dbh;
 	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;
 
@@ -2501,11 +2499,8 @@ typedef struct {
 } switch_cache_db_odbc_options_t;
 
 typedef struct {
-	char *dsn;
-} switch_cache_db_pgsql_options_t;
-
-typedef struct {
-	char *dsn;
+	const char *original_dsn;
+	char *connection_string;
 	char prefix[16];
 	switch_database_interface_t *database_interface;
 	switch_bool_t make_module_no_unloadable;
@@ -2514,7 +2509,6 @@ typedef struct {
 typedef union {
 	switch_cache_db_core_db_options_t core_db_options;
 	switch_cache_db_odbc_options_t odbc_options;
-	switch_cache_db_pgsql_options_t pgsql_options;
 	switch_cache_db_database_interface_options_t database_interface_options;
 } switch_cache_db_connection_options_t;
 
@@ -2529,11 +2523,6 @@ static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_
 	case SCDB_TYPE_DATABASE_INTERFACE:
 		{
 			type_str = "DATABASE_INTERFACE";
-		}
-		break;
-	case SCDB_TYPE_PGSQL:
-		{
-			type_str = "PGSQL";
 		}
 		break;
 	case SCDB_TYPE_ODBC:
@@ -2673,6 +2662,11 @@ SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_dat
 \brief Returns error if no suitable database interface found to serve core db dsn.
 */
 SWITCH_DECLARE(switch_status_t) switch_core_check_core_db_dsn(void);
+
+/*!
+\brief Returns error if no suitable database interface found for a dsn.
+*/
+SWITCH_DECLARE(switch_status_t) switch_database_available(char* dsn);
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);

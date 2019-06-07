@@ -74,8 +74,7 @@ override_dh_auto_clean:
 		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
 		--with-gnu-ld --with-python --with-erlang --with-openssl \
-		--enable-core-odbc-support --enable-zrtp \
-		--enable-core-pgsql-support
+		--enable-core-odbc-support --enable-zrtp
 	touch $@
 
 override_dh_auto_configure: .stamp-configure

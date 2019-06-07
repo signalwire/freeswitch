@@ -391,6 +391,13 @@ Module: codecs/mod_yuv
 Description: Adds mod_yuv
  Adds mod_yuv.
 
+## mod/databases
+
+Module: databases/mod_pgsql
+Description: Adds mod_pgsql
+ Adds mod_pgsql.
+Build-Depends: libpq-dev 
+
 ## mod/dialplans
 
 Module: dialplans/mod_dialplan_asterisk

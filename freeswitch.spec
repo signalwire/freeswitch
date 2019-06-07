@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #		      and others
 #
@@ -839,6 +839,20 @@ Requires:       %{name} = %{version}-%{release}
 Theora Video Codec support for FreeSWITCH open source telephony platform.
 
 ######################################################################################################################
+#				FreeSWITCH Database Modules
+######################################################################################################################
+
+%package database-pgsql
+Summary:	PostgreSQL native support for FreeSWITCH
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+Requires:	postgresql-libs
+BuildRequires:	postgresql-devel
+
+%description database-pgsql
+PostgreSQL native support for FreeSWITCH.
+
+######################################################################################################################
 #				FreeSWITCH Directory Modules
 ######################################################################################################################
 
@@ -1419,6 +1433,7 @@ Requires:	freeswitch-codec-passthru-g729
 Requires:	freeswitch-codec-h26x
 Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
+Requires:	freeswitch-database-pgsql
 Requires:	freeswitch-format-local-stream
 Requires:	freeswitch-format-native-file
 Requires:	freeswitch-format-portaudio-stream
@@ -1513,6 +1528,13 @@ CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
 %endif
+
+######################################################################################################################
+#
+#					Database Modules
+#
+######################################################################################################################
+DATABASES_MODULES="databases/mod_pgsql"
 
 ######################################################################################################################
 #
@@ -1616,7 +1638,7 @@ XML_INT_MODULES="xml_int/mod_xml_cdr xml_int/mod_xml_curl xml_int/mod_xml_rpc"
 #				Create one environment variable out of all the module defs
 #
 ######################################################################################################################
-MYMODULES="$APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES \
+MYMODULES="$APPLICATIONS_MODULES $CODECS_MODULES $DATABASES_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES \
 $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES \
 $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
@@ -1669,7 +1691,6 @@ autoreconf --force --install
 --with-dbdir=%{DBDIR} \
 --with-htdocsdir=%{HTDOCSDIR} \
 --with-soundsdir=%{SOUNDSDIR} \
---enable-core-pgsql-support \
 --enable-core-odbc-support \
 --enable-core-libedit-support \
 --with-grammardir=%{GRAMMARDIR} \
@@ -1987,6 +2008,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/portaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/post_load_modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
@@ -2261,6 +2283,15 @@ fi
 
 %files codec-theora
 %{MODINSTDIR}/mod_theora.so*
+
+######################################################################################################################
+#
+#						FreeSWITCH Database Modules
+#
+######################################################################################################################
+
+%files database-pgsql
+%{MODINSTDIR}/mod_pgsql.so*
 
 ######################################################################################################################
 #

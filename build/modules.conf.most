@@ -76,6 +76,7 @@ codecs/mod_sangoma_codec
 codecs/mod_silk
 codecs/mod_siren
 codecs/mod_theora
+databases/mod_pgsql
 dialplans/mod_dialplan_asterisk
 dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml

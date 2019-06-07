@@ -161,7 +161,27 @@
     -->
     <!-- <param name="rtp-retain-crypto-keys" value="true"/> -->
 
+    <!--
+	 Native PostgreSQL support was removed from the FreeSWITCH Core!
+	 =================================
+	 NOTICE: You MUST enable mod_pgsql        
+	 =================================
+	 According to https://www.postgresql.org/docs/9.6/libpq-connect.html#LIBPQ-CONNSTRING
+	 There are two accepted formats for connection strings supported by the libpq library: 
+	 * For plain keyword = value strings use pgsql://
+	   pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'
+	 * For RFC 3986 URIs use postgresql:// or postgres://
+	   postgresql://
+	   postgresql://localhost
+	   postgresql://localhost:5433
+	   postgresql://localhost/mydb
+	   postgresql://user@localhost
+	   postgresql://user:secret@localhost
+	   postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp
+	   postgresql:///mydb?host=localhost&port=5433
+    -->
     <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
+    <!-- <param name="core-db-dsn" value="postgresql://freeswitch:@127.0.0.1/freeswitch?options=-c%20client_min_messages%3DNOTICE" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- 
 	 Allow to specify the sqlite db at a different location (In this example, move it to ramdrive for

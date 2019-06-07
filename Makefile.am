@@ -326,7 +326,6 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
-	src/include/switch_pgsql.h \
 	src/include/switch_hashtable.h \
 	src/include/switch_image.h
 
@@ -390,7 +389,6 @@ libfreeswitch_la_SOURCES = \
 	src/switch_config.c \
 	src/switch_time.c \
 	src/switch_odbc.c \
-	src/switch_pgsql.c \
 	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \

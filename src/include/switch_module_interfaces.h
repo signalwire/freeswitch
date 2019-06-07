@@ -621,7 +621,7 @@ struct switch_database_interface {
 	const char *interface_name;
 	/*! flags indicating database specifics, see switch_database_flag_t */
 	uint32_t flags;
-	switch_status_t(*handle_new)(char *dsn, switch_database_interface_handle_t **dih);
+	switch_status_t(*handle_new)(switch_cache_db_database_interface_options_t database_interface_options, switch_database_interface_handle_t **dih);
 	switch_status_t(*handle_destroy)(switch_database_interface_handle_t **dih); 
 	switch_status_t(*flush)(switch_database_interface_handle_t *dih);
 	switch_status_t(*exec_detailed)(const char *file, const char *func, int line, 

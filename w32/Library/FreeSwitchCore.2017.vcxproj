@@ -48,7 +48,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)\w32\switch_version.props" Condition=" '$(switch_versionPropsImported)' == '' " />
-  <Import Project="$(SolutionDir)\w32\libpq.props" Condition=" '$(libpqPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\curl.props" Condition=" '$(CurlPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\pcre.props" Condition=" '$(pcrePropsImported)' == '' " />
@@ -399,7 +398,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4389;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="..\..\src\switch_odbc.c" />
-    <ClCompile Include="..\..\src\switch_pgsql.c" />
     <ClCompile Include="..\..\src\switch_pcm.c" />
     <ClCompile Include="..\..\src\switch_speex.c" />
     <ClCompile Include="..\..\src\switch_profile.c" />
@@ -737,7 +735,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClInclude Include="..\..\src\include\switch_module_interfaces.h" />
     <ClInclude Include="..\..\src\include\switch_mprintf.h" />
     <ClInclude Include="..\..\src\include\switch_odbc.h" />
-    <ClInclude Include="..\..\src\include\switch_pgsql.h" />
     <ClInclude Include="..\..\src\include\switch_platform.h" />
     <ClInclude Include="..\..\src\include\switch_regex.h" />
     <ClInclude Include="..\..\src\include\switch_resample.h" />

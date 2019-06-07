@@ -580,6 +580,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg", "libs\win32\ffmpeg
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Setup.CA.DownloadOpenH264", "w32\Setup\CustomActions\Setup.CA.DownloadOpenH264\Setup.CA.DownloadOpenH264.csproj", "{EBFDCFCA-8095-4ECC-98BE-B494BCB4E042}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Databases", "Databases", "{31C2761D-20E0-4BF8-98B9-E32F0D8DD6E1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_pgsql", "src\mod\databases\mod_pgsql\mod_pgsql.2017.vcxproj", "{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2659,6 +2663,18 @@ Global
 		{EBFDCFCA-8095-4ECC-98BE-B494BCB4E042}.Release|Win32.Build.0 = Release|x86
 		{EBFDCFCA-8095-4ECC-98BE-B494BCB4E042}.Release|x64.ActiveCfg = Release|x86
 		{EBFDCFCA-8095-4ECC-98BE-B494BCB4E042}.Release|x64.Build.0 = Release|x86
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.All|Win32.ActiveCfg = Release|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.All|Win32.Build.0 = Release|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.All|x64.ActiveCfg = Release|x64
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.All|x64.Build.0 = Release|x64
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Debug|Win32.Build.0 = Debug|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Debug|x64.ActiveCfg = Debug|x64
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Debug|x64.Build.0 = Debug|x64
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Release|Win32.ActiveCfg = Release|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Release|Win32.Build.0 = Release|Win32
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Release|x64.ActiveCfg = Release|x64
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2869,6 +2885,7 @@ Global
 		{EBD0B6B4-C5CA-46B0-BBC7-DBA71DF05D31} = {4F227C26-768F-46A3-8684-1D08A46FB374}
 		{B19AE6FC-BFFF-428D-B483-3BBEAECCC618} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
+		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2} = {31C2761D-20E0-4BF8-98B9-E32F0D8DD6E1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}
