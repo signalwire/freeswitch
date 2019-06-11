@@ -67,6 +67,7 @@ typedef struct switch_thread_data_s {
 	switch_thread_start_t func;
 	void *obj;
 	int alloc;
+	int running;
 	switch_memory_pool_t *pool;
 } switch_thread_data_t;
 
@@ -851,7 +852,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 
 SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_data_t **tdp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session);
-
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td, int ms);
+																
 /*!
   \brief Retrieve a pointer to the channel object associated with a given session
   \param session the session to retrieve from

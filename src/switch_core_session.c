@@ -1779,8 +1779,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 #ifdef DEBUG_THREAD_POOL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) (intptr_t) thread);
 #endif
+			td->running = 1;
 			td->func(thread, td->obj);
-
+			td->running = 0;
+			
 			if (td->pool) {
 				switch_memory_pool_t *pool = td->pool;
 				td = NULL;
@@ -1896,6 +1898,15 @@ SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_d
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td, int ms)
+{
+	while(!td->running && --ms > 0) {
+		switch_cond_next();
+	}
+
+	return ms > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TIMEOUT;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_INUSE;
@@ -1919,7 +1930,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
