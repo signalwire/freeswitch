@@ -393,6 +393,11 @@ Description: Adds mod_yuv
 
 ## mod/databases
 
+Module: databases/mod_mariadb
+Description: Adds mod_mariadb
+ Adds mod_mariadb.
+Build-Depends: libmariadb-dev
+
 Module: databases/mod_pgsql
 Description: Adds mod_pgsql
  Adds mod_pgsql.

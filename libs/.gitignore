@@ -862,4 +862,5 @@ libks-*/
 libks*
 signalwire-client-c-*/
 signalwire-client-c-*
-
+mariadb-connector-c-*/
+mariadb-connector-c-*

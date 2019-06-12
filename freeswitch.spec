@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #		      and others
 #
@@ -842,6 +842,16 @@ Theora Video Codec support for FreeSWITCH open source telephony platform.
 #				FreeSWITCH Database Modules
 ######################################################################################################################
 
+%package database-mariadb
+Summary:	MariaDB native support for FreeSWITCH
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+Requires:	mariadb-connector-c
+BuildRequires:	mariadb-connector-c-devel
+
+%description database-mariadb
+MariaDB native support for FreeSWITCH.
+
 %package database-pgsql
 Summary:	PostgreSQL native support for FreeSWITCH
 Group:		System/Libraries
@@ -1534,7 +1544,7 @@ CODECS_MODULES+="codecs/mod_sangoma_codec"
 #					Database Modules
 #
 ######################################################################################################################
-DATABASES_MODULES="databases/mod_pgsql"
+DATABASES_MODULES="databases/mod_mariadb databases/mod_pgsql"
 
 ######################################################################################################################
 #
@@ -2289,6 +2299,9 @@ fi
 #						FreeSWITCH Database Modules
 #
 ######################################################################################################################
+
+%files database-mariadb
+%{MODINSTDIR}/mod_mariadb.so*
 
 %files database-pgsql
 %{MODINSTDIR}/mod_pgsql.so*

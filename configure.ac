@@ -705,6 +705,11 @@ AC_SUBST([POSTGRESQL_CFLAGS], [$POSTGRESQL_CFLAGS])
 AC_SUBST([POSTGRESQL_LDFLAGS], [$POSTGRESQL_LDFLAGS])
 AC_SUBST([POSTGRESQL_LIBDIR], [$POSTGRESQL_LIBDIR])
 
+
+PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
+  AM_CONDITIONAL([HAVE_MARIADB],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])])
+
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
 
@@ -1925,6 +1930,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
+		src/mod/databases/mod_mariadb/Makefile
 		src/mod/databases/mod_pgsql/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile

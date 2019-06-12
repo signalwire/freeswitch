@@ -2929,7 +2929,7 @@ static char create_row_size_limited_channels_sql[] =
 	"   ip_addr  VARCHAR(256),\n"
 	"   dest  VARCHAR(1024),\n"
 	"   application  VARCHAR(128),\n"
-	"   application_data  VARCHAR(4096),\n"
+	"   application_data TEXT,\n"
 	"   dialplan VARCHAR(128),\n"
 	"   context VARCHAR(128),\n"
 	"   read_codec  VARCHAR(128),\n"
