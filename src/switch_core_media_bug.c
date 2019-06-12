@@ -828,7 +828,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 
 	if (!switch_channel_media_ready(session->channel)) {
-		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+		if (switch_channel_direction(session->channel == SWITCH_CALL_DIRECTION_OUTBOUND) ||
+			switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot establish media. Media bug add failed.\n");
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -890,8 +892,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	}
 
 	bug->stop_time = stop_time;
-	bytes = bug->read_impl.decoded_bytes_per_packet;
 
+	if (!(bytes = bug->read_impl.decoded_bytes_per_packet)) {
+		bytes = 320;
+	}
+	
 	if (!bug->flags) {
 		bug->flags = (SMBF_READ_STREAM | SMBF_WRITE_STREAM);
 	}
@@ -1031,6 +1036,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
 	switch_media_bug_t *new_bug = NULL, *cur = NULL, *bp = NULL, *last = NULL;
 	int total = 0;
 
+	if (!switch_channel_media_ready(new_session->channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_WARNING, "Cannot transfer media bugs to a channel with no media.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
 	bp = orig_session->bugs;
 	while (bp) {

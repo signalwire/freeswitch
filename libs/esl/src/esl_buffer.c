@@ -58,14 +58,20 @@ ESL_DECLARE(esl_status_t) esl_buffer_create(esl_buffer_t **buffer, esl_size_t bl
 	if (new_buffer) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
-		if (start_len) {
-			new_buffer->data = malloc(start_len);
-			if (!new_buffer->data) {
-				free(new_buffer);
-				return ESL_FAIL;
-			}
-			memset(new_buffer->data, 0, start_len);
+		if (!start_len) {
+			start_len = 250;
 		}
+
+		if (!block_size) {
+			block_size = start_len;
+		}
+		
+		new_buffer->data = malloc(start_len);
+		if (!new_buffer->data) {
+			free(new_buffer);
+			return ESL_FAIL;
+		}
+		memset(new_buffer->data, 0, start_len);
 
 		new_buffer->max_len = max_len;
 		new_buffer->datalen = start_len;

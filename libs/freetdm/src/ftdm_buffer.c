@@ -57,14 +57,20 @@ FT_DECLARE(ftdm_status_t) ftdm_buffer_create(ftdm_buffer_t **buffer, ftdm_size_t
 	if (new_buffer) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
-		if (start_len) {
-			new_buffer->data = ftdm_malloc(start_len);
-			if (!new_buffer->data) {
-				ftdm_safe_free(new_buffer);
-				return FTDM_MEMERR;
-			}
-			memset(new_buffer->data, 0, start_len);
+		if (!start_len) {
+			start_len = 250;
 		}
+
+		if (!block_size) {
+			block_size = start_len;
+		}
+
+		new_buffer->data = ftdm_malloc(start_len);
+		if (!new_buffer->data) {
+			ftdm_safe_free(new_buffer);
+			return FTDM_MEMERR;
+		}
+		memset(new_buffer->data, 0, start_len);
 
 		new_buffer->max_len = max_len;
 		new_buffer->datalen = start_len;

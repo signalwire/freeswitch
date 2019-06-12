@@ -118,14 +118,21 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 	if ((new_buffer = malloc(sizeof(*new_buffer)))) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
-		if (start_len) {
-			if (!(new_buffer->data = malloc(start_len))) {
-				free(new_buffer);
-				*buffer = NULL;
-				return SWITCH_STATUS_MEMERR;
-			}
-			memset(new_buffer->data, 0, start_len);
+		if (!start_len) {
+			start_len = 250;
 		}
+
+		if (!block_size) {
+			block_size = start_len;
+		}
+		
+		if (!(new_buffer->data = malloc(start_len))) {
+			free(new_buffer);
+			*buffer = NULL;
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		memset(new_buffer->data, 0, start_len);
 
 		new_buffer->max_len = max_len;
 		new_buffer->datalen = start_len;
