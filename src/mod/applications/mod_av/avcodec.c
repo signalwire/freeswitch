@@ -2169,7 +2169,7 @@ static void parse_codecs(avcodec_profile_t *aprofile, switch_xml_t codecs)
 	switch_xml_t codec = NULL;
 
 	if (!codecs) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no codecs in %s\n", aprofile->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no codecs defined in mod_av profile %s\n", aprofile->name);
 		return;
 	}
 
