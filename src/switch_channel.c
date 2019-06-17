@@ -1752,17 +1752,19 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_app_flag(switch_channel_
 																 uint32_t app_flag,
 																 const char *key, switch_bool_t pres, uint32_t to)
 {
+	int r = 0;
+	
 	if (to) {
 		to++;
 	}
 
 	for (;;) {
 		if (pres) {
-			if (switch_channel_test_app_flag_key(key, channel, app_flag)) {
+			if ((r = switch_channel_test_app_flag_key(key, channel, app_flag))) {
 				break;
 			}
 		} else {
-			if (!switch_channel_test_app_flag_key(key, channel, app_flag)) {
+			if (!(r = switch_channel_test_app_flag_key(key, channel, app_flag))) {
 				break;
 			}
 		}
@@ -1770,15 +1772,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_app_flag(switch_channel_
 		switch_cond_next();
 
 		if (switch_channel_down(channel)) {
-			return SWITCH_STATUS_FALSE;
+			return r;
 		}
 
 		if (to && !--to) {
-			return SWITCH_STATUS_FALSE;
+			return r;
 		}
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return r;
 }
 
 
