@@ -1036,7 +1036,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_co
 SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on);
 
 SWITCH_DECLARE(switch_status_t) switch_dial_handle_create(switch_dial_handle_t **handle);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json_obj(switch_dial_handle_t **handle, cJSON *json);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json(switch_dial_handle_t **handle, const char *handle_string);
 SWITCH_DECLARE(void) switch_dial_handle_destroy(switch_dial_handle_t **handle);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_serialize_json_obj(switch_dial_handle_t *handle, cJSON **json);
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_serialize_json(switch_dial_handle_t *handle, char **str);
 SWITCH_DECLARE(void) switch_dial_handle_add_leg_list(switch_dial_handle_t *handle, switch_dial_leg_list_t **leg_listP);
 SWITCH_DECLARE(void) switch_dial_leg_list_add_leg(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *dial_string);
 SWITCH_DECLARE(void) switch_dial_leg_list_add_leg_printf(switch_dial_leg_list_t *parent, switch_dial_leg_t **legP, const char *fmt, ...);

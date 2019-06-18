@@ -137,6 +137,66 @@ FST_CORE_BEGIN("./conf")
 			fst_check(destroy == 2);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(dial_handle_create_json)
+		{
+			const char *dh_str = "{\n"
+			"    \"vars\": {\n"
+			"        \"foo\": \"bar\",\n"
+			"        \"absolute_codec_string\": \"opus,pcmu,pcma\",\n"
+			"        \"ignore_early_media\": \"true\"\n"
+			"    },\n"
+			"    \"leg_lists\": [\n"
+			"        { \"legs\": [\n"
+			"            { \n"
+			"                \"dial_string\": \"loopback/dest\", \n"
+			"                \"vars\": {\n"
+			"                    \"bar\": \"bar\"\n"
+			"                }\n"
+			"            },\n"
+			"            { \n"
+			"                \"dial_string\": \"sofia/gateway/gw/12345\"\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"sofia/external/foo@example.com^5551231234\",\n"
+			"                \"vars\": {\n"
+			"                    \"sip_h_X-Custom\": \"my val\"\n"
+			"                }\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"group/my_group\"\n"
+			"            }\n"
+			"        ] }\n"
+			"    ]\n"
+			"}";
+
+			// create dial handle from json string, convert back to json and compare
+			switch_dial_handle_t *dh = NULL;
+			char *dh_str2 = NULL;
+			char *dh_str3 = NULL;
+			cJSON *dh_json = NULL;
+			fst_requires(switch_dial_handle_create_json(&dh, dh_str) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dh != NULL);
+			fst_requires(switch_dial_handle_serialize_json_obj(dh, &dh_json) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dh_json != NULL);
+			fst_requires(switch_dial_handle_serialize_json(dh, &dh_str2) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dh_str2 != NULL);
+			fst_check_string_equals(dh_str2, "{\"vars\":{\"foo\":\"bar\",\"absolute_codec_string\":\"opus,pcmu,pcma\",\"ignore_early_media\":\"true\"},\"leg_lists\":[{\"legs\":[{\"dial_string\":\"loopback/dest\",\"vars\":{\"bar\":\"bar\"}},{\"dial_string\":\"sofia/gateway/gw/12345\"}]},{\"legs\":[{\"dial_string\":\"sofia/external/foo@example.com^5551231234\",\"vars\":{\"sip_h_X-Custom\":\"my val\"}}]},{\"legs\":[{\"dial_string\":\"group/my_group\"}]}]}");
+
+			dh_str3 = cJSON_PrintUnformatted(dh_json);
+			fst_requires(dh_str3);
+			fst_check_string_equals(dh_str2, dh_str3);
+
+			switch_safe_free(dh_str2);
+			switch_safe_free(dh_str3);
+			cJSON_Delete(dh_json);
+			switch_dial_handle_destroy(&dh);
+		}
+		FST_TEST_END();
 	}
 	FST_SUITE_END()
 }

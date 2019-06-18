@@ -4384,6 +4384,168 @@ SWITCH_DECLARE(switch_event_t *) switch_dial_leg_get_vars(switch_dial_leg_t *leg
 }
 
 
+static switch_status_t vars_serialize_json_obj(switch_event_t *event, cJSON **json)
+{
+	switch_event_header_t *hp;
+	*json = cJSON_CreateObject();
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (hp->name && hp->value) {
+			cJSON_AddItemToObject(*json, hp->name, cJSON_CreateString(hp->value));
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t leg_serialize_json_obj(switch_dial_leg_t *leg, cJSON **json)
+{
+	cJSON *vars_json = NULL;
+	*json = cJSON_CreateObject();
+	if (leg->dial_string) {
+		cJSON_AddStringToObject(*json, "dial_string", leg->dial_string);
+	}
+	if (leg->leg_vars && vars_serialize_json_obj(leg->leg_vars, &vars_json) == SWITCH_STATUS_SUCCESS && vars_json) {
+		cJSON_AddItemToObject(*json, "vars", vars_json);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t leg_list_serialize_json_obj(switch_dial_leg_list_t *ll, cJSON **json)
+{
+	int i;
+	cJSON *legs_json = cJSON_CreateArray();
+	*json = cJSON_CreateObject();
+	cJSON_AddItemToObject(*json, "legs", legs_json);
+	for (i = 0; i < ll->leg_idx; i++) {
+		switch_dial_leg_t *leg = ll->legs[i];
+		cJSON *leg_json = NULL;
+		if (leg_serialize_json_obj(leg, &leg_json) == SWITCH_STATUS_SUCCESS && leg_json) {
+			cJSON_AddItemToArray(legs_json, leg_json);
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_serialize_json_obj(switch_dial_handle_t *handle, cJSON **json)
+{
+	int i;
+	cJSON *global_vars_json = NULL;
+	cJSON *leg_lists_json = NULL;
+	if (!handle) {
+		return SWITCH_STATUS_FALSE;
+	}
+	*json = cJSON_CreateObject();
+	if (handle->global_vars && vars_serialize_json_obj(handle->global_vars, &global_vars_json) == SWITCH_STATUS_SUCCESS && global_vars_json) {
+		cJSON_AddItemToObject(*json, "vars", global_vars_json);
+	}
+
+	leg_lists_json = cJSON_CreateArray();
+	cJSON_AddItemToObject(*json, "leg_lists", leg_lists_json);
+	for (i = 0; i < handle->leg_list_idx; i++) {
+		switch_dial_leg_list_t *ll = handle->leg_lists[i];
+		cJSON *leg_list_json = NULL;
+		if (leg_list_serialize_json_obj(ll, &leg_list_json) == SWITCH_STATUS_SUCCESS && leg_list_json) {
+			cJSON_AddItemToArray(leg_lists_json, leg_list_json);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_serialize_json(switch_dial_handle_t *handle, char **str)
+{
+	cJSON *json = NULL;
+	if (switch_dial_handle_serialize_json_obj(handle, &json) == SWITCH_STATUS_SUCCESS && json) {
+		*str = cJSON_PrintUnformatted(json);
+		cJSON_Delete(json);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json_obj(switch_dial_handle_t **handle, cJSON *json)
+{
+	cJSON *vars_json = NULL;
+	cJSON *var_json = NULL;
+	cJSON *leg_lists_json = NULL;
+	if (!json) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_dial_handle_create(handle);
+
+	leg_lists_json = cJSON_GetObjectItem(json, "leg_lists");
+	if (leg_lists_json && leg_lists_json->type == cJSON_Array) {
+		cJSON *leg_list_json = NULL;
+		cJSON_ArrayForEach(leg_list_json, leg_lists_json) {
+			cJSON *legs_json = cJSON_GetObjectItem(leg_list_json, "legs");
+			cJSON *leg_json = NULL;
+			switch_dial_leg_list_t *ll = NULL;
+			if (!legs_json || legs_json->type != cJSON_Array) {
+				continue;
+			}
+			switch_dial_handle_add_leg_list(*handle, &ll);
+			cJSON_ArrayForEach(leg_json, legs_json) {
+				switch_dial_leg_t *leg = NULL;
+				const char *dial_string = NULL;
+				if (!leg_json || leg_json->type != cJSON_Object) {
+					continue;
+				}
+				dial_string = cJSON_GetObjectCstr(leg_json, "dial_string");
+				if (!dial_string) {
+					continue;
+				}
+				switch_dial_leg_list_add_leg(ll, &leg, dial_string);
+
+				vars_json = cJSON_GetObjectItem(leg_json, "vars");
+				if (vars_json && vars_json->type == cJSON_Object) {
+					cJSON_ArrayForEach(var_json, vars_json) {
+						if (!var_json || var_json->type != cJSON_String || !var_json->valuestring || !var_json->string) {
+							continue;
+						}
+						switch_dial_handle_add_leg_var(leg, var_json->string, var_json->valuestring);
+					}
+				}
+			}
+		}
+	}
+
+	vars_json = cJSON_GetObjectItem(json, "vars");
+	if (vars_json && vars_json->type == cJSON_Object) {
+		cJSON_ArrayForEach(var_json, vars_json) {
+			if (!var_json || var_json->type != cJSON_String || !var_json->valuestring || !var_json->string) {
+				continue;
+			}
+			switch_dial_handle_add_global_var(*handle, var_json->string, var_json->valuestring);
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json(switch_dial_handle_t **handle, const char *handle_string)
+{
+	switch_status_t status;
+	cJSON *handle_json = NULL;
+
+	if (zstr(handle_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	handle_json = cJSON_Parse(handle_string);
+	if (!handle_json) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	status = switch_dial_handle_create_json_obj(handle, handle_json);
+	cJSON_Delete(handle_json);
+	return status;
+}
+
+
 static switch_status_t o_bridge_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	char *str = (char *) buf;
