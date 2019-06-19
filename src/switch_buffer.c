@@ -122,8 +122,8 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 			start_len = 250;
 		}
 
-		if (!block_size) {
-			block_size = start_len;
+		if (!blocksize) {
+			blocksize = start_len;
 		}
 		
 		if (!(new_buffer->data = malloc(start_len))) {
