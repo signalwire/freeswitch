@@ -252,7 +252,7 @@ static switch_status_t ja_say_time(switch_core_session_t *session, char *tosay, 
 	const char *tz = switch_channel_get_variable(channel, "timezone");
 
 	int mod_min;
-	char buffer[3];
+	char buffer[11];
 
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {

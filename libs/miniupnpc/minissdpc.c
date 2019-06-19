@@ -58,7 +58,7 @@ getDevicesFromMiniSSDPD(const char * devtype, const char * socketpath)
 		return NULL;
 	}
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, socketpath, sizeof(addr.sun_path));
+	memcpy(addr.sun_path, socketpath, sizeof(addr.sun_path));
 	if(connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0)
 	{
 		/*syslog(LOG_WARNING, "connect(\"%s\"): %m", socketpath);*/

@@ -302,7 +302,7 @@ static ks_status_t mod_signalwire_adoption_post(void)
 			status = KS_STATUS_FAIL;
 			goto done;
 		}
-		strncpy(globals.adoption_data_external_ip, external_ip, sizeof(globals.adoption_data_external_ip));
+		snprintf(globals.adoption_data_external_ip, sizeof(globals.adoption_data_external_ip), "%s", external_ip);
 	}
 
 	if (!globals.adoption_data_uname[0]) {
@@ -609,7 +609,7 @@ static switch_status_t mod_signalwire_load_or_generate_token(void)
 			token[len - 1] = '\0';
 		}
 
-		strncpy(globals.adoption_token, token, sizeof(globals.adoption_token) - 1);
+		snprintf(globals.adoption_token, sizeof(globals.adoption_token), "%s", token);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
@@ -674,7 +674,7 @@ static switch_status_t load_config()
 	}
 
 	if ((data = getenv("SW_ADOPTION_SERVICE"))) {
-		strncpy(globals.adoption_service, data, sizeof(globals.adoption_service));
+	        snprintf(globals.adoption_service, sizeof(globals.adoption_service), "%s", data);
 	}
 
 	swclt_config_load_from_env(globals.config);
@@ -1032,7 +1032,7 @@ static void mod_signalwire_state_online(void)
 static void mod_signalwire_state_configure(void)
 {
 	switch_memory_pool_t *pool = NULL;
-	char local_ip[256];
+	char local_ip[64];
 	switch_port_t local_port = 6050;
 	char local_endpoint[256];
 	char *external_ip;

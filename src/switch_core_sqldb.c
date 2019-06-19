@@ -4160,7 +4160,7 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 			}
 		}
 		if (i == 3) {
-			strncpy(cleankey_str, dbh->name, strlen(dbh->name));
+			snprintf(cleankey_str, sizeof(cleankey_str), "%s", dbh->name);
 		}
 
 		count++;

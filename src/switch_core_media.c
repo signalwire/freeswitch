@@ -11921,7 +11921,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			memcpy(q, strchr(a_engine->adv_sdp_ip, ':') ? "6 " : "4 ", 2);
 			p +=2;
 			q +=2;
-			strncpy(q, a_engine->adv_sdp_ip, strlen(a_engine->adv_sdp_ip));
+			snprintf(q, qe - q, "%s", a_engine->adv_sdp_ip);
 			q += strlen(a_engine->adv_sdp_ip);
 
 			while (p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f'))) {
@@ -11967,7 +11967,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				snprintf(o_line, sizeof(o_line), "o=%s %010u %010u IN %s %s\r\n",
 						 smh->mparams->sdp_username, smh->owner_id, smh->session_id, family, smh->mparams->sipip);
 
-				strncpy(q, o_line, strlen(o_line));
+				snprintf(q, qe-q, "%s", o_line);
 				q += strlen(o_line) - 1;
 
 			}
@@ -11988,8 +11988,8 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				p += len;
 
 				snprintf(s_line, sizeof(s_line), "s=%s\r\n", smh->mparams->sdp_username);
+				snprintf(q, qe-q, "%s", s_line);
 
-				strncpy(q, s_line, strlen(s_line));
 				q += strlen(s_line) - 1;
 
 			}
@@ -12012,7 +12012,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			}
 
 
-			strncpy(q, port_buf, strlen(port_buf));
+			snprintf(q, qe - q, "%s", port_buf);
 			q += strlen(port_buf);
 
 			if (q >= qe) {
@@ -12074,7 +12074,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				goto end;
 			}
 
-			strncpy(q, vport_buf, strlen(vport_buf));
+			snprintf(q, qe-q, "%s", vport_buf);
 			q += strlen(vport_buf);
 
 			if (q >= qe) {
@@ -12137,7 +12137,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				goto end;
 			}
 
-			strncpy(q, tport_buf, strlen(tport_buf));
+			snprintf(q, qe-q, "%s", tport_buf);
 			q += strlen(tport_buf);
 
 			if (q >= qe) {

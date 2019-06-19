@@ -34,6 +34,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <stdio.h>
 #include "sofia-sip/su_alloc.h"
 
 /** Duplicate a string, allocate memory from @a home.
@@ -54,7 +55,7 @@ char *su_strdup(su_home_t *home, char const *s)
     size_t n = strlen(s);
     char *retval = su_alloc(home, n + 1);
     if (retval)
-      strncpy(retval, s, n)[n] = 0;
+      snprintf(retval, n + 1, "%s", s);
     return retval;
   }
   return NULL;

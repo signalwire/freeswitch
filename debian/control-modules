@@ -479,6 +479,7 @@ Module: endpoints/mod_verto
 Description: Adds mod_verto.
  Adds mod_verto.
 Build-Depends: libperl-dev
+Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
 
 ## mod/event_handlers
 
@@ -635,7 +636,7 @@ Description: Adds mod_basic.
 Module: languages/mod_java
 Description: mod_java
  Adds mod_java.
-Build-Depends: default-jdk, gcj-jdk
+Build-Depends: default-jdk
 
 Module: languages/mod_lua
 Description: mod_lua
@@ -651,6 +652,7 @@ Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.
 Build-Depends: libperl-dev
+Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
 
 Module: languages/mod_python
 Description: mod_python

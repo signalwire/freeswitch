@@ -2412,7 +2412,7 @@ void sofia_reg_handle_sip_r_register(int status,
 
 		if (de && de->data && de->data->e_msg) {
 			if (!zstr_buf(gateway->register_network_ip)) {
-				strncpy(oregister_network_ip, gateway->register_network_ip, sizeof(oregister_network_ip) - 1);
+				snprintf(oregister_network_ip, sizeof(oregister_network_ip), "%s", gateway->register_network_ip);
 			}
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 			if (!zstr_buf(network_ip)) {

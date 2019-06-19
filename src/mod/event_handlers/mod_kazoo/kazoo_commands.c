@@ -333,8 +333,7 @@ static size_t header_callback(char *buffer, size_t size, size_t nitems, void *us
 	int len = strlen(buffer);
 	char buf[1024];
 	if(len > 2 && len < 1024) {
-		strncpy(buf, buffer, len-2);
-		buf[len-2] = '\0';
+		snprintf(buf, sizeof(buf), "%s", buffer);
 		switch_event_add_header_string(event, SWITCH_STACK_PUSH | SWITCH_STACK_BOTTOM, "Reply-Headers", buf);
 	}
 	return nitems * size;

@@ -28,7 +28,7 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="wheezy jessie stretch sid"
+supported_debian_distros="wheezy jessie stretch buster sid"
 supported_ubuntu_distros="trusty utopic xenial"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(

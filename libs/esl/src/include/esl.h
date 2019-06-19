@@ -40,8 +40,8 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
-#define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
-#define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
+#define esl_copy_string(_x, _y, _z) snprintf(_x, _z, "%s", _y)
+#define esl_set_string(_x, _y)  esl_copy_string(_x, _y, sizeof(_x))
 #define ESL_VA_NONE "%s", ""
 
 typedef struct esl_event_header esl_event_header_t;

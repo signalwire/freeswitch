@@ -157,7 +157,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 {
 	switch_event_t *event;
 	int *event_num = NULL;
-	char str_event_num[10];
+	char str_event_num[12];
 	void *val;
 	int added = 0;
 

@@ -35,9 +35,6 @@
 #ifdef  _MSC_VER
 #include <io.h>
 #include <WinSock2.h>
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
 typedef SOCKET credis_socket_t;
 #define CREDIS_SOCK_INVALID INVALID_SOCKET
 #else

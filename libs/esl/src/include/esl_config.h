@@ -113,7 +113,7 @@ struct esl_config {
 	/*! FILE stream buffer to the opened file */
 	FILE *file;
 	/*! path to the file */
-	char path[512];
+	char path[1024];
 	/*! current category */
 	char category[256];
 	/*! current section */

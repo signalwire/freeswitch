@@ -50,7 +50,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 #endif
 
 typedef struct {
-	char name[128];
+	char name[256];
 	char host[128];
 	esl_port_t port;
 	char user[256];
@@ -1267,7 +1267,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 	if (esl_config_open_file(&cfg, cfile) ||
 		esl_config_open_file(&cfg, dft_cfile)) {
 		char *var, *val;
-		char cur_cat[128] = "";
+		char cur_cat[256] = "";
 		while (esl_config_next_pair(&cfg, &var, &val)) {
 			if (strcmp(cur_cat, cfg.category)) {
 				esl_set_string(cur_cat, cfg.category);
@@ -1470,7 +1470,7 @@ int main(int argc, char *argv[])
 	int argv_error = 0;
 	int argv_exec = 0;
 	char argv_command[1024] = "";
-	char argv_loglevel[128] = "";
+	char argv_loglevel[127] = "";
 	int argv_log_uuid = 0;
 	int argv_log_uuid_short = 0;
 	int argv_quiet = 0;

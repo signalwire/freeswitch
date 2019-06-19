@@ -111,10 +111,6 @@ typedef int gid_t;
 #include <io.h>
 #define strcasecmp(s1, s2) stricmp(s1, s2)
 #define strncasecmp(s1, s2, n) strnicmp(s1, s2, n)
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
-
 #else
 /* packed attribute */
 #if (defined __SUNPRO_CC) || defined(__SUNPRO_C)
