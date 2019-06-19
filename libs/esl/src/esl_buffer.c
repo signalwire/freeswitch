@@ -62,8 +62,8 @@ ESL_DECLARE(esl_status_t) esl_buffer_create(esl_buffer_t **buffer, esl_size_t bl
 			start_len = 250;
 		}
 
-		if (!block_size) {
-			block_size = start_len;
+		if (!blocksize) {
+			blocksize = start_len;
 		}
 		
 		new_buffer->data = malloc(start_len);
