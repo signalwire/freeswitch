@@ -61,8 +61,8 @@ FT_DECLARE(ftdm_status_t) ftdm_buffer_create(ftdm_buffer_t **buffer, ftdm_size_t
 			start_len = 250;
 		}
 
-		if (!block_size) {
-			block_size = start_len;
+		if (!blocksize) {
+			blocksize = start_len;
 		}
 
 		new_buffer->data = ftdm_malloc(start_len);
