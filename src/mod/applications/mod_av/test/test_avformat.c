@@ -52,6 +52,7 @@ FST_CORE_BEGIN("conf")
 			switch_size_t len = SAMPLES;
 			uint32_t flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
 			int i = 0;
+			switch_image_t *ccimg;
 
 			fst_requires(img);
 
@@ -68,7 +69,7 @@ FST_CORE_BEGIN("conf")
 			status = switch_core_file_write_video(&fh, &frame);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
-			switch_image_t *ccimg = switch_img_read_png("./cluecon.png", SWITCH_IMG_FMT_ARGB);
+			ccimg = switch_img_read_png("./cluecon.png", SWITCH_IMG_FMT_ARGB);
 			fst_requires(ccimg);
 
 			switch_rgb_color_t color = {0};
