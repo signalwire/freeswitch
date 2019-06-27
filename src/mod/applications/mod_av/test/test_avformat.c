@@ -156,9 +156,9 @@ FST_CORE_BEGIN("conf")
 
 		FST_TEARDOWN_BEGIN()
 		{
-			const char *err = NULL;
-			switch_sleep(1000000);
-			//fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_av", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
+		  //const char *err = NULL;
+		  switch_sleep(1000000);
+		  //fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_av", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
 		}
 		FST_TEARDOWN_END()
 	}
