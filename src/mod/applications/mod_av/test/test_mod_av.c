@@ -50,9 +50,10 @@ static fctcl_init_t my_cl_options[] = {
 
 FST_CORE_BEGIN("conf")
 {
+        const char *loop_;
 	fctcl_install(my_cl_options);
 
-	const char *loop_ = fctcl_val("--loop");
+	loop_ = fctcl_val("--loop");
 	if (loop_) loop = atoi(loop_);
 
 	FST_MODULE_BEGIN(mod_av, mod_av_test)
@@ -68,6 +69,11 @@ FST_CORE_BEGIN("conf")
 			switch_status_t status;
 			switch_codec_t codec = { 0 };
 			switch_codec_settings_t codec_settings = { 0 };
+			switch_image_t *img;
+			uint8_t buf[SWITCH_DEFAULT_VIDEO_SIZE + 12];
+			switch_frame_t frame = { 0 };
+			int packets = 0;
+			switch_status_t encode_status;
 
 			// switch_set_string(codec_settings.video.config_profile_name, "conference");
 
@@ -85,11 +91,9 @@ FST_CORE_BEGIN("conf")
 							   &codec_settings, fst_pool);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
-			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
+			img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
 			fst_requires(img);
 
-			uint8_t buf[SWITCH_DEFAULT_VIDEO_SIZE + 12];
-			switch_frame_t frame = { 0 };
 
 			frame.packet = buf;
 			frame.packetlen = SWITCH_DEFAULT_VIDEO_SIZE + 12;
@@ -100,9 +104,6 @@ FST_CORE_BEGIN("conf")
 			frame.seq = 0;
 			frame.timestamp = 0;
 			frame.img = img;
-
-			int packets = 0;
-			switch_status_t encode_status;
 
 			do {
 				frame.datalen = SWITCH_DEFAULT_VIDEO_SIZE;
