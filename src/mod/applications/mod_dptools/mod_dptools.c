@@ -896,6 +896,35 @@ static int e_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 1;
 }
 
+#define native_eavesdrop_SYNTAX "<uuid> [read|write]"
+SWITCH_STANDARD_APP(native_eavesdrop_function)
+{
+	switch_eavesdrop_flag_t flags = ED_TAP_READ;
+	char *argv[2] = { 0 };
+	int argc = 0;
+	char *mydata;
+
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "INVALID ARGS usage (%s)\n", native_eavesdrop_SYNTAX);
+		return;
+	}
+	
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_split(mydata, ' ', argv);
+
+	if (argc > 1) {
+		if (switch_stristr("read", argv[1])) {
+			flags |= ED_TAP_READ;
+		} else if (switch_stristr("write", argv[1])) {
+			flags |= ED_TAP_WRITE;
+		}
+	}
+
+	switch_ivr_eavesdrop_session(session, argv[0], NULL, flags);	
+}
+
+
 #define eavesdrop_SYNTAX "[all | <uuid>]"
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
@@ -6571,6 +6600,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "unblock_dtmf", "Stop blocking DTMF", "Stop blocking DTMF", dtmf_unblock_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "intercept", "intercept", "intercept", intercept_function, INTERCEPT_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eavesdrop", "eavesdrop on a uuid", "eavesdrop on a uuid", eavesdrop_function, eavesdrop_SYNTAX, SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "native_eavesdrop", "eavesdrop on a uuid", "eavesdrop on a uuid", native_eavesdrop_function, native_eavesdrop_SYNTAX, SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "three_way", "three way call with a uuid", "three way call with a uuid", three_way_function, threeway_SYNTAX,
 				   SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "set_user", "Set a User", "Set a User", set_user_function, SET_USER_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);

@@ -1848,12 +1848,13 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	switch_channel_t *e_channel = switch_core_session_get_channel(ep->eavesdropper);
 	int show_spy = 0;
-
+	switch_frame_t *nframe = NULL;
+	
 	frame.data = data;
 	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	show_spy = switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM) || switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
-
+	
 	if (show_spy) {
 		if (!ep->set_decoded_read) {
 			ep->set_decoded_read = 1;
@@ -1892,6 +1893,12 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		switch_channel_clear_flag_recursive(switch_core_session_get_channel(session), CF_VIDEO_DECODED_READ);
 
 		break;
+	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
+		nframe = switch_core_media_bug_get_native_write_frame(bug);
+		break;
+	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
+		nframe = switch_core_media_bug_get_native_read_frame(bug);
+		break;
 	case SWITCH_ABC_TYPE_WRITE:
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
@@ -1901,8 +1908,6 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
 				switch_buffer_unlock(ep->buffer);
 			}
-		} else {
-			return SWITCH_FALSE;
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ:
@@ -1990,6 +1995,21 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		break;
 	}
 
+	if (nframe) {
+		switch_frame_t frame = {0};
+		uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = "";
+		
+		frame = *nframe;
+		frame.data = buf;
+		frame.codec = nframe->codec;
+		
+		memcpy(frame.data, nframe->data, nframe->datalen);
+
+		if (switch_core_session_write_frame(ep->eavesdropper, nframe, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_FALSE;
+		}
+	}
+	
 	return SWITCH_TRUE;
 }
 
@@ -2127,9 +2147,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			goto end;
 		}
 
+		if ((flags & ED_TAP_READ) || (flags & ED_TAP_WRITE)) {
+			switch_core_session_get_real_read_impl(tsession, &tread_impl);
+			switch_core_session_get_real_read_impl(session, &read_impl);
+			
+			if (strcasecmp(tread_impl.iananame, read_impl.iananame)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codecs do not match which is required for this mode\n");
+				goto end;
+			}
+		}
+
 		switch_core_session_get_read_impl(tsession, &tread_impl);
 		switch_core_session_get_read_impl(session, &read_impl);
-
+		
 		if ((id_name = switch_channel_get_variable(tchannel, "eavesdrop_announce_id"))) {
 			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_announce_macro");
 			if (tmp) {
@@ -2217,18 +2247,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		ep->eavesdropper = session;
 		ep->flags = flags;
-		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->buffer, buf_size, buf_size, buf_size);
-		switch_buffer_add_mutex(ep->buffer, ep->mutex);
 
-		switch_mutex_init(&ep->w_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->w_buffer, buf_size, buf_size, buf_size);
-		switch_buffer_add_mutex(ep->w_buffer, ep->w_mutex);
-
-		switch_mutex_init(&ep->r_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->r_buffer, buf_size, buf_size, buf_size);
-		switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
-
+		if (!(flags & ED_TAP_READ) && !(flags & ED_TAP_WRITE)) {
+			switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+			switch_buffer_create_dynamic(&ep->buffer, buf_size, buf_size, buf_size);
+			switch_buffer_add_mutex(ep->buffer, ep->mutex);
+			
+			switch_mutex_init(&ep->w_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+			switch_buffer_create_dynamic(&ep->w_buffer, buf_size, buf_size, buf_size);
+			switch_buffer_add_mutex(ep->w_buffer, ep->w_mutex);
+			
+			switch_mutex_init(&ep->r_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+			switch_buffer_create_dynamic(&ep->r_buffer, buf_size, buf_size, buf_size);
+			switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
+		}
+		
 		if (flags & ED_BRIDGE_READ) {
 			read_flags = SMBF_READ_STREAM | SMBF_READ_REPLACE;
 		}
@@ -2236,6 +2269,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		if (flags & ED_BRIDGE_WRITE) {
 			write_flags = SMBF_WRITE_STREAM | SMBF_WRITE_REPLACE;
 		}
+
+		if (flags & ED_TAP_READ) {
+			read_flags = SMBF_TAP_NATIVE_READ;
+			write_flags = 0;
+		}
+
+		if (flags & ED_TAP_WRITE) {
+			write_flags = SMBF_TAP_NATIVE_WRITE;
+			read_flags = 0;
+		}
+		
 
 		if (switch_channel_test_flag(session->channel, CF_VIDEO) && switch_channel_test_flag(tsession->channel, CF_VIDEO)) {
 			if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_show_listener_video"))) {
@@ -2284,6 +2328,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		name = cp->caller_id_name;
 		num = cp->caller_id_number;
 
+		if ((flags & ED_TAP_READ) || (flags & ED_TAP_WRITE)) {
+			flags &= ~ED_DTMF;
+			flags &= ~ED_BRIDGE_READ;
+			flags &= ~ED_BRIDGE_WRITE;
+		}
+		
 		if (flags & ED_COPY_DISPLAY) {
 			if (switch_channel_test_flag(tchannel, CF_BRIDGE_ORIGINATOR) || !switch_channel_test_flag(tchannel, CF_BRIDGED)) {
 				name = cp->callee_id_name;
@@ -2425,7 +2475,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				}
 			}
 
-			if (!switch_test_flag(read_frame, SFF_CNG)) {
+			if (ep->r_buffer && ep->w_buffer && !switch_test_flag(read_frame, SFF_CNG)) {
 				switch_buffer_lock(ep->r_buffer);
 				switch_buffer_zwrite(ep->r_buffer, read_frame->data, read_frame->datalen);
 				switch_buffer_unlock(ep->r_buffer);
@@ -2439,7 +2489,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				len = tlen;
 			}
 
-			if (switch_buffer_inuse(ep->buffer) >= len) {
+			if (ep->buffer && switch_buffer_inuse(ep->buffer) >= len) {
 				switch_buffer_lock(ep->buffer);
 				while (switch_buffer_inuse(ep->buffer) >= len) {
 					int tchanged = 0, changed = 0;
