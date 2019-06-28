@@ -68,7 +68,7 @@ FST_CORE_BEGIN("conf")
 		{
 			switch_status_t status;
 			switch_codec_t codec = { 0 };
-			switch_codec_settings_t codec_settings = { 0 };
+			switch_codec_settings_t codec_settings = {{ 0 }};
 			switch_image_t *img;
 			uint8_t buf[SWITCH_DEFAULT_VIDEO_SIZE + 12];
 			switch_frame_t frame = { 0 };
