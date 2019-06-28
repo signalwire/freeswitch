@@ -3583,8 +3583,6 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_create_schema(sql_manager.dbh, "create index complete10 on complete (a10,hostname)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index complete11 on complete (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,hostname)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index nat_map_port_proto on nat (port,proto,hostname)", NULL);
-	switch_cache_db_create_schema(sql_manager.dbh, "create index channels1 on channels(hostname)", NULL);
-	switch_cache_db_create_schema(sql_manager.dbh, "create index calls1 on calls(hostname)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index chidx1 on channels (hostname)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index uuindex on channels (uuid, hostname)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index uuindex2 on channels (call_uuid)", NULL);
