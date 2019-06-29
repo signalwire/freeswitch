@@ -1,7 +1,8 @@
-en-us-callie 1.0.51
-en-us-allison 1.0.0
+en-us-callie 1.0.52
+en-us-allison 1.0.1
 ru-RU-elena 1.0.51
 en-ca-june 1.0.51
+es-ar-mario 1.0.0
 fr-ca-june 1.0.51
 pt-BR-karina 1.0.51
 sv-se-jakob 1.0.50
