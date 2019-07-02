@@ -150,7 +150,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_st
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
-	char *buf = handle->data;
 	char *end = handle->end;
 	int ret = 0;
 	char *data = NULL;
@@ -178,7 +177,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 			if ((new_data = realloc(handle->data, new_len))) {
 				handle->data_size = handle->alloc_len = new_len;
 				handle->data = new_data;
-				buf = handle->data;
 				remaining = handle->data_size - handle->data_len;
 				handle->end = (uint8_t *) (handle->data) + handle->data_len;
 				end = handle->end;
@@ -194,7 +192,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 		} else {
 			ret = 0;
 			switch_snprintf(end, remaining, "%s", data);
-			handle->data_len = strlen(buf);
+			handle->data_len += strlen(data);
 			handle->end = (uint8_t *) (handle->data) + handle->data_len;
 		}
 		free(data);

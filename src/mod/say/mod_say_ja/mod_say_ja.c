@@ -367,7 +367,8 @@ static switch_status_t ja_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("time/pm.wav");
 		}
 		say_file("time/hour-%d.wav", tm.tm_hour);
-		if (tm.tm_min > 10) {
+		/* tm_min is always < 60 - this is just to silence gcc 8 warning */
+		if (tm.tm_min > 10 && tm.tm_min < 60) {
 	    		int temp;
                 	char tch[1+1];
                 	mod_min = tm.tm_min % 10;

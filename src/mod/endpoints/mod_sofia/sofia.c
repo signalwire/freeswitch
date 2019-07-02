@@ -5389,9 +5389,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
 						if (switch_true(val)) {
-							profile->mndlb |= SM_NDLB_ALLOW_BAD_IANANAME;
+							profile->ndlb |= SM_NDLB_ALLOW_BAD_IANANAME;
 						} else {
-							profile->mndlb &= ~SM_NDLB_ALLOW_BAD_IANANAME;
+							profile->ndlb &= ~SM_NDLB_ALLOW_BAD_IANANAME;
 						}
 					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
 						if (switch_true(val)) {

@@ -519,8 +519,8 @@ switch_status_t create_acceptor() {
     char ipbuf[48];
     const char *ip_addr;
 
-#if ERLANG_MAJOR >= 10
-    ei_init();
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_init();
 #endif
 
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
