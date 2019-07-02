@@ -230,6 +230,8 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **i
 
 		stun_ip = strdup(sourceip + 5);
 
+		switch_assert(stun_ip);
+
 		if ((p = strchr(stun_ip, ':'))) {
 			int iport;
 			*p++ = '\0';
@@ -794,11 +796,13 @@ char *sofia_glue_strip_uri(const char *str)
 	if ((p = strchr(str, '<'))) {
 		p++;
 		r = strdup(p);
+		switch_assert(r);
 		if ((p = strchr(r, '>'))) {
 			*p = '\0';
 		}
 	} else {
 		r = strdup(str);
+		switch_assert(r);
 	}
 
 	return r;
@@ -858,23 +862,12 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		if (switch_stristr("port=", stripped)) {
 			new_uri = switch_core_session_sprintf(session, "%s%s%s", uri_only ? "" : "<", stripped, uri_only ? "" : ">");
 		} else {
-
-			if (strchr(stripped, ';')) {
-				if (params) {
-					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s;%s%s",
-														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
-				} else {
-					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s",
-														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
-				}
+			if (params) {
+				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s;%s%s",
+													  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
 			} else {
-				if (params) {
-					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s;%s%s",
-														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
-				} else {
-					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s",
-														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
-				}
+				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s",
+													  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
 			}
 		}
 	} else {
@@ -988,7 +981,9 @@ char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char 
 	for (hp = event->headers; hp; hp = hp->next) {
 		if (!zstr(hp->name) && !zstr(hp->value) && !strncasecmp(hp->name, prefix, strlen(prefix))) {
 			char *name = strdup(hp->name);
-			const char *hname = name + strlen(prefix);
+			const char *hname;
+			switch_assert(name);
+			hname = name + strlen(prefix);
 			stream.write_function(&stream, "%s: %s\r\n", hname, (char *)hp->value);
 			free(name);
 		}
@@ -1912,6 +1907,7 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 		url++;
 		if (to_dup) {
 			url = strdup(url);
+			switch_assert(url);
 			e = strchr(url, '>');
 		}
 
@@ -2329,9 +2325,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 	r++;
 
-	if (profile) {
-		sofia_glue_release_profile(profile);
-	}
+	sofia_glue_release_profile(profile);
 
 
 	return r;
@@ -2905,6 +2899,8 @@ char *sofia_glue_get_register_host(const char *uri)
 
 	register_host = strdup(s);
 
+	switch_assert(register_host);
+
 	/* remove port for register_host for testing nat acl take into account
 	   ipv6 addresses which are required to have brackets around the addr
 	*/
@@ -3298,7 +3294,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		}
 	}
 
-	if (!np->is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
+	if (!np->is_nat && sip->sip_via && sip->sip_via->v_port &&
 		atoi(sip->sip_via->v_port) == 5060 && np->network_port != 5060 ) {
 		np->is_nat = "via port";
 	}

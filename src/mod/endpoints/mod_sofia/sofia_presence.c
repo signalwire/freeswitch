@@ -271,14 +271,14 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nNobody to send to: Profile %s\n", proto, from, to,
-						  body ? body : "[no body]", prof ? prof : "NULL");
+						  body ? body : "[no body]", prof);
 		// emit no recipient event
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Error-Type", "chat");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error-Reason", "no recipient");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-To", to);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-From", from);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-Profile", prof ? prof : "NULL");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-Profile", prof);
 			switch_event_add_body(event, "%s", body);
 			switch_event_fire(&event);
 		}
@@ -301,6 +301,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 			dup_dest = strdup(dst->to);
 		}
 
+		switch_assert(dup_dest);
 
 		remote_host = strdup(dup_dest);
 		if (!zstr(remote_host)) {
@@ -319,7 +320,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		if (dup_dest && (p = strstr(dup_dest, ";fs_"))) {
+		if ((p = strstr(dup_dest, ";fs_"))) {
 			*p = '\0';
 		}
 
@@ -627,10 +628,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	switch_safe_free(stream.data);
 	switch_safe_free(dup_account);
-
-	if (profile) {
-		sofia_glue_release_profile(profile);
-	}
+	sofia_glue_release_profile(profile);
 }
 
 static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -709,7 +707,7 @@ static void do_normal_probe(switch_event_t *event)
 		probe_euser = (p + 1);
 	}
 
-	if (probe_euser && probe_host &&
+	if (probe_host &&
 		((profile = sofia_glue_find_profile(probe_host)) || (profile_name && (profile = sofia_glue_find_profile(profile_name))))) {
 		sql = switch_mprintf("select state,status,rpid,presence_id,uuid from sip_dialogs "
 							 "where hostname='%q' and profile_name='%q' and call_info_state != 'seized' and "
@@ -846,7 +844,7 @@ static void do_dialog_probe(switch_event_t *event)
 		probe_euser = (p + 1);
 	}
 
-	if (probe_euser && probe_host) {
+	if (probe_host) {
 		char *sub_call_id = switch_event_get_header(event, "sub-call-id");
 		char *profile_name = switch_event_get_header(event, "sip_profile");
 		sofia_profile_t *profile = sofia_glue_find_profile(probe_host);
@@ -1811,6 +1809,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 
 			presence_id = argv[12];
 			free_me = strdup(presence_id);
+			switch_assert(free_me);
 			if ((p = strchr(free_me, '@'))) *p = '\0';
 			user = free_me;
 		}
@@ -1906,6 +1905,7 @@ char *get_display_name_from_contact(const char *in, char* dst)
 	strcpy(dst, "");
 	if (strchr(in, '<') && strchr(in, '>')) {
 		buf = strdup(in);
+		switch_assert(buf);
 		p = strchr(buf, '<');
 		*p = '\0';
 		if (!zstr(buf)) {
@@ -1914,6 +1914,7 @@ char *get_display_name_from_contact(const char *in, char* dst)
 				if (*p == '"') {
 					if (end_of(p+1) == '"') {
 						char *q = strdup(p + 1);
+						switch_assert(q);
 						end_of(q) = '\0';
 						strcpy(dst, q);
 						switch_safe_free(q);
@@ -2722,6 +2723,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		free_me = strdup(presence_id);
 
+		switch_assert(free_me);
+
 		if ((p = strchr(free_me, '@'))) {
 			*p = '\0';
 		}
@@ -2888,13 +2891,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 #endif
 
 		if (is_dialog) {
-			SWITCH_STANDARD_STREAM(stream);
-		}
-
-		if (is_dialog) {
 			// Usually we report the dialogs FROM the probed user.  The exception is when the monitored endpoint is internal,
 			// and its presence_id is set in the dialplan.  Reverse the direction if this is not a registered entity.
 			const char *caller = switch_str_nil(switch_event_get_header(helper->event, "caller-username"));
+			SWITCH_STANDARD_STREAM(stream);
 			if (!strcmp(direction, "inbound") && strcmp(sub_to_user,  caller)) {
 				// If inbound and the entity is not the caller (i.e. internal to FS), then the direction is reversed
 				// because it is not going through the B2BUA
@@ -3728,9 +3728,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	if (to) {
 		to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);
-	}
-
-	if (to) {
 		to_user = to->a_url->url_user;
 		to_host = to->a_url->url_host;
 	}
@@ -3754,14 +3751,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
-		if (sub_max_deviation_var > 0) {
-			int sub_deviation;
-			srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
-			/* random negative number between 0 and negative sub_max_deviation_var: */
-			sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
-			if ( (exp_delta + sub_deviation) > 45 ) {
-				exp_delta += sub_deviation;
-			}
+		int sub_deviation;
+		srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
+		/* random negative number between 0 and negative sub_max_deviation_var: */
+		sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
+		if ( (exp_delta + sub_deviation) > 45 ) {
+			exp_delta += sub_deviation;
 		}
 	}
 
@@ -3858,7 +3853,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
-		if (!(proto && to_user && to_host)) {
+		if (!(proto && to_host)) {
 			nua_respond(nh, SIP_404_NOT_FOUND, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
@@ -4078,7 +4073,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
-		sip_to_tag(nh->nh_home, sip->sip_to, use_to_tag);
+		if (nh && nh->nh_home) {
+			sip_to_tag(nh->nh_home, sip->sip_to, use_to_tag);
+		}
 
 		if (mod_sofia_globals.debug_presence > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to SUBSCRIBE with 202 Accepted\n");
@@ -4237,6 +4234,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			char *pd_dup = NULL;
 
 			pd_dup = strdup(sip->sip_payload->pl_data);
+
+			switch_assert(pd_dup);
 
 			if ((xml = switch_xml_parse_str(pd_dup, strlen(pd_dup)))) {
 				switch_xml_t device = NULL;
@@ -4503,18 +4502,11 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status (%d) != 200, updated state to SUB_STATE_FAILED.\n", status);
 		gw_sub_ptr->state = SUB_STATE_FAILED;
 
-		if (!sofia_private) {
-			nua_handle_destroy(nh);
-		}
-
 		break;
 	}
 
  end:
-
-	if (gateway) {
-		sofia_reg_release_gateway(gateway);
-	}
+	sofia_reg_release_gateway(gateway);
 
 }
 
@@ -4607,6 +4599,8 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 		pd_dup = strdup(payload->pl_data);
+
+		switch_assert(pd_dup);
 
 		if ((xml = switch_xml_parse_str(pd_dup, strlen(pd_dup)))) {
 			char *open_closed = "", *note_txt = "";
@@ -4775,7 +4769,7 @@ void sofia_presence_handle_sip_i_message(int status,
 			channel = switch_core_session_get_channel(session);
 		}
 
-		if (sofia_test_pflag(profile, PFLAG_AUTH_MESSAGES) && sip){
+		if (sofia_test_pflag(profile, PFLAG_AUTH_MESSAGES)) {
 			sip_authorization_t const *authorization = NULL;
 			auth_res_t auth_res = AUTH_FORBIDDEN;
 			char keybuf[128] = "";
