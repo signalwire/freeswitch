@@ -128,7 +128,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown)
 	mod_avcodec_shutdown();
 	avformat_network_deinit();
 	av_log_set_callback(NULL);
+
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,9,100))
 	av_lockmgr_register(NULL);
+#endif
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -190,11 +194,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 {
 	switch_api_interface_t *api_interface = NULL;
 
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,9,100))
 	av_lockmgr_register(&mod_av_lockmgr_cb);
+#endif
+
 	av_log_set_callback(log_callback);
 	av_log_set_level(AV_LOG_INFO);
 	avformat_network_init();
+
+#if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
 	av_register_all();
+#endif
 
 	av_log(NULL, AV_LOG_INFO, "%s %d\n", "av_log callback installed, level=", av_log_get_level());
 

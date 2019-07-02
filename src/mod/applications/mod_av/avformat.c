@@ -39,8 +39,21 @@ GCC_DIAG_OFF(deprecated-declarations)
 #include <libavutil/imgutils.h>
 #include <libavutil/avstring.h>
 #include <libavutil/channel_layout.h>
-#include <libavresample/avresample.h>
 #include <libswscale/swscale.h>
+#ifdef USE_AVRESAMPLE
+#include <libavresample/avresample.h>
+#define SwrContext AVAudioResampleContext
+#define swr_alloc avresample_alloc_context
+#define swr_init avresample_open
+#define swr_free avresample_free
+#define swr_get_out_samples avresample_get_out_samples
+#define swr_get_out_samples avresample_get_out_samples
+#define swr_convert(ctx, odata, osamples, idata, isamples) \
+	avresample_convert(ctx, odata, osamples, 0, idata, isamples, 0)
+#else
+#include <libswresample/swresample.h>
+#endif
+
 GCC_DIAG_ON(deprecated-declarations)
 #define SCALE_FLAGS SWS_BICUBIC
 #define DFT_RECORD_OFFSET 0
@@ -77,7 +90,7 @@ typedef struct MediaStream {
 	// audio
 	int channels;
 	int sample_rate;
-	struct AVAudioResampleContext *resample_ctx;
+	struct SwrContext *resample_ctx;
 
 	//video
 	int width;
@@ -365,8 +378,15 @@ static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputF
 	} else
 		s->priv_data = NULL;
 
-	if (filename)
+	if (filename) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,7,100))
 		av_strlcpy(s->filename, filename, sizeof(s->filename));
+#else
+		s->url = strdup(filename);
+		switch_assert(s->url);
+#endif
+	}
+
 	*avctx = s;
 	return 0;
 nomem:
@@ -684,15 +704,12 @@ GCC_DIAG_ON(deprecated-declarations)
 		mst->frame->nb_samples = c->frame_size;
 	}
 
-
-		
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "sample_rate: %d nb_samples: %d\n", mst->frame->sample_rate, mst->frame->nb_samples);
 
 	if (c->sample_fmt != AV_SAMPLE_FMT_S16) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "sample_fmt %d != AV_SAMPLE_FMT_S16, start resampler\n", c->sample_fmt);
 
-		mst->resample_ctx = avresample_alloc_context();
+		mst->resample_ctx = swr_alloc();
 
 		if (!mst->resample_ctx) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate resampler context\n");
@@ -709,7 +726,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		av_opt_set_int(mst->resample_ctx, "out_sample_fmt",     c->sample_fmt,     0);
 		av_opt_set_int(mst->resample_ctx, "out_channel_layout", c->channel_layout, 0);
 
-		if ((ret = avresample_open(mst->resample_ctx)) < 0) {
+		if ((ret = swr_init(mst->resample_ctx)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the resampling context\n");
 			av_free(mst->resample_ctx);
 			mst->resample_ctx = NULL;
@@ -960,7 +977,7 @@ static void close_stream(AVFormatContext *fc, MediaStream *mst)
 {
 	if (!mst->active) return;
 
-	if (mst->resample_ctx) avresample_free(&mst->resample_ctx);
+	if (mst->resample_ctx) swr_free(&mst->resample_ctx);
 	if (mst->sws_ctx) sws_freeContext(mst->sws_ctx);
 	if (mst->frame) av_frame_free(&mst->frame);
 	if (mst->tmp_frame) av_frame_free(&mst->tmp_frame);
@@ -994,8 +1011,8 @@ static int is_device(const AVClass *avclass)
 }
 
 void show_formats(switch_stream_handle_t *stream) {
-	AVInputFormat *ifmt  = NULL;
-	AVOutputFormat *ofmt = NULL;
+	const AVInputFormat *ifmt  = NULL;
+	const AVOutputFormat *ofmt = NULL;
 	const char *last_name;
 	// int is_dev;
 
@@ -1013,7 +1030,14 @@ void show_formats(switch_stream_handle_t *stream) {
 		const char *name      = NULL;
 		const char *long_name = NULL;
 
+#if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
 		while ((ofmt = av_oformat_next(ofmt))) {
+#else
+		void *i;
+
+		while ((ofmt = av_muxer_iterate(&i))) {
+#endif
+
 			is_dev = is_device(ofmt->priv_class);
 
 			if ((name == NULL || strcmp(ofmt->name, name) < 0) &&
@@ -1024,7 +1048,11 @@ void show_formats(switch_stream_handle_t *stream) {
 			}
 		}
 
+#if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
 		while ((ifmt = av_iformat_next(ifmt))) {
+#else
+		while ((ifmt = av_demuxer_iterate(&i))) {
+#endif
 			is_dev = is_device(ifmt->priv_class);
 
 			if ((name == NULL || strcmp(ifmt->name, name) < 0) &&
@@ -1058,11 +1086,11 @@ static void mod_avformat_destroy_output_context(av_file_context_t *context)
 	close_stream(context->fc, &context->audio_st[1]);
 
 	if (context->audio_st[0].resample_ctx) {
-		avresample_free(&context->audio_st[0].resample_ctx);
+		swr_free(&context->audio_st[0].resample_ctx);
 	}
 
 	if (context->audio_st[1].resample_ctx) {
-		avresample_free(&context->audio_st[1].resample_ctx);
+		swr_free(&context->audio_st[1].resample_ctx);
 	}
 
 	avformat_close_input(&context->fc);
@@ -1210,7 +1238,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 GCC_DIAG_ON(deprecated-declarations)
 			int x;
  			for (x = 0; x < context->has_audio && x < 2 && c[x]; x++) {
-				AVAudioResampleContext *resample_ctx = avresample_alloc_context();
+				struct SwrContext *resample_ctx = swr_alloc();
 
 				if (resample_ctx) {
 					int ret;
@@ -1225,7 +1253,7 @@ GCC_DIAG_ON(deprecated-declarations)
 					av_opt_set_int(resample_ctx, "out_sample_fmt",     AV_SAMPLE_FMT_S16, 0);
 					av_opt_set_int(resample_ctx, "out_channel_layout", handle->channels == 2 ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO, 0);
 					
-					if ((ret = avresample_open(resample_ctx)) < 0) {
+					if ((ret = swr_init(resample_ctx)) < 0) {
 						char errbuf[1024];
 						av_strerror(ret, errbuf, 1024);
 						
@@ -1510,17 +1538,17 @@ GCC_DIAG_ON(deprecated-declarations)
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got data frm->format: %d samples: %d\n", in_frame.format, in_frame.nb_samples);
 
 				if (context->audio_st[0].resample_ctx) {
-					int out_samples = avresample_get_out_samples(context->audio_st[0].resample_ctx, in_frame.nb_samples);
+					int out_samples = swr_get_out_samples(context->audio_st[0].resample_ctx, in_frame.nb_samples);
 					int ret;
 					uint8_t *data[2] = { 0 };
 
 					data[0] = malloc(out_samples * context->audio_st[0].channels * 2);
 					switch_assert(data[0]);
 
-					ret = avresample_convert(context->audio_st[0].resample_ctx, data, 0, out_samples,
-						in_frame.data, 0, in_frame.nb_samples);
+					ret = swr_convert(context->audio_st[0].resample_ctx, data, out_samples,
+						(const uint8_t **)in_frame.data, in_frame.nb_samples);
 
-					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "out_samples: %d ret: %d delay: %d buffer: %zu\n", out_samples, ret, avresample_get_delay(context->audio_st[0].resample_ctx), switch_buffer_inuse(context->audio_buffer));
+					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "out_samples: %d ret: %d delay: %ld buffer: %zu\n", out_samples, ret, swr_get_delay(context->audio_st[0].resample_ctx, 8000), switch_buffer_inuse(context->audio_buffer));
 
 					if (ret) {
 						switch_mutex_lock(context->mutex);
@@ -1638,8 +1666,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sample rate: %d, channels: %d\n", handle->samplerate, handle->channels);
-
-	av_register_all();
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
 		if (open_input_file(context, handle, path) != SWITCH_STATUS_SUCCESS) {
@@ -2009,14 +2035,14 @@ GCC_DIAG_ON(deprecated-declarations)
 			use_frame = context->audio_st[j].frame;
 
 			if (context->audio_st[j].resample_ctx) {
-				int out_samples = avresample_get_out_samples(context->audio_st[j].resample_ctx, context->audio_st[j].frame->nb_samples);
+				int out_samples = swr_get_out_samples(context->audio_st[j].resample_ctx, context->audio_st[j].frame->nb_samples);
 				
 				av_frame_make_writable(context->audio_st[j].tmp_frame);				
 				
 				/* convert to destination format */
-				ret = avresample_convert(context->audio_st[j].resample_ctx,
-										 context->audio_st[j].tmp_frame->data, 0, out_samples,
-										 (uint8_t **)context->audio_st[j].frame->data, 0, context->audio_st[j].frame->nb_samples);
+				ret = swr_convert(context->audio_st[j].resample_ctx,
+										 context->audio_st[j].tmp_frame->data, out_samples,
+										 (const uint8_t **)context->audio_st[j].frame->data, context->audio_st[j].frame->nb_samples);
 				
 				if (ret < 0) {
 					char ebuf[255] = "";

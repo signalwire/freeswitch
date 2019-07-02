@@ -197,7 +197,9 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 	my_dump_int64(request_channel_layout);
 	my_dump_enum(audio_service_type);
 	my_dump_enum(request_sample_fmt);
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,106,102))
 	my_dump_int(refcounted_frames);
+#endif
 	my_dump_float(qcompress);  ///< amount of qscale change between easy & hard scenes (0.0-1.0)
 	my_dump_float(qblur);      ///< amount of qscale smoothing over time (0.0-1.0)
 	my_dump_int(qmin);
@@ -1755,7 +1757,13 @@ static char get_media_type_char(enum AVMediaType type)
 static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev,
 										int encoder)
 {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,10,100))
 	while ((prev = av_codec_next(prev))) {
+#else
+	void *i;
+
+	while ((prev = av_codec_iterate(&i))) {
+#endif
 		if (prev->id == id &&
 			(encoder ? av_codec_is_encoder(prev) : av_codec_is_decoder(prev)))
 			return prev;
