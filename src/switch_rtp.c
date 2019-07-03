@@ -772,7 +772,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		}
 	}
 
-	if (bytes && rtp_session->dtmf_data.in_digit_ts) {
+	if (rtp_session->dtmf_data.in_digit_ts) {
 		if (!switch_rtp_ready(rtp_session)) {
 			return RESULT_GOTO_END;
 		}
@@ -1000,7 +1000,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 			break;
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
-			if (attr->type) {
+			{
 				char ip[50];
 				uint16_t port;
 				switch_stun_packet_attribute_get_mapped_address(attr, ip, sizeof(ip), &port);
@@ -1008,7 +1008,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 			break;
 		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
-			if (attr->type) {
+			{
 				char ip[50];
 				uint16_t port;
 				switch_stun_packet_attribute_get_xor_mapped_address(attr, &packet->header, ip, sizeof(ip), &port);
@@ -1016,7 +1016,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 			break;
 		case SWITCH_STUN_ATTR_USERNAME:
-			if (attr->type) {
+			{
 				switch_stun_packet_attribute_get_username(attr, username, sizeof(username));
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s\n", username);
 			}
@@ -1137,6 +1137,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 							if (!host || !port) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
+								switch_mutex_unlock(rtp_session->ice_mutex);
 								return;
 							}
 
@@ -1161,6 +1162,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 							if (switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS ||
 								!ice->addr) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
+								switch_mutex_unlock(rtp_session->ice_mutex);
 								return;
 							}
 
@@ -1272,7 +1274,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				}
 				
 				
-				if (ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].cand_type &&
+				if (ice->ice_params && ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].cand_type &&
 					!strcasecmp(ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].cand_type, "relay")) {
 					do_adj++;
 				}
@@ -1790,7 +1792,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 
 	sr->ts = htonl(rtp_session->last_write_ts);
 	sr->pc = htonl(rtp_session->stats.outbound.packet_count);
-	sr->oc = htonl((rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t)));
+	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t));
 
 	switch_time_exp_gmt(&now_hr,now);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
@@ -3020,10 +3022,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 			switch_socket_close(sock);
 
 			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != sock) {
-				if ((sock = rtp_session->rtcp_sock_output)) {
-					rtp_session->rtcp_sock_output = NULL;
-					switch_socket_close(sock);
-				}
+				sock = rtp_session->rtcp_sock_output;
+				rtp_session->rtcp_sock_output = NULL;
+				switch_socket_close(sock);
 			}
 		}
 	}
@@ -4881,6 +4882,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		port = ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port;
 
 		if (!host || !port || switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !ice->addr) {
+			switch_mutex_unlock(rtp_session->ice_mutex);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -6260,7 +6262,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 			/* recalculate body length in case rtp extension used */
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				rtp_session->has_rtp && rtp_session->recv_msg.header.x) { /* header extensions */
+				rtp_session->recv_msg.header.x) { /* header extensions */
 				uint16_t length;
 
 				rtp_session->recv_msg.ext = (switch_rtp_hdr_ext_t *) RTP_BODY(rtp_session);
