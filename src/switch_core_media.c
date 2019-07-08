@@ -8671,7 +8671,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											   a_engine->cur_payload_map->pt,
 											   a_engine->read_impl.samples_per_packet,
 											   a_engine->cur_payload_map->codec_ms * 1000,
-											   flags, timer_name, &err, switch_core_session_get_pool(session));
+											   flags, timer_name, &err, switch_core_session_get_pool(session),
+											   0, 0);
 
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			switch_rtp_set_payload_map(a_engine->rtp_session, &a_engine->payload_map);
@@ -9077,7 +9078,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 												   t_engine->cur_payload_map->remote_sdp_ip,
 												   t_engine->cur_payload_map->remote_sdp_port,
 												   t_engine->cur_payload_map->pt,
-												   TEXT_TIMER_SAMPLES, TEXT_TIMER_MS * 1000, flags, NULL, &err, switch_core_session_get_pool(session));
+												   TEXT_TIMER_SAMPLES, TEXT_TIMER_MS * 1000, flags, NULL, &err, switch_core_session_get_pool(session),
+												   0, 0);
 
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sTEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
@@ -9406,7 +9408,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 														 v_engine->cur_payload_map->remote_sdp_ip,
 														 v_engine->cur_payload_map->remote_sdp_port,
 														 v_engine->cur_payload_map->pt,
-														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session));
+														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session),
+														 0, 0);
 
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",

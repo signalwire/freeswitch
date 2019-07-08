@@ -2200,7 +2200,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 							codec->implementation->samples_per_packet,
 							codec->implementation->microseconds_per_packet,
 							flags, timer_name, &err,
-							switch_core_session_get_pool(m_fsSession));
+						       switch_core_session_get_pool(m_fsSession), 0, 0);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------------->tech_pvt->rtp_session = %p\n",tech_pvt->rtp_session);
 		m_conn->m_startRTP = true;

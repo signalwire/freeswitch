@@ -389,7 +389,7 @@ struct switch_rtp {
 	switch_time_t last_write_timestamp;
 	uint32_t flags[SWITCH_RTP_FLAG_INVALID];
 	switch_memory_pool_t *pool;
-	switch_sockaddr_t *from_addr, *rtp_from_addr, *rtcp_from_addr;
+	switch_sockaddr_t *from_addr, *rtp_from_addr, *rtcp_from_addr, *bundle_internal_addr, *bundle_external_addr;
 	char *rx_host;
 	switch_port_t rx_port;
 	switch_rtp_ice_t ice;
@@ -2155,7 +2155,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 			rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 			rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP RR");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Sending RTCP RR (ssrc=%u)\n", rtp_session->ssrc);
 		} else {
 			struct switch_rtcp_sender_info *rtcp_sender_info;
 			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_SR; /* Sender report */
@@ -2173,7 +2173,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 			}
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
 		}
 
 		rtp_session->rtcp_send_msg.header.length = htons((uint16_t)(rtcp_bytes / 4) - 1);
@@ -4509,7 +4509,9 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool)
+											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool,
+                                              switch_port_t bundle_internal_port,
+                                              switch_port_t bundle_external_port)
 {
 	switch_rtp_t *rtp_session = NULL;
 

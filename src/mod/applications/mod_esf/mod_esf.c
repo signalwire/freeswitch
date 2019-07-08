@@ -392,7 +392,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 mcast_port,
 									 alert_packet->audio_header.codec,
 									 160,
-									 20000, flags, "soft", &err, switch_core_session_get_pool(session));
+									 20000, flags, "soft", &err, switch_core_session_get_pool(session), 0, 0);
 
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");

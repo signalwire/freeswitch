@@ -289,7 +289,7 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 			iana,
 			sess->impl->samples_per_packet,
 			codec_req_leg->ms * 1000, /* microseconds per packet */
-			flags, NULL, &err, sesspool);
+								 flags, NULL, &err, sesspool, 0, 0);
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create switch rtp session: %s\n", err);

@@ -147,7 +147,7 @@ static int oreka_setup_rtp(oreka_session_t *oreka, oreka_stream_type_t type)
 			0, /* PCMU IANA*/
 			codec_impl->samples_per_packet,
 			codec_impl->microseconds_per_packet,
-			flags, NULL, &err, switch_core_session_get_pool(oreka->session));
+								flags, NULL, &err, switch_core_session_get_pool(oreka->session), 0, 0);
 	if (!rtp_stream) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create %s RTP stream at %s:%d: %s\n",
 				type_str, globals.local_ipv4_str, rtp_port, err);
