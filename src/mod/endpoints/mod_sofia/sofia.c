@@ -10563,11 +10563,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		char tmp[35] = "";
 		const char *ipv6 = strchr(tech_pvt->mparams.remote_ip, ':');
 
-		if (sip->sip_via) {
-			transport = sofia_glue_via2transport(sip->sip_via);
-		} else {
-			transport = sofia_glue_url2transport(sip->sip_contact->m_url);
-		}
+		transport = sofia_glue_via2transport(sip->sip_via);
 
 
 		tech_pvt->record_route =
