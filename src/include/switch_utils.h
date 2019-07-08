@@ -1056,19 +1056,27 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 
 
-static inline int32_t switch_calc_bitrate(int w, int h, int quality, double fps)
-{
-	int r;
+static inline int32_t switch_calc_bitrate(int w, int h, float quality, double fps)
+{   
+    int r;
 
-	/* KUSH GAUGE*/
+    if (quality == 0) {
+        quality = 1;
+    }
 
-	if (!fps) fps = 15;
+    /* KUSH GAUGE*/
 
-	r = (int32_t)((double)(w * h * fps * (quality ? quality : 1)) * 0.07) / 1000;
+    if (!fps) fps = 15;
 
-	if (!quality) r /= 2;
+    r = (int32_t)((double)(w * h * fps * quality) * 0.07) / 1000;
 
-	return r;
+    if (!quality) r /= 2;
+
+    if (quality < 0.0f) {
+        r = (int) ((float)r * quality);
+    }
+
+    return r;
 
 }
 
