@@ -3053,6 +3053,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, char **urlP)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	return SWITCH_STATUS_FALSE;
+}
+
 #endif
 
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color)
