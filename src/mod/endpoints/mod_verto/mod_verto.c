@@ -294,7 +294,7 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 			}
 
 			if (thisnp->jsock->profile->debug || verto_globals.debug) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "UNSUBBING %s [%s]\n", thisnp->jsock->name, thisnp->head->event_channel);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UNSUBBING %s [%s]\n", thisnp->jsock->name, thisnp->head->event_channel);
 			}
 
 			thisnp->jsock = NULL;
@@ -604,7 +604,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	if ((json_text = cJSON_PrintUnformatted(*json))) {
 		if (jsock->profile->debug || verto_globals.debug) {
 			char *log_text = cJSON_Print(*json);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE %s [%s]\n", jsock->name, log_text);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WRITE %s [%s]\n", jsock->name, log_text);
 			free(log_text);
 		}
 		switch_mutex_lock(jsock->write_mutex);
@@ -1408,7 +1408,7 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 
 		if (jsock->profile->debug || verto_globals.debug) {
 			char *log_text = cJSON_Print(json);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "READ %s [%s]\n", jsock->name, log_text);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "READ %s [%s]\n", jsock->name, log_text);
 			free(log_text);
 		}
 
@@ -4049,7 +4049,9 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 			} else {
 				//r = SWITCH_TRUE;
 				//cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MCAST Data Sent\n");
+				if (verto_globals.debug > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Data Sent: %s\n",json_text);
+				}
 			}
 			free(json_text);
 			json_text = NULL;
@@ -5566,7 +5568,7 @@ void verto_broadcast(const char *event_channel, cJSON *json, const char *key, sw
 	if (verto_globals.debug > 9) {
 		char *json_text;
 		if ((json_text = cJSON_Print(json))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "EVENT BROADCAST %s %s\n", event_channel, json_text);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EVENT BROADCAST %s %s\n", event_channel, json_text);
 			free(json_text);
 		}
 	}
