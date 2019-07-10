@@ -2230,6 +2230,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
+		switch_channel_execute_on(switch_core_session_get_channel(cont->session), "execute_on_fax_detect_close");
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
