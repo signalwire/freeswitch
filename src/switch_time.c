@@ -431,7 +431,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if ((r = read(fd, &exp, sizeof(exp)) < 0)) {
+	if ((r = read(fd, &exp, sizeof(exp))) < 0) {
 		close(fd);
 		return SWITCH_STATUS_GENERR;
 	}
