@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 File: fct.h
 */
 
+#include <switch_platform.h>
+
 #if !defined(FCT_INCLUDED__IMB)
 #define FCT_INCLUDED__IMB
 
@@ -69,7 +71,6 @@ with a standard logger. */
                          FCT_QUOTEME(FCT_VERSION_MICRO))
 
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -87,17 +88,7 @@ with a standard logger. */
 
 #define FCTMIN(x, y) ( x < y) ? (x) : (y)
 
-#ifndef __INTEL_COMPILER
-/* Use regular assertions for non-Intel compilers */
-#define FCT_ASSERT(expr) assert(expr)
-#else
-/* Silence Intel warnings on assert(expr && "str") or assert("str") */
-#define FCT_ASSERT(expr) do {             \
-    _Pragma("warning(push,disable:279)"); \
-    assert(expr);                         \
-    _Pragma("warning(pop)");              \
-    } while (0)
-#endif
+#define FCT_ASSERT(expr) switch_assert(expr)
 
 #if defined(__cplusplus)
 #define FCT_EXTERN_C extern "C"
@@ -314,6 +305,7 @@ fctstr_clone(char const *s)
     FCT_ASSERT( s != NULL && "invalid arg");
     klen = strlen(s)+1;
     k = (char*)malloc(sizeof(char)*klen+1);
+    FCT_ASSERT( k != NULL );
     fctstr_safe_cpy(k, s, klen);
     return k;
 }
@@ -332,6 +324,7 @@ fctstr_clone_lower(char const *s)
     }
     klen = strlen(s)+1;
     k = (char*)malloc(sizeof(char)*klen+1);
+    FCT_ASSERT( k != NULL );
     for ( i=0; i != klen; ++i )
     {
         k[i] = (char)tolower(s[i]);
@@ -2027,6 +2020,7 @@ fctkern__add_prefix_filter(fctkern_t *nk, char const *prefix_filter)
     in our little list. */
     filter_len = strlen(prefix_filter);
     filter = (char*)malloc(sizeof(char)*(filter_len+1));
+    FCT_ASSERT( filter != NULL );
     fctstr_safe_cpy(filter, prefix_filter, filter_len+1);
     fct_nlist__append(&(nk->prefix_list), (void*)filter);
 }
@@ -2700,6 +2694,7 @@ static void
 fct_logger_record_failure(fctchk_t const* chk, fct_nlist_t* fail_list)
 {
     fctchk_t *dup_chk = (fctchk_t *)malloc(sizeof(*dup_chk));
+    FCT_ASSERT( dup_chk != NULL );
     memcpy(dup_chk, chk, sizeof(*dup_chk));
     fct_nlist__append(fail_list, (void *)dup_chk);
 }
@@ -3670,7 +3665,7 @@ with. If we fail a setup up, then we go directly to a teardown mode. */
                 );                                                       \
        }                                                                 \
     } else {                                                             \
-       assert("invalid condition for fct_req!");                         \
+       switch_assert("invalid condition for fct_req!");                         \
        _fct_req((_CNDTN_));                                              \
     }
 
