@@ -635,7 +635,7 @@ SWITCH_DECLARE(void) switch_img_rotate_copy(switch_image_t *img, switch_image_t 
 	if (img->fmt != SWITCH_IMG_FMT_I420) abort();
 
 	if (*new_img != NULL) {
-		if (img->fmt != (*new_img)->fmt || img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w) {
+		if (img->fmt != (*new_img)->fmt || img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_h) {
 			switch_img_free(new_img);
 		}
 	}
