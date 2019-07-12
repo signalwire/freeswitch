@@ -404,11 +404,6 @@ static switch_call_cause_t rtc_outgoing_channel(switch_core_session_t *session, 
 	goto done;
 
   error:
-
-	if (nsession) {
-		switch_core_session_destroy(&nsession);
-	}
-
 	if (pool) {
 		*pool = NULL;
 	}
