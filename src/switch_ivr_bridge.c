@@ -85,9 +85,8 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 				if (inuse + 4 > text_framesize) {
 					void *tmp = malloc(inuse + 1024);
 
-					memcpy(tmp, text_framedata, text_framesize);
-
 					switch_assert(tmp);
+					memcpy(tmp, text_framedata, text_framesize);
 
 					text_framesize = inuse + 1024;
 
@@ -1914,7 +1913,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			explicit = !strcasecmp(hup, "explicit");
 		}
 
-		if (cause && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+		if (!switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 			switch_channel_handle_cause(caller_channel, cause);
 		}
 
