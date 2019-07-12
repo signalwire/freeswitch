@@ -269,7 +269,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		goto end;
 	}
 
-	if (session->read_codec && session->read_impl.decoded_bytes_per_packet) {
+	if (session->read_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
@@ -440,7 +440,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		session->write_impl = *codec->implementation;
 	}
 
-	if (session->write_codec && codec && session->write_impl.codec_id) {
+	if (codec && session->write_impl.codec_id) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", session->write_impl.iananame);
@@ -663,7 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 
 	if (!strncasecmp(codec_name, "PROXY", 5)) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-			if ((!channels || channels == iptr->number_of_channels)) {
+			if (!channels || channels == iptr->number_of_channels) {
 				implementation = iptr;
 				break;
 			}
@@ -906,11 +906,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
-	switch_mutex_t *mutex = codec->mutex;
-	switch_memory_pool_t *pool = codec->memory_pool;
+	switch_mutex_t *mutex = NULL;
+	switch_memory_pool_t *pool = NULL;
 	int free_pool = 0;
 
 	switch_assert(codec != NULL);
+	mutex = codec->mutex;
+	pool = codec->memory_pool;
 
 	if (mutex) switch_mutex_lock(mutex);
 
