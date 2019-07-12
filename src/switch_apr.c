@@ -841,11 +841,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 
 #if defined(TCP_KEEPIDLE)
 		r = setsockopt(sock->socketdes, SOL_TCP, TCP_KEEPIDLE, (void *)&on, sizeof(on));
+#else
+		return SWITCH_STATUS_NOTIMPL;
 #endif
-		if (r == -10) {
-			return SWITCH_STATUS_NOTIMPL;
-		}
-
 
 		return r ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 	}
@@ -855,11 +853,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 
 #if defined(TCP_KEEPINTVL)
 		r = setsockopt(sock->socketdes, SOL_TCP, TCP_KEEPINTVL, (void *)&on, sizeof(on));
+#else
+		return SWITCH_STATUS_NOTIMPL;
 #endif
-
-		if (r == -10) {
-			return SWITCH_STATUS_NOTIMPL;
-		}
 
 		return r ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 	}
