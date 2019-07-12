@@ -109,7 +109,7 @@ static switch_bool_t USE_UTF_8_ENCODING = SWITCH_TRUE;
 static void preprocess_exec_set(char *keyval)
 {
 	char *key = keyval;
-	char *val = strchr(key, '=');
+	char *val = strchr(keyval, '=');
 
 	if (val) {
 		char *ve = val++;
@@ -145,7 +145,7 @@ static void preprocess_exec_set(char *keyval)
 static void preprocess_stun_set(char *keyval)
 {
 	char *key = keyval;
-	char *val = strchr(key, '=');
+	char *val = strchr(keyval, '=');
 
 	if (val) {
 		char *ve = val++;
@@ -185,7 +185,7 @@ static void preprocess_stun_set(char *keyval)
 static void preprocess_env_set(char *keyval)
 {
 	char *key = keyval;
-	char *val = strchr(key, '=');
+	char *val = strchr(keyval, '=');
 
 	if (key && val) {
 		*val++ = '\0';
@@ -400,7 +400,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char
 
 	for (p = switch_xml_child(node, childname); p; p = p->next) {
 		const char *aname = switch_xml_attr(p, attrname);
-		if (aname && value && !strcasecmp(aname, value)) {
+		if (aname && !strcasecmp(aname, value)) {
 			break;
 		}
 	}
@@ -446,7 +446,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 				if (aname) {
 					if (*vals[x] == '!') {
 						const char *sval = vals[x] + 1;
-						if (sval && strcasecmp(aname, sval)) {
+						if (strcasecmp(aname, sval)) {
 							goto done;
 						}
 					} else {
@@ -1463,7 +1463,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 				continue;
 			}
 			if ((e = strstr(tcmd, "/>"))) {
-				*e += 2;
+				e += 2;
 				*e = '\0';
 				if (fwrite(e, 1, (unsigned) strlen(e), write_fd) != (int) strlen(e)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
@@ -1522,7 +1522,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 					}
 				}
 
-				if (name && val) {
+				if (val) {
 					switch_core_set_variable(name, val);
 				}
 
@@ -1586,7 +1586,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 						}
 					}
 
-					if (name && val) {
+					if (val) {
 						switch_core_set_variable(name, val);
 					}
 
@@ -3276,6 +3276,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, s
 	if ((status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language)) != SWITCH_STATUS_SUCCESS) {
 		char *str_language_dup = strdup(str_language);
 		char *secondary;
+		switch_assert(str_language_dup);
 		if ((secondary = strchr(str_language_dup, '-'))) {
 			*secondary++ = '\0';
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
