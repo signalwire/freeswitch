@@ -205,16 +205,16 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 	if ((db_ret = switch_core_db_open(path, &db)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL) != SQLITE_OK)) {
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL) != SQLITE_OK)) {
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=8000;", NULL, NULL, NULL) != SQLITE_OK)) {
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=8000;", NULL, NULL, NULL)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL) != SQLITE_OK)) {
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL)) != SQLITE_OK) {
 		goto end;
 	}
 
