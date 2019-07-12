@@ -304,7 +304,9 @@ SWITCH_DECLARE(char *) switch_print_host(switch_sockaddr_t *addr, char *buf, swi
 */
 _Check_return_ static inline int _zstr(_In_opt_z_ const char *s)
 {
-	return !s || *s == '\0';
+	if (!s) return 1;
+	if (*s == '\0') return 1;
+	return 0;
 }
 #ifdef _PREFAST_
 #define zstr(x) (_zstr(x) ? 1 : __analysis_assume(x),0)
@@ -1138,7 +1140,7 @@ static inline uint32_t switch_parse_cpu_string(const char *cpu)
 	} else {
 		ncpu = atoi(cpu);
 
-		if (cpu && strrchr(cpu, '%')) {
+		if (strrchr(cpu, '%')) {
 			ncpu = (int) (cpu_count * ((float)ncpu / 100));
 		}
 	}
@@ -1193,6 +1195,7 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 	char *e = NULL;
 	char *space = strdup(file);
 
+	switch_assert(space);
 	file = space;
 
 	*file_portion = NULL;
@@ -1324,15 +1327,9 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 #define switch_strdup(ptr, s) (void)( (!!(ptr = strdup(s))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr)
 #endif
 #else
-#if (_MSC_VER >= 1500)			// VC9+
-#define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr);__analysis_assume( ptr )
-#define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr);__analysis_assume( ptr )
-#define switch_strdup(ptr, s) (void)(assert(((ptr) = _strdup(s))),ptr);__analysis_assume( ptr )
-#else
-#define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr)
-#define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr)
-#define switch_strdup(ptr, s) (void)(assert(((ptr) = strdup((s)))),ptr)
-#endif
+#define switch_malloc(ptr, len) (void)(switch_assert(((ptr) = malloc((len)))),ptr)
+#define switch_zmalloc(ptr, len) (void)(switch_assert((ptr = calloc(1, (len)))),ptr)
+#define switch_strdup(ptr, s) (void)(switch_assert(((ptr) = strdup((s)))),ptr)
 #endif
 
 #define DUMP_EVENT(_e) 	{char *event_str;switch_event_serialize(_e, &event_str, SWITCH_FALSE);switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DUMP\n%s\n", event_str);free(event_str);}
