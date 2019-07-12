@@ -75,6 +75,8 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 		return SWITCH_STATUS_GENERR;
 	}
 
+	handle->pos = 0;
+
 	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
 		int64_t samples = 0;
 		switch_file_seek(context->fd, SEEK_END, &samples);
@@ -84,10 +86,8 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	handle->samples = 0;
 	handle->samplerate = 8000;
 
-	if (ext) {
-		if (!strcasecmp(ext, "G722")) {
-			handle->samplerate = 16000;
-		}
+	if (!strcasecmp(ext, "G722")) {
+		handle->samplerate = 16000;
 	}
 
 	handle->channels = 1;
@@ -95,7 +95,6 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	handle->sections = 0;
 	handle->seekable = 1;
 	handle->speed = 0;
-	handle->pos = 0;
 	handle->private_info = context;
 	handle->flags |= SWITCH_FILE_NATIVE;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
