@@ -213,7 +213,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "status", off3++))) {
 			abort();
 		}
-		switch_xml_set_txt_d(x_tag3, np->leave_time ? "disconnected" : "connected");
+		switch_xml_set_txt_d(x_tag3, "connected");
 
 
 		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "joining-info", off3++))) {
@@ -398,15 +398,12 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 			}
 		}
 
-		if (np->cp) {
-
-			if (!user_uri) {
-				user_uri = switch_mprintf("%s@%s", np->cp->caller_id_number, domain);
-			}
-
-			json_add_child_string(juser, "entity", user_uri);
-			json_add_child_string(juser, "displayText", np->cp->caller_id_name);
+		if (!user_uri) {
+			user_uri = switch_mprintf("%s@%s", np->cp->caller_id_number, domain);
 		}
+
+		json_add_child_string(juser, "entity", user_uri);
+		json_add_child_string(juser, "displayText", np->cp->caller_id_name);
 
 		//if (np->record_path) {
 		//json_add_child_string(juser, "recordingPATH", np->record_path);
@@ -494,11 +491,9 @@ void conference_cdr_del(conference_member_t *member)
 			switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
 		}
 
-		if (member->cdr_node) {
-			member->cdr_node->leave_time = switch_epoch_time_now(NULL);
-			memcpy(member->cdr_node->mflags, member->flags, sizeof(member->flags));
-			member->cdr_node->member = NULL;
-		}
+		member->cdr_node->leave_time = switch_epoch_time_now(NULL);
+		memcpy(member->cdr_node->mflags, member->flags, sizeof(member->flags));
+		member->cdr_node->member = NULL;
 	}
 	switch_mutex_unlock(member->conference->member_mutex);
 }

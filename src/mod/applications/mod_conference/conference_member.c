@@ -128,7 +128,7 @@ void conference_member_update_status_field(conference_member_t *member)
 	char *str, *vstr = "", display[128] = "", *json_display = NULL;
 	cJSON *json, *audio, *video;
 
-	if (!member->conference->la || !member->json || !member->status_field || conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
+	if (!member || !member->conference || !member->conference->la || !member->json || !member->status_field || conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 		return;
 	}
 
@@ -157,7 +157,7 @@ void conference_member_update_status_field(conference_member_t *member)
 			vstr = " VIDEO (BLIND)";
 		} else {
 			vstr = " VIDEO";
-			if (member && member->id == member->conference->video_floor_holder) {
+			if (member->id == member->conference->video_floor_holder) {
 				vstr = " VIDEO (FLOOR)";
 			}
 		}
@@ -194,8 +194,8 @@ void conference_member_update_status_field(conference_member_t *member)
 			cJSON_AddItemToObject(video, "avatarPresented", cJSON_CreateBool(!!member->avatar_png_img));
 			cJSON_AddItemToObject(video, "mediaFlow", cJSON_CreateString(switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY ? "sendOnly" : "sendRecv"));
 			cJSON_AddItemToObject(video, "muted", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)));
-			cJSON_AddItemToObject(video, "floor", cJSON_CreateBool(member && member->id == member->conference->video_floor_holder));
-			if (member && member->id == member->conference->video_floor_holder && conference_utils_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK)) {
+			cJSON_AddItemToObject(video, "floor", cJSON_CreateBool(member->id == member->conference->video_floor_holder));
+			if (member->id == member->conference->video_floor_holder && conference_utils_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK)) {
 				cJSON_AddItemToObject(video, "floorLocked", cJSON_CreateTrue());
 			}
 			cJSON_AddItemToObject(video, "reservationID", member->video_reservation_id ?
@@ -502,7 +502,7 @@ void conference_member_check_channels(switch_frame_t *frame, conference_member_t
 		rlen = frame->datalen / 2 / from;
 
 		if (in && frame->rate == 48000 && ((from == 1 && to == 2) || (from == 2 && to == 2)) && conference_utils_member_test_flag(member, MFLAG_POSITIONAL)) {
-			if (from == 2 && to == 2) {
+			if (from == 2) {
 				switch_mux_channels((int16_t *) frame->data, rlen, 2, 1);
 				frame->datalen /= 2;
 				rlen = frame->datalen / 2;
@@ -1397,11 +1397,13 @@ switch_status_t conference_member_play_file(conference_member_t *member, char *f
 	char *dfile = NULL, *expanded = NULL;
 	conference_file_node_t *fnode, *nptr = NULL;
 	switch_memory_pool_t *pool;
-	int channels = member->conference->channels;
+	int channels = 0;
 	int bad_params = 0;
 
 	if (member == NULL || file == NULL || conference_utils_member_test_flag(member, MFLAG_KICKED))
 		return status;
+
+	channels = member->conference->channels;
 
 	if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(member->session), file)) != file) {
 		file = expanded;
@@ -1510,20 +1512,22 @@ switch_status_t conference_member_play_file(conference_member_t *member, char *f
 /* Say some thing with TTS in the conference room */
 switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin)
 {
-	conference_obj_t *conference = member->conference;
+	conference_obj_t *conference = NULL;
 	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *fp = NULL;
-	int channels = member->conference->channels;
+	int channels = 0;
 	switch_event_t *params = NULL;
 	const char *position = NULL;
 
 	if (member == NULL || zstr(text))
 		return SWITCH_STATUS_FALSE;
 
+	conference = member->conference;
 	switch_assert(conference != NULL);
+	channels = conference->channels;
 
 	if (!(conference->tts_engine && conference->tts_voice)) {
 		return SWITCH_STATUS_SUCCESS;

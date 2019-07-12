@@ -512,7 +512,7 @@ switch_status_t conference_api_sub_conference_video_vmute_snap(conference_member
 	}
 
 	if (!member->conference->canvases[0]) {
-		stream->write_function(stream, "-ERR Conference is not in mixing mode\n");
+		if (stream) stream->write_function(stream, "-ERR Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -974,12 +974,12 @@ switch_status_t conference_api_sub_dtmf(conference_member_t *member, switch_stre
 	char *dtmf = (char *) data;
 
 	if (member == NULL) {
-		stream->write_function(stream, "-ERR Invalid member!\n");
+		if (stream != NULL) stream->write_function(stream, "-ERR Invalid member!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (zstr(dtmf)) {
-		stream->write_function(stream, "-ERR Invalid input!\n");
+		if (stream != NULL) stream->write_function(stream, "-ERR Invalid input!\n");
 		return SWITCH_STATUS_GENERR;
 	} else {
 		char *p;
@@ -1365,7 +1365,7 @@ switch_status_t conference_api_sub_max_energy(conference_member_t *member, switc
 
 	if (member->max_energy_level && member->max_energy_level < member->energy_level) {
 		member->max_energy_level = 0;
-		stream->write_function(stream, "-ERR %u Max-Energy cannot exceed energy level.\n", member->id);
+		if (stream != NULL) stream->write_function(stream, "-ERR %u Max-Energy cannot exceed energy level.\n", member->id);
 	} else if (data) {
 		char *p, *q;
 		if ((p = strchr(data, ':'))) {
@@ -1656,10 +1656,7 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	}
 
 	if (argv[4]) {
-
-		if (argv[4]) {
-			id = atoi(argv[4]);
-		}
+		id = atoi(argv[4]);
 
 		if (id < 1 || id > MAX_CANVASES+1) {
 			id = -1;
@@ -1685,7 +1682,7 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	}
 
 	for (i = 0; i <= conference->canvas_count; i++) {
-		if (i > -1 && i != id - 1) {
+		if (i != id - 1) {
 			continue;
 		}
 
@@ -1768,15 +1765,14 @@ switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, sw
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((canvas = conference->canvases[idx])) {
-		switch_mutex_lock(canvas->mutex);
-		if (!strcasecmp(file, "clear")) {
-			conference_video_reset_image(canvas->img, &canvas->bgcolor);
-		} else {
-			status = conference_video_set_canvas_bgimg(canvas, file);
-		}
-		switch_mutex_unlock(canvas->mutex);
+	canvas = conference->canvases[idx];
+	switch_mutex_lock(canvas->mutex);
+	if (!strcasecmp(file, "clear")) {
+		conference_video_reset_image(canvas->img, &canvas->bgcolor);
+	} else {
+		status = conference_video_set_canvas_bgimg(canvas, file);
 	}
+	switch_mutex_unlock(canvas->mutex);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK Set Bgimg %s\n", file);
@@ -1882,7 +1878,7 @@ switch_status_t conference_api_sub_vid_res(conference_obj_t *conference, switch_
 
 	}
 
-	if (id == 0 && conference->canvases[0]) id = 1;
+	if (id == 0) id = 1;
 
 	if (id > conference->canvas_count + 1) {
 		id = 1;
@@ -2018,7 +2014,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		}
 	}
 
-	if (!vlayout && (vlayout = switch_core_hash_find(conference->layout_hash, argv[2]))) {
+	if ((vlayout = switch_core_hash_find(conference->layout_hash, argv[2]))) {
 		if (argv[3]) {
 			if ((idx = atoi(argv[3]))) {
 				idx--;
@@ -2964,7 +2960,6 @@ switch_status_t conference_api_sub_cam(conference_obj_t *conference, switch_stre
 					
 					if (p) {
 						*p++ = '\0';
-						if (!p) p = "";
 						
 						if (!strcasecmp(argv[x], "zoom") || !strcasecmp(argv[x], "pan")) {
 							str_arg = p;
@@ -3612,7 +3607,6 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 {
 	switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
 	char *conference_name = NULL, *profile_name;
-	switch_event_t *params = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -3621,6 +3615,7 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 		int x;
 
 		conference_name = strdup(argv[2]);
+		switch_assert(conference_name);
 
 		if ((profile_name = strchr(conference_name, '@'))) {
 			*profile_name++ = '\0';
@@ -3662,10 +3657,6 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 		}
 	} else {
 		ret_status = SWITCH_STATUS_GENERR;
-	}
-
-	if (params) {
-		switch_event_destroy(&params);
 	}
 
 	switch_safe_free(conference_name);
@@ -4197,6 +4188,7 @@ switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_str
 						char *var, *val;
 
 						var = strdup(argv[argn + 1]);
+						switch_assert(var);
 
 						if ((val = strchr(var, '='))) {
 							*val++ = '\0';

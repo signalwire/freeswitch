@@ -1019,7 +1019,7 @@ switch_status_t chat_send(switch_event_t *message_event)
 
 	SWITCH_STANDARD_STREAM(stream);
 
-	if (body != NULL && (lbuf = strdup(body))) {
+	if ((lbuf = strdup(body))) {
 		/* special case list */
 		if (conference->broadcast_chat_messages) {
 			conference_event_chat_message_broadcast(conference, message_event);

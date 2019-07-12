@@ -1841,6 +1841,7 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 
 		if (inuse + 1 > member->text_framesize) {
 			void *tmp = malloc(inuse + 1024);
+			switch_assert(tmp);
 			memcpy(tmp, member->text_framedata, member->text_framesize);
 
 			switch_assert(tmp);
@@ -2029,10 +2030,8 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if this is a bridging call, and it's not a duplicate, build a */
 	/* conference object, and skip pin handling, and locked checking */
 
-	if (!locked) {
-		switch_mutex_lock(conference_globals.setup_mutex);
-		locked = 1;
-	}
+	switch_mutex_lock(conference_globals.setup_mutex);
+	locked = 1;
 
 	if (isbr) {
 		char *uuid = switch_core_session_get_uuid(session);
@@ -2057,10 +2056,8 @@ SWITCH_STANDARD_APP(conference_function)
 		conference->flags[CFLAG_JSON_STATUS] = 1;
 		conference_utils_set_cflags(cflags_str, conference->flags);
 
-		if (locked) {
-			switch_mutex_unlock(conference_globals.setup_mutex);
-			locked = 0;
-		}
+		switch_mutex_unlock(conference_globals.setup_mutex);
+		locked = 0;
 
 		switch_channel_set_variable(channel, "conference_name", conference->name);
 
@@ -2086,10 +2083,8 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		if ((conference = conference_find(conference_name, NULL))) {
-			if (locked) {
-				switch_mutex_unlock(conference_globals.setup_mutex);
-				locked = 0;
-			}
+			switch_mutex_unlock(conference_globals.setup_mutex);
+			locked = 0;
 		}
 
 		/* if the conference exists, get the pointer to it */
@@ -2267,7 +2262,7 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 
 			while (!pin_valid && pin_retries && status == SWITCH_STATUS_SUCCESS) {
-				size_t dpin_length = dpin ? strlen(dpin) : 0;
+				size_t dpin_length = strlen(dpin);
 				size_t mdpin_length = mdpin ? strlen(mdpin) : 0;
 				int maxpin = dpin_length > mdpin_length ? (int)dpin_length : (int)mdpin_length;
 				switch_status_t pstatus = SWITCH_STATUS_FALSE;
@@ -2361,10 +2356,8 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* Release the config registry handle */
-	if (cxml) {
-		switch_xml_free(cxml);
-		cxml = NULL;
-	}
+	switch_xml_free(cxml);
+	cxml = NULL;
 
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
@@ -3308,10 +3301,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			video_layout_name = CONFERENCE_MUX_DEFAULT_LAYOUT;
 		}
 
-		if (!strncasecmp(video_layout_name, "group:", 6)) {
-			video_layout_group = video_layout_name + 6;
-		}
 		if (video_layout_name) {
+			if (!strncasecmp(video_layout_name, "group:", 6)) {
+				video_layout_group = video_layout_name + 6;
+			}
 			conference->video_layout_name = switch_core_strdup(conference->pool, video_layout_name);
 		}
 
@@ -3516,9 +3509,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		if (conference->max_energy_hit_trigger < 0) {
 			conference->max_energy_hit_trigger = 0;
 		}
-	}
 
-	if (!zstr(max_energy_level)) {
 		conference->max_energy_level = atoi(max_energy_level);
 		if (conference->max_energy_level < 0) {
 			conference->max_energy_level = 0;

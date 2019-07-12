@@ -328,7 +328,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		goto end;
 	}
 
-	while (conference_utils_member_test_flag(member, MFLAG_RUNNING) && conference_utils_test_flag(conference, CFLAG_RUNNING) && (conference->count + conference->count_ghosts)) {
+	while (conference_utils_member_test_flag(member, MFLAG_RUNNING) && conference_utils_test_flag(conference, CFLAG_RUNNING) && (conference->count + conference->count_ghosts) > 0) {
 
 		len = 0;
 
