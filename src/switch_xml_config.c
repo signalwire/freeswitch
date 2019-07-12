@@ -316,7 +316,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						}
 					} else {
 						if (*dest) {
-							switch_safe_free(*dest);
+							free(*dest);
 							changed = SWITCH_TRUE;
 						}
 					}
