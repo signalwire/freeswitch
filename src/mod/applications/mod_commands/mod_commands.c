@@ -872,7 +872,7 @@ SWITCH_STANDARD_API(time_test_function)
 		stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		total += diff;
 	}
-	stream->write_function(stream, "avg %d\n", total / (x > 1 ? x - 1 : 1));
+	stream->write_function(stream, "avg %d\n", total / (x - 1));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1567,6 +1567,7 @@ SWITCH_STANDARD_API(expand_function)
 	}
 
 	dup = strdup(cmd);
+	switch_assert(dup);
 	mycmd = dup;
 
 	if (!strncasecmp(mycmd, "uuid:", 5)) {
@@ -1664,6 +1665,7 @@ SWITCH_STANDARD_API(console_complete_xml_function)
 
 SWITCH_STANDARD_API(eval_function)
 {
+	switch_core_session_t *nsession = NULL;
 	char *expanded;
 	switch_event_t *event;
 	char uuid[80] = "";
@@ -1689,9 +1691,9 @@ SWITCH_STANDARD_API(eval_function)
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA);
 	if (*uuid) {
-		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel_event_set_data(switch_core_session_get_channel(session), event);
-			switch_core_session_rwunlock(session);
+		if ((nsession = switch_core_session_locate(uuid))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(nsession), event);
+			switch_core_session_rwunlock(nsession);
 		}
 	}
 
@@ -1767,6 +1769,7 @@ SWITCH_STANDARD_API(toupper_function)
 		int i;
 
 		data = strdup(cmd);
+		switch_assert(data);
 		for(i = 0; i < strlen(data); i++) {
 			data[i] = toupper(data[i]);
 		}
@@ -1790,6 +1793,7 @@ SWITCH_STANDARD_API(tolower_function)
 		int i;
 
 		data = strdup(cmd);
+		switch_assert(data);
 		for(i = 0; i < strlen(data); i++) {
 			data[i] = tolower(data[i]);
 		}
@@ -1963,6 +1967,7 @@ SWITCH_STANDARD_API(replace_function)
 	}
 
 	mydata = strdup(cmd);
+	switch_assert(mydata);
 	d = mydata;
 
 	if (*d == 'm' && *(d + 1) == ':' && *(d + 2)) {
@@ -6178,6 +6183,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 						int idx = -1;
 						char *vname = strdup(var_name);
 
+						switch_assert(vname);
 						if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
 							*ptr++ = '\0';
 							idx = atoi(ptr);
@@ -6518,7 +6524,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 		if ((format = strchr(mycmd, ' '))) {
 			*format++ = '\0';
 
-			if (format && (p = strchr(format, '|'))) {
+			if ((p = strchr(format, '|'))) {
 				*p++ = '\0';
 				when = atol(format);
 				format = p;
@@ -7550,7 +7556,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer outgoing channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "Set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "Reinvite FS in or out of media path", uuid_media_function, MEDIA_SYNTAX);
