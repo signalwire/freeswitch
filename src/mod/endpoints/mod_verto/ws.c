@@ -290,6 +290,9 @@ int ws_handshake(wsh_t *wsh)
 	}
 
 	wsh->uri = malloc((e-p) + 1);
+
+	if (!wsh->uri) goto err;
+
 	strncpy(wsh->uri, p, e-p);
 	*(wsh->uri + (e-p)) = '\0';
 
@@ -439,10 +442,10 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 				int ms = 1;
 
 				if (wsh->block) {
-					if (sanity < WS_WRITE_SANITY * 3 / 4) {
-						ms = 50;
-					} else if (sanity < WS_WRITE_SANITY / 2) {
+					if (sanity < WS_WRITE_SANITY / 2) {
 						ms = 25;
+					} else if (sanity < WS_WRITE_SANITY * 3 / 4) {
+						ms = 50;
 					}
 				}
 				ms_sleep(ms);
@@ -479,10 +482,10 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 			int ms = 1;
 
 			if (wsh->block) {
-				if (sanity < WS_WRITE_SANITY * 3 / 4) {
-					ms = 50;
-				} else if (sanity < WS_WRITE_SANITY / 2) {
+				if (sanity < WS_WRITE_SANITY / 2) {
 					ms = 25;
+				} else if (sanity < WS_WRITE_SANITY * 3 / 4) {
+					ms = 50;
 				}
 			}
 			ms_sleep(ms);
@@ -584,7 +587,7 @@ int establish_logical_layer(wsh_t *wsh)
 
 			if (code < 0) {
 				int ssl_err = SSL_get_error(wsh->ssl, code);
-				if (code < 0 && !SSL_WANT_READ_WRITE(ssl_err)) {
+				if (!SSL_WANT_READ_WRITE(ssl_err)) {
 					return -1;
 				}
 			}
@@ -817,7 +820,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	if (wsh->datalen < need) {
 		ssize_t bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen, WS_BLOCK);
 		
-		if (bytes < 0 || (wsh->datalen += bytes) < need) {
+		if (bytes < 0 || (wsh->datalen + bytes) < need) {
 			/* too small - protocol err */
 			return ws_close(wsh, WS_NONE);
 		}

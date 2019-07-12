@@ -728,7 +728,9 @@ static void jsock_send_event(cJSON *event)
 	write_event(event_channel, use_jsock, event);
 	if (strchr(event_channel, '.')) {
 		char *main_channel = strdup(event_channel);
-		char *p = strchr(main_channel, '.');
+		char *p;
+		switch_assert(main_channel);
+		p = strchr(main_channel, '.');
 		if (p) *p = '\0';
 		write_event(main_channel, use_jsock, event);
 		free(main_channel);
@@ -752,6 +754,7 @@ static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
 		if (strchr(method, '.')) {
 			char *p;
 			main_method = strdup(method);
+			switch_assert(main_method);
 			if ((p = strchr(main_method, '.'))) {
 				*p = '\0';
 			}
@@ -803,6 +806,7 @@ static void set_perm(const char *str, switch_event_t **event)
 
 	if (!zstr(str)) {
 		edup = strdup(str);
+		switch_assert(edup);
 		cur = edup;
 
 		if (strchr(edup, ' ')) {
@@ -2082,6 +2086,7 @@ static switch_bool_t auth_api_command(jsock_t *jsock, const char *api_cmd, const
 					if (arg) {
 						switch_safe_free(dup_arg);
 						dup_arg = strdup(arg);
+						switch_assert(dup_arg);
 						check_cmd = dup_arg;
 						if ((next = strchr(check_cmd, ' '))) {
 							*next++ = '\0';
@@ -3486,6 +3491,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
 				pproto = strdup(to);
+				switch_assert(pproto);
 				if ((to = strchr(pproto, '+'))) {
 					*to++ = '\0';
 				}
@@ -3852,6 +3858,7 @@ static switch_bool_t event_channel_check_auth(jsock_t *jsock, const char *event_
 		if (strchr(event_channel, '.')) {
 			char *p;
 			main_event_channel = strdup(event_channel);
+			switch_assert(main_event_channel);
 			if ((p = strchr(main_event_channel, '.'))) {
 				*p = '\0';
 			}
@@ -4507,10 +4514,9 @@ static void kill_profiles(void)
 }
 
 
-static int runtime(verto_profile_t *profile)
+static void runtime(verto_profile_t *profile)
 {
 	int i;
-	int r = 0;
 	int listeners = 0;
 
 	for (i = 0; i < profile->i; i++) {
@@ -4531,7 +4537,7 @@ static int runtime(verto_profile_t *profile)
 			ok++;
 		}
 
-		if (ok && mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
+		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
 			mcast_socket_close(&profile->mcast_sub);
 			ok = 0;
 		}
@@ -4559,12 +4565,6 @@ static int runtime(verto_profile_t *profile)
 	if (profile->mcast_pub.sock != ws_sock_invalid) {
 		mcast_socket_close(&profile->mcast_pub);
 	}
-
-	if (r) {
-		kill_profile(profile);
-	}
-
-	return r;
 
 }
 
@@ -4594,7 +4594,7 @@ static void parse_ip(char *host, switch_size_t host_len, uint16_t *port, char *i
 			strncpy(host, p, end - p);
 			if (*(end+1) == ':' && end + 2 < end_of_p(input)) {
 				end += 2;
-				if (end) {
+				if (*end) {
 					*port = (uint16_t)atoi(end);
 				}
 			}
@@ -4753,14 +4753,13 @@ static switch_status_t parse_config(const char *cf)
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;
 				char *val = NULL;
-				int i = 0;
 
 				var = (char *) switch_xml_attr_soft(param, "name");
 				val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (!strcasecmp(var, "bind-local")) {
 					const char *secure = switch_xml_attr_soft(param, "secure");
-					if (i < MAX_BIND) {
+					if (profile->i < MAX_BIND) {
 						parse_ip(profile->ip[profile->i].local_ip, sizeof(profile->ip[profile->i].local_ip), &profile->ip[profile->i].local_port, val);
 						if (switch_true(secure)) {
 							profile->ip[profile->i].secure = 1;
@@ -5459,8 +5458,10 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "verto_orig_dest", dest);
 		if (zstr(switch_event_get_header(var_event, "origination_callee_id_number"))) {
+			char *p;
 			char *trimmed_dest = strdup(dest);
-			char *p = strchr(trimmed_dest, '@');
+			switch_assert(trimmed_dest);
+			p = strchr(trimmed_dest, '@');
 			if (p) *p = '\0';
 			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_callee_id_number", trimmed_dest);
 			free(trimmed_dest);
@@ -5652,7 +5653,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		cJSON_AddItemToObject(msg, "body", cJSON_CreateString(body));
 
 		for (eh = message_event->headers; eh; eh = eh->next) {
-			if ((!strncasecmp(eh->name, "from_", 5) || !strncasecmp(eh->name, "to_", 3))) {
+			if (!strncasecmp(eh->name, "from_", 5) || !strncasecmp(eh->name, "to_", 3)) {
 				cJSON_AddItemToObject(msg, eh->name, cJSON_CreateString(eh->value));
 			}
 		}
