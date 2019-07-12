@@ -1307,11 +1307,7 @@ static void load_mime_types(void)
 	}
 
 	switch_safe_free(line_buf);
-
-	if (fd) {
-		fclose(fd);
-		fd = NULL;
-	}
+	fclose(fd);
 
   end:
 
@@ -2649,6 +2645,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 
 			if (!zstr(arg)) {
 				tech = strdup(arg);
+				switch_assert(tech);
 
 				if ((prof = strchr(tech, ':'))) {
 					*prof++ = '\0';
@@ -2656,10 +2653,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 
 				if (!strcasecmp(tech, "flush")) {
 					flush++;
-					tech = NULL;
 
 					if (prof) {
-						tech = prof;
+						char *tech = prof;
 						if ((prof = strchr(tech, ':'))) {
 							*prof++ = '\0';
 						}
