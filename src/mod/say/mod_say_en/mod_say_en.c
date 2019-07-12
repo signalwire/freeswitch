@@ -202,7 +202,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		if (strchr(tosay, ':')) {
 			char *tme = strdup(tosay);
 			char *p;
-
+			switch_assert(tme);
 			if ((p = strrchr(tme, ':'))) {
 				*p++ = '\0';
 				seconds = atoi(p);
@@ -341,10 +341,6 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		}
 		if (tm.tm_yday >= tm_now.tm_yday - 5) {
 			say_dow = 1;
-			break;
-		}
-		if (tm.tm_mon != tm_now.tm_mon) {
-			say_month = say_day = say_dow = 1;
 			break;
 		}
 
