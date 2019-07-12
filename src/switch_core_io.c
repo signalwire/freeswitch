@@ -669,7 +669,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					continue;
 				}
 
-				if (ok && switch_test_flag(bp, SMBF_READ_REPLACE)) {
+				if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->read_replace_frame_in = read_frame;
@@ -720,7 +720,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					continue;
 				}
 
-				if (ok && bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
+				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
 					if (bp->read_demux_frame) {
 						uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -755,7 +755,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
-		if (do_bugs || tap_only) {
+		if (do_bugs) {
 			goto done;
 		}
 
@@ -985,11 +985,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_assert(dtmf);
+
 	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
 
