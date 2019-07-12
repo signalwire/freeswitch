@@ -282,6 +282,8 @@ SWITCH_STANDARD_API(start_tone_detect_api)
 
 	puuid = strdup((char *)cmd);
 
+	switch_assert(puuid);
+
 	if ((descriptor = strchr(puuid, ' '))) {
 		*descriptor++ = '\0';
 	}
@@ -367,7 +369,7 @@ SWITCH_STANDARD_API(start_tdd_detect_api)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	spandsp_tdd_decode_session(psession);
+	status = spandsp_tdd_decode_session(psession);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK started\n");
@@ -412,6 +414,8 @@ SWITCH_STANDARD_API(start_send_tdd_api)
 	}
 
 	puuid = strdup((char *)cmd);
+
+	switch_assert(puuid);
 
 	if ((text = strchr(puuid, ' '))) {
 		*text++ = '\0';

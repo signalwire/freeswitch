@@ -363,7 +363,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 
 int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int msg_len)
 {
-	uint8_t fec[LOCAL_FAX_MAX_DATAGRAM];
+	uint8_t fec[LOCAL_FAX_MAX_DATAGRAM] = { 0 };
 	int i;
 	int j;
 	int seq;

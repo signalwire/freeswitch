@@ -744,8 +744,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
-		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
 		break;

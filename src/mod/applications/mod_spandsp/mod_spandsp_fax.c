@@ -824,9 +824,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 			/* add to timer thread processing */
 			if (!add_pvt(pvt)) {
-				if (channel) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				}
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 
 			span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, pvt->session);
@@ -1027,12 +1025,17 @@ static switch_status_t spanfax_destroy(pvt_t *pvt)
 
 static t38_mode_t configure_t38(pvt_t *pvt)
 {
-	switch_core_session_t *session = pvt->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_t38_options_t *t38_options = switch_channel_get_private(channel, "t38_options");
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	switch_t38_options_t *t38_options;
 	int method = 2;
 
-	if (!t38_options || !pvt || !pvt->t38_core) {
+	switch_assert(pvt && pvt->session);
+	session = pvt->session;
+	channel = switch_core_session_get_channel(session);
+	t38_options = switch_channel_get_private(channel, "t38_options");
+
+	if (!t38_options || !pvt->t38_core) {
 		pvt->t38_mode = T38_MODE_REFUSED;
 		return pvt->t38_mode;
 	}
@@ -2364,7 +2367,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!cont && !(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
+	if (!(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 

@@ -463,7 +463,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))) {
+	if (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2")) {
 		packing = G726_PACKING_LEFT;
 	}
 
