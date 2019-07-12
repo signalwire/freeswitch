@@ -73,7 +73,7 @@ int exprFuncListAdd(exprFuncList * flist, char *name, exprFuncType ptr, int min,
 	if (refmin >= 0 && refmax >= 0) {
 		if (refmin > refmax) {
 			result = refmin;
-			refmin = max;
+			refmin = refmax;
 			refmax = result;
 		}
 	}
@@ -148,7 +148,7 @@ int exprFuncListAddType(exprFuncList * flist, char *name, int type, int min, int
 	if (refmin >= 0 && refmax >= 0) {
 		if (refmin > refmax) {
 			result = refmin;
-			refmin = max;
+			refmin = refmax;
 			refmax = result;
 		}
 	}
