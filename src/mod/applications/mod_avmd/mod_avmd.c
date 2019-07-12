@@ -2225,7 +2225,7 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
             return AVMD_DETECT_FREQ;
         }
         if (mode == AVMD_DETECT_BOTH) {
-            if ((avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1) && (valid_omega == 1))  {
+            if ((avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1))  {
                 return AVMD_DETECT_BOTH;
             }
         }
