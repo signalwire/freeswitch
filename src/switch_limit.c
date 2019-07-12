@@ -47,9 +47,7 @@ static switch_limit_interface_t *get_backend(const char *backend) {
 }
 
 static void release_backend(switch_limit_interface_t *limit) {
-	if (limit) {
-		UNPROTECT_INTERFACE(limit);
-	}
+	UNPROTECT_INTERFACE(limit);
 }
 
 SWITCH_DECLARE(void) switch_limit_init(switch_memory_pool_t *pool) {
