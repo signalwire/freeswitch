@@ -955,16 +955,13 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 		p += 2;
 	}
 
-	if (!max) {
-		return -2;
-	}
-
 	data = strdup(val + 7);
 
 	len = (sizeof(char *) * max) + 1;
 	switch_assert(len);
 
 	array = malloc(len);
+	switch_assert(array);
 	memset(array, 0, len);
 
 	switch_separate_string_string(data, "|:", array, max);
@@ -1565,12 +1562,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 
 		if ((len + llen) > dlen) {
-			char *m = buf;
+			char *m = NULL;
 			dlen += (blocksize + (len + llen));
-			if (!(buf = realloc(buf, dlen))) {
-				buf = m;
+			if (!(m = realloc(buf, dlen))) {
 				abort();
 			}
+			buf = m;
 		}
 
 		switch_snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, *encode_buf == '\0' ? "_undef_" : encode_buf);
@@ -1591,12 +1588,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 
 		if ((len + llen) > dlen) {
-			char *m = buf;
+			char *m = NULL;
 			dlen += (blocksize + (len + llen));
-			if (!(buf = realloc(buf, dlen))) {
-				buf = m;
+			if (!(m = realloc(buf, dlen))) {
 				abort();
 			}
+			buf = m;
 		}
 
 		if (blen) {
@@ -2244,6 +2241,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
+	switch_assert(indup);
 	endof_indup = end_of_p(indup) + 1;
 
 	if ((data = malloc(olen))) {
@@ -2438,45 +2436,36 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 				} else {
 					switch_stream_handle_t stream = { 0 };
 					char *expanded = NULL;
+					char *expanded_vname = NULL;
 
 					SWITCH_STANDARD_STREAM(stream);
 
-					if (stream.data) {
-						char *expanded_vname = NULL;
-
-						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
-							expanded_vname = NULL;
-						} else {
-							vname = expanded_vname;
-						}
-
-						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
-							expanded = NULL;
-						} else {
-							vval = expanded;
-						}
-
-						if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
-							func_val = NULL;
-							sub_val = "<API execute Permission Denied>";
-						} else {
-							if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-								func_val = stream.data;
-								sub_val = func_val;
-							} else {
-								free(stream.data);
-							}
-						}
-
-						switch_safe_free(expanded);
-						switch_safe_free(expanded_vname);
-
+					if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
+						expanded_vname = NULL;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-						free(data);
-						free(indup);
-						return (char *) in;
+						vname = expanded_vname;
 					}
+
+					if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
+						expanded = NULL;
+					} else {
+						vval = expanded;
+					}
+
+					if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
+						func_val = NULL;
+						sub_val = "<API execute Permission Denied>";
+					} else {
+						if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+							func_val = stream.data;
+							sub_val = func_val;
+						} else {
+							free(stream.data);
+						}
+					}
+
+					switch_safe_free(expanded);
+					switch_safe_free(expanded_vname);
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
 					if (len + nlen >= olen) {
@@ -2925,6 +2914,7 @@ static void ecd_deliver(event_channel_data_t **ecdP)
 
 	if ((p = strchr(ecd->event_channel, '.'))) {
 		char *main_channel = strdup(ecd->event_channel);
+		switch_assert(main_channel);
 		p = strchr(main_channel, '.');
 		*p = '\0';
 		_switch_event_channel_broadcast(main_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
@@ -3022,7 +3012,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 		switch_thread_pool_launch_thread(&td);
 	}
 
-	if ((status = switch_queue_trypush(EVENT_CHANNEL_DISPATCH_QUEUE, ecd) != SWITCH_STATUS_SUCCESS)) {
+	if ((status = switch_queue_trypush(EVENT_CHANNEL_DISPATCH_QUEUE, ecd)) != SWITCH_STATUS_SUCCESS) {
 		cJSON_Delete(ecd->json);
 		ecd->json = NULL;
 		destroy_ecd(&ecd);
