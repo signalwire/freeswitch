@@ -198,7 +198,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 			} else if (*string == '[') {
 				flags = string;
 				if ((e = switch_find_end_paren(flags, '[', ']'))) {
-					if (e && *++e == ':') {
+					if (*++e == ':') {
 						flags++;
 						*e++ = '\0';
 						string = e;
@@ -393,7 +393,7 @@ static void bind_to_session(switch_core_session_t *session,
 		if (*string == '[') {
 			flags = string;
 			if ((e = switch_find_end_paren(flags, '[', ']'))) {
-				if (e && *(e+1) == ':') {
+				if (*(e+1) == ':') {
 					flags++;
 					*e = '\0';
 					if (strchr(flags, 'P'))
@@ -3045,7 +3045,7 @@ SWITCH_STANDARD_APP(playback_function)
 		if ((p = strchr(file, '@')) && *(p + 1) == '@') {
 			*p = '\0';
 			p += 2;
-			if (p && *p) {
+			if (*p) {
 				fh.samples = atoi(p);
 			}
 		}
@@ -3260,9 +3260,8 @@ SWITCH_STANDARD_APP(record_function)
 		if (*l == '+') {
 			l++;
 		}
-		if (l) {
-			limit = switch_atoui(l);
-		}
+
+		limit = switch_atoui(l);
 	}
 
 	if (argv[2]) {
@@ -3566,34 +3565,29 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				fail = 1;
 			}
 
-			if (camping) {
+			if (!thread_started && fail && moh && !switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
+				!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
+				!switch_true(switch_channel_get_variable(caller_channel, "bypass_media"))) {
+				switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+				stake.running = 1;
+				stake.moh = moh;
+				stake.session = session;
+				switch_thread_create(&thread, thd_attr, camp_music_thread, &stake, switch_core_session_get_pool(session));
+				thread_started = 1;
+			}
 
-				if (!thread_started && fail && moh && !switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
-					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
-					!switch_true(switch_channel_get_variable(caller_channel, "bypass_media"))) {
-					switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-					switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-					stake.running = 1;
-					stake.moh = moh;
-					stake.session = session;
-					switch_thread_create(&thread, thd_attr, camp_music_thread, &stake, switch_core_session_get_pool(session));
-					thread_started = 1;
+			if (camp_loops++) {
+				int64_t wait = (int64_t)campon_sleep * 1000000;
+
+				if (--campon_retries <= 0 || stake.do_xfer) {
+					stake.do_xfer = 1;
+					break;
 				}
 
-				if (camp_loops++) {
-					if (--campon_retries <= 0 || stake.do_xfer) {
-						stake.do_xfer = 1;
-						break;
-					}
-
-					if (fail) {
-						int64_t wait = (int64_t)campon_sleep * 1000000;
-
-						while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
-							switch_yield(100000);
-							wait -= 100000;
-						}
-					}
+				while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
+					switch_yield(100000);
+					wait -= 100000;
 				}
 			}
 
@@ -3727,6 +3721,7 @@ static void pickup_send_presence(const char *key_name)
 
 
 	dup_key_name = strdup(key_name);
+	switch_assert(dup_key_name);
 	key_name = dup_key_name;
 
 	if ((domain_name = strchr(dup_key_name, '@'))) {
@@ -3874,6 +3869,7 @@ static void pickup_add_session(switch_core_session_t *session, const char *key)
 	}
 
 	node = malloc(sizeof(*node));
+	switch_assert(node);
 	node->key = strdup(key);
 	node->uuid = strdup(switch_core_session_get_uuid(session));
 	node->next = NULL;
@@ -4094,10 +4090,6 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	goto done;
 
   error:
-
-	if (nsession) {
-		switch_core_session_destroy(&nsession);
-	}
 
 	if (pool) {
 		*pool = NULL;
@@ -5415,7 +5407,7 @@ static void cancel(switch_core_session_t *session, master_mutex_t *master)
 
 	switch_mutex_lock(globals.mutex_mutex);
 	for (np = master->list; np; np = np->next) {
-		if (np && !strcmp(np->uuid, uuid)) {
+		if (!strcmp(np->uuid, uuid)) {
 			switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s mutex %s canceled\n",
 							  switch_core_session_get_uuid(session),
@@ -5552,7 +5544,7 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	switch_mutex_lock(globals.mutex_mutex);
 	used = switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT) || switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_SET);
 
-	if ((on && used) || (!on && !used)) {
+	if (!on == !used) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID STATE\n");
 		switch_mutex_unlock(globals.mutex_mutex);
 		return SWITCH_FALSE;
@@ -5983,7 +5975,7 @@ SWITCH_STANDARD_APP(page_function)
 		if (*l == '+') {
 			l++;
 		}
-		if (l) {
+		if (!zstr(l)) {
 			limit = switch_atoui(l);
 		}
 	}
