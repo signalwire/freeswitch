@@ -1646,7 +1646,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		if (rh->fh && switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
 			if (!bug->video_ping_frame) break;
 
-			if ((len || bug->video_ping_frame->img) && switch_core_file_write_video(rh->fh, bug->video_ping_frame) != SWITCH_STATUS_SUCCESS &&
+			if (bug->video_ping_frame->img && switch_core_file_write_video(rh->fh, bug->video_ping_frame) != SWITCH_STATUS_SUCCESS &&
 				rh->hangup_on_error) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", rh->file);
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -4045,10 +4045,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	}
 
 	cont->list[cont->index].callback = callback;
-
-	if (!hits)
-		hits = 1;
-
 	cont->list[cont->index].hits = 0;
 	cont->list[cont->index].total_hits = hits;
 	cont->list[cont->index].start_time = switch_micro_time_now();
@@ -4547,7 +4543,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	if (!state.done) {
 		switch_ivr_detect_speech_start_input_timers(session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
-		while (!state.done && switch_channel_ready(channel)) {
+		while (switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
 
 			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
@@ -5244,7 +5240,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	helper->flags = flags;
 
-	switch_copy_string(cur, path, len - sizeof(helper));
+	switch_copy_string(cur, path, len - sizeof(*helper));
 	helper->path = cur;
 
 	return switch_scheduler_add_task(runtime, sch_broadcast_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
@@ -5272,7 +5268,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	channel = switch_core_session_get_channel(session);
 
 	mypath = strdup(path);
-	assert(mypath);
+	switch_assert(mypath);
 
 	if ((p = strchr(mypath, ':')) && *(p + 1) == ':') {
 		app = mypath;
@@ -5288,7 +5284,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((cause = strchr(app, '!'))) {
 		*cause++ = '\0';
-		if (!cause) {
+		if (!*cause) {
 			cause = "normal_clearing";
 		}
 	}
