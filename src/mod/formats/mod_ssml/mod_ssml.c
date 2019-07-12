@@ -620,6 +620,7 @@ static int tag_hook(void *user_data, char *name, char **atts, int type)
 
 	if (type == IKS_OPEN || type == IKS_SINGLE) {
 		struct ssml_node *new_node = malloc(sizeof *new_node);
+		switch_assert(new_node);
 		if (parent_node) {
 			/* inherit parent attribs */
 			*new_node = *parent_node;
@@ -741,6 +742,7 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 
 		/* try macro */
 		to_say = malloc(len + 1);
+		switch_assert(to_say);
 		strncpy(to_say, data, len);
 		to_say[len] = '\0';
 		if (!cur_node->say_macro || !get_file_from_macro(parsed_data, to_say)) {
