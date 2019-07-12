@@ -75,7 +75,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 	if (*expression == '/') {
 		char *opts = NULL;
 		tmp = strdup(expression + 1);
-		assert(tmp);
+		switch_assert(tmp);
 		if ((opts = strrchr(tmp, '/'))) {
 			*opts++ = '\0';
 		} else {
@@ -85,7 +85,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 			goto end;
 		}
 		expression = tmp;
-		if (opts) {
+		if (*opts) {
 			if (strchr(opts, 'i')) {
 				flags |= PCRE_CASELESS;
 			}
@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	if (*expression == '/') {
 		char *opts = NULL;
 		tmp = strdup(expression + 1);
-		assert(tmp);
+		switch_assert(tmp);
 		if ((opts = strrchr(tmp, '/'))) {
 			*opts++ = '\0';
 		} else {
@@ -237,7 +237,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 			goto end;
 		}
 		expression = tmp;
-		if (opts) {
+		if (*opts) {
 			if (strchr(opts, 'i')) {
 				flags |= PCRE_CASELESS;
 			}
