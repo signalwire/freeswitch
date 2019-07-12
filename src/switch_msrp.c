@@ -616,6 +616,7 @@ char* HEADER_NAMES[] = {
 
 	"MSRP_H_TRASACTION_ID",
 	"MSRP_H_DELIMITER",
+	"MSRP_H_CODE_DESCRIPTION",
 
 	"MSRP_H_UNKNOWN"
 };
@@ -910,8 +911,8 @@ static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_
 				if (globals.debug) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "=======================================delimiter: %s\n", delim_pos);
 				}
+				switch_assert(delim_pos - buf >= 2);
 				payload_bytes = delim_pos - buf - 2;
-				switch_assert(payload_bytes >= 0);
 				switch_msrp_msg_set_payload(msrp_msg, buf, payload_bytes);
 				msrp_msg->byte_end = msrp_msg->byte_start + msrp_msg->payload_bytes - 1;
 				msrp_msg->state = MSRP_ST_DONE;
@@ -1631,6 +1632,7 @@ SWITCH_DECLARE(switch_msrp_msg_t *) switch_msrp_msg_dup(switch_msrp_msg_t *msg)
 
 	if (msg->payload_bytes > 0 && msg->payload) {
 		new_msg->payload = malloc(msg->payload_bytes + 1);
+		switch_assert(new_msg->payload);
 		memcpy(new_msg->payload, msg->payload, msg->payload_bytes);
 		*(new_msg->payload + msg->payload_bytes) = '\0';
 	}
