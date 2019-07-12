@@ -69,7 +69,7 @@ static void switch_core_media_bug_destroy(switch_media_bug_t **bug)
 		switch_thread_join(&st, bp->video_bug_thread);
 	}
 
-	if (switch_test_flag(bp, SMBF_READ_VIDEO_PATCH) && bp->session->video_read_codec) {
+	if (bp->session && switch_test_flag(bp, SMBF_READ_VIDEO_PATCH) && bp->session->video_read_codec) {
 		switch_clear_flag(bp->session->video_read_codec, SWITCH_CODEC_FLAG_VIDEO_PATCHING);
 	}
 
