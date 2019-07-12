@@ -606,6 +606,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 			SQLSMALLINT NameLength = 0, DataType = 0, DecimalDigits = 0, Nullable = 0;
 			SQLULEN ColumnSize = 0;
 			names[y] = malloc(name_len);
+			switch_assert(names[y]);
 			memset(names[y], 0, name_len);
 
 			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
@@ -619,6 +620,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 				ColumnSize++;
 
 				vals[y] = malloc(ColumnSize);
+				switch_assert(vals[y]);
 				memset(vals[y], 0, ColumnSize);
 				SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
 			}
