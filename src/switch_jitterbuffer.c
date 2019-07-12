@@ -502,12 +502,11 @@ static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 		goto end;
 	}
 
-	if (i < 0) {
-		if ((jb->frame_len + i) > jb->min_frame_len) {
-			jb->frame_len += i;
-		} else {
-			jb->frame_len = jb->min_frame_len;
-		}
+	/* i < 0 */
+	if ((jb->frame_len + i) > jb->min_frame_len) {
+		jb->frame_len += i;
+	} else {
+		jb->frame_len = jb->min_frame_len;
 	}
 
  end:
@@ -958,7 +957,6 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->highest_read_ts = 0;
 	jb->highest_read_seq = 0;
 	jb->read_init = 0;
-	jb->next_seq = 0;
 	jb->complete_frames = 0;
 	jb->period_miss_count = 0;
 	jb->consec_miss_count = 0;
