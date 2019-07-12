@@ -1962,8 +1962,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
-	if (!ctx) return;
-
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		const char *name = switch_xml_attr(param, "name");
 		const char *value = switch_xml_attr(param, "value");

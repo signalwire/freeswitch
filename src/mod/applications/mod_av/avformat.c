@@ -1638,7 +1638,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			context->offset = atoi(tmp);
 		}
 		if ((tmp = switch_event_get_header(handle->params, "video_time_audio"))) {
-			if (tmp && switch_false(tmp)) {
+			if (switch_false(tmp)) {
 				context->audio_timer = 0;
 			}
 		}
@@ -1795,7 +1795,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 				}
 			}
 
-			if (handle->stream_name && handle->mm.fps > 0.0f) {
+			if (handle->mm.fps > 0.0f) {
 				handle->mm.keyint = (int) 2.0f * handle->mm.fps;
 			}
 		}
@@ -1809,8 +1809,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		const char *issplit = 0;
 
 		context->audio_st[0].channels = handle->channels;
-		context->audio_st[0].channels = handle->channels;
-		context->audio_st[1].sample_rate = handle->samplerate;
 		context->audio_st[1].sample_rate = handle->samplerate;
 
 		if (handle->channels > 1 && handle->params && (issplit = switch_event_get_header(handle->params, "channelsplit"))) {
@@ -2528,7 +2526,7 @@ GCC_DIAG_ON(deprecated-declarations)
  resize_check:
 	
 	if (frame->img) {
-		if (frame->img && context->handle->mm.scale_w && context->handle->mm.scale_h) {
+		if (context->handle->mm.scale_w && context->handle->mm.scale_h) {
 			if (frame->img->d_w != context->handle->mm.scale_w || frame->img->d_h != context->handle->mm.scale_h) {
 				switch_img_fit(&frame->img, context->handle->mm.scale_w, context->handle->mm.scale_h, SWITCH_FIT_SCALE);
 			}
@@ -2549,6 +2547,7 @@ static switch_status_t av_file_write_video(switch_file_handle_t *handle, switch_
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+	switch_image_t *img = NULL;
 
 	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		return SWITCH_STATUS_FALSE;
@@ -2589,38 +2588,33 @@ GCC_DIAG_ON(deprecated-declarations)
 		}
 	}
 
-	if (context->has_video) {
-		switch_image_t *img = NULL;
-
-		if (!context->eh.video_thread) {
-			switch_threadattr_t *thd_attr = NULL;
-			
-			switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-			context->eh.mutex = context->mutex;
-			context->eh.video_st = &context->video_st;
-			context->eh.fc = context->fc;
-			context->eh.mm = &handle->mm;
-			switch_queue_create(&context->eh.video_queue, SWITCH_CORE_QUEUE_LEN, handle->memory_pool);
-			switch_threadattr_create(&thd_attr, handle->memory_pool);
-			//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
-			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_core_timer_init(&context->video_timer, "soft", 1, 1, context->pool);
-			context->eh.video_timer = &context->video_timer;
-			context->audio_st[0].frame->pts = 0;
-			context->audio_st[0].next_pts = 0;
-			switch_thread_create(&context->eh.video_thread, thd_attr, video_thread_run, context, handle->memory_pool);
-		}
-
-		switch_img_copy(frame->img, &img);
-		switch_queue_push(context->eh.video_queue, img);
+	if (!context->eh.video_thread) {
+		switch_threadattr_t *thd_attr = NULL;
 		
-		if (!context->vid_ready) {
-			switch_mutex_lock(context->mutex);
-			switch_buffer_zero(context->audio_buffer);
-			switch_mutex_unlock(context->mutex);
-			context->vid_ready = 1;
-		}
+		switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
+		context->eh.mutex = context->mutex;
+		context->eh.video_st = &context->video_st;
+		context->eh.fc = context->fc;
+		context->eh.mm = &handle->mm;
+		switch_queue_create(&context->eh.video_queue, SWITCH_CORE_QUEUE_LEN, handle->memory_pool);
+		switch_threadattr_create(&thd_attr, handle->memory_pool);
+		//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_core_timer_init(&context->video_timer, "soft", 1, 1, context->pool);
+		context->eh.video_timer = &context->video_timer;
+		context->audio_st[0].frame->pts = 0;
+		context->audio_st[0].next_pts = 0;
+		switch_thread_create(&context->eh.video_thread, thd_attr, video_thread_run, context, handle->memory_pool);
+	}
 
+	switch_img_copy(frame->img, &img);
+	switch_queue_push(context->eh.video_queue, img);
+	
+	if (!context->vid_ready) {
+		switch_mutex_lock(context->mutex);
+		switch_buffer_zero(context->audio_buffer);
+		switch_mutex_unlock(context->mutex);
+		context->vid_ready = 1;
 	}
 
 end:
