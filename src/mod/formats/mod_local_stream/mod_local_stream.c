@@ -1106,7 +1106,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	}
 
 	if (context->source->banner_txt) {
-		if ((!context->banner_timeout || context->banner_timeout >= now)) {
+		if (!context->banner_timeout || context->banner_timeout >= now) {
 			if (context->newres) {
 				switch_img_free(&context->banner_img);
 				context->newres = 0;
@@ -1276,12 +1276,12 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			source->logo_pos = parse_img_position(val);
 		} else if (!strcasecmp(var, "logo-opacity") && !zstr(val)) {
 			source->logo_opacity = atoi(val);
-			if (source->logo_opacity < 0 && source->logo_opacity > 100) {
+			if (source->logo_opacity < 0 || source->logo_opacity > 100) {
 				source->logo_opacity = 0;
 			}
 		} else if (!strcasecmp(var, "text-opacity") && !zstr(val)) {
 			source->text_opacity = atoi(val);
-			if (source->text_opacity < 0 && source->text_opacity > 100) {
+			if (source->text_opacity < 0 || source->text_opacity > 100) {
 				source->text_opacity = 0;
 			}
 		} else if (!strcasecmp(var, "volume")) {
