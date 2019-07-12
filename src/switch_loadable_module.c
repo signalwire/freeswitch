@@ -2525,9 +2525,7 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 
 	switch_mutex_lock(loadable_modules.mutex);
 	ptr = switch_core_hash_find(loadable_modules.endpoint_hash, name);
-	if (ptr) {
-		PROTECT_INTERFACE(ptr);
-	}
+	PROTECT_INTERFACE(ptr);
 	switch_mutex_unlock(loadable_modules.mutex);
 
 
@@ -2611,9 +2609,7 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 
 	switch_mutex_unlock(loadable_modules.mutex);
 
-	if (codec) {
-		PROTECT_INTERFACE(codec);
-	}
+	PROTECT_INTERFACE(codec);
 
 	return codec;
 }
