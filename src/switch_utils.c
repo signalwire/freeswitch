@@ -312,6 +312,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 
 	if (orig->packet) {
 		new_frame->packet = malloc(SWITCH_RTP_MAX_BUF_LEN);
+		switch_assert(new_frame->packet);
 		memcpy(new_frame->packet, orig->packet, orig->packetlen);
 		new_frame->data = ((unsigned char *)new_frame->packet) + 12;
 	} else {
@@ -2659,7 +2660,7 @@ static char *cleanup_separated_string(char *str, char delim)
 			}
 		}
 		if (!esc) {
-			if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
+			if (*ptr == '\'' && (inside_quotes || strchr(ptr+1, '\''))) {
 				if ((inside_quotes = (1 - inside_quotes))) {
 					end = dest;
 				}
@@ -2722,7 +2723,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 			/* escaped characters are copied verbatim to the destination string */
 			if (*ptr == ESCAPE_META) {
 				++ptr;
-			} else if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
+			} else if (*ptr == '\'' && (inside_quotes || strchr(ptr+1, '\''))) {
 				inside_quotes = (1 - inside_quotes);
 			} else if (*ptr == delim && !inside_quotes) {
 				*ptr = '\0';
@@ -2811,7 +2812,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	if (*buf == '^' && *(buf+1) == '^') {
 		char *p = buf + 2;
 
-		if (p && *p && *(p+1)) {
+		if (*p && *(p+1)) {
 			buf = p;
 			delim = *buf++;
 		}
@@ -3058,6 +3059,7 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 	int s = 0, r = 0, i;
 
 	pfds = calloc(len, sizeof(struct pollfd));
+	switch_assert(pfds);
 
 	for (i = 0; i < len; i++) {
 		if (waitlist[i].sock == SWITCH_SOCK_INVALID) {
@@ -3387,10 +3389,12 @@ SWITCH_DECLARE(char *) switch_core_url_encode_opt(switch_memory_pool_t *pool, co
 	const char hex[] = "0123456789ABCDEF";
 	switch_size_t len = 0;
 	switch_size_t slen = 0;
-	const char *p, *e = end_of_p(url);
+	const char *p, *e;
 
 	if (!url) return NULL;
 	if (!pool) return NULL;
+
+	e = end_of_p(url);
 
 	for (p = url; *p; p++) {
 		int ok = 0;
@@ -3507,13 +3511,13 @@ SWITCH_DECLARE(void) switch_split_time(const char *exp, int *hour, int *min, int
 		} else {
 			ssec = "00";
 		}
-		if (hour && shour) {
+		if (hour) {
 			*hour = atol(shour);
 		}
-		if (min && smin) {
+		if (min) {
 			*min = atol(smin);
 		}
-		if (sec && ssec) {
+		if (sec) {
 			*sec = atol(ssec);
 		}
 
@@ -3537,13 +3541,13 @@ SWITCH_DECLARE(void) switch_split_date(const char *exp, int *year, int *month, i
 		*smonth++ = '\0';
 		if ((sday=strchr(smonth, '-'))) {
 			*sday++ = '\0';
-			if (year && syear) {
+			if (year) {
 				*year = atol(syear);
 			}
-			if (month && smonth) {
+			if (month) {
 				*month = atol(smonth);
 			}
-			if (day && sday) {
+			if (day) {
 				*day = atol(sday);
 			}
 		}
@@ -3923,7 +3927,7 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 	while ((cur = _dow_read_token(&p)) != DOW_EOF) {
 		if (cur == DOW_COMA) {
 			/* Reset state */
-			cur = prev = DOW_EOF;
+			cur = DOW_EOF;
 		} else if (cur == DOW_HYPHEN) {
 			/* Save the previous token and move to the next one */
 			range_start = prev;
@@ -4258,12 +4262,11 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 	}
 
 	request->_buffer = strdup(buffer);
+	switch_assert(request->_buffer);
 	request->method = request->_buffer;
 	request->bytes_buffered = datalen;
-	if (body) {
-		request->bytes_header = body - buffer;
-		request->bytes_read = body - buffer;
-	}
+	request->bytes_header = body - buffer;
+	request->bytes_read = body - buffer;
 
 	p = strchr(request->method, ' ');
 
