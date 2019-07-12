@@ -49,7 +49,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 #define swr_get_out_samples avresample_get_out_samples
 #define swr_get_out_samples avresample_get_out_samples
 #define swr_convert(ctx, odata, osamples, idata, isamples) \
-	avresample_convert(ctx, odata, osamples, 0, idata, isamples, 0)
+	avresample_convert(ctx, odata, osamples, 0, (uint8_t **)idata, isamples, 0)
 #else
 #include <libswresample/swresample.h>
 #endif
