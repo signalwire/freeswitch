@@ -306,13 +306,16 @@ SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
   unsigned int x;
   switch_profile_timer_t *p = calloc(1, sizeof(switch_profile_timer_t));
 
-  if ( runtime.cpu_idle_smoothing_depth && runtime.cpu_idle_smoothing_depth > 0 ) {
+  if (!p) return NULL;
+
+  if (runtime.cpu_idle_smoothing_depth > 0) {
 	  p->cpu_idle_smoothing_depth = runtime.cpu_idle_smoothing_depth;
   } else {
 	  p->cpu_idle_smoothing_depth = 30;
   }
 
   p->percentage_of_idle_time_ring = calloc(1, sizeof(double) * p->cpu_idle_smoothing_depth);
+  switch_assert(p->percentage_of_idle_time_ring);
 
   for ( x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
 	  p->percentage_of_idle_time_ring[x] = 100.0;
