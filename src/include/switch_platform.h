@@ -337,7 +337,11 @@ SWITCH_END_EXTERN_C
 #define TRUE (!FALSE)
 #endif
 #ifndef switch_assert
+#ifdef PVS_STUDIO // Mute PVS FALSE ALARM
+#define switch_assert(expr) do {if (!(expr)) {fprintf(stderr, "MEMERR\n"); abort();}} while (0)
+#else
 #define switch_assert(expr) assert(expr)
+#endif
 #endif
 #ifndef __ATTR_SAL
 	/* used for msvc code analysis */
