@@ -218,7 +218,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_hash_empty(switch_hash_t *hash)
 	switch_hash_index_t *hi = switch_core_hash_first(hash);
 
 	if (hi) {
-		switch_safe_free(hi);
+		free(hi);
 		return SWITCH_FALSE;
 	}
 
