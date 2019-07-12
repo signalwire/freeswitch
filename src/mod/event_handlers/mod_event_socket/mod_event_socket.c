@@ -906,6 +906,8 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			edup = strdup(events);
 
+			switch_assert(edup);
+
 			if (strchr(edup, ' ')) {
 				delim = ' ';
 			}
@@ -1295,7 +1297,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 									val++;
 								}
 							}
-							if (var && val) {
+							if (val) {
 								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
@@ -1581,9 +1583,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	switch_safe_free(stream.data);
 	switch_safe_free(freply);
 
-	if (acs->listener->rwlock) {
-		switch_thread_rwlock_unlock(acs->listener->rwlock);
-	}
+	switch_thread_rwlock_unlock(acs->listener->rwlock);
 
   done:
 
@@ -1636,6 +1636,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 					if (arg) {
 						switch_safe_free(dup_arg);
 						dup_arg = strdup(arg);
+						switch_assert(dup_arg);
 						check_cmd = dup_arg;
 						if ((next = strchr(check_cmd, ' '))) {
 							*next++ = '\0';
@@ -1762,7 +1763,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			user = cmd + 9;
 
-			if (user && (domain_name = strchr(user, '@'))) {
+			if ((domain_name = strchr(user, '@'))) {
 				*domain_name++ = '\0';
 			}
 
@@ -1842,6 +1843,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					edup = strdup(allowed_events);
 					cur = edup;
 
+					switch_assert(edup);
+					
 					if (strchr(edup, ' ')) {
 						delim = ' ';
 					}
@@ -1918,10 +1921,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 
 		  bot:
-
-			if (params) {
-				switch_event_destroy(&params);
-			}
+			switch_event_destroy(&params);
 
 			if (authed) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
@@ -2133,16 +2133,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		channel = switch_core_session_get_channel(listener->session);
 
-		if (onoff) {
-			while (*onoff == ' ') {
-				onoff++;
-			}
+		while (*onoff == ' ') {
+			onoff++;
+		}
 
-			if (*onoff == '\r' || *onoff == '\n') {
-				onoff = NULL;
-			} else {
-				strip_cr(onoff);
-			}
+		if (*onoff == '\r' || *onoff == '\n') {
+			onoff = NULL;
+		} else {
+			strip_cr(onoff);
 		}
 
 		if (zstr(onoff)) {
@@ -2173,16 +2171,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			async = 1;
 		}
 
-		if (uuid) {
-			while (*uuid == ' ') {
-				uuid++;
-			}
+		while (*uuid == ' ') {
+			uuid++;
+		}
 
-			if (*uuid == '\r' || *uuid == '\n') {
-				uuid = NULL;
-			} else {
-				strip_cr(uuid);
-			}
+		if (*uuid == '\r' || *uuid == '\n') {
+			uuid = NULL;
+		} else {
+			strip_cr(uuid);
 		}
 
 		if (zstr(uuid)) {
@@ -2286,6 +2282,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			char *arg_copy = NULL;
 			int ok = 0;
 
+			switch_assert(api_copy);
+
 			if ((arg_copy = strchr(api_copy, ' '))) {
 				*arg_copy++ = '\0';
 			}
@@ -2348,9 +2346,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		acs->listener = listener;
 		acs->console_execute = 0;
 
-		if (api_cmd) {
-			acs->api_cmd = switch_core_strdup(acs->pool, api_cmd);
-		}
+		acs->api_cmd = switch_core_strdup(acs->pool, api_cmd);
 		if (arg) {
 			acs->arg = switch_core_strdup(acs->pool, arg);
 		}
@@ -2457,7 +2453,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		strip_cr(cmd);
 		cur = cmd + 5;
 
-		if (cur && (cur = strchr(cur, ' '))) {
+		if ((cur = strchr(cur, ' '))) {
 			for (cur++; cur; count++) {
 				switch_event_types_t type;
 
@@ -2539,7 +2535,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		strip_cr(cmd);
 		cur = cmd + 8;
 
-		if (cur && (cur = strchr(cur, ' '))) {
+		if ((cur = strchr(cur, ' '))) {
 			for (cur++; cur; count++) {
 				switch_event_types_t type;
 
@@ -3026,7 +3022,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
 			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
-			if (listener->sa && (listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
+			if ((listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
 				launch_listener_thread(listener);
 				continue;
 			}
