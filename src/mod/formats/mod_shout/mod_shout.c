@@ -1249,6 +1249,7 @@ void do_telecast(switch_stream_handle_t *stream)
 	switch_core_session_t *tsession;
 	char *fname = "stream.mp3";
 
+	switch_assert(uuid);
 	if ((fname = strchr(uuid, '/'))) {
 		*fname++ = '\0';
 	}
@@ -1309,13 +1310,13 @@ void do_telecast(switch_stream_handle_t *stream)
 				switch_buffer_lock(buffer);
 				bytes = switch_buffer_read(buffer, buf, sizeof(buf));
 				switch_buffer_unlock(buffer);
-			} else {
-				if (!bytes) {
-					switch_cond_next();
-					continue;
-				}
-				memset(buf, 0, bytes);
 			}
+
+			if (!bytes) {
+				switch_cond_next();
+				continue;
+			}
+			memset(buf, 0, bytes);
 
 			if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, (int)(bytes / 2), mp3buf, sizeof(mp3buf))) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
