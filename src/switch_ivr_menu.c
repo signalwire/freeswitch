@@ -143,9 +143,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 	if (!(menu = switch_core_alloc(pool, sizeof(*menu)))) {
 		if (newpool) {
 			switch_core_destroy_memory_pool(&pool);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			return SWITCH_STATUS_MEMERR;
 		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		return SWITCH_STATUS_MEMERR;
 	}
 
 	menu->pool = pool;
@@ -458,12 +459,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	switch_assert(stack);
+
 	if (++stack->stack_count > 12) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Too many levels of recursion.\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (!session || !stack || zstr(name)) {
+	if (!session || zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid menu context\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
@@ -897,6 +900,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(timeout),
 									  strlen(max_failures) ? atoi(max_failures) : 0, strlen(max_timeouts) ? atoi(max_timeouts) : 0, xml_menu_ctx->pool);
 
+		switch_assert(menu);
 
 		if (!zstr(exec_on_max_fail)) {
 			menu->exec_on_max_fail = switch_core_strdup(menu->pool, exec_on_max_fail);
@@ -927,7 +931,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 			}
 		}
 
-		if (status == SWITCH_STATUS_SUCCESS && menu != NULL) {
+		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_xml_t xml_kvp;
 
 			/* build menu entries */
