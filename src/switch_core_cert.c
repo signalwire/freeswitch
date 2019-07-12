@@ -378,7 +378,6 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 
 	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
 		abort();
-		goto err;
 	}
 
 	rsa = NULL;
