@@ -396,7 +396,7 @@ int iks_attrib_is_decimal_between_zero_and_one(const char *value)
 {
 	if (value && *value && switch_is_number(value)) {
 		double value_d = atof(value);
-		if (value_d >= 0.0 || value_d <= 1.0) {
+		if (value_d >= 0.0 && value_d <= 1.0) {
 			return SWITCH_TRUE;
 		}
 	}

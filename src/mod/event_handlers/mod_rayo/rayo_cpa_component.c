@@ -310,6 +310,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 			have_grammar = 1;
 
 			url_dup = strdup(url);
+			switch_assert(url_dup);
 			if ((url_params = strchr(url_dup, '?'))) {
 				*url_params = '\0';
 				url_params++;

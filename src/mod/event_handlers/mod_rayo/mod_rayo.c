@@ -912,6 +912,7 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 {
 	const char *msg_name;
 	struct rayo_message *msg = malloc(sizeof(*msg));
+	switch_assert(msg);
 	if (dup) {
 		msg->payload = iks_copy(payload);
 	} else {

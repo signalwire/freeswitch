@@ -271,6 +271,7 @@ static int tag_hook(void *user_data, char *name, char **atts, int type)
 
 	if (type == IKS_OPEN || type == IKS_SINGLE) {
 		struct nlsml_node *child_node = malloc(sizeof(*child_node));
+		switch_assert(child_node);
 		child_node->name = name;
 		child_node->tag_def = switch_core_hash_find(globals.tag_defs, name);
 		if (!child_node->tag_def) {
