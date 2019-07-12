@@ -205,19 +205,19 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_estimate(kalman_estimator_t * est, f
 
 	/*sanitize input a little bit, just in case */
 	if (system_model == EST_LOSS )  {
-		if ((measurement > 100) && (measurement < 0)) {
+		if ((measurement > 100) || (measurement < 0)) {
 			return SWITCH_FALSE ;
 		}
 	}
 
 	if (system_model == EST_JITTER)  {
-		if ((measurement > 10000) && (measurement < 0)) {
+		if ((measurement > 10000) || (measurement < 0)) {
 			return SWITCH_FALSE;
 		}
 	}
 
 	if (system_model == EST_RTT)  {
-		if ((measurement > 2 ) && (measurement < 0)) {
+		if ((measurement > 2 ) || (measurement < 0)) {
 			return SWITCH_FALSE;
 		}
 	}
