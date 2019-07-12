@@ -14919,7 +14919,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
 	if (!switch_channel_test_flag(session->channel, CF_VIDEO_READY) && *frame) {
-		if (((switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ) && (*frame)->img) || (*frame)->m) && ++smh->ready_loops > 5) {
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ)) {
+			if ((*frame)->img) {
+				switch_channel_set_flag(session->channel, CF_VIDEO_READY);
+			}
+		} else if ((*frame)->m || ++smh->ready_loops > 5) {
 			switch_channel_set_flag(session->channel, CF_VIDEO_READY);
 		}
 	}
