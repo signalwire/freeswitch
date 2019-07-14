@@ -7,3 +7,5 @@ mod_http_cache_la_CFLAGS   = $(AM_CFLAGS)
 mod_http_cache_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS)
 mod_http_cache_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_http_cache_la_LDFLAGS  = $(CURL_LIBS) -avoid-version -module -no-undefined -shared
+
+SUBDIRS=. test

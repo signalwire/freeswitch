@@ -1865,6 +1865,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
+		src/mod/applications/mod_http_cache/test/Makefile
 		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile

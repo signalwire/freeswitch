@@ -63,7 +63,7 @@ static char *my_strrstr(const char *haystack, const char *needle)
 	return NULL;
 }
 
-void parse_url(char *url, const char *base_domain, const char *default_base_domain, char **bucket, char **object)
+SWITCH_DECLARE(void) parse_url(char *url, const char *base_domain, const char *default_base_domain, char **bucket, char **object)
 {
 	char *bucket_start = NULL;
 	char *bucket_end;

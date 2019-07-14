@@ -47,7 +47,7 @@
  * @param date header
  * @return the string_to_sign (must be freed)
  */
-char *aws_s3_string_to_sign(const char *verb, const char *bucket, const char *object, const char *content_type, const char *content_md5, const char *date)
+static char *aws_s3_string_to_sign(const char *verb, const char *bucket, const char *object, const char *content_type, const char *content_md5, const char *date)
 {
 	/*
 	 * String to sign has the following format:
@@ -66,7 +66,7 @@ char *aws_s3_string_to_sign(const char *verb, const char *bucket, const char *ob
  * @param aws_secret_access_key secret access key
  * @return the signature buffer or NULL if missing input
  */
-char *aws_s3_signature(char *signature, int signature_length, const char *string_to_sign, const char *aws_secret_access_key)
+static char *aws_s3_signature(char *signature, int signature_length, const char *string_to_sign, const char *aws_secret_access_key)
 {
 #if defined(HAVE_OPENSSL)
 	unsigned int signature_raw_length = SHA1_LENGTH;
@@ -107,7 +107,7 @@ char *aws_s3_signature(char *signature, int signature_length, const char *string
  * @param expires seconds since the epoch
  * @return presigned_url
  */
-char *aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires)
+SWITCH_DECLARE(char *) aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires)
 {
 	char signature[S3_SIGNATURE_LENGTH_MAX];
 	char signature_url_encoded[S3_SIGNATURE_LENGTH_MAX];
@@ -143,7 +143,7 @@ char *aws_s3_presigned_url_create(const char *verb, const char *url, const char 
  * @param date header
  * @return signature for Authorization header
  */
-char *aws_s3_authentication_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *date)
+static char *aws_s3_authentication_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *date)
 {
 	char signature[S3_SIGNATURE_LENGTH_MAX];
 	char *string_to_sign;
@@ -162,7 +162,7 @@ char *aws_s3_authentication_create(const char *verb, const char *url, const char
 	return switch_mprintf("AWS %s:%s", aws_access_key_id, signature);
 }
 
-switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
+SWITCH_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
@@ -217,7 +217,7 @@ switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
  * @param url
  * @return updated headers
  */
-switch_curl_slist_t *aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+SWITCH_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
 		const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
 {
 	char date[256];
