@@ -19,11 +19,26 @@ FST_TEARDOWN_END()
 
 FST_TEST_BEGIN(test_string_to_sign)
 {
-	fst_check_string_equals("GET\n\n\nFri, 17 May 2013 19:35:26 GMT\n/rienzo-vault/troporocks.mp3", aws_s3_string_to_sign("GET", "rienzo-vault", "troporocks.mp3", "", "", "Fri, 17 May 2013 19:35:26 GMT"));
-	fst_check_string_equals("GET\nc8fdb181845a4ca6b8fec737b3581d76\naudio/mpeg\nThu, 17 Nov 2005 18:49:58 GMT\n/foo/man.chu", aws_s3_string_to_sign("GET", "foo", "man.chu", "audio/mpeg", "c8fdb181845a4ca6b8fec737b3581d76", "Thu, 17 Nov 2005 18:49:58 GMT"));
-	fst_check_string_equals("\n\n\n\n//", aws_s3_string_to_sign("", "", "", "", "", ""));
-	fst_check_string_equals("\n\n\n\n//", aws_s3_string_to_sign(NULL, NULL, NULL, NULL, NULL, NULL));
-	fst_check_string_equals("PUT\n\naudio/wav\nWed, 12 Jun 2013 13:16:58 GMT\n/bucket/voicemails/recording.wav", aws_s3_string_to_sign("PUT", "bucket", "voicemails/recording.wav", "audio/wav", "", "Wed, 12 Jun 2013 13:16:58 GMT"));
+	char *string_to_sign = NULL;
+	string_to_sign = aws_s3_string_to_sign("GET", "rienzo-vault", "troporocks.mp3", "", "", "Fri, 17 May 2013 19:35:26 GMT")	;
+	fst_check_string_equals("GET\n\n\nFri, 17 May 2013 19:35:26 GMT\n/rienzo-vault/troporocks.mp3", string_to_sign);
+	switch_safe_free(string_to_sign);
+
+	string_to_sign = aws_s3_string_to_sign("GET", "foo", "man.chu", "audio/mpeg", "c8fdb181845a4ca6b8fec737b3581d76", "Thu, 17 Nov 2005 18:49:58 GMT");
+	fst_check_string_equals("GET\nc8fdb181845a4ca6b8fec737b3581d76\naudio/mpeg\nThu, 17 Nov 2005 18:49:58 GMT\n/foo/man.chu", string_to_sign);
+	switch_safe_free(string_to_sign);
+
+	string_to_sign = aws_s3_string_to_sign("", "", "", "", "", "");
+	fst_check_string_equals("\n\n\n\n//", string_to_sign);
+	switch_safe_free(string_to_sign);
+
+	string_to_sign = aws_s3_string_to_sign(NULL, NULL, NULL, NULL, NULL, NULL);
+	fst_check_string_equals("\n\n\n\n//", string_to_sign);
+	switch_safe_free(string_to_sign);
+
+	string_to_sign = aws_s3_string_to_sign("PUT", "bucket", "voicemails/recording.wav", "audio/wav", "", "Wed, 12 Jun 2013 13:16:58 GMT");
+	fst_check_string_equals("PUT\n\naudio/wav\nWed, 12 Jun 2013 13:16:58 GMT\n/bucket/voicemails/recording.wav", string_to_sign);
+	switch_safe_free(string_to_sign);
 }
 FST_TEST_END()
 
@@ -119,17 +134,33 @@ FST_TEST_END()
 
 FST_TEST_BEGIN(test_authorization_header)
 {
-	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
-	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
-	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	char *authentication_header = aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", authentication_header);
+	switch_safe_free(authentication_header);
+
+	authentication_header = aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", authentication_header);
+	switch_safe_free(authentication_header);
+
+	authentication_header = aws_s3_authentication_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", authentication_header);
+	switch_safe_free(authentication_header);
 }
 FST_TEST_END()
 
 FST_TEST_BEGIN(test_presigned_url)
 {
-	fst_check_string_equals("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
-	fst_check_string_equals("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
-	fst_check_string_equals("https://vault.example.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	char *presigned_url = aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", presigned_url);
+	switch_safe_free(presigned_url);
+
+	presigned_url = aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", presigned_url);
+	switch_safe_free(presigned_url);
+
+	presigned_url = aws_s3_presigned_url_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890");
+	fst_check_string_equals("https://vault.example.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", presigned_url);
+	switch_safe_free(presigned_url);
 }
 FST_TEST_END()
 
