@@ -25,6 +25,8 @@
           <zone name="GMT" value="GMT0" />
       </timezones>
     </configuration>
+
+    <X-PRE-PROCESS cmd="include" data="vpx.conf.xml"/>
   </section>
 
   <section name="dialplan" description="Regex/XML Dialplan">
