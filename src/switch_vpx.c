@@ -164,6 +164,17 @@ typedef struct {
 	unsigned start:1;
 	unsigned reserved2:1;
 	unsigned pid:3;
+	unsigned I:1;
+	unsigned L:1;
+	unsigned T:1;
+	unsigned K:1;
+	unsigned RSV:4;
+	unsigned M:1;
+	unsigned PID:15;
+	unsigned TL0PICIDX:8;
+	unsigned TID:2;
+	unsigned Y:1;
+	unsigned KEYIDX:5;
 } vp8_payload_descriptor_t;
 
 typedef struct {
@@ -207,6 +218,17 @@ typedef struct {
 	unsigned non_referenced:1;
 	unsigned reserved1:1;
 	unsigned extended:1;
+	unsigned RSV:4;
+	unsigned K:1;
+	unsigned T:1;
+	unsigned L:1;
+	unsigned I:1;
+	unsigned PID:15;
+	unsigned M:1;
+	unsigned TL0PICIDX:8;
+	unsigned KEYIDX:5;
+	unsigned Y:1;
+	unsigned TID:2;
 } vp8_payload_descriptor_t;
 
 typedef struct {
@@ -373,6 +395,7 @@ struct vpx_context {
 	switch_buffer_t *pbuffer;
 	switch_time_t start_time;
 	switch_image_t *patch_img;
+	int16_t picture_id;
 };
 typedef struct vpx_context vpx_context_t;
 
@@ -606,13 +629,15 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "VPX VER:%s VPX_IMAGE_ABI_VERSION:%d VPX_CODEC_ABI_VERSION:%d\n",
 		vpx_codec_version_str(), VPX_IMAGE_ABI_VERSION, VPX_CODEC_ABI_VERSION);
 
+	context->picture_id =  13; // picture Id may start from random value and must be incremented on each frame
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t *frame)
 {
 	vpx_payload_descriptor_t *payload_descriptor;
-	uint8_t *body;
+	uint8_t *body, *c = NULL;
 	uint32_t hdrlen = 0, payload_size = 0, packet_size = 0, start = 0, key = 0;
 	switch_size_t remaining_bytes = 0;
 	switch_status_t status;
@@ -650,9 +675,15 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	/* reset header */
 	*(uint8_t *)frame->data = 0;
 	payload_descriptor = (vpx_payload_descriptor_t *) frame->data;
+	memset(payload_descriptor, 0, sizeof(*payload_descriptor));
 
-	// if !extended
-	hdrlen = 1;
+
+	if (context->is_vp9) {
+		hdrlen = 1;				/* Send VP9 with 1 byte REQUIRED header. */
+	} else {
+		hdrlen = 4;				/* Send VP8 with 4 byte extended header, includes 1 byte REQUIRED header, 1 byte X header and 2 bytes of I header with picture_id. */
+	}
+
 	body = ((uint8_t *)frame->data) + hdrlen;
 	packet_size = vpx_globals.rtp_slice_size;
 	payload_size = packet_size - hdrlen;
@@ -731,11 +762,38 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		payload_descriptor->vp8.start = start;
 	}
 
+	if (!context->is_vp9) {
+		
+		payload_descriptor->vp8.extended = 1;	/* REQUIRED header. */
+		
+		payload_descriptor->vp8.I = 1;			/* X header. */
+		
+		payload_descriptor->vp8.M = 1;			/* I header. */
+		c = ((uint8_t *)frame->data) + 2;
+		*c++ = (context->picture_id >> 8) | 0x80;
+		*c = context->picture_id & 0xff;
+		
+		payload_descriptor->vp8.L = 0;
+		payload_descriptor->vp8.TL0PICIDX = 0;
+		
+		payload_descriptor->vp8.T = 0;
+		payload_descriptor->vp8.TID = 0;
+		payload_descriptor->vp8.Y = 0;
+		payload_descriptor->vp8.K = 0;
+		payload_descriptor->vp8.KEYIDX = 0;
+	}
+
 	if (remaining_bytes <= payload_size) {
 		switch_buffer_read(context->pbuffer, body, remaining_bytes);
 		context->pkt = NULL;
 		frame->datalen += remaining_bytes;
 		frame->m = 1;
+		if (!context->is_vp9) {
+			context->picture_id++;
+			if (context->picture_id > 0x7fff) {
+				context->picture_id = 0;
+			}
+		}
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_buffer_read(context->pbuffer, body, payload_size);
