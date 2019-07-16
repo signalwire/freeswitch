@@ -15,3 +15,22 @@ mod_conference_la_LDFLAGS += -lopenal -lm
 mod_conference_la_CFLAGS += -DOPENAL_POSITIONING
 endif
 
+
+noinst_LTLIBRARIES = libmodconference.la
+
+libmodconference_la_SOURCES  = $(mod_conference_la_SOURCES)
+libmodconference_la_CFLAGS   = $(AM_CFLAGS) -I.
+
+noinst_PROGRAMS = test/test_image test/test_member
+
+test_test_image_SOURCES = test/test_image.c
+test_test_image_CFLAGS = $(AM_CFLAGS) -I.
+test_test_image_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
+test_test_image_LDADD = libmodconference.la
+
+test_test_member_SOURCES = test/test_member.c
+test_test_member_CFLAGS = $(AM_CFLAGS) -I.
+test_test_member_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
+test_test_member_LDADD = libmodconference.la
+
+TESTS = $(noinst_PROGRAMS)
