@@ -36,7 +36,7 @@ using Microsoft.Build.Framework;
                   "Parsing FreeSWITCH version.");                    
 
             string ConfigureAC = File.ReadAllText(@"$(BaseDir)configure.ac");                
-            string pattern = @"AC_SUBST\((SWITCH_VERSION_[A-Z_]+),.*\[(.?)\]\)";
+            string pattern = @"AC_SUBST\((SWITCH_VERSION_[A-Z_]+),.*\[(.*)\]\)";
 
             Dictionary<string, string> v = new Dictionary<string, string>();
 
@@ -44,9 +44,14 @@ using Microsoft.Build.Framework;
             v.Add("SWITCH_VERSION_YEAR", year);
             
             foreach (Match m in Regex.Matches(ConfigureAC, pattern)) {
-               v.Add(m.Groups[1].Value.Trim(), m.Groups[2].Value.Trim());
+               string value = m.Groups[2].Value.Trim();
+               if (value.Contains("-")) {
+                   string[] tokens = value.Split('-');
+                   value = tokens[0];
+               }        
+               v.Add(m.Groups[1].Value.Trim(), value.Trim());
                Log.LogMessage(MessageImportance.High,
-                    m.Groups[1].Value + " = '" + m.Groups[2].Value + "'");                    
+                    m.Groups[1].Value + " = '" + value.Trim() + "'");                    
             }
             
             //---------------------------------------------------------            

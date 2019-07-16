@@ -926,7 +926,10 @@
     <Exec Command="$(SolutionDir)w32\Setup\FullVersion.cmd" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="FullVersion" />
     </Exec>
-    <CreateProperty Condition="'$(GitCommits)' != '0'" Value="-snapshot-$(GitCommit)-$([System.DateTime]::Now.ToString(yyyyMMddHHmmss))">
+    <CreateProperty Condition="'$(Configuration)' == 'Debug'" Value="-debug">
+      <Output TaskParameter="Value" PropertyName="DebugConfiguration" />
+    </CreateProperty>
+    <CreateProperty Condition="'$(GitCommits)' != '0'" Value="$(GitCommits)-$(GitCommit)-$([System.DateTime]::Now.ToString(yyyyMMddHHmmss))">
       <Output TaskParameter="Value" PropertyName="SnapshotName" />
     </CreateProperty>
     <CreateProperty Condition="'$(GitCommits)' != '0'" Value=".$(GitCommits)">
@@ -941,7 +944,10 @@
     <CreateProperty Condition="'$(Platform)'=='x64'" Value="x64">
       <Output TaskParameter="Value" PropertyName="UserFriendlyPlatform" />
     </CreateProperty>
-    <CreateProperty Condition="$(FullVersion) != ''" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)$(Revision)$(SnapshotName)-$(UserFriendlyPlatform)-$(Configuration).msi">
+    <CreateProperty Condition="$(FullVersion) != '' AND '$(GitCommits)' != '0'" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)-Dev-$(SnapshotName)-$(UserFriendlyPlatform)$(DebugConfiguration).msi">
+      <Output TaskParameter="Value" PropertyName="DestinationFileName" />
+    </CreateProperty>
+    <CreateProperty Condition="$(FullVersion) != '' AND '$(GitCommits)' == '0'" Value="$(SolutionDir)$(UserFriendlyPlatform)\$(OutputName)-$(FullVersion)-Release-$(UserFriendlyPlatform)$(DebugConfiguration).msi">
       <Output TaskParameter="Value" PropertyName="DestinationFileName" />
     </CreateProperty>
     <CreateProperty Value="$(VCToolsRedistVersion)">
@@ -969,6 +975,7 @@
     <Message Importance="High" Text="VSInstallDir: $(VSInstallDir)" />
     <Message Importance="High" Text="SoundsDir: $(SoundsDir)" />
     <Message Importance="High" Text="DefineConstants: $(DefineConstants)" />
+    <Message Importance="High" Text="DestinationFileName: $(DestinationFileName)" />
   </Target>
   <!--
       To modify your build process, add your task inside one of the targets below.
