@@ -11047,7 +11047,7 @@ else
     return ret;
   }
 
-  public static int switch_calc_bitrate(int w, int h, int quality, double fps) {
+  public static int switch_calc_bitrate(int w, int h, float quality, double fps) {
     int ret = freeswitchPINVOKE.switch_calc_bitrate(w, h, quality, fps);
     return ret;
   }
@@ -11357,6 +11357,11 @@ else
     return ret;
   }
 
+  public static int switch_frame_buffer_size(SWIGTYPE_p_switch_frame_buffer_s fb) {
+    int ret = freeswitchPINVOKE.switch_frame_buffer_size(SWIGTYPE_p_switch_frame_buffer_s.getCPtr(fb));
+    return ret;
+  }
+
   public static void switch_getcputime(switch_cputime t) {
     freeswitchPINVOKE.switch_getcputime(switch_cputime.getCPtr(t));
   }
@@ -11442,6 +11447,11 @@ else
 
   public static switch_status_t switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t want_flag, switch_bool_t pres, uint to, SWIGTYPE_p_switch_channel super_channel) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)want_flag, (int)pres, to, SWIGTYPE_p_switch_channel.getCPtr(super_channel));
+    return ret;
+  }
+
+  public static switch_status_t switch_channel_wait_for_app_flag(SWIGTYPE_p_switch_channel channel, uint app_flag, string key, switch_bool_t pres, uint to) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_app_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), app_flag, key, (int)pres, to);
     return ret;
   }
 
@@ -13666,10 +13676,10 @@ else
     }
   }
 
-  public static SWIGTYPE_p_switch_rtp switch_rtp_new(string rx_host, ushort rx_port, string tx_host, ushort tx_port, byte payload, uint samples_per_interval, uint ms_per_packet, SWIGTYPE_p_switch_rtp_flag_t flags, string timer_name, out string err, SWIGTYPE_p_apr_pool_t pool) {
+  public static SWIGTYPE_p_switch_rtp switch_rtp_new(string rx_host, ushort rx_port, string tx_host, ushort tx_port, byte payload, uint samples_per_interval, uint ms_per_packet, SWIGTYPE_p_switch_rtp_flag_t flags, string timer_name, out string err, SWIGTYPE_p_apr_pool_t pool, ushort bundle_internal_ports, ushort bundle_external_port) {
 var err_ptr = global::System.IntPtr.Zero;
     try {
-      global::System.IntPtr cPtr = freeswitchPINVOKE.switch_rtp_new(rx_host, rx_port, tx_host, tx_port, payload, samples_per_interval, ms_per_packet, SWIGTYPE_p_switch_rtp_flag_t.getCPtr(flags), timer_name, ref err_ptr, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+      global::System.IntPtr cPtr = freeswitchPINVOKE.switch_rtp_new(rx_host, rx_port, tx_host, tx_port, payload, samples_per_interval, ms_per_packet, SWIGTYPE_p_switch_rtp_flag_t.getCPtr(flags), timer_name, ref err_ptr, SWIGTYPE_p_apr_pool_t.getCPtr(pool), bundle_internal_ports, bundle_external_port);
       SWIGTYPE_p_switch_rtp ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_switch_rtp(cPtr, false);
       return ret;
     } finally {
@@ -13713,6 +13723,10 @@ else
 
   public static void switch_rtp_set_max_missed_packets(SWIGTYPE_p_switch_rtp rtp_session, uint max) {
     freeswitchPINVOKE.switch_rtp_set_max_missed_packets(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), max);
+  }
+
+  public static void switch_rtp_set_media_timeout(SWIGTYPE_p_switch_rtp rtp_session, uint ms) {
+    freeswitchPINVOKE.switch_rtp_set_media_timeout(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), ms);
   }
 
   public static switch_status_t switch_rtp_udptl_mode(SWIGTYPE_p_switch_rtp rtp_session) {
@@ -14898,6 +14912,7 @@ else
   public static readonly int SWITCH_RTCP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTCP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN_WORDS = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_WORDS_get();
   public static readonly string SWITCH_RTP_CRYPTO_KEY_80 = freeswitchPINVOKE.SWITCH_RTP_CRYPTO_KEY_80_get();
+  public static readonly int SWITCH_RTP_BUNDLE_INTERNAL_PT = freeswitchPINVOKE.SWITCH_RTP_BUNDLE_INTERNAL_PT_get();
   public static readonly int MAX_CAND = freeswitchPINVOKE.MAX_CAND_get();
   public static readonly int SWITCH_XML_BUFSIZE = freeswitchPINVOKE.SWITCH_XML_BUFSIZE_get();
 }
@@ -20324,7 +20339,7 @@ class freeswitchPINVOKE {
   public static extern string switch_util_quote_shell_arg_pool(string jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_calc_bitrate___")]
-  public static extern int switch_calc_bitrate(int jarg1, int jarg2, int jarg3, double jarg4);
+  public static extern int switch_calc_bitrate(int jarg1, int jarg2, float jarg3, double jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_calc_fps___")]
   public static extern void switch_calc_fps(global::System.Runtime.InteropServices.HandleRef jarg1, float jarg2, int jarg3);
@@ -20610,6 +20625,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_frame_buffer_trypop___")]
   public static extern int switch_frame_buffer_trypop(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_frame_buffer_size___")]
+  public static extern int switch_frame_buffer_size(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_cputime_userms_set___")]
   public static extern void switch_cputime_userms_set(global::System.Runtime.InteropServices.HandleRef jarg1, long jarg2);
@@ -23899,6 +23917,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_wait_for_flag___")]
   public static extern int switch_channel_wait_for_flag(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3, uint jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_wait_for_app_flag___")]
+  public static extern int switch_channel_wait_for_app_flag(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2, string jarg3, int jarg4, uint jarg5);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_perform_set_state___")]
   public static extern int switch_channel_perform_set_state(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4, int jarg5);
 
@@ -25591,6 +25612,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_RTP_CRYPTO_KEY_80_get___")]
   public static extern string SWITCH_RTP_CRYPTO_KEY_80_get();
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_RTP_BUNDLE_INTERNAL_PT_get___")]
+  public static extern int SWITCH_RTP_BUNDLE_INTERNAL_PT_get();
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_packet_t_header_set___")]
   public static extern void switch_rtp_packet_t_header_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
@@ -25856,7 +25880,7 @@ class freeswitchPINVOKE {
   public static extern int switch_rtp_create(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2, uint jarg3, uint jarg4, global::System.Runtime.InteropServices.HandleRef jarg5, string jarg6, ref global::System.IntPtr jarg7, global::System.Runtime.InteropServices.HandleRef jarg8);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_new___")]
-  public static extern global::System.IntPtr switch_rtp_new(string jarg1, ushort jarg2, string jarg3, ushort jarg4, byte jarg5, uint jarg6, uint jarg7, global::System.Runtime.InteropServices.HandleRef jarg8, string jarg9, ref global::System.IntPtr jarg10, global::System.Runtime.InteropServices.HandleRef jarg11);
+  public static extern global::System.IntPtr switch_rtp_new(string jarg1, ushort jarg2, string jarg3, ushort jarg4, byte jarg5, uint jarg6, uint jarg7, global::System.Runtime.InteropServices.HandleRef jarg8, string jarg9, ref global::System.IntPtr jarg10, global::System.Runtime.InteropServices.HandleRef jarg11, ushort jarg12, ushort jarg13);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_set_remote_address___")]
   public static extern int switch_rtp_set_remote_address(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, ushort jarg3, ushort jarg4, int jarg5, ref global::System.IntPtr jarg6);
@@ -25875,6 +25899,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_set_max_missed_packets___")]
   public static extern void switch_rtp_set_max_missed_packets(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_set_media_timeout___")]
+  public static extern void switch_rtp_set_media_timeout(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_udptl_mode___")]
   public static extern int switch_rtp_udptl_mode(global::System.Runtime.InteropServices.HandleRef jarg1);
