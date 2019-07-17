@@ -1497,14 +1497,14 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   for (ab = a->m_bandwidths, bb = b->m_bandwidths;
        ab || bb;
        ab = ab->b_next, bb = bb->b_next)
-    if ((rv = sdp_bandwidth_cmp(a->m_bandwidths, b->m_bandwidths)))
+    if ((rv = sdp_bandwidth_cmp(ab, bb)))
       return rv;
 
   if ((rv = sdp_key_cmp(a->m_key, b->m_key)))
     return rv;
 
   for (aa = a->m_attributes, ba = b->m_attributes;
-       aa || bb;
+       aa || ba;
        aa = aa->a_next, ba = ba->a_next)
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
