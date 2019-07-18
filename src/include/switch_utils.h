@@ -1348,9 +1348,15 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 #define switch_strdup(ptr, s) (void)( (!!(ptr = strdup(s))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr)
 #endif
 #else
+#if (_MSC_VER >= 1500)            // VC9+
+#define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr);__analysis_assume( ptr )
+#define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr);__analysis_assume( ptr )
+#define switch_strdup(ptr, s) (void)(assert(((ptr) = _strdup(s))),ptr);__analysis_assume( ptr )
+#else
 #define switch_malloc(ptr, len) (void)(switch_assert(((ptr) = malloc((len)))),ptr)
 #define switch_zmalloc(ptr, len) (void)(switch_assert((ptr = calloc(1, (len)))),ptr)
 #define switch_strdup(ptr, s) (void)(switch_assert(((ptr) = strdup((s)))),ptr)
+#endif
 #endif
 
 #define DUMP_EVENT(_e) 	{char *event_str;switch_event_serialize(_e, &event_str, SWITCH_FALSE);switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DUMP\n%s\n", event_str);free(event_str);}
