@@ -126,9 +126,7 @@ esl_status_t esl_thread_create_detached_ex(esl_thread_function_t func, void *dat
 #endif
 
  fail:
-	if (thread) {
-		free(thread);
-	}
+	free(thread);
  done:
 	return status;
 }

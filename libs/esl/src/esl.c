@@ -734,9 +734,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
  end:
 
-	if (server_sock != ESL_SOCK_INVALID) {
-		closesocket(server_sock);
-	}
+	closesocket(server_sock);
 
 	return status;
 
@@ -802,9 +800,7 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 
  end:
 
-	if (server_sock != ESL_SOCK_INVALID) {
-		closesocket(server_sock);
-	}
+	closesocket(server_sock);
 
 	return status;
 
@@ -1150,9 +1146,7 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	while(ep) {
 		esl_event_t *e = ep;
 		ep = ep->next;
-		if (e) {
-			esl_event_destroy(&e);
-		}
+		esl_event_destroy(&e);
 	}
 
 	esl_event_safe_destroy(&handle->last_event);
@@ -1214,10 +1208,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 		return ESL_BREAK;
 	}
 
-	if (activity < 0) { 
-		handle->connected = 0;
-		status = ESL_FAIL;
-	} else if (activity > 0 && (activity & ESL_POLL_READ)) {
+	if ((activity & ESL_POLL_READ)) {
 		if (esl_recv_event(handle, check_q, save_event)) {
 			status = ESL_FAIL;
 		}
@@ -1237,9 +1228,7 @@ static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t data
 	
 	if (handle->connected) {
 		if ((activity = esl_wait_sock(handle->sock, 1000, ESL_POLL_READ|ESL_POLL_ERROR)) > 0) {
-			if (activity < 0) {
-				activity = -1;
-			} else if ((activity & ESL_POLL_ERROR)) {
+			if ((activity & ESL_POLL_ERROR)) {
 				activity = -1;
 			} else if ((activity & ESL_POLL_READ)) {
 				if (!(activity = recv(handle->sock, data, datalen, 0))) {
@@ -1271,10 +1260,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	}
 
 	esl_mutex_lock(handle->mutex);
-
-	if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
-		goto fail;
-	}
 
 	esl_event_safe_destroy(&handle->last_ievent);
 	
@@ -1313,7 +1298,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 						*e++ = '\0';
 						while(*e == '\n' || *e == '\r') e++;
 						
-						if (hname && hval) {
+						if (hval) {
 							esl_url_decode(hval);
 							esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
 							if (!strncmp(hval, "ARRAY::", 7)) {
@@ -1428,7 +1413,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 					hname = beg;
 					hval = col = NULL;
 			
-					if (hname && (col = strchr(hname, ':'))) {
+					if ((col = strchr(hname, ':'))) {
 						hval = col + 1;
 						*col = '\0';
 						while(*hval == ' ') hval++;
@@ -1436,7 +1421,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				
 					*c = '\0';
 			
-					if (hname && hval) {
+					if (hval) {
 						esl_url_decode(hval);
 						esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
 						if (!strcasecmp(hname, "event-name")) {
@@ -1541,13 +1526,6 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 
 	esl_mutex_lock(handle->mutex);
 
-
-	if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
-		handle->connected = 0;
-		esl_mutex_unlock(handle->mutex);
-		return ESL_FAIL;
-	}
-
 	esl_event_safe_destroy(&handle->last_sr_event);
 
 	*handle->last_sr_reply = '\0';
@@ -1593,12 +1571,10 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 			goto recv;
 		}
 
-		if (handle->last_sr_event) {
-			hval = esl_event_get_header(handle->last_sr_event, "reply-text");
+		hval = esl_event_get_header(handle->last_sr_event, "reply-text");
 
-			if (!esl_strlen_zero(hval)) {
-				snprintf(handle->last_sr_reply, sizeof(handle->last_sr_reply), "%s", hval);
-			}		
+		if (!esl_strlen_zero(hval)) {
+			snprintf(handle->last_sr_reply, sizeof(handle->last_sr_reply), "%s", hval);
 		}
 	}
 	

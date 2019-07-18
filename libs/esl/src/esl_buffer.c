@@ -205,10 +205,12 @@ ESL_DECLARE(esl_size_t) esl_buffer_read(esl_buffer_t *buffer, void *data, esl_si
 
 ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer)
 {
-	char *pe, *p, *e, *head = (char *) buffer->head;
+	char *pe, *p, *e, *head;
 	esl_size_t x = 0;
 	
 	esl_assert(buffer != NULL);
+
+	head = (char *) buffer->head;
 
 	e = (head + buffer->used);
 
@@ -228,11 +230,13 @@ ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer)
 
 ESL_DECLARE(esl_size_t) esl_buffer_read_packet(esl_buffer_t *buffer, void *data, esl_size_t maxlen)
 {
-	char *pe, *p, *e, *head = (char *) buffer->head;
+	char *pe, *p, *e, *head;
 	esl_size_t datalen = 0;
 
 	esl_assert(buffer != NULL);
 	esl_assert(data != NULL);
+
+	head = (char *) buffer->head;
 
 	e = (head + buffer->used);
 
