@@ -2263,7 +2263,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	*/
 #ifdef SWITCH_HAVE_YUV
 #ifdef SWITCH_HAVE_VPX
-	switch_loadable_module_load_module_ex("", "CORE_VPX_MODULE", SWITCH_FALSE, SWITCH_FALSE, &err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, event_hash);
+	switch_loadable_module_load_module("", "CORE_VPX_MODULE", SWITCH_FALSE, &err);
 #endif
 #endif
 
