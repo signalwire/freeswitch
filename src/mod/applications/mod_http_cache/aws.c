@@ -186,7 +186,7 @@ switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
 			profile->aws_s3_access_key_id = switch_strip_whitespace(switch_xml_txt(id));
 			profile->secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
 			if (zstr(profile->aws_s3_access_key_id) || zstr(profile->secret_access_key)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Azure Blob credentials for profile \"%s\"\n", profile->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing AWS S3 credentials for profile \"%s\"\n", profile->name);
 				switch_safe_free(profile->aws_s3_access_key_id);
 				profile->aws_s3_access_key_id = NULL;
 				switch_safe_free(profile->secret_access_key);
