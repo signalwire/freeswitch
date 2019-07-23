@@ -39,13 +39,13 @@ mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined -shared
 
 BUILT_SOURCES = $(SOFIALA)
 
-bin_PROGRAMS = test/test_sofia_funcs
+noinst_PROGRAMS = test/test_sofia_funcs
 
 test_test_sofia_funcs_SOURCES = test/test_sofia_funcs.c
 test_test_sofia_funcs_CFLAGS = $(AM_CFLAGS) -I $(libsofiamod_la_CFLAGS) 
 test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(SOFIALA)
 test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIALA)
-TESTS = $(bin_PROGRAMS)
+TESTS = $(noinst_PROGRAMS)
 
 if ISMAC
 mod_sofia_la_LDFLAGS += -framework CoreFoundation -framework SystemConfiguration
