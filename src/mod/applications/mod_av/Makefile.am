@@ -22,10 +22,10 @@ mod_av_la_LIBADD   = libavmod.la $(switch_builddir)/libfreeswitch.la $(AVFORMAT_
 mod_av_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lm -lz
 
 
-bin_PROGRAMS = test/test_mod_av test/test_avformat
+noinst_PROGRAMS = test/test_mod_av test/test_avformat
 AM_CFLAGS = $(SWITCH_AM_CFLAGS) -I../ $(AVFORMAT_CFLAGS) $(AVCODEC_CFLAGS) $(SWSCALE_CFLAGS) $(AVUTIL_CFLAGS) $(RESAMPLE_CFLAGS)
 AM_LDFLAGS = $(AVFORMAT_LIBS) $(AVCODEC_LIBS) $(SWSCALE_LIBS)  $(AVUTIL_LIBS) $(RESAMPLE_LIBS) -avoid-version -no-undefined $(SWITCH_AM_LDFLAGS)
-TESTS = $(bin_PROGRAMS)
+TESTS = $(noinst_PROGRAMS)
 
 test_test_mod_av_LDADD = libavmod.la $(switch_builddir)/libfreeswitch.la
 test_test_avformat_LDADD = libavmod.la $(switch_builddir)/libfreeswitch.la
