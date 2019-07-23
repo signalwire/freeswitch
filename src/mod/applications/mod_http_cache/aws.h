@@ -36,10 +36,10 @@
 /* (SHA1_LENGTH * 1.37 base64 bytes per byte * 3 url-encoded bytes per byte) */
 #define S3_SIGNATURE_LENGTH_MAX 83
 
-SWITCH_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+SWITCH_MOD_DECLARE(switch_curl_slist_t*) aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
 	const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);
-SWITCH_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
-SWITCH_DECLARE(char *) aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires);
+SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
+SWITCH_MOD_DECLARE(char *) aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires);
 
 #endif
 
