@@ -4073,7 +4073,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
-		if (nh && nh->nh_home) {
+		if (nh) {
 			sip_to_tag(nh->nh_home, sip->sip_to, use_to_tag);
 		}
 
