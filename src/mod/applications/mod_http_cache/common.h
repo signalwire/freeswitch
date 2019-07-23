@@ -23,7 +23,7 @@ struct http_profile {
 typedef struct http_profile http_profile_t;
 
 
-SWITCH_DECLARE(void) parse_url(char *url, const char *base_domain, const char *default_base_domain, char **bucket, char **object);
+SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const char *default_base_domain, char **bucket, char **object);
 
 #endif
 
