@@ -788,6 +788,7 @@ void limit_remote_destroy(limit_remote_t **r)
 		switch_thread_rwlock_destroy((*r)->rwlock);
 
 		switch_core_destroy_memory_pool(&((*r)->pool));
+		switch_core_hash_destroy(&(*r)->index);
 		*r = NULL;
 	}
 }

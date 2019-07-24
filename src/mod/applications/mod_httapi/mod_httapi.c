@@ -3242,6 +3242,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 
 	switch_core_hash_destroy(&globals.profile_hash);
 	switch_core_hash_destroy(&globals.parse_hash);
+	switch_core_hash_destroy(&globals.request_hash);
 
 	while (globals.hash_root) {
 		ptr = globals.hash_root;

@@ -4274,6 +4274,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 		queue = NULL;
 	}
 
+	switch_core_hash_destroy(&globals.queue_hash);
+
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
 	switch_safe_free(globals.cc_instance_id);

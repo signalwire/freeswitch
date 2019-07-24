@@ -2451,6 +2451,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 	switch_xml_clear_user_cache(NULL, NULL, NULL);
 
 	switch_core_hash_destroy(&CACHE_HASH);
+	switch_core_hash_destroy(&CACHE_EXPIRES_HASH);
 
 	return status;
 }
