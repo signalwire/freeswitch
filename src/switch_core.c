@@ -2985,6 +2985,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_loadable_module_shutdown();
 
+	switch_curl_destroy();
+
 	switch_ssl_destroy_ssl_locks();
 
 	switch_scheduler_task_thread_stop();
@@ -3032,6 +3034,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.data_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.localstate_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.certs_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.lib_dir);
+
+	switch_safe_free(SWITCH_GLOBAL_filenames.conf_name);
 
 	switch_event_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.ptimes);

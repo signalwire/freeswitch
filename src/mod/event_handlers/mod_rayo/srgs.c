@@ -852,6 +852,7 @@ static void srgs_grammar_destroy(struct srgs_grammar *grammar)
 		switch_file_remove(grammar->jsgf_file_name, pool);
 	}
 	switch_core_destroy_memory_pool(&pool);
+	switch_core_hash_destroy(&grammar->rules);
 }
 
 /**

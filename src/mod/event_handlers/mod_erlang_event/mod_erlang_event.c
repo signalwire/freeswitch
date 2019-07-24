@@ -1399,6 +1399,7 @@ void destroy_listener(listener_t * listener)
 	switch_mutex_unlock(listener->sock_mutex);
 
 	switch_core_hash_destroy(&listener->event_hash);
+	switch_core_hash_destroy(&listener->sessions);
 
 	/* remove any bindings for this connection */
 	remove_binding(listener, NULL);

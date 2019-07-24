@@ -555,6 +555,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_pg_csv_shutdown)
 	switch_event_unbind_callback(event_handler);
 	switch_core_remove_state_handler(&state_handlers);
 
+	switch_core_hash_destroy(&globals.fd_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -351,6 +351,8 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_destroy()
 
 	msrp_deinit_ssl();
 
+	switch_safe_free(globals.ip);
+
 	return st;
 }
 

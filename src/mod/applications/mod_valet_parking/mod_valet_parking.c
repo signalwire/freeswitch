@@ -37,11 +37,12 @@
 
 /* Prototypes */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_valet_parking_shutdown);
 
 /* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
-SWITCH_MODULE_DEFINITION(mod_valet_parking, mod_valet_parking_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_valet_parking, mod_valet_parking_load, mod_valet_parking_shutdown, NULL);
 
 typedef struct {
 	char ext[256];
@@ -928,6 +929,12 @@ static void pres_event_handler(switch_event_t *event)
 
 	switch_safe_free(dup_to);
 	switch_safe_free(dup_lot_name);
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_valet_parking_shutdown)
+{
+	switch_core_hash_destroy(&globals.hash);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* Macro expands to: switch_status_t mod_valet_parking_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
