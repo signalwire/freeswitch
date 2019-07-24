@@ -918,6 +918,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 	if (switch_test_flag(bug, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bug, SMBF_READ_VIDEO_PING) || switch_test_flag(bug, SMBF_WRITE_VIDEO_PING)) {
 		switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+
+		if (switch_test_flag(bug, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bug, SMBF_READ_VIDEO_PING)) {
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_READ_TAPPED);
+		}
+
+		if (switch_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bug, SMBF_WRITE_VIDEO_PING)) {
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_WRITE_TAPPED);
+		}
 	}
 
 	if (switch_test_flag(bug, SMBF_SPY_VIDEO_STREAM) || switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG)) {
@@ -1297,6 +1305,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 
 		if (switch_test_flag(bp, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bp, SMBF_READ_VIDEO_PING) || switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
 			switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_DECODED_READ);
+
+			if (switch_test_flag(bp, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
+				switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_READ_TAPPED);
+			}
+
+			if (switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
+				switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_WRITE_TAPPED);
+			}
 		}
 
 		bp->ready = 0;
