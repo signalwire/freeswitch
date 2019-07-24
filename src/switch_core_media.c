@@ -5510,7 +5510,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					cng_pt = (switch_payload_t) map->rm_pt;
 					if (a_engine->rtp_session) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
-						switch_rtp_set_cng_pt(a_engine->rtp_session, smh->mparams->cng_pt);
+						switch_rtp_set_cng_pt(a_engine->rtp_session, cng_pt);
 					}
 					continue;
 				}
@@ -5857,7 +5857,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 						if (a_engine->rtp_session) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u@%lu\n", cng_pt, cng_rate);
-							switch_rtp_set_cng_pt(a_engine->rtp_session, smh->mparams->cng_pt);
+							switch_rtp_set_cng_pt(a_engine->rtp_session, cng_pt);
 						}
 					}
 					continue;
