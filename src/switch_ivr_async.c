@@ -1448,6 +1448,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 					switch_core_media_bug_set_media_params(bug, &rh->fh->mm);
 					switch_core_session_request_video_refresh(session);
+					switch_core_media_gen_key_frame(session);
 				}
 			}
 		}
