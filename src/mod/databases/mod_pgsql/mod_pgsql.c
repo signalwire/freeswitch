@@ -939,14 +939,12 @@ switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char
 				if (tmp) {
 					len = strlen(tmp);
 					names[col] = malloc(len + 1);
-					names[col][len] = '\0';
-					strncpy(names[col], tmp, len);
+					snprintf(names[col], len + 1, "%s", tmp);
 
 					len = PQgetlength(result->result, row, col);
 					vals[col] = malloc(len + 1);
-					vals[col][len] = '\0';
 					tmp = PQgetvalue(result->result, row, col);
-					strncpy(vals[col], tmp, len);
+					snprintf(vals[col], len + 1, "%s", tmp);
 					/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Processing result row %d, col %d: %s => %s\n", row, col, names[col], vals[col]);*/
 				} else {
 					/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Processing result row %d, col %d.\n", row, col);*/
