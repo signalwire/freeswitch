@@ -687,13 +687,11 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 			jb->highest_wrote_ts = packet->header.ts;
 			jb->complete_frames++;
 
-			if (!switch_test_flag(jb, SJB_QUEUE_ONLY)) {
-				if (jb->packet_count > jb->max_packet_len) {
-					jb->max_packet_len = jb->packet_count;
-				}
-					
-				jb->packet_count = 0;
+			jb->packet_count--;
+			if (jb->packet_count > jb->max_packet_len) {
+				jb->max_packet_len = jb->packet_count;
 			}
+			jb->packet_count = 1;
 			node->complete_frame_mark = TRUE;
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
