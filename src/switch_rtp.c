@@ -6340,6 +6340,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->vb) {
 			switch_jb_destroy(&rtp_session->vb);
 		}
+
+		if (rtp_session->vbw) {
+			switch_jb_destroy(&rtp_session->vbw);
+		}
+
 	}
 
 	if (rtp_session->has_rtp && *bytes) {
