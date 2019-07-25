@@ -1842,7 +1842,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 
 	stats->cum_lost=stats->cum_lost+pkt_lost;
 	if (expected_pkt > 0 && pkt_lost > 0) {
-		rtcp_report_block->fraction = (uint8_t) (pkt_lost * 256 / expected_pkt);
+		rtcp_report_block->fraction = (pkt_lost == expected_pkt ? 255 : (uint8_t) (pkt_lost * 256 / expected_pkt));             /* if X packets were expected and X was lost, we want 0xff to be reported, not 0 */
 	} else {
 		rtcp_report_block->fraction = 0;
 	}
@@ -2075,6 +2075,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			uint32_t nack = switch_jb_pop_nack(rtp_session->vb);
 
 			if (!nack) break;
+
+			seq = ntohs(nack & 0xFFFF);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u\n",
+					switch_core_session_get_name(rtp_session->session), nack, nack, seq);
 
 			cur_nack[nack_ttl++] = nack;
 		}
@@ -6713,12 +6718,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
 				uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
-				uint8_t percent_fraction = (uint8_t)report->fraction * 100 / 256 ;
+				uint8_t percent_fraction = (uint8_t)((uint16_t/* prevent overflow when '* 100' */)(uint8_t)report->fraction * 100 / 255);
 				if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
-					rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)percent_fraction;
+					rtp_session->rtcp_frame.reports[i].loss_avg = percent_fraction;
 				} else {
 					rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
-																			 ((float)(uint8_t)percent_fraction * .3));
+																			 ((float)percent_fraction * .3));
 				}
 
 				rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
