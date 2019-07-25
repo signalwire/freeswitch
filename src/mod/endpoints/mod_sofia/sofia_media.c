@@ -69,7 +69,7 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 
 
 
-switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r_sdp)
+switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r_sdp, switch_sdp_type_t type)
 {
 	uint8_t match = 0;
 
@@ -80,7 +80,7 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp, SDP_TYPE_REQUEST))) {
+	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp, type))) {
 		if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}

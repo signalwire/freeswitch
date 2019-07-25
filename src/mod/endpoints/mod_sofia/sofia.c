@@ -7476,7 +7476,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 
 				} else {
-					if (sofia_media_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_tech_media(tech_pvt, (char *) r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 						nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),TAG_END());
@@ -7981,7 +7981,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 
 										switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-										if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+										if (sofia_media_tech_media(tech_pvt, r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 											switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 											switch_core_session_rwunlock(other_session);
 											switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
