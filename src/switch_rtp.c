@@ -2074,6 +2074,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 			if (!nack) break;
 
+			seq = ntohs(nack & 0xFFFF);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s Got NACK [%u][0x%x] for seq %u\n",
+					switch_core_session_get_name(rtp_session->session), nack, nack, seq);
+
 			cur_nack[nack_ttl++] = nack;
 		}
 		if (nack_ttl) {
