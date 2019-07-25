@@ -14545,6 +14545,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_status_t encode_status;
 	switch_frame_t write_frame = {0};
 	switch_rtp_engine_t *v_engine = NULL;
+	switch_bool_t need_free = SWITCH_FALSE;
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
@@ -14679,6 +14680,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 					bp->video_ping_frame = NULL;
 				}
 
+				if (bug_frame.img && bug_frame.img != img) {
+					need_free = SWITCH_TRUE;
+					img = bug_frame.img;
+				}
+
 				if (switch_core_media_bug_test_flag(bp, SMBF_SPY_VIDEO_STREAM_BLEG) && !patched) {
 					switch_core_media_bug_patch_spy_frame(bp, img, SWITCH_RW_WRITE);
 				}
@@ -14750,6 +14756,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	switch_img_free(&dup_img);
+
+	if (need_free) {
+		switch_img_free(&frame->img);
+	}
 
 	return status;
 }
