@@ -6619,9 +6619,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 								  switch_core_session_get_name(rtp_session->session));
 			} else {
 				switch_core_media_gen_key_frame(rtp_session->session);
-				if (rtp_session->vbw) {
-					switch_jb_reset(rtp_session->vbw);
-				}
+				switch_core_session_request_video_refresh(rtp_session->session);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Got FIR/PLI\n", 
 								  switch_core_session_get_name(rtp_session->session));
 				switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
