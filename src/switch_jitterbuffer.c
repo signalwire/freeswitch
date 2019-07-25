@@ -986,6 +986,15 @@ SWITCH_DECLARE(uint32_t) switch_jb_get_nack_success(switch_jb_t *jb)
 	return nack_recovered;
 }
 
+SWITCH_DECLARE(uint32_t) switch_jb_get_packets_per_frame(switch_jb_t *jb) 
+{
+	uint32_t ppf;
+	switch_mutex_lock(jb->mutex);
+	ppf = jb->packet_count; /* get current packets per frame */
+	switch_mutex_unlock(jb->mutex);
+	return ppf;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
 {
 	switch_jb_node_t *node = NULL;
