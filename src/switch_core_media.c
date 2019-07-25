@@ -9484,7 +9484,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				flags[SWITCH_RTP_FLAG_PLI]++;
 			}
 
-			if (v_engine->nack) {
+			if ((v_engine->nack) && !switch_channel_var_true(session->channel, "rtp_video_nack_disable")) { 
 				flags[SWITCH_RTP_FLAG_NACK]++;
 			}
 
