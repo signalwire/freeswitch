@@ -1838,6 +1838,8 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	}
 
 	pkt_lost = expected_pkt - stats->period_pkt_count;
+	if (pkt_lost < 0) pkt_lost = 0;
+
 	stats->cum_lost=stats->cum_lost+pkt_lost;
 	if (expected_pkt > 0 && pkt_lost > 0) {
 		rtcp_report_block->fraction = (uint8_t) (pkt_lost * 256 / expected_pkt);
