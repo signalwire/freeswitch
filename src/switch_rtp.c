@@ -6716,12 +6716,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
 				uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
-				uint8_t percent_fraction = (uint8_t)report->fraction * 100 / 256 ;
+				uint8_t percent_fraction = (uint8_t)((uint16_t/* prevent overflow when '* 100' */)(uint8_t)report->fraction * 100 / 255);
 				if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
-					rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)percent_fraction;
+					rtp_session->rtcp_frame.reports[i].loss_avg = percent_fraction;
 				} else {
 					rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
-																			 ((float)(uint8_t)percent_fraction * .3));
+																			 ((float)percent_fraction * .3));
 				}
 
 				rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
