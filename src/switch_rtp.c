@@ -2046,6 +2046,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0, nack_dup = 0; 
 	uint32_t cur_nack[MAX_NACK] = { 0 };
+	uint16_t seq = 0;
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 		rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] &&
