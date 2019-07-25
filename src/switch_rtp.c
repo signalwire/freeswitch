@@ -1840,7 +1840,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	pkt_lost = expected_pkt - stats->period_pkt_count;
 	stats->cum_lost=stats->cum_lost+pkt_lost;
 	if (expected_pkt > 0 && pkt_lost > 0) {
-		rtcp_report_block->fraction = (uint8_t) (pkt_lost * 256 / expected_pkt);
+		rtcp_report_block->fraction = (pkt_lost == expected_pkt ? 255 : (uint8_t) (pkt_lost * 256 / expected_pkt));             /* if X packets were expected and X was lost, we want 0xff to be reported, not 0 */
 	} else {
 		rtcp_report_block->fraction = 0;
 	}
