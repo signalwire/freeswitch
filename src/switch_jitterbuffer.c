@@ -678,9 +678,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	}
 
 	if (jb->type == SJB_VIDEO) {
-		if (!switch_test_flag(jb, SJB_QUEUE_ONLY)) {
-			jb->packet_count++;
-		}
+		jb->packet_count++;
 		
 		if (jb->write_init && check_seq(packet->header.seq, jb->highest_wrote_seq) && check_ts(node->packet.header.ts, jb->highest_wrote_ts)) {
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
