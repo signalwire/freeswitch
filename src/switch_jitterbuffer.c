@@ -107,6 +107,8 @@ struct switch_jb_s {
 	uint32_t packet_count;
 	uint32_t max_packet_len;
 	uint32_t period_len;
+	uint32_t nack_saved_the_day;
+	uint32_t nack_didnt_save_the_day;
 };
 
 
@@ -971,6 +973,15 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->last_target_ts = 0;
 }
 
+SWITCH_DECLARE(uint32_t) switch_jb_get_nack_success(switch_jb_t *jb) 
+{
+	uint32_t nack_recovered; /*count*/
+	switch_mutex_lock(jb->mutex);
+	nack_recovered = jb->nack_saved_the_day + jb->nack_didnt_save_the_day;
+	switch_mutex_unlock(jb->mutex);
+	return nack_recovered;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
 {
 	switch_jb_node_t *node = NULL;
@@ -1091,6 +1102,11 @@ SWITCH_DECLARE(switch_status_t) switch_jb_destroy(switch_jb_t **jbp)
 	switch_jb_t *jb = *jbp;
 	*jbp = NULL;
 
+	if (jb->type == SJB_VIDEO && !switch_test_flag(jb, SJB_QUEUE_ONLY)) {
+		jb_debug(jb, 3, "Stats: NACK saved the day: %u\n", jb->nack_saved_the_day);
+		jb_debug(jb, 3, "Stats: NACK was late: %u\n", jb->nack_didnt_save_the_day);
+		jb_debug(jb, 3, "Stats: Hash entrycount: missing_seq_hash %u\n", switch_hashtable_count(jb->missing_seq_hash));
+	}
 	if (jb->type == SJB_VIDEO) {
 		switch_core_inthash_destroy(&jb->missing_seq_hash);
 	}
@@ -1223,8 +1239,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 			if (got < ntohs(jb->target_seq)) {
 				jb_debug(jb, 2, "got nacked seq %u too late\n", got);
 				jb_frame_inc(jb, 1);
+				jb->nack_didnt_save_the_day++;
 			} else {
 				jb_debug(jb, 2, "got nacked %u saved the day!\n", got);
+				jb->nack_saved_the_day++;
 			}
 		}
 

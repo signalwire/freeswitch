@@ -5090,6 +5090,13 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		return;
 	}
 
+	if ((*rtp_session)->vb) {
+		/* retrieve counter for ALL received NACKed packets */
+		uint32_t nack_jb_ok = switch_jb_get_nack_success((*rtp_session)->vb);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG((*rtp_session)->session), SWITCH_LOG_DEBUG, 
+				"NACK: Added to JB: [%u]\n", nack_jb_ok);
+	}
+
 	(*rtp_session)->flags[SWITCH_RTP_FLAG_SHUTDOWN] = 1;
 
 	READ_INC((*rtp_session));
