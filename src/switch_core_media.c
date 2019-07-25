@@ -196,6 +196,8 @@ typedef struct switch_rtp_engine_s {
 	uint8_t new_ice;
 	uint8_t new_dtls;
 	uint32_t sdp_bw;
+	uint32_t orig_bitrate;
+	float bw_mult;
 	uint8_t reject_avp;
 	int t140_pt;
 	int red_pt;
@@ -12434,12 +12436,34 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t
 	return SWITCH_FALSE;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_media_get_orig_bitrate(switch_core_session_t *session, switch_media_type_t type) 
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+
+	if (!(smh = session->media_handle)) {
+		return 0;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return 0;
+	}
+
+	engine = &smh->engines[type];
+
+	if (engine) {
+		return engine->orig_bitrate;
+	} else {
+		return 0;
+	}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_core_session_t *session, switch_media_type_t type, uint32_t bitrate)
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	uint32_t new_bitrate;
 
 	if (!(smh = session->media_handle)) {
 		return SWITCH_STATUS_FALSE;
@@ -12451,12 +12475,55 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_co
 
 	engine = &smh->engines[type];
 
+	new_bitrate = bitrate - bitrate * engine->bw_mult;
 	if (switch_core_codec_ready(&engine->write_codec)) {
 		status = switch_core_codec_control(&engine->write_codec, SCC_VIDEO_BANDWIDTH,
-										   SCCT_INT, &bitrate, SCCT_NONE, NULL, NULL, NULL);
+										   SCCT_INT, &new_bitrate, SCCT_NONE, NULL, NULL, NULL);
 	}
+	engine->orig_bitrate = bitrate;
 
 	return status;
+}
+
+SWITCH_DECLARE(float) switch_core_media_get_media_bw_mult(switch_core_session_t *session) 
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+
+	if (!(smh = session->media_handle)) {
+		return 0;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return 0;
+	}
+
+	engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (engine) {
+		return engine->bw_mult;
+	}
+	return 0;
+}
+
+SWITCH_DECLARE(void) switch_core_media_set_media_bw_mult(switch_core_session_t *session, float mult)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return;
+	}
+
+	engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (engine) {
+		engine->bw_mult = mult;
+	}
 }
 
 //?
