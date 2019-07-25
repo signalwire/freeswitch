@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Dragos Oancea <dragos@freeswitch.org>
  *
  * switch_jitterbuffer.c -- Audio/Video Jitter Buffer
  *
@@ -51,6 +52,8 @@ typedef struct switch_jb_node_s {
 	uint8_t bad_hits;
 	struct switch_jb_node_s *prev;
 	struct switch_jb_node_s *next;
+	/* used for counting the number of partial or complete frames currently in the JB */
+	switch_bool_t complete_frame_mark;
 } switch_jb_node_t;
 
 struct switch_jb_s {
@@ -300,8 +303,9 @@ static inline void hide_node(switch_jb_node_t *node, switch_bool_t pop)
 	}
 
 	if (switch_core_inthash_delete(jb->node_hash, node->packet.header.seq)) {
-		if (node->packet.header.version == 1 && jb->type == SJB_VIDEO) {
+		if (node->complete_frame_mark && jb->type == SJB_VIDEO) {
 			jb->complete_frames--;
+			node->complete_frame_mark = FALSE;
 		}
 	}
 
@@ -688,7 +692,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 					
 				jb->packet_count = 0;
 			}
-			node->packet.header.version = 1;
+			node->complete_frame_mark = TRUE;
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
