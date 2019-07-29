@@ -176,6 +176,10 @@ typedef struct srtp_ctx_t_ {
  * is not identical)
  */
 
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
@@ -185,8 +189,8 @@ typedef struct {
     unsigned version : 2; /* protocol version       */
     unsigned pt : 7;      /* payload type           */
     unsigned m : 1;       /* marker bit             */
-    uint16_t seq;              /* sequence number        */
-    uint32_t ts;               /* timestamp              */
+    unsigned seq : 16;    /* sequence number        */
+    unsigned ts : 32;     /* timestamp              */
     uint32_t ssrc;             /* synchronization source */
 } srtp_hdr_t;
 
@@ -199,8 +203,8 @@ typedef struct {
     unsigned cc : 4;      /* CSRC count             */
     unsigned m : 1;       /* marker bit             */
     unsigned pt : 7;      /* payload type           */
-    uint16_t seq;              /* sequence number        */
-    uint32_t ts;               /* timestamp              */
+    unsigned seq: 16;     /* sequence number        */
+    unsigned ts : 32;     /* timestamp              */
     uint32_t ssrc;             /* synchronization source */
 } srtp_hdr_t;
 
@@ -225,7 +229,7 @@ typedef struct {
     unsigned p : 1;       /* padding flag           */
     unsigned version : 2; /* protocol version       */
     unsigned pt : 8;      /* payload type           */
-    uint16_t len;              /* length                 */
+    unsigned len : 16;    /* length                 */
     uint32_t ssrc;             /* synchronization source */
 } srtcp_hdr_t;
 
@@ -243,7 +247,7 @@ typedef struct {
     unsigned p : 1;       /* padding flag           */
     unsigned rc : 5;      /* reception report count */
     unsigned pt : 8;      /* payload type           */
-    uint16_t len;              /* length                 */
+    unsigned len : 16;    /* length                 */
     uint32_t ssrc;             /* synchronization source */
 } srtcp_hdr_t;
 
@@ -254,6 +258,10 @@ typedef struct {
                              /* and then the variable-length auth tag */
 } srtcp_trailer_t;
 
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
 #endif
 
 /*
