@@ -193,8 +193,9 @@ create_dsc () {
     set -e
     local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" suite_postfix="" suite_postfix_p=false zl=9
     local modules_add=""
-    while getopts 'f:m:p:s:u:z:' o "$@"; do
+    while getopts 'a:f:m:p:s:u:z:' o "$@"; do
       case "$o" in
+        a) avoid_mods_arch="$OPTARG";;
         f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
         p) modules_add="$modules_add $OPTARG";;
@@ -225,7 +226,7 @@ create_dsc () {
         bootstrap_args="$bootstrap_args -p${x}"
       done
     fi
-    (cd debian && ./bootstrap.sh -c $distro $bootstrap_args)
+    (cd debian && ./bootstrap.sh -a "$avoid_mods_arch" -c $distro $bootstrap_args)
     case "$speed" in
       paranoid) sed -i ./debian/rules \
         -e '/\.stamp-bootstrap:/{:l2 n; /\.\/bootstrap.sh -j/{s/ -j//; :l3 n; b l3}; b l2};' ;;
