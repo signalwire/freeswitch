@@ -4593,7 +4593,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	if (!state.done) {
 		switch_ivr_detect_speech_start_input_timers(session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
-		while (switch_channel_ready(channel)) {
+		while (!state.done && switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
 
 			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
