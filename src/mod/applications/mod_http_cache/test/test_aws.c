@@ -101,7 +101,7 @@ FST_TEST_BEGIN(test_parse_url)
 	fst_check(bucket == NULL);
 	fst_check(object == NULL);
 
-	snprintf(url, sizeof(url), "");
+	snprintf(url, sizeof(url), "%s", "");
 	parse_url(url, NULL, "s3", &bucket, &object);
 	fst_check(bucket == NULL);
 	fst_check(object == NULL);
