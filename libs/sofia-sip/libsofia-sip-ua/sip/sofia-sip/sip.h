@@ -215,6 +215,9 @@ typedef msg_list_t                  sip_allow_events_t;
 /* RFC 3323 - @Privacy */
 typedef struct sip_privacy_s sip_privacy_t;
 
+/* SIP Identity Header, e.g. STIR-Shaken SIP Identity Header, RFC 8224 */
+typedef struct sip_identity_s sip_identity_t;
+
 /* RFC 3327 - @Path */
 typedef struct sip_route_s     	    sip_path_t;
 
@@ -259,6 +262,7 @@ struct sip_s {
   sip_to_t         	    *sip_to;		/**< To (t) */
   sip_call_id_t             *sip_call_id;	/**< Call-ID (i) */
   sip_cseq_t       	    *sip_cseq;		/**< CSeq */
+  sip_identity_t       	    *sip_identity;		/**< Identity */
   sip_contact_t             *sip_contact;	/**< Contact (m) */
   sip_rseq_t                *sip_rseq;          /**< RSeq */
   sip_rack_t                *sip_rack;          /**< RAck */
@@ -472,6 +476,17 @@ struct sip_cseq_s
   uint32_t       cs_seq;	    /**< Sequence number */
   sip_method_t   cs_method;	    /**< Method enum */
   char const    *cs_method_name;    /**< Method name */
+};
+
+/**@ingroup sip_identity
+ * @brief Structure for @Identity SIP header.
+ */
+struct sip_identity_s
+{
+  sip_common_t   id_common[1];	/**< Common fragment info */
+  sip_error_t   *id_next;		/**< Link to next (dummy) */
+  char const    *id_value;		/**< Identity text as shown in SIP Header */
+  char const	*id_info;		/**< Info param containing URL of the cert */
 };
 
 /**@ingroup sip_contact
@@ -920,6 +935,7 @@ union sip_header_u
 
   sip_separator_t            sh_separator[1];
   sip_payload_t              sh_payload[1];
+  sip_identity_t			sh_identity[1];
 };
 
 SOFIA_END_DECLS

@@ -224,6 +224,10 @@ SOFIAPUBFUN sip_call_id_t *sip_call_id_create(su_home_t *home,
 SOFIAPUBFUN sip_cseq_t *sip_cseq_create(su_home_t *, uint32_t seq,
 					unsigned method, char const *name);
 
+/** Create a @Identity header object.  */
+SOFIAPUBFUN sip_identity_t *sip_identity_create(su_home_t *, uint32_t seq,
+					unsigned method, char const *name);
+
 /** Create a @Contact header object. */
 SOFIAPUBFUN sip_contact_t * sip_contact_create(su_home_t *,
 					       url_string_t const *url,
