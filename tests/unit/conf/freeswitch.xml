@@ -6,7 +6,8 @@
     <configuration name="modules.conf" description="Modules">
       <modules>
         <load module="mod_console"/>
-        <load module="mod_loopback"/>
+		<load module="mod_loopback"/>
+		<load module="mod_opus"/>
       </modules>
     </configuration>
 

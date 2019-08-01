@@ -621,7 +621,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 								  codec->implementation->iananame,
 								  codec->implementation->modname,
 								  codec->fmtp_in,
-								  codec->implementation->samples_per_second,
+								  codec->implementation->actual_samples_per_second,
 								  codec->implementation->microseconds_per_packet / 1000,
 								  codec->implementation->number_of_channels,
 								  codec->flags,
