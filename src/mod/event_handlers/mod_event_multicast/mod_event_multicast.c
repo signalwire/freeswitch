@@ -493,6 +493,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 	globals.running = 0;
 	switch_event_unbind_callback(event_handler);
 
+	switch_mutex_lock(globals.mutex);
 	if (globals.udp_socket) {
 		switch_socket_shutdown(globals.udp_socket, 2);
 	}
@@ -501,11 +502,16 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 	switch_event_free_subclass(MULTICAST_PEERUP);
 	switch_event_free_subclass(MULTICAST_PEERDOWN);
 
-	switch_core_hash_destroy(&globals.event_hash);
-	switch_core_hash_destroy(&globals.peer_hash);
+	if (globals.event_hash) {
+		switch_core_hash_destroy(&globals.event_hash);
+	}
+	if (globals.peer_hash) {
+		switch_core_hash_destroy(&globals.peer_hash);
+	}
 
 	switch_safe_free(globals.address);
 	switch_safe_free(globals.bindings);
+	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
