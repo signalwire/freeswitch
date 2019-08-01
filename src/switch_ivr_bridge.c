@@ -2017,6 +2017,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_channel = switch_core_session_get_channel(originator_session);
 			originatee_channel = switch_core_session_get_channel(originatee_session);
 
+			switch_ivr_check_hold(originator_session);
+			switch_ivr_check_hold(originatee_session);
+	
 
 			if (switch_channel_test_flag(originator_channel, CF_LEG_HOLDING)) {
 				switch_channel_set_flag(originator_channel, CF_HOLD_ON_BRIDGE);
