@@ -6,5 +6,7 @@
     <!--param name="adoption-service" value="https://adopt.signalwire.com/adoption"/-->
     <!--param name="stun-server" value="stun.freeswitch.org"/-->
     <!-- <authentication></authentication> -->
+    <!-- override dialplan context for calls on connector -->
+    <!--<param name="override-context" value="signalwire"/>-->
   </settings>
 </configuration>
