@@ -76,6 +76,7 @@ static struct {
 	char adoption_service[1024];
 	char stun_server[1024];
 	char adoption_token[64];
+	char override_context[64];
 	ks_size_t adoption_backoff;
 	ks_time_t adoption_next;
 
@@ -657,6 +658,8 @@ static switch_status_t load_config()
 					switch_set_string(globals.stun_server, val);
 				} else if (!strcasecmp(var, "ssl-verify")) {
 					globals.ssl_verify = switch_true(val) ? 1 : 0;
+				} else if (!strcasecmp(var, "override-context") && !ks_zstr(val)) {
+					switch_set_string(globals.override_context, val);
 				}
 			}
 			if ((tmp = switch_xml_child(settings, "authentication"))) {
@@ -747,6 +750,11 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error obtaining caller profile!\n");
 			goto done;
 		}
+	}
+
+	if (globals.override_context[0] != '\0') {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Overriding dialplan context from %s to %s\n",caller_profile->context,globals.override_context);
+		caller_profile->context = globals.override_context;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s <%s>->%s in context %s\n",
