@@ -301,7 +301,9 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 	/* after all that did we get what we were after?! */
 	if (reply.xml_str) {
 		/* HELL YA WE DID */
-		reply.xml_str = expand_vars(reply.xml_str);
+		if (kazoo_globals.expand_headers_on_fetch) {
+			reply.xml_str = expand_vars(reply.xml_str);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received %s XML (%s) after %dms: %s\n"
 						  ,section
 						  ,reply.uuid_str
