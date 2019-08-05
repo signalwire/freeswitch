@@ -205,6 +205,7 @@ struct globals_s {
 
 	int legacy_events;
 	uint8_t tweaks[KZ_TWEAK_MAX];
+	switch_bool_t expand_headers_on_fetch;
 
 
 };

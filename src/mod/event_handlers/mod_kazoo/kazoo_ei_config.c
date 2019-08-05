@@ -203,6 +203,9 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "legacy-events")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set legacy-events: %s\n", val);
 				kazoo_globals.legacy_events = switch_true(val);
+			} else if (!strcmp(var, "expand-headers-on-fetch")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set expand-headers-on-fetch: %s\n", val);
+				kazoo_globals.expand_headers_on_fetch = switch_true(val);
 			}
 		}
 	}
