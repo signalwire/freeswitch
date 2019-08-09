@@ -2849,7 +2849,8 @@ SIP_HEADER_CLASS(identity, "Identity", "", id_common, single, identity);
 issize_t sip_identity_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
   sip_identity_t *id = (sip_identity_t *)h;
-  char const *p = NULL, *pp = NULL, *ppp = NULL, *ib = NULL, *ie = NULL;
+  char const *p = NULL, *pp = NULL, *ppp = NULL, *ie = NULL;
+  char *result = NULL;
   size_t len = 0;
 
   id->id_value = strdup(s);
@@ -2857,27 +2858,22 @@ issize_t sip_identity_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 
   p = strstr(s, "info=");
   if (p) {
-	  ib = p + 5;
+
 	  ie = strchr(p, ';');
 	  pp = strchr(p, '<');
+	  ppp = strchr(p, '>');
 
-	  if (!ie) return 0;
+	  // allow for a spaces between "info=" and opening '<'
+	  // extract URI from inside "<>" but allow empty - let the higher level app decide what to do about it
+	  if (ie && pp && ppp && (pp < ppp) && (ppp < ie)) {
 
-	  if (pp && pp < ie) {
-
-		  // info= with opening '<'
-		  // must contain closing '>' before ';'
-		  ppp = strchr(pp, '>');
-		  if (!ppp || ppp > ie) {
-			  return 0;
-		  } else {
-			  ib = pp + 1;
-			  ie = ppp - 1;
+		  len = ppp - pp;
+		  if ((result = malloc(len))) {
+			  memcpy(result, pp + 1, len - 1);
+			  result[len - 1] = '\0';
+			  id->id_info = result;
 		  }
 	  }
-
-	  len = ie - ib + 1;
-	  id->id_info = strndup(ib, len);
   }
 
   return 0;
