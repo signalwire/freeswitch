@@ -1488,20 +1488,20 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 						char tmp[100];
 						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with drop_sql", result);
 					}
+				}
 
-					if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
-						char tmp[100];
-						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
+				if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+					char tmp[100];
+					switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
 
-						if (row_size_limited_reactive_sql && switch_test_flag(database_interface, SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT)) {
-							if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, row_size_limited_reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
-								switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with row_size_limited_reactive_sql", result);
-							}
+					if (row_size_limited_reactive_sql && switch_test_flag(database_interface, SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT)) {
+						if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, row_size_limited_reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with row_size_limited_reactive_sql", result);
 						}
 					}
-
-					r = (result == SWITCH_STATUS_SUCCESS);
 				}
+
+				r = (result == SWITCH_STATUS_SUCCESS);
 			}
 		}
 		break;
