@@ -282,6 +282,8 @@
     };
 
     $.FSRTC.prototype.stopPeer = function() {
+        var self = this;
+
         if (self.peer) {
             console.log("stopping peer");
             self.peer.stop();
