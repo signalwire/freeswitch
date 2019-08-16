@@ -72,6 +72,10 @@
         return newLine.join(' ');
     }
 
+    function defaultSupportedResolutions() {
+      return [[160, 120], [320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
+    }
+
     $.FSRTC = function(options) {
         this.options = $.extend({
             useVideo: null,
@@ -115,6 +119,7 @@
     };
 
     $.FSRTC.validRes = [];
+    $.FSRTC.supportedResolutions = defaultSupportedResolutions();
 
     $.FSRTC.prototype.useVideo = function(obj, local) {
         var self = this;
@@ -1061,11 +1066,11 @@
 	return [w, h];
     }
 
-    var resList = [[160, 120], [320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
     var resI = 0;
     var ttl = 0;
 
     var checkRes = function (cam, func) {
+      var resList = $.FSRTC.supportedResolutions;
 
 	if (resI >= resList.length) {
             var res = {
