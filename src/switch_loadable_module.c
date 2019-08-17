@@ -2515,6 +2515,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.limit_hash);
 	switch_core_hash_destroy(&loadable_modules.database_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
+	switch_core_hash_destroy(&loadable_modules.secondary_recover_hash);
 
 	switch_core_destroy_memory_pool(&loadable_modules.pool);
 }
