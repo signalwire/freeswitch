@@ -6473,6 +6473,12 @@ void mod_sofia_shutdown_cleanup() {
 
 	su_deinit();
 
+	/* 
+		Release the clone of the default SIP parser 
+		created by `sip_update_default_mclass(sip_extend_mclass(NULL))` call with NULL argument
+	*/
+	free(sip_default_mclass());
+
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
