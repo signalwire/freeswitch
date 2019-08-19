@@ -479,6 +479,10 @@ static switch_status_t _timerfd_next(switch_timer_t *timer)
 	interval_timer_t *it = timer->private_info;
 	uint64_t u64  = 0;
 
+	if (!it) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (read(it->fd, &u64, sizeof(u64)) < 0) {
 		return SWITCH_STATUS_GENERR;
 	} else {
@@ -494,6 +498,10 @@ static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 	interval_timer_t *it = timer->private_info;
 	struct itimerspec val;
 	int diff;
+
+	if (!it) {
+		return SWITCH_STATUS_GENERR;
+	}
 
 	timerfd_gettime(it->fd, &val);
 	diff = val.it_interval.tv_nsec / 1000;
@@ -515,9 +523,12 @@ static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 static switch_status_t _timerfd_destroy(switch_timer_t *timer)
 {
 	interval_timer_t *it = timer->private_info;
-	int rc;
+	int rc = SWITCH_STATUS_GENERR;
 
-	rc = timerfd_stop_interval(it);
+	if (it) {
+		rc = timerfd_stop_interval(it);
+	}
+
 	return rc;
 }
 
