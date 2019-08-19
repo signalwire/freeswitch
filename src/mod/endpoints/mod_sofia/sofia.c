@@ -4290,6 +4290,7 @@ switch_status_t sofia_init(void)
 	su_init();
 	if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
 		su_deinit();
+		sip_cloned_parser_destroy();
 		return SWITCH_STATUS_GENERR;
 	}
 
