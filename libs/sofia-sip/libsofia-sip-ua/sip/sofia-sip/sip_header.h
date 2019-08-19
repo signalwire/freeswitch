@@ -60,6 +60,9 @@ SOFIA_BEGIN_DECLS
 /** Return a built-in SIP parser object. */
 SOFIAPUBFUN msg_mclass_t const *sip_default_mclass(void);
 
+/** Release SIP parser object if it was cloned. */
+SOFIAPUBFUN void sip_cloned_parser_destroy(void);
+
 SOFIAPUBFUN int sip_update_default_mclass(msg_mclass_t const *mclass);
 SOFIAPUBFUN msg_mclass_t *sip_extend_mclass(msg_mclass_t *input);
 
