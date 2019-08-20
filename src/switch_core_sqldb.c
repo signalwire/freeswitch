@@ -818,6 +818,7 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
 			int affected_rows = 0;
 			database_interface->affected_rows(dbh->native_handle.database_interface_dbh, &affected_rows);
+			return affected_rows;
 		}
 		break;
 	}
@@ -1188,11 +1189,10 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switc
 		case SCDB_TYPE_DATABASE_INTERFACE:
 		{
 			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
-			switch_status_t result;
 
-			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
 				char tmp[100];
-				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback", result);
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback", status);
 			}
 		}
 		break;
@@ -1249,15 +1249,14 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback_err(s
 	case SCDB_TYPE_DATABASE_INTERFACE:
 		{
 			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
-			switch_status_t result;
 
-			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, helper_callback, &h, err)) != SWITCH_STATUS_SUCCESS) {
 				char tmp[100];
-				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback_err", result);
-			} else {
-				if (err && *err) {
-					(*err_callback)(pdata, (const char*)*err);
-				}
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_event_callback_err", status);
+			}
+
+			if (err && *err) {
+				(*err_callback)(pdata, (const char*)*err);
 			}
 		}
 		break;
@@ -1316,11 +1315,10 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		case SCDB_TYPE_DATABASE_INTERFACE:
 		{
 			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
-			switch_status_t result;
 
-			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
 				char tmp[100];
-				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback", result);
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback", status);
 			}
 		}
 		break;
@@ -1372,15 +1370,14 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 	case SCDB_TYPE_DATABASE_INTERFACE:
 		{
 			switch_database_interface_t *database_interface = dbh->native_handle.database_interface_dbh->connection_options.database_interface;
-			switch_status_t result;
 
-			if ((result = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = database_interface_handle_callback_exec(database_interface, dbh->native_handle.database_interface_dbh, sql, callback, pdata, err)) != SWITCH_STATUS_SUCCESS) {
 				char tmp[100];
-				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback_err", result);
-			} else {
-				if (err && *err) {
-					(*err_callback)(pdata, (const char*)*err);
-				}
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to execute_sql_callback_err", status);
+			}
+			
+			if (err && *err) {
+				(*err_callback)(pdata, (const char*)*err);
 			}
 		}
 		break;
@@ -1491,20 +1488,20 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 						char tmp[100];
 						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with drop_sql", result);
 					}
+				}
 
-					if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
-						char tmp[100];
-						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
+				if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+					char tmp[100];
+					switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with reactive_sql", result);
 
-						if (row_size_limited_reactive_sql && switch_test_flag(database_interface, SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT)) {
-							if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, row_size_limited_reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
-								switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with row_size_limited_reactive_sql", result);
-							}
+					if (row_size_limited_reactive_sql && switch_test_flag(database_interface, SWITCH_DATABASE_FLAG_ROW_SIZE_LIMIT)) {
+						if ((result = database_interface_handle_exec(database_interface, dbh->native_handle.database_interface_dbh, row_size_limited_reactive_sql, NULL)) != SWITCH_STATUS_SUCCESS) {
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to test_reactive with row_size_limited_reactive_sql", result);
 						}
 					}
-
-					r = (result == SWITCH_STATUS_SUCCESS);
 				}
+
+				r = (result == SWITCH_STATUS_SUCCESS);
 			}
 		}
 		break;

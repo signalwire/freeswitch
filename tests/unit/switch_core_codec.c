@@ -51,6 +51,7 @@ FST_CORE_BEGIN("./conf")
 		FST_SETUP_BEGIN()
 		{
 			fst_requires_module("mod_opus");
+			fst_requires_module("mod_spandsp");
 		}
 		FST_SETUP_END()
 
@@ -91,6 +92,20 @@ FST_CORE_BEGIN("./conf")
 			status = switch_core_codec_init(&orig_codec,
 			"OPUS",
 			"mod_opus",
+			NULL,
+			8000,
+			20,
+			1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+			&codec_settings, fst_pool);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_core_codec_copy(&orig_codec, &new_codec, NULL, NULL);
+			fst_check(orig_codec.implementation->samples_per_second == new_codec.implementation->samples_per_second);
+			fst_check(orig_codec.implementation->actual_samples_per_second == new_codec.implementation->actual_samples_per_second);
+ 
+			status = switch_core_codec_init(&orig_codec,
+			"G722",
+			"mod_spandsp",
 			NULL,
 			8000,
 			20,

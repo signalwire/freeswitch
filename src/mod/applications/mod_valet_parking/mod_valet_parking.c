@@ -933,6 +933,7 @@ static void pres_event_handler(switch_event_t *event)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_valet_parking_shutdown)
 {
+	switch_event_unbind_callback(pres_event_handler);
 	switch_core_hash_destroy(&globals.hash);
 	return SWITCH_STATUS_SUCCESS;
 }

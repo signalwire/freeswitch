@@ -2797,3 +2797,118 @@ char const *sip_via_port(sip_via_t const *v, int *using_rport)
   else
     return SIP_DEFAULT_SERV;	/* 5060 */
 }
+
+/**@SIP_HEADER sip_identity Identity Header
+ *
+ * The Identity header field specifies the "logical" recipient of the
+ * request. It is defined in @RFC8224 with semantics shown below,
+ * though for now it's parsed to a single 'value' field.
+ *
+ * @code
+ *  Identity =	"Identity" HCOLON signed-identity-digest SEMI
+ *				ident-info *( SEMI ident-info-params )
+ *              signed-identity-digest = 1*(base64-char / ".")
+ *              ident-info = "info" EQUAL ident-info-uri
+ *              ident-info-uri = LAQUOT absoluteURI RAQUOT
+ *              ident-info-params = ident-info-alg / ident-type /
+ *              ident-info-extension
+ *              ident-info-alg = "alg" EQUAL token
+ *              ident-type = "ppt" EQUAL token
+ *              ident-info-extension = generic-param
+ *
+ *              base64-char = ALPHA / DIGIT / "/" / "+"
+ * @endcode
+ *
+ * The parsed Identity header is stored in #sip_identity_t structure.
+ */
+
+/**@ingroup sip_identity
+ * @typedef typedef struct sip_identity_s sip_identity_t;
+ *
+ * The structure #sip_identity_t contains representation of @Identity header.
+ *
+ * The #sip_identity_t is defined as follows:
+ * @code
+ * typedef struct {
+ *   sip_common_t       id_common[1];    // Common fragment info
+ *   sip_error_t		*id_next;        // Link to next (dummy)
+ *   char const			*id_value;		// Identity
+ *   char const			*id_info;		// Info param containing URL of the cert, with no '<','>'
+ * } sip_identity_t;
+ * @endcode
+ *
+ */
+
+static msg_xtra_f sip_identity_dup_xtra;
+static msg_dup_f sip_identity_dup_one;
+static msg_update_f sip_identity_update;
+
+msg_hclass_t sip_identity_class[] =
+SIP_HEADER_CLASS(identity, "Identity", "", id_common, single, identity);
+
+issize_t sip_identity_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
+{
+  sip_identity_t *id = (sip_identity_t *)h;
+  char const *p = NULL, *pp = NULL, *ppp = NULL, *ie = NULL;
+  char *result = NULL;
+  size_t len = 0;
+
+  id->id_value = strdup(s);
+  id->id_info = NULL;
+
+  p = strstr(s, "info=");
+  if (p) {
+
+	  ie = strchr(p, ';');
+	  pp = strchr(p, '<');
+	  ppp = strchr(p, '>');
+
+	  // allow for a spaces between "info=" and opening '<'
+	  // extract URI from inside "<>" but allow empty - let the higher level app decide what to do about it
+	  if (ie && pp && ppp && (pp < ppp) && (ppp < ie)) {
+
+		  len = ppp - pp;
+		  if ((result = malloc(len))) {
+			  memcpy(result, pp + 1, len - 1);
+			  result[len - 1] = '\0';
+			  id->id_info = result;
+		  }
+	  }
+  }
+
+  return 0;
+}
+
+issize_t sip_identity_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
+{
+  sip_identity_t const *id = (sip_identity_t *)h;
+
+  return snprintf(b, bsiz, "%s", id->id_value);
+}
+
+isize_t sip_identity_dup_xtra(sip_header_t const *h, isize_t offset)
+{
+  sip_identity_t const *id = (sip_identity_t *)h;
+  return offset + MSG_STRING_SIZE(id->id_value);
+}
+
+char *sip_identity_dup_one(sip_header_t *dst, sip_header_t const *src,
+		       char *b, isize_t xtra)
+{
+  sip_identity_t *id = (sip_identity_t *)dst;
+  sip_identity_t const *o = (sip_identity_t *)src;
+
+  MSG_STRING_DUP(b, id->id_value, o->id_value);
+
+  return b;
+}
+
+static int sip_identity_update(msg_common_t *h,
+			     char const *name, isize_t namelen,
+			     char const *value)
+{
+  sip_identity_t *id = (sip_identity_t *)h;
+
+  id->id_value = strdup(value);
+  return 0;
+}
