@@ -1461,6 +1461,46 @@ end:
 	return result;
 }
 
+struct sqlite_column_rename_callback_data {
+	const char *table;
+	switch_cache_db_handle_t *dbh;
+};
+typedef struct sqlite_column_rename_callback_data sqlite_column_rename_callback_data_t;
+
+static int sqlite_column_rename_callback(void *pArg, const char *errmsg)
+{
+	sqlite_column_rename_callback_data_t *callback_data = (sqlite_column_rename_callback_data_t *)pArg;
+	char tmptable[4096];
+	char *sql = NULL;
+
+	if (!strcasecmp("agents", callback_data->table)) {
+		if (NULL != (sql = strstr(agents_sql, "TABLE agents ("))) {
+			sql += 14;
+			sprintf(tmptable, "CREATE TABLE agents_tmp (%s", sql);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, tmptable, NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "INSERT INTO agents_tmp SELECT * FROM agents;", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "drop table agents", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, agents_sql, NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "INSERT INTO agents SELECT * FROM agents_tmp;", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "drop table agents_tmp", NULL, NULL, NULL);
+		}
+	}
+	else if (!strcasecmp("members", callback_data->table)) {
+		if (NULL != (sql = strstr(members_sql, "TABLE members ("))) {
+			sql += 15;
+			sprintf(tmptable, "CREATE TABLE members_tmp (%s", sql);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, tmptable, NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "INSERT INTO members_tmp SELECT * FROM members;", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "drop table members", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, members_sql, NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "INSERT INTO members SELECT * FROM members_tmp;", NULL, NULL, NULL);
+			switch_cache_db_execute_sql_callback(callback_data->dbh, "drop table members_tmp", NULL, NULL, NULL);
+		}
+	}
+
+	return 0;
+}
+
 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1534,15 +1574,24 @@ static switch_status_t load_config(void)
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
 	switch_cache_db_test_reactive(dbh, "select count(external_calls_count) from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
-	/* This will rename column system for MySQL */
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from agents", NULL, "alter table agents rename column `system` TO instance_id;");
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from members", NULL, "alter table members rename column `system` TO instance_id;");
 	/* This will rename column system for SQLite */
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from agents", NULL, "alter table agents rename column system TO instance_id;");
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from members", NULL, "alter table members rename column system TO instance_id;");
-	/* This will rename column system for PGSql */
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from agents", NULL, "alter table agents rename system TO instance_id;");
-	switch_cache_db_test_reactive(dbh, "select count(instance_id) from members", NULL, "alter table members rename system TO instance_id;");
+	if (switch_cache_db_get_type(dbh) == SCDB_TYPE_CORE_DB) {
+		char *errmsg = NULL;
+		sqlite_column_rename_callback_data_t callback_data;
+		/* SQLite < 3.27.0 ( https://www.sqlite.org/changes.html ) has issues with renaming columns and tables */
+		callback_data.dbh = dbh;
+		callback_data.table = "agents";
+		switch_cache_db_execute_sql_callback_err(dbh, "select count(instance_id) from agents", NULL, sqlite_column_rename_callback, &callback_data, &errmsg);
+		callback_data.table = "members";
+		switch_cache_db_execute_sql_callback_err(dbh, "select count(instance_id) from members", NULL, sqlite_column_rename_callback, &callback_data, &errmsg);
+	} else {
+		/* This will rename column system for MySQL */
+		switch_cache_db_test_reactive(dbh, "select count(instance_id) from agents", NULL, "alter table agents rename column `system` TO instance_id;");
+		switch_cache_db_test_reactive(dbh, "select count(instance_id) from members", NULL, "alter table members rename column `system` TO instance_id;");
+		/* This will rename column system for PGSql */
+		switch_cache_db_test_reactive(dbh, "select count(instance_id) from agents", NULL, "alter table agents rename system TO instance_id;");
+		switch_cache_db_test_reactive(dbh, "select count(instance_id) from members", NULL, "alter table members rename system TO instance_id;");
+	}
 
 	switch_cache_db_release_db_handle(&dbh);
 
