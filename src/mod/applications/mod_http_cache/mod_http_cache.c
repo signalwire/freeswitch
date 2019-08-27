@@ -1754,6 +1754,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
 	handle->channels = context->fh.channels;
+	handle->cur_channels = context->fh.real_channels;
 	handle->flags |= SWITCH_FILE_NOMUX;
 	handle->pre_buffer_datalen = 0;
 
