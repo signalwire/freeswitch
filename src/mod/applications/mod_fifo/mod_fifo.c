@@ -4392,10 +4392,10 @@ static switch_status_t read_config_file(switch_xml_t *xml, switch_xml_t *cfg) {
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
 				globals.default_strategy = parse_strategy(val);
 			} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-				if (switch_database_available(val)) {
+				if (switch_database_available(val) == SWITCH_STATUS_SUCCESS) {
 					switch_set_string(globals.odbc_dsn, val);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATABASE IS NOT AVAILABLE!\n");
 				}
 			} else if (!strcasecmp(var, "dbname") && !zstr(val)) {
 				globals.dbname = switch_core_strdup(globals.pool, val);
