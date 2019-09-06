@@ -108,6 +108,10 @@ static void msrp_deinit_ssl()
 		SSL_CTX_free(globals.ssl_ctx);
 		globals.ssl_ctx = NULL;
 	}
+	if (globals.ssl_client_ctx) {
+		SSL_CTX_free(globals.ssl_client_ctx);
+		globals.ssl_client_ctx = NULL;
+	}
 }
 
 static void msrp_init_ssl()
