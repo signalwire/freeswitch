@@ -2430,7 +2430,7 @@ void sofia_event_callback(nua_event_t event,
 							tech_pvt->nh = NULL;
 							sofia_set_flag(tech_pvt, TFLAG_BYE);
 							switch_mutex_lock(profile->flag_mutex);
-							switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
+							switch_core_hash_insert_auto_free(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
 							switch_mutex_unlock(profile->flag_mutex);
 							nua_handle_destroy(nh);
 						} else {
@@ -2519,10 +2519,11 @@ void sofia_event_callback(nua_event_t event,
 
 
 		if (sip->sip_call_id && sip->sip_call_id->i_id) {
-			char *uuid;
+			char *uuid = NULL, *tmp;
 
 			switch_mutex_lock(profile->flag_mutex);
-			if ((uuid = (char *) switch_core_hash_find(profile->chat_hash, sip->sip_call_id->i_id))) {
+			if ((tmp = (char *) switch_core_hash_find(profile->chat_hash, sip->sip_call_id->i_id))) {
+				uuid = strdup(tmp);
 				switch_core_hash_delete(profile->chat_hash, sip->sip_call_id->i_id);
 			}
 			switch_mutex_unlock(profile->flag_mutex);

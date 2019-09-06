@@ -360,7 +360,6 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
@@ -376,13 +375,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		}
 
 		if (!zstr(tech_pvt->call_id)) {
-			switch_mutex_lock(tech_pvt->profile->flag_mutex);
-			if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
-				free(uuid);
-				uuid = NULL;
-				switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
-			}
-			switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+			switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->call_id, tech_pvt->profile->flag_mutex);
 		}
 
 
@@ -461,7 +454,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key && !sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
-		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
+		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
 	if (session && tech_pvt->profile->pres_type) {

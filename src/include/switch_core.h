@@ -1425,6 +1425,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
 
 /*!
+  \brief Insert data into a hash and set flags so the value is automatically freed on delete
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param data the data to add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data);
+
+/*!
   \brief Insert data into a hash
   \param hash the hash to add data to
   \param key the name of the key to add the data to
