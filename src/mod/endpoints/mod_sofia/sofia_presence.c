@@ -5000,7 +5000,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				abort();
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
+			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find_locked(profile->chat_hash, hash_key, profile->flag_mutex))) {
 				switch_core_session_queue_event(tech_pvt->session, &event);
 			} else {
 				switch_core_chat_send(proto, event);
