@@ -821,8 +821,13 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			while ((call_info = call_info->ci_next) != NULL) {
 				char *tmp = sip_header_as_string(nua_handle_home(nh), (void *) call_info);
 				size_t tmp_len = strlen(tmp);
-				hold = realloc(hold, cur_len + tmp_len + 2);
-				switch_assert(hold);
+				char *tmp_hold = realloc(hold, cur_len + tmp_len + 2);
+				if (!tmp_hold) {
+					/* Avoid leak if realloc failed */
+					free(hold);
+				}
+				switch_assert(tmp_hold);
+				hold = tmp_hold;
 				strncpy(hold + cur_len, ",", 2);
 				strncpy(hold + cur_len + 1, tmp, tmp_len +1);
 				su_free(nua_handle_home(nh), tmp);
