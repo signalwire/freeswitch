@@ -696,7 +696,7 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
   VP9_COMMON *const cm = &pbi->common;
   const BLOCK_SIZE bsize = mi->sb_type;
   const int allow_hp = cm->allow_high_precision_mv;
-  int_mv best_ref_mvs[2];
+  int_mv best_ref_mvs[2] = { { 0 }, { 0 } };
   int ref, is_compound;
   uint8_t inter_mode_ctx;
   const POSITION *const mv_ref_search = mv_ref_blocks[bsize];
