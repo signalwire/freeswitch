@@ -179,18 +179,27 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
 
+	/* First loop allows a thread to use a handle multiple times sumiltaneously
+	   but only if that handle is in use by the same thread. In that case use_count will be incremented.
+	   This allows SQLite to read and write within a single thread, giving the same handle for both operations.
+	*/
 	for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
-		if (dbh_ptr->thread_hash == thread_hash && dbh_ptr->hash == hash && !dbh_ptr->use_count &&
+		if (dbh_ptr->thread_hash == thread_hash && dbh_ptr->hash == hash &&
 			!switch_test_flag(dbh_ptr, CDF_PRUNE) && switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 			r = dbh_ptr;
+			break;
 		}
 	}
 
 	if (!r) {
+		/* If a handle idles, take it and associate with the thread.
+		   If a handle is in use, skip and create new one.
+		*/
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
-			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_DATABASE_INTERFACE || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) &&
+			if (dbh_ptr->hash == hash && !dbh_ptr->use_count && !switch_test_flag(dbh_ptr, CDF_PRUNE) &&
 				switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 				r = dbh_ptr;
+				r->thread_hash = thread_hash;
 				break;
 			}
 		}
@@ -200,8 +209,6 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 		r->use_count++;
 		r->total_used_count++;
 		sql_manager.total_used_handles++;
-		r->hash = switch_ci_hashfunc_default(db_str, &hlen);
-		r->thread_hash = thread_hash;
 		switch_set_string(r->last_user, user_str);
 	}
 
@@ -349,9 +356,7 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 		(*dbh)->io_mutex = NULL;
 
 		if ((*dbh)->use_count) {
-			if (--(*dbh)->use_count == 0) {
-				(*dbh)->thread_hash = 1;
-			}
+			--(*dbh)->use_count;
 		}
 		switch_mutex_unlock((*dbh)->mutex);
 		sql_manager.total_used_handles--;
