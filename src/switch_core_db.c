@@ -57,15 +57,7 @@ SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db)
 
 SWITCH_DECLARE(const unsigned char *) switch_core_db_column_text(switch_core_db_stmt_t *stmt, int iCol)
 {
-	const unsigned char *txt = sqlite3_column_text(stmt, iCol);
-
-	if (!strcasecmp((char *) stmt, "(null)")) {
-		memset(stmt, 0, 1);
-		txt = NULL;
-	}
-
-	return txt;
-
+	return sqlite3_column_text(stmt, iCol);
 }
 
 SWITCH_DECLARE(const char *) switch_core_db_column_name(switch_core_db_stmt_t *stmt, int N)

@@ -884,8 +884,6 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 							if ((txt = switch_core_db_column_text(stmt, 0))) {
 								switch_copy_string(str, (char *) txt, len);
 								status = SWITCH_STATUS_SUCCESS;
-							} else {
-								goto end;
 							}
 						}
 						break;
