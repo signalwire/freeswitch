@@ -50,6 +50,11 @@ SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t *
 	return sqlite3_open(filename, ppDb);
 }
 
+SWITCH_DECLARE(int) switch_core_db_open_v2(const char *filename, switch_core_db_t **ppDb)
+{
+	return sqlite3_open_v2(filename, ppDb, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI, NULL);
+}
+
 SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db)
 {
 	return sqlite3_close(db);
@@ -84,6 +89,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 	while (--sane > 0) {
 		ret = sqlite3_exec(db, sql, callback, data, &err);
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SQLite is %s, sane=%d [%s]\n", (ret == SQLITE_BUSY ? "BUSY" : "LOCKED"), sane, sql);
 			if (sane > 1) {
 				switch_core_db_free(err);
 				switch_yield(100000);
@@ -187,6 +193,35 @@ SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const ch
 	return ret;
 }
 
+static int switch_core_db_connection_setup(switch_core_db_t *db, switch_bool_t in_memory) {
+	int db_ret;
+
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL)) != SQLITE_OK) {
+		goto end;
+	}
+	if (!in_memory) {
+		if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=8000;", NULL, NULL, NULL)) != SQLITE_OK) {
+			goto end;
+		}
+	} else {
+		if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=-8192;", NULL, NULL, NULL)) != SQLITE_OK) {
+			goto end;
+		}
+		if ((db_ret = switch_core_db_exec(db, "PRAGMA journal_mode=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
+			goto end;
+		}
+	}
+
+end:
+	return db_ret;
+}
+
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename)
 {
 	switch_core_db_t *db;
@@ -197,16 +232,28 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 	if ((db_ret = switch_core_db_open(path, &db)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
+	if ((db_ret = switch_core_db_connection_setup(db, SWITCH_FALSE)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL)) != SQLITE_OK) {
+
+end:
+	if (db_ret != SQLITE_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
+		switch_core_db_close(db);
+		db = NULL;
+	}
+	return db;
+}
+
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_in_memory(const char *uri)
+{
+	switch_core_db_t *db;
+	int db_ret;
+
+	if ((db_ret = switch_core_db_open_v2(uri, &db)) != SQLITE_OK) {
 		goto end;
 	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=8000;", NULL, NULL, NULL)) != SQLITE_OK) {
-		goto end;
-	}
-	if ((db_ret = switch_core_db_exec(db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL)) != SQLITE_OK) {
+	if ((db_ret = switch_core_db_connection_setup(db, SWITCH_TRUE)) != SQLITE_OK) {
 		goto end;
 	}
 

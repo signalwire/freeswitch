@@ -1855,6 +1855,13 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(_In_ 
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename);
 
 /*!
+  \brief Open a core db (SQLite) in-memory
+  \param uri to the db to open
+  \return the db handle
+*/
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_in_memory(const char *uri);
+
+/*!
   \brief Execute a sql stmt until it is accepted
   \param db the db handle
   \param sql the sql to execute
@@ -2485,7 +2492,8 @@ typedef int (*switch_core_db_event_callback_func_t) (void *pArg, switch_event_t 
 #define CACHE_DB_LEN 256
 typedef enum {
 	CDF_INUSE = (1 << 0),
-	CDF_PRUNE = (1 << 1)
+	CDF_PRUNE = (1 << 1),
+	CDF_NONEXPIRING = (1 << 2)
 } cache_db_flag_t;
 
 typedef enum {
@@ -2495,13 +2503,14 @@ typedef enum {
 } switch_cache_db_handle_type_t;
 
 typedef union {
-	switch_core_db_t *core_db_dbh;
+	switch_core_db_handle_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
 	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
 	char *db_path;
+	switch_bool_t in_memory;
 } switch_cache_db_core_db_options_t;
 
 typedef struct {

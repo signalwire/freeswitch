@@ -51,6 +51,12 @@ SWITCH_BEGIN_EXTERN_C
  * following opaque structure.
 */
 	typedef struct sqlite3 switch_core_db_t;
+
+struct switch_core_db_handle {
+	switch_bool_t in_memory;
+	switch_core_db_t *handle;
+};
+
 typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
 typedef int (*switch_core_db_callback_func_t) (void *pArg, int argc, char **argv, char **columnNames);
@@ -101,6 +107,11 @@ SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db);
  * switch_core_db_close() when it is no longer required.
  */
 SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb);
+
+/**
+	Same as switch_core_db_open() but additionally allows SQLITE_OPEN_URI
+ */
+SWITCH_DECLARE(int) switch_core_db_open_v2(const char *filename, switch_core_db_t **ppDb);
 
 /**
  * ^Strings returned by sqlite3_column_text() and sqlite3_column_text16(),

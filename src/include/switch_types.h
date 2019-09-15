@@ -2318,6 +2318,7 @@ typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
+typedef struct switch_core_db_handle switch_core_db_handle_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_database_interface_handle switch_database_interface_handle_t;
 
