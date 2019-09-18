@@ -2503,7 +2503,7 @@ typedef enum {
 } switch_cache_db_handle_type_t;
 
 typedef union {
-	switch_core_db_handle_t *core_db_dbh;
+	switch_coredb_handle_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
 	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;

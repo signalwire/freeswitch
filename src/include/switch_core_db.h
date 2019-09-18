@@ -52,7 +52,7 @@ SWITCH_BEGIN_EXTERN_C
 */
 	typedef struct sqlite3 switch_core_db_t;
 
-struct switch_core_db_handle {
+struct switch_coredb_handle {
 	switch_bool_t in_memory;
 	switch_core_db_t *handle;
 };
