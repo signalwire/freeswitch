@@ -5384,6 +5384,9 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						sofia_glue_free_destination(dst);
+						switch_safe_free(route_uri);
+						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5410,9 +5413,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5465,9 +5468,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			}
@@ -5647,6 +5650,7 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
+					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5776,9 +5780,11 @@ void general_event_handler(switch_event_t *event)
 				nua_handle_unref(nh);
 			}
 
-			sofia_glue_release_profile(profile);
-
 		  done:
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
 
 			switch_safe_free(local_dup);
 

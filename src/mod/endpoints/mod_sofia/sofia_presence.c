@@ -1160,6 +1160,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 						if (!mod_sofia_globals.profile_hash) {
 							switch_console_free_matches(&matches);
+							sofia_glue_release_profile(profile);
 							goto done;
 						}
 
@@ -1413,6 +1414,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
+					sofia_glue_release_profile(profile);
 					goto done;
 				}
 
