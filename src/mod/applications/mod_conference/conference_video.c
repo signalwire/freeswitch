@@ -3866,7 +3866,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 									switch_image_t *mute_img = omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img;
 
 									if (mute_img) {
-										switch_image_t *tmp;
+										switch_image_t *tmp = NULL;
 
 										switch_img_copy(mute_img, &tmp);
 										switch_img_fit(&tmp, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
