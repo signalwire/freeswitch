@@ -77,6 +77,7 @@
         }, options);
 
         self.ws_cnt = 0;
+        self.ws_fallback_cnt = 0;
 
         // Declare an instance version of the onmessage callback to wrap 'this'.
         this.wsOnMessage = function(event) { self._wsOnMessage(event); };
@@ -106,7 +107,7 @@
 	    for (i = 0; i < loops; i++) {
 		socket.send("#SPB " + data);
 	    }
-	    
+
 	    if (rem) {
 		socket.send("#SPB " + data);
 	    }
@@ -322,8 +323,9 @@
                         self.options.onWSClose(self);
                     }
 
-                    if (self.ws_cnt > 10 && self.options.wsFallbackURL) {
-                      self.options.socketUrl = self.options.wsFallbackURL;
+                    if (self.ws_cnt > ((self.ws_fallback_cnt + 1) * 10) && self.options.wsFallbackURL && self.options.wsFallbackURL.length > 0) {
+                        self.options.socketUrl = self.options.wsFallbackURL[self.ws_fallback_cnt];
+                        self.ws_fallback_cnt++;
                     }
 
                     console.error("Websocket Lost " + self.ws_cnt + " sleep: " + self.ws_sleep + "msec");
@@ -347,6 +349,8 @@
                     }
                     self.ws_sleep = 1000;
                     self.ws_cnt = 0;
+                    self.ws_fallback_cnt = 0;
+
                     if (self.options.onWSConnect) {
                         self.options.onWSConnect(self);
                     }
@@ -427,7 +431,7 @@
 
 		var up_kps = (((this.speedBytes * 8) / (this.up_dur / 1000)) / 1024).toFixed(0);
 		var down_kps = (((this.speedBytes * 8) / (this.down_dur / 1000)) / 1024).toFixed(0);
-		
+
 		console.info("Speed Test: Up: " + up_kps + " Down: " + down_kps);
 		var cb = this.speedCB;
 		this.speedCB = null;
@@ -438,7 +442,7 @@
 			downKPS: down_kps
 		});
 	    }
-	    
+
 	    return;
 	}
 
