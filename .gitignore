@@ -93,6 +93,7 @@ Debug/
 Release/
 /ipch/
 /*.log
+/.idea/
 
 /build/config/compile
 /build/config/config.guess
