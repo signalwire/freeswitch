@@ -410,6 +410,7 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_image_t **destP);
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
 SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit);
+SWITCH_DECLARE(void) switch_img_calc_fit(switch_image_t *src, int width, int height, int *new_wP, int *new_hP);
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
 SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name);
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
