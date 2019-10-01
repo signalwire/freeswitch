@@ -1872,7 +1872,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	new_handle->free_pool = free_pool;
 
 	if (zstr(font_family)) {
-		font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, "FreeMono.ttf");
+		font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, "FreeSans.ttf");
 	}
 
 	if (!switch_is_file_path(font_family)) {
@@ -3110,31 +3110,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit)
+SWITCH_DECLARE(void) switch_img_calc_fit(switch_image_t *src, int width, int height, int *new_wP, int *new_hP)
 {
-	switch_image_t *src, *tmp = NULL;
-	int new_w = 0, new_h = 0;
+	int new_w, new_h;
 
-	switch_assert(srcP);
-	switch_assert(width && height);
-
-	src = *srcP;
-
-	if (!src || (src->d_w == width && src->d_h == height)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (fit == SWITCH_FIT_NECESSARY && src->d_w <= width && src->d_h < height) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (fit == SWITCH_FIT_SCALE) {
-		switch_img_scale(src, &tmp, width, height);
-		switch_img_free(&src);
-		*srcP = tmp;
-		return SWITCH_STATUS_SUCCESS;
-	}
-
+	switch_assert(src);
+	
 	new_w = src->d_w;
 	new_h = src->d_h;
 
@@ -3163,6 +3144,37 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 		}
 	}
 
+	*new_wP = new_w;
+	*new_hP = new_h;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit)
+{
+	switch_image_t *src, *tmp = NULL;
+	int new_w = 0, new_h = 0;
+
+	switch_assert(srcP);
+	switch_assert(width && height);
+
+	src = *srcP;
+
+	if (!src || (src->d_w == width && src->d_h == height)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (fit == SWITCH_FIT_NECESSARY && src->d_w <= width && src->d_h < height) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (fit == SWITCH_FIT_SCALE) {
+		switch_img_scale(src, &tmp, width, height);
+		switch_img_free(&src);
+		*srcP = tmp;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_img_calc_fit(src, width, height, &new_w, &new_h);
+	
 	if (new_w && new_h) {
 		if (switch_img_scale(src, &tmp, new_w, new_h) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&src);
