@@ -85,7 +85,7 @@ apt-get install freeswitch-conf-vanilla
 ```
 2) clone freeswitch repo
 ```sh
-git clone https://freeswitch.org/stash/projects/FS/repos/freeswitch/browse
+git clone https://github.com/signalwire/freeswitch.git
 ```
 3) execute ```make_min_archive.sh``` script
 ```sh
@@ -100,4 +100,4 @@ docker build -t freeswitch_custom .
 Read more
 ---------
 
-[Dockerfile of official FreeSwitch container](https://freeswitch.org/stash/projects/FS/repos/freeswitch/browse/docker/release)
+[Dockerfile of official FreeSwitch container](https://github.com/signalwire/freeswitch/tree/master/docker/release)
