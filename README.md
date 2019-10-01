@@ -54,7 +54,7 @@ Slack is our chat system where the developers, the FreeSWITCH team, and the most
 This is the place to get answers faster and chat with other users in real time. All you need to do is enter your email and verify it on the Slack signup page and you are ready to join in the discussion!
 
 Slack Community:
-  * https://goo.gl/eqdXBC
+  * https://signalwire.community/
 
 Mailing list:
 
