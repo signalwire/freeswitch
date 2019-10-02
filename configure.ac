@@ -1661,7 +1661,7 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
    PHP=php
    PHP_CONFIG=php-config
    PHP_LDFLAGS="`$PHP_CONFIG --ldflags`"
-   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto)//g'`"
+   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre2-8|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto|argon2|sodium)//g'`"
    PHP_EXT_DIR="`$PHP_CONFIG --extension-dir`"
    PHP_INC_DIR="`$PHP -r 'echo ini_get("include_path");' | cut -d: -f2`"
    PHP_INI_DIR="`$PHP_CONFIG --configure-options | tr " " "\n" | grep -- --with-config-file-scan-dir | cut -f2 -d=`"
