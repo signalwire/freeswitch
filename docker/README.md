@@ -31,7 +31,7 @@ The container exposes the following ports:
 
 If you wish to help improve these please submit a pull request at:
 
-https://freeswitch.org/jira
+https://github.com/signalwire/freeswitch
 
 Thanks,
 /b
