@@ -46,41 +46,46 @@
  *
  * More examples are available in README.md
  */
-(function($) {
-  /**
-   * @fn new
-   * @memberof $.JsonRpcClient
-   *
-   * @param options An object stating the backends:
-   *                ajaxUrl    A url (relative or absolute) to a http(s) backend.
-   *                socketUrl  A url (relative of absolute) to a ws(s) backend.
-   *                onmessage  A socket message handler for other messages (non-responses).
-   *                getSocket  A function returning a WebSocket or null.
-   *                           It must take an onmessage_cb and bind it to the onmessage event
-   *                           (or chain it before/after some other onmessage handler).
-   *                           Or, it could return null if no socket is available.
-   *                           The returned instance must have readyState <= 1, and if less than 1,
-   *                           react to onopen binding.
-   */
-    $.JsonRpcClient = function(options) {
+(function ($) {
+    /**
+     * @fn new
+     * @memberof $.JsonRpcClient
+     *
+     * @param options An object stating the backends:
+     *                ajaxUrl    A url (relative or absolute) to a http(s) backend.
+     *                socketUrl  A url (relative of absolute) to a ws(s) backend.
+     *                onmessage  A socket message handler for other messages (non-responses).
+     *                getSocket  A function returning a WebSocket or null.
+     *                           It must take an onmessage_cb and bind it to the onmessage event
+     *                           (or chain it before/after some other onmessage handler).
+     *                           Or, it could return null if no socket is available.
+     *                           The returned instance must have readyState <= 1, and if less than 1,
+     *                           react to onopen binding.
+     */
+    $.JsonRpcClient = function (options) {
         var self = this;
         this.options = $.extend({
-            ajaxUrl       : null,
-            socketUrl     : null, ///< The ws-url for default getSocket.
-            onmessage     : null, ///< Other onmessage-handler.
-            login         : null, /// auth login
-            passwd        : null, /// auth passwd
-            sessid        : null,
-	    loginParams   : null,
-	    userVariables : null,
-            getSocket     : function(onmessage_cb) { return self._getSocket(onmessage_cb); }
+            ajaxUrl: null,
+            socketUrl: null, ///< The ws-url for default getSocket.
+            wsFallbackURL: [],
+            onmessage: null, ///< Other onmessage-handler.
+            login: null, /// auth login
+            passwd: null, /// auth passwd
+            sessid: null,
+            loginParams: null,
+            userVariables: null,
+            getSocket: function (onmessage_cb) {
+                return self._getSocket(onmessage_cb);
+            }
         }, options);
 
         self.ws_cnt = 0;
         self.ws_fallback_cnt = 0;
 
         // Declare an instance version of the onmessage callback to wrap 'this'.
-        this.wsOnMessage = function(event) { self._wsOnMessage(event); };
+        this.wsOnMessage = function (event) {
+            self._wsOnMessage(event);
+        };
     };
 
     /// Holding the WebSocket on default getsocket.
@@ -95,27 +100,26 @@
 
     $.JsonRpcClient.prototype.speedTest = function (bytes, cb) {
         var socket = this.options.getSocket(this.wsOnMessage);
-	if (socket !== null) {
-	    this.speedCB = cb;
-	    this.speedBytes = bytes;
-	    socket.send("#SPU " + bytes);
+        if (socket !== null) {
+            this.speedCB = cb;
+            this.speedBytes = bytes;
+            socket.send("#SPU " + bytes);
 
-	    var loops = bytes / 1024;
-	    var rem = bytes % 1024;
-	    var i;
-	    var data = new Array(1024).join(".");
-	    for (i = 0; i < loops; i++) {
-		socket.send("#SPB " + data);
-	    }
+            var loops = bytes / 1024;
+            var rem = bytes % 1024;
+            var i;
+            var data = new Array(1024).join(".");
+            for (i = 0; i < loops; i++) {
+                socket.send("#SPB " + data);
+            }
 
-	    if (rem) {
-		socket.send("#SPB " + data);
-	    }
+            if (rem) {
+                socket.send("#SPB " + data);
+            }
 
-	    socket.send("#SPE");
-	}
+            socket.send("#SPE");
+        }
     };
-
 
 
     /**
@@ -127,8 +131,8 @@
      * @param success_cb A callback for successful request.
      * @param error_cb   A callback for error.
      */
-    $.JsonRpcClient.prototype.call = function(method, params, success_cb, error_cb) {
-    // Construct the JSON-RPC 2.0 request.
+    $.JsonRpcClient.prototype.call = function (method, params, success_cb, error_cb) {
+        // Construct the JSON-RPC 2.0 request.
 
         if (!params) {
             params = {};
@@ -139,18 +143,22 @@
         }
 
         var request = {
-            jsonrpc : '2.0',
-            method  : method,
-            params  : params,
-            id      : this._current_id++  // Increase the id counter to match request/response
+            jsonrpc: '2.0',
+            method: method,
+            params: params,
+            id: this._current_id++  // Increase the id counter to match request/response
         };
 
         if (!success_cb) {
-            success_cb = function(e){console.log("Success: ", e);};
+            success_cb = function (e) {
+                console.log("Success: ", e);
+            };
         }
 
         if (!error_cb) {
-            error_cb = function(e){console.log("Error: ", e);};
+            error_cb = function (e) {
+                console.log("Error: ", e);
+            };
         }
 
         // Try making a WebSocket call.
@@ -166,19 +174,19 @@
         }
 
         $.ajax({
-            type     : 'POST',
-            url      : this.options.ajaxUrl,
-            data     : $.toJSON(request),
-            dataType : 'json',
-            cache    : false,
+            type: 'POST',
+            url: this.options.ajaxUrl,
+            data: $.toJSON(request),
+            dataType: 'json',
+            cache: false,
 
-            success  : function(data) {
+            success: function (data) {
                 if ('error' in data) error_cb(data.error, this);
                 success_cb(data.result, this);
             },
 
             // JSON-RPC Server could return non-200 on error
-            error    : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 try {
                     var response = $.parseJSON(jqXHR.responseText);
 
@@ -187,7 +195,7 @@
                     error_cb(response.error, this);
                 } catch (err) {
                     // Perhaps the responseText wasn't really a jsonrpc-error.
-                    error_cb({ error: jqXHR.responseText }, this);
+                    error_cb({error: jqXHR.responseText}, this);
                 }
             }
         });
@@ -205,7 +213,7 @@
      * @param method     The method to run on JSON-RPC server.
      * @param params     The params; an array or object.
      */
-    $.JsonRpcClient.prototype.notify = function(method, params) {
+    $.JsonRpcClient.prototype.notify = function (method, params) {
         // Construct the JSON-RPC 2.0 request.
 
         if (this.options.sessid) {
@@ -214,8 +222,8 @@
 
         var request = {
             jsonrpc: '2.0',
-            method:  method,
-            params:  params
+            method: method,
+            params: params
         };
 
         // Try making a WebSocket call.
@@ -231,11 +239,11 @@
         }
 
         $.ajax({
-            type     : 'POST',
-            url      : this.options.ajaxUrl,
-            data     : $.toJSON(request),
-            dataType : 'json',
-            cache    : false
+            type: 'POST',
+            url: this.options.ajaxUrl,
+            data: $.toJSON(request),
+            dataType: 'json',
+            cache: false
         });
     };
 
@@ -255,7 +263,7 @@
      *                    Note, that batch calls should always get an overall success, and the
      *                    only error
      */
-    $.JsonRpcClient.prototype.batch = function(callback, all_done_cb, error_cb) {
+    $.JsonRpcClient.prototype.batch = function (callback, all_done_cb, error_cb) {
         var batch = new $.JsonRpcClient._batchObject(this, all_done_cb, error_cb);
         callback(batch);
         batch._execute();
@@ -270,7 +278,7 @@
      * @memberof $.JsonRpcClient
      */
 
-    $.JsonRpcClient.prototype.socketReady = function() {
+    $.JsonRpcClient.prototype.socketReady = function () {
         if (this._ws_socket === null || this._ws_socket.readyState > 1) {
             return false;
         }
@@ -278,23 +286,25 @@
         return true;
     };
 
-    $.JsonRpcClient.prototype.closeSocket = function() {
-	var self = this;
+    $.JsonRpcClient.prototype.closeSocket = function () {
+        var self = this;
         if (self.socketReady()) {
-            self._ws_socket.onclose = function (w) {console.log("Closing Socket");};
+            self._ws_socket.onclose = function (w) {
+                console.log("Closing Socket");
+            };
             self._ws_socket.close();
         }
     };
 
-    $.JsonRpcClient.prototype.loginData = function(params) {
-	var self = this;
+    $.JsonRpcClient.prototype.loginData = function (params) {
+        var self = this;
         self.options.login = params.login;
         self.options.passwd = params.passwd;
-	self.options.loginParams = params.loginParams;
-	self.options.userVariables = params.userVariables;
+        self.options.loginParams = params.loginParams;
+        self.options.userVariables = params.userVariables;
     };
 
-    $.JsonRpcClient.prototype.connectSocket = function(onmessage_cb) {
+    $.JsonRpcClient.prototype.connectSocket = function (onmessage_cb) {
         var self = this;
 
         if (self.to) {
@@ -323,14 +333,14 @@
                         self.options.onWSClose(self);
                     }
 
-                    if (self.ws_cnt > ((self.ws_fallback_cnt + 1) * 10) && self.options.wsFallbackURL && self.options.wsFallbackURL.length > 0) {
+                    if (self.ws_cnt > ((self.ws_fallback_cnt + 1) * 10) && self.options.wsFallbackURL.length > 0) {
                         self.options.socketUrl = self.options.wsFallbackURL[self.ws_fallback_cnt];
                         self.ws_fallback_cnt++;
                     }
 
                     console.error("Websocket Lost " + self.ws_cnt + " sleep: " + self.ws_sleep + "msec");
 
-                    self.to = setTimeout(function() {
+                    self.to = setTimeout(function () {
                         console.log("Attempting Reconnection....");
                         self.connectSocket(onmessage_cb);
                     }, self.ws_sleep);
@@ -343,7 +353,7 @@
                 };
 
                 // Set up sending of message for when the socket is open.
-                self._ws_socket.onopen = function() {
+                self._ws_socket.onopen = function () {
                     if (self.to) {
                         clearTimeout(self.to);
                     }
@@ -367,12 +377,12 @@
         return self._ws_socket ? true : false;
     };
 
-    $.JsonRpcClient.prototype.stopRetrying = function() {
-      if (self.to)
-        clearTimeout(self.to);
+    $.JsonRpcClient.prototype.stopRetrying = function () {
+        if (self.to)
+            clearTimeout(self.to);
     }
 
-    $.JsonRpcClient.prototype._getSocket = function(onmessage_cb) {
+    $.JsonRpcClient.prototype._getSocket = function (onmessage_cb) {
         // If there is no ws url set, we don't have a socket.
         // Likewise, if there is no window.WebSocket.
         if (this.options.socketUrl === null || !("WebSocket" in window)) return null;
@@ -393,7 +403,7 @@
      * @fn _wsCall
      * @memberof $.JsonRpcClient
      */
-    $.JsonRpcClient.prototype._wsCall = function(socket, request, success_cb, error_cb) {
+    $.JsonRpcClient.prototype._wsCall = function (socket, request, success_cb, error_cb) {
         var request_json = $.toJSON(request);
 
         if (socket.readyState < 1) {
@@ -407,7 +417,12 @@
 
         // Setup callbacks.  If there is an id, this is a call and not a notify.
         if ('id' in request && typeof success_cb !== 'undefined') {
-            this._ws_callbacks[request.id] = { request: request_json, request_obj: request, success_cb: success_cb, error_cb: error_cb };
+            this._ws_callbacks[request.id] = {
+                request: request_json,
+                request_obj: request,
+                success_cb: success_cb,
+                error_cb: error_cb
+            };
         }
     };
 
@@ -418,33 +433,33 @@
      *
      * @param event The websocket onmessage-event.
      */
-    $.JsonRpcClient.prototype._wsOnMessage = function(event) {
+    $.JsonRpcClient.prototype._wsOnMessage = function (event) {
         // Check if this could be a JSON RPC message.
         var response;
 
-	// Special sub proto
-	if (event.data[0] == "#" && event.data[1] == "S" && event.data[2] == "P") {
-	    if (event.data[3] == "U") {
-		this.up_dur = parseInt(event.data.substring(4));
-	    } else if (this.speedCB && event.data[3] == "D") {
-		this.down_dur = parseInt(event.data.substring(4));
+        // Special sub proto
+        if (event.data[0] == "#" && event.data[1] == "S" && event.data[2] == "P") {
+            if (event.data[3] == "U") {
+                this.up_dur = parseInt(event.data.substring(4));
+            } else if (this.speedCB && event.data[3] == "D") {
+                this.down_dur = parseInt(event.data.substring(4));
 
-		var up_kps = (((this.speedBytes * 8) / (this.up_dur / 1000)) / 1024).toFixed(0);
-		var down_kps = (((this.speedBytes * 8) / (this.down_dur / 1000)) / 1024).toFixed(0);
+                var up_kps = (((this.speedBytes * 8) / (this.up_dur / 1000)) / 1024).toFixed(0);
+                var down_kps = (((this.speedBytes * 8) / (this.down_dur / 1000)) / 1024).toFixed(0);
 
-		console.info("Speed Test: Up: " + up_kps + " Down: " + down_kps);
-		var cb = this.speedCB;
-		this.speedCB = null;
-		cb(event, {
-			upDur: this.up_dur,
-			downDur: this.down_dur,
-			upKPS: up_kps,
-			downKPS: down_kps
-		});
-	    }
+                console.info("Speed Test: Up: " + up_kps + " Down: " + down_kps);
+                var cb = this.speedCB;
+                this.speedCB = null;
+                cb(event, {
+                    upDur: this.up_dur,
+                    downDur: this.down_dur,
+                    upKPS: up_kps,
+                    downKPS: down_kps
+                });
+            }
 
-	    return;
-	}
+            return;
+        }
 
 
         try {
@@ -463,15 +478,15 @@
                     // Get the success callback.
                     var success_cb = this._ws_callbacks[response.id].success_cb;
 
-    /*
-                    // set the sessid if present
-                    if ('sessid' in response.result && !this.options.sessid || (this.options.sessid != response.result.sessid)) {
-                        this.options.sessid = response.result.sessid;
-                        if (this.options.sessid) {
-                            console.log("setting session UUID to: " + this.options.sessid);
-                        }
-                    }
-    */
+                    /*
+                                    // set the sessid if present
+                                    if ('sessid' in response.result && !this.options.sessid || (this.options.sessid != response.result.sessid)) {
+                                        this.options.sessid = response.result.sessid;
+                                        if (this.options.sessid) {
+                                            console.log("setting session UUID to: " + this.options.sessid);
+                                        }
+                                    }
+                    */
                     // Delete the callback from the storage.
                     delete this._ws_callbacks[response.id];
 
@@ -479,9 +494,9 @@
                     success_cb(response.result, this);
                     return;
                 } else if ('error' in response && this._ws_callbacks[response.id]) {
-                // If this is an object with error, it is an error response.
+                    // If this is an object with error, it is an error response.
 
-                // Get the error callback.
+                    // Get the error callback.
                     var error_cb = this._ws_callbacks[response.id].error_cb;
                     var orig_req = this._ws_callbacks[response.id].request;
 
@@ -489,56 +504,60 @@
                     if (!self.authing && response.error.code == -32000 && self.options.login && self.options.passwd) {
                         self.authing = true;
 
-                        this.call("login", { login: self.options.login, passwd: self.options.passwd, loginParams: self.options.loginParams,
-					     userVariables: self.options.userVariables},
-                            this._ws_callbacks[response.id].request_obj.method == "login" ?
-                            function(e) {
-                                self.authing = false;
-                                console.log("logged in");
-                                delete self._ws_callbacks[response.id];
-
-                                if (self.options.onWSLogin) {
-                                    self.options.onWSLogin(true, self);
-                                }
-                            }
-
-                            :
-
-                            function(e) {
-                                self.authing = false;
-                                console.log("logged in, resending request id: " + response.id);
-                                var socket = self.options.getSocket(self.wsOnMessage);
-                                if (socket !== null) {
-                                    socket.send(orig_req);
-                                }
-                                if (self.options.onWSLogin) {
-                                    self.options.onWSLogin(true, self);
-                                }
+                        this.call("login", {
+                                login: self.options.login,
+                                passwd: self.options.passwd,
+                                loginParams: self.options.loginParams,
+                                userVariables: self.options.userVariables
                             },
+                            this._ws_callbacks[response.id].request_obj.method == "login" ?
+                                function (e) {
+                                    self.authing = false;
+                                    console.log("logged in");
+                                    delete self._ws_callbacks[response.id];
 
-                            function(e) {
+                                    if (self.options.onWSLogin) {
+                                        self.options.onWSLogin(true, self);
+                                    }
+                                }
+
+                                :
+
+                                function (e) {
+                                    self.authing = false;
+                                    console.log("logged in, resending request id: " + response.id);
+                                    var socket = self.options.getSocket(self.wsOnMessage);
+                                    if (socket !== null) {
+                                        socket.send(orig_req);
+                                    }
+                                    if (self.options.onWSLogin) {
+                                        self.options.onWSLogin(true, self);
+                                    }
+                                },
+
+                            function (e) {
                                 console.log("error logging in, request id:", response.id);
                                 delete self._ws_callbacks[response.id];
                                 error_cb(response.error, this);
                                 if (self.options.onWSLogin) {
-                                self.options.onWSLogin(false, self);
+                                    self.options.onWSLogin(false, self);
                                 }
                             });
-                            return;
-                        }
-
-                        // Delete the callback from the storage.
-                        delete this._ws_callbacks[response.id];
-
-                        // Run callback with the error object as parameter.
-                        error_cb(response.error, this);
                         return;
                     }
+
+                    // Delete the callback from the storage.
+                    delete this._ws_callbacks[response.id];
+
+                    // Run callback with the error object as parameter.
+                    error_cb(response.error, this);
+                    return;
                 }
-            } catch (err) {
+            }
+        } catch (err) {
             // Probably an error while parsing a non json-string as json.  All real JSON-RPC cases are
             // handled above, and the fallback method is called below.
-            console.log("ERROR: "+ err);
+            console.log("ERROR: " + err);
             return;
         }
 
@@ -574,21 +593,22 @@
     /**
      * Handling object for batch calls.
      */
-    $.JsonRpcClient._batchObject = function(jsonrpcclient, all_done_cb, error_cb) {
+    $.JsonRpcClient._batchObject = function (jsonrpcclient, all_done_cb, error_cb) {
         // Array of objects to hold the call and notify requests.  Each objects will have the request
         // object, and unless it is a notify, success_cb and error_cb.
-        this._requests   = [];
+        this._requests = [];
 
         this.jsonrpcclient = jsonrpcclient;
         this.all_done_cb = all_done_cb;
-        this.error_cb    = typeof error_cb === 'function' ? error_cb : function() {};
+        this.error_cb = typeof error_cb === 'function' ? error_cb : function () {
+        };
 
     };
 
     /**
      * @sa $.JsonRpcClient.prototype.call
      */
-    $.JsonRpcClient._batchObject.prototype.call = function(method, params, success_cb, error_cb) {
+    $.JsonRpcClient._batchObject.prototype.call = function (method, params, success_cb, error_cb) {
 
         if (!params) {
             params = {};
@@ -599,38 +619,42 @@
         }
 
         if (!success_cb) {
-            success_cb = function(e){console.log("Success: ", e);};
+            success_cb = function (e) {
+                console.log("Success: ", e);
+            };
         }
 
         if (!error_cb) {
-        error_cb = function(e){console.log("Error: ", e);};
+            error_cb = function (e) {
+                console.log("Error: ", e);
+            };
         }
 
         this._requests.push({
-            request    : {
-            jsonrpc : '2.0',
-            method  : method,
-            params  : params,
-            id      : this.jsonrpcclient._current_id++  // Use the client's id series.
-        },
-            success_cb : success_cb,
-            error_cb   : error_cb
+            request: {
+                jsonrpc: '2.0',
+                method: method,
+                params: params,
+                id: this.jsonrpcclient._current_id++  // Use the client's id series.
+            },
+            success_cb: success_cb,
+            error_cb: error_cb
         });
     };
 
     /**
      * @sa $.JsonRpcClient.prototype.notify
      */
-    $.JsonRpcClient._batchObject.prototype.notify = function(method, params) {
+    $.JsonRpcClient._batchObject.prototype.notify = function (method, params) {
         if (this.options.sessid) {
             params.sessid = this.options.sessid;
         }
 
         this._requests.push({
-            request    : {
-                jsonrpc : '2.0',
-                method  : method,
-                params  : params
+            request: {
+                jsonrpc: '2.0',
+                method: method,
+                params: params
             }
         });
     };
@@ -638,7 +662,7 @@
     /**
      * Executes the batched up calls.
      */
-    $.JsonRpcClient._batchObject.prototype._execute = function() {
+    $.JsonRpcClient._batchObject.prototype._execute = function () {
         var self = this;
 
         if (this._requests.length === 0) return; // All done :P
@@ -657,7 +681,7 @@
             for (i = 0; i < this._requests.length; i++) {
                 call = this._requests[i];
                 success_cb = ('success_cb' in call) ? call.success_cb : undefined;
-                error_cb   = ('error_cb'   in call) ? call.error_cb   : undefined;
+                error_cb = ('error_cb' in call) ? call.error_cb : undefined;
                 self.jsonrpcclient._wsCall(socket, call.request, success_cb, error_cb);
             }
 
@@ -672,13 +696,15 @@
             // If the request has an id, it should handle returns (otherwise it's a notify).
             if ('id' in call.request) {
                 handlers[call.request.id] = {
-                    success_cb : call.success_cb,
-                    error_cb   : call.error_cb
+                    success_cb: call.success_cb,
+                    error_cb: call.error_cb
                 };
             }
         }
 
-        success_cb = function(data) { self._batchCb(data, handlers, self.all_done_cb); };
+        success_cb = function (data) {
+            self._batchCb(data, handlers, self.all_done_cb);
+        };
 
         // No WebSocket, and no HTTP backend?  This won't work.
         if (self.jsonrpcclient.options.ajaxUrl === null) {
@@ -687,17 +713,17 @@
 
         // Send request
         $.ajax({
-            url      : self.jsonrpcclient.options.ajaxUrl,
-            data     : $.toJSON(batch_request),
-            dataType : 'json',
-            cache    : false,
-            type     : 'POST',
+            url: self.jsonrpcclient.options.ajaxUrl,
+            data: $.toJSON(batch_request),
+            dataType: 'json',
+            cache: false,
+            type: 'POST',
 
             // Batch-requests should always return 200
-            error    : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 self.error_cb(jqXHR, textStatus, errorThrown);
             },
-            success  : success_cb
+            success: success_cb
         });
     };
 
@@ -707,7 +733,7 @@
      * @fn _batchCb
      * @memberof $.JsonRpcClient
      */
-    $.JsonRpcClient._batchObject.prototype._batchCb = function(result, handlers, all_done_cb) {
+    $.JsonRpcClient._batchObject.prototype._batchCb = function (result, handlers, all_done_cb) {
         for (var i = 0; i < result.length; i++) {
             var response = result[i];
 
