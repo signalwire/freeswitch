@@ -35,6 +35,7 @@
 #include <switch_stun.h>
 
 #define MSRP_BUFF_SIZE (SWITCH_RTP_MAX_BUF_LEN - 32)
+#define DISABLE_MSRP 0
 #define DEBUG_MSRP 0
 #define MSRP_LISTEN_PORT 2855
 #define MSRP_SSL_LISTEN_PORT 2856
@@ -56,6 +57,7 @@ struct msrp_client_socket_s {
 
 static struct {
 	int running;
+	int disabled;
 	int debug;
 	switch_memory_pool_t *pool;
 	// switch_mutex_t *mutex;
@@ -218,6 +220,8 @@ static switch_status_t load_config()
 				globals.msock.port = atoi(val);
 			} else if (!strcasecmp(var, "listen-ssl-port")) {
 				globals.msock_ssl.port = atoi(val);
+			} else if (!strcasecmp(var, "disable-msrp")) {
+				globals.disabled = switch_true(val);
 			} else if (!strcasecmp(var, "debug")) {
 				globals.debug = switch_true(val);
 			} else if (!strcasecmp(var, "secure-cert")) {
@@ -301,9 +305,16 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_init()
 	globals.msock_ssl.port = (switch_port_t)MSRP_SSL_LISTEN_PORT;
 	globals.msock_ssl.secure = 1;
 	globals.message_buffer_size = 50;
+	globals.disabled = DISABLE_MSRP;
 	globals.debug = DEBUG_MSRP;
 
 	load_config();
+
+	if (globals.disabled) {
+		globals.running = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP is disabled\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	globals.running = 1;
 
@@ -411,7 +422,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_
 switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, switch_msrp_msg_t *msg)
 {
 	switch_mutex_lock(ms->mutex);
-	
+
 	if (ms->last_msg == NULL) {
 		ms->last_msg = msg;
 		ms->msrp_msg = msg;
