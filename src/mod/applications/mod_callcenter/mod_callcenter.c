@@ -4208,12 +4208,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_json_api_interface_t *json_api_interface;
 	switch_status_t status;
 
-
-	if (switch_event_reserve_subclass(CALLCENTER_EVENT) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
-		return SWITCH_STATUS_TERM;
-	}
-
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
@@ -4222,6 +4216,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
+	}
+
+	if (switch_event_reserve_subclass(CALLCENTER_EVENT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
+		return SWITCH_STATUS_TERM;
 	}
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
