@@ -10537,6 +10537,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_channel_set_variable_printf(channel, "sip_invite_stamp", "%" SWITCH_TIME_T_FMT, sip_invite_time);
 
 	if (*acl_token) {
+		if (x_user) {
+			switch_xml_free(x_user);
+			x_user = NULL;
+		}
 		switch_channel_set_variable(channel, "acl_token", acl_token);
 		if (sofia_locate_user(acl_token, session, sip, &x_user) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
@@ -10544,6 +10548,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
 			if (sofia_test_pflag(profile, PFLAG_AUTH_REQUIRE_USER)) {
 				nua_respond(nh, SIP_480_TEMPORARILY_UNAVAILABLE, TAG_END());
+				if (v_event) {
+					switch_event_destroy(&v_event);
+				}
 				goto fail;
 			}
 		}
