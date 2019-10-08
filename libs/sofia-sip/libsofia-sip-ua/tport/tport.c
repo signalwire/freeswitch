@@ -1056,15 +1056,19 @@ int tport_register_secondary(tport_t *self, su_wakeup_f wakeup, int events)
       &&
       (i = su_root_register(root, wait, wakeup, self, 0)) != -1) {
 
+    /* Can't be added to list of opened if already closed */
+    if (tport_is_closed(self)) goto fail;
+
     self->tp_index = i;
     self->tp_events = events;
 
-	/* Can't be added to list of opened if already closed */
-	if (!tport_is_closed(self))
-		tprb_append(&self->tp_pri->pri_open, self);
+    tprb_append(&self->tp_pri->pri_open, self);
+
     return 0;
   }
 
+fail:
+  SU_DEBUG_9(("%s(%p): tport is %s!\n", __func__, (void *)self, (tport_is_closed(self) ? "closed" : "opened")));
   su_wait_destroy(wait);
   return -1;
 }
