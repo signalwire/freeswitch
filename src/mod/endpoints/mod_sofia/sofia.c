@@ -10333,16 +10333,74 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
-		int ok = 1;
+		int ok = 0;
 		char *last_acl = NULL;
 		const char *token = NULL;
-		int acl_port = sofia_test_pflag(profile, PFLAG_USE_PORT_FOR_ACL_CHECK) ? network_port : 0;
+		int acl_port;
 
+		int network_ip_is_proxy = 0;
+		const char* x_auth_ip = network_ip;
+		int x_auth_port = network_port;
+		/* Check if network_ip is a proxy allowed to send us calls */
+		if (profile->proxy_acl_count) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			for (x = 0; x < profile->proxy_acl_count; x++) {
+				last_acl = profile->proxy_acl[x];
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "checking %s against acl %s\n", network_ip, last_acl);
+				if (switch_check_network_list_ip_port_token(network_ip, network_port, last_acl, &token)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s is a proxy according to the %s acl\n", network_ip, last_acl);
+					network_ip_is_proxy = 1;
+					break;
+				}
+			}
+		}
+
+		/*
+		 * if network_ip is a proxy allowed to send calls, check for auth
+		 * ip header and see if it matches against the inbound acl
+		 */
+		if (network_ip_is_proxy) {
+
+			/*
+			 * if network_ip is a proxy allowed to send calls,
+			 * authorize call if proxy provided matched token header
+			 */
+			if (profile->acl_proxy_x_token_header) {
+				const char * x_auth_token = sofia_glue_get_unknown_header(sip, profile->acl_proxy_x_token_header);
+				if (!zstr(x_auth_token)) {
+					token = x_auth_token;
+					switch_copy_string(proxied_client_ip, x_auth_ip, sizeof(proxied_client_ip));
+					ok = 1;
+				}
+			}
+
+			if (!ok && (x_auth_ip = sofia_glue_get_unknown_header(sip, "X-AUTH-IP")) && !zstr(x_auth_ip)) {
+				const char* x_auth_port_char = sofia_glue_get_unknown_header(sip, "X-AUTH-PORT");
+				x_auth_port = zstr(x_auth_port_char) ? 0 : atoi(x_auth_port_char);
+			} else {
+				x_auth_ip = network_ip;
+			}
+
+			if (ok) {
+				if (token) {
+					switch_set_string(acl_token, token);
+				}
+				if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
+					                  x_auth_ip, switch_str_nil(last_acl), acl_token);
+					switch_set_string(sip_acl_authed_by, last_acl);
+					switch_set_string(sip_acl_token, acl_token);
+					is_auth = 1;
+				}
+			}
+		}
+
+		acl_port = sofia_test_pflag(profile, PFLAG_USE_PORT_FOR_ACL_CHECK) ? x_auth_port : 0;
 		for (x = 0; x < profile->acl_count; x++) {
 			last_acl = profile->acl[x];
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "verifying acl \"%s\" for ip/port %s:%i.\n",
-							  switch_str_nil(last_acl), network_ip, acl_port);
-			if ((ok = switch_check_network_list_ip_port_token(network_ip, acl_port, last_acl, &token))) {
+							  switch_str_nil(last_acl), x_auth_ip, acl_port);
+			if ((ok = switch_check_network_list_ip_port_token(x_auth_ip, acl_port, last_acl, &token))) {
 
 				if (profile->acl_pass_context[x]) {
 					acl_context = profile->acl_pass_context[x];
@@ -10376,92 +10434,15 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				is_auth = 1;
 			}
 		} else {
-			int network_ip_is_proxy = 0;
-			const char* x_auth_ip = network_ip;
-			/* Check if network_ip is a proxy allowed to send us calls */
-			if (profile->proxy_acl_count) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
-				for (x = 0; x < profile->proxy_acl_count; x++) {
-					last_acl = profile->proxy_acl[x];
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "checking %s against acl %s\n", network_ip, last_acl);
-					if (switch_check_network_list_ip_port_token(network_ip, network_port, last_acl, &token)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s is a proxy according to the %s acl\n", network_ip, last_acl);
-						network_ip_is_proxy = 1;
-						break;
-					}
-				}
-			}
-
-			/*
-			 * if network_ip is a proxy allowed to send calls, check for auth
-			 * ip header and see if it matches against the inbound acl
-			 */
-			if (network_ip_is_proxy) {
-				const char * x_auth_port = sofia_glue_get_unknown_header(sip, "X-AUTH-PORT");
-				int x_auth_port_i = sofia_test_pflag(profile, PFLAG_USE_PORT_FOR_ACL_CHECK) ? zstr(x_auth_port) ? 0 : atoi(x_auth_port) : 0;
-
-				/*
-				 * if network_ip is a proxy allowed to send calls,
-				 * authorize call if proxy provided matched token header
-				 */
-				if (profile->acl_proxy_x_token_header) {
-					const char * x_auth_token = sofia_glue_get_unknown_header(sip, profile->acl_proxy_x_token_header);
-					if (!zstr(x_auth_token)) {
-						token = x_auth_token;
-						switch_copy_string(proxied_client_ip, x_auth_ip, sizeof(proxied_client_ip));
-						ok = 1;
-					}
-				}
-
-				if (!ok && (x_auth_ip = sofia_glue_get_unknown_header(sip, "X-AUTH-IP")) && !zstr(x_auth_ip)) {
-					for (x = 0; x < profile->acl_count; x++) {
-						last_acl = profile->acl[x];
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "verifying acl \"%s\" from proxy for ip/port %s:%i.\n",
-										  switch_str_nil(last_acl), x_auth_ip, x_auth_port_i);
-						if ((ok = switch_check_network_list_ip_port_token(x_auth_ip, x_auth_port_i, last_acl, &token))) {
-
-							switch_copy_string(proxied_client_ip, x_auth_ip, sizeof(proxied_client_ip));
-
-							if (profile->acl_pass_context[x]) {
-								acl_context = profile->acl_pass_context[x];
-							}
-
-							break;
-						}
-
-						if (profile->acl_fail_context[x]) {
-							acl_context = profile->acl_fail_context[x];
-						} else {
-							acl_context = NULL;
-						}
-					}
+			if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", x_auth_ip, switch_str_nil(last_acl));
+				if (!acl_context) {
+					nua_respond(nh, SIP_403_FORBIDDEN,
+								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
+					goto fail;
 				} else {
-					x_auth_ip = network_ip;
-				}
-			}
-
-			if (ok) {
-				if (token) {
-					switch_set_string(acl_token, token);
-				}
-				if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
-					                  x_auth_ip, switch_str_nil(last_acl), acl_token);
-					switch_set_string(sip_acl_authed_by, last_acl);
-					switch_set_string(sip_acl_token, acl_token);
-					is_auth = 1;
-				}
-			} else {
-				if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", x_auth_ip, switch_str_nil(last_acl));
-					if (!acl_context) {
-						nua_respond(nh, SIP_403_FORBIDDEN,
-									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
-						goto fail;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
-										  x_auth_ip, switch_str_nil(last_acl));
-					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
+									  x_auth_ip, switch_str_nil(last_acl));
 				}
 			}
 		}
