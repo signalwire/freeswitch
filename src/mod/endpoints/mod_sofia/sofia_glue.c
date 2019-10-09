@@ -852,7 +852,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
 
-	/* remove our params so we don't make any whiny moronic device piss it's pants and forget who it is for a half-hour */
+	/* remove our params so we don't make any whiny moronic device piss its pants and forget who it is for a half-hour */
 	if ((p = (char *) switch_stristr(";fs_", stripped))) {
 		*p = '\0';
 	}
