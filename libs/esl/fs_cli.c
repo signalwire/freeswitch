@@ -674,7 +674,7 @@ static void redisplay(void)
 	esl_mutex_lock(MUTEX);
 	{
 #ifdef HAVE_LIBEDIT
-#ifdef XHAVE_DECL_EL_REFRESH
+#ifdef HAVE_DECL_EL_REFRESH
 #ifdef HAVE_EL_WSET
 		/* Current libedit versions don't implement EL_REFRESH in eln.c so
 		 * use the wide version instead. */
