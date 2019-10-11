@@ -4673,9 +4673,9 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
 
-			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_MORE_DATA) {
 				goto done;
-			} else if (status == SWITCH_STATUS_SUCCESS) {
+			} else {
 				/* Try to fetch extra information for this result, the return value doesn't really matter here - it's just optional data. */
 				switch_core_asr_get_result_headers(sth->ah, &headers, &flags);
 			}
@@ -4727,6 +4727,14 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+
+					if (headers) {
+						switch_event_merge(event, headers);
+					}
+
+					switch_event_add_body(event, "%s", xmlstr);
+				} else if (status == SWITCH_STATUS_MORE_DATA) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-partial-speech");
 
 					if (headers) {
 						switch_event_merge(event, headers);
