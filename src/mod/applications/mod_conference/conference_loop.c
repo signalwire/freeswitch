@@ -839,6 +839,13 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			continue;
 		}
 
+		if (conference_utils_test_flag(member->conference, CFLAG_BREAKABLE) &&
+			switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
+			break;
+		}
+
 		/* Read a frame. */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
