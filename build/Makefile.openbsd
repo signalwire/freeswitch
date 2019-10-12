@@ -24,7 +24,7 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
-	test -d freeswitch.git || git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
+	test -d freeswitch.git || git clone https://github.com/signalwire/freeswitch.git freeswitch.git
 
 install:
 	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install

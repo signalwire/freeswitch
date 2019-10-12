@@ -35,6 +35,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://freeswitch.org/stash/scm/fs/freeswitch.git"
+    "url": "https://github.com/signalwire/freeswitch.git"
   }
 }
