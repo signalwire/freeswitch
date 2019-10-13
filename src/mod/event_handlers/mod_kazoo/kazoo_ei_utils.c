@@ -866,7 +866,8 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
-	} else if ((child = switch_xml_child(cfg, "event-filter"))) {
+	} else {
+		if ((child = switch_xml_child(cfg, "event-filter"))) {
 			switch_hash_t *filter;
 			switch_hash_t *old_filter;
 
@@ -881,9 +882,10 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 			if (old_filter) {
 				switch_core_hash_destroy(&old_filter);
 			}
+		}
 
-			kazoo_globals.config_fetched = 1;
-			switch_xml_free(xml);
+		kazoo_globals.config_fetched = 1;
+		switch_xml_free(xml);
 	}
 
 }
