@@ -39,6 +39,10 @@ FST_CORE_BEGIN("./conf_playsay")
 	{
 		FST_SETUP_BEGIN()
 		{
+			fst_requires_module("mod_tone_stream");
+			fst_requires_module("mod_sndfile");
+			fst_requires_module("mod_dptools");
+			fst_requires_module("mod_test");
 		}
 		FST_SETUP_END()
 
