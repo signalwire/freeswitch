@@ -2063,6 +2063,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 
 	while (switch_channel_ready(channel)) {
 
+		/* reinitialize energy value per loop */
+		energy = 0;
+
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -2102,6 +2105,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		if (countdown) {
 			if (!--countdown) {
 				switch_channel_set_variable(channel, "wait_for_silence_timeout", "false");
+				switch_channel_set_variable_printf(channel, "wait_for_silence_listenhits", "%d", listening);
+				switch_channel_set_variable_printf(channel, "wait_for_silence_silence_hits", "%d", silence_hits);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_silence: SILENCE DETECTED\n");
 				break;
 			} else {
@@ -2111,9 +2116,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 
 		data = (int16_t *) read_frame->data;
 
-		for (energy = 0, j = 0, count = 0; count < read_frame->samples; count++) {
-			energy += abs(data[j++]);
-			j += channels;
+		/* Need to check if the read_frame is valid before attempting to get "energy" value from it */
+		if (read_frame->seq) {
+			for (energy = 0, j = 0, count = 0; count < read_frame->samples; count++) {
+				energy += abs(data[j++]);
+				j += channels;
+			}
 		}
 
 		score = (uint32_t) (energy / (read_frame->samples / divisor));
@@ -2122,7 +2130,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 			listening++;
 		}
 
-		if (listening > listen_hits && score < thresh) {
+		if (((listen_hits == 0) || (listening > listen_hits)) && (score < thresh)) {
 			if (!--silence_hits) {
 				countdown = 25;
 			}
