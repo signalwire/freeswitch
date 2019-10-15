@@ -220,7 +220,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 			if (interval && interval > 0) {
 				port = interval;
 			}
-		} else if (!strncmp(var, "heartbeat", 4)) {
+		} else if (!strncmp(var, "heartbeat", 9)) {
 			int interval = atoi(val);
 			if (interval && interval > 0) {
 				heartbeat = interval;
