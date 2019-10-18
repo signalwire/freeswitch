@@ -25,6 +25,7 @@
  *
  * Christopher M. Rienzo <chris@rienzo.com>
  * Darren Schreiber <d@d-man.org>
+ * Quoc-Bao Nguyen <baonq5@vng.com.vn>
  *
  * Maintainer: Christopher M. Rienzo <chris@rienzo.com>
  *
@@ -315,15 +316,18 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	char *ext;  /* file extension, used for MIME type identification */
 	const char *mime_type = "application/octet-stream";
 	char *buf;
-
 	CURL *curl_handle = NULL;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
 
-	switch_size_t sent_bytes = 0;
+    int backup_error_code;
+    char* backup_full_path;
+
+    switch_size_t sent_bytes = 0;
 	switch_size_t bytes_per_block;
 	unsigned int block_num = 1;
-	*httpRes = 0;
+    switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+    *httpRes = 0;
 
 	/* guess what type of mime content this is going to be */
 	if ((ext = strrchr(filename, '.'))) {
@@ -357,7 +361,9 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 
 	bytes_per_block = profile && profile->bytes_per_block ? profile->bytes_per_block : file_info.st_size;
 
-	// for Azure - will re-upload all of the file on error we could just upload the blocks
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "fstat() file size of %s: %ld\n", filename, file_info.st_size);
+
+    // for Azure - will re-upload all of the file on error we could just upload the blocks
 	// that failed.  Also, we could do it all in parallel.
 
 	while (sent_bytes < file_info.st_size) {
@@ -379,7 +385,9 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			switch_strdup(full_url, url);
 		}
 
-		// seek to the correct position in the file
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Full URL: %s\n", full_url);
+
+        // seek to the correct position in the file
 		if (fseek(file_to_put, sent_bytes, SEEK_SET) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to seek file - errno=%d\n", errno);
 			status = SWITCH_STATUS_FALSE;
@@ -406,6 +414,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);          // Upload operation must complete in 60 seconds
 		if (cache->connect_timeout > 0) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
 		}
@@ -421,14 +430,14 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		if (!cache->ssl_verifyhost) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
 		}
-		switch_curl_easy_perform(curl_handle);
+        curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 
 		if (*httpRes == 200 || *httpRes == 201 || *httpRes == 202 || *httpRes == 204) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, full_url);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", *httpRes, filename, url);
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to save %s to %s\n", curl_status, *httpRes, filename, url);
 			status = SWITCH_STATUS_GENERR;
 		}
 
@@ -447,6 +456,11 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			break;
 		}
 	}	//while
+
+    if (file_info.st_size == 0) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "File %s is empty\n", filename);
+        status = SWITCH_STATUS_GENERR;
+    }
 
 	fclose(file_to_put);
 
@@ -469,7 +483,33 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		if (profile && profile->finalise_put_ptr) {
 			profile->finalise_put_ptr(profile, url, block_num);
 		}
-	}
+	} else if (!zstr(profile->backup_folder))
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup folder: %s\n", profile->backup_folder);
+
+        // Get full path
+	    if (!strncasecmp(url, "https://", 8)) {
+            backup_full_path = switch_mprintf("%s/%s", profile->backup_folder, url + 8);
+        } else if (!strncasecmp(url, "http://", 7)) {
+            backup_full_path = switch_mprintf("%s/%s", profile->backup_folder, url + 7);
+        } else
+        {
+            backup_full_path = switch_mprintf("%s/%s", profile->backup_folder, url);
+        }
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup full path: %s\n", backup_full_path);
+
+	    // Perform backup operation
+        backup_error_code = backup_file(filename, backup_full_path);
+
+	    // Report status
+        if (backup_error_code == 0)
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File backup success: %s\n", backup_full_path);
+        } else
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error code %d. Could not backup file %s\n", backup_error_code, backup_full_path);
+        }
+    }
 
 	switch_safe_free(buf);
 
@@ -813,7 +853,7 @@ static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *
 	if (queue->size >= queue->max_size && url_cache_replace(cache, session) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding %s(%s) to cache index %d\n", url->url, url->filename, queue->pos);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding %s (%s) to cache index %d\n", url->url, url->filename, queue->pos);
 
 	queue->data[queue->pos] = url;
 	queue->pos = (queue->pos + 1) % queue->max_size;
@@ -1099,6 +1139,8 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	char *query_string = NULL;
+	char *full_url = url->url;
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1110,7 +1152,13 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 	if (profile && profile->append_headers_ptr) {
-		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, NULL);
+
+		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, &query_string);
+
+        if (query_string) {
+            full_url = switch_mprintf("%s?%s", url->url, query_string);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Full URL: %s\n", full_url);
+		}
 	}
 
 	curl_handle = switch_curl_easy_init();
@@ -1123,7 +1171,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		if (headers) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		}
-		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
@@ -1177,6 +1225,11 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 done:
+    if (query_string)
+    {
+        switch_safe_free(query_string);
+        switch_safe_free(full_url);
+    }
 
 	if (headers) {
 		switch_curl_slist_free_all(headers);
