@@ -6507,6 +6507,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
 			switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 invite failed\n", switch_channel_get_name(tech_pvt->channel));
+			sofia_set_flag(tech_pvt, TFLAG_SDP);
 		}
 
 
