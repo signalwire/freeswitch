@@ -1052,14 +1052,17 @@ fi
 CFLAGS="$saved_CFLAGS"
 
 if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
+     saved_CFLAGS="$CFLAGS"
      # Next check added for Xcode 5 and systems with clang 5 llvm 3.3 or above, extended offset must be off
      AC_CACHE_CHECK([whether compiler supports -Wextended-offsetof], [ac_cv_clang_extended_offsetof], [
+       CFLAGS="$CFLAGS -Wno-extended-offsetof"
        AC_TRY_COMPILE([],[return 0;],[ac_cv_clang_extended_offsetof=yes],[ac_cv_clang_extended_offsetof=no])
      ])
      AC_MSG_RESULT($ac_cv_clang_extended_offsetof)
      if test x"$ac_cv_clang_extended_offsetof" = xyes; then
          APR_ADDTO(CFLAGS, -Wno-extended-offsetof)
      fi
+     CFLAGS="$saved_CFLAGS"
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
