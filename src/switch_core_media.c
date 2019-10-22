@@ -10573,7 +10573,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=msid-semantic: WMS %s\r\n", smh->msid);
 	}
 
-	if (a_engine->codec_negotiated) {
+	if (a_engine->codec_negotiated && !switch_channel_test_flag(session->channel, CF_NOSDP_REINVITE)) {
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port,
 						get_media_profile_name(session, !a_engine->no_crypto &&
 											   (switch_channel_test_flag(session->channel, CF_DTLS) || a_engine->crypto_type != CRYPTO_INVALID)));
@@ -10582,10 +10582,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->cur_payload_map->pt);
 
 
-		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO) || switch_channel_test_flag(session->channel, CF_NOSDP_REINVITE)) {
+		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO)) {
 			switch_mutex_lock(smh->sdp_mutex);
 			for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-				if (pmap->pt != a_engine->cur_payload_map->pt && pmap->pt != smh->mparams->te) {
+				if (pmap->pt != a_engine->cur_payload_map->pt) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
 				}
 			}
@@ -10621,10 +10621,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\r\n", a_engine->cur_payload_map->pt, fmtp_out);
 		}
 
-		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO) || switch_channel_test_flag(session->channel, CF_NOSDP_REINVITE)) {
+		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO)) {
 			switch_mutex_lock(smh->sdp_mutex);
 			for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-				if (pmap->pt != a_engine->cur_payload_map->pt && pmap->pt != smh->mparams->te) {
+				if (pmap->pt != a_engine->cur_payload_map->pt) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\r\n",
 									pmap->pt, pmap->iananame,
 									pmap->rate);
