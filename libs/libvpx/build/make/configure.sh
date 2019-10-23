@@ -757,6 +757,18 @@ process_common_toolchain() {
         tgt_isa=x86_64
         tgt_os=darwin16
         ;;
+      *darwin17*)
+        tgt_isa=x86_64
+        tgt_os=darwin17
+        ;;
+      *darwin18*)
+        tgt_isa=x86_64
+        tgt_os=darwin18
+        ;;
+      *darwin19*)
+        tgt_isa=x86_64
+        tgt_os=darwin19
+        ;;
       x86_64*mingw32*)
         tgt_os=win64
         ;;
@@ -884,6 +896,18 @@ process_common_toolchain() {
     *-darwin16-*)
       add_cflags  "-mmacosx-version-min=10.12"
       add_ldflags "-mmacosx-version-min=10.12"
+      ;;
+    *-darwin17-*)
+      add_cflags  "-mmacosx-version-min=10.13"
+      add_ldflags "-mmacosx-version-min=10.13"
+      ;;
+    *-darwin18-*)
+      add_cflags  "-mmacosx-version-min=10.14"
+      add_ldflags "-mmacosx-version-min=10.14"
+      ;;
+    *-darwin19-*)
+      add_cflags  "-mmacosx-version-min=10.15"
+      add_ldflags "-mmacosx-version-min=10.15"
       ;;
     *-iphonesimulator-*)
       add_cflags  "-miphoneos-version-min=${IOS_VERSION_MIN}"
