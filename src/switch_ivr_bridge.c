@@ -1099,7 +1099,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *se
 		switch_channel_clear_flag(channel, CF_ARRANGED_BRIDGE);
 		return SWITCH_STATUS_FALSE;
 	} else {
-		audio_bridge_on_exchange_media(session);
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
+			audio_bridge_on_exchange_media(session);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
