@@ -1149,7 +1149,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "loopback_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -1593,7 +1595,9 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "loopback_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
