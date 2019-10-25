@@ -117,7 +117,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.format |= map->format;
 	}
 
-	if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
+	if (!strcmp(ext, "raw")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+	} else if (!strcmp(ext, "r8")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
