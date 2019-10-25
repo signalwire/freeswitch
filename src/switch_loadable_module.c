@@ -3008,8 +3008,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		}
 		UNPROTECT_INTERFACE(api);
 	} else {
-		status = SWITCH_STATUS_FALSE;
-		stream->write_function(stream, "INVALID COMMAND!\n");
+		status = api == 0 ? SWITCH_STATUS_NOTFOUND : SWITCH_STATUS_FALSE;
 	}
 
 	if (stream->param_event) {
