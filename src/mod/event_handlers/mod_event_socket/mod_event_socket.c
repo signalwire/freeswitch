@@ -1539,7 +1539,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 	if (acs->console_execute) {
 		if ((status = switch_console_execute(acs->api_cmd, 0, &stream)) != SWITCH_STATUS_SUCCESS) {
-			stream.write_function(&stream, "-ERR %s Command not found!\n", acs->api_cmd);
+			stream.write_function(&stream, "-ERR %s Command %s!\n", acs->api_cmd, status == SWITCH_STATUS_NOTFOUND ? "not found" : "return error");
 		}
 	} else {
 		status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream);
@@ -1548,7 +1548,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	if (status == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
 	} else {
-		freply = switch_mprintf("-ERR %s Command not found!\n", acs->api_cmd);
+		freply = switch_mprintf("-ERR %s Command %s!\n", acs->api_cmd, status == SWITCH_STATUS_NOTFOUND ? "not found" : "return error");
 		reply = freply;
 	}
 
