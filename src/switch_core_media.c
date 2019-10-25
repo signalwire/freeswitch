@@ -3711,7 +3711,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 		if (strcasecmp(a_engine->read_impl.iananame, a_engine->cur_payload_map->iananame) ||
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
-
+                        switch_channel_execute_on(session->channel, "execute_on_audio_change");
 			if (session->read_resampler) {
 				switch_mutex_lock(session->resample_mutex);
 				switch_resample_destroy(&session->read_resampler);
