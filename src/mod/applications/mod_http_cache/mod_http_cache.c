@@ -483,7 +483,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		if (profile && profile->finalise_put_ptr) {
 			profile->finalise_put_ptr(profile, url, block_num);
 		}
-	} else if (!zstr(profile->backup_folder))
+	} else if (profile && !zstr(profile->backup_folder))
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup folder: %s\n", profile->backup_folder);
 
