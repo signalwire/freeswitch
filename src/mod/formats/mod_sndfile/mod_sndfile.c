@@ -121,19 +121,15 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
 	} else if (!strcmp(ext, "r8")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
 	} else if (!strcmp(ext, "r16")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 16000;
 	} else if (!strcmp(ext, "r24")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 24000;
 	} else if (!strcmp(ext, "r32")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
-		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 32000;
 	} else if (!strcmp(ext, "gsm")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
