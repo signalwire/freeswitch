@@ -3860,8 +3860,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
  end:
 
 	if (resetting) {
-		switch_core_session_unlock_codec_write(session);
-		switch_core_session_unlock_codec_read(session);
+	    switch_channel_execute_on(session->channel, "execute_on_audio_change");
+	    switch_core_session_unlock_codec_write(session);
+	    switch_core_session_unlock_codec_read(session);
 	}
 
 	return status;
