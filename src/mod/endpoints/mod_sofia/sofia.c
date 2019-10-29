@@ -5056,6 +5056,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
+							switch_goto_status(SWITCH_STATUS_GENERR, done);
 						}
 					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
@@ -5150,6 +5151,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
+							switch_goto_status(SWITCH_STATUS_GENERR, done);
 						}
 					} else if (!strcasecmp(var, "local-network-acl")) {
 						if (val && !strcasecmp(val, "none")) {
