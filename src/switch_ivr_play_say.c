@@ -2737,6 +2737,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		text = tmp;
 	}
 
+	sh->session = session;
 	switch_core_speech_feed_tts(sh, text, &flags);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Speaking text: %s\n", text);
 	switch_safe_free(tmp);
@@ -2968,6 +2969,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	sh = &lsh;
 	codec = &lcodec;
 	timer = &ltimer;
+	sh->session = session;
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_CACHE_SPEECH_HANDLES_VARIABLE)) && switch_true(var)) {
 		if ((cache_obj = (cached_speech_handle_t *) switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {

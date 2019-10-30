@@ -98,6 +98,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
 #define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
 #define MY_EVENT_WRONG_CALL_STATE "sofia::wrong_call_state"
+#define MY_EVENT_AUDIO_ACTIVITY "sofia::audio_activity"
 
 #define MY_EVENT_TRANSFEROR "sofia::transferor"
 #define MY_EVENT_TRANSFEREE "sofia::transferee"
@@ -128,6 +129,8 @@ typedef struct private_object private_object_t;
 //#define SOFIA_HAS_VIDEO_CRYPTO_VARIABLE "sip_has_video_crypto"
 //#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 #define FREESWITCH_SUPPORT "update_display,send_info"
+
+#define AUDIO_ACTIVITY_INTERVAL_MSEQ 60000
 
 #include <switch_stun.h>
 #include <sofia-sip/nua.h>
@@ -651,6 +654,7 @@ struct sofia_profile {
 	char *presence_hosts;
 	char *presence_privacy;
 	char *challenge_realm;
+	char *challenge_opaque;
 	char *pnp_prov_url;
 	char *pnp_notify_profile;
 	int sip_user_ping_max;
@@ -678,6 +682,7 @@ struct sofia_profile {
 	uint32_t nonce_ttl;
 	uint32_t max_auth_validity;
 	nua_t *nua;
+	int nua_handle_count;
 	switch_memory_pool_t *pool;
 	su_root_t *s_root;
 	sip_alias_node_t *aliases;
@@ -754,6 +759,7 @@ struct sofia_profile {
 	int tls_verify_date;
 	enum tport_tls_verify_policy tls_verify_policy;
 	int tls_verify_depth;
+	int tls_enable_dh;
 	char *tls_passphrase;
 	char *tls_verify_in_subjects_str;
 	su_strlst_t *tls_verify_in_subjects;
@@ -864,6 +870,12 @@ struct private_object {
 	uint32_t recv_invites;
 	uint8_t sent_last_invite;
 	uint32_t req_media_counter;
+	switch_time_t last_audio_packet_recv;
+	switch_time_t last_audio_activity_signal_read;
+	switch_time_t last_audio_inactivity_signal_read;
+	switch_time_t last_audio_packet_sent;
+	switch_time_t last_audio_activity_signal_write;
+	switch_time_t last_audio_inactivity_signal_write;
 };
 
 
@@ -1212,8 +1224,6 @@ char *sofia_glue_get_non_extra_unknown_headers(sip_t const *sip);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
 int sofia_sla_supported(sip_t const *sip);
-int sofia_glue_recover(switch_bool_t flush);
-int sofia_glue_profile_recover(sofia_profile_t *profile, switch_bool_t flush);
 void sofia_profile_destroy(sofia_profile_t *profile);
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
 const char *sofia_gateway_status_name(sofia_gateway_status_t status);
@@ -1222,7 +1232,7 @@ const char *sofia_sip_user_status_name(sofia_sip_user_status_t status);
 void sofia_reg_fire_custom_sip_user_state_event(sofia_profile_t *profile, const char *sip_user, const char *contact,
 							const char* from_user, const char* from_host, const char *call_id, sofia_sip_user_status_t status, int options_res, const char *phrase);
 uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const char *host);
-char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
+char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type, switch_size_t * mp_data_len);
 int sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host, time_t reg_time, const char *contact_str, long exptime);

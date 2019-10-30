@@ -510,6 +510,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(_In_ switch_core_fl
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(_In_ uint32_t new_limit);
 
+SWITCH_DECLARE(void) switch_core_session_drop_udp_invites(switch_bool_t drop);
+SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites();
+
 /*!
   \brief Set/Get Session Rate Limit
   \param new_limit new value (if > 0)
@@ -974,6 +977,9 @@ SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *str
   \param cause the hangup cause to apply to the hungup channels
 */
 SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
+
+typedef void (*switch_core_session_enumerate_t)(switch_core_session_t* session, void* user_data);
+SWITCH_DECLARE(void) switch_core_session_enumerate(switch_core_session_enumerate_t callback, void* user_data);
 
 typedef enum {
 	SHT_NONE = 0,
@@ -2355,6 +2361,11 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 */
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
 
+SWITCH_DECLARE(void) switch_core_set_last_seen(switch_time_t last_seen);
+SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen();
+SWITCH_DECLARE(void) switch_core_set_last_seen_previous(switch_time_t last_seen);
+SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen_previous();
+
 /*!
   \brief send a control message to the core
   \param cmd the command
@@ -2743,6 +2754,11 @@ SWITCH_DECLARE(void) switch_core_gen_encoded_silence(unsigned char *data, const 
 SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_core_dbtype(void);
 SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql);
 SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const char *profile_name);
+
+typedef void (*recovery_callback_t)(switch_core_session_t *session, const char* xml_cdr);
+SWITCH_DECLARE(void) switch_core_recovery_track_callback(recovery_callback_t callback);
+SWITCH_DECLARE(void) switch_core_recovery_untrack_callback(recovery_callback_t callback);
+
 SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force);
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
@@ -2816,6 +2832,10 @@ SWITCH_DECLARE(const char *)switch_version_full_human(void);
 SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_core_session_t *session);
+
+SWITCH_DECLARE(void) switch_enable_dump_cores(int enabled);
+SWITCH_DECLARE(void) switch_core_global_mutex_lock();
+SWITCH_DECLARE(void) switch_core_global_mutex_unlock();
 
 SWITCH_DECLARE(const char *) switch_core_get_event_channel_key_separator(void);
 

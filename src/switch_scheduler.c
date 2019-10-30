@@ -54,6 +54,7 @@ static struct {
 	int task_thread_running;
 	switch_queue_t *event_queue;
 	switch_memory_pool_t *memory_pool;
+	uint32_t total_tasks;
 } globals;
 
 static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
@@ -208,6 +209,15 @@ static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *th
 	return NULL;
 }
 
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task()
+{
+	uint32_t total;
+	switch_mutex_lock(globals.task_mutex);
+	total = globals.total_tasks;
+	switch_mutex_unlock(globals.task_mutex);
+	return total;
+}
+
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   switch_scheduler_func_t func,
 												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
@@ -246,6 +256,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 
 	for (container->task.task_id = 0; !container->task.task_id; container->task.task_id = ++globals.task_id);
 
+	globals.total_tasks++;
 	switch_mutex_unlock(globals.task_mutex);
 
 	tp = container;

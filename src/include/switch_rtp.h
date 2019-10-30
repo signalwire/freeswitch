@@ -44,6 +44,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_MAX_BUF_LEN 16384
 #define SWITCH_RTCP_MAX_BUF_LEN 16384
 #define SWITCH_RTP_MAX_BUF_LEN_WORDS 4094 /* (max / 4) - 2 */
+#define SWITCH_RTP_MAX_CRYPTO_LEN 64
 //#define SWITCH_RTP_KEY_LEN 30
 //#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
@@ -116,6 +117,24 @@ typedef struct ice_s {
 
 } ice_t;
 
+struct switch_rtcp_report_block {
+	uint32_t ssrc; /* The SSRC identifier of the source to which the information in this reception report block pertains. */
+	unsigned int fraction :8; /* The fraction of RTP data packets from source SSRC_n lost since the previous SR or RR packet was sent */
+	int lost :24; /* The total number of RTP data packets from source SSRC_n that have been lost since the beginning of reception */
+	uint32_t highest_sequence_number_received;
+	uint32_t jitter; /* An estimate of the statistical variance of the RTP data packet interarrival time, measured in timestamp units and expressed as an unsigned integer. */
+	uint32_t lsr; /* The middle 32 bits out of 64 in the NTP timestamp */
+	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
+};
+
+struct switch_rtcp_sender_info {
+	uint32_t ntp_msw;
+	uint32_t ntp_lsw;
+	uint32_t ts;
+	uint32_t pc;
+	uint32_t oc;
+};
+
 typedef enum { /* RTCP Control Packet types (PT) http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4 */
 	_RTCP_PT_FIR   = 192, /* [RFC 2032] RTP Payload Format for H.261 Video Streams. types 192 (FIR) section 5.2.1 */
 	_RTCP_PT_IJ    = 195, /* IJ: Extended inter-arrival jitter report RFC5450*/
@@ -173,6 +192,13 @@ typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignme
 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec);
+typedef void (*rtcp_probe_func)(switch_rtp_t *, rtcp_pt_t, switch_bool_t, struct switch_rtcp_report_block*, struct switch_rtcp_sender_info*);
+typedef void (*rtp_create_probe_func)(switch_rtp_t *, switch_channel_t*);
+
+SWITCH_DECLARE(void) switch_rtp_set_rtcp_probe(switch_rtp_t * rtp_session, rtcp_probe_func probe);
+SWITCH_DECLARE(rtcp_probe_func) switch_rtp_get_rtcp_probe(switch_rtp_t * rtp_session);
+SWITCH_DECLARE(void) switch_rtp_set_create_probe(rtp_create_probe_func probe);
+SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_session(switch_rtp_t * rtp_session);
 
 ///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
@@ -276,6 +302,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(char *) switch_rtp_get_local_host(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(switch_port_t) switch_rtp_get_local_port(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max);
 SWITCH_DECLARE(void) switch_rtp_set_media_timeout(switch_rtp_t *rtp_session, uint32_t ms);

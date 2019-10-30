@@ -1480,6 +1480,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 			}
 			if (ok) {
 				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
+				switch_telnyx_on_set_variable(channel, varname, value);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
@@ -1511,6 +1512,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_cha
 			}
 			if (ok) {
 				switch_event_add_header_string(channel->variables, stack, varname, value);
+				switch_telnyx_on_set_variable(channel, varname, value);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
@@ -2691,12 +2693,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 {
 	switch_event_header_t *hi;
 	int global_verbose_events = -1;
+	const char* call_control = 0;
 
 	switch_mutex_lock(channel->profile_mutex);
 
 	switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &global_verbose_events);
+	
+	call_control = switch_channel_get_variable_dup(channel, "call_control", SWITCH_FALSE, -1);
 
-	if (global_verbose_events ||
+	if ((call_control && switch_true(call_control)) || global_verbose_events ||
 		switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
 		switch_event_get_header(event, "presence-data-cols") ||
 		event->event_id == SWITCH_EVENT_CHANNEL_CREATE ||
@@ -2728,8 +2733,12 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_HOLD || 
 		event->event_id == SWITCH_EVENT_CHANNEL_UNHOLD || 
 		event->event_id == SWITCH_EVENT_TEXT || 
-		event->event_id == SWITCH_EVENT_CUSTOM) {
+		event->event_id == SWITCH_EVENT_CUSTOM ||
+		event->event_id == SWITCH_EVENT_DTMF) {
 
+		if ((call_control && switch_true(call_control))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_control", "true");
+		}
 		/* Index Variables */
 
 		if (channel->scope_variables) {

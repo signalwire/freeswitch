@@ -514,6 +514,7 @@ struct switch_speech_handle {
 
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
+	switch_core_session_t *session;
 };
 
 /*! \brief Abstract interface to a say module */

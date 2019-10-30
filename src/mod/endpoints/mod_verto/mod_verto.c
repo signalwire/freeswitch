@@ -4519,6 +4519,11 @@ static void runtime(verto_profile_t *profile)
 	int i;
 	int listeners = 0;
 
+	//
+	// Lock the global mutex.  ssl_init is not threadsafe
+	//
+	switch_core_global_mutex_lock();
+	
 	for (i = 0; i < profile->i; i++) {
 		//if ((profile->server_socket[i] = prepare_socket(profile->ip[i].local_ip_addr, profile->ip[i].local_port)) < 0) {
 		if ((profile->server_socket[i] = prepare_socket(&profile->ip[i])) != ws_sock_invalid) {
@@ -4527,6 +4532,7 @@ static void runtime(verto_profile_t *profile)
 	}
 
 	if (!listeners) {
+		switch_core_global_mutex_unlock();
 		die("%s Client Socket Error! No Listeners!\n", profile->name);
 	}
 
@@ -4549,6 +4555,8 @@ static void runtime(verto_profile_t *profile)
 		}
 	}
 
+
+	switch_core_global_mutex_unlock();
 
 	while(profile->running) {
 		if (profile_one_loop(profile) < 0) {

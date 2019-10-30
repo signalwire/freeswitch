@@ -34,12 +34,15 @@
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
+static const int QUEUE_LEN_WARNING_1 = MAX_QUEUE_LEN * .50;
+static const int QUEUE_LEN_WARNING_2 = MAX_QUEUE_LEN * .75;
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
 SWITCH_MODULE_DEFINITION(mod_event_socket, mod_event_socket_load, mod_event_socket_shutdown, mod_event_socket_runtime);
 
 static char *MARKER = "1";
+static char* call_control_ip = 0;
 
 typedef enum {
 	LFLAG_AUTHED = (1 << 0),
@@ -98,6 +101,7 @@ struct listener {
 	time_t linger_timeout;
 	struct listener *next;
 	switch_pollfd_t *pollfd;
+	uint32_t total_sent;
 };
 
 typedef struct listener listener_t;
@@ -113,6 +117,7 @@ static struct {
 	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
+	uint32_t total_sent_events;
 } listen_list;
 
 #define MAX_ACL 100
@@ -165,6 +170,77 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
 static void launch_listener_thread(listener_t *listener);
 
+SWITCH_STANDARD_API(event_socket_log_queue_sizes)
+{
+	listener_t *l;
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		unsigned int qsize = 0;
+		qsize = switch_queue_size(l->log_queue);
+		stream->write_function(stream, "%u", qsize);
+		if (l->next) {
+			stream->write_function(stream, " ", qsize);
+		}
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(event_socket_event_queue_sizes)
+{
+	listener_t *l;
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		unsigned int qsize = 0;
+		qsize = switch_queue_size(l->event_queue);
+		stream->write_function(stream, "%u", qsize);
+		if (l->next) {
+			stream->write_function(stream, " ");
+		}
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(event_socket_get_listener_metrics)
+{
+	listener_t *l;
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		stream->write_function(stream, "%s=%u", l->remote_ip, l->total_sent);
+		if (l->next) {
+			stream->write_function(stream, ",");
+		}
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(event_socket_set_call_control_ip)
+{
+	switch_mutex_lock(globals.listener_mutex);
+	if (zstr(cmd)) {
+		switch_safe_free(call_control_ip);
+		call_control_ip = 0;
+		stream->write_function(stream, "Call Control IP set to NULL");
+		switch_mutex_unlock(globals.listener_mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	switch_safe_free(call_control_ip);
+	call_control_ip = strdup(cmd);
+	stream->write_function(stream, "Call Control IP set to %s", call_control_ip);
+	switch_mutex_unlock(globals.listener_mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(event_socket_event_sent_total)
+{
+	switch_mutex_lock(globals.listener_mutex);
+	stream->write_function(stream, "%u", listen_list.total_sent_events);
+	switch_mutex_unlock(globals.listener_mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
@@ -172,8 +248,18 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
+			unsigned int qsize = 0;
 			switch_log_node_t *dnode = switch_log_node_dup(node);
-			qstatus = switch_queue_trypush(l->log_queue, dnode); 
+			qstatus = switch_queue_trypush(l->log_queue, dnode);
+			qsize = switch_queue_size(l->log_queue);
+			if (qsize >= QUEUE_LEN_WARNING_1 && qsize < QUEUE_LEN_WARNING_1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						"Queue size is more than 50%% full: [%u/%u] Lost [%d]\n", qsize, MAX_QUEUE_LEN, l->lost_logs);
+			} else if (qsize >= QUEUE_LEN_WARNING_2 && qsize <  MAX_QUEUE_LEN) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						"Queue size is more than 75%% full: [%u/%u] Lost [%d]\n", qsize, MAX_QUEUE_LEN, l->lost_logs);
+			}
+			
 			if (qstatus == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
@@ -182,7 +268,6 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 				}
 			} else {
 				char errbuf[512] = {0};
-				unsigned int qsize = switch_queue_size(l->log_queue);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
 						"Log enqueue ERROR [%d] | [%s] Queue size: [%u/%u] %s\n", 
 						(int)qstatus, switch_strerror(qstatus, errbuf, sizeof(errbuf)), qsize, MAX_QUEUE_LEN, (qsize == MAX_QUEUE_LEN)?"Max queue size reached":"");
@@ -312,10 +397,14 @@ static void event_handler(switch_event_t *event)
 				send = 1;
 			}
 		}
+		
+		if (switch_test_flag(event, EF_NO_SEND)) {
+			send = 0;
+		}
 
 		if (send) {
 			switch_mutex_lock(l->filter_mutex);
-
+			
 			if (l->filters && l->filters->headers) {
 				switch_event_header_t *hp;
 				const char *hval;
@@ -376,10 +465,23 @@ static void event_handler(switch_event_t *event)
 				send = 0;
 			}
 		}
+		
+		if (call_control_ip && strcmp(l->remote_ip, call_control_ip) == 0) {
+			const char* call_control_flag = switch_event_get_header(event, "call_control");
+			if (!call_control_flag || !switch_true(call_control_flag)) {
+				send = 0;
+			}
+		}
 
+		if (switch_test_flag(event, EF_NO_SEND)) {
+			send = 0;
+		}
+		
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				qstatus = switch_queue_trypush(l->event_queue, clone); 
+				qstatus = switch_queue_trypush(l->event_queue, clone);
+				listen_list.total_sent_events++;
+				l->total_sent++;
 				if (qstatus == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
 						int le = l->lost_events;
@@ -1187,6 +1289,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "socket", "Connect to a socket", "Connect to a socket", socket_function, "<ip>[:<port>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "event_sink", "event_sink", event_sink_function, "<web data>");
+	SWITCH_ADD_API(api_interface, "event_socket_log_queue_sizes", "event_socket_log_queue_sizes", event_socket_log_queue_sizes, "");
+	SWITCH_ADD_API(api_interface, "event_socket_event_queue_sizes", "event_socket_log_queue_sizes", event_socket_event_queue_sizes, "");
+	SWITCH_ADD_API(api_interface, "event_socket_event_sent_total", "event_socket_event_sent_total", event_socket_event_sent_total, "");
+	SWITCH_ADD_API(api_interface, "event_socket_get_listener_metrics", "event_socket_get_listener_metrics", event_socket_get_listener_metrics, "");
+	SWITCH_ADD_API(api_interface, "event_socket_set_call_control_ip", "event_socket_set_call_control_ip", event_socket_set_call_control_ip, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

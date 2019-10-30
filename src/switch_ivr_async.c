@@ -5263,6 +5263,53 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char
 	return switch_scheduler_add_task(runtime, sch_transfer_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
 
+struct hold_helper {
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+};
+
+SWITCH_STANDARD_SCHED_FUNC(sch_hold_callback)
+{
+	struct hold_helper *helper;
+	switch_assert(task);
+	helper = (struct hold_helper *) task->cmd_arg;
+	switch_ivr_hold_uuid(helper->uuid_str, 0, 1);
+}
+
+SWITCH_STANDARD_SCHED_FUNC(sch_unhold_callback)
+{
+	struct hold_helper *helper;
+	switch_assert(task);
+	helper = (struct hold_helper *) task->cmd_arg;
+	switch_ivr_unhold_uuid(helper->uuid_str);
+}
+
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hold(time_t runtime, const char *uuid)
+{
+	struct hold_helper *helper;
+	size_t len = sizeof(*helper);
+	char *cur = NULL;
+	switch_zmalloc(cur, len);
+	helper = (struct hold_helper *) cur;
+
+	cur += sizeof(*helper);
+	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
+
+	return switch_scheduler_add_task(runtime, sch_hold_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
+}
+
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_unhold(time_t runtime, const char *uuid)
+{
+	struct hold_helper *helper;
+	size_t len = sizeof(*helper);
+	char *cur = NULL;
+	switch_zmalloc(cur, len);
+	helper = (struct hold_helper *) cur;
+
+	cur += sizeof(*helper);
+	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
+	return switch_scheduler_add_task(runtime, sch_unhold_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
+}
+
 struct broadcast_helper {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *path;

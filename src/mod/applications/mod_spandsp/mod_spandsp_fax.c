@@ -35,6 +35,8 @@
 #include "mod_spandsp.h"
 
 #include "udptl.h"
+#include "prometheus_metrics.h"
+
 
 #define LOCAL_FAX_MAX_DATAGRAM      400
 #define MAX_FEC_ENTRIES             4
@@ -546,14 +548,21 @@ static void phase_e_handler(void *user_data, int result)
 
 	if (result == T30_ERR_OK) {
 		if (pvt->app_mode == FUNCTION_TX) {
+			prometheus_increment_tx_fax_success();
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
 		} else if (pvt->app_mode == FUNCTION_RX) {
+			prometheus_increment_tx_fax_failure();
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully received.\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
+		if (pvt->app_mode == FUNCTION_TX) {
+			prometheus_increment_rx_fax_success();
+		} else if (pvt->app_mode == FUNCTION_RX) {
+			prometheus_increment_rx_fax_failure();
+		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
 		switch_channel_set_variable(channel, "fax_success", "0");
@@ -1746,11 +1755,13 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 	switch_core_session_message_t msg = { 0 };
 	switch_status_t status;
 	switch_frame_t *read_frame = { 0 };
+	int fax_failed = 0;
 
 	if (!(other_session = switch_core_session_locate(peer_uuid))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot locate channel with uuid %s",
 				switch_channel_get_name(channel), peer_uuid);
+		fax_failed = 1;
 		goto end;
 	}
 
@@ -1770,11 +1781,13 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		if (pvt->done) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating\n", switch_channel_get_name(channel));
 			/* Our duty is over */
+			fax_failed = 1;
 			goto end_unlock;
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Read failed, status=%u\n", switch_channel_get_name(channel), status);
+			fax_failed = 1;
 			goto end_unlock;
 		}
 
@@ -1784,18 +1797,21 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 
 		if (switch_core_session_write_frame(other_session, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Write failed\n", switch_channel_get_name(channel));
+			fax_failed = 1;
 			goto end_unlock;
 		}
 	}
 
 	if (!(switch_channel_ready(channel) && switch_channel_up(other_channel))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Channel not ready\n", switch_channel_get_name(channel));
+		fax_failed = 1;
 		goto end_unlock;
 	}
 
 	if (!switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Could not negotiate T38\n", switch_channel_get_name(channel));
+		fax_failed = 1;
 		goto end_unlock;
 	}
 
@@ -1808,6 +1824,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		if (negotiate_t38(pvt) != T38_MODE_NEGOTIATED) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Could not negotiate T38\n", switch_channel_get_name(channel));
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			fax_failed = 1;
 			goto end_unlock;
 		}
 		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
@@ -1859,6 +1876,11 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 
  end:
 
+	if (fax_failed) {
+		prometheus_increment_gateway_fax_failure();
+	} else {
+		prometheus_increment_gateway_fax_success();
+	}
 	switch_channel_clear_state_handler(channel, &t38_gateway_state_handlers);
 	switch_channel_set_variable(channel, "t38_peer", NULL);
 
@@ -1885,8 +1907,10 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	zap_socket_t read_fd = FAX_INVALID_SOCKET, write_fd = FAX_INVALID_SOCKET;
 	switch_core_session_message_t msg = { 0 };
 	switch_event_t *event;
+	const char *uuid;
 
 	switch_core_session_get_read_impl(session, &read_impl);
+	uuid = switch_core_session_get_uuid(session);
 
 	buf = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
@@ -2015,10 +2039,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 			if (read_fd != FAX_INVALID_SOCKET) {
 				switch_ssize_t rv;
 				do { rv = write(read_fd, read_frame->data, read_frame->datalen); } while (rv == -1 && errno == EINTR);
-		}
-		if (t38_gateway_rx(pvt->t38_gateway_state, (int16_t *) read_frame->data, read_frame->samples)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
-				goto end_unlock;
+			}
+			switch_telnyx_set_current_trace_message(uuid);
+			if (t38_gateway_rx(pvt->t38_gateway_state, (int16_t *) read_frame->data, read_frame->samples)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
+					goto end_unlock;
 			}
 		}
 
@@ -2052,7 +2077,6 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	msg.from = __FILE__;
 	msg.string_arg = peer_uuid;
 	switch_core_session_receive_message(session, &msg);
-
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);

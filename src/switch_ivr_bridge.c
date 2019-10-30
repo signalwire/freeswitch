@@ -1190,6 +1190,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 				if (running_state == CS_SOFT_EXECUTE) {
 
 					if (switch_channel_test_flag(other_channel, CF_UUID_BRIDGE_ORIGINATOR)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (not originator)\n", switch_channel_get_name(channel));
 						goto done;
 					} else {
 						break;
@@ -1203,8 +1204,10 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_yield(20000);
 		}
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (channel reset)\n", switch_channel_get_name(channel));
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (wait for answer)\n", switch_channel_get_name(channel));
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
 			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
 				switch_channel_set_state(channel, CS_EXECUTE);
@@ -1213,12 +1216,14 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			} else if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (wait for answer failure)\n", switch_channel_get_name(channel));
 			goto done;
 		}
 
 		ready_a = switch_channel_ready(channel);
 		ready_b = switch_channel_ready(other_channel);
 
+		
 		if (!ready_a || !ready_b) {
 			if (!ready_a) {
 				switch_channel_hangup(other_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1232,6 +1237,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				}
 			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (channel ready failure)\n", switch_channel_get_name(channel));
 			goto done;
 		}
 
@@ -1250,6 +1256,8 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_event_fire(&event);
 		}
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE (bridging media)\n", switch_channel_get_name(channel));
+		
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 
 		state = switch_channel_get_state(channel);
@@ -1675,13 +1683,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
 		const char *app, *data;
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (peer channel in cf_answered)\n", switch_channel_get_name(caller_channel));
+		
  		if (!switch_channel_ready(caller_channel)) {
 			abort_call(caller_channel, peer_channel);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (caller channel not ready)\n", switch_channel_get_name(caller_channel));
 			goto done;
 		}
 
 		if (!switch_channel_test_flag(peer_channel, CF_ARRANGED_BRIDGE)) {
 			switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (CF_ARRANGED_BRIDGE set - consume media delayed)\n", switch_channel_get_name(caller_channel));
 		}
 
 		switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
@@ -1707,6 +1720,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			if (!switch_channel_ready(caller_channel)) {
 				abort_call(caller_channel, peer_channel);
 				switch_core_session_rwunlock(peer_session);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (caller channel not ready 2)\n", switch_channel_get_name(caller_channel));
 				goto done;
 			}
 
@@ -1731,6 +1745,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					}
 					abort_call(caller_channel, peer_channel);
 					switch_core_session_rwunlock(peer_session);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (caller channel not ready - 3)\n", switch_channel_get_name(caller_channel));
 					goto done;
 				}
 			}
@@ -1751,6 +1766,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				status = SWITCH_STATUS_FALSE;
 				abort_call(caller_channel, peer_channel);
 				switch_core_session_rwunlock(peer_session);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (events not received)\n", switch_channel_get_name(caller_channel));
 				goto done;
 			}
 
@@ -1759,6 +1775,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				status = SWITCH_STATUS_FALSE;
 				abort_call(caller_channel, peer_channel);
 				switch_core_session_rwunlock(peer_session);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (events not received - 2)\n", switch_channel_get_name(caller_channel));
 				goto done;
 			}
 
@@ -1794,6 +1811,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
 			}
 			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MEDIA_BRIDGE (thread started)\n", switch_channel_get_name(caller_channel));
 			audio_bridge_thread(NULL, (void *) a_leg);
 
 			switch_channel_clear_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);

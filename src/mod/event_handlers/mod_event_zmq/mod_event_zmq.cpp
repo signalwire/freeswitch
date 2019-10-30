@@ -1,10 +1,10 @@
 #include <switch.h>
-#include <zmq.hpp>
 #include <exception>
 #include <stdexcept>
 #include <memory>
 
 #include "mod_event_zmq.h"
+#include "zmq_helper.hpp"
 
 namespace mod_event_zmq {
 
@@ -20,15 +20,17 @@ public:
 	}
 
 	void PublishEvent(const switch_event_t *event) {
+		if (!event) {
+			return;
+		}
 		// Serialize the event into a JSON string
-		char* pjson;
-		switch_event_serialize_json(const_cast<switch_event_t*>(event), &pjson);
-
-		// Use the JSON string as the message body
-		zmq::message_t msg(pjson, strlen(pjson), free_message_data, NULL);
-
-		// Send the message
-		_publisher.send(msg);
+		char* pjson = 0;
+		if ((switch_event_serialize_json(const_cast<switch_event_t*>(event), &pjson) == SWITCH_STATUS_SUCCESS) && pjson) {
+			// Use the JSON string as the message body
+			zmq::message_t msg(pjson, strlen(pjson), free_message_data, NULL);
+			// Send the message
+			_publisher.send(msg);
+		}
 	}
 
 private:
@@ -124,7 +126,9 @@ private:
 	static void event_handler(switch_event_t *event) {
 		try {
 			ZmqEventPublisher *publisher = static_cast<ZmqEventPublisher*>(event->bind_user_data);
-			publisher->PublishEvent(event);
+			if (publisher) {
+				publisher->PublishEvent(event);
+			}
 		} catch(std::exception ex) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error publishing event via 0MQ: %s\n", ex.what());
 		} catch(...) { // Exceptions must not propogate to C caller

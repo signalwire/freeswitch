@@ -1128,6 +1128,7 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *sql, *auth_str;
+	char *opaque = profile->challenge_opaque;
 	msg_t *msg = NULL;
 
 
@@ -1145,7 +1146,8 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 	switch_assert(sql != NULL);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
+	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth%s%s\"", realm, uuid_str, stale ? " stale=true," : "",
+						 opaque ? "\", opaque=\"" : "", opaque ? opaque : "");
 
 	if (regtype == REG_REGISTER) {
 		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
