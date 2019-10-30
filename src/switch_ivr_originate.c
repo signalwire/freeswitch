@@ -4383,6 +4383,12 @@ SWITCH_DECLARE(switch_event_t *) switch_dial_leg_get_vars(switch_dial_leg_t *leg
 	return leg->leg_vars;
 }
 
+SWITCH_DECLARE(const char *) switch_dial_leg_get_var(switch_dial_leg_t *leg, const char *key)
+{
+	switch_assert(leg);
+
+	return switch_event_get_header(leg->leg_vars, key);
+}
 
 static switch_status_t vars_serialize_json_obj(switch_event_t *event, cJSON **json)
 {
@@ -4559,32 +4565,31 @@ static switch_status_t o_bridge_on_dtmf(switch_core_session_t *session, void *in
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh)
+SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh, switch_call_cause_t *cause)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
-	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int fail = 0;
 	
 	if ((status = switch_ivr_originate(session,
 									   &peer_session,
-									   &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh)) != SWITCH_STATUS_SUCCESS) {
+									   cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh)) != SWITCH_STATUS_SUCCESS) {
 		fail = 1;
 	}
 
 
 	if (fail) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(*cause));
 		
-		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(cause));
+		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(*cause));
 
-		switch_channel_handle_cause(caller_channel, cause);
+		switch_channel_handle_cause(caller_channel, *cause);
 
-		return;
+		return status;
 	} else {
-		
 		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+
 		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
 			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
@@ -4620,6 +4625,8 @@ SWITCH_DECLARE(void) switch_ivr_orig_and_bridge(switch_core_session_t *session, 
 			switch_core_session_rwunlock(peer_session);
 		}
 	}
+
+	return status;
 }
 
 
