@@ -188,6 +188,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
   unsigned tls_policy = TPTLS_VERIFY_NONE;
   unsigned tls_depth = 0;
   unsigned tls_date = 1;
+  unsigned tls_enable_dh = 0;
   su_strlst_t const *tls_subjects = NULL;
   su_home_t autohome[SU_HOME_AUTO_SIZE(1024)];
   tls_issues_t ti = {0};
@@ -206,10 +207,13 @@ static int tport_tls_init_master(tport_primary_t *pri,
 	  TPTAG_TLS_PASSPHRASE_REF(passphrase),
 	  TPTAG_TLS_VERIFY_POLICY_REF(tls_policy),
 	  TPTAG_TLS_VERIFY_DEPTH_REF(tls_depth),
+	  TPTAG_TLS_ENABLE_DH_REF(tls_enable_dh),
 	  TPTAG_TLS_VERIFY_DATE_REF(tls_date),
 	  TPTAG_TLS_VERIFY_SUBJECTS_REF(tls_subjects),
 	  TAG_END());
 
+  ti.enable_dh = tls_enable_dh;
+  
   if (!path) {
     homedir = getenv("HOME");
     if (!homedir)

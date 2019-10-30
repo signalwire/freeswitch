@@ -141,6 +141,10 @@ struct nua_handle_s
   unsigned        nh_has_subscribe:1;  /**< Has watcher */
   unsigned        nh_has_notify:1;     /**< Has notifier */
   unsigned        nh_has_register:1;   /**< Has registration */
+  unsigned        nh_use_compact:1;   /**< Use compact SIP headers */
+  unsigned        nh_offer_100rel:1;   /**< Offer 100rel */
+  unsigned        nh_no_strip_routes:1;   /**< Do not strip route headers for mid dialog requests*/
+  unsigned        nh_skip_send_bye:1;
 
   /* Call status */
   unsigned        nh_active_call:1;
@@ -302,6 +306,8 @@ int nua_registration_process_request(nua_registration_t *nr,
 
 void nua_stack_post_signal(nua_handle_t *nh, nua_event_t event,
 			   tag_type_t tag, tag_value_t value, ...);
+
+int nua_stack_count_handles(nua_t *nua);
 
 typedef int nua_stack_signal_handler(nua_t *,
 				     nua_handle_t *,

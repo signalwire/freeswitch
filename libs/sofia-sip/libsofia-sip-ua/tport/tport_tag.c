@@ -382,6 +382,8 @@ tag_typedef_t tptag_tls_verify_policy = UINTTAG_TYPEDEF(tls_verify_policy);
  */
 tag_typedef_t tptag_tls_verify_depth = UINTTAG_TYPEDEF(tls_verify_depth);
 
+tag_typedef_t tptag_tls_enable_dh = UINTTAG_TYPEDEF(tls_enable_dh);
+
 /**@def TPTAG_TLS_VERIFY_DATE(x)
  *
  * Enable/Disable verification of notBefore and notAfter parameters of

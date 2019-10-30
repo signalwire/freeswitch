@@ -193,6 +193,8 @@ SOFIAPUBFUN void nua_shutdown(nua_t *nua);
 /** Destroy the NUA stack. */
 SOFIAPUBFUN void nua_destroy(nua_t *nua);
 
+int nua_count_handles(nua_t *nua);
+
 /** Fetch callback context from nua. */
 SOFIAPUBFUN nua_magic_t *nua_magic(nua_t *nua);
 
@@ -250,6 +252,14 @@ SOFIAPUBFUN int nua_handle_has_events(nua_handle_t const *nh);
 
 /** Check if operation handle has active registrations */
 SOFIAPUBFUN int nua_handle_has_registrations(nua_handle_t const *nh);
+
+SOFIAPUBFUN int nua_handle_use_compact(nua_handle_t const *nh);
+
+SOFIAPUBFUN int nua_handle_offer_100rel(nua_handle_t const *nh);
+
+SOFIAPUBFUN int nua_handle_skip_send_bye(nua_handle_t const *nh);
+
+SOFIAPUBFUN void nua_handle_skip_send_bye_set(nua_handle_t *nh, int val);
 
 /** Get the remote address (From/To header) of operation handle */
 SOFIAPUBFUN sip_to_t const *nua_handle_remote(nua_handle_t const *nh);

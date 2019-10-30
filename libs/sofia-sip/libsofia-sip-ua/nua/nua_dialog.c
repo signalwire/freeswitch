@@ -363,9 +363,13 @@ void nua_dialog_usage_remove(nua_owner_t *own,
     if (du == *at)
       break;
 
+#if 0
   assert(*at);
-
   nua_dialog_usage_remove_at(own, ds, at, cr, sr);
+#else
+  if (*at)
+	  nua_dialog_usage_remove_at(own, ds, at, cr, sr);
+#endif
 }
 
 /** @internal Remove dialog usage.

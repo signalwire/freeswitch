@@ -160,6 +160,7 @@ int nua_client_create(nua_handle_t *nh,
 			   NULL);
   }
 
+  cr->nh = nh;
   cr->cr_methods = methods;
   cr->cr_event = event;
   cr->cr_method = method;
@@ -612,8 +613,7 @@ msg_t *nua_client_request_template(nua_client_request_t *cr)
   nua_handle_t *nh = cr->cr_owner;
   nua_t *nua = nh->nh_nua;
   nua_dialog_state_t *ds = nh->nh_ds;
-
-  msg_t *msg = nta_msg_create(nua->nua_nta, 0);
+  msg_t *msg = nta_msg_create(nua->nua_nta, nua_handle_use_compact(nh) ? MSG_FLG_COMPACT : 0);
   sip_t *sip = sip_object(msg);
 
   if (!sip)
@@ -773,12 +773,15 @@ int nua_client_request_sendmsg(nua_client_request_t *cr)
     return -1;
 
   if (nua_dialog_is_established(ds)) {
-    while (sip->sip_route)
-      sip_route_remove(msg, sip);
+    if (!nh->nh_no_strip_routes) {
+      while (sip->sip_route) {
+        sip_route_remove(msg, sip);
+      }
+    } 
   }
   else if (!ds->ds_route) {
     sip_route_t *initial_route = NH_PGET(nh, initial_route);
-
+    SU_DEBUG_1(("nua(%p): JOGEN: nua is a new dialog\n", (void *)nh));
     if (initial_route) {
       initial_route = sip_route_dup(msg_home(msg), initial_route);
       if (!initial_route) return -1;
@@ -1552,7 +1555,6 @@ int nua_base_client_response(nua_client_request_t *cr,
 
   if (method == sip_method_cancel)
     return 1;
-
   return nua_client_next_request(nh->nh_ds->ds_cr, method == sip_method_invite);
 }
 

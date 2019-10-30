@@ -382,7 +382,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     return -1;
 #endif
 #ifndef OPENSSL_NO_DH
-  } else {
+  } else if (ti->enable_dh) {
     BIO *bio = BIO_new_file(ti->key, "r");
     if (bio != NULL) {
       DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);

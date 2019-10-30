@@ -243,6 +243,13 @@ TPORT_DLL extern tag_typedef_t tptag_tls_verify_depth_ref;
 #define TPTAG_TLS_VERIFY_DEPTH_REF(x) \
              tptag_tls_verify_depth_ref, tag_uint_vr(&(x))
 
+TPORT_DLL extern tag_typedef_t tptag_tls_enable_dh;
+#define TPTAG_TLS_ENABLE_DH(x) tptag_tls_enable_dh, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_enable_dh_ref;
+#define TPTAG_TLS_ENABLE_DH_REF(x) \
+             tptag_tls_enable_dh_ref, tag_uint_vr(&(x))
+
 TPORT_DLL extern tag_typedef_t tptag_tls_verify_date;
 #define TPTAG_TLS_VERIFY_DATE(x) tptag_tls_verify_date, tag_uint_v((x))
 

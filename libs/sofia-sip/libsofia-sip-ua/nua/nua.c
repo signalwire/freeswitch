@@ -89,7 +89,7 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  * @param root            Pointer to a root object
  * @param callback        Pointer to event callback function
  * @param magic           Pointer to callback context
- * @param tag, value, ... List of tagged parameters
+ * @param tag,ï¿½value, ... List of tagged parameters
  *
  * @retval !=NULL a pointer to a @nua stack object
  * @retval NULL upon an error
@@ -479,6 +479,26 @@ int nua_handle_has_subscribe(nua_handle_t const *nh)
 int nua_handle_has_register(nua_handle_t const *nh)
 {
   return nh ? nh->nh_has_register : 0;
+}
+
+int nua_handle_use_compact(nua_handle_t const *nh)
+{
+  return nh ? nh->nh_use_compact : 0;
+}
+
+int nua_handle_offer_100rel(nua_handle_t const *nh)
+{
+  return nh ? nh->nh_offer_100rel : 0;
+}
+
+int nua_handle_skip_send_bye(nua_handle_t const *nh)
+{
+  return nh ? nh->nh_skip_send_bye : 0;
+}
+
+void nua_handle_skip_send_bye_set(nua_handle_t *nh, int val)
+{
+	nh->nh_skip_send_bye = val;
 }
 
 /** Check if operation handle has an active call
@@ -1088,4 +1108,9 @@ nua_handle_t *nua_handle_by_call_id(nua_t *nua, const char *call_id)
     }
   }
   return NULL;
+}
+
+int nua_count_handles(nua_t *nua)
+{
+	return nua_stack_count_handles(nua);
 }

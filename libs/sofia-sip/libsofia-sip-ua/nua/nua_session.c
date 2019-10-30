@@ -800,7 +800,12 @@ static int nua_invite_client_request(nua_client_request_t *cr,
   ss->ss_precondition = sip_has_feature(sip->sip_require, "precondition");
   if (ss->ss_precondition)
     ss->ss_update_needed = ss->ss_100rel = 1;
-
+  
+  if (!ss->ss_100rel && nua_handle_offer_100rel(nh)) {
+    ss->ss_100rel = 1;
+    SU_DEBUG_5(("nua(%p): 100rel enabled by nua handle\n", (void *)nh));
+  }
+  
   if (nh->nh_soa) {
     soa_init_offer_answer(nh->nh_soa);
 
@@ -833,7 +838,6 @@ static int nua_invite_client_request(nua_client_request_t *cr,
   else {
     offer_sent = session_get_description(sip, NULL, NULL);
   }
-
   retval = nua_base_client_trequest(cr, msg, sip,
 				    NTATAG_REL100(ss->ss_100rel),
 				    TAG_NEXT(tags));
@@ -1281,7 +1285,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   msg_destroy(msg);
 
-  msg = nta_msg_create(nh->nh_nua->nua_nta, 0);
+  msg = nta_msg_create(nh->nh_nua->nua_nta, nua_handle_use_compact(nh) ? MSG_FLG_COMPACT : 0);
   sip = sip_object(msg);
   if (!msg)
     goto error;
@@ -3807,7 +3811,7 @@ static int nua_bye_client_request(nua_client_request_t *cr,
   nua_session_usage_t *ss;
   char const *reason = NULL;
 
-  int error;
+  int error = 0;
   nua_server_request_t *sr;
 
   if (du == NULL)
@@ -3815,6 +3819,10 @@ static int nua_bye_client_request(nua_client_request_t *cr,
 
   ss = nua_dialog_usage_private(du);
   reason = ss->ss_reason;
+
+  if (nua_handle_skip_send_bye(cr->nh)) {
+    return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
+  }
 
   error = nua_base_client_trequest(cr, msg, sip,
 				    SIPTAG_REASON_STR(reason),

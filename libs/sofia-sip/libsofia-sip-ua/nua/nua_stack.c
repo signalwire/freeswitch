@@ -740,6 +740,19 @@ void nua_stack_timer(nua_t *nua, su_timer_t *t, su_timer_arg_t *a)
   }
 }
 
+int nua_stack_count_handles(nua_t *nua)
+{
+	int count = 0;
+	nua_handle_t *nh , *nh_next ;
+	if (nua) {
+		for (nh = nua->nua_handles; nh; nh = nh_next) {
+			nh_next = nh->nh_next;
+			count++;
+		}
+	}
+	return count;
+}
+
 
 static
 int nh_call_pending(nua_handle_t *nh, sip_time_t now)

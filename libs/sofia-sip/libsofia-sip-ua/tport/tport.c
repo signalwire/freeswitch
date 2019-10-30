@@ -3559,7 +3559,7 @@ ssize_t tport_vsend(tport_t *self,
 {
   ssize_t n;
   su_addrinfo_t *ai = msg_addrinfo(msg);
-
+  
   if (cc) {
     n = tport_send_comp(self, msg, iov, iovused, cc, self->tp_comp);
   }

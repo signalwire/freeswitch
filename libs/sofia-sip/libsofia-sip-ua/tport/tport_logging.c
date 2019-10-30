@@ -45,6 +45,8 @@
 #include <errno.h>
 #include <limits.h>
 
+
+#define snprintf_nowarn(...) (snprintf(__VA_ARGS__) < 0 ? printf("snprintf failure") : (void)0)
 #define TPORT_STAMP_SIZE 144
 
 /**@var TPORT_LOG
@@ -360,6 +362,7 @@ void tport_stamp(tport_t const *self, msg_t *msg,
   su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof(name));
 
   snprintf(stamp, TPORT_STAMP_SIZE,
+
 	   "%s "MOD_ZU" bytes %s %s/[%s]:%u%s%s at %02u:%02u:%02u.%06lu:\n",
 	   what, (size_t)n, via, self->tp_name->tpn_proto,
 	   name, ntohs(su->su_port), label[0] ? label : "", comp,

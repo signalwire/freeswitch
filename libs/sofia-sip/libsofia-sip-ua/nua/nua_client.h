@@ -36,6 +36,7 @@
  */
 
 #include <nua_types.h>
+#include <sofia-sip/nua_tag.h>
 
 /* Methods for client request. @internal */
 typedef struct {
@@ -150,6 +151,8 @@ struct nua_client_request
   nua_client_request_t *cr_next, **cr_prev; /**< Linked list of requests */
   nua_owner_t        *cr_owner;
   nua_dialog_usage_t *cr_usage;
+  
+  nua_handle_t* nh;
 
   nua_saved_signal_t cr_signal[1];
   tagi_t const      *cr_tags;

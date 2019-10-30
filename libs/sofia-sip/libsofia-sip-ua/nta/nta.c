@@ -126,6 +126,9 @@ HTABLE_DECLARE_WITH(leg_htable, lht, nta_leg_t, size_t, hash_value_t);
 HTABLE_DECLARE_WITH(outgoing_htable, oht, nta_outgoing_t, size_t, hash_value_t);
 HTABLE_DECLARE_WITH(incoming_htable, iht, nta_incoming_t, size_t, hash_value_t);
 
+/* Callback whether to drop incoming messages on purpose*/
+nta_peek_datagram_request_func nta_peek_datagram_request = 0;
+
 typedef struct outgoing_queue_t {
   nta_outgoing_t **q_tail;
   nta_outgoing_t  *q_head;
@@ -2888,9 +2891,16 @@ void agent_recv_request(nta_agent_t *agent,
       return;
     }
   }
+  
+  if (nta_peek_datagram_request && !tport_is_reliable(tport) && nta_peek_datagram_request(msg, sip) != 0) {
+      SU_DEBUG_5(("nta: %s (%u) is %s\n", method_name, cseq, "dropped by nta_peek_datagram_request simulating packet loss"));
+      agent->sa_stats->as_drop_request++;
+      msg_destroy(msg);
+      return;
+  }
 
   stream = tport_is_stream(tport);
-
+  
   /* Try to use compression on reverse direction if @Via has comp=sigcomp  */
   if (stream &&
       sip->sip_via && sip->sip_via->v_comp &&
@@ -5151,20 +5161,17 @@ int leg_route(nta_leg_t *leg,
 	      int reroute)
 {
   su_home_t *home = leg->leg_home;
-  sip_route_t *r, r0[1], *old;
-  int route_is_set;
-
+  sip_route_t *r, *old;
+#ifdef NTA_STRICT_ROUTING
+  sip_route_t r0[1];
+#endif
   if (!leg)
     return -1;
 
   if (route == NULL && reverse == NULL && contact == NULL)
     return 0;
 
-  sip_route_init(r0);
-
-  route_is_set = reroute ? leg->leg_route_set : leg->leg_route != NULL;
-
-  if (route_is_set && reroute <= 1) {
+  if (leg->leg_route != NULL) {
     r = leg->leg_route;
   }
   else if (route) {
@@ -5177,6 +5184,7 @@ int leg_route(nta_leg_t *leg,
     r = NULL;
 
 #ifdef NTA_STRICT_ROUTING
+  sip_route_init(r0);
   /*
    * Handle Contact according to the RFC2543bis04 sections 16.1, 16.2 and 16.4.
    */
@@ -11953,6 +11961,11 @@ int nta_tport_keepalive(nta_outgoing_t *orq)
 #else
   return -1;
 #endif
+}
+
+void nta_set_peek_datagram_request_func(nta_peek_datagram_request_func func)
+{
+  nta_peek_datagram_request = func;
 }
 
 /** Close all transports. @since Experimental in @VERSION_1_12_2. */
