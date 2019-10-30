@@ -32,6 +32,8 @@ static struct ws_globals_s ws_globals;
 
 #ifndef WSS_STANDALONE
 
+#define snprintf_nowarn(...) (snprintf(__VA_ARGS__) < 0 ? printf("snprintf failure") : (void)0)
+
 void init_ssl(void)
 {
 	//	SSL_library_init();
@@ -304,15 +306,15 @@ int ws_handshake(wsh_t *wsh)
 		goto err;
 	}
 
-	snprintf(input, sizeof(input), "%s%s", key, WEBSOCKET_GUID);
+	snprintf_nowarn(input, sizeof(input), "%s%s", key, WEBSOCKET_GUID);
 	sha1_digest(output, input);
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
 
 	if (*proto) {
-		snprintf(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
+		snprintf_nowarn(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
 	}
 
-	snprintf(respond, sizeof(respond),
+	snprintf_nowarn(respond, sizeof(respond),
 			 "HTTP/1.1 101 Switching Protocols\r\n"
 			 "Upgrade: websocket\r\n"
 			 "Connection: Upgrade\r\n"
@@ -335,7 +337,7 @@ int ws_handshake(wsh_t *wsh)
 	if (!wsh->stay_open) {
 
 		if (bytes > 0) {
-			snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+			snprintf_nowarn(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 					 "Sec-WebSocket-Version: 13\r\n\r\n");
 			respond[511] = 0;
 
