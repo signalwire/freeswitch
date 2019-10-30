@@ -58,6 +58,7 @@
 #ifdef SOLARIS_PRIVILEGES
 #include <priv.h>
 #endif
+#include <switch_telnyx.h>
 
 #ifdef WIN32
 #define popen _popen
@@ -107,6 +108,7 @@ static void send_heartbeat(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-Max", "%u", runtime.sessions_peak);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-FiveMin", "%u", runtime.sessions_peak_fivemin);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Idle-CPU", "%f", switch_core_idle_cpu());
+		switch_telnyx_on_populate_core_heartbeat(event);
 		switch_event_fire(&event);
 	}
 }
@@ -273,6 +275,14 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 	return runtime.console;
 }
 
+SWITCH_DECLARE(void) switch_core_global_mutex_lock()
+{
+	switch_mutex_lock(runtime.global_mutex);
+}
+SWITCH_DECLARE(void) switch_core_global_mutex_unlock()
+{
+	switch_mutex_unlock(runtime.global_mutex);
+}
 
 SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
@@ -1979,6 +1989,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 #ifdef ENABLE_ZRTP
 	switch_core_set_serial();
 #endif
+	switch_uuid_get(&uuid);
+	switch_uuid_format(runtime.uuid_str, &uuid);
+	switch_core_set_variable("core_uuid", runtime.uuid_str);
+
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
@@ -2020,11 +2034,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), check_ip_callback, "check_ip", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL | SSHF_OWN_THREAD);
-
-	switch_uuid_get(&uuid);
-	switch_uuid_format(runtime.uuid_str, &uuid);
-	switch_core_set_variable("core_uuid", runtime.uuid_str);
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2078,6 +2087,18 @@ SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number)
 }
 
 static uint32_t d_30 = 30;
+
+void switch_enable_dump_cores(int enabled)
+{
+	struct rlimit rlp;
+	int uid = geteuid();
+	seteuid(getuid()); // Switch back to starting uid for next call
+	memset(&rlp, 0, sizeof(rlp));
+	rlp.rlim_cur = enabled ? RLIM_INFINITY : 0;
+	rlp.rlim_max = enabled ? RLIM_INFINITY : 0;
+	setrlimit(RLIMIT_CORE, &rlp);
+	seteuid(uid);
+}
 
 static void switch_load_core_config(const char *file)
 {
@@ -2136,13 +2157,12 @@ static void switch_load_core_config(const char *file)
 					}
 #ifdef HAVE_SETRLIMIT
 				} else if (!strcasecmp(var, "dump-cores") && switch_true(val)) {
-					struct rlimit rlp;
-					memset(&rlp, 0, sizeof(rlp));
-					rlp.rlim_cur = RLIM_INFINITY;
-					rlp.rlim_max = RLIM_INFINITY;
-					setrlimit(RLIMIT_CORE, &rlp);
+					switch_enable_dump_cores(1);
+					
+				} else if (!strcasecmp(var, "dump-cores") && !switch_true(val)) {
+					switch_enable_dump_cores(0);
 #endif
-				} else if (!strcasecmp(var, "debug-level")) {
+				}else if (!strcasecmp(var, "debug-level")) {
 					int tmp = atoi(val);
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
@@ -2535,6 +2555,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		free(stream.data);
 		free(cmd);
 	}
+	
+	send_heartbeat();
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2560,6 +2582,26 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
 	return switch_mono_micro_time_now() - runtime.initiated;
+}
+
+SWITCH_DECLARE(void) switch_core_set_last_seen(switch_interval_time_t last_seen)
+{
+	runtime.last_seen = last_seen;
+}
+
+SWITCH_DECLARE(void) switch_core_set_last_seen_previous(switch_interval_time_t last_seen)
+{
+	runtime.last_seen_previous = last_seen;
+}
+
+SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen()
+{
+	return runtime.last_seen;
+}
+
+SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen_previous()
+{
+	return runtime.last_seen_previous;
 }
 
 

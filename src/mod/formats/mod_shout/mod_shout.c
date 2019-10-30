@@ -245,9 +245,11 @@ static inline void free_context(shout_context_t *context)
 			context->gfp = NULL;
 		}
 
+		switch_mutex_lock(context->audio_mutex);
 		if (context->audio_buffer) {
 			switch_buffer_destroy(&context->audio_buffer);
 		}
+		switch_mutex_unlock(context->audio_mutex);
 
 		switch_mutex_destroy(context->audio_mutex);
 
@@ -970,6 +972,10 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		decode_fd(context, data, bytes);
 
 	switch_mutex_lock(context->audio_mutex);
+	if (!context->audio_buffer) {
+		switch_mutex_unlock(context->audio_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
 	rb = switch_buffer_read(context->audio_buffer, data, bytes);
 	switch_mutex_unlock(context->audio_mutex);
 

@@ -578,7 +578,20 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 			}
 
 			if (file_sample_len <= 0) {
-				member->fnode->done++;
+				if (member->fnode->loops) {
+					if (--member->fnode->loops < 0) {
+						member->fnode->loops = -1;
+					}
+
+					if (member->fnode->loops) {
+						uint32_t pos = 0;
+						switch_core_file_seek(&member->fnode->fh, &pos, 0, SEEK_SET);
+					}
+				}
+
+				if (!member->fnode->loops) {
+					member->fnode->done++;
+				}
 			} else {			/* there is file node data to mix into the frame */
 				uint32_t i;
 				int32_t sample;
@@ -1471,10 +1484,19 @@ switch_status_t conference_member_play_file(conference_member_t *member, char *f
 	if (fnode->fh.params) {
 		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
 		const char *position = switch_event_get_header(fnode->fh.params, "position");
+		const char *loopsstr = switch_event_get_header(fnode->fh.params, "loops");
 
 		if (!zstr(vol)) {
 			fnode->fh.vol = atoi(vol);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Set playback volume for file: %d\n",fnode->fh.vol);
+		}
+
+		if (loopsstr) {
+			fnode->loops = atoi(loopsstr);
+
+			if (!strcasecmp(loopsstr, "inf") || !strcasecmp(loopsstr, "infinite")) {
+				fnode->loops = -1;
+			}
 		}
 
 		if (!bad_params && !zstr(position) && member->conference->channels == 2) {

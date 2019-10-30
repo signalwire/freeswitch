@@ -329,7 +329,8 @@ library_include_HEADERS = \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
 	src/include/switch_hashtable.h \
-	src/include/switch_image.h
+	src/include/switch_image.h \
+	src/include/switch_telnyx.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
@@ -405,6 +406,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_msrp.c \
 	src/switch_vad.c \
 	src/switch_vpx.c \
+	src/switch_telnyx.cpp \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
 	libs/miniupnpc/miniwget.c \

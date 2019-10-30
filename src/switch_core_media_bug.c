@@ -81,6 +81,11 @@ static void switch_core_media_bug_destroy(switch_media_bug_t **bug)
 		switch_buffer_destroy(&bp->raw_write_buffer);
 	}
 
+	if (bp->callback && bp->user_data) {
+		bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_DESTROY_USER_DATA);
+		bp->user_data = 0;
+	}
+		
 	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bp->function);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bp->target);
@@ -804,7 +809,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_media_bug_t *bug, *bp;
 	switch_size_t bytes;
 	switch_event_t *event;
+#if 0
 	int tap_only = 1, punt = 0, added = 0;
+#else
+	int tap_only = 1, punt = 0;
+#endif
 
 	const char *p;
 
@@ -969,7 +978,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
-
+#if 0
 	if (!session->bugs) {
 		session->bugs = bug;
 		added = 1;
@@ -991,6 +1000,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 			break;
 		}
 	}
+#else
+	bug->next = session->bugs;
+	session->bugs = bug;
+
+	for(bp = session->bugs; bp; bp = bp->next) {
+		if (bp->ready && !switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+			tap_only = 0;
+		}
+	}
+#endif
 
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 	*new_bug = bug;

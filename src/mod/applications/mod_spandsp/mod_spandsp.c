@@ -39,6 +39,7 @@
 #include "mod_spandsp.h"
 #include <spandsp/version.h>
 #include "mod_spandsp_modem.h"
+#include "prometheus_metrics.h"
 
 /* **************************************************************************
    FREESWITCH MODULE DEFINITIONS
@@ -871,7 +872,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	switch_console_set_complete("add uuid_send_tdd ::console::list_uuid");
 
 
-
+	prometheus_init(module_interface, api_interface, pool);
+	
 	if ((switch_event_bind(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our reloadxml handler!\n");
 		/* Not such severe to prevent loading */
@@ -885,7 +887,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 #if defined(MODEM_SUPPORT)
 	modem_global_init(module_interface, pool);
 #endif
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_spandsp loaded, using spandsp library version [%s]\n", SPANDSP_RELEASE_DATETIME_STRING);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -919,6 +921,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	}
 
 	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
+
+	prometheus_destroy();
 
 	return SWITCH_STATUS_UNLOAD;
 }

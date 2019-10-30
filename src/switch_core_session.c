@@ -375,7 +375,17 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 
 }
 
+static void switch_core_session_hupall_handler(switch_core_session_t* session, void* user_data)
+{
+	switch_channel_hangup(session->channel, (switch_call_cause_t)user_data);
+}
+
 SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
+{
+	switch_core_session_enumerate(switch_core_session_hupall_handler, (void*)cause);
+}
+
+SWITCH_DECLARE(void) switch_core_session_enumerate(switch_core_session_enumerate_t callback, void* user_data)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -404,13 +414,12 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 
 	for(np = head; np; np = np->next) {
 		if ((session = switch_core_session_locate(np->str))) {
-			switch_channel_hangup(session->channel, cause);
+			callback(session, user_data);
 			switch_core_session_rwunlock(session);
 		}
 	}
 
 	switch_core_destroy_memory_pool(&pool);
-
 }
 
 
@@ -746,6 +755,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			if ((profile = switch_channel_get_caller_profile(peer_channel))) {
 				if ((cloned_profile = switch_caller_profile_clone(session, profile)) != 0) {
 					switch_channel_set_origination_caller_profile(channel, cloned_profile);
+				}
+			}
+			
+			if (switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+				char* rtcp_probe_data = 0;
+				switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
+				switch_channel_set_flag(peer_channel, CF_ENABLE_RTCP_PROBE);
+				if ((rtcp_probe_data = (char*)switch_channel_get_private(channel, "__rtcp_probe_data"))) {
+					switch_channel_set_private(peer_channel, "__rtcp_probe_data", switch_core_session_strdup(*new_session, rtcp_probe_data));
 				}
 			}
 
@@ -1256,9 +1274,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_queue_t *queue;
+	const char* call_control = 0;
+	switch_channel_t* channel = 0;
 
 	switch_assert(session != NULL);
 	switch_assert(event != NULL);
+
+	channel = switch_core_session_get_channel(session);
+	if (channel) {
+		call_control = switch_channel_get_variable_dup(channel, "call_control", SWITCH_FALSE, -1);
+		if (call_control && switch_true(call_control)) {
+			switch_channel_event_set_extended_data(channel, *event);
+		}
+	}
 
 	if (session->private_event_queue) {
 		queue = priority ? session->private_event_queue_pri : session->private_event_queue;
@@ -2538,6 +2566,15 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 	return session_manager.session_limit;
 }
 
+SWITCH_DECLARE(void) switch_core_session_drop_udp_invites(switch_bool_t drop)
+{
+	session_manager.drop_udp_invites = drop;
+}
+SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites()
+{
+	return session_manager.drop_udp_invites;
+}
+
 SWITCH_DECLARE(double) switch_core_min_idle_cpu(double new_limit)
 {
 	if (new_limit >= 0) {
@@ -2566,6 +2603,7 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 {
 	memset(&session_manager, 0, sizeof(session_manager));
 	session_manager.session_limit = 1000;
+	session_manager.drop_udp_invites = SWITCH_FALSE;
 	session_manager.session_id = 1;
 	session_manager.memory_pool = pool;
 	switch_core_hash_init(&session_manager.session_table);

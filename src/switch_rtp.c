@@ -48,6 +48,7 @@
 #include <srtp_priv.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
+#include <switch_estimators.h>
 
 //#define DEBUG_TS_ROLLOVER
 #ifdef DEBUG_TS_ROLLOVER
@@ -93,6 +94,7 @@ static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
+static rtp_create_probe_func create_probe = 0;
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -499,9 +501,11 @@ struct switch_rtp {
 	int zrtp_mitm_tries;
 	int zinit;
 #endif
-
+	switch_time_t next_dtmf_send_time;
+	rtcp_probe_func rtcp_probe;
 };
 
+#if 0
 struct switch_rtcp_report_block {
 	uint32_t ssrc; /* The SSRC identifier of the source to which the information in this reception report block pertains. */
 	unsigned int fraction :8; /* The fraction of RTP data packets from source SSRC_n lost since the previous SR or RR packet was sent */
@@ -511,6 +515,7 @@ struct switch_rtcp_report_block {
 	uint32_t lsr; /* The middle 32 bits out of 64 in the NTP timestamp */
 	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
 };
+#endif
 
 struct switch_rtcp_sr_head {
 	uint32_t ssrc;
@@ -521,6 +526,7 @@ struct switch_rtcp_sr_head {
 	uint32_t oc;
 };
 
+#if 0
 struct switch_rtcp_sender_info {
 	uint32_t ntp_msw;
 	uint32_t ntp_lsw;
@@ -528,6 +534,7 @@ struct switch_rtcp_sender_info {
 	uint32_t pc;
 	uint32_t oc;
 };
+#endif
 
 struct switch_rtcp_sender_report {
 	uint32_t ssrc;
@@ -1591,6 +1598,7 @@ static void do_mos(switch_rtp_t *rtp_session) {
 				rtp_session->stats.inbound.error_log->flaws += penalty;
 				rtp_session->stats.inbound.error_log->consecutive_flaws++;
 			}
+			switch_telnyx_process_flaws(rtp_session, penalty);
 		}
 	} else {
 		rtp_session->consecutive_flaws = 0;
@@ -2059,6 +2067,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	uint32_t cur_nack[MAX_NACK] = { 0 };
 	uint16_t seq = 0;
 
+
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 		rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] &&
 		rtp_session->send_msg.header.ts &&
@@ -2152,7 +2161,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		switch_size_t sdes_bytes = sizeof(struct switch_rtcp_hdr_s);
 		uint32_t *ssrc;
 		switch_rtcp_sdes_unit_t *unit;
+		struct switch_rtcp_sender_info *rtcp_sender_info = 0;
 		switch_bool_t is_only_receiver = FALSE;
+		switch_bool_t report_sent = FALSE;
 
 		if (!rtcp_fb) {
 			rtp_session->rtcp_last_sent = now;
@@ -2180,9 +2191,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 			rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 			rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
+			report_sent = TRUE;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP RR (ssrc=%u)\n", rtp_session->ssrc);
+
 		} else {
-			struct switch_rtcp_sender_info *rtcp_sender_info;
 			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_SR; /* Sender report */
 			sr = (struct switch_rtcp_sender_report*) rtp_session->rtcp_send_msg.body;
 			sr->ssrc = htonl(rtp_session->ssrc);
@@ -2197,9 +2209,18 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
+				report_sent = TRUE;
 				stats->sent_pkt_count = 0;
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
+		}
+
+		if (report_sent && rtp_session->rtcp_probe) {
+			rtcp_pt_t type = (rtp_session->stats.rtcp.sent_pkt_count || force_send_rr) ? _RTCP_PT_RR : _RTCP_PT_SR;
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+				rtp_session->rtcp_probe(rtp_session, type, TRUE, rtcp_report_block, rtcp_sender_info);
+			}
 		}
 
 		rtp_session->rtcp_send_msg.header.length = htons((uint16_t)(rtcp_bytes / 4) - 1);
@@ -2985,6 +3006,16 @@ SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session)
 {
 	return rtp_session->remote_port;
+}
+
+SWITCH_DECLARE(char *) switch_rtp_get_local_host(switch_rtp_t *rtp_session)
+{
+	return zstr(rtp_session->local_host_str) ? "0.0.0.0" : rtp_session->local_host_str;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_get_local_port(switch_rtp_t *rtp_session)
+{
+	return rtp_session->local_port;
 }
 
 static void ping_socket(switch_rtp_t *rtp_session)
@@ -3965,13 +3996,32 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_rtcp_probe(switch_rtp_t * rtp_session, rtcp_probe_func probe)
+{
+	rtp_session->rtcp_probe = probe;
+}
+
+SWITCH_DECLARE(rtcp_probe_func) switch_rtp_get_rtcp_probe(switch_rtp_t * rtp_session)
+{
+	return rtp_session->rtcp_probe;
+}
+
+SWITCH_DECLARE(void) switch_rtp_set_create_probe(rtp_create_probe_func probe)
+{
+	create_probe = probe;
+}
+
+SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_session(switch_rtp_t * rtp_session)
+{
+	return rtp_session->session;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec)
 {
 #ifndef ENABLE_SRTP
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "SRTP NOT SUPPORTED IN THIS BUILD!\n");
 	return SWITCH_STATUS_FALSE;
 #else
-
 	switch_rtp_crypto_key_t *crypto_key;
 	srtp_policy_t *policy;
 	srtp_err_status_t stat;
@@ -4411,6 +4461,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_te = INVALID_PT;
 	rtp_session->cng_pt = INVALID_PT;
 	rtp_session->session = session;
+	rtp_session->rtcp_probe = 0;
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -4594,6 +4645,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
+	
+	if (create_probe){
+		create_probe(rtp_session, channel);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -5444,25 +5499,15 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 	}
 }
 
-static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_ms)
+static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms)
 {
-	int upsamp, max_upsamp;
-
-
-	if (!max_ms) max_ms = ms;
-
-	upsamp = ms * (rtp_session->samples_per_second / 1000);
-	max_upsamp = max_ms * (rtp_session->samples_per_second / 1000);
-	
+	int upsamp = ms * (rtp_session->samples_per_second / 1000);
+	rtp_session->queue_delay =  ms * (rtp_session->samples_per_second / 1000);
+	rtp_session->next_dtmf_send_time = switch_micro_time_now() + (ms * 1000);
 	rtp_session->sending_dtmf = 0;
-	rtp_session->queue_delay = upsamp;
-
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-		rtp_session->max_next_write_samplecount = rtp_session->timer.samplecount + max_upsamp;
-		rtp_session->next_write_samplecount = rtp_session->timer.samplecount + upsamp;
 		rtp_session->last_write_ts += upsamp;
 	}
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Queue digit delay of %dms\n", ms);
 }
 
@@ -5534,7 +5579,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_dur = 0;
 
 			if (rtp_session->interdigit_delay) {
-				set_dtmf_delay(rtp_session, rtp_session->interdigit_delay, rtp_session->interdigit_delay * 10);
+				set_dtmf_delay(rtp_session, rtp_session->interdigit_delay);
 			}
 
 			return;
@@ -5543,6 +5588,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
 		void *pop;
+
+
+		if (rtp_session->queue_delay && rtp_session->next_dtmf_send_time >  switch_micro_time_now()) {
+			return;
+		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
 			//switch_core_timer_sync(&rtp_session->write_timer);
@@ -5568,8 +5618,10 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (rtp_session->queue_delay) {
 			return;
+		} else {
+			rtp_session->next_dtmf_send_time = 0;
+			rtp_session->queue_delay = 0;
 		}
-
 
 		if (!rtp_session->sending_dtmf) {
 			rtp_session->sending_dtmf = 1;
@@ -5580,13 +5632,13 @@ static void do_2833(switch_rtp_t *rtp_session)
 			switch_size_t wrote;
 
 			if (rdigit->digit == 'w') {
-				set_dtmf_delay(rtp_session, 500, 0);
+				set_dtmf_delay(rtp_session, 500);
 				free(rdigit);
 				return;
 			}
 
 			if (rdigit->digit == 'W') {
-				set_dtmf_delay(rtp_session, 1000, 0);
+				set_dtmf_delay(rtp_session, 1000);
 				free(rdigit);
 				return;
 			}
@@ -6728,6 +6780,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			double rtt_now = 0;
 			uint8_t rtt_valid = 0;
 			int rtt_increase = 0, packet_loss_increase=0;
+      struct switch_rtcp_sender_info *rtcp_sender_info = 0;
 
 			//if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
 			//	rtp_session->send_rr = 1;
@@ -6745,6 +6798,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				lsr = (ntohl(sr->sender_info.ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->sender_info.ntp_msw)&0x0000ffff)<<16; /* The middle 32 bits out of 64 in the NTP timestamp */
 				rtp_session->stats.rtcp.last_recv_lsr_peer = htonl(lsr);  /* Save it include it in the next SR */
 				rtp_session->stats.rtcp.last_recv_lsr_local = lsr_now;    /* Save it to calculate DLSR when generating next SR */
+				rtcp_sender_info = &sr->sender_info;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Received a SR with %d report blocks, " \
 								  "length in words = %d, " \
 								  "SSRC = 0x%X, " \
@@ -6787,6 +6841,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			}
 			
+			if (rtp_session->rtcp_probe) {
+				switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+				if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+					rtp_session->rtcp_probe(rtp_session, msg->header.type, FALSE, report, rtcp_sender_info);
+				}
+			}
 
 			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
 				uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
@@ -7726,6 +7786,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		/* ignore packets not meant for us unless the auto-adjust window is open (ice mode has its own alternatives to this) */
+#ifdef IGNORE_CN_AUTOADJUST
 		if (!using_ice(rtp_session) && bytes) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ]) {
 				if (rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt || rtp_session->last_rtp_hdr.pt == 13) {
@@ -7736,6 +7797,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				goto recvfrom;
 			}
 		}
+#else
+		if (!using_ice(rtp_session) && bytes) {
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+				goto recvfrom;
+			}
+		}
+#endif
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
 			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
@@ -8583,9 +8651,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		uint32_t ts_delta;
-
 		this_ts = ntohl(send_msg->header.ts);
-
 		ts_delta = abs((int32_t)(this_ts - rtp_session->last_write_ts));
 
 		if (ts_delta > rtp_session->samples_per_second * 2) {

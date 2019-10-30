@@ -146,6 +146,7 @@
 #include "switch_estimators.h"
 #include "switch_vad.h"
 #include <libteletone.h>
+#include "switch_telnyx.h"
 
 
 /** \mainpage FreeSWITCH

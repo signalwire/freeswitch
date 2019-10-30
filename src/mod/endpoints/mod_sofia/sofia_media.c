@@ -36,11 +36,14 @@
 
 uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t type)
 {
-	uint8_t t, p = 0;
+	uint8_t t = 0, p = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, type))) {
-		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
+	if (!switch_channel_test_flag(channel, CF_REINVITE) || switch_core_media_validate_common_audio_sdp(session, r_sdp, type)) {
+		if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, type))) {
+			sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
+		}
 	}
 
 	if (!p) {
@@ -97,21 +100,45 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 	return SWITCH_STATUS_FALSE;
 }
 
-static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str) {
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_string_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
+{
+	va_list ap;
+	char *data = NULL;
+	va_start(ap, fmt);
+	//ret = switch_vasprintf(&data, fmt, ap);
+	if (!(data = switch_vmprintf(fmt, ap))) {
+		return SWITCH_STATUS_FALSE;
+	}
+	va_end(ap);
+	return handle->raw_write_function(handle, (unsigned char*)data, strlen(data));
+}
+
+
+static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str, const char*isup, intptr_t isup_len, switch_bool_t drop_sdp) {
 	char *dname = switch_core_session_strdup(session, str);
 	char *dval;
 
 	if ((dval = strchr(dname, ':'))) {
 		*dval++ = '\0';
-		if (*dval == '~') {
-			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(dval), dval + 1);
+		
+		if (drop_sdp && (strcasecmp(dname, "application/sdp") == 0)) {
+			return;
+		}
+
+		if (strcasecmp(dname, "application/isup") == 0 && isup) {
+			switch_string_stream_write(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", boundary, dname, isup_len);
+			stream->raw_write_function(stream, (unsigned char*)isup, isup_len);
+			switch_string_stream_write(stream, "\r\n");
+		} else if (*dval == '~') {
+			switch_string_stream_write(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(dval), dval + 1);
 		} else {
-			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, dname, strlen(dval) + 1, dval);
+			switch_string_stream_write(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, dname, strlen(dval) + 1, dval);
 		}
 	}
+	
 }
 
-char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
+char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp,  char **mp_type, switch_size_t * mp_data_len)
 {
 	char *extra_headers = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -120,6 +147,9 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *boundary = switch_core_session_get_uuid(session);
 
+	char * isup = (char*)switch_channel_get_private(channel, "_isup_payload");
+	intptr_t isup_len = (intptr_t)switch_channel_get_private(channel, "_isup_payload_size");
+	
 	SWITCH_STANDARD_STREAM(stream);
 	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = hi->next) {
@@ -131,11 +161,11 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 					int i = 0;
 
 					for(i = 0; i < hi->idx; i++) {
-						process_mp(session, &stream, boundary, hi->array[i]);
+						process_mp(session, &stream, boundary, hi->array[i], isup, isup_len, !!sdp);
 						x++;
 					}
 				} else {
-					process_mp(session, &stream, boundary, value);
+					process_mp(session, &stream, boundary, value, isup, isup_len, !!sdp);
 					x++;
 				}
 			}
@@ -146,9 +176,9 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	if (x) {
 		*mp_type = switch_core_session_sprintf(session, "multipart/mixed; boundary=%s", boundary);
 		if (sdp) {
-			stream.write_function(&stream, "--%s\r\nContent-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, strlen(sdp) + 1, sdp);
+			switch_string_stream_write(&stream, "--%s\r\nContent-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, strlen(sdp) + 1, sdp);
 		}
-		stream.write_function(&stream, "--%s--\r\n", boundary);
+		switch_string_stream_write(&stream, "--%s--\r\n", boundary);
 	}
 
 	if (!zstr((char *) stream.data)) {
@@ -156,7 +186,8 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	} else {
 		switch_safe_free(stream.data);
 	}
-
+	
+	*mp_data_len = stream.data_len;
 	return extra_headers;
 }
 

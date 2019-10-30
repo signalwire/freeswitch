@@ -70,6 +70,8 @@
 #include <../lib/abyss/src/http.h>
 #include <../lib/abyss/src/session.h>
 #include "ws.h"
+#include "prometheus_metrics.h"
+#include "rpc_helper.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
@@ -79,6 +81,7 @@ SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mo
 static abyss_bool HTTPWrite(TSession * s, const char *buffer, const uint32_t len);
 
 static struct {
+	char *addr;
 	uint16_t port;
 	uint8_t running;
 	char *realm;
@@ -90,8 +93,11 @@ static struct {
 	xmlrpc_registry *registryP;
 	switch_bool_t enable_websocket;
 	char *commands_to_log;
+	switch_mutex_t *mutex;
+	uint8_t shutting_down;
 } globals;
 
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_addr, globals.addr);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
@@ -101,9 +107,9 @@ static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
-	char *realm, *user, *pass, *default_domain;
+	char *addr, *realm, *user, *pass, *default_domain;
 
-	default_domain = realm = user = pass = NULL;
+	addr = default_domain = realm = user = pass = NULL;
 	globals.commands_to_log = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -112,6 +118,7 @@ static switch_status_t do_config(void)
 	}
 
 	globals.virtual_host = SWITCH_TRUE;
+	globals.addr = 0;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -134,7 +141,13 @@ static switch_status_t do_config(void)
 				} else if (!strcasecmp(var, "enable-websocket")) {
 					globals.enable_websocket = switch_true(val);
 				} else if (!strcasecmp(var, "commands-to-log")) {
-					globals.commands_to_log = val;
+					switch_set_string(globals.commands_to_log, val);
+				} else if (!strcasecmp(var, "http-address")) {
+					addr = val;
+				} else if (!strcasecmp(var, "throttle-on-idle-cpu")) {
+					set_min_idle_cpu_watermark(val);
+				} else if (!strcasecmp(var, "throttle-api")) {
+					set_throttled_api_calls(val);
 				}
 			}
 		}
@@ -153,6 +166,9 @@ static switch_status_t do_config(void)
 	if (default_domain) {
 		set_global_default_domain(default_domain);
 	}
+	if (addr) {
+		set_global_addr(addr);
+	}
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -170,8 +186,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals, 0, sizeof(globals));
-
+	
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_lock(globals.mutex);
 	do_config();
+	switch_mutex_unlock(globals.mutex);
+	prometheus_init(module_interface, pool);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -828,8 +848,12 @@ abyss_bool handler_hook(TSession * r)
 	TRequestInfo *info = 0;
 	switch_event_t *evnt = 0; /* shortcut to stream.param_event */
 	char v[256] = "";
+	double idle_cpu = switch_core_idle_cpu();
+	
+	switch_mutex_lock(globals.mutex);
 
-	if (!r || !(info = &r->requestInfo) || !(uri = info->uri)) {
+	if (globals.shutting_down || !r || !(info = &r->requestInfo) || !(uri = info->uri)) {
+		switch_mutex_unlock(globals.mutex);
 		return FALSE;
 	}
 
@@ -855,9 +879,16 @@ abyss_bool handler_hook(TSession * r)
 		command += 8;
 		xml++;
 	} else {
+		switch_mutex_unlock(globals.mutex);
 		return FALSE; /* 404 */
 	}
 
+	if (!is_resource_available(command, info->query))
+	{
+		ret = TRUE;
+		goto end;
+	}
+	
 	if ((path_info = strchr(command, '/'))) {
 		*path_info++ = '\0';
 	}
@@ -871,6 +902,8 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
+	
+		
 	if (!is_authorized(r, command)) {
 		ret = TRUE;
 		goto end;
@@ -1009,6 +1042,7 @@ abyss_bool handler_hook(TSession * r)
 
 	/* We made it this far, always OK */
 	if (!HTTPWrite(r, "HTTP/1.1 200 OK\r\n", (uint32_t) strlen("HTTP/1.1 200 OK\r\n"))) {
+		switch_mutex_unlock(globals.mutex);
 		return TRUE;
 	}
 
@@ -1046,6 +1080,7 @@ abyss_bool handler_hook(TSession * r)
 		char *header = switch_mprintf("%s: %s\r\n", ti->name, ti->value);
 		if (!ConnWrite(r->connP, header, (uint32_t) strlen(header))) {
 			switch_safe_free(header);
+			switch_mutex_unlock(globals.mutex);
 			return TRUE;
 		}
 		switch_safe_free(header);
@@ -1054,6 +1089,7 @@ abyss_bool handler_hook(TSession * r)
 	/* send end http header */
 	if (html||text||xml) {
 		if (!ConnWrite(r->connP, CRLF, 2)) {
+			switch_mutex_unlock(globals.mutex);
 			return TRUE;
 		}
 	}
@@ -1076,7 +1112,9 @@ abyss_bool handler_hook(TSession * r)
 	/* execute actual fs api command                                                            */
 	/* fs api command will write to stream,  calling http_stream_write / http_stream_raw_write	*/
 	/* switch_api_execute will stream INVALID COMMAND before it fails					        */
+	prometheus_increment_api_counter(command);
 	switch_api_execute(command, api_str, NULL, &stream);
+	prometheus_decrement_current_api_call();
 
         if (globals.commands_to_log != NULL) {
                 full_command = switch_mprintf("%s%s%s", command, (api_str==NULL ? "" : " "), api_str);
@@ -1093,7 +1131,7 @@ abyss_bool handler_hook(TSession * r)
 	r->requestInfo.keepalive = 0;
 
   end:
-
+	switch_mutex_unlock(globals.mutex);
 	return ret;
 }
 
@@ -1132,6 +1170,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		arg = "reload mod_xml_rpc";
 	}
 
+	prometheus_increment_api_counter(command);
 	SWITCH_STANDARD_STREAM(stream);
 	if (switch_api_execute(command, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		/* Return our result. */
@@ -1140,6 +1179,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	} else {
 		val = xmlrpc_build_value(envP, "s", "ERROR!");
 	}
+	prometheus_decrement_current_api_call();
 
   end:
 
@@ -1214,12 +1254,21 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
+	in_addr_t addr;
 
+	//
+	// Lock the global mutex.  ssl_init is not threadsafe
+	//
+	switch_core_global_mutex_lock();
 	globals.running = 1;
 
 	xmlrpc_env_init(&env);
 
 	globals.registryP = xmlrpc_registry_new(&env);
+	
+	if (globals.addr) {
+		addr = inet_addr(globals.addr);
+	}
 
 	/* TODO why twice and why add_method for freeswitch.api and add_method2 for freeswitch.management ? */
     xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch.api", &freeswitch_api, NULL, NULL, NULL);
@@ -1237,7 +1286,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	}
 
 	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
-	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
+	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.addr ? &addr : NULL, globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", globals.registryP);
 
@@ -1249,15 +1298,18 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 		xmlrpc_registry_free(globals.registryP);
 		MIMETypeTerm();
 
+		switch_core_global_mutex_unlock();
 		return SWITCH_STATUS_TERM;
 	}
 
+	switch_core_global_mutex_unlock();
+	
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
 	ServerSetKeepaliveTimeout(&globals.abyssServer, 5);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]%s\n",
-		globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, globals.enable_websocket ? " with websocket." : "");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP address %s:%d, DocRoot [%s]%s\n",
+		globals.addr ? globals.addr : "0.0.0.0", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, globals.enable_websocket ? " with websocket." : "");
 	ServerRun(&globals.abyssServer);
 
 	switch_yield(1000000);
@@ -1284,7 +1336,10 @@ void stop_all_websockets()
 /* upon module unload */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
-
+	switch_mutex_lock(globals.mutex);
+	globals.shutting_down = 1;
+	switch_mutex_unlock(globals.mutex);
+	
 	switch_event_free_subclass("websocket::stophook");
 
 	/* Cann't find a way to stop the websockets, use this for a workaround before finding the real one that works */
@@ -1301,10 +1356,18 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 	xmlrpc_registry_free(globals.registryP);
 	MIMETypeTerm();
 
+	switch_mutex_lock(globals.mutex);
+	
 	switch_safe_free(globals.realm);
 	switch_safe_free(globals.user);
 	switch_safe_free(globals.pass);
 	switch_safe_free(globals.default_domain);
+	switch_safe_free(globals.commands_to_log);
+	
+	switch_mutex_unlock(globals.mutex);
+	switch_mutex_destroy(globals.mutex);
+	
+	prometheus_destroy();
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -1039,6 +1039,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_co
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on);
 
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hold(time_t runtime, const char *uuid);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_unhold(time_t runtime, const char *uuid);
 SWITCH_DECLARE(switch_status_t) switch_dial_handle_create(switch_dial_handle_t **handle);
 SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json_obj(switch_dial_handle_t **handle, cJSON *json);
 SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json(switch_dial_handle_t **handle, const char *handle_string);

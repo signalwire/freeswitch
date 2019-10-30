@@ -1197,6 +1197,8 @@ int main(int argc, char *argv[])
 
 	switch_file_write(fd, pid_buffer, &pid_len);
 
+	switch_telnyx_init();
+
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
@@ -1225,6 +1227,7 @@ int main(int argc, char *argv[])
 	}
 
 	switch_core_runtime_loop(nc);
+	switch_telnyx_deinit();
 
 	destroy_status = switch_core_destroy();
 

@@ -3770,8 +3770,10 @@ SWITCH_STANDARD_API(uuid_early_ok_function)
 		switch_channel_t *channel = switch_core_session_get_channel(xsession);
 		switch_channel_set_flag(channel, CF_EARLY_OK);
 		switch_core_session_rwunlock(xsession);
+	} else if (uuid) {
+		stream->write_function(stream, "-ERROR: [uuid_early_ok] Unable to locate %s\n", uuid);
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERROR: [uuid_early_ok] NULL uuid!\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3807,7 +3809,11 @@ SWITCH_STANDARD_API(uuid_ring_ready_function)
 	stream->write_function(stream, "-USAGE: %s\n", RING_READY_SYNTAX);
 	goto done;
  error:
-	stream->write_function(stream, "-ERROR\n");
+	if (uuid) {
+		stream->write_function(stream, "-ERROR [uuid_ring_ready] Unable to locate uuid %s\n", uuid);
+	} else {
+		stream->write_function(stream, "-ERROR [uuid_ring_ready] NULL uuid!\n");
+	}
 	goto done;
  done:
 	switch_safe_free(mycmd);
@@ -3824,11 +3830,13 @@ SWITCH_STANDARD_API(uuid_pre_answer_function)
 		if (switch_channel_pre_answer(channel) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK\n");
 		} else {
-			stream->write_function(stream, "-ERROR\n");
+			stream->write_function(stream, "-ERROR [uuid_pre_answer] switch_channel_pre_answer() returned non-success code for uuid %s\n", uuid);
 		}
 		switch_core_session_rwunlock(xsession);
+	} else if (uuid) {
+		stream->write_function(stream, "-ERROR [uuid_pre_answer] Unable to locate uuid %s\n", uuid);
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERROR [uuid_pre_answer] Null uuid!\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3846,10 +3854,12 @@ SWITCH_STANDARD_API(uuid_answer_function)
 		if (status == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK\n");
 		} else {
-			stream->write_function(stream, "-ERROR\n");
+			stream->write_function(stream, "-ERROR [uuid_answer] switch_channel_answer() returned non-success code for uuid %s\n", uuid);
 		}
+	} else if (uuid) {
+		stream->write_function(stream, "-ERROR: [uuid_answer] Unable to locate uuid %s\n", uuid);
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERROR: [uuid_answer] Null uuid!\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5280,6 +5290,7 @@ SWITCH_STANDARD_API(sched_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef USE_NATIVE_BGAPI
 static switch_thread_rwlock_t *bgapi_rwlock = NULL;
 
 struct bg_job {
@@ -5287,6 +5298,8 @@ struct bg_job {
 	char *arg;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_memory_pool_t *pool;
+	switch_time_t created;
+	switch_time_t executed;
 };
 
 static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
@@ -5298,6 +5311,7 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	switch_event_t *event;
 	char *arg;
 	switch_memory_pool_t *pool;
+	switch_time_t elapsed;
 
 	if (!job) {
 		return NULL;
@@ -5306,6 +5320,7 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_rdlock(bgapi_rwlock);
 
 	pool = job->pool;
+	job->executed = switch_micro_time_now();
 
 	SWITCH_STANDARD_STREAM(stream);
 
@@ -5313,10 +5328,16 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 		*arg++ = '\0';
 	}
 
-	if ((status = switch_api_execute(job->cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
-		reply = stream.data;
+	elapsed = job->executed - job->created;
+	if ((elapsed / 1000) < 1000) { 
+		if ((status = switch_api_execute(job->cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+			reply = stream.data;
+		} else {
+			freply = switch_mprintf("%s: Command not found!\n", job->cmd);
+			reply = freply;
+		}
 	} else {
-		freply = switch_mprintf("%s: Command not found!\n", job->cmd);
+		freply = switch_mprintf("%s: Command took too long to execute!\n", job->cmd);
 		reply = freply;
 	}
 
@@ -5354,6 +5375,7 @@ SWITCH_STANDARD_API(bgapi_function)
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	int has_uuid = 0;
 	
 	const char *p, *arg = cmd;
 	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = ""; 
@@ -5366,6 +5388,7 @@ SWITCH_STANDARD_API(bgapi_function)
 	if (!strncasecmp(cmd, "uuid:", 5)) {
 		p = cmd + 5;
 		if ((arg = strchr(p, ' ')) && *arg++) {
+			has_uuid = 1;
 			switch_copy_string(my_uuid, p, arg - p);
 		}
 	}
@@ -5379,8 +5402,9 @@ SWITCH_STANDARD_API(bgapi_function)
 	job = switch_core_alloc(pool, sizeof(*job));
 	job->cmd = switch_core_strdup(pool, arg);
 	job->pool = pool;
+	job->created = switch_micro_time_now();
 
-	if (*my_uuid) {
+	if (has_uuid) {
 		switch_copy_string(job->uuid_str, my_uuid, strlen(my_uuid)+1);
 	} else {
 		switch_uuid_get(&uuid);
@@ -5395,6 +5419,7 @@ SWITCH_STANDARD_API(bgapi_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif
 
 struct holder {
 	char * delim;
@@ -7028,8 +7053,8 @@ end:
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
+#ifdef USE_NATIVE_BGAPI
 	int x;
-
 	for (x = 30; x > 0; x--) {
 		if (switch_thread_rwlock_trywrlock(bgapi_rwlock) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_rwlock_unlock(bgapi_rwlock);
@@ -7040,11 +7065,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 		}
 		switch_yield(1000000);
 	}
-
 	if (!x) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up waiting for bgapi threads.\n");
 	}
-
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -7449,8 +7473,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
+#ifdef USE_NATIVE_BGAPI
 	switch_thread_rwlock_create(&bgapi_rwlock, pool);
+#endif
 	switch_mutex_init(&reload_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	if (use_system_commands) {
@@ -7461,7 +7486,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "acl", "Compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);	SWITCH_ADD_API(commands_api_interface, "coalesce", "Return first nonempty parameter", coalesce_function, COALESCE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "banner", "Return the system banner", banner_function, "");
+#ifdef USE_NATIVE_BGAPI
 	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
+#endif
 	SWITCH_ADD_API(commands_api_interface, "break", "uuid_break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "cond", "Evaluate a conditional", cond_function, "<expr> ? <true val> : <false val>");

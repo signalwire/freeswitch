@@ -1270,6 +1270,8 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 			switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
 			switch_bool_t bleg = SWITCH_FALSE;
 			int sec = atol(argv[0] + 1);
+			uint32_t id;
+			char ids[80] = "";
 
 			if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + sec;
@@ -1288,7 +1290,9 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 			if (sec == 0) {
 				switch_channel_hangup(switch_core_session_get_channel(session), cause);
 			} else {
-				switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
+				id = switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
+				snprintf(ids, sizeof(ids), "%u", id);
+				switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No time specified.\n");
@@ -1330,6 +1334,60 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 			}
 
 			id = switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
+		}
+	}
+}
+
+SWITCH_STANDARD_APP(sched_hold_function)
+{
+	int argc;
+	char *argv[4] = { 0 };
+	char *mydata;
+
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			time_t when;
+			uint32_t id;
+			char ids[80] = "";
+
+			if (*argv[0] == '+') {
+				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+			} else {
+				when = atol(argv[0]);
+			}
+
+			id = switch_ivr_schedule_hold(when, switch_core_session_get_uuid(session));
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
+		}
+	}
+}
+
+SWITCH_STANDARD_APP(sched_unhold_function)
+{
+	int argc;
+	char *argv[4] = { 0 };
+	char *mydata;
+
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			time_t when;
+			uint32_t id;
+			char ids[80] = "";
+
+			if (*argv[0] == '+') {
+				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+			} else {
+				when = atol(argv[0]);
+			}
+
+			id = switch_ivr_schedule_unhold(when, switch_core_session_get_uuid(session));
 			snprintf(ids, sizeof(ids), "%u", id);
 			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
 		} else {
@@ -6571,6 +6629,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function,
 				   "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
+	
+	SWITCH_ADD_APP(app_interface, "sched_hold", "Schedule a call hold request", "Schedule a call hold request", sched_hold_function, "[+]<time>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_unhold", "Schedule a call unhold request", "Schedule a call unhold request", sched_unhold_function, "[+]<time>", SAF_SUPPORT_NOMEDIA);
+	
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_heartbeat", "Enable Scheduled Heartbeat", "Enable Scheduled Heartbeat",
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);

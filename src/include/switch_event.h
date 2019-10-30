@@ -119,7 +119,8 @@ typedef struct switch_serial_event_header_s {
 typedef enum {
 	EF_UNIQ_HEADERS = (1 << 0),
 	EF_NO_CHAT_EXEC = (1 << 1),
-	EF_DEFAULT_ALLOW = (1 << 2)
+	EF_DEFAULT_ALLOW = (1 << 2),
+	EF_NO_SEND = (1 << 3)
 } switch_event_flag_t;
 
 

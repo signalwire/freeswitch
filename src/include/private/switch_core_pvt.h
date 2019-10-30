@@ -243,6 +243,8 @@ typedef enum {
 struct switch_runtime {
 	switch_time_t initiated;
 	switch_time_t reference;
+	switch_time_t last_seen;
+	switch_time_t last_seen_previous;
 	int64_t offset;
 	switch_event_t *global_vars;
 	switch_hash_t *mime_types;
@@ -321,6 +323,7 @@ struct switch_session_manager {
 	switch_thread_cond_t *cond;
 	int running;
 	int busy;
+	switch_bool_t drop_udp_invites;
 };
 
 extern struct switch_session_manager session_manager;

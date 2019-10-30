@@ -52,6 +52,8 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t bridged;
 	switch_time_t last_hold;
 	switch_time_t hold_accum;
+	switch_time_t last_rtp_read_heartbeat;
+	switch_time_t last_rtp_write_heartbeat;
 	struct switch_channel_timetable *next;
 };
 

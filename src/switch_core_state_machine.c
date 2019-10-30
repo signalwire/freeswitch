@@ -55,16 +55,18 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
+	switch_rtp_stats_t *audio_stats = NULL;
 	int rec;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 
+	switch_core_media_set_stats(session);
+	audio_stats = switch_core_media_get_stats(session, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(session));
+	if (audio_stats) {
+		switch_telnyx_process_audio_stats(session, audio_stats);
+	}
 	if (switch_true(switch_channel_get_variable(session->channel, "log_audio_stats_on_hangup"))) {
-		switch_rtp_stats_t *audio_stats = NULL;
-
-		switch_core_media_set_stats(session);
-		audio_stats = switch_core_media_get_stats(session, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(session));
 		if (audio_stats) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 					SWITCH_LOG_DEBUG,

@@ -3264,7 +3264,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 				switch_channel_set_flag(channel, CF_RECOVERING_BRIDGE);
 			}
 
-			switch_core_media_recover_session(session);
+			switch_core_media_recover_session(session, 0, 0, SWITCH_FALSE);
 
 			if ((cbname = switch_channel_get_variable(channel, "secondary_recovery_module"))) {
 				switch_core_recover_callback_t recover_callback;
@@ -3310,6 +3310,9 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Endpoint %s has no recovery function\n", argv[0]);
+		if (session) {
+			switch_core_session_destroy(&session);
+		}
 	}
 
 
@@ -3429,15 +3432,26 @@ SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql)
 	switch_sql_queue_manager_push(sql_manager.qm, sql, 3, SWITCH_TRUE);
 }
 
+static recovery_callback_t recovery_track_callback = 0;
+static recovery_callback_t recovery_untrack_callback = 0;
+
+SWITCH_DECLARE(void) switch_core_recovery_track_callback(recovery_callback_t callback)
+{
+	recovery_track_callback = callback;
+}
+SWITCH_DECLARE(void) switch_core_recovery_untrack_callback(recovery_callback_t callback)
+{
+	recovery_untrack_callback = callback;
+}
+
 SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force)
 {
-	char *sql = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (!sql_manager.manage) {
+	
+	if (!recovery_untrack_callback) {
 		return;
 	}
-
+	
 	if (!switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_get_state(channel) < CS_SOFT_EXECUTE) {
 		return;
 	}
@@ -3451,35 +3465,21 @@ SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session
 	}
 
 	if (switch_channel_test_flag(channel, CF_TRACKED) || force) {
-
-		if (force) {
-			sql = switch_mprintf("delete from recovery where uuid='%q'", switch_core_session_get_uuid(session));
-
-		} else {
-			sql = switch_mprintf("delete from recovery where runtime_uuid='%q' and uuid='%q'",
-								 switch_core_get_uuid(), switch_core_session_get_uuid(session));
-		}
-
-		switch_sql_queue_manager_push(sql_manager.qm, sql, 3, SWITCH_FALSE);
-
 		switch_channel_clear_flag(channel, CF_TRACKED);
+		recovery_untrack_callback(session, 0);
 	}
-
 }
 
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
 {
 	switch_xml_t cdr = NULL;
 	char *xml_cdr_text = NULL;
-	char *sql = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *profile_name;
-	const char *technology;
-
-	if (!sql_manager.manage) {
+	
+	if (!recovery_track_callback) {
 		return;
 	}
-
+	
 	if (!switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_get_state(channel) < CS_SOFT_EXECUTE) {
 		return;
 	}
@@ -3488,31 +3488,16 @@ SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
 		return;
 	}
 
-	profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
-	technology = session->endpoint_interface->interface_name;
-
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
 		switch_xml_free(cdr);
 	}
 
 	if (xml_cdr_text) {
-		if (switch_channel_test_flag(channel, CF_TRACKED)) {
-			sql = switch_mprintf("update recovery set metadata='%q' where uuid='%q'",  xml_cdr_text, switch_core_session_get_uuid(session));
-		} else {
-			sql = switch_mprintf("insert into recovery (runtime_uuid, technology, profile_name, hostname, uuid, metadata) "
-								 "values ('%q','%q','%q','%q','%q','%q')",
-								 switch_core_get_uuid(), switch_str_nil(technology),
-								 switch_str_nil(profile_name), switch_core_get_switchname(), switch_core_session_get_uuid(session), xml_cdr_text);
-		}
-
-		switch_sql_queue_manager_push(sql_manager.qm, sql, 2, SWITCH_FALSE);
-
+		recovery_track_callback(session, xml_cdr_text);
 		switch_safe_free(xml_cdr_text);
 		switch_channel_set_flag(channel, CF_TRACKED);
-
 	}
-
 }
 
 
