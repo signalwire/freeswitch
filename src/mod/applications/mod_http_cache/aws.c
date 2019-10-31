@@ -64,19 +64,19 @@ static char* aws_s3_signature_key(char* key_signing, switch_aws_s3_profile* aws_
  */
 static char* aws_s3_standardized_query_string(switch_aws_s3_profile* aws_s3_profile)
 {
-    char* credential;
-    char expires[10];
-    char* standardized_query_string;
+	char* credential;
+	char expires[10];
+	char* standardized_query_string;
 
 	credential = switch_mprintf("%s%%2F%s%%2F%s%%2Fs3%%2Faws4_request", aws_s3_profile->access_key_id, aws_s3_profile->date_stamp, aws_s3_profile->region);
-    switch_snprintf(expires, 9, "%ld", aws_s3_profile->expires);
+	switch_snprintf(expires, 9, "%ld", aws_s3_profile->expires);
 
 	standardized_query_string = switch_mprintf(
-            "X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-SignedHeaders=host",
-            credential, aws_s3_profile->time_stamp, expires
-    );
+			"X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-SignedHeaders=host",
+			credential, aws_s3_profile->time_stamp, expires
+	);
 
-    switch_safe_free(credential);
+	switch_safe_free(credential);
 
 	return standardized_query_string;
 }
@@ -92,7 +92,7 @@ static char* aws_s3_standardized_request(switch_aws_s3_profile* aws_s3_profile) 
 
 	char* standardized_request = switch_mprintf(
 		"%s\n/%s\n%s\nhost:%s.%s\n\nhost\nUNSIGNED-PAYLOAD",
-        aws_s3_profile->verb, aws_s3_profile->object, standardized_query_string, aws_s3_profile->bucket, aws_s3_profile->base_domain
+		aws_s3_profile->verb, aws_s3_profile->object, standardized_query_string, aws_s3_profile->bucket, aws_s3_profile->base_domain
 	);
 
 	switch_safe_free(standardized_query_string);
@@ -116,7 +116,7 @@ static char *aws_s3_string_to_sign(char* standardized_request, switch_aws_s3_pro
 
 	string_to_sign = switch_mprintf(
 		"AWS4-HMAC-SHA256\n%s\n%s/%s/s3/aws4_request\n%s",
-        aws_s3_profile->time_stamp, aws_s3_profile->date_stamp, aws_s3_profile->region, standardized_request_hex
+		aws_s3_profile->time_stamp, aws_s3_profile->date_stamp, aws_s3_profile->region, standardized_request_hex
 	);
 
 	return string_to_sign;
@@ -134,7 +134,7 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
 	char* standardized_query_string;
 	char* standardized_request;
 	char signature_key[SHA256_DIGEST_LENGTH];
-    char* query_param;
+	char* query_param;
 
 	// Get standardized_query_string
 	standardized_query_string = aws_s3_standardized_query_string(aws_s3_profile);
@@ -149,16 +149,16 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
 	aws_s3_signature_key(signature_key, aws_s3_profile);
 
 	// Get signature
-    hmac256_hex(signature, signature_key, SHA256_DIGEST_LENGTH, string_to_sign);
+	hmac256_hex(signature, signature_key, SHA256_DIGEST_LENGTH, string_to_sign);
 
-    // Build final query string
-    query_param = switch_mprintf("%s&X-Amz-Signature=%s", standardized_query_string, signature);
+	// Build final query string
+	query_param = switch_mprintf("%s&X-Amz-Signature=%s", standardized_query_string, signature);
 
-    switch_safe_free(string_to_sign);
-    switch_safe_free(standardized_query_string);
-    switch_safe_free(standardized_request);
+	switch_safe_free(string_to_sign);
+	switch_safe_free(standardized_query_string);
+	switch_safe_free(standardized_request);
 
-    return query_param;
+	return query_param;
 }
 
 /**
@@ -173,43 +173,43 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
  * @return updated headers
  */
 SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
-        http_profile_t *profile,
-        switch_curl_slist_t *headers,
-        const char *verb,
-        unsigned int content_length,
-        const char *content_type,
-        const char *url,
-        const unsigned int block_num,
-        char **query_string
+		http_profile_t *profile,
+		switch_curl_slist_t *headers,
+		const char *verb,
+		unsigned int content_length,
+		const char *content_type,
+		const char *url,
+		const unsigned int block_num,
+		char **query_string
 ) {
-    switch_aws_s3_profile aws_s3_profile;
-    char* url_dup;
+	switch_aws_s3_profile aws_s3_profile;
+	char* url_dup;
 
-    // Get bucket and object name from url
-    switch_strdup(url_dup, url);
+	// Get bucket and object name from url
+	switch_strdup(url_dup, url);
 	parse_url(url_dup, profile->base_domain, "s3", &aws_s3_profile.bucket, &aws_s3_profile.object);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bucket: %s\n", aws_s3_profile.bucket);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "object: %s\n", aws_s3_profile.object);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bucket: %s\n", aws_s3_profile.bucket);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "object: %s\n", aws_s3_profile.object);
 
-    // Get date and time
-    get_time("%Y%m%d", aws_s3_profile.date_stamp, DATE_STAMP_LENGTH);
-    get_time("%Y%m%dT%H%M%SZ", aws_s3_profile.time_stamp, TIME_STAMP_LENGTH);
+	// Get date and time
+	get_time("%Y%m%d", aws_s3_profile.date_stamp, DATE_STAMP_LENGTH);
+	get_time("%Y%m%dT%H%M%SZ", aws_s3_profile.time_stamp, TIME_STAMP_LENGTH);
 
-    // Get access key id and secret
-    aws_s3_profile.access_key_id = profile->aws_s3_access_key_id;
-    aws_s3_profile.access_key_secret = profile->secret_access_key;
+	// Get access key id and secret
+	aws_s3_profile.access_key_id = profile->aws_s3_access_key_id;
+	aws_s3_profile.access_key_secret = profile->secret_access_key;
 
-    // Get base domain
-    aws_s3_profile.base_domain = profile->base_domain;
-    aws_s3_profile.region = profile->region;
-    aws_s3_profile.verb = verb;
-    aws_s3_profile.expires = profile->expires;
+	// Get base domain
+	aws_s3_profile.base_domain = profile->base_domain;
+	aws_s3_profile.region = profile->region;
+	aws_s3_profile.verb = verb;
+	aws_s3_profile.expires = profile->expires;
 
-    *query_string = aws_s3_authentication_create(&aws_s3_profile);
+	*query_string = aws_s3_authentication_create(&aws_s3_profile);
 
-    switch_safe_free(url_dup);
+	switch_safe_free(url_dup);
 
-    return headers;
+	return headers;
 }
 
 /**
@@ -220,12 +220,11 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
  */
 SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
 {
-	//switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
 	switch_xml_t region_xml = switch_xml_child(xml, "region");
 	switch_xml_t expires_xml = switch_xml_child(xml, "expires");
 	switch_xml_t backup_folder_xml = switch_xml_child(xml, "backup-folder");
-    switch_stream_handle_t stream = { 0 };
+	switch_stream_handle_t stream = { 0 };
 
 	// Function pointer to be called to append query params to original url
 	profile->append_headers_ptr = aws_s3_append_headers;
@@ -259,39 +258,39 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 
 	// Get region
 	if (!region_xml) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
-        return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
+		return SWITCH_STATUS_FALSE;
 	}
-    profile->region = switch_strip_whitespace(switch_xml_txt(region_xml));
-    if (zstr(profile->region)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
-        switch_safe_free(profile->region);
-        return SWITCH_STATUS_FALSE;
-    }
+	profile->region = switch_strip_whitespace(switch_xml_txt(region_xml));
+	if (zstr(profile->region)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
+		switch_safe_free(profile->region);
+		return SWITCH_STATUS_FALSE;
+	}
 
-    // Get base domain for AWS S3 compatible services. Default base domain is s3.amazonaws.com
-    if (base_domain_xml) {
-        profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
-        if (zstr(profile->base_domain)) {
-            switch_safe_free(profile->base_domain);
-            profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
-        }
-    } else
-    {
-        profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
-    }
+	// Get base domain for AWS S3 compatible services. Default base domain is s3.amazonaws.com
+	if (base_domain_xml) {
+		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
+		if (zstr(profile->base_domain)) {
+			switch_safe_free(profile->base_domain);
+			profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
+		}
+	} else
+	{
+		profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
+	}
 
 	// Get expire time for URL signature
 	if (expires_xml) {
 		char* expires = switch_strip_whitespace(switch_xml_txt(expires_xml));
 		if (!zstr(expires) && switch_is_number(expires))
 		{
-            profile->expires = switch_safe_atoi(expires, DEFAULT_EXPIRATION_TIME);
-        } else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid \"expires\" in http_cache.conf.xml for profile \"%s\"\n", profile->name);
-            profile->expires = DEFAULT_EXPIRATION_TIME;
-        }
+			profile->expires = switch_safe_atoi(expires, DEFAULT_EXPIRATION_TIME);
+		} else
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid \"expires\" in http_cache.conf.xml for profile \"%s\"\n", profile->name);
+			profile->expires = DEFAULT_EXPIRATION_TIME;
+		}
 		switch_safe_free(expires);
 	} else
 	{
@@ -303,20 +302,20 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 		profile->backup_folder = NULL;
 	} else
 	{
-        profile->backup_folder = switch_strip_whitespace(switch_xml_txt(backup_folder_xml));
-        if (zstr(profile->backup_folder))
-        {
-            SWITCH_STANDARD_STREAM(stream);
-            switch_api_execute("eval", "$${storage_dir}", NULL, &stream);
-            if (zstr(stream.data)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not read variable $${storage_dir}");
-                return SWITCH_STATUS_FALSE;
-            }
+		profile->backup_folder = switch_strip_whitespace(switch_xml_txt(backup_folder_xml));
+		if (zstr(profile->backup_folder))
+		{
+			SWITCH_STANDARD_STREAM(stream);
+			switch_api_execute("eval", "$${storage_dir}", NULL, &stream);
+			if (zstr(stream.data)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not read variable $${storage_dir}");
+				return SWITCH_STATUS_FALSE;
+			}
 
-            switch_strdup(profile->backup_folder, stream.data);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup folder set to default: %s\n", profile->backup_folder);
-            switch_safe_free(stream.data)
-        }
+			switch_strdup(profile->backup_folder, stream.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup folder set to default: %s\n", profile->backup_folder);
+			switch_safe_free(stream.data)
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
