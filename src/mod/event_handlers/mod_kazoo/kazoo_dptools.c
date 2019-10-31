@@ -891,7 +891,8 @@ SWITCH_STANDARD_APP(kz_att_xfer_function)
 	}
 }
 
-void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switch_application_interface_t *app_interface) {
+void add_kz_dptools(switch_loadable_module_interface_t **module_interface) {
+	switch_application_interface_t *app_interface = NULL;
 	SWITCH_ADD_APP(app_interface, "kz_set", SET_SHORT_DESC, SET_LONG_DESC, set_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_set_encoded", SET_SHORT_DESC, SET_LONG_DESC, set_encoded_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_multiset", MULTISET_SHORT_DESC, MULTISET_LONG_DESC, multiset_function, MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);

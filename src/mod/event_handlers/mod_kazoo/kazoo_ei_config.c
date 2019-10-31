@@ -95,6 +95,19 @@ static int read_cookie_from_file(char *filename) {
 	}
 }
 
+void kz_set_hostname()
+{
+	if (kazoo_globals.hostname == NULL) {
+		char hostname[NODENAME_MAX];
+		memcpy(hostname, switch_core_get_hostname(), NODENAME_MAX);
+		kazoo_globals.hostname_ent = gethostbyname(hostname);
+		if(kazoo_globals.hostname_ent != NULL) {
+			kazoo_globals.hostname = switch_core_strdup(kazoo_globals.pool, kazoo_globals.hostname_ent->h_name);
+		} else {
+			kazoo_globals.hostname = switch_core_strdup(kazoo_globals.pool, hostname);
+		}
+	}
+}
 
 switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	switch_xml_t child, param;
@@ -109,7 +122,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.receive_msg_preallocate = 2000;
 	kazoo_globals.event_stream_preallocate = KZ_DEFAULT_STREAM_PRE_ALLOCATE;
 	kazoo_globals.send_msg_batch = 10;
-	kazoo_globals.event_stream_framing = 2;
+	kazoo_globals.event_stream_framing = 4;
 	kazoo_globals.port = 0;
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
@@ -211,11 +224,18 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	}
 
 	if ((child = switch_xml_child(cfg, "tweaks"))) {
+		char *default_tweaks = (char *) switch_xml_attr_soft(param, "default");
+		if (default_tweaks) {
+			int i, v = switch_true(default_tweaks) ? 1 : 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak default : %s\n", default_tweaks);
+			for (i = 0; i < KZ_TWEAK_MAX; i++) kazoo_globals.tweaks[i] = v;
+		}
 		for (param = switch_xml_child(child, "tweak"); param; param = param->next) {
 			kz_tweak_t tweak = KZ_TWEAK_MAX;
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if(var && val && kz_name_tweak(var, &tweak) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak %s : %s\n", var, val);
 				if(switch_true(val)) {
 					kz_set_tweak(tweak);
 				} else {
@@ -230,6 +250,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if(var && val) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set core variable %s : %s\n", var, val);
 				switch_core_set_variable(var, val);
 			}
 		}
