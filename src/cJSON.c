@@ -1041,22 +1041,10 @@ static unsigned char *print_value(const cJSON * const item, const size_t depth, 
             break;
         case cJSON_Raw:
         {
-            size_t raw_length = 0;
-            if (item->valuestring == NULL)
-            {
-                if (!output_buffer->noalloc)
-                {
-                    hooks->deallocate(output_buffer->buffer);
-                }
-                output = NULL;
-                break;
-            }
-
-            raw_length = strlen(item->valuestring) + sizeof('\0');
-            output = ensure(output_buffer, raw_length, hooks);
+            output = ensure(output_buffer, strlen(item->valuestring), hooks);
             if (output != NULL)
             {
-                memcpy(output, item->valuestring, raw_length);
+                strcpy((char*)output, item->valuestring);
             }
             break;
         }
