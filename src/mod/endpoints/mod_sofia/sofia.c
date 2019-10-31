@@ -10131,6 +10131,7 @@ switch_status_t sofia_locate_user(char* user, switch_core_session_t *session, si
 		for (un = sip->sip_unknown; un; un = un->un_next) {
 			switch_event_add_header_string(v_event, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
 		};
+		switch_channel_event_set_data(switch_core_session_get_channel(session), v_event);
 	}
 
 	result = switch_xml_locate_user_merged("id", username, domain, NULL, x_user, v_event);
