@@ -232,7 +232,9 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 			expanded = kz_event_expand_headers(src, field->value);
 			if(expanded != NULL && !zstr(expanded)) {
 				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, expanded);
-				free(expanded);
+				if(expanded != field->value) {
+					free(expanded);
+				}
 			}
 			break;
 
@@ -325,6 +327,21 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
     return SWITCH_STATUS_SUCCESS;
 }
 
+#define EVENT_TIMESTAMP_FIELD "Event-Date-Timestamp"
+#define JSON_TIMESTAMP_FIELD "Event-Timestamp"
+
+static switch_status_t kazoo_event_add_timestamp(switch_event_t* evt, cJSON* JObj)
+{
+	switch_event_header_t *header;
+	cJSON *item = NULL;
+	if((header = switch_event_get_header_ptr(evt, EVENT_TIMESTAMP_FIELD)) != NULL) {
+		if ((item = kazoo_event_json_value(JSON_NUMBER, header->value)) != NULL) {
+			kazoo_cJSON_AddItemToObject(JObj, JSON_TIMESTAMP_FIELD, item);
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	return SWITCH_STATUS_NOTFOUND;
+}
 
 kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_ptr event, kazoo_event_profile_ptr profile)
 {
@@ -366,6 +383,8 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 
 	kazoo_event_init_json(profile->fields, event ? event->fields : NULL, evt, &JObj);
 
+	kazoo_event_add_timestamp(evt, JObj);
+
 	if(profile->fields)
 		kazoo_event_add_fields_to_json(&logging, JObj, evt, profile->fields->head);
 
@@ -401,6 +420,8 @@ kazoo_message_ptr kazoo_message_create_fetch(switch_event_t* evt, kazoo_fetch_pr
 
 
 	kazoo_event_init_json(profile->fields, NULL, evt, &JObj);
+
+	kazoo_event_add_timestamp(evt, JObj);
 
 	if(profile->fields)
 		kazoo_event_add_fields_to_json(&logging, JObj, evt, profile->fields->head);

@@ -332,8 +332,6 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 		return NULL;
 	}
 
-	switch_getnameinfo(&kazoo_globals.hostname, sa, 0);
-
 	if (kazoo_globals.nat_map && switch_nat_get_type()) {
 		switch_nat_add_mapping(port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
 	}
