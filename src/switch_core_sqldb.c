@@ -153,6 +153,8 @@ SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_dat
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
 
+top:
+
 	for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
 		if (switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 			if (dbh_ptr->type != SCDB_TYPE_DATABASE_INTERFACE) {
@@ -170,6 +172,7 @@ SWITCH_DECLARE(void) switch_cache_db_database_interface_flush_handles(switch_dat
 			del_handle(dbh_ptr);
 			switch_mutex_unlock(dbh_ptr->mutex);
 			destroy_handle(&dbh_ptr);
+			goto top;
 		}
 	}
 
@@ -303,7 +306,7 @@ static void sql_close(time_t prune)
 
 			del_handle(dbh);
 			switch_mutex_unlock(dbh->mutex);
-			switch_core_destroy_memory_pool(&dbh->pool);
+			destroy_handle(&dbh);
 			goto top;
 
 		} else {
@@ -432,7 +435,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn_ex(switch_cac
 																   const char *file, const char *func, int line)
 {
 	switch_cache_db_connection_options_t connection_options = { {0} };
-	switch_cache_db_handle_type_t type;
+	switch_cache_db_handle_type_t type = SCDB_TYPE_CORE_DB;
 	switch_database_interface_t *database_interface = NULL;
 	char tmp[256] = "";
 	char *p;
