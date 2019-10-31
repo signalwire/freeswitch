@@ -3008,7 +3008,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		}
 		UNPROTECT_INTERFACE(api);
 	} else {
-		status = api == 0 ? SWITCH_STATUS_NOTFOUND : SWITCH_STATUS_FALSE;
+		status = api ? SWITCH_STATUS_FALSE : SWITCH_STATUS_NOTFOUND;
 	}
 
 	if (stream->param_event) {
