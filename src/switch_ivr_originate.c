@@ -1587,7 +1587,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	/* extract channel variables, allowing multiple sets of braces */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
-	while (*data == '<') {
+	while (data && *data == '<') {
 		char *parsed = NULL;
 
 		if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
@@ -2742,7 +2742,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				end = NULL;
 
-				chan_type = peer_names[i];
+				if (!(chan_type = peer_names[i])) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Empty dial string\n");
+					switch_goto_status(SWITCH_STATUS_FALSE, done);
+				}
 
 
 				/* strip leading spaces */
