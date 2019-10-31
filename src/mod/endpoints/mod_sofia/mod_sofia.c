@@ -5122,6 +5122,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_custom_headers")) || switch_true(vval)) {
 			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
+		} else if (vval && !zstr(vval) && !switch_false(vval)) {
+			char *argv[10] = { 0 };
+			char *dupvar = switch_core_session_strdup(session, vval);
+			int i, c;
+			c = switch_separate_string(dupvar, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (i = 0; i < c; i++) {
+				char buf[100];
+				sprintf(buf, "%s%s", SOFIA_SIP_HEADER_PREFIX_T, argv[i]);
+				switch_ivr_transfer_variable(session, nsession, buf);
+			}
 		}
 
 		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_multipart")) || switch_true(vval)) {
