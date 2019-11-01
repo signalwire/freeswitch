@@ -519,6 +519,8 @@ while calls are in progress.
 Summary:	FreeSWITCH mod_rad_auth
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       freeradius-client
+BuildRequires:  freeradius-client-devel
 
 %description application-rad_auth
 Provides FreeSWITCH mod_rad_auth, authetication via RADIUS protocol from FreeSWITCH dialplan
@@ -1088,7 +1090,9 @@ JSON CDR Logger for FreeSWITCH.
 %package event-radius-cdr
 Summary:        RADIUS Logger for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       freeradius-client
+BuildRequires:  freeradius-client-devel
 
 %description event-radius-cdr
 RADIUS Logger for the FreeSWITCH open source telephony platform
@@ -1641,7 +1645,7 @@ TIMERS_MODULES+="timers/mod_timerfd"
 #						XML Modules
 #
 ######################################################################################################################
-XML_INT_MODULES="xml_int/mod_xml_cdr xml_int/mod_xml_curl xml_int/mod_xml_rpc"
+XML_INT_MODULES="xml_int/mod_xml_cdr xml_int/mod_xml_curl xml_int/mod_xml_radius xml_int/mod_xml_rpc"
 
 ######################################################################################################################
 #
@@ -2604,6 +2608,9 @@ fi
 
 %files xml-curl
 %{MODINSTDIR}/mod_xml_curl.so*
+
+%files xml-radius
+%{MODINSTDIR}/mod_xml_radius.so*
 
 ######################################################################################################################
 #			FreeSWITCH ESL language modules
