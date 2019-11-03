@@ -1700,7 +1700,7 @@ then
 		AC_MSG_RESULT([$with_python])
 		AC_SUBST([PYTHON], ["$with_python"])
 	else
-		AC_PATH_PROG([PYTHON], ["python"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+		AC_PATH_PROG([PYTHON], ["python2"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
 	fi
 
 	if test "$PYTHON" != "no" ; then

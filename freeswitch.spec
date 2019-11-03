@@ -174,7 +174,6 @@ BuildRequires: db-devel
 %else
 BuildRequires: db4-devel
 %endif
-BuildRequires: python-devel
 BuildRequires: libogg-devel
 BuildRequires: libvorbis-devel
 BuildRequires: libjpeg-devel
@@ -201,10 +200,6 @@ BuildRequires: lua-devel
 BuildRequires: mongo-c-driver-devel
 BuildRequires: opus-devel
 BuildRequires: soundtouch-devel >= 1.7.1
-%if %{build_py26_esl}
-BuildRequires: python26-devel
-Requires: python26
-%endif
 Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
@@ -223,7 +218,6 @@ Requires: db4
 Requires: gdbm
 Requires: zlib
 Requires: libtiff
-Requires: python
 Requires: libtheora
 Requires: libxml2
 Requires: libsndfile
@@ -1240,7 +1234,8 @@ Requires:	perl
 Summary:        Python support for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:	python
+Requires:	python2
+BuildRequires:  python2-devel
 
 %description    python
 
@@ -1387,6 +1382,8 @@ The Perl ESL module allows for native interaction with FreeSWITCH over the event
 %package	-n python-ESL
 Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 Group:		System Environment/Libraries
+Requires:       python2
+BuildRequires:  python2-devel
 
 %description	-n python-ESL
 The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
@@ -1738,15 +1735,6 @@ cd libs/esl
 cd libs/esl
 %{__make} DESTDIR=%{buildroot} pymod-install
 %{__make} DESTDIR=%{buildroot} perlmod-install
-
-%if %{build_py26_esl}
-#install esl for python 26
-%{__make} clean
-sed -i s/python\ /python26\ /g python/Makefile
-%{__make} pymod
-%{__mkdir} -p %{buildroot}/usr/lib/python2.6/site-packages
-%{__make} DESTDIR=%{buildroot} pymod-install
-%endif
 
 cd ../..
 
