@@ -10008,7 +10008,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 							);
 		}
 
-		if (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		if (smh->mparams->rtcp_audio_interval_msec && (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING))) {
 
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
