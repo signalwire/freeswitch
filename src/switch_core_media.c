@@ -8416,41 +8416,41 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 		engine->ice_out.cands[0][0].foundation = switch_core_session_strdup(session, tmp);
 	}
 
-	if (engine->rtcp_mux < 0 && !engine->ice_out.cands[0][1].foundation) {
+	if (engine->rtcp_mux < 1 && !engine->ice_out.cands[0][1].foundation) {
 		switch_stun_random_string(tmp, 10, "0123456789");
 		tmp[10] = '\0';
 		engine->ice_out.cands[0][1].foundation = switch_core_session_strdup(session, tmp);
 	}
 
 	engine->ice_out.cands[0][0].transport = "udp";
-	if (engine->rtcp_mux < 0 ) engine->ice_out.cands[0][1].transport = "udp";
+	if (engine->rtcp_mux < 1 ) engine->ice_out.cands[0][1].transport = "udp";
 
 	if (!engine->ice_out.cands[0][0].component_id) {
 		engine->ice_out.cands[0][0].component_id = 1;
 		engine->ice_out.cands[0][0].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][0].component_id);
 	}
 
-	if (engine->rtcp_mux < 0 && !engine->ice_out.cands[0][1].component_id) {
+	if (engine->rtcp_mux < 1 && !engine->ice_out.cands[0][1].component_id) {
 		engine->ice_out.cands[0][1].component_id = 2;
 		engine->ice_out.cands[0][1].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][1].component_id);
 	}
 
 	if (!zstr(ip)) {
 		engine->ice_out.cands[0][0].con_addr = switch_core_session_strdup(session, ip);
-		if (engine->rtcp_mux < 0) engine->ice_out.cands[0][1].con_addr = switch_core_session_strdup(session, ip);
+		if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].con_addr = switch_core_session_strdup(session, ip);
 	}
 
 	if (port) {
 		engine->ice_out.cands[0][0].con_port = port;
-		if (engine->rtcp_mux < 0) engine->ice_out.cands[0][1].con_port = port+1;
+		if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].con_port = port+1;
 	}
 
 	engine->ice_out.cands[0][0].generation = "0";
-	if (engine->rtcp_mux < 0) engine->ice_out.cands[0][1].generation = "0";
+	if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].generation = "0";
 	//add rport stuff later
 
 	engine->ice_out.cands[0][0].ready = 1;
-	if (engine->rtcp_mux < 0) engine->ice_out.cands[0][1].ready = 1;
+	if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].ready = 1;
 
 
 }
