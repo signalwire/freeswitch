@@ -5382,7 +5382,8 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_
 
 	upsamp = ms * (rtp_session->samples_per_second / 1000);
 	max_upsamp = max_ms * (rtp_session->samples_per_second / 1000);
-
+	
+	rtp_session->sending_dtmf = 0;
 	rtp_session->queue_delay = upsamp;
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
