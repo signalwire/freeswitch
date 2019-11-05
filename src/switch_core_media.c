@@ -8443,7 +8443,7 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 	if (port) {
 		engine->ice_out.cands[0][0].con_port = port;
 		if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].con_port = port+1;
-		else if engine->ice_out.cands[0][1].con_port = port;
+		else engine->ice_out.cands[0][1].con_port = port;
 	}
 
 	engine->ice_out.cands[0][0].generation = "0";
