@@ -8415,43 +8415,43 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 		tmp[10] = '\0';
 		engine->ice_out.cands[0][0].foundation = switch_core_session_strdup(session, tmp);
 	}
-	/*rtcp_mux -1: no rtcp, rtcp_mux 0: rtcp over separate port, rtcp_mux 1: rtcp muxed over rtp port */
-	if (engine->rtcp_mux >= 0 && !engine->ice_out.cands[0][1].foundation) {
+	/*rtcp_mux -1: no rtcp/unknown, rtcp_mux 0: probably rtcp over separate port (not sure it is ever set to this), rtcp_mux 1: rtcp muxed over rtp port */
+	if (!engine->ice_out.cands[0][1].foundation) {
 		switch_stun_random_string(tmp, 10, "0123456789");
 		tmp[10] = '\0';
 		engine->ice_out.cands[0][1].foundation = switch_core_session_strdup(session, tmp);
 	}
 
 	engine->ice_out.cands[0][0].transport = "udp";
-	if (engine->rtcp_mux >= 0 ) engine->ice_out.cands[0][1].transport = "udp";
+	engine->ice_out.cands[0][1].transport = "udp";
 
 	if (!engine->ice_out.cands[0][0].component_id) {
 		engine->ice_out.cands[0][0].component_id = 1;
 		engine->ice_out.cands[0][0].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][0].component_id);
 	}
 
-	if (engine->rtcp_mux >= 0 && !engine->ice_out.cands[0][1].component_id) {
+	if (!engine->ice_out.cands[0][1].component_id) {
 		engine->ice_out.cands[0][1].component_id = 2;
 		engine->ice_out.cands[0][1].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][1].component_id);
 	}
 
 	if (!zstr(ip)) {
 		engine->ice_out.cands[0][0].con_addr = switch_core_session_strdup(session, ip);
-		if (engine->rtcp_mux >= 0) engine->ice_out.cands[0][1].con_addr = switch_core_session_strdup(session, ip);
+		engine->ice_out.cands[0][1].con_addr = switch_core_session_strdup(session, ip);
 	}
 
 	if (port) {
 		engine->ice_out.cands[0][0].con_port = port;
-		if (engine->rtcp_mux == 0) engine->ice_out.cands[0][1].con_port = port+1;
-		else if (engine->rtcp_mux == 1) engine->ice_out.cands[0][1].con_port = port;
+		if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].con_port = port+1;
+		else if engine->ice_out.cands[0][1].con_port = port;
 	}
 
 	engine->ice_out.cands[0][0].generation = "0";
-	if (engine->rtcp_mux >= 0) engine->ice_out.cands[0][1].generation = "0";
+	engine->ice_out.cands[0][1].generation = "0";
 	//add rport stuff later
 
 	engine->ice_out.cands[0][0].ready = 1;
-	if (engine->rtcp_mux >= 0) engine->ice_out.cands[0][1].ready = 1;
+	engine->ice_out.cands[0][1].ready = 1;
 
 
 }
@@ -13855,17 +13855,23 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 	v_engine->ice_out.pwd = NULL;
 	v_engine->ice_out.cands[0][0].foundation = NULL;
 	v_engine->ice_out.cands[0][0].component_id = 0;
+	v_engine->ice_out.cands[0][1].foundation = NULL;
+	v_engine->ice_out.cands[0][1].component_id = 0;
 
 	t_engine->ice_out.ufrag = NULL;
 	t_engine->ice_out.pwd = NULL;
 	t_engine->ice_out.cands[0][0].foundation = NULL;
 	t_engine->ice_out.cands[0][0].component_id = 0;
+	t_engine->ice_out.cands[0][1].foundation = NULL;
+	t_engine->ice_out.cands[0][1].component_id = 0;
 
 
 	a_engine->ice_out.ufrag = NULL;
 	a_engine->ice_out.pwd = NULL;
 	a_engine->ice_out.cands[0][0].foundation = NULL;
 	a_engine->ice_out.cands[0][0].component_id = 0;
+	a_engine->ice_out.cands[0][1].foundation = NULL;
+	a_engine->ice_out.cands[0][1].component_id = 0;
 
 	if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 		gen_ice(smh->session, SWITCH_MEDIA_TYPE_VIDEO, NULL, 0);
