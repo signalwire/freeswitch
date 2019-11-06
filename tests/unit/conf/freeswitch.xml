@@ -11,6 +11,8 @@
 		<load module="mod_spandsp"/>
 		<load module="mod_amr"/>
 		<load module="mod_amrwb"/>
+		<load module="mod_tone_stream"/>
+		<load module="mod_dptools"/>
 		<load module="mod_sndfile"/>
       </modules>
     </configuration>
