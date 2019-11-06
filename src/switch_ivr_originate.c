@@ -764,7 +764,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 				   && !switch_channel_test_flag(oglobals->originate_status[i].peer_channel, CF_TAGGED)
 			) {
 
-			if (!zstr(oglobals->key)) {
+			const char *group_confirm_key = switch_channel_get_variable(oglobals->originate_status[i].peer_channel, "group_confirm_key");
+			const char *group_confirm_file = switch_channel_get_variable(oglobals->originate_status[i].peer_channel, "group_confirm_file");
+
+			if (!zstr(oglobals->key) || !zstr(group_confirm_key)) {
 				struct key_collect *collect;
 
 				if (oglobals->cancel_timeout == SWITCH_TRUE) {
@@ -775,10 +778,15 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 
 				if ((collect = switch_core_session_alloc(oglobals->originate_status[i].peer_session, sizeof(*collect)))) {
 					switch_channel_set_flag(oglobals->originate_status[i].peer_channel, CF_TAGGED);
-					if (!zstr(oglobals->key)) {
+					if (!zstr(group_confirm_key)) {
+						collect->key = switch_core_session_strdup(oglobals->originate_status[i].peer_session, group_confirm_key);
+					} else {
 						collect->key = switch_core_session_strdup(oglobals->originate_status[i].peer_session, oglobals->key);
 					}
-					if (!zstr(oglobals->file)) {
+
+					if (!zstr(group_confirm_file)) {
+						collect->file = switch_core_session_strdup(oglobals->originate_status[i].peer_session, group_confirm_file);
+					} else if (!zstr(oglobals->file)) {
 						collect->file = switch_core_session_strdup(oglobals->originate_status[i].peer_session, oglobals->file);
 					}
 					if (!zstr(oglobals->error_file)) {
@@ -2375,6 +2383,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
 		oglobals.cancel_timeout = SWITCH_TRUE;
+	}
+
+	if ((var = switch_event_get_header(var_event, "group_confirm_early_ok"))) {
+		oglobals.early_ok = switch_true(var);
 	}
 
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
