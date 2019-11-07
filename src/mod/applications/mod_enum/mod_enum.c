@@ -196,11 +196,11 @@ static switch_status_t load_config(void)
 	}
 
 	if (!globals.root) {
-		set_global_root("e164.org");
+		set_global_root("enum.enumer.org");
 	}
 
 	if (!globals.isn_root) {
-		set_global_isn_root("freenum.org");
+		set_global_isn_root("nrenum.net");
 	}
 
 	return status;
