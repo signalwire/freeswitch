@@ -2767,6 +2767,7 @@ static int tport_wakeup_pri(su_root_magic_t *m, su_wait_t *w, tport_t *self)
 int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 {
   int events = su_wait_events(w, self->tp_socket);
+  int error;
 
 #if HAVE_POLL
   assert(w->fd == self->tp_socket);
@@ -2781,9 +2782,16 @@ int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 	      self->tp_closed ? " (closed)" : ""));
 
   if (self->tp_pri->pri_vtable->vtp_wakeup)
-    return self->tp_pri->pri_vtable->vtp_wakeup(self, events);
+    error = self->tp_pri->pri_vtable->vtp_wakeup(self, events);
   else
-    return tport_base_wakeup(self, events);
+    error = tport_base_wakeup(self, events);
+
+  if (tport_is_closed(self)) {
+    SU_DEBUG_9(("%s(%p): tport is closed! Setting secondary timer!\n", "tport_wakeup", (void *)self));
+    tport_set_secondary_timer(self);
+  }
+
+  return error;
 }
 
 static int tport_base_wakeup(tport_t *self, int events)
