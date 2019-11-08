@@ -842,7 +842,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 
 		if (elapsed > 30000) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "No %s stun for a long time!\n", rtp_type(rtp_session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "No %s stun for a long time!\n", rtp_type(rtp_session));
 			rtp_session->last_stun = switch_micro_time_now();
 			//status = SWITCH_STATUS_GENERR;
 			//goto end;
