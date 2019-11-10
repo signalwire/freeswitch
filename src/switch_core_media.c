@@ -8476,11 +8476,7 @@ static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engin
 
 		if (!zstr(engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(session)) {
 
-#ifdef HAVE_OPENSSL_DTLSv1_2_method
 			uint8_t want_DTLSv1_2 = 1;
-#else
-			uint8_t want_DTLSv1_2 = 0;
-#endif // HAVE_OPENSSL_DTLSv1_2_method
 
 			dtls_type_t xtype, dtype = engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
@@ -8520,12 +8516,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_media_handle_t *smh;
 	int is_reinvite = 0;
-
-#ifdef HAVE_OPENSSL_DTLSv1_2_method
-			uint8_t want_DTLSv1_2 = 1;
-#else
-			uint8_t want_DTLSv1_2 = 0;
-#endif
+	uint8_t want_DTLSv1_2 = 1;
 
 	switch_assert(session);
 
