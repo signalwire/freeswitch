@@ -48,13 +48,28 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#define HAVE_OPENSSL_1_1_API
+#endif
+
+#ifdef HAVE_OPENSSL_1_1_API
+#include <openssl/rsa.h>
+#include <openssl/bn.h>
+#include <openssl/dh.h>
+#else
+#define X509_get0_notBefore(X) X509_get_notBefore(X)
+#define X509_get0_notAfter(X) X509_get_notAfter(X)
+#endif
+
 SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_fingerprint_t *fp);
 
 #else
 static inline int switch_core_cert_extract_fingerprint(void* x509, dtls_fingerprint_t *fp) { return 0; }
 #endif
 
+#ifndef HAVE_OPENSSL_1_1_API
 SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void);
 SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void);
+#endif
 
 #endif

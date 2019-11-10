@@ -32,6 +32,7 @@
 #include <switch.h>
 #include <switch_ssl.h>
 
+#ifndef HAVE_OPENSSL_1_1_API
 static switch_mutex_t **ssl_mutexes;
 static switch_memory_pool_t *ssl_pool = NULL;
 static int ssl_count = 0;
@@ -97,6 +98,7 @@ SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void)
 		switch_core_destroy_memory_pool(&ssl_pool);
 	}
 }
+#endif /* HAVE_OPENSSL_1_1_API */
 
 static const EVP_MD *get_evp_by_name(const char *name)
 {
@@ -307,10 +309,12 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	X509_free(x509);
 	EVP_PKEY_free(pkey);
 
+#ifndef HAVE_OPENSSL_1_1_API
 #ifndef OPENSSL_NO_ENGINE
 	ENGINE_cleanup();
 #endif
 	CRYPTO_cleanup_all_ex_data();
+#endif /* HAVE_OPENSSL_1_1_API */
 
 	//CRYPTO_mem_leaks(bio_err);
 	//BIO_free(bio_err);
@@ -389,8 +393,8 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 
 	X509_set_version(x, 0);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
-	X509_gmtime_adj(X509_get_notBefore(x), -(long)60*60*24*7);
-	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
+	X509_gmtime_adj((ASN1_TIME *)X509_get0_notBefore(x), -(long)60*60*24*7);
+	X509_gmtime_adj((ASN1_TIME *)X509_get0_notAfter(x), (long)60*60*24*days);
 	X509_set_pubkey(x, pk);
 
 	name = X509_get_subject_name(x);

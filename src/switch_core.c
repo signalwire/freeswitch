@@ -1936,8 +1936,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
+#ifdef HAVE_OPENSSL_1_1_API
+	if (!OPENSSL_init_ssl(0, NULL)) {
+		*err = "FATAL ERROR! Could not initialize OpenSSL\n";
+		return SWITCH_STATUS_MEMERR;
+	}
+#else
 	SSL_library_init();
 	switch_ssl_init_ssl_locks();
+#endif
 	switch_curl_init();
 
 	switch_core_set_variable("hostname", runtime.hostname);
@@ -3000,7 +3007,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_curl_destroy();
 
+#ifndef HAVE_OPENSSL_1_1_API
 	switch_ssl_destroy_ssl_locks();
+#endif
 
 	switch_scheduler_task_thread_stop();
 

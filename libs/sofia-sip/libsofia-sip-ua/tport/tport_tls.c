@@ -53,6 +53,10 @@
 #include <openssl/bio.h>
 #include <openssl/opensslv.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(OPENSSL_NO_DH)
+#include <openssl/dh.h>
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,8 +99,12 @@ static int tls_ex_data_idx = -1; /* see SSL_get_ex_new_index(3ssl) */
 static void
 tls_init_once(void)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+#else
   SSL_library_init();
   SSL_load_error_strings();
+#endif
   tls_ex_data_idx = SSL_get_ex_new_index(0, "sofia-sip private data", NULL, NULL, NULL);
 }
 

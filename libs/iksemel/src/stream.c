@@ -314,11 +314,21 @@ handshake (struct stream_data *data)
 	int ret;
 	int finished;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (!OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL)) {
+		return IKS_NOMEM;
+	}
+#else
 	SSL_library_init();
 	SSL_load_error_strings();
+#endif
 	
 	if (data->flags & SF_SERVER) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		data->ssl_ctx = SSL_CTX_new(TLS_server_method());
+#else
 		data->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
+#endif
 		if(!data->ssl_ctx) return IKS_NOMEM;
 
 		if (SSL_CTX_use_certificate_file(data->ssl_ctx, data->cert_file, SSL_FILETYPE_PEM) <= 0) {
@@ -329,7 +339,11 @@ handshake (struct stream_data *data)
 		}
 		SSL_CTX_set_verify(data->ssl_ctx, SSL_VERIFY_NONE, NULL);
 	} else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		data->ssl_ctx = SSL_CTX_new(TLS_method());
+#else
 		data->ssl_ctx = SSL_CTX_new(TLSv1_method());
+#endif
 		if(!data->ssl_ctx) return IKS_NOMEM;
 	}
 	
