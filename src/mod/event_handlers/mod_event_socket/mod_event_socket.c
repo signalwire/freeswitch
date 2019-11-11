@@ -2635,11 +2635,22 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_assert(listener != NULL);
 
-	if ((session = listener->session)) {
-		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
-			locked = 0;
-			goto done;
-		}
+	if (!(session = listener->session)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Listener session is null!\n");
+		switch_clear_flag_locked(listener, LFLAG_RUNNING);
+		goto done;
+	}
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to lock session!\n");
+		locked = 0;
+		goto done;
+	}
+
+	if (!listener->sock) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Listener socket is null!\n");
+		switch_clear_flag_locked(listener, LFLAG_RUNNING);
+		goto done;
 	}
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
