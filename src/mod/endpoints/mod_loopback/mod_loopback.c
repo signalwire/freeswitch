@@ -1521,6 +1521,7 @@ static switch_status_t null_channel_read_frame(switch_core_session_t *session, s
 		samples = tech_pvt->read_codec.implementation->samples_per_packet;
 		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->read_frame.datalen = samples * sizeof(int16_t);
+		tech_pvt->read_frame.buflen = samples * sizeof(int16_t);
 		tech_pvt->read_frame.samples = samples;
 		tech_pvt->read_frame.data = tech_pvt->null_buf;
 		switch_generate_sln_silence((int16_t *)tech_pvt->read_frame.data, tech_pvt->read_frame.samples, tech_pvt->read_codec.implementation->number_of_channels, 10000);
