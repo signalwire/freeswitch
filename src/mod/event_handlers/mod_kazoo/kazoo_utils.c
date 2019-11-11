@@ -516,6 +516,32 @@ SWITCH_DECLARE(switch_status_t) kz_switch_event_add_variable_name_printf(switch_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) kz_expand_json_to_event(cJSON *json, switch_event_t *event, char * prefix)
+{
+	char * fmt = switch_mprintf("%s%s%%s", prefix ? prefix : "", prefix ? "_" : "");
+	if (event) {
+		cJSON *item = NULL;
+		char *response = NULL;
+		cJSON_ArrayForEach(item, json) {
+			if (item->type == cJSON_String) {
+				response = strdup(item->valuestring);
+			} else if (item->type == cJSON_Object) {
+				char * fmt1 = switch_mprintf(fmt, item->string);
+				kz_expand_json_to_event(item, event, fmt1);
+				switch_safe_free(fmt1);
+				continue;
+			} else {
+				response = cJSON_PrintUnformatted(item);
+			}
+			kz_switch_event_add_variable_name_printf(event, SWITCH_STACK_BOTTOM, response, fmt, item->string);
+			switch_safe_free(response);
+		}
+	}
+
+	switch_safe_free(fmt);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_xml_t) kz_xml_child(switch_xml_t xml, const char *name)
 {
 	xml = (xml) ? xml->child : NULL;
