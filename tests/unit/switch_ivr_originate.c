@@ -71,6 +71,16 @@ static switch_state_handler_table_t state_handlers = {
     SSH_FLAG_STICKY
 };
 
+static int application_hit = 0;
+
+static void loopback_group_confirm_event_handler(switch_event_t *event) // general event handler
+{
+	if (event->event_id == SWITCH_EVENT_CHANNEL_APPLICATION) {
+		application_hit++;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "application_hit = %d\n", application_hit);
+	}
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_ivr_originate)
@@ -78,6 +88,7 @@ FST_CORE_BEGIN("./conf")
 		FST_SETUP_BEGIN()
 		{
 			fst_requires_module("mod_loopback");
+			application_hit = 0;
 		}
 		FST_SETUP_END()
 
@@ -437,6 +448,44 @@ FST_CORE_BEGIN("./conf")
 			switch_core_session_rwunlock(session);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_loopback_endpoint_originate)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			const char *dialstring = "[group_confirm_key=exec,group_confirm_file='event a=1']loopback/loopback";
+
+			switch_event_bind("test", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, loopback_group_confirm_event_handler, NULL);
+			status = switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(session);
+			switch_yield(1000000);
+			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_yield(1000000);
+			switch_core_session_rwunlock(session);
+			switch_event_unbind_callback(loopback_group_confirm_event_handler);
+			fst_check(application_hit == 1);
+		}
+		FST_TEST_END()
+
+		FST_SESSION_BEGIN(originate_test_group_confirm_loopback_endpoint_bridge)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			const char *dialstring = "[group_confirm_key=exec,group_confirm_file='event a=1']loopback/loopback";
+
+			switch_event_bind("test", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, loopback_group_confirm_event_handler, NULL);
+
+			switch_core_session_execute_application(fst_session, "bridge", dialstring);
+			switch_yield(2000000);
+			switch_channel_hangup(fst_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			fst_check(application_hit == 1);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }
