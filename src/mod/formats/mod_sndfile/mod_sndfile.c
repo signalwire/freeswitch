@@ -267,7 +267,9 @@ static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
 {
 	sndfile_context *context = handle->private_info;
 
-	sf_close(context->handle);
+	if (context) {
+		sf_close(context->handle);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

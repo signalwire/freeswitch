@@ -340,17 +340,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 
 	// add runtime vars to event for expand
 	if (ctx) {
-		cJSON *item = NULL;
-		char *response = NULL;
-		cJSON_ArrayForEach(item, ctx) {
-			if (item->type == cJSON_String) {
-				response = strdup(item->valuestring);
-			} else {
-				response = cJSON_PrintUnformatted(item);
-			}
-			kz_switch_event_add_variable_name_printf(event, SWITCH_STACK_BOTTOM, response, "kz_ctx_%s", item->string);
-			switch_safe_free(response);
-		}
+		kz_expand_json_to_event(ctx, event, "kz_ctx");
 	}
 
 	d_dest = kz_event_expand_headers(event, dest);

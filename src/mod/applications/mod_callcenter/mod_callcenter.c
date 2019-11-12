@@ -4208,10 +4208,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_json_api_interface_t *json_api_interface;
 	switch_status_t status;
 
-
+	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(CALLCENTER_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
 		return SWITCH_STATUS_TERM;
+	}
+
+	/* Subscribe to presence request events */
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
+									cc_presence_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
 	memset(&globals, 0, sizeof(globals));
@@ -4221,13 +4228,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+		switch_event_unbind(&globals.node);
+		switch_event_free_subclass(CALLCENTER_EVENT);
+		switch_core_hash_destroy(&globals.queue_hash);
 		return status;
-	}
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
-									cc_presence_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
-		return SWITCH_STATUS_GENERR;
 	}
 
 	switch_mutex_lock(globals.mutex);
