@@ -1403,6 +1403,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     avmd_session_t      *avmd_session = NULL;
     switch_core_media_flag_t flags = 0;
 	const char *direction = "NO DIRECTION";
+	uint8_t report = 0;
 
     if (session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "BUGGG. FreeSWITCH session is NULL! Please report to developers\n");
@@ -1446,6 +1447,8 @@ SWITCH_STANDARD_APP(avmd_start_app) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error\n");
             goto end;
     }
+	
+	report = avmd_session->settings.report_status;
 
     status = init_avmd_session_data(avmd_session, session, avmd_globals.mutex);
     if (status != SWITCH_STATUS_SUCCESS) {
@@ -1508,7 +1511,10 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the audio stream */
     if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
-        goto end_unlock;
+
+		switch_mutex_unlock(avmd_session->mutex);
+		avmd_session_close(avmd_session);
+        goto end;
     }
 
     switch_mutex_lock(avmd_globals.mutex);
@@ -1526,7 +1532,7 @@ end_unlock:
 
 end:
     if (status != SWITCH_STATUS_SUCCESS) {
-        if (avmd_session == NULL || avmd_session->settings.report_status == 1) {
+        if (avmd_session == NULL || report) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Avmd on channel [%s] NOT started\n", switch_channel_get_name(channel));
         }
     }
