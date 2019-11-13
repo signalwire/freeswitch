@@ -63,6 +63,7 @@ static struct {
 	switch_thread_t *db_thread;
 	int db_thread_running;
 	switch_bool_t manage;
+	switch_thread_rwlock_t *RWLOCK;
 	switch_mutex_t *io_mutex;
 	switch_mutex_t *dbh_mutex;
 	switch_mutex_t *ctl_mutex;
@@ -2835,14 +2836,21 @@ static void core_event_handler(switch_event_t *event)
 		int i = 0;
 
 
+		switch_thread_rwlock_rdlock(sql_manager.RWLOCK);
 		for (i = 0; i < sql_idx; i++) {
-			if (switch_stristr("update channels", sql[i]) || switch_stristr("delete from channels", sql[i])) {
-				switch_sql_queue_manager_push(sql_manager.qm, sql[i], 1, SWITCH_FALSE);
+			if (!sql_manager.qm) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "DROP [%s]\n", sql[i]);
 			} else {
-				switch_sql_queue_manager_push(sql_manager.qm, sql[i], 0, SWITCH_FALSE);
+				if (switch_stristr("update channels", sql[i]) || switch_stristr("delete from channels", sql[i])) {
+					switch_sql_queue_manager_push(sql_manager.qm, sql[i], 1, SWITCH_FALSE);
+				}
+				else {
+					switch_sql_queue_manager_push(sql_manager.qm, sql[i], 0, SWITCH_FALSE);
+				}
 			}
 			sql[i] = NULL;
 		}
+		switch_thread_rwlock_unlock(sql_manager.RWLOCK);
 	}
 }
 
@@ -3590,6 +3598,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_mutex_init(&sql_manager.dbh_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
 	switch_mutex_init(&sql_manager.io_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
 	switch_mutex_init(&sql_manager.ctl_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
+	switch_thread_rwlock_create(&sql_manager.RWLOCK, sql_manager.memory_pool);
 
 	if (!sql_manager.manage) goto skip;
 
@@ -3887,7 +3896,9 @@ static void switch_core_sqldb_stop_thread(void)
 	switch_mutex_lock(sql_manager.ctl_mutex);
 	if (sql_manager.manage) {
 		if (sql_manager.qm) {
+			switch_thread_rwlock_wrlock(sql_manager.RWLOCK);
 			switch_sql_queue_manager_destroy(&sql_manager.qm);
+			switch_thread_rwlock_unlock(sql_manager.RWLOCK);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL is not enabled\n");
