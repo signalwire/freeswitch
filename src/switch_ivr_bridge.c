@@ -233,8 +233,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 		}
 
 
-		if (switch_test_flag(read_frame, SFF_CNG) ||
-			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
+		if (read_frame && (switch_test_flag(read_frame, SFF_CNG) ||
+			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED))) {
 			continue;
 		}
 
