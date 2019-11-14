@@ -670,7 +670,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				} else {
 					switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				}
-				bypass_media_after_bridge = 0;
 				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
 			}
