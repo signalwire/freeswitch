@@ -3069,7 +3069,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 		cJSON_Delete(ecd->json);
 		ecd->json = NULL;
 		destroy_ecd(&ecd);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s\n", event_channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s, status = %d\n", event_channel, status);
 	} else {
 		ecd = NULL;
 	}
