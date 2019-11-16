@@ -385,6 +385,7 @@ typedef struct h264_codec_context_s {
 	switch_image_t *img;
 	switch_image_t *encimg;
 	int need_key_frame;
+	switch_time_t last_keyframe_request;
 	switch_bool_t nalu_28_start;
 
 	int change_bandwidth;
@@ -420,7 +421,7 @@ struct avcodec_globals {
 	int debug;
 	uint32_t max_bitrate;
 	uint32_t rtp_slice_size;
-	uint32_t key_frame_min_freq;
+	uint32_t key_frame_min_freq; // in ms
 	uint32_t enc_threads;
 	uint32_t dec_threads;
 
@@ -1567,10 +1568,14 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 
 	avframe->pts = context->pts++;
 
-	if (context->need_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Send AV KEYFRAME\n");
+	if (context->need_key_frame && (context->last_keyframe_request + avcodec_globals.key_frame_min_freq) < switch_time_now()) {
+		if (avcodec_globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Generate/Send AV KEYFRAME\n");
+		}
+
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
 		 avframe->key_frame = 1;
+		 context->last_keyframe_request = switch_time_now();
 	}
 
 	/* encode the image */
@@ -1585,7 +1590,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		goto error;
 	}
 
-	if (context->need_key_frame) {
+	if (context->need_key_frame && avframe->key_frame == 1) {
 		avframe->pict_type = 0;
 		avframe->key_frame = 0;
 		context->need_key_frame = 0;
@@ -1633,8 +1638,12 @@ GCC_DIAG_ON(deprecated-declarations)
 				context->nalus[i].start = p;
 				context->nalus[i].eat = p;
 
-				if (mod_av_globals.debug && (*p & 0x1f) == 7) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
+				if ((*p & 0x1f) == 7) { // Got Keyframe
+					// prevent to generate key frame too frequently
+					context->last_keyframe_request = switch_time_now();
+					if (mod_av_globals.debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
+					}
 				}
 			} else {
 				context->nalus[i].len = p - context->nalus[i].start;
