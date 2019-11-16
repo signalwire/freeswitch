@@ -69,7 +69,8 @@ SWITCH_BEGIN_EXTERN_C
 	SWITCH_XML_ROOT = (1 << 0),	// root
 	SWITCH_XML_NAMEM = (1 << 1),	// name is malloced
 	SWITCH_XML_TXTM = (1 << 2),	// txt is malloced
-	SWITCH_XML_DUP = (1 << 3)	// attribute name and value are strduped
+	SWITCH_XML_DUP = (1 << 3),	// attribute name and value are strduped
+	SWITCH_XML_CDATA = (1 << 4) // body is in CDATA
 } switch_xml_flag_t;
 
 /*! \brief A representation of an XML tree */

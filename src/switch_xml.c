@@ -1139,10 +1139,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 			if (!(s = strstr(s + 3, "--")) || (*(s += 2) != '>' && *s) || (!*s && e != '>'))
 				return switch_xml_err(root, d, "unclosed <!--");
 		} else if (!strncmp(s, "![CDATA[", 8)) {	/* cdata */
-			if ((s = strstr(s, "]]>")))
+			if ((s = strstr(s, "]]>"))) {
+				if (root && root->cur) {
+					root->cur->flags |= SWITCH_XML_CDATA;
+				}
 				switch_xml_char_content(root, d + 8, (s += 2) - d - 10, 'c');
-			else
+			} else {
 				return switch_xml_err(root, d, "unclosed <![CDATA[");
+			}
 		} else if (!strncmp(s, "!DOCTYPE", 8)) {	/* dtd */
 			for (l = 0; *s && ((!l && *s != '>') || (l && (*s != ']' || *(s + strspn(s + 1, SWITCH_XML_WS) + 1) != '>'))); l = (*s == '[') ? 1 : l)
 				s += strcspn(s + 1, "[]>") + 1;
