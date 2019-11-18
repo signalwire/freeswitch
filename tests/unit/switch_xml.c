@@ -68,6 +68,56 @@ FST_MINCORE_BEGIN()
 			switch_xml_free(xml);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_utf_8)
+		{
+			const char *text = "<xml>Voulez-Vous Parler Français</xml>";
+			switch_xml_t xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
+			char *xml_string = NULL;
+
+			fst_requires(xml);
+			xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>Voulez-Vous Parler Fran&#xE7;ais</xml>\n");
+			free(xml_string);
+
+			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>Voulez-Vous Parler Français</xml>\n");
+			switch_xml_free(xml);
+			free(xml_string);
+
+			text = "<xml>你好，中文</xml>";
+			xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
+
+			fst_requires(xml);
+			xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>&#x4F60;&#x597D;&#xFF0C;&#x4E2D;&#x6587;</xml>\n");
+			free(xml_string);
+
+			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>你好，中文</xml>\n");
+			switch_xml_free(xml);
+			free(xml_string);
+
+			text = "<xml><tag><![CDATA[Voulez-Vous Parler Français]]></tag></xml>";
+
+			xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
+			fst_requires(xml);
+			xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>\n  <tag>Voulez-Vous Parler Fran&#xE7;ais</tag>\n</xml>\n");
+			switch_xml_free(xml);
+			free(xml_string);
+
+			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
+			fst_requires(xml_string);
+			fst_check_string_equals(xml_string, "<xml>\n  <tag>Voulez-Vous Parler Français</tag>\n</xml>\n");
+			switch_xml_free(xml);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
