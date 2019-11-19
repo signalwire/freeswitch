@@ -1461,9 +1461,15 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 static switch_status_t null_channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	null_private_t *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *dtmf_str = switch_channel_get_variable(channel, "null_channel_dtmf_queued");
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (!dtmf_str) dtmf_str = "";
+
+	switch_channel_set_variable_printf(channel, "null_channel_dtmf_queued", "%s%c", dtmf_str, dtmf->digit);
 
 	return SWITCH_STATUS_SUCCESS;
 }
