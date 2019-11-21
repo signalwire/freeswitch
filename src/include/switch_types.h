@@ -1937,7 +1937,8 @@ typedef enum {
 	SWITCH_FILE_NOMUX = (1 << 17),
 	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18),
 	SWITCH_FILE_FLAG_VIDEO = (1 << 19),
-	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20)
+	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20),
+	SWITCH_FILE_PRE_CLOSED = (1 << 21)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 

@@ -915,6 +915,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 	}
 
 	switch_clear_flag_locked(fh, SWITCH_FILE_OPEN);
+	switch_set_flag_locked(fh, SWITCH_FILE_PRE_CLOSED);
 
 	if (fh->file_interface->file_pre_close) {
 		status = fh->file_interface->file_pre_close(fh);
@@ -929,9 +930,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		status = switch_core_file_pre_close(fh);
-	} else {
+	} else if (!switch_test_flag(fh, SWITCH_FILE_PRE_CLOSED)) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	switch_clear_flag_locked(fh, SWITCH_FILE_PRE_CLOSED);
 
 	fh->file_interface->file_close(fh);
 
