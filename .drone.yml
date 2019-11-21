@@ -1,0 +1,47 @@
+---
+kind: pipeline
+name: unit-tests
+
+steps:
+    - name: run-tests
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - ./bootstrap.sh -j
+      - echo "applications/mod_test" >> modules.conf
+      - ./configure
+      - echo "#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./build-status.txt\nmake install\n" > build.sh
+      - chmod +x build.sh
+      - ./build.sh
+      - cd tests/unit
+      - ./run-tests.sh
+      - mkdir logs && (mv log_run-tests_*.html logs || true)
+      - echo 0 > run-tests-status.txt
+      - ./collect-test-logs.sh && exit 0 || echo 'Some tests failed'
+      - echo 1 > run-tests-status.txt
+      - cd logs && ls -la
+
+    - name: notify
+      image: signalwire/unit-tests-notify
+      pull: true
+      environment:
+        GITHUB_CI_APP_PEM:
+          from_secret: github_ci_app_pem
+        SSH_KEY:
+          from_secret: ssh_key
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+      commands:
+      - /root/notify.sh
+      
+trigger:
+  branch:
+  - master
+  event:
+  - pull_request
+  - push
+---
+kind: signature
+hmac: a34718dd1e2b9468a845962219ff05cac0c922ddf90d885af557a937a9e412e0
+
+...
