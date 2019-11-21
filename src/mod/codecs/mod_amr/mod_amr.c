@@ -335,6 +335,18 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 					break;
 				}
 			}
+
+			/* re-create fmtp modes */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+			for (i = 0; 8 > i; ++i) {
+				if (context->enc_modes & (1 << i)) {
+					fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
+				}
+			}
+
+		} else {
+			/* use default mode */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_mode);
 		}
 
 		if (globals.adjust_bitrate) {
@@ -342,20 +354,12 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		}
 
 
-		/* re-create fmtp modes */
-		fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
-		for (i = 0; 8 > i; ++i) {
-			if (context->enc_modes & (1 << i)) {
-				fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
-			}
-		}
-
 
 		if (!globals.volte) {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
 			/* some UEs reject the call with 488 if mode-change-capability is not 2 */
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
 							switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
