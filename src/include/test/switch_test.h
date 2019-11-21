@@ -308,7 +308,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 /**
  * Minimal FS core load
  */
-#define FST_MINCORE_BEGIN() \
+#define FST_MINCORE_BEGIN(confdir) \
 	FCT_BGN() \
 	{ \
 		int fst_core = 0; \
@@ -317,7 +317,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(".", NULL, 1) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
+		if (fst_init_core_and_modload(confdir, NULL, 1) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
 			fst_core = 1; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
