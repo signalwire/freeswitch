@@ -189,7 +189,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 #else
 	struct amrwb_context *context = NULL;
 	int encoding, decoding;
-	int x, i, argc;
+	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
 
@@ -274,16 +274,25 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 
+		/* re-create fmtp modes */
+		fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+		for (i = 0; 8 > i; ++i) {
+			if (context->enc_modes & (1 << i)) {
+				fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
+			}
+		}
+
+
 		if (globals.adjust_bitrate) {
 			switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE);
 		}
 
 		if (!globals.volte) {
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d",
-					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
+					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d; max-red=0; mode-change-capability=2",
-					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
