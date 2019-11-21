@@ -272,15 +272,20 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					break;
 				}
 			}
+
+			/* re-create fmtp modes */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+			for (i = 0; 8 > i; ++i) {
+				if (context->enc_modes & (1 << i)) {
+					fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
+				}
+			}
+
+		} else {
+			/* use default mode */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_mode);
 		}
 
-		/* re-create fmtp modes */
-		fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
-		for (i = 0; 8 > i; ++i) {
-			if (context->enc_modes & (1 << i)) {
-				fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
-			}
-		}
 
 
 		if (globals.adjust_bitrate) {
