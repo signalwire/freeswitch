@@ -109,13 +109,13 @@ FST_MINCORE_BEGIN()
 			xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
 			fst_requires(xml_string);
 			fst_check_string_equals(xml_string, "<xml>\n  <tag>Voulez-Vous Parler Fran&#xE7;ais</tag>\n</xml>\n");
-			switch_xml_free(xml);
 			free(xml_string);
 
 			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
 			fst_requires(xml_string);
 			fst_check_string_equals(xml_string, "<xml>\n  <tag>Voulez-Vous Parler Français</tag>\n</xml>\n");
 			switch_xml_free(xml);
+			free(xml_string);
 		}
 		FST_TEST_END()
 	}
