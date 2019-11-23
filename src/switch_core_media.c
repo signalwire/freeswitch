@@ -10871,6 +10871,22 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+				if (sdp_type == SDP_TYPE_REQUEST)
+				{
+					switch_core_session_t *orig_session = NULL;
+
+					switch_core_session_get_partner(session, &orig_session);
+					if (orig_session)
+					{
+						switch_bool_t isContinue = false;
+						const char *ep = switch_channel_get_variable(orig_session->channel, "ep_codec_string");
+						if (ep && !switch_stristr(imp->iananame, ep))
+							isContinue = true;
+						switch_core_session_rwunlock(orig_session);
+						if ( isContinue )
+							continue;
+					}
+				}
 				has_vid = 1;
 				break;
 			}
