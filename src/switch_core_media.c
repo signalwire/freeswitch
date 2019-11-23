@@ -1910,6 +1910,28 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 		}
+		if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_stream_change")
+			&& engine->type == SWITCH_MEDIA_TYPE_VIDEO
+			&& sdp_type == SDP_TYPE_REQUEST && switch_channel_test_flag(session->channel, CF_REINVITE) )
+		{
+			switch_core_session_t *other_session;
+
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)
+			{
+				if(other_session->media_handle != NULL )
+				{
+					switch_rtp_engine_t *other_engine = &other_session->media_handle->engines[type];
+
+					other_engine->crypto_type = ctype;
+					other_engine->ssec[other_engine->crypto_type].crypto_tag = crypto_tag;
+
+					if (zstr(other_engine->ssec[other_engine->crypto_type].local_crypto_key)) {
+						switch_core_media_build_crypto(other_session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
+					}
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 	}
 
  end:
