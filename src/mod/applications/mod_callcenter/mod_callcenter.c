@@ -4010,7 +4010,7 @@ SWITCH_STANDARD_API(cc_break_api_function)
 	const char *uuid = NULL;
 	switch_core_session_t *break_session = NULL;
 	switch_channel_t *channel = NULL;
-	switch_bool_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
@@ -4246,7 +4246,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	}
 
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
 	SWITCH_ADD_API(api_interface, "callcenter_break", "Stop watching an uuid and release agent", cc_break_api_function, "callcenter_break agent <uuid>");
 
