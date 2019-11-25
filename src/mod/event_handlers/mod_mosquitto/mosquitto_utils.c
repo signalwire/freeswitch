@@ -1,0 +1,378 @@
+/*
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Norm Brandinger <norm@goes.com>
+ *
+ * mod_mosquitto -- Interface to an MQTT broker using Mosquitto
+ *				  Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto API library
+ *				  Publishes FreeSWITCH events to one more more MQTT brokers
+ *				  Subscribes to topics located on one more more MQTT brokers
+ *
+ * MQTT http://mqtt.org/
+ * Mosquitto https://mosquitto.org/
+ *
+ */
+
+#include <switch.h>
+
+#include "mosquitto_utils.h"
+#include "mod_mosquitto.h"
+#include "mosquitto_events.h"
+#include "mosquitto_config.h"
+#include "mosquitto_mosq.h"
+
+/**
+ * \brief This function initializes all of the configured profiles.
+ *
+ * \details	The profiles are stored in a hash.  The address of the hash is stored in a global variable.
+ *		  Standard hash looping is performed to locate each profile.
+ *
+ * \param[in]	void	No input parameters
+ *
+ * \return		Always returns SWITCH_STATUS_SUCCESS
+ */
+switch_status_t initialize_profiles(void)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(mosquitto_globals.profiles_mutex);
+	for (switch_hash_index_t *profiles_hi = switch_core_hash_first(mosquitto_globals.profiles); profiles_hi; profiles_hi = switch_core_hash_next(&profiles_hi)) {
+		mosquitto_profile_t *profile = NULL;
+		void *val;
+		switch_core_hash_this(profiles_hi, NULL, NULL, &val);
+		profile = (mosquitto_profile_t *)val;
+		if (profile->enable) {
+			log(DEBUG, "profile:%s activation in progress\n", profile->name);
+			status = profile_activate(profile);
+		} else {
+			log(DEBUG, "profile:%s deactivation in progress\n", profile->name);
+			status = profile_deactivate(profile);
+		}
+	}
+	switch_mutex_unlock(mosquitto_globals.profiles_mutex);
+
+	return status;
+}
+
+
+switch_status_t profile_activate(mosquitto_profile_t *profile)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(profile->mutex);
+
+	switch_mutex_lock(profile->publishers_mutex);
+	for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {
+		mosquitto_publisher_t *publisher = NULL;
+		void *val;
+		switch_core_hash_this(publishers_hi, NULL, NULL, &val);
+		publisher = (mosquitto_publisher_t *)val;
+		if (publisher->enable) {
+			log(DEBUG, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
+			status = publisher_activate(profile, publisher);
+		} else {
+			log(DEBUG, "profile:%s publisher:%s deactivation in progress\n", profile->name, publisher->name);
+			status = publisher_deactivate(profile, publisher);
+		}
+	}
+	switch_mutex_unlock(profile->publishers_mutex);
+
+	switch_mutex_lock(profile->subscribers_mutex);
+	for (switch_hash_index_t *subscribers_hi = switch_core_hash_first(profile->subscribers); subscribers_hi; subscribers_hi = switch_core_hash_next(&subscribers_hi)) {
+		mosquitto_subscriber_t *subscriber = NULL;
+		void *val;
+		switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
+		subscriber = (mosquitto_subscriber_t *)val;
+		if (subscriber->enable) {
+			log(DEBUG, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+			status = subscriber_activate(profile, subscriber);
+		} else {
+			log(DEBUG, "profile:%s subscriber:%s deactivation in progress\n", profile->name, subscriber->name);
+			status = subscriber_deactivate(profile, subscriber);
+		}
+	}
+	switch_mutex_unlock(profile->subscribers_mutex);
+	switch_mutex_unlock(profile->mutex);
+
+	switch_mutex_lock(profile->connections_mutex);
+	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
+		mosquitto_connection_t *connection = NULL;
+		void *val;
+		switch_core_hash_this(connections_hi, NULL, NULL, &val);
+		connection = (mosquitto_connection_t *)val;
+		if (connection->enable) {
+			log(DEBUG, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+			status = client_connect(profile, connection);
+		} else {
+			log(DEBUG, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+			status = mosq_disconnect(connection);
+			connection->userdata = NULL;
+			connection->mosq = NULL;
+		}
+	}
+	switch_mutex_unlock(profile->connections_mutex);
+	return status;
+}
+
+
+switch_status_t profile_deactivate(mosquitto_profile_t *profile)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	log(DEBUG, "profile:%s deactivate in progress\n", profile->name);
+	return status;
+}
+
+
+switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	log(DEBUG, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
+
+	switch_mutex_lock(publisher->topics_mutex);
+	for (switch_hash_index_t *topics_hi = switch_core_hash_first(publisher->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
+		mosquitto_topic_t *topic = NULL;
+		void *val;
+		switch_core_hash_this(topics_hi, NULL, NULL, &val);
+		topic = (mosquitto_topic_t *)val;
+		if (publisher->enable) {
+			if (topic->enable) {
+				status = publisher_topic_activate(profile, publisher, topic);
+			} else {
+				status = publisher_topic_deactivate(profile, publisher, topic);
+			}
+		} else {
+			status = publisher_topic_deactivate(profile, publisher, topic);
+		}
+	}
+	switch_mutex_unlock(publisher->topics_mutex);
+
+	return status;
+}
+
+
+switch_status_t publisher_topic_activate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	log(DEBUG, "profile:%s publishser:%s topic:%s activation in progress\n", profile->name, publisher->name, topic->name);
+
+	if (topic->enable) {
+		switch_mutex_lock(topic->events_mutex);
+		for (switch_hash_index_t *events_hi = switch_core_hash_first(topic->events); events_hi; events_hi = switch_core_hash_next(&events_hi)) {
+			mosquitto_event_t *event = NULL;
+			void *val;
+			switch_core_hash_this(events_hi, NULL, NULL, &val);
+			event = (mosquitto_event_t *)val;
+			status = bind_event(profile, publisher, topic, event);
+		}
+		switch_mutex_unlock(topic->events_mutex);
+	}
+
+	return status;
+}
+
+
+switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	log(NOTICE, "profile:%s publisher:%s topic:%s deactivate in progress\n", profile->name, publisher->name, topic->name);
+
+	switch_mutex_lock(topic->events_mutex);
+	for (switch_hash_index_t *events_hi = switch_core_hash_first(topic->events); events_hi; events_hi = switch_core_hash_next(&events_hi)) {
+		mosquitto_event_t *event = NULL;
+		void *val;
+		switch_core_hash_this(events_hi, NULL, NULL, &val);
+		event = (mosquitto_event_t *)val;
+		log(NOTICE, "1 profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
+		//status = unbind_event(profile, publisher, topic, event);
+		//log(NOTICE, "2 profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
+	}
+	switch_mutex_unlock(topic->events_mutex);
+
+	return status;
+}
+
+
+switch_status_t publisher_deactivate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	log(DEBUG, "profilt:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
+	return status;
+}
+
+
+switch_status_t subscriber_activate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	log(DEBUG, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+
+	switch_mutex_lock(subscriber->topics_mutex);
+	for (switch_hash_index_t *topics_hi = switch_core_hash_first(subscriber->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
+		mosquitto_topic_t *topic = NULL;
+		void *val;
+		switch_core_hash_this(topics_hi, NULL, NULL, &val);
+		topic = (mosquitto_topic_t *)val;
+		if (subscriber->enable) {
+			if (topic->enable) {
+				status = subscriber_topic_activate(profile, subscriber, topic);
+			} else {
+				status = subscriber_topic_deactivate(profile, subscriber, topic);
+			}
+		} else {
+			status = subscriber_topic_deactivate(profile, subscriber, topic);
+		}
+	}
+	switch_mutex_unlock(subscriber->topics_mutex);
+
+	return status;
+}
+
+
+switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (topic->enable) {
+		log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+		status = mosq_subscribe(profile, subscriber, topic);
+	}
+
+	return status;
+}
+
+
+switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+
+	log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+
+	return status;
+}
+
+switch_status_t subscriber_deactivate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	log(DEBUG, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
+	return status;
+}
+
+
+switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (mosq_new(profile, connection) == SWITCH_STATUS_SUCCESS) {
+		mosq_reconnect_delay_set(connection);
+		mosq_message_retry_set(connection);
+		mosq_max_inflight_messages_set(connection);
+		mosq_username_pw_set(connection);
+		status = mosq_connect(connection);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			log(DEBUG, "profile:%s connection:%s succesfully connected to broker\n", profile->name, connection->name);
+		} else {
+			log(DEBUG, "profile:%s connection:%s failed to connect to broker", profile->name, connection->name);
+		}
+	}
+
+	return status;
+}
+
+
+mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquitto_connection_t *connection, const char *name)
+{
+	mosquitto_topic_t *found_topic = NULL;
+
+	if (zstr(name)) {
+		log(ERROR, "profile:%s connection:%s topic name is NULL\n", profile->name, connection->name);
+		return found_topic;
+	}
+
+	switch_mutex_lock(profile->subscribers_mutex);
+	for (switch_hash_index_t *subscribers_hi = switch_core_hash_first(profile->subscribers); subscribers_hi; subscribers_hi = switch_core_hash_next(&subscribers_hi)) {
+		mosquitto_subscriber_t *subscriber = NULL;
+		void *val;
+		switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
+		subscriber = (mosquitto_subscriber_t *)val;
+		if (!subscriber->enable) {
+			continue;
+		}
+		switch_mutex_lock(subscriber->topics_mutex);
+		for (switch_hash_index_t *topics_hi = switch_core_hash_first(subscriber->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
+			mosquitto_topic_t *topic;
+			void *val;
+			switch_core_hash_this(topics_hi, NULL, NULL, &val);
+			topic = (mosquitto_topic_t *)val;
+			if (!topic->enable) {
+				continue;
+			}
+			if (!strcasecmp(topic->connection_name, connection->name)) {
+				if (!strcasecmp(topic->pattern, name)) {
+					log(INFO, "profile:%s connection:%s topic:%s pattern:%s found\n", profile->name,  connection->name, topic->name, topic->pattern);
+					found_topic = topic;
+					break;
+				}
+			}
+		}
+		switch_mutex_unlock(subscriber->topics_mutex);
+	}
+	switch_mutex_unlock(profile->subscribers_mutex);
+
+	return found_topic;
+}
+
+
+switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (connection->enable) {
+		log(DEBUG, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+		status = client_connect(profile, connection);
+	} else {
+		log(DEBUG, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+		status = mosq_disconnect(connection);
+		connection->userdata = NULL;
+		connection->mosq = NULL;
+	}
+
+	return status;
+}
+
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

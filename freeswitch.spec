@@ -2,7 +2,7 @@
 #
 # spec file for package freeswitch
 #
-# includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
+# includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #		      and others
@@ -152,8 +152,8 @@ BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: pcre-devel 
-BuildRequires: speex-devel 
+BuildRequires: pcre-devel
+BuildRequires: speex-devel
 BuildRequires: sqlite-devel
 BuildRequires: libtiff-devel
 BuildRequires: ldns-devel
@@ -192,7 +192,7 @@ BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
 BuildRequires: broadvoice-devel
 BuildRequires: flite-devel
-BuildRequires: ilbc2-devel 
+BuildRequires: ilbc2-devel
 BuildRequires: g722_1-devel
 BuildRequires: codec2-devel
 BuildRequires: libsilk-devel
@@ -248,22 +248,22 @@ PreReq:       %insserv_prereq %fillup_prereq
 BuildRoot:    %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
-FreeSWITCH is an open source telephony platform designed to facilitate the creation of voice 
-and chat driven products scaling from a soft-phone up to a soft-switch.  It can be used as a 
-simple switching engine, a media gateway or a media server to host IVR applications using 
-simple scripts or XML to control the callflow. 
+FreeSWITCH is an open source telephony platform designed to facilitate the creation of voice
+and chat driven products scaling from a soft-phone up to a soft-switch.  It can be used as a
+simple switching engine, a media gateway or a media server to host IVR applications using
+simple scripts or XML to control the callflow.
 
-We support various communication technologies such as SIP, H.323 and GoogleTalk making 
+We support various communication technologies such as SIP, H.323 and GoogleTalk making
 it easy to interface with other open source PBX systems such as sipX, OpenPBX, Bayonne, YATE or Asterisk.
 
-We also support both wide and narrow band codecs making it an ideal solution to bridge legacy 
-devices to the future. The voice channels and the conference bridge module all can operate 
+We also support both wide and narrow band codecs making it an ideal solution to bridge legacy
+devices to the future. The voice channels and the conference bridge module all can operate
 at 8, 16 or 32 kilohertz and can bridge channels of different rates.
 
-FreeSWITCH runs on several operating systems including Windows, Max OS X, Linux, BSD and Solaris 
+FreeSWITCH runs on several operating systems including Windows, Max OS X, Linux, BSD and Solaris
 on both 32 and 64 bit platforms.
 
-Our developers are heavily involved in open source and have donated code and other resources to 
+Our developers are heavily involved in open source and have donated code and other resources to
 other telephony projects including sipXecs, OpenSER, Asterisk, CodeWeaver and OpenPBX.
 
 
@@ -308,7 +308,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-blacklist
-Provide black/white listing of various fields used for routing calls in 
+Provide black/white listing of various fields used for routing calls in
 FreeSWITCH
 
 %package application-callcenter
@@ -320,7 +320,7 @@ Requires:       %{name} = %{version}-%{release}
 Provide Automated Call Distribution capabilities for FreeSWITCH
 
 %package application-cidlookup
-Summary:	FreeSWITCH mod_cidlookup 
+Summary:	FreeSWITCH mod_cidlookup
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
@@ -333,7 +333,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-conference
-Provide FreeSWITCH Conference Bridge Services. 
+Provide FreeSWITCH Conference Bridge Services.
 
 %package application-curl
 Summary:	FreeSWITCH mod_curl
@@ -349,9 +349,9 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-db
-mod_db implements an API and dialplan interface to a database backend for 
-FreeSWITCH.  The database can either be in sqlite or ODBC.  It also provides 
-support for group dialing and provides database backed limit interface. 
+mod_db implements an API and dialplan interface to a database backend for
+FreeSWITCH.  The database can either be in sqlite or ODBC.  It also provides
+support for group dialing and provides database backed limit interface.
 
 %package application-directory
 Summary:	FreeSWITCH mod_directory
@@ -359,7 +359,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-directory
-Provides FreeSWITCH mod_directory, a dial by name directory application. 
+Provides FreeSWITCH mod_directory, a dial by name directory application.
 
 %package application-distributor
 Summary:	FreeSWITCH mod_distributor
@@ -367,7 +367,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-distributor
-Provides FreeSWITCH mod_distributor, a simple round-robbin style distribution 
+Provides FreeSWITCH mod_distributor, a simple round-robbin style distribution
 to call gateways.
 
 %package application-easyroute
@@ -376,7 +376,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-easyroute
-Provides FreeSWITCH mod_easyroute, a simple, easy to use DB Backed DID routing 
+Provides FreeSWITCH mod_easyroute, a simple, easy to use DB Backed DID routing
 Engine. Uses ODBC to connect to the DB of your choice.
 
 %package application-enum
@@ -385,7 +385,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-enum
-Provides FreeSWITCH mod_enum, a ENUM dialplan, with API and Dialplan extensions 
+Provides FreeSWITCH mod_enum, a ENUM dialplan, with API and Dialplan extensions
 supporting ENUM lookups.
 
 %package application-esf
@@ -412,7 +412,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-expr
-Provides FreeSWITCH mod_expr, implements Brian Allen Vanderburg's ExprEval 
+Provides FreeSWITCH mod_expr, implements Brian Allen Vanderburg's ExprEval
 expression evaluation library for FreeSWITCH.
 
 %package application-fifo
@@ -421,7 +421,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-fifo
-Provides FreeSWITCH mod_fifo, a parking-like app which allows you to make 
+Provides FreeSWITCH mod_fifo, a parking-like app which allows you to make
 custom call queues
 
 %package application-fsk
@@ -430,7 +430,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-fsk
-Provides FreeSWITCH mod_fsk, a module to send and receive information via 
+Provides FreeSWITCH mod_fsk, a module to send and receive information via
 Frequency-shift keying
 
 %package application-fsv
@@ -447,8 +447,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-hash
-Provides FreeSWITCH mod_hash, implements an API and application interface for 
-manipulating a hash table. It also provides a limit backend. 
+Provides FreeSWITCH mod_hash, implements an API and application interface for
+manipulating a hash table. It also provides a limit backend.
 
 %package application-httapi
 Summary:	FreeSWITCH mod_httapi
@@ -456,8 +456,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-httapi
-Provides FreeSWITCH mod_httapi, provides an HTTP based Telephony API using a 
-standard FreeSWITCH application interface as well as a cached http file format 
+Provides FreeSWITCH mod_httapi, provides an HTTP based Telephony API using a
+standard FreeSWITCH application interface as well as a cached http file format
 interface
 
 %package application-http-cache
@@ -466,9 +466,9 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-http-cache
-Provides FreeSWITCH mod_http_cache, allows one to make a HTTP GET request to 
-cache a document. The primary use case is to download and cache audio files 
-from a web server. 
+Provides FreeSWITCH mod_http_cache, allows one to make a HTTP GET request to
+cache a document. The primary use case is to download and cache audio files
+from a web server.
 
 %package application-lcr
 Summary:	FreeSWITCH mod_lcr
@@ -493,9 +493,9 @@ Requires:       %{name} = %{version}-%{release}
 
 %description application-memcache
 Provides FreeSWITCH mod_memcache, implements an API interface to memcached which
-is a "high-performance, distributed memory object caching system, generic in 
-nature, but intended for use in speeding up dynamic web applications by 
-alleviating database load." 
+is a "high-performance, distributed memory object caching system, generic in
+nature, but intended for use in speeding up dynamic web applications by
+alleviating database load."
 
 %package application-mongo
 Summary:	FreeSWITCH mod_mongo
@@ -511,8 +511,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-nibblebill
-Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for 
-FreeSWITCH to allow real-time debiting of credit or cash from a database 
+Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for
+FreeSWITCH to allow real-time debiting of credit or cash from a database
 while calls are in progress.
 
 %package application-rad_auth
@@ -556,8 +556,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-sms
-Provides FreeSWITCH mod_sms, provide a way to route messages in freeswitch, 
-potentially allowing one to build a powerful chatting system like in XMPP using 
+Provides FreeSWITCH mod_sms, provide a way to route messages in freeswitch,
+potentially allowing one to build a powerful chatting system like in XMPP using
 using SIP SIMPLE on SIP clients
 
 %package application-snapshot
@@ -566,8 +566,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-snapshot
-Provides FreeSWITCH mod_snapshot, allows recording a sliding window of audio 
-and taking snapshots to disk. 
+Provides FreeSWITCH mod_snapshot, allows recording a sliding window of audio
+and taking snapshots to disk.
 
 %package application-snom
 Summary:	FreeSWITCH mod_snom
@@ -575,7 +575,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-snom
-Provides FreeSWITCH mod_snom, an application for controlling the functionality 
+Provides FreeSWITCH mod_snom, an application for controlling the functionality
 and appearance of the programmable softkeys on Snom phones
 
 %package application-soundtouch
@@ -595,7 +595,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-spy
-Provides FreeSWITCH mod_spy, implements userspy application which provides 
+Provides FreeSWITCH mod_spy, implements userspy application which provides
 persistent eavesdrop on all channels bridged to a certain user
 
 %package application-stress
@@ -604,8 +604,8 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-stress
-Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
-person's voice and generates FreeSWITCH events based on that data. 
+Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a
+person's voice and generates FreeSWITCH events based on that data.
 
 %package application-translate
 Summary:	FreeSWITCH mod_translate
@@ -639,7 +639,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-voicemail
-Provides FreeSWITCH mod_voicemail. Implements Voicemail Application 
+Provides FreeSWITCH mod_voicemail. Implements Voicemail Application
 
 %package application-voicemail-ivr
 Summary:	FreeSWITCH mod_voicemail_ivr
@@ -647,7 +647,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-voicemail-ivr
-Provides FreeSWITCH mod_voicemail_ivr. Provides a custimizable audio navigation 
+Provides FreeSWITCH mod_voicemail_ivr. Provides a custimizable audio navigation
 system for backend voicemail systems
 
 ######################################################################################################################
@@ -668,7 +668,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description asrtts-pocketsphinx
-Provides FreeSWITCH mod_pocketsphinx, a interface to the OpenSource 
+Provides FreeSWITCH mod_pocketsphinx, a interface to the OpenSource
 Pocketsphinx speech recognition engine
 
 %package asrtts-tts-commandline
@@ -677,7 +677,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description asrtts-tts-commandline
-Provides FreeSWITCH mod_tts_commandline, Run a command line and play the 
+Provides FreeSWITCH mod_tts_commandline, Run a command line and play the
 output file.
 
 %package asrtts-unimrcp
@@ -686,7 +686,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description asrtts-unimrcp
-Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource 
+Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource
 Control Protocol (MRCP) servers
 
 ######################################################################################################################
@@ -823,11 +823,11 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description codec-siren
-Siren Codec support for FreeSWITCH open source telephony platform. Using 
+Siren Codec support for FreeSWITCH open source telephony platform. Using
 mod_siren in a commercial product will require you to acquire a patent license
-directly from Polycom(R) for your company. 
-see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_g7221.html 
-and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
+directly from Polycom(R) for your company.
+see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_g7221.html
+and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html
 At the time of this packaging, Polycom does not charge for licensing.
 
 %package codec-theora
@@ -893,7 +893,7 @@ to be used as a client for GoogleTalk or other XMPP Servers.
 #Requires:       %{name} = %{version}-%{release}
 #
 #%description endpoint-gsmopen
-#GSMopen is an endpoint (channel driver) that allows an SMS to be sent or 
+#GSMopen is an endpoint (channel driver) that allows an SMS to be sent or
 #received from FreeSWITCH as well as incoming and outgoing GSM voice calls.
 #SMS is handled via the standard CHAT API in FreeSWITCH.
 
@@ -972,10 +972,10 @@ Summary:	Sangoma ISDN Module for FreeTDM
 Group:		System/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_isdn 
-BuildRequires: wanpipe 
-BuildRequires: libsng_isdn 
+Requires: wanpipe
+Requires: libsng_isdn
+BuildRequires: wanpipe
+BuildRequires: libsng_isdn
 
 %description freetdm-sng-isdn
 Sangoma ISDN Module for freetdm
@@ -989,10 +989,10 @@ Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for F
 Group:		System/Libraries
 Requires:        %{name} = %{version}-%{release}
 Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_ss7 
-BuildRequires: wanpipe 
-BuildRequires: libsng_ss7 
+Requires: wanpipe
+Requires: libsng_ss7
+BuildRequires: wanpipe
+BuildRequires: libsng_ss7
 %if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
 Requires: openssl098e
 BuildRequires: openssl098e
@@ -1136,10 +1136,10 @@ Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 
 %description format-local-stream
-Local File Streamer for FreeSWITCH. It streams files from a directory and 
-multiple channels connected to the same stream will hear the same (looped) 
-file playback .. similar to a shoutcast stream. Useful for Music-on-hold type 
-scenarios. 
+Local File Streamer for FreeSWITCH. It streams files from a directory and
+multiple channels connected to the same stream will hear the same (looped)
+file playback .. similar to a shoutcast stream. Useful for Music-on-hold type
+scenarios.
 
 %package format-native-file
 Summary:	Native Media File support for the FreeSWITCH open source telephony platform
@@ -1150,7 +1150,7 @@ Requires:	%{name} = %{version}-%{release}
 The native file module is designed to make it easy to play sound files where no
 transcoding is necessary. The default FreeSWITCH sound files are in wav format.
 Generally, these require transcoding when being played to callers. However, if
-a native format sound file is available then FreeSWITCH can use it. 
+a native format sound file is available then FreeSWITCH can use it.
 
 %package format-portaudio-stream
 Summary:	PortAudio Media Steam support for the FreeSWITCH open source telephony platform
@@ -1166,9 +1166,9 @@ Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 
 %description format-shell-stream
-Mod shell stream is a FreeSWITCH module to allow you to stream audio from an 
-arbitrary shell command. You could use it to read audio from a database, from 
-a soundcard, etc. 
+Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
+arbitrary shell command. You could use it to read audio from a database, from
+a soundcard, etc.
 
 %if %{build_mod_shout}
 %package format-mod-shout
@@ -1340,7 +1340,7 @@ Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description timer-timerfd
-Provides Linux Timerfs based timer for the FreeSWITCH Open Source telephone 
+Provides Linux Timerfs based timer for the FreeSWITCH Open Source telephone
 platform.
 %endif
 
@@ -1552,7 +1552,7 @@ DATABASES_MODULES="databases/mod_mariadb databases/mod_pgsql"
 #
 ######################################################################################################################
 DIALPLANS_MODULES="dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
-#DISABLED DIALPLANS dialplans/mod_dialplan_asterisk 
+#DISABLED DIALPLANS dialplans/mod_dialplan_asterisk
 ######################################################################################################################
 #
 #					Directory Modules
@@ -1569,8 +1569,8 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
- 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp
+
 ######################################################################################################################
 #
 #						Event Handlers
@@ -1584,7 +1584,7 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 %endif
 
-#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
+#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -1674,7 +1674,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 ######################################################################################################################
 
 if test -f bootstrap.sh
-then 
+then
    ./bootstrap.sh
 else
    ./rebootstrap.sh
@@ -1927,8 +1927,8 @@ fi
 %{MODINSTDIR}/mod_cdr_csv.so*
 %{MODINSTDIR}/mod_console.so*
 %{MODINSTDIR}/mod_commands.so*
-%{MODINSTDIR}/mod_dialplan_directory.so* 
-%{MODINSTDIR}/mod_dialplan_xml.so* 
+%{MODINSTDIR}/mod_dialplan_directory.so*
+%{MODINSTDIR}/mod_dialplan_xml.so*
 %{MODINSTDIR}/mod_dptools.so*
 %{MODINSTDIR}/mod_event_socket.so*
 %{MODINSTDIR}/mod_logfile.so*
@@ -1939,7 +1939,7 @@ fi
 %{MODINSTDIR}/mod_spandsp.so*
 %{MODINSTDIR}/mod_syslog.so*
 %{MODINSTDIR}/mod_tone_stream.so*
-%{MODINSTDIR}/mod_xml_rpc.so* 
+%{MODINSTDIR}/mod_xml_rpc.so*
 ######################################################################################################################
 #
 #						Package for the developer
@@ -1985,7 +1985,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dingaling.conf.xml 
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dingaling.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/directory.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/distributor.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/easyroute.conf.xml
@@ -2010,6 +2010,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/memcache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/mongo.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/mosquitto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/msrp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opal.conf.xml
@@ -2412,7 +2413,7 @@ fi
 %{MODINSTDIR}/mod_radius_cdr.so*
 
 %if %{build_mod_rayo}
-%files event-rayo 
+%files event-rayo
 %{MODINSTDIR}/mod_rayo.so*
 %endif
 

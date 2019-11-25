@@ -29,8 +29,8 @@ AC_SUBST(switch_srcdir)
 AC_SUBST(switch_builddir)
 
 #
-# --enable-64 has been moved up higher prior to AC_PROG_CC so that we can tuck in the -m64 flag 
-# so devs on with Solaris wanting to build 64bit can not bother with adding any additional 
+# --enable-64 has been moved up higher prior to AC_PROG_CC so that we can tuck in the -m64 flag
+# so devs on with Solaris wanting to build 64bit can not bother with adding any additional
 # flags on the ./configure line.  User friendly.
 #
 
@@ -540,7 +540,7 @@ if test "${enable_debug}" = "yes"; then
 	CFLAGS=
         AX_CFLAGS_WARN_ALL_ANSI
 	SWITCH_ANSI_CFLAGS=$CFLAGS
-	CFLAGS="$saved_CFLAGS"	
+	CFLAGS="$saved_CFLAGS"
 
 	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
 	    if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
@@ -1016,7 +1016,7 @@ va_list_is_array=no
 AC_MSG_CHECKING(whether va_list is an array)
 AC_TRY_COMPILE([
 #include <stdarg.h>
-], [va_list list1, list2; list1 = list2;], , 
+], [va_list list1, list2; list1 = list2;], ,
 va_list_is_array=yes)
 AC_MSG_RESULT($va_list_is_array)
 if test x"$va_list_is_array" = xyes; then
@@ -1066,7 +1066,7 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp
 #                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
@@ -1178,8 +1178,8 @@ else
 fi
 
 # Basically, we have tried to figure out the correct format strings
-# for SWITCH types which vary between platforms, but we don't always get 
-# it right.  If you find that we don't get it right for your platform, 
+# for SWITCH types which vary between platforms, but we don't always get
+# it right.  If you find that we don't get it right for your platform,
 # you can override our decision below.
 # NOTE: borrowed much of this logic from apr.
 case $host in
@@ -1216,9 +1216,9 @@ AC_SUBST(long_value)
 AC_SUBST(int64_value)
 AC_SUBST(size_t_value)
 AC_SUBST(ssize_t_value)
-AC_SUBST(int64_t_fmt) 
-AC_SUBST(uint64_t_fmt) 
-AC_SUBST(ssize_t_fmt) 
+AC_SUBST(int64_t_fmt)
+AC_SUBST(uint64_t_fmt)
+AC_SUBST(ssize_t_fmt)
 AC_SUBST(size_t_fmt)
 
 case $host in
@@ -1451,7 +1451,7 @@ PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
 flite="true"
 PKG_CHECK_MODULES([FLITE], [flite >= 2],[],[
   AC_CHECK_LIB([flite], [flite_init],[
-    AC_CHECK_HEADERS([flite/flite.h],[      
+    AC_CHECK_HEADERS([flite/flite.h],[
       FLITE_LIBS="-lflite -lflite_cmu_grapheme_lang -lflite_cmu_grapheme_lex -lflite_cmu_indic_lang -lflite_cmu_indic_lex -lflite_cmulex -lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal16 -lflite_cmu_us_kal -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish"
       FLITE_CFLAGS=""
     ], [
@@ -1515,6 +1515,10 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([MOSQUITTO], [libmosquitto >= 1.4.101],[
+  AM_CONDITIONAL([HAVE_MOSQUITTO],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MOSQUITTO],[false])])
+
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])
@@ -1539,7 +1543,7 @@ PKG_CHECK_MODULES([HIREDIS], [hiredis >= 0.10.0],[
   AM_CONDITIONAL([HAVE_HIREDIS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_HIREDIS],[false])])
 
-AC_ARG_ENABLE(core-libedit-support,     
+AC_ARG_ENABLE(core-libedit-support,
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
 AS_IF([test "x$enable_core_libedit_support" != "xno"],[
@@ -1610,7 +1614,7 @@ else
 fi
 
 AX_CHECK_JAVA
-   
+
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
@@ -1967,6 +1971,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
 		src/mod/event_handlers/mod_kazoo/Makefile
+		src/mod/event_handlers/mod_mosquitto/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile

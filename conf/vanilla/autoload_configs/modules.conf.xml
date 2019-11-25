@@ -30,6 +30,7 @@
     <!-- <load module="mod_erlang_event"/> -->
     <!-- <load module="mod_smpp"/> -->
     <!-- <load module="mod_snmp"/> -->
+    <!-- <load module="mod_mosquitto"/> -->
 
     <!-- Directory Interfaces -->
     <!-- <load module="mod_ldap"/> -->
