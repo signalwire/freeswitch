@@ -2369,6 +2369,20 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
 					}
+				} else if (!strcasecmp(var, "event-channel-hierarchy-deliver-once") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					}
+				} else if (!strcasecmp(var, "event-channel-log-undeliverable-json") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					}
 				}
 			}
 		}

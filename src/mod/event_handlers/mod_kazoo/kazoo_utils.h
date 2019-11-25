@@ -48,4 +48,6 @@ void kz_expand_headers_self(switch_event_t *event);
 char * kz_expand_vars_pool(char *xml_str, switch_memory_pool_t *pool);
 switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res);
 
+SWITCH_DECLARE(switch_status_t) kz_expand_json_to_event(cJSON *json, switch_event_t *event, char * prefix);
+
 KZ_END_EXTERN_C

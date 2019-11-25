@@ -14069,7 +14069,9 @@ SWITCH_DECLARE(void) switch_core_media_init(void)
 
 SWITCH_DECLARE(void) switch_core_media_deinit(void)
 {
-	switch_core_destroy_memory_pool(&video_globals.pool);
+	if (video_globals.pool) {
+		switch_core_destroy_memory_pool(&video_globals.pool);
+	}
 }
 
 static int payload_number(const char *name)

@@ -2934,17 +2934,21 @@ static void ecd_deliver(event_channel_data_t **ecdP)
 		const char *sep = switch_core_get_event_channel_key_separator();
 		char *x_argv[SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS] = { 0 };
 		int x_argc = switch_separate_string_string(key, (char*) sep, x_argv, SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS);
-		char buf[512];
-		int i;
+		char buf[1024];
+		int i, r;
 		for(i=x_argc - 1; i > 0; i--) {
 			int z;
-			memset(buf, 0, 512);
+			memset(buf, 0, 1024);
 			sprintf(buf, "%s", x_argv[0]);
 			for(z=1; z < i; z++) {
 				strcat(buf, sep);
 				strcat(buf, x_argv[z]);
 			}
-			t += _switch_event_channel_broadcast(buf, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+			r = _switch_event_channel_broadcast(buf, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+			t += r;
+			if (r && switch_core_test_flag(SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE)) {
+				break;
+			}
 		}
 	} else {
 		char *p = NULL;
@@ -2958,7 +2962,13 @@ static void ecd_deliver(event_channel_data_t **ecdP)
 	t += _switch_event_channel_broadcast(SWITCH_EVENT_CHANNEL_GLOBAL, ecd->event_channel, ecd->json, ecd->key, ecd->id);
 
 	if(t == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s\n", ecd->event_channel, ecd->key);
+		if (switch_core_test_flag(SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON)) {
+			char *json = cJSON_Print(ecd->json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s => %s\n", ecd->event_channel, ecd->key, json);
+			switch_safe_free(json);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s\n", ecd->event_channel, ecd->key);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "delivered to %u subscribers for %s\n", t, ecd->event_channel);
 	}

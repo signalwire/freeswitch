@@ -929,6 +929,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		status = switch_core_file_pre_close(fh);
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	fh->file_interface->file_close(fh);
