@@ -724,7 +724,7 @@ static mosquitto_topic_t *add_publisher_topic(mosquitto_profile_t *profile, mosq
 	}
 
 	if (zstr(name)) {
-		log(ERROR, "Profile %s publisher %s topic name not passed to add_publisher()\n", profile->name, publisher->name);
+		log(ERROR, "Profile %s publisher %s topic name not passed to add_publisher_topic()\n", profile->name, publisher->name);
 		return NULL;
 	}
 
@@ -808,44 +808,119 @@ static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile
 }
 
 
+/**
+ * \brief   This function is used to locate a topic by name given a profile and publisher
+ *
+ * \details This function searches the topic hash asssociated with a publisher and profile in an attempt to
+ *          to find a matching name.  The name is used as a key, so must be unique
+ *          (two topics within the same profile and publisher cannot have the same name)
+ *
+ * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *publisher  Pointer to a publisher hash entry
+ * \param[in]   *name       Name of the topic name to locate
+ *
+ * \retval      pointer to the hash entry of the topic or NULL
+ */
+
 mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, const char *name)
 {
 	mosquitto_topic_t *topic = NULL;
 
+	if (!profile) {
+		log(ERROR, "Profile not passed to locate_publisher_topic()\n");
+		return NULL;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to locate_publisher_topic()\n", profile->name);
+		return NULL;
+	}
+
 	if (zstr(name)) {
-		log(ERROR, "Topic name not passed to locate_publisher_topic()\n");
-		return topic;
+		log(ERROR, "Profile %s publisher %s topic name not passed to locate_publisher_topic()\n", profile->name, publisher->name);
+		return NULL;
 	}
 
 	if (!(topic = switch_core_hash_find_locked(publisher->topics, name, publisher->topics_mutex))) {
-		log(DEBUG, "Unable to locate profile %s publisher %s topic %s\n", publisher->profile_name, publisher->name, name);
+		log(WARNING, "Profile %s publisher %s topic %s not found\n", publisher->profile_name, publisher->name, name);
 	}
 
 	return topic;
 }
 
 
+/**
+ * \brief   This function is used to locate an event by name given a profile, publisher and topic
+ *
+ * \details This function searches the event hash asssociated with a publisher, profile and topic in an attempt to
+ *          to find a matching name.  The name is used as a key, so must be unique
+ *          (two events within the same profile, publisher and topic cannot have the same name)
+ *
+ * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *publisher  Pointer to a publisher hash entry
+ * \param[in]   *name       Name of the topic name to locate
+ *
+ * \retval      pointer to the hash entry of the topic or NULL
+ */
+
 mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name)
 {
 	mosquitto_event_t *event = NULL;
 
+	if (!profile) {
+		log(ERROR, "Profile not passed to locate_publisher_topic_event()\n");
+		return NULL;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to locate_publisher_topic_event()\n", profile->name);
+		return NULL;
+	}
+
+	if (!topic) {
+		log(ERROR, "Profile %s publisher %s topic not passed to locate_publisher_topic_event()\n", profile->name, publisher->name);
+		return NULL;
+	}
+
 	if (zstr(name)) {
-		log(ERROR, "Event name not passed to locate_publisher_topic_event()\n");
+		log(WARNING, "Profile %s publisher %s topic %s event name not passed to locate_publisher_topic_event()\n", profile->name, publisher->name, topic->name);
 		return event;
 	}
 
 	if (!(event = switch_core_hash_find_locked(topic->events, name, topic->events_mutex))) {
-		log(DEBUG, "Unable to locate profile %s publisher %s topic %s event %s \n", publisher->profile_name, publisher->name, topic->name, name);
+		log(DEBUG, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
 	}
 
 	return event;
 }
 
 
+/**
+ * \brief   This function is used to parse the publisher topics from the configuration file
+ *
+ * \details	topics are located withing the publishers section of the configuration file
+ *
+ * \param[in]   *profile	Pointer to a profile hash entry
+ * \param[in]   *publisher	Pointer to a profile hash entry
+ * \param[in]   xpublisher	Publisher section of the configuration file
+ *
+ * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
 static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, switch_xml_t xpublisher)
 {
 	switch_xml_t xtopic, xtopics, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to parse_publisher_topics()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to parse_publisher_topics()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if ((xtopics = switch_xml_child(xpublisher, "topics"))) {
 		log(DEBUG, "parse_publisher_topics() found topic\n");
@@ -911,9 +986,37 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
 }
 
 
+/**
+ * \brief   This function is used to add a new topic to an existing subscriber
+ *
+ * \details Each subscriber can have one or more associated topics
+ *
+ * \param[in]   *profile    Pointer to the profile that the subscriber belongs to
+ * \param[in]   *subscriber Pointer to the subscriber that the will have the topic added
+ * \param[in]   name        Name of the topic to be added to the subscriber
+ *
+ * \retval      Address of the newly added topic or NULL
+ */
+
 static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
 {
 	mosquitto_topic_t *topic = NULL;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to add_subscriber_topic()\n");
+		return NULL;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to add_subscriber_topic()\n", profile->name);
+		return NULL;
+	}
+
+	if (zstr(name)) {
+		log(ERROR, "Profile %s subscriber %s topic name not passed to add_subsctiber_topic()\n", profile->name, subscriber->name);
+		return NULL;
+	}
+
 
 	if (!(topic = switch_core_alloc(profile->pool, sizeof(*topic)))) {
 		log(ERROR, "Failed to allocate memory from profile %s subscriber %s for topic %s\n", profile->name, subscriber->name, name);
@@ -932,9 +1035,33 @@ static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mos
 }
 
 
+/**
+ * \brief   This function is used to locate a topic by name given a profile and subscriber
+ *
+ * \details This function searches the topic hash asssociated with a subscriber and profile in an attempt to
+ *          to find a matching name.  The name is used as a key, so must be unique
+ *          (two topics within the same profile and subscriber cannot have the same name)
+ *
+ * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *subscriber Pointer to a subscriber hash entry
+ * \param[in]   *name       Name of the topic name to locate
+ *
+ * \retval      pointer to the hash entry of the topic or NULL
+ */
+
 mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
 {
 	mosquitto_topic_t *topic = NULL;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to locate_subscriber_topic()\n");
+		return NULL;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to locate_subscriber_topic()\n", profile->name);
+		return NULL;
+	}
 
 	if (zstr(name)) {
 		log(ERROR, "Topic name not passed to locate_subscriber_topic()\n");
@@ -949,6 +1076,18 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 }
 
 
+/**
+ * \brief   This function is used to parse the subscriber topics from the configuration file
+ *
+ * \details topics are located withing the subscribers section of the configuration file
+ *
+ * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *subscriber Pointer to a profile hash entry
+ * \param[in]   xsubscriber Publisher section of the configuration file
+ *
+ * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
 static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, switch_xml_t xsubscriber)
 {
 	switch_xml_t xtopic, xtopics, param;
@@ -961,12 +1100,12 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 			const char *name = switch_xml_attr(xtopic, "name");
 
 			if (zstr(name)) {
-				log(ERROR, "Required field name missing\n");
+				log(ERROR, "Profile %s subscriber %s Required field name missing\n", profile->name, subscriber->name);
 				continue;
 			}
 
 			if (locate_subscriber_topic(profile, subscriber, name)) {
-				log(ERROR, "Topic %s already exists\n", name);
+				log(ERROR, "Profile %s subscriber %s topic %s already exists\n", profile->name, subscriber->name, name);
 				continue;
 			}
 
@@ -1001,6 +1140,17 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 }
 
 
+/**
+ * \brief   This function is used to parse the connections from the configuration file
+ *
+ * \details Connections located within the profile section of the configuration file
+ *
+ * \param[in]   xprofile    Profile section of the configuration file
+ * \param[in]   *profile    Pointer to the profile hash that the newly parsed connections will be added to
+ *
+ * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
 static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profile_t *profile)
 {
 	switch_xml_t xconnection, xconnections, param;
@@ -1025,7 +1175,7 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 			}
 
 			if (locate_connection(profile, name)) {
-				log(ERROR, "Connection %s already exists\n", name);
+				log(ERROR, "Profile %s connection %s already exists\n", profile->name, name);
 				continue;
 			}
 
@@ -1105,6 +1255,16 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 }
 
 
+/**
+ * \brief   This function is used to parse the profiles from the configuration file
+ *
+ * \details Profiles are located at the top level of the configuration file
+ *
+ * \param[in]   cfg		The top of the configuration file
+ *
+ * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
 static switch_status_t parse_profiles(switch_xml_t cfg)
 {
 	switch_xml_t xprofile, xprofiles, param;
@@ -1146,6 +1306,16 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 	return status;
 }
 
+
+/**
+ * \brief   This function is used to parse the global settings from the configuration file
+ *
+ * \details The global settings are located at the top level of the configuration file
+ *
+ * \param[in]   cfg		The top of the configuration file
+ *
+ * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
 
 static switch_status_t parse_settings(switch_xml_t cfg)
 {
@@ -1220,6 +1390,16 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 }
 
 
+/**
+ * \brief   This function is the entry routine to parse the configuration file
+ *
+ * \details This routine is called during mod_mosquitto module load processing.
+ *
+ * \param[in]   cf	Name of the configuration file
+ *
+ * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
 switch_status_t mosquitto_load_config(const char *cf)
 {
 	switch_xml_t cfg, xml;
@@ -1241,6 +1421,18 @@ switch_status_t mosquitto_load_config(const char *cf)
 	return status;
 }
 
+
+/**
+ * \brief   This function creates a string of random characters
+ *
+ * \details There is a requirement for uniqueness in client_id's connected to the same MQTT broker
+ *			This helper routine creates random strings that are appended to non-unique values such
+ *			as switchname or hostname.
+ *
+ * \param[in]   dest	Pointer to a char buffer that will contain the random characters
+ * \param[in]	length	Number of random characters to create
+ *
+ */
 
 static void rand_str(char *dest, size_t length)
 {

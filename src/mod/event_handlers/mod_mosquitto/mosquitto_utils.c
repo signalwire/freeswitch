@@ -207,9 +207,8 @@ switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquit
 		void *val;
 		switch_core_hash_this(events_hi, NULL, NULL, &val);
 		event = (mosquitto_event_t *)val;
-		log(NOTICE, "1 profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
+		log(NOTICE, "profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
 		//status = unbind_event(profile, publisher, topic, event);
-		//log(NOTICE, "2 profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
 	}
 	switch_mutex_unlock(topic->events_mutex);
 
