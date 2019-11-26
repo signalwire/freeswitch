@@ -9,7 +9,6 @@ Contents
 6.  Notes
 
 
-
 1. Features
 -----------
 
@@ -26,15 +25,24 @@ Mosquitto https://mosquitto.org/
 ---------------------------
 
 1.	Enable mod_mosquitto in the modules.conf file
-2.	Execute the configure / make / make install commands
+2.	Execute configure;make;make install
+3.	Restart FreeSWITCH
 
 Note that mod_mosquitto requires libmosquitto-dev to build on Debian.
+
+To install local modifications to mod_mosquitto:
+
+1.	cd freeswitch/src/mod/event_handlers/mod_mosquitto
+2.	Make any local modifications
+3.	Execute make;make install
+4.	Enter the FreeSWITCH console (fs_cli)
+5.	Enter 'reload mod_mosquitto'
 
 
 3. Configuration
 ----------------
 
-All configuration is done within the mosquitto.conf.xml file located in the freeswitch/conf/autoload_configs folder.
+All configuration is done within the mosquitto.conf.xml file located in the freeswitch/conf/autoload_configs/mosquitto.conf.xml file.
 
 The configuration follows the standard way all other FreeSWITCH modules are configured.
 
