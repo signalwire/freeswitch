@@ -929,6 +929,7 @@ done:
 
 cc_status_t cc_agent_del(const char *agent)
 {
+	switch_event_t *event;
 	cc_status_t result = CC_STATUS_SUCCESS;
 
 	char *sql;
@@ -939,6 +940,13 @@ cc_status_t cc_agent_del(const char *agent)
 			agent, agent);
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-del");
+		switch_event_fire(&event);
+	}
+
 	return result;
 }
 
