@@ -77,9 +77,25 @@ switch_status_t initialize_profiles(void)
 }
 
 
+/**
+ * \brief   This routine starts all of the connections, publishers, subscribers within a profile
+ *
+ * \details This routine loops thru all the hashes associated with connection, publishers and subscribers
+ *			attempting to start them (if enabled)
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t profile_activate(mosquitto_profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to profile_activate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	switch_mutex_lock(profile->mutex);
 
@@ -136,20 +152,57 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 	return status;
 }
 
+/**
+ * \brief   TODO: This routine stops all of the connections, publishers, subscribers within a profile
+ *
+ * \details TODO: This routine loops thru all the hashes associated with connection, publishers and subscribers
+ *			attempting to deactivate them
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
 
 switch_status_t profile_deactivate(mosquitto_profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to profile_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	log(DEBUG, "profile:%s deactivate in progress\n", profile->name);
 	return status;
 }
 
 
+/**
+ * \brief   This routine starts a publisher associated with a profile
+ *
+ * \details This routine will also bind any events to topics associated with the publisher
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *publisher  Pointer to the publisher associated with profile
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	log(DEBUG, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
+	if (!profile) {
+		log(ERROR, "Profile not passed to publisher_activate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to publisher_activate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	log(DEBUG, "Profile %s publisher %s activation in progress\n", profile->name, publisher->name);
 
 	switch_mutex_lock(publisher->topics_mutex);
 	for (switch_hash_index_t *topics_hi = switch_core_hash_first(publisher->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
@@ -173,11 +226,38 @@ switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publi
 }
 
 
+/**
+ * \brief   This routine binds the events associated with a topic, profile and publisher
+ *
+ * \details This routine loops thru the events hash binding each one that is enabled
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *publisher  Pointer to the publisher associated with profile
+ * \param[in]   *topic		Pointer to the topic associated with profile
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t publisher_topic_activate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	log(DEBUG, "profile:%s publishser:%s topic:%s activation in progress\n", profile->name, publisher->name, topic->name);
+	if (!profile) {
+		log(ERROR, "Profile not passed to publisher_topic_activate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to publisher_topic_activate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!topic) {
+		log(ERROR, "Profile %s publisher %s topic not passed to publisher_topic_activate()\n", profile->name, publisher->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	log(NOTICE, "profile:%s publishser:%s topic:%s activation in progress\n", profile->name, publisher->name, topic->name);
 
 	if (topic->enable) {
 		switch_mutex_lock(topic->events_mutex);
@@ -195,40 +275,112 @@ switch_status_t publisher_topic_activate(mosquitto_profile_t *profile, mosquitto
 }
 
 
+/**
+ * \brief   This routine deactivates and unbinds the events associated with a topic, profile and publisher
+ *
+ * \details This routine loops thru the events hash unbinding each one that is enabled
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *publisher  Pointer to the publisher associated with profile
+ * \param[in]   *topic		Pointer to the topic associated with profile
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (!profile) {
+		log(ERROR, "Profile not passed to publisher_topic_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to publisher_topic_deactivate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!topic) {
+		log(ERROR, "Profile %s publisher %s topic not passed to publisher_topic_deactivate()\n", profile->name, publisher->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+
 	log(NOTICE, "profile:%s publisher:%s topic:%s deactivate in progress\n", profile->name, publisher->name, topic->name);
 
-	switch_mutex_lock(topic->events_mutex);
-	for (switch_hash_index_t *events_hi = switch_core_hash_first(topic->events); events_hi; events_hi = switch_core_hash_next(&events_hi)) {
-		mosquitto_event_t *event = NULL;
-		void *val;
-		switch_core_hash_this(events_hi, NULL, NULL, &val);
-		event = (mosquitto_event_t *)val;
-		log(NOTICE, "profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
-		//status = unbind_event(profile, publisher, topic, event);
+	if (topic->enable) {
+		switch_mutex_lock(topic->events_mutex);
+		for (switch_hash_index_t *events_hi = switch_core_hash_first(topic->events); events_hi; events_hi = switch_core_hash_next(&events_hi)) {
+			mosquitto_event_t *event = NULL;
+			void *val;
+			switch_core_hash_this(events_hi, NULL, NULL, &val);
+			event = (mosquitto_event_t *)val;
+			log(NOTICE, "profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
+			//status = unbind_event(profile, publisher, topic, event);
+		}
+		switch_mutex_unlock(topic->events_mutex);
 	}
-	switch_mutex_unlock(topic->events_mutex);
 
 	return status;
 }
 
+
+/**
+ * \brief   TODO: This routine deactivates the publisher associated with the specified profile
+ *
+ * \details TODO: This routine loops thru all the topics associated with the publisher and unbinds any events
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *publisher  Pointer to the publisher associated with the specified profile
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
 
 switch_status_t publisher_deactivate(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	log(DEBUG, "profilt:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to publisher_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to publisher_deactivate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	log(DEBUG, "profile:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
 	return status;
 }
 
+/**
+ * \brief   This routine starts a subscriber associated with a profile
+ *
+ * \details This routine will also create subscribe to topics associated with the subscriber
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *subscriber Pointer to the subscriber associated with profile
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
 
 switch_status_t subscriber_activate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	log(DEBUG, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+	if (!profile) {
+		log(ERROR, "Profile not passed to subscriber_activate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to subscriber_activate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	log(NOTICE, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
 
 	switch_mutex_lock(subscriber->topics_mutex);
 	for (switch_hash_index_t *topics_hi = switch_core_hash_first(subscriber->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
@@ -252,9 +404,36 @@ switch_status_t subscriber_activate(mosquitto_profile_t *profile, mosquitto_subs
 }
 
 
+/**
+ * \brief   This routine binds the events associated with a topic, profile and subscriber
+ *
+ * \details This routine loops thru the topics and subscribes to each one that is enabled
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *subscriber Pointer to the subscriber associated with profile
+ * \param[in]   *topic      Pointer to the topic associated with profile
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to subscriber_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!topic) {
+		log(ERROR, "Profile %s subscriber %s topic not passed to subscriber_deactivate()\n", profile->name, subscriber->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (topic->enable) {
 		log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
@@ -265,27 +444,95 @@ switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitt
 }
 
 
+/**
+ * \brief   TODO: This routine deactivates the subscriber associated with the specified profile
+ *
+ * \details TODO: This routine loops thru all the topics associated with the subscriber and removes any subscriptions
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *subscriber Pointer to the subscriber associated with the specified profile
+ *
+ * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (!profile) {
+		log(ERROR, "Profile not passed to subscriber_topic_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to subscriber_topic_deactivate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!topic) {
+		log(ERROR, "Profile %s subscriber %s topic not passed to subscriber_topic_deactivate()\n", profile->name, subscriber->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
 
 	return status;
 }
 
+/**
+ * \brief   TODO: This routine deactivates the subscriber associated with the specified profile
+ *
+ * \details TODO: This routine loops thru all the topics associated with the subscriber and unsubscribes to them
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *subscriber Pointer to the subscriber associated with the specified profile
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t subscriber_deactivate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to subscriber_deactivate()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
 	log(DEBUG, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
 	return status;
 }
 
 
+/**
+ * \brief   This routine attempts to connect to an MQTT broker
+ *
+ * \details This routine sets up connection properties/options and then calls the routine to perform the actual connection
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *connection Pointer to the connection associated with the specified profile
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to client_connect()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to client_connect()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (mosq_new(profile, connection) == SWITCH_STATUS_SUCCESS) {
 		mosq_reconnect_delay_set(connection);
@@ -304,12 +551,35 @@ switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connectio
 }
 
 
+/**
+ * \brief   This routine tries to locate the subscriber form an inbound message
+ *
+ * \details Received messages only have the connection and topic available.  This routine searches for the associated subscriber
+ *			so that the message can be processes.
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *connection Pointer to the connection associated with the specified profile
+ * \param[in]   *name		Pointer to the topic name associated with the received message
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquitto_connection_t *connection, const char *name)
 {
 	mosquitto_topic_t *found_topic = NULL;
 
+	if (!profile) {
+		log(ERROR, "Profile not passed to locate_connection_topic()\n");
+		return NULL;
+	}
+
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to locate_connection_topic()\n", profile->name);
+		return NULL;
+	}
+
 	if (zstr(name)) {
-		log(ERROR, "profile:%s connection:%s topic name is NULL\n", profile->name, connection->name);
+		log(ERROR, "profile:%s connection:%s topic name is NULL for locate_connection_topic()\n", profile->name, connection->name);
 		return found_topic;
 	}
 
@@ -347,9 +617,31 @@ mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquit
 }
 
 
+/**
+ * \brief   This routine attempts to reinitialize a connection associated with the specified profile
+ *
+ * \details The connection will either be attempted or disconnected based on it being enabled or not
+ *			so that the message can be processes.
+ *
+ * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *connection Pointer to the connection associated with the specified profile
+ *
+ * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
+ */
+
 switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to connection_initialize()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to connection_initialize()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (connection->enable) {
 		log(DEBUG, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);

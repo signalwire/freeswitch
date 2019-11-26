@@ -39,8 +39,17 @@
 #include "mosquitto_utils.h"
 #include "mosquitto_events.h"
 #include "mosquitto_config.h"
+#include "mosquitto_mosq.h"
 
-static void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *connection, mosquitto_topic_t *topic, int rc);
+
+/**
+ * \brief   This is the primary event handler.  It is called when a bound FreeSWITCH event is fired.
+ *
+ * \details This routine is called for ALL events regardless of the profile or publisher used.
+ *			Details around how to process the event are located in the userdata structure passed with event.
+ *
+ * \param[in]   *event	Pointer to an event structure
+ */
 
 void event_handler(switch_event_t *event)
 {
@@ -128,6 +137,20 @@ void event_handler(switch_event_t *event)
 
 }
 
+/**
+ * \brief   This functions binds an event to FreeSWITCH.
+ *
+ * \details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
+ *			be processed by the correct publisher.
+ *
+ * \param[in]   *profile	Pointer to the profile associated with this event
+ * \param[in]   *publisher	Pointer to the publisher associated with this event
+ * \param[in]   *topic		Pointer to the topic associated with this event
+ * \param[in]	*event		Pointer to an event structure
+ *
+ * \retval SWITCH_STATUS_GENERR if there was a problem binding to the event
+ *
+ */
 
 switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, mosquitto_event_t *event)
 {
@@ -140,15 +163,32 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 		return SWITCH_STATUS_GENERR;
 	}
 
+    if (!profile) {
+        log(ERROR, "Profile not passed to bind_event()\n");
+        return SWITCH_STATUS_GENERR;
+    }
+
+    if (!publisher) {
+        log(ERROR, "Profile %s publisher not passed to bind_event()\n", profile->name);
+        return SWITCH_STATUS_GENERR;
+    }
+    if (!topic) {
+        log(ERROR, "Profile %s publisher %s topic not passed to bind_event()\n", profile->name, publisher->name);
+        return SWITCH_STATUS_GENERR;
+    }
+    if (!event) {
+        log(ERROR, "Profile %s publisher %s topic %s event not passed to bind_event()\n", profile->name, publisher->name, topic->name);
+        return SWITCH_STATUS_GENERR;
+    }
+
 	userdata = event->userdata;
 
 	userdata->profile = profile;
 	userdata->publisher = publisher;
 	userdata->topic = topic;
 
-
 	if (!(connection = locate_connection(profile, topic->connection_name))) {
-		log(ERROR, "Cannot bind to topic %s because connection %s (profile %s) is invalid\n", topic->name, topic->connection_name, profile->name);
+		log(ERROR, "Profile %s topic %s connection %s not found for bind_event()\n", profile->name, topic->name, topic->connection_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -157,17 +197,32 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 	snprintf(event->event_id, sizeof(event->event_id), "%s-%s-%s", profile->name, publisher->name, topic->name);
 
 	if ((switch_event_bind_removable(event->event_id, event->event_type, SWITCH_EVENT_SUBCLASS_ANY, event_handler, userdata, &event->node)) != SWITCH_STATUS_SUCCESS) {
-		log(DEBUG, "failed to bind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(ERROR, "failed to bind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		event->bound = SWITCH_FALSE;
 		return SWITCH_STATUS_GENERR;
 	} else {
-		log(DEBUG, "Bound event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(INFO, "Bound event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		event->bound = SWITCH_TRUE;
 	}
 
 	return status;
 }
 
+
+/**
+ * \brief   This functions unbinds an event to FreeSWITCH.
+ *
+ * \details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
+ *			be processed by the correct publisher.
+ *
+ * \param[in]   *profile	Pointer to the profile associated with this event
+ * \param[in]   *publisher	Pointer to the publisher associated with this event
+ * \param[in]   *topic		Pointer to the topic associated with this event
+ * \param[in]	*event		Pointer to an event structure
+ *
+ * \retval SWITCH_STATUS_GENERR if there was a problem binding to the event
+ *
+ */
 
 switch_status_t unbind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, mosquitto_event_t *event)
 {
@@ -178,47 +233,35 @@ switch_status_t unbind_event(mosquitto_profile_t *profile, mosquitto_publisher_t
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (!profile) {
+        log(ERROR, "Profile not passed to unbind_event()\n");
+        return SWITCH_STATUS_GENERR;
+    }
+
+    if (!publisher) {
+        log(ERROR, "Profile %s publisher not passed to unbind_event()\n", profile->name);
+        return SWITCH_STATUS_GENERR;
+    }
+    if (!topic) {
+        log(ERROR, "Profile %s publisher %s topic not passed to unbind_event()\n", profile->name, publisher->name);
+        return SWITCH_STATUS_GENERR;
+    }
+    if (!event) {
+		log(ERROR, "Profile %s publisher %s topic %s event not passed to unbind_event()\n", profile->name, publisher->name, topic->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+
 	if (switch_event_unbind(&event->node) != SWITCH_STATUS_SUCCESS) {
-		log(DEBUG, "failed to unbind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(ERROR, "failed to unbind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		return SWITCH_STATUS_GENERR;
 	} else {
-		log(DEBUG, "Unbound event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(INFO, "Unbound event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		memset(event->event_id, '\0', sizeof(event->event_id));
 		event->bound = SWITCH_FALSE;
 	}
 
 	return status;
-}
-
-
-static void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *connection, mosquitto_topic_t *topic, int rc)
-{
-	switch (rc) {
-		case MOSQ_ERR_SUCCESS:
-			log(DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
-			break;
-		case MOSQ_ERR_INVAL:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s invalid input parameters \n", profile->name, connection->name, topic->pattern);
-			if (connection->enable) {
-				connection_initialize(profile, connection);
-			}
-			break;
-		case MOSQ_ERR_NOMEM:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
-			break;
-		case MOSQ_ERR_NO_CONN:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
-			break;
-		case MOSQ_ERR_PROTOCOL:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
-			break;
-		case MOSQ_ERR_PAYLOAD_SIZE:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
-			break;
-		default:
-			log(DEBUG, "Event handler: unknown return code %d from publish\n", rc);
-			break;
-	}
 }
 
 
