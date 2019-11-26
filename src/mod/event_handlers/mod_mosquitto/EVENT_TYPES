@@ -83,7 +83,7 @@
    BACKGROUND_JOB           - Background Job
    DETECTED_SPEECH          - Detected Speech
    DETECTED_TONE            - Detected Tone
-   PRIVATE_COMMAND          - A private command event 
+   PRIVATE_COMMAND          - A private command event
    HEARTBEAT                - Machine is alive
    TRAP                     - Error Trap
    ADD_SCHEDULE             - Something has been scheduled

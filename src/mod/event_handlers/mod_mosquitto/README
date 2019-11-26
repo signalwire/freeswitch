@@ -46,13 +46,78 @@ At a high level, the configuration file is organized as follows:
 4.	Within each publisher or subscriber, there can be one or more topics defined.
 5.	Publisher topics can have one or more event parameters
 
+Configuration parameter definitions
+
+SETTINGS
+
+	loglevel			- log severity level is one of: debug,info,notice,warning,error,critical,alert,console
+	enable-profiles		- Default setting if unspecified in the configuration file
+	enable-publishers	- Default setting if unspecified in the configuration file
+	enable-subscribers	- Default setting if unspecified in the configuration file
+	enable-connections	- Default setting if unspecified in the configuration file
+	enable-topics		- Default setting if unspecified in the configuration file
+	event-queue-size	- Number of pending events that the event queue can hold
+	unique-string-length- Lengh of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
+
+PROFILE
+	name				- Name of the profile. Each profile must have a unique name.
+	enable				- Is this profile enabled (true) / disabled (false).
+
+CONNECTIONS
+	send_maximum
+	bind_address
+
+CONNECTION
+	name				- Name of this connection.  Each connection within a profile must have unique name.
+	enable				- Is this connection enabled (true) / disabled (false).
+	receive_maximum
+	send_maximum
+	host				- The hostname (FQDN) of the MQTT broker to connect to.
+	port				- The port on the MQTT broker to connect to.
+	keepalive			-
+	username			- The username used by the MQTT broker to authorize the connection.
+	password			- The password used by the MQTT broker to authenticate the connection.
+	client_id			-
+	clean_session		-
+	retries				-
+	reconnect_delay		-
+	reconnect_delay_max	-
+	reconnect_exponsntial_backoff -
+
+PUBLISHER
+	name				- Name of this publisher.  Each publisher within a profile must have unique name.
+	enable				- Is this publisher enabled (true) / disabled (false).
+
+TOPIC
+	name				- Name of this topic.  Each topic within a profile/publisher must have unique name.
+	enable				- Is this topic enabled (true) / disabled (false).
+	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
+	event				- The FreeSWITCH event name that will be published to this topic.  Multiple events can be specified, one per param.
+	pattern				-
+	qos					-
+	retain				-
+
+SUBSCRIBER
+	name				- Name of this subscriber.  Each subscriber within a profile must have unique name.
+	enable				- Is this subscriber enabled (true) / disabled (false).
+
+TOPIC
+	name				- Name of this topic.  Each topic within a profile/subscriber must have unique name.
+	enable				- Is this topic enabled (true) / disabled (false).
+	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
+	pattern				-
+	qos					-
+	originate_authorized- Are originate commands authorized (true) / not authorized (false)
+	bgapi_authorized	- Are bgapi commands authorized (true) / not authorized (false)
+
+
 An example configuration file:
 
 <configuration name="mosquitto.conf" description="mod_mosquitto">
 	<settings>
 		<!-- Default Log Level - value is one of: debug,info,notice,warning,error,critical,alert,console -->
 		<param name="loglevel" value="debug"/>
-		
+
 		<param name="enable-profiles" value="true"/>
 		<param name="enable-publishers" value="true"/>
 		<param name="enable-subscribers" value="true"/>
@@ -176,7 +241,7 @@ ORIGINATE
 		originate {origination_caller_id_number=19005551212}sofia/internal/sip:1000@192.168.1.1:58289 9386 XML default
 		originate {origination_caller_id_number=9005551212}sofia/default/whatever@wherever 19005551212 XML default
 4.	Note: Depending on the FreeSWITCH events being published, the result of the originate" command may, or may not be sent to the MQTT client.
-								
+
 SUBSCRIBE to a topic
 
 Example of the the topic configuration to subscribe to a topic (and allowing both bgapi and originate commands):
@@ -209,7 +274,7 @@ Notes:
 
 
 PUBLISH an event to a topic:
-	
+
 Notes:
 	1.	The topic name must be unique within a profile.
 	2.	The topic can be enabled or disabled by setting the "enable" param.
@@ -284,4 +349,4 @@ Possible TODO items:
 	Enhanced security around command execution
 	Enhanced CLI funcationality
 	Enhanced logging / statistics
-	
+
