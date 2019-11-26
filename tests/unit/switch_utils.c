@@ -33,7 +33,7 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 
 FST_SUITE_BEGIN(switch_hash)
 
