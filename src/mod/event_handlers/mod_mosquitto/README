@@ -72,25 +72,29 @@ PROFILE
 	enable				- Is this profile enabled (true) / disabled (false).
 
 CONNECTIONS
-	send_maximum
-	bind_address
 
 CONNECTION
 	name				- Name of this connection.  Each connection within a profile must have unique name.
 	enable				- Is this connection enabled (true) / disabled (false).
-	receive_maximum
-	send_maximum
+	receive_maximum		- The maximum number of incoming QoS1 and QoS2 messages to be processed at once.
+	send_maximum		- The maximum number of 'in-flight' QoS1 and QoS2 messages to be processed at once.
 	host				- The hostname (FQDN) of the MQTT broker to connect to.
 	port				- The port on the MQTT broker to connect to.
-	keepalive			-
+	bind_address		- the hostname or IP address of the local network interface to bind to.
+	srv					- Should SRV lookups be performed (true/false).
+	keepalive			- The MQTT keepalive value.
 	username			- The username used by the MQTT broker to authorize the connection.
 	password			- The password used by the MQTT broker to authenticate the connection.
-	client_id			-
-	clean_session		-
-	retries				-
-	reconnect_delay		-
-	reconnect_delay_max	-
-	reconnect_exponsntial_backoff -
+	client_id			- The client id to use. If not specified a random client id will be generated.
+						- FreeSWITCH-Switchname - Use the switchname as the client id.
+						- FreeSWITCH-Switchname-Unique - Use the switchname with random characters appended as the client id.
+						- FreeSWITCH-Hostname - Use the hostname as the client id.
+						- FreeSWITCH-Hostname-Unique - Use the hostname with random characters appended as the client id.
+	clean_session		- The MQTT clean sesson flag (frue/false)
+	retries				- The maximum number of reconnect retries.
+	reconnect_delay		- The number of seconds to wait between reconnects.
+	reconnect_delay_max	- The maximum number of seconds to taie between reconnects.
+	reconnect_exponsntial_backoff - Use exponential backoff between reconnect attempts (true/false).
 
 PUBLISHER
 	name				- Name of this publisher.  Each publisher within a profile must have unique name.
@@ -117,7 +121,10 @@ TOPIC
 	enable				- Is this topic enabled (true) / disabled (false).
 	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
 	pattern				- Pattern used to classify and filter different MQTT messages.  For example: FreeSWITCH/command or FreeSWITCH/heartbeat.
-	qos					-
+	qos					- The requested Quality of Service for this subscription.
+						- At most once (0)	- Best effort delivery. Mesage may not be delivered to the receiver.
+						- At least once (1)	- Guarantees that the mesage will be delivered at least one time to the receiver (duplicates possible).
+						- Exactly once (2)	- Guarentees that the message is received only once by the receiver.
 	originate_authorized- Are originate commands authorized (true) / not authorized (false)
 	bgapi_authorized	- Are bgapi commands authorized (true) / not authorized (false)
 

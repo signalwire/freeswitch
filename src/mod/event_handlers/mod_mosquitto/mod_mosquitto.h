@@ -64,26 +64,27 @@ typedef struct mosquitto_profile_s mosquitto_profile_t;
 typedef struct mosquitto_connection_s mosquitto_connection_t;
 typedef struct mosquitto_publisher_s mosquitto_publisher_t;
 typedef struct mosquitto_subscriber_s mosquitto_subscriber_t;
-typedef struct mosquitto_topic_s mosquitto_topic_t;
+typedef struct mosquitto_bgapi_s mosquitto_bgapi_job_t;
+typedef struct mosquitto_lib_s mosquitto_lib_t;
+typedef struct mosquitto_will_s mosquitto_will_t;
+typedef struct mosquitto_event_s mosquitto_event_t;
 typedef struct mosquitto_event_userdata_s mosquitto_event_userdata_t;
+typedef struct mosquitto_topic_s mosquitto_topic_t;
 typedef struct mosquitto_mosq_userdata_s mosquitto_mosq_userdata_t;
 
-struct mosquitto_bgapi_job {
+
+struct mosquitto_bgapi_s {
     char *cmd;
     char *arg;
     char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
     switch_memory_pool_t *pool;
 };
-typedef struct mosquitto_bgapi_job mosquitto_bgapi_job_t;
-
 
 struct mosquitto_lib_s {
 	int major;
 	int minor;
 	int revision;
 };
-typedef struct mosquitto_lib_s mosquitto_lib_t;
-
 
 struct mosquitto_will_s {
 	char *name;
@@ -93,7 +94,6 @@ struct mosquitto_will_s {
 	int qos;
 	switch_bool_t retain;
 };
-typedef struct mosquitto_will_s mosquitto_will_t;
 
 struct mosquitto_event_s {
 	char *name;
@@ -104,7 +104,6 @@ struct mosquitto_event_s {
 	switch_bool_t bound;
 	unsigned count;
 };
-typedef struct mosquitto_event_s mosquitto_event_t;
 
 struct mosquitto_topic_s {
 	char *name;
@@ -128,7 +127,6 @@ struct mosquitto_topic_s {
 	switch_bool_t bgapi_authorized;
 	unsigned count;
 };
-//typedef struct mosquitto_topic_s mosquitto_topic_t;
 
 struct mosquitto_subscriber_s {
 	char *name;
@@ -141,7 +139,6 @@ struct mosquitto_subscriber_s {
 
 	switch_bool_t enable;
 };
-//typedef struct mosquitto_subscriber_s mosquitto_subscriber_t;
 
 struct mosquitto_publisher_s {
 	char *name;
@@ -155,7 +152,6 @@ struct mosquitto_publisher_s {
 	switch_bool_t enable;
 	unsigned count;
 };
-//typedef struct mosquitto_publisher_s mosquitto_publisher_t;
 
 struct mosquitto_connection_s {
 	char *name;
@@ -188,7 +184,6 @@ struct mosquitto_connection_s {
 	mosquitto_mosq_userdata_t *userdata;
 	struct mosquitto *mosq;
 };
-//typedef struct mosquitto_connection_s mosquitto_connection_t;
 
 struct mosquitto_profile_s {
 	char *name;
@@ -205,7 +200,6 @@ struct mosquitto_profile_s {
 
 	switch_bool_t enable;
 };
-//typedef struct mosquitto_profile_s mosquitto_profile_t;
 
 struct mosquitto_event_userdata_s {
 	mosquitto_profile_t *profile;
@@ -214,7 +208,6 @@ struct mosquitto_event_userdata_s {
 	mosquitto_subscriber_t *subscriber;
 	mosquitto_topic_t *topic;
 };
-//typedef struct mosquitto_event_userdata_s mosquitto_event_userdata_t;
 
 struct mosquitto_mosq_userdata_s {
 	mosquitto_profile_t *profile;
@@ -223,7 +216,6 @@ struct mosquitto_mosq_userdata_s {
 	mosquitto_subscriber_t *subscriber;
 	mosquitto_topic_t *topic;
 };
-//typedef struct mosquitto_mosq_userdata_s mosquitto_mosq_userdata_t;
 
 struct globals_s {
 	switch_memory_pool_t *pool;
