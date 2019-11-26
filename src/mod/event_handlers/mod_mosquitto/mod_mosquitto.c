@@ -44,6 +44,7 @@
 #include "mosquitto_events.h"
 #include "mosquitto_mosq.h"
 
+struct globals_s mosquitto_globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown);

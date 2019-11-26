@@ -246,7 +246,8 @@ struct globals_s {
 	switch_bool_t enable_topics;
 	switch_bool_t enable_events;
 	size_t unique_string_length;
-} mosquitto_globals;
+};
+extern struct globals_s mosquitto_globals;
 
 #endif /* MOD_MOSQUITTO_H */
 

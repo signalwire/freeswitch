@@ -43,6 +43,7 @@
 #include "mosquitto_config.h"
 #include "mosquitto_mosq.h"
 
+
 /**
  * \brief This function initializes all of the configured profiles.
  *

@@ -44,6 +44,7 @@
 #define MOSQUITTO_DESC "Mosquitto API"
 #define MOSQUITTO_SYNTAX "<command> [<args>]"
 
+
 typedef switch_status_t (*mosquitto_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 /**

@@ -44,6 +44,7 @@
 #include "mosquitto_config.h"
 #include "mosquitto_cli.h"
 
+
 static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *userdata, char *payload_string, const struct mosquitto_message *message);
 static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata, char *payload_string, const struct mosquitto_message *message);
 

@@ -101,9 +101,12 @@ TOPIC
 	enable				- Is this topic enabled (true) / disabled (false).
 	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
 	event				- The FreeSWITCH event name that will be published to this topic.  Multiple events can be specified, one per param.
-	pattern				-
-	qos					-
-	retain				-
+	pattern				- Pattern used to classify and filter different MQTT messages.  For example: FreeSWITCH/command or FreeSWITCH/heartbeat.
+	qos					- Message delivery Quality of Service
+						- At most once (0)	- Best effort delivery. Mesage may not be delivered to the receiver.
+						- At least once (1)	- Guarantees that the mesage will be delivered at least one time to the receiver (duplicates possible).
+						- Exactly once (2)	- Guarentees that the message is received only once by the receiver.
+	retain				- (true/false) The MQTT broker stores the last retained messae and the corresponding QoS for that topic.
 
 SUBSCRIBER
 	name				- Name of this subscriber.  Each subscriber within a profile must have unique name.
@@ -113,7 +116,7 @@ TOPIC
 	name				- Name of this topic.  Each topic within a profile/subscriber must have unique name.
 	enable				- Is this topic enabled (true) / disabled (false).
 	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
-	pattern				-
+	pattern				- Pattern used to classify and filter different MQTT messages.  For example: FreeSWITCH/command or FreeSWITCH/heartbeat.
 	qos					-
 	originate_authorized- Are originate commands authorized (true) / not authorized (false)
 	bgapi_authorized	- Are bgapi commands authorized (true) / not authorized (false)
