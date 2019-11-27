@@ -257,8 +257,6 @@ static switch_status_t test_asr_get_results(switch_asr_handle_t *ah, char **resu
 {
 	test_asr_t *context = (test_asr_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_stream_handle_t result = { 0 };
-	SWITCH_STANDARD_STREAM(result);
 
 	if (switch_test_flag(context, ASRFLAG_RETURNED_RESULT) || switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED)) {
 		return SWITCH_STATUS_FALSE;
