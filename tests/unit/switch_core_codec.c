@@ -74,6 +74,8 @@ FST_CORE_BEGIN("./conf")
 			switch_core_codec_copy(&orig_codec, &new_codec, NULL, NULL);
 			fst_check(orig_codec.implementation->samples_per_second == new_codec.implementation->samples_per_second);
 			fst_check(orig_codec.implementation->actual_samples_per_second == new_codec.implementation->actual_samples_per_second);
+			switch_core_codec_destroy(&orig_codec);
+			switch_core_codec_destroy(&new_codec);
 
 			status = switch_core_codec_init(&orig_codec,
 			"OPUS",
@@ -88,6 +90,8 @@ FST_CORE_BEGIN("./conf")
 			switch_core_codec_copy(&orig_codec, &new_codec, NULL, NULL);
 			fst_check(orig_codec.implementation->samples_per_second == new_codec.implementation->samples_per_second);
 			fst_check(orig_codec.implementation->actual_samples_per_second == new_codec.implementation->actual_samples_per_second);
+			switch_core_codec_destroy(&orig_codec);
+			switch_core_codec_destroy(&new_codec);
 
 			status = switch_core_codec_init(&orig_codec,
 			"OPUS",
@@ -102,6 +106,8 @@ FST_CORE_BEGIN("./conf")
 			switch_core_codec_copy(&orig_codec, &new_codec, NULL, NULL);
 			fst_check(orig_codec.implementation->samples_per_second == new_codec.implementation->samples_per_second);
 			fst_check(orig_codec.implementation->actual_samples_per_second == new_codec.implementation->actual_samples_per_second);
+			switch_core_codec_destroy(&orig_codec);
+			switch_core_codec_destroy(&new_codec);
  
 			status = switch_core_codec_init(&orig_codec,
 			"G722",
@@ -116,6 +122,8 @@ FST_CORE_BEGIN("./conf")
 			switch_core_codec_copy(&orig_codec, &new_codec, NULL, NULL);
 			fst_check(orig_codec.implementation->samples_per_second == new_codec.implementation->samples_per_second);
 			fst_check(orig_codec.implementation->actual_samples_per_second == new_codec.implementation->actual_samples_per_second);
+			switch_core_codec_destroy(&orig_codec);
+			switch_core_codec_destroy(&new_codec);
 
 		}
 		FST_TEST_END()
