@@ -82,6 +82,7 @@ FST_CORE_BEGIN("./conf")
 			fst_check(frame.m == 1);
 			fst_check(packets > 0);
 
+			switch_img_free(&img);
 			switch_core_codec_destroy(&codec);
 		}
 		FST_TEST_END()
