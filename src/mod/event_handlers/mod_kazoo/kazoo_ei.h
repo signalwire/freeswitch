@@ -238,7 +238,7 @@ void fetch_config();
 
 switch_status_t kazoo_load_config();
 void kazoo_destroy_config();
-
+void kz_set_hostname();
 
 #define _ei_x_encode_string(buf, string) { ei_x_encode_binary(buf, string, strlen(string)); }
 
