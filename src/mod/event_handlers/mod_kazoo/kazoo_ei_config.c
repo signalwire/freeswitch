@@ -122,7 +122,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.receive_msg_preallocate = 2000;
 	kazoo_globals.event_stream_preallocate = KZ_DEFAULT_STREAM_PRE_ALLOCATE;
 	kazoo_globals.send_msg_batch = 10;
-	kazoo_globals.event_stream_framing = 4;
+	kazoo_globals.event_stream_framing = 2;
 	kazoo_globals.port = 0;
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
