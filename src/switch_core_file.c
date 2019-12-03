@@ -114,7 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_remove( const char *file_path, 
 	}
 	if (! pool) {
 		if (switch_core_new_memory_pool(&new_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating \n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating pool\n");
 			return SWITCH_STATUS_FALSE;
 		}
 		pool = new_pool;

@@ -1156,6 +1156,180 @@ done:
 
 	return status;
 }
+/**
+ * Deletes a remote file via HTTP
+ * @param cache the cache
+ * @param profile the HTTP profile
+ * @param url The cached URL entry
+ * @param session the (optional) session
+ * @return SWITCH_STATUS_SUCCESS if successful
+ */
+static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
+	switch_CURL *curl_handle = NULL;
+	http_get_data_t del_data = {0};
+	long httpRes = 0;
+	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+
+	/* set up HTTP DELETE */
+	del_data.fd = 0;
+	del_data.url = url;
+
+	/* find profile for domain */
+	if (!profile) {
+		profile = url_cache_http_profile_find_by_fqdn(cache, url->url);
+	}
+
+	if (profile && profile->append_headers_ptr) {
+		headers = profile->append_headers_ptr(profile, headers, "DELETE", 0, "", url->url, 0, NULL);
+	}
+
+	curl_handle = switch_curl_easy_init();
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache headers\n", del_data.url->filename);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	if (headers) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, del_data.url->url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &del_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	if (cache->connect_timeout > 0) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+	}
+	if (cache->download_timeout > 0) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, cache->download_timeout);
+	}
+	if (!cache->ssl_verifypeer) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	} else {
+		/* this is the file with all the trusted certificate authorities */
+		if (!zstr(cache->ssl_cacert)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
+		}
+	}
+	
+	/* verify that the host name matches the cert */
+	if (!cache->ssl_verifyhost) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+	}
+	
+	curl_status = switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
+	close(del_data.fd);
+	if (curl_status != CURLE_OK) {
+		url->size = 0; // nothing downloaded or download interrupted
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to delete %s\n", curl_status, httpRes, url->url);
+		status = SWITCH_STATUS_GENERR;
+		goto done;
+	}
+
+done:
+
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
+
+	return status;
+}
+
+/**
+ * Checks to see if a file exists via HTTP
+ * @param cache the cache
+ * @param profile the HTTP profile
+ * @param url The cached URL entry
+ * @param session the (optional) session
+ * @return SWITCH_STATUS_SUCCESS if it exists 
+ * Will want to make this generic for head & delete & maybe get together but for now just trying to add functionality
+ */
+static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
+	switch_CURL *curl_handle = NULL;
+	http_get_data_t del_data = {0};
+	long httpRes = 0;
+	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+
+	/* set up HTTP HEAD */
+	del_data.fd = 0;
+	del_data.url = url;
+
+	/* find profile for domain */
+	if (!profile) {
+		profile = url_cache_http_profile_find_by_fqdn(cache, url->url);
+	}
+
+	if (profile && profile->append_headers_ptr) {
+		headers = profile->append_headers_ptr(profile, headers, "HEAD", 0, "", url->url, 0, NULL);
+	}
+
+	curl_handle = switch_curl_easy_init();
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache headers\n", del_data.url->filename);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	if (headers) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, del_data.url->url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &del_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	if (cache->connect_timeout > 0) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+	}
+	if (cache->download_timeout > 0) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, cache->download_timeout);
+	}
+	if (!cache->ssl_verifypeer) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	} else {
+		/* this is the file with all the trusted certificate authorities */
+		if (!zstr(cache->ssl_cacert)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
+		}
+	}
+	
+	/* verify that the host name matches the cert */
+	if (!cache->ssl_verifyhost) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+	}
+	
+	curl_status = switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
+	close(del_data.fd);
+	if (curl_status != CURLE_OK) {
+		url->size = 0; // nothing downloaded or download interrupted
+		status = SWITCH_STATUS_GENERR;
+		if (httpRes != 404) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to delete %s\n", curl_status, httpRes, url->url);
+		}
+		goto done;
+	}
+
+done:
+
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
+
+	return status;
+}
 
 /**
  * Deletes a remote file via HTTP
@@ -1441,7 +1615,6 @@ SWITCH_STANDARD_API(http_cache_get)
 
 	return status;
 }
-
 #define HTTP_TRYGET_SYNTAX "{param=val}<url>"
 /**
  * Get a file from the cache, fail if download is needed
@@ -1928,7 +2101,6 @@ static switch_status_t http_cache_file_exists(const char *path, switch_memory_po
 	switch_core_session_t *session = NULL;
 	u = cached_url_create(&gcache, path, NULL);
 	profile = url_cache_http_profile_find_by_fqdn(&gcache, path);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Calling http_cache_file_exists on %s\n", u->filename);
 	return http_exists(&gcache, profile, u, session);
 }
 
