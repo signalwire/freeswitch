@@ -68,6 +68,9 @@ SWITCH_DECLARE(switch_status_t) kz_name_tweak(const char *name, kz_tweak_t *type
 /* kazoo_node.c */
 void add_kz_node(switch_loadable_module_interface_t **module_interface);
 
+/* kazoo_ei_config.c */
+void kz_set_hostname();
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown);
 
