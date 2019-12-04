@@ -345,10 +345,9 @@ switch_socket_t *create_socket(switch_memory_pool_t *pool) {
 }
 
 switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode) {
-    char hostname[EI_MAXHOSTNAMELEN + 1] = "";
+    char hostname[EI_MAXHOSTNAMELEN + 1];
     char nodename[MAXNODELEN + 1];
     char cnodename[EI_MAXALIVELEN + 1];
-    //EI_MAX_COOKIE_SIZE+1
     char *atsign;
 
     /* copy the erlang interface nodename into something we can modify */
@@ -356,17 +355,13 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
 
     if ((atsign = strchr(cnodename, '@'))) {
         /* we got a qualified node name, don't guess the host/domain */
-        snprintf(nodename, MAXNODELEN + 1, "%s", kazoo_globals.ei_nodename);
+        snprintf(nodename, MAXNODELEN + 1, "%s", name);
         /* truncate the alivename at the @ */
-        *atsign = '\0';
+        *atsign++ = '\0';
+        strncpy(hostname, atsign, EI_MAXHOSTNAMELEN);
     } else {
-        if (zstr(kazoo_globals.hostname) || !strncasecmp(kazoo_globals.ip, "0.0.0.0", 7) || !strncasecmp(kazoo_globals.ip, "::", 2)) {
-            memcpy(hostname, switch_core_get_hostname(), EI_MAXHOSTNAMELEN);
-        } else {
-            memcpy(hostname, kazoo_globals.hostname, EI_MAXHOSTNAMELEN);
-        }
-
-        snprintf(nodename, MAXNODELEN + 1, "%s@%s", kazoo_globals.ei_nodename, hostname);
+        strncpy(hostname, kazoo_globals.hostname, EI_MAXHOSTNAMELEN);
+        snprintf(nodename, MAXNODELEN + 1, "%s@%s", name, hostname);
     }
 
 	if (kazoo_globals.ei_shortname) {
@@ -375,6 +370,8 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
 			*off = '\0';
 		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "creating nodename: %s\n", nodename);
 
     /* init the ec stuff */
     if (ei_connect_xinit(ei_cnode, hostname, cnodename, nodename, (Erl_IpAddr) ip_addr, kazoo_globals.ei_cookie, 0) < 0) {
