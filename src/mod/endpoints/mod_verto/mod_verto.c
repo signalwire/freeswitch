@@ -3589,6 +3589,8 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	*response = obj;
 
+	PROTECT_INTERFACE(verto_endpoint_interface);
+
 	if (!params) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
 		err = 1; goto cleanup;
@@ -3615,7 +3617,6 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", call_id);
 
-	PROTECT_INTERFACE(verto_endpoint_interface);
 	if ((reason = switch_core_session_outgoing_channel(NULL, var_event, "rtc",
 													   NULL, &session, NULL, SOF_NONE, &cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot create channel"));
