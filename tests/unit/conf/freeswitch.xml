@@ -11,6 +11,7 @@
 		<load module="mod_spandsp"/>
 		<load module="mod_amr"/>
 		<load module="mod_amrwb"/>
+		<load module="mod_sndfile"/>
       </modules>
     </configuration>
 
