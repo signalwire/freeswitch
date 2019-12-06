@@ -1456,6 +1456,9 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_core_session_t *other_session;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_channel_set_variable_printf(channel, "sip_refer_status_code", "%d", status);
 
 	if (status < 200) {
 		return;
