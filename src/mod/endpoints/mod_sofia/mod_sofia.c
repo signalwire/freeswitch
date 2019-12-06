@@ -1548,6 +1548,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
 				  TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 				  TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+				  SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 				  TAG_END());
 
 		if (msg->string_array_arg[0]) {
