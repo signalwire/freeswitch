@@ -1551,6 +1551,29 @@ static switch_status_t null_channel_receive_message(switch_core_session_t *sessi
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		switch_core_timer_sync(&tech_pvt->timer);
 		break;
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		if (msg->string_array_arg[0]) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "string_array_arg[0]: %s\n", (char *)msg->string_array_arg[0]);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "string_arg: %s\n", (char *)msg->string_arg);
+			if (msg->string_arg) {
+				if (!strncmp(msg->string_arg, "sip:refer-200", 13)) {
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 200 OK\r\n");
+				} else if (!strncmp(msg->string_arg, "sip:refer-202", 13)) {
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					// no notify received
+					switch_yield(5000000);
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				} else if (!strncmp(msg->string_arg, "sip:refer-403", 13)) {
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 403 Forbidden\r\n");
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+				}
+			}
+		}
+		break;
 	default:
 		break;
 	}
