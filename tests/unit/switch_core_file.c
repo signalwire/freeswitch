@@ -83,6 +83,7 @@ FST_CORE_BEGIN("./conf")
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			fst_check(!switch_test_flag(&fh, SWITCH_FILE_PRE_CLOSED));
 
+
 			status = switch_core_file_close(&fh);
 			fst_check(status == SWITCH_STATUS_FALSE);
 
@@ -123,6 +124,14 @@ FST_CORE_BEGIN("./conf")
 			status = switch_core_file_close(&fh);
 			fst_check(status == SWITCH_STATUS_FALSE);
 
+			status = switch_core_file_exists(filename, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			status = switch_core_file_remove(filename, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			status = switch_core_file_exists(filename, NULL);
+			fst_check(status != SWITCH_STATUS_SUCCESS);
 			unlink(filename);
 		}
 		FST_TEST_END()
