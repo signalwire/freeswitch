@@ -61,7 +61,7 @@ static switch_queue_t *LOG_QUEUE = NULL;
 #ifdef SWITCH_LOG_RECYCLE
 static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
 #endif
-static int8_t THREAD_RUNNING = 0;
+static switch_thread_ctl_t *thread_ctl;
 static uint8_t MAX_LEVEL = 0;
 static int mods_loaded = 0;
 static int console_mods_loaded = 0;
@@ -434,9 +434,9 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 	if (!obj) {
 		obj = NULL;
 	}
-	THREAD_RUNNING = 1;
+	switch_thread_ctl_thread_set_running(thread_ctl);
 
-	while (THREAD_RUNNING == 1) {
+	while (1) {
 		void *pop = NULL;
 		switch_log_node_t *node = NULL;
 		switch_log_binding_t *binding;
@@ -446,7 +446,6 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		}
 
 		if (!pop) {
-			THREAD_RUNNING = -1;
 			break;
 		}
 
@@ -463,7 +462,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 
 	}
 
-	THREAD_RUNNING = 0;
+	switch_thread_ctl_thread_set_stopped(thread_ctl);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logger Ended.\n");
 	return NULL;
 }
@@ -478,7 +477,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	va_end(ap);
 }
 
-#define do_mods (LOG_QUEUE && THREAD_RUNNING)
+#define do_mods (LOG_QUEUE && switch_thread_ctl_thread_is_running(thread_ctl))
 SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
 {
@@ -665,6 +664,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 
 	LOG_POOL = pool;
 
+	switch_thread_ctl_init(&thread_ctl, LOG_POOL);
+
 	switch_threadattr_create(&thd_attr, LOG_POOL);
 
 	switch_queue_create(&LOG_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
@@ -675,7 +676,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
 
-	while (!THREAD_RUNNING) {
+	while (!switch_thread_ctl_thread_is_initiated(thread_ctl)) {
 		switch_cond_next();
 	}
 
@@ -717,7 +718,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 
 
 	switch_queue_push(LOG_QUEUE, NULL);
-	while (THREAD_RUNNING) {
+	while (switch_thread_ctl_thread_is_running(thread_ctl)) {
 		switch_cond_next();
 	}
 

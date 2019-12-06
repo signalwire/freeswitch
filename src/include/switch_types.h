@@ -2304,6 +2304,7 @@ typedef struct switch_loadable_module switch_loadable_module_t;
 typedef struct switch_frame switch_frame_t;
 typedef struct switch_rtcp_frame switch_rtcp_frame_t;
 typedef struct switch_channel switch_channel_t;
+typedef struct switch_thread_ctl switch_thread_ctl_t;
 typedef struct switch_sql_queue_manager switch_sql_queue_manager_t;
 typedef struct switch_file_handle switch_file_handle_t;
 typedef struct switch_core_session switch_core_session_t;

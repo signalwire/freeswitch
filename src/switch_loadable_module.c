@@ -2526,9 +2526,9 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 
 	switch_mutex_lock(loadable_modules.mutex);
 	ptr = switch_core_hash_find(loadable_modules.endpoint_hash, name);
-	PROTECT_INTERFACE(ptr);
 	switch_mutex_unlock(loadable_modules.mutex);
 
+	PROTECT_INTERFACE(ptr);
 
 	return ptr;
 }
@@ -2555,7 +2555,7 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
 
 	switch_mutex_unlock(loadable_modules.mutex);
 
-	if (i) PROTECT_INTERFACE(i);
+	PROTECT_INTERFACE(i);
 
 	return i;
 }
@@ -2583,7 +2583,7 @@ SWITCH_DECLARE(switch_database_interface_t *) switch_loadable_module_get_databas
 
 	switch_mutex_unlock(loadable_modules.mutex);
 
-	if (i) PROTECT_INTERFACE(i);
+	PROTECT_INTERFACE(i);
 
 	return i;
 }

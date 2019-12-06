@@ -1452,6 +1452,116 @@ SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t);
 
 SWITCH_DECLARE(char *)switch_html_strip(const char *str);
 
+/**
+ * switch_thread_ctl is the right thing if you need a thread to dispatch, buffer or queue
+ * Use it (and its helper functions) to safety control the thread states.
+ * Initiate switch_thread_ctl before starting your thread
+ * Use switch_thread_ctl_thread_set_running() and switch_thread_ctl_thread_set_stopped() inside your thread.
+ * Check your thread states from the outside with switch_thread_ctl_thread_is_initiated() and switch_thread_ctl_thread_is_running()
+ * See more in the header file.
+ **/
+struct switch_thread_ctl {
+	volatile int8_t thread_initiated;
+	volatile int8_t thread_running;
+	switch_thread_rwlock_t *rwlock;
+};
+
+/** 
+ * Allocates and initializes switch_thread_ctl structure
+ * \thread_ctl	[in]	thread_ctl
+ * \pool		[in]	memory pool
+ * \return				void
+ **/
+static inline void switch_thread_ctl_init(switch_thread_ctl_t **thread_ctl, switch_memory_pool_t *pool) {
+	*thread_ctl = (switch_thread_ctl_t *)switch_core_alloc(pool, sizeof(switch_thread_ctl_t));
+	switch_thread_rwlock_create(&(*thread_ctl)->rwlock, pool);
+}
+
+/**
+ * Checks if the newly created switch_thread_ctl thread was finally initiated to run.
+ * Usually called from the controlled thread itself to demonstrate that the thread turned into the operational state.
+ * Does not mean the thread is still running, because it may stop right away after by its own reasons.
+ * \thread_ctl	[in]	thread_ctl
+ * \return				1 - initiated, 0 - was not initiated yet.
+**/
+static inline int8_t switch_thread_ctl_thread_is_initiated(switch_thread_ctl_t *thread_ctl)
+{
+	int8_t result;
+	switch_thread_rwlock_rdlock(thread_ctl->rwlock);
+	result = (thread_ctl->thread_initiated == 1);
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+	return result;
+}
+
+/**
+ * Checks if switch_thread_ctl thread is running
+ * \thread_ctl	[in]	thread_ctl
+ * \return				1 - running, 0 - stopping or stopped.
+**/
+static inline int8_t switch_thread_ctl_thread_is_running(switch_thread_ctl_t *thread_ctl)
+{
+	int8_t result;
+	switch_thread_rwlock_rdlock(thread_ctl->rwlock);
+	result = (thread_ctl->thread_running == 1);
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+	return result;
+}
+
+/**
+ * Asks switch_thread_ctl thread to begin stopping and give other threads ability to wait for the actual stop.
+ * \thread_ctl	[in]	thread_ctl
+ * \return				void
+**/
+static inline void switch_thread_ctl_thread_request_stop(switch_thread_ctl_t *thread_ctl)
+{
+	switch_thread_rwlock_wrlock(thread_ctl->rwlock);
+	thread_ctl->thread_running = -1;
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+}
+
+/**
+ * Checks if switch_thread_ctl thread is still stopping and not finally stopped.
+ * \thread_ctl	[in]	thread_ctl
+ * \return				1 - stopping, 0 - not stopping (0 does not mean stopped if wrongly used).
+**/
+static inline int8_t switch_thread_ctl_thread_is_stopping(switch_thread_ctl_t *thread_ctl)
+{
+	int8_t result;
+
+	switch_thread_rwlock_rdlock(thread_ctl->rwlock);
+	result = (thread_ctl->thread_running == -1);
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+
+	return result;
+}
+
+/**
+ * Puts switch_thread_ctl thread into the running and initializated state (initializated state will be never changed later)
+ * \thread_ctl	[in]	thread_ctl
+ * \return				void
+ **/
+static inline void switch_thread_ctl_thread_set_running(switch_thread_ctl_t *thread_ctl)
+{
+	switch_thread_rwlock_wrlock(thread_ctl->rwlock);
+	thread_ctl->thread_initiated = 1;
+	thread_ctl->thread_running = 1;
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+}
+
+/**
+ * Puts switch_thread_ctl into the stopped state. 
+ * Usually called by the controled thread itself right before the exiting.
+ * NOTE: Does not flip the thread_initiated flag!
+ * \thread_ctl	[in]	thread_ctl
+ * \return				void
+ **/
+static inline void switch_thread_ctl_thread_set_stopped(switch_thread_ctl_t *thread_ctl)
+{
+	switch_thread_rwlock_wrlock(thread_ctl->rwlock);
+	thread_ctl->thread_running = 0;
+	switch_thread_rwlock_unlock(thread_ctl->rwlock);
+}
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
