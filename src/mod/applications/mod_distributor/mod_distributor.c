@@ -283,7 +283,22 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 	return NULL;
 }
 
+switch_bool_t dist_exist(const char *name) {
+	switch_bool_t result = SWITCH_FALSE;
+	struct dist_list *lp;
 
+	switch_mutex_lock(globals.mod_lock);
+	for (lp = globals.list; lp; lp = lp->next) {
+		if (!strcasecmp(name, lp->name)) {
+			result = SWITCH_TRUE;
+			break;
+		}
+	}
+
+	switch_mutex_unlock(globals.mod_lock);
+
+	return result;
+}
 static char *dist_engine(const char *name)
 {
 	struct dist_node *np = NULL;
@@ -347,6 +362,19 @@ SWITCH_STANDARD_API(distributor_function)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+
+}
+
+SWITCH_STANDARD_API(distributor_exist_function)
+{
+        if (!zstr(cmd)) {
+		switch_bool_t ret = dist_exist(cmd);
+                stream->write_function(stream, "%s", ret?"true":"false");
+        } else {
+                stream->write_function(stream, "-err");
+        }
+
+        return SWITCH_STATUS_SUCCESS;
 
 }
 
@@ -507,6 +535,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_distributor_load)
 
 	SWITCH_ADD_API(api_interface, "distributor", "Distributor API", distributor_function, "<list name>[ <exception1> <exceptionN>]");
 	SWITCH_ADD_API(api_interface, "distributor_ctl", "Distributor API", distributor_ctl_function, "[reload]");
+	SWITCH_ADD_API(api_interface, "distributor_exist", "Distributor Exist API", distributor_exist_function, "<list name>");
 	SWITCH_ADD_APP(app_interface, "distributor", "Distributor APP", "Distributor APP", distributor_exec, "<list name>[ <exception1> <exceptionN>]",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
