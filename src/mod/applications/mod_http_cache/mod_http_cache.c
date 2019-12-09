@@ -160,6 +160,7 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t curl_data, cached_url_t *url, url_cache_t *cache);
 static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
@@ -341,7 +342,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	}
 
 	/* open file and get the file size */
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for upload to %s\n", filename, url);
 
 	file_to_put = fopen(filename, "rb");
 	if (!file_to_put) {
@@ -1116,40 +1117,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 	curl_handle = switch_curl_easy_init();
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-		if (headers) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-		}
-		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-		if (cache->connect_timeout > 0) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
-		}
-		if (cache->download_timeout > 0) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, cache->download_timeout);
-		}
-		if (!cache->ssl_verifypeer) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-		} else {
-			/* this is the file with all the trusted certificate authorities */
-			if (!zstr(cache->ssl_cacert)) {
-				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
-			}
-		}
-		
-		/* verify that the host name matches the cert */
-		if (!cache->ssl_verifyhost) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-		}
+		http_curl_setopts(&curl_handle, headers, get_data, url, cache);
 		
 		curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
@@ -1186,6 +1156,7 @@ done:
 
 	return status;
 }
+
 /**
  * Deletes a remote file via HTTP
  * @param cache the cache
@@ -1217,41 +1188,10 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 	}
 
 	curl_handle = switch_curl_easy_init();
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache headers\n", del_data.url->filename);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	if (headers) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-	}
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, del_data.url->url);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to delete %s via http_cache\n", url->url);
+	http_curl_setopts(&curl_handle, headers, del_data, url, cache);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &del_data);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-	if (cache->connect_timeout > 0) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
-	}
-	if (cache->download_timeout > 0) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, cache->download_timeout);
-	}
-	if (!cache->ssl_verifypeer) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-	} else {
-		/* this is the file with all the trusted certificate authorities */
-		if (!zstr(cache->ssl_cacert)) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
-		}
-	}
-	
-	/* verify that the host name matches the cert */
-	if (!cache->ssl_verifyhost) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-	}
-	
+
 	curl_status = switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	switch_curl_easy_cleanup(curl_handle);
@@ -1286,13 +1226,13 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
 	switch_CURL *curl_handle = NULL;
-	http_get_data_t del_data = {0};
+	http_get_data_t exists_data = {0};
 	long httpRes = 0;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
 
 	/* set up HTTP HEAD */
-	del_data.fd = 0;
-	del_data.url = url;
+	exists_data.fd = 0;
+	exists_data.url = url;
 
 	/* find profile for domain */
 	if (!profile) {
@@ -1304,7 +1244,8 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	}
 
 	curl_handle = switch_curl_easy_init();
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache headers\n", del_data.url->url);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", exists_data.url->url);
+	http_curl_setopts(&curl_handle, headers, exists_data, url, cache);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
@@ -1312,10 +1253,54 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	if (headers) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, del_data.url->url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+
+	curl_status = switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
+	close(exists_data.fd);
+	if (curl_status != CURLE_OK) {
+		url->size = 0; // nothing downloaded or download interrupted
+		status = SWITCH_STATUS_FALSE;
+		if (httpRes != 404) {
+			status = SWITCH_STATUS_GENERR;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld on exists %s\n", curl_status, httpRes, url->url);
+		}
+		goto done;
+	}
+
+done:
+
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
+
+	return status;
+}
+
+/**
+ * Sets the options for a curl_handle
+ * @param cache the cache
+ * @param profile the HTTP profile
+ * @param url The cached URL entry
+ * @param session the (optional) session
+ * @return SWITCH_STATUS_SUCCESS if it exists 
+ * Will want to make this generic for head & delete & maybe get together but for now just trying to add functionality
+ */
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t curl_data, cached_url_t *url, url_cache_t *cache)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	/* find profile for domain */
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	if (headers) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, curl_data.url->url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &del_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &curl_data);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
@@ -1338,27 +1323,6 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	if (!cache->ssl_verifyhost) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
 	}
-	
-	curl_status = switch_curl_easy_perform(curl_handle);
-	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	switch_curl_easy_cleanup(curl_handle);
-	close(del_data.fd);
-	if (curl_status != CURLE_OK) {
-		url->size = 0; // nothing downloaded or download interrupted
-		status = SWITCH_STATUS_FALSE;
-		if (httpRes != 404) {
-			status = SWITCH_STATUS_GENERR;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld on exists %s\n", curl_status, httpRes, url->url);
-		}
-		goto done;
-	}
-
-done:
-
-	if (headers) {
-		switch_curl_slist_free_all(headers);
-	}
-
 	return status;
 }
 
@@ -1477,6 +1441,7 @@ SWITCH_STANDARD_API(http_cache_get)
 
 	return status;
 }
+
 #define HTTP_TRYGET_SYNTAX "{param=val}<url>"
 /**
  * Get a file from the cache, fail if download is needed
@@ -1964,11 +1929,9 @@ static switch_status_t http_cache_file_exists(const char *path, switch_memory_po
 	u = cached_url_create(&gcache, path, NULL);
 	profile = url_cache_http_profile_find_by_fqdn(&gcache, path);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Calling http_cache_file_exists on %s\n", u->filename);
-	//if (switch_file_exists(u->filename, gcache.pool) == SWITCH_STATUS_SUCCESS) {
-	//	return SWITCH_STATUS_SUCCESS;
-	//}
 	return http_exists(&gcache, profile, u, session);
 }
+
 /**
  * Remove URL
  * @param handle 

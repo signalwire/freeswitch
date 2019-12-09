@@ -1148,7 +1148,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 static int unlink_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	if (argv[0]) {
-		if (switch_core_file_remove(argv[0],NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_file_remove(argv[0], NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", argv[0]);
 		}
 	}
@@ -1227,7 +1227,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		args.buf = input;
 		args.buflen = sizeof(input);
 
-		switch_core_file_remove(file_path,NULL);
+		switch_core_file_remove(file_path, NULL);
 
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
 
@@ -1236,7 +1236,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		}
 
 		if (limit && (*message_len = fh.samples_out / (fh.samplerate ? fh.samplerate : 8000)) < profile->min_record_len) {
-			if (switch_core_file_remove(file_path,NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_file_remove(file_path, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
 			got_file = 0;
@@ -1557,7 +1557,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 
 	}
 
-	if (switch_core_file_remove(announce,NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_remove(announce, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", announce);
 	}
 	ret = tmp_path;
@@ -1902,7 +1902,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
   end:
 
 	if (forward_file_path) {
-		if (switch_core_file_remove(forward_file_path,NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_file_remove(forward_file_path, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", forward_file_path);
 		}
 	}
@@ -2278,7 +2278,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_event_t *params;
 						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 						tmp_file_path = switch_mprintf("%s%sgreeting_%d_TMP.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-						switch_core_file_remove(tmp_file_path,NULL);
+						switch_core_file_remove(tmp_file_path, NULL);
 
 						TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len, SWITCH_TRUE, NULL, NULL));
 						switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
@@ -2358,7 +2358,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_t *params;
 					file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
 					tmp_file_path = switch_mprintf("%s%srecorded_name_TMP.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
-					switch_core_file_remove(tmp_file_path,NULL);
+					switch_core_file_remove(tmp_file_path, NULL);
 					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE, NULL, NULL));
 					switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
 					sql = switch_mprintf("update voicemail_prefs set name_path='%q' where username='%q' and domain='%q'", file_path, myid, domain_name);
@@ -2683,7 +2683,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	switch_safe_free(file_path);
 
 	if (tmp_file_path) {
-		switch_core_file_remove(tmp_file_path,NULL);
+		switch_core_file_remove(tmp_file_path, NULL);
 		free(tmp_file_path);
 		tmp_file_path = NULL;
 	}
@@ -3144,7 +3144,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
   failed:
 
 	if (!insert_db && file_path && switch_core_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
-		if (switch_core_file_remove(file_path,NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_file_remove(file_path, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
 	}
@@ -4157,7 +4157,7 @@ struct holder {
 static int del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	if (argc > 8) {
-		if (switch_core_file_remove(argv[8],NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_file_remove(argv[8], NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", argv[8]);
 		}
 	}
@@ -4589,7 +4589,7 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 static int api_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 
-	switch_core_file_remove(argv[3],NULL);
+	switch_core_file_remove(argv[3], NULL);
 
 	return 0;
 }
@@ -5059,7 +5059,7 @@ static int message_purge_callback(void *pArg, int argc, char **argv, char **colu
 	char *sql;
 	vm_profile_t *profile = get_profile(profile_name);
 
-	if (switch_core_file_remove(file_path,NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_remove(file_path, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 	} else {
 		sql = switch_mprintf("DELETE FROM voicemail_msgs WHERE username='%q' AND domain='%q' AND uuid = '%q'", id, domain, uuid);
