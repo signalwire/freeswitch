@@ -930,21 +930,33 @@ done:
 cc_status_t cc_agent_del(const char *agent)
 {
 	switch_event_t *event;
-	cc_status_t result = CC_STATUS_SUCCESS;
+	cc_status_t result;
 
 	char *sql;
+	int deleted_row_count;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s\n", agent);
-	sql = switch_mprintf("DELETE FROM agents WHERE name = '%q';"
-			"DELETE FROM tiers WHERE agent = '%q';",
-			agent, agent);
+	sql = switch_mprintf("DELETE FROM tiers WHERE agent = '%q';", agent);
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-del");
-		switch_event_fire(&event);
+	sql = switch_mprintf("DELETE FROM agents WHERE name = '%q';",	agent);
+	deleted_row_count = cc_execute_sql_affected_rows(sql);
+	switch_safe_free(sql);
+
+  if (deleted_row_count > 0) {
+
+  	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s\n", agent);
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-del");
+			switch_event_fire(&event);
+		}
+		result = CC_STATUS_SUCCESS;
+
+	} else {
+  	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s not found, can not be deleted\n", agent);
+  	result = CC_STATUS_AGENT_NOT_FOUND;
 	}
 
 	return result;
@@ -3596,6 +3608,9 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					case CC_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
+					case CC_STATUS_AGENT_NOT_FOUND:
+						stream->write_function(stream, "%s", "-ERR Agent not found!\n");
+						goto done;
 					default:
 						stream->write_function(stream, "%s", "-ERR Unknown Error!\n");
 						goto done;
