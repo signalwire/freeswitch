@@ -945,7 +945,7 @@ cc_status_t cc_agent_del(const char *agent)
 
   if (deleted_row_count > 0) {
 
-  	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s\n", agent);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s\n", agent);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
@@ -955,8 +955,8 @@ cc_status_t cc_agent_del(const char *agent)
 		result = CC_STATUS_SUCCESS;
 
 	} else {
-  	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s not found, can not be deleted\n", agent);
-  	result = CC_STATUS_AGENT_NOT_FOUND;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s not found, can not be deleted\n", agent);
+		result = CC_STATUS_AGENT_NOT_FOUND;
 	}
 
 	return result;
