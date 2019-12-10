@@ -66,11 +66,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_exists(const char *file_path, s
 {
 	switch_status_t status;
 	char *rhs = NULL;
-	switch_memory_pool_t *new_pool;
+	switch_memory_pool_t *new_pool = NULL;
 	if (zstr(file_path)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (! pool) {
+	if (!pool) {
 		if ((status = switch_core_new_memory_pool(&new_pool)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
@@ -97,7 +97,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_exists(const char *file_path, s
 	else {
 		status = switch_file_exists(file_path, pool);
 	}
-	switch_core_destroy_memory_pool(&new_pool);
+	if (new_pool) {
+		switch_core_destroy_memory_pool(&new_pool);
+	}
 	return status;
 }
 
@@ -106,13 +108,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_remove( const char *file_path, 
 	char stream_name[128] = "";
 	char *rhs = NULL;
 	char *ext;
-	switch_memory_pool_t *new_pool;
+	switch_memory_pool_t *new_pool = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	if (zstr(file_path)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	if (! pool) {
+	if (!pool) {
 		if (switch_core_new_memory_pool(&new_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating pool\n");
 			return SWITCH_STATUS_FALSE;
@@ -140,7 +142,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_remove( const char *file_path, 
 	} else {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	switch_core_destroy_memory_pool(&new_pool);
+	if (new_pool) {
+		switch_core_destroy_memory_pool(&new_pool);
+	}
 	return status;
 }
 

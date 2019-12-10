@@ -2108,8 +2108,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				listen_callback_t cbt;
 				char sql[512];
 				int cur_message, total_messages;
-				//switch_bool_t keep_vm;
-				//keep_vm = SWITCH_FALSE;
 
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
