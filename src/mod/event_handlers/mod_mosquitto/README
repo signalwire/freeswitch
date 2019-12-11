@@ -325,7 +325,7 @@ Notes:
 	4.	The pattern must comply with MQTT standards.
 	5.	The qos value must comply with MQTT standards. Value 0, 1 or 2 indicating the Quality of Service to be used.
 	6.	The originate_authorized / bgapi_authorized permission flags.
-		WARNING: Allowing either of these permissons WILL allow phone calls to be initiated by the MQTT broker to FreeSWITCH.
+		WARNING: Allowing either of these settings WILL allow phone calls to be initiated by the MQTT broker to FreeSWITCH.
 		WARNING: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors.
 		WARNING: REPEATED: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors.
 		WARNING: REPEATED A THIRD TIME: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors.
@@ -337,7 +337,7 @@ Notes:
 			<param name="connection_name" value="mqtt_broker"/>
 			<param name="pattern" value="FreeSWITCH/command"/>
 			<param name="qos" value="0"/>
-			<!-- WARNING THESE TWO  SETTINGS WILL ALLOW THE MQTT BROKER TO INITIATE PHONE CALLS -->
+			<!-- WARNING EITHER OF THESE TWO SETTINGS WILL ALLOW THE MQTT BROKER TO INITIATE PHONE CALLS -->
 			<param name="originate_authorized" value="true"/>
 			<param name="bgapi_authorized" value="true"/>
 		</topic>
@@ -418,5 +418,5 @@ Possible TODO items:
 	MQTT V5 support
 	Throttle (circuit-breaker) support
 	Enhanced security around command execution
-	Enhanced CLI funcationality
+	Enhanced CLI functionality
 	Enhanced logging / statistics

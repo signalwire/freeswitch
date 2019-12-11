@@ -55,10 +55,10 @@
 		 switch_log_printf(SWITCH_CHANNEL_LOG, (severity), __VA_ARGS__); \
 	}
 
-#define SSL_VERIFY_NONE				0
-#define SSL_VERIFY_PEER				1
-#define TLS_CERT					2
-#define TLS_PSK						3
+#define SSL_VERIFY_NONE	0
+#define SSL_VERIFY_PEER	1
+#define TLS_CERT		2
+#define TLS_PSK			3
 
 #define MOSQUITTO_CONFIG_FILE		"mosquitto.conf"
 #define MOSQUITTO_DEFAULT_PROFILE	"default"
