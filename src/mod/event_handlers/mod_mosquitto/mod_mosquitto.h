@@ -159,7 +159,7 @@ struct mosquitto_publisher_s {
 struct mosquitto_tls_s {
 	int	enable;		// Not a bool because three values are allowed: 'certificate', 'psk', or NULL
 	switch_bool_t advanced_options;
-	unsigned port;
+	uint16_t port;
 	char *cafile;
 	char *capath;
 	char *certfile;
@@ -185,7 +185,7 @@ struct mosquitto_connection_s {
 	int send_maximum;
 	int receive_maximum;
 	char *host;
-	unsigned port;
+	uint16_t port;
 	int keepalive;
 	char *username;
 	char *password;
