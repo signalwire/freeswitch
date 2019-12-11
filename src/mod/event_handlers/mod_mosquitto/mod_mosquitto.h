@@ -62,6 +62,7 @@
 #define EVENT_QUEUE_SIZE			50000
 #define	UNIQUE_STRING_LENGTH		32
 
+typedef struct mosquitto_tls_s mosquitto_tls_t;
 typedef struct mosquitto_profile_s mosquitto_profile_t;
 typedef struct mosquitto_connection_s mosquitto_connection_t;
 typedef struct mosquitto_publisher_s mosquitto_publisher_t;
@@ -155,6 +156,23 @@ struct mosquitto_publisher_s {
 	unsigned count;
 };
 
+struct mosquitto_tls_s {
+	int	enable;
+	switch_bool_t advanced_options;
+	unsigned port;
+	char *cafile;
+	char *capath;
+	char *certfile;
+	char *keyfile;
+	char *pw_callback;
+	int cert_reqs;
+	char *version;
+	char *opts_ciphers;
+	char *psk;
+	char *identity;
+	char *psk_ciphers;
+};
+
 struct mosquitto_connection_s {
 	char *name;
 	char *profile_name;
@@ -185,21 +203,8 @@ struct mosquitto_connection_s {
 	switch_bool_t srv;
 	mosquitto_mosq_userdata_t *userdata;
 	struct mosquitto *mosq;
-	//* tls specific settings
-	int tls_enable;
-	switch_bool_t advanced_options;
-	unsigned tls_port;
-	char *cafile;
-	char *capath;
-	char *certfile;
-	char *keyfile;
-	char *pw_callback;
-	int cert_reqs;
-	char *tls_version;
-	char *opts_ciphers;
-	char *psk;
-	char *identity;
-	char *psk_ciphers;
+	mosquitto_tls_t tls;
+	mosquitto_will_t will;
 };
 
 struct mosquitto_profile_s {

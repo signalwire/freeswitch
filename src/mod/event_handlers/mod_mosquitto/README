@@ -112,14 +112,14 @@ CONNECTION
 		keyfile			- Path to a file containing the PEM encoded private key for this client.
 						- If NULL, certfile must also be NULL and no client certificate will be used.
 
-		advanced_options - enabled (true) / disabled (false): When enabled, 'cert_reqs', 'tls_version', and 'opts_ciphers' are set for the connection.
+		advanced_options - enabled (true) / disabled (false): When enabled, 'cert_reqs', 'version', and 'opts_ciphers' are set for the connection.
 		cert_reqs		- Verification requirements the connection will impose on the server
 						- 'SSL_VERIFY_NONE': The server will not be verified in any way.
 						- 'SSL_VERIFY_PEER': The server certificate will be verified and the connection aborted if the verification fails.
 						- The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
 		opts_ciphers	- A string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.
 						- If NULL, the default ciphers will be used.
-		tls_version		- The version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.
+		version			- The version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.
 						- The default value and the available values depend on the version of openssl that the library was compiled against.
 						- For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.
 						- For openssl < 1.0.1, only tlsv1 is available.
@@ -220,7 +220,7 @@ An example configuration file:
                         <!-- <param name="cert_reqs" value="SSL_VERIFY_NONE"/> -->
                         <!-- <param name="cert_reqs" value="SSL_VERIFY_PEER"/> -->
                         <param name="cert_reqs" value=""/>
-                        <param name="tls_version" value=""/>
+                        <param name="version" value=""/>
                         <param name="opts_ciphers" value=""/>
                         <param name="psk" value=""/>
                         <param name="identity" value=""/>

@@ -925,19 +925,19 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 	}
 
 	//* Set default values for all the possible settings
-	connection->tls_enable = SWITCH_FALSE;
-	connection->advanced_options = SWITCH_FALSE;
-	connection->cafile = NULL;
-	connection->capath = NULL;
-	connection->certfile = NULL;
-	connection->keyfile = NULL;
-	connection->cert_reqs = SSL_VERIFY_NONE;
-	connection->tls_version = NULL;
-	connection->opts_ciphers = NULL;
-	connection->psk_ciphers = NULL;
-	connection->psk = NULL;
-	connection->identity = NULL;
-	connection->tls_port = 0;
+	connection->tls.enable = SWITCH_FALSE;
+	connection->tls.advanced_options = SWITCH_FALSE;
+	connection->tls.cafile = NULL;
+	connection->tls.capath = NULL;
+	connection->tls.certfile = NULL;
+	connection->tls.keyfile = NULL;
+	connection->tls.cert_reqs = SSL_VERIFY_NONE;
+	connection->tls.version = NULL;
+	connection->tls.opts_ciphers = NULL;
+	connection->tls.psk_ciphers = NULL;
+	connection->tls.psk = NULL;
+	connection->tls.identity = NULL;
+	connection->tls.port = 0;
 
 	for (param = switch_xml_child(xconnection, "param"); param; param = param->next) {
 		char *var = NULL;
@@ -948,38 +948,38 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 		log(DEBUG,"var:%s val:%s\n", var, val);
 		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
 			if (!strncasecmp(val, "certificate", 11)) {
-				connection->tls_enable = TLS_CERT;
+				connection->tls.enable = TLS_CERT;
 			} else if (!strncasecmp(val, "psk", 3)) {
-				connection->tls_enable = TLS_PSK;
+				connection->tls.enable = TLS_PSK;
 			}
 		} else if (!strncasecmp(var, "port", 4) && !zstr(val)) {
-			connection->tls_port = atoi(val);
+			connection->tls.port = atoi(val);
 		} else if (!strncasecmp(var, "advanced_options", 16) && !zstr(val)) {
-			connection->advanced_options = switch_true(val);
+			connection->tls.advanced_options = switch_true(val);
 		} else if (!strncasecmp(var, "cafile", 6) && !zstr(val)) {
-			connection->cafile = switch_core_strdup(profile->pool, val);
+			connection->tls.cafile = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "capath", 6) && !zstr(val)) {
-			connection->capath = switch_core_strdup(profile->pool, val);
+			connection->tls.capath = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "certfile", 8) && !zstr(val)) {
-			connection->certfile = switch_core_strdup(profile->pool, val);
+			connection->tls.certfile = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "keyfile", 7) && !zstr(val)) {
-			connection->keyfile = switch_core_strdup(profile->pool, val);
+			connection->tls.keyfile = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "cert_reqs", 9) && !zstr(val)) {
 			if (!strncasecmp(val, "SSL_VERIFY_NONE", 15)) {
-				connection->cert_reqs = SSL_VERIFY_NONE;
+				connection->tls.cert_reqs = SSL_VERIFY_NONE;
 			} else if (!strncasecmp(val, "SSL_VERIFY_PEER", 15)) {
-				connection->cert_reqs = SSL_VERIFY_PEER;
+				connection->tls.cert_reqs = SSL_VERIFY_PEER;
 			}
-		} else if (!strncasecmp(var, "tls_version", 11) && !zstr(val)) {
-			connection->tls_version = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "version", 7) && !zstr(val)) {
+			connection->tls.version = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "opts_ciphers", 12) && !zstr(val)) {
-			connection->opts_ciphers = switch_core_strdup(profile->pool, val);
+			connection->tls.opts_ciphers = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "psk_ciphers", 11) && !zstr(val)) {
-			connection->psk_ciphers = switch_core_strdup(profile->pool, val);
+			connection->tls.psk_ciphers = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "psk", 3) && !zstr(val)) {
-			connection->psk = switch_core_strdup(profile->pool, val);
+			connection->tls.psk = switch_core_strdup(profile->pool, val);
 		} else if (!strncasecmp(var, "identity", 8) && !zstr(val)) {
-			connection->identity = switch_core_strdup(profile->pool, val);
+			connection->tls.identity = switch_core_strdup(profile->pool, val);
 		}
 	}
 

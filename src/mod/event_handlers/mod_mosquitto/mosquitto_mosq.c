@@ -700,7 +700,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 	//*				Your callback must write the password into “buf”, which is “size” bytes long.
 	//*				The return value must be the length of the password.  “userdata” will be set to the calling mosquitto instance.
 	//*				The mosquitto userdata member variable can be retrieved using mosquitto_userdata.
-	rc = mosquitto_tls_set(connection->mosq, connection->cafile, connection->capath, connection->certfile, connection->certfile, NULL);
+	rc = mosquitto_tls_set(connection->mosq, connection->tls.cafile, connection->tls.capath, connection->tls.certfile, connection->tls.certfile, NULL);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
@@ -717,7 +717,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 			return status;
 	}
 
-	if (connection->advanced_options == SWITCH_TRUE) {
+	if (connection->tls.advanced_options == SWITCH_TRUE) {
 		mosq_tls_opts_set(connection);
 	}
 
@@ -751,7 +751,7 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 	//* identity	the identity of this client.  May be used as the username depending on the server settings.
 	//* ciphers		a string describing the PSK ciphers available for use.
 	//*				See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
-	rc = mosquitto_tls_psk_set(connection->mosq, connection->psk, connection->identity, connection->psk_ciphers);
+	rc = mosquitto_tls_psk_set(connection->mosq, connection->tls.psk, connection->tls.identity, connection->tls.psk_ciphers);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
@@ -768,7 +768,8 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 			return status;
 	}
 
-	if (connection->advanced_options == SWITCH_TRUE) {
+
+	if (connection->tls.advanced_options == SWITCH_TRUE) {
 		mosq_tls_opts_set(connection);
 	}
 
@@ -802,9 +803,9 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 	//*				SSL_VERIFY_NONE (0): the server will not be verified in any way.
 	//*				SSL_VERIFY_PEER (1): the server certificate will be verified and the connection aborted if the verification fails.
 	//*				The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
-	//* tls_version	the version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.  The default value and the available values depend on the version of openssl that the library was compiled against.  For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.  For openssl < 1.0.1, only tlsv1 is available.
+	//* version		the version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.  The default value and the available values depend on the version of openssl that the library was compiled against.  For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.  For openssl < 1.0.1, only tlsv1 is available.
 	//* ciphers		a string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
-	rc = mosquitto_tls_opts_set(connection->mosq, connection->cert_reqs, connection->tls_version, connection->opts_ciphers);
+	rc = mosquitto_tls_opts_set(connection->mosq, connection->tls.cert_reqs, connection->tls.version, connection->tls.opts_ciphers);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
@@ -849,14 +850,14 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	connection->retry_count = 0;
 	port = connection->port;
 
-	if (connection->tls_enable != SWITCH_FALSE) {
-		if (connection->tls_enable == TLS_CERT) {
+	if (connection->tls.enable != SWITCH_FALSE) {
+		if (connection->tls.enable == TLS_CERT) {
 			mosq_tls_set(connection);
-		} else if (connection->tls_enable == TLS_PSK) {
+		} else if (connection->tls.enable == TLS_PSK) {
 				mosq_tls_psk_set(connection);
 		}
-		if (connection->tls_port) {
-			port = connection->tls_port;
+		if (connection->tls.port) {
+			port = connection->tls.port;
 		}
 	}
 
