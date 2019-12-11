@@ -160,10 +160,11 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t *curl_data, cached_url_t *url, url_cache_t *cache);
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, cached_url_t *url, url_cache_t *cache);
 static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
+static size_t empty_callback(void *ptr, size_t size, size_t nmemb, void *data);
 static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get);
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *url);
 static void process_cache_control_header(cached_url_t *url, char *data);
@@ -504,6 +505,17 @@ static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get)
 	}
 
 	return result;
+}
+/**
+ * Called by libcurl so to not write to standerd out 
+ * @param ptr The data to write
+ * @param size The size of the data element to write
+ * @param nmemb The number of elements to write
+ * @param get Info about this current GET request
+ * @return bytes processed
+ */
+static size_t empty_callback(void *ptr, size_t size, size_t nmemb, void *data) {
+  return size * nmemb;
 }
 
 /**
@@ -1119,8 +1131,10 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		http_curl_setopts(curl_handle, headers, &get_data, url, cache);
-		
+		http_curl_setopts(curl_handle, headers, url, cache);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
+	
 		curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
@@ -1170,13 +1184,8 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
 	switch_CURL *curl_handle = NULL;
-	http_get_data_t del_data = {0};
 	long httpRes = 0;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
-
-	/* set up HTTP DELETE */
-	del_data.fd = 0;
-	del_data.url = url;
 
 	/* find profile for domain */
 	if (!profile) {
@@ -1189,13 +1198,13 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to delete %s via http_cache\n", url->url);
-	http_curl_setopts(curl_handle, headers, &del_data, url, cache);
+	http_curl_setopts(curl_handle, headers, url, cache);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 
 	curl_status = switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	switch_curl_easy_cleanup(curl_handle);
-	close(del_data.fd);
 	if (curl_status != CURLE_OK) {
 		url->size = 0; // nothing downloaded or download interrupted
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to delete %s\n", curl_status, httpRes, url->url);
@@ -1226,13 +1235,8 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
 	switch_CURL *curl_handle = NULL;
-	http_get_data_t exists_data = {0};
 	long httpRes = 0;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
-
-	/* set up HTTP HEAD */
-	exists_data.fd = 0;
-	exists_data.url = url;
 
 	/* find profile for domain */
 	if (!profile) {
@@ -1244,14 +1248,14 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	}
 
 	curl_handle = switch_curl_easy_init();
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", exists_data.url->url);
-	http_curl_setopts(curl_handle, headers, &exists_data, url, cache);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", url->url);
+	http_curl_setopts(curl_handle, headers, url, cache);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 
 	curl_status = switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	switch_curl_easy_cleanup(curl_handle);
-	close(exists_data.fd);
 	if (curl_status != CURLE_OK) {
 		url->size = 0; // nothing downloaded or download interrupted
 		status = SWITCH_STATUS_FALSE;
@@ -1280,7 +1284,7 @@ done:
  * @return SWITCH_STATUS_SUCCESS if it exists 
  * Will want to make this generic for head & delete & maybe get together but for now just trying to add functionality
  */
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t *curl_data, cached_url_t *url, url_cache_t *cache)
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, cached_url_t *url, url_cache_t *cache)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	/* find profile for domain */
@@ -1292,8 +1296,6 @@ static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_s
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url->url);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) curl_data);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
