@@ -84,7 +84,7 @@ switch_status_t initialize_profiles(void)
  * \details This routine loops thru all the hashes associated with connection, publishers and subscribers
  *			attempting to start them (if enabled)
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  *
  * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
  */
@@ -159,7 +159,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
  * \details TODO: This routine loops thru all the hashes associated with connection, publishers and subscribers
  *			attempting to deactivate them
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  *
  * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
  */
@@ -183,7 +183,7 @@ switch_status_t profile_deactivate(mosquitto_profile_t *profile)
  *
  * \details This routine will also bind any events to topics associated with the publisher
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *publisher  Pointer to the publisher associated with profile
  *
  * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -232,7 +232,7 @@ switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publi
  *
  * \details This routine loops thru the events hash binding each one that is enabled
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *publisher  Pointer to the publisher associated with profile
  * \param[in]   *topic		Pointer to the topic associated with profile
  *
@@ -281,7 +281,7 @@ switch_status_t publisher_topic_activate(mosquitto_profile_t *profile, mosquitto
  *
  * \details This routine loops thru the events hash unbinding each one that is enabled
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *publisher  Pointer to the publisher associated with profile
  * \param[in]   *topic		Pointer to the topic associated with profile
  *
@@ -332,7 +332,7 @@ switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquit
  *
  * \details TODO: This routine loops thru all the topics associated with the publisher and unbinds any events
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *publisher  Pointer to the publisher associated with the specified profile
  *
  * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -361,7 +361,7 @@ switch_status_t publisher_deactivate(mosquitto_profile_t *profile, mosquitto_pub
  *
  * \details This routine will also create subscribe to topics associated with the subscriber
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *subscriber Pointer to the subscriber associated with profile
  *
  * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -410,9 +410,9 @@ switch_status_t subscriber_activate(mosquitto_profile_t *profile, mosquitto_subs
  *
  * \details This routine loops thru the topics and subscribes to each one that is enabled
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *subscriber Pointer to the subscriber associated with profile
- * \param[in]   *topic      Pointer to the topic associated with profile
+ * \param[in]   *topic	  Pointer to the topic associated with profile
  *
  * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
  */
@@ -450,7 +450,7 @@ switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitt
  *
  * \details TODO: This routine loops thru all the topics associated with the subscriber and removes any subscriptions
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *subscriber Pointer to the subscriber associated with the specified profile
  *
  * \retval	SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -485,7 +485,7 @@ switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosqui
  *
  * \details TODO: This routine loops thru all the topics associated with the subscriber and unsubscribes to them
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *subscriber Pointer to the subscriber associated with the specified profile
  *
  * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -515,7 +515,7 @@ switch_status_t subscriber_deactivate(mosquitto_profile_t *profile, mosquitto_su
  *
  * \details This routine sets up connection properties/options and then calls the routine to perform the actual connection
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *connection Pointer to the connection associated with the specified profile
  *
  * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR
@@ -554,7 +554,7 @@ switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connectio
  * \details Received messages only have the connection and topic available.  This routine searches for the associated subscriber
  *			so that the message can be processes.
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *connection Pointer to the connection associated with the specified profile
  * \param[in]   *name		Pointer to the topic name associated with the received message
  *
@@ -620,7 +620,7 @@ mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquit
  * \details The connection will either be attempted or disconnected based on it being enabled or not
  *			so that the message can be processes.
  *
- * \param[in]   *profile    Pointer to the profile hash
+ * \param[in]   *profile	Pointer to the profile hash
  * \param[in]   *connection Pointer to the connection associated with the specified profile
  *
  * \retval  SWITCH_STATUS_SUCCCESS or SWITCH_STATUS_GENERR

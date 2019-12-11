@@ -239,12 +239,12 @@ switch_status_t remove_profile(const char *name)
 	}
 
 	log(NOTICE, "profile:%s shutting down publishers\n", profile->name);
-    switch_mutex_lock(profile->publishers_mutex);
-    for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {
+	switch_mutex_lock(profile->publishers_mutex);
+	for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {
 		mosquitto_publisher_t *publisher = NULL;
-        void *val;
-        switch_core_hash_this(publishers_hi, NULL, NULL, &val);
-        publisher = (mosquitto_publisher_t *)val;
+		void *val;
+		switch_core_hash_this(publishers_hi, NULL, NULL, &val);
+		publisher = (mosquitto_publisher_t *)val;
 		switch_mutex_lock(publisher->topics_mutex);
 		for (switch_hash_index_t *topics_hi = switch_core_hash_first(publisher->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
 			mosquitto_topic_t *topic = NULL;
@@ -258,16 +258,16 @@ switch_status_t remove_profile(const char *name)
 		switch_mutex_unlock(publisher->topics_mutex);
 		log(NOTICE, "deleting publisher name:%s from profile hash\n", publisher->name);
 		switch_core_hash_delete(profile->publishers, publisher->name);
-    }
-    switch_mutex_unlock(profile->publishers_mutex);
+	}
+	switch_mutex_unlock(profile->publishers_mutex);
 
 	log(NOTICE, "shutting down subscribers\n");
 	switch_mutex_lock(profile->subscribers_mutex);
-    for (switch_hash_index_t *subscribers_hi = switch_core_hash_first(profile->subscribers); subscribers_hi; subscribers_hi = switch_core_hash_next(&subscribers_hi)) {
+	for (switch_hash_index_t *subscribers_hi = switch_core_hash_first(profile->subscribers); subscribers_hi; subscribers_hi = switch_core_hash_next(&subscribers_hi)) {
 		mosquitto_subscriber_t *subscriber = NULL;
-        void *val;
-        switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
-        subscriber = (mosquitto_subscriber_t *)val;
+		void *val;
+		switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
+		subscriber = (mosquitto_subscriber_t *)val;
 		switch_mutex_lock(subscriber->topics_mutex);
 		for (switch_hash_index_t *topics_hi = switch_core_hash_first(subscriber->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
 			mosquitto_topic_t *topic = NULL;
@@ -279,25 +279,25 @@ switch_status_t remove_profile(const char *name)
 			switch_core_hash_delete(subscriber->topics, topic->name);
 		}
 		switch_core_hash_delete(profile->subscribers, subscriber->name);
-    }
-    switch_mutex_unlock(profile->subscribers_mutex);
+	}
+	switch_mutex_unlock(profile->subscribers_mutex);
 
 	log(NOTICE, "profile:%s shutting down connections\n", profile->name);
-    switch_mutex_lock(profile->connections_mutex);
-    for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
+	switch_mutex_lock(profile->connections_mutex);
+	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
 		mosquitto_connection_t *connection = NULL;
-        void *val;
-        switch_core_hash_this(connections_hi, NULL, NULL, &val);
-        connection = (mosquitto_connection_t *)val;
+		void *val;
+		switch_core_hash_this(connections_hi, NULL, NULL, &val);
+		connection = (mosquitto_connection_t *)val;
 		log(NOTICE, "profile:%s connection:%s being disconnected\n", profile->name, connection->name);
-        mosq_disconnect(connection);
+		mosq_disconnect(connection);
 		switch_core_hash_delete(profile->connections, connection->name);
-    }
-    switch_mutex_unlock(profile->connections_mutex);
+	}
+	switch_mutex_unlock(profile->connections_mutex);
 
 	status = SWITCH_STATUS_SUCCESS;
-    switch_core_hash_delete(mosquitto_globals.profiles, profile->name);
-    switch_core_destroy_memory_pool(&profile->pool);
+	switch_core_hash_delete(mosquitto_globals.profiles, profile->name);
+	switch_core_destroy_memory_pool(&profile->pool);
 	return status;
 }
 
@@ -812,14 +812,14 @@ static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile
  * \brief   This function is used to locate a topic by name given a profile and publisher
  *
  * \details This function searches the topic hash asssociated with a publisher and profile in an attempt to
- *          to find a matching name.  The name is used as a key, so must be unique
- *          (two topics within the same profile and publisher cannot have the same name)
+ *		  to find a matching name.  The name is used as a key, so must be unique
+ *		  (two topics within the same profile and publisher cannot have the same name)
  *
- * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *profile	Pointer to a profile hash entry
  * \param[in]   *publisher  Pointer to a publisher hash entry
- * \param[in]   *name       Name of the topic name to locate
+ * \param[in]   *name	   Name of the topic name to locate
  *
- * \retval      pointer to the hash entry of the topic or NULL
+ * \retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, const char *name)
@@ -853,14 +853,14 @@ mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitt
  * \brief   This function is used to locate an event by name given a profile, publisher and topic
  *
  * \details This function searches the event hash asssociated with a publisher, profile and topic in an attempt to
- *          to find a matching name.  The name is used as a key, so must be unique
- *          (two events within the same profile, publisher and topic cannot have the same name)
+ *		  to find a matching name.  The name is used as a key, so must be unique
+ *		  (two events within the same profile, publisher and topic cannot have the same name)
  *
- * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *profile	Pointer to a profile hash entry
  * \param[in]   *publisher  Pointer to a publisher hash entry
- * \param[in]   *name       Name of the topic name to locate
+ * \param[in]   *name	   Name of the topic name to locate
  *
- * \retval      pointer to the hash entry of the topic or NULL
+ * \retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name)
@@ -942,7 +942,7 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 		char *val = NULL;
 		var = (char *) switch_xml_attr_soft(param, "name");
 		val = (char *) switch_xml_attr_soft(param, "value");
-	
+
 		log(DEBUG,"var:%s val:%s\n", var, val);
 		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
 			if (!strncasecmp(val, "certificate", 11)) {
@@ -1080,11 +1080,11 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
  *
  * \details Each subscriber can have one or more associated topics
  *
- * \param[in]   *profile    Pointer to the profile that the subscriber belongs to
+ * \param[in]   *profile	Pointer to the profile that the subscriber belongs to
  * \param[in]   *subscriber Pointer to the subscriber that the will have the topic added
- * \param[in]   name        Name of the topic to be added to the subscriber
+ * \param[in]   name		Name of the topic to be added to the subscriber
  *
- * \retval      Address of the newly added topic or NULL
+ * \retval	  Address of the newly added topic or NULL
  */
 
 static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
@@ -1128,14 +1128,14 @@ static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mos
  * \brief   This function is used to locate a topic by name given a profile and subscriber
  *
  * \details This function searches the topic hash asssociated with a subscriber and profile in an attempt to
- *          to find a matching name.  The name is used as a key, so must be unique
- *          (two topics within the same profile and subscriber cannot have the same name)
+ *		  to find a matching name.  The name is used as a key, so must be unique
+ *		  (two topics within the same profile and subscriber cannot have the same name)
  *
- * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *profile	Pointer to a profile hash entry
  * \param[in]   *subscriber Pointer to a subscriber hash entry
- * \param[in]   *name       Name of the topic name to locate
+ * \param[in]   *name	   Name of the topic name to locate
  *
- * \retval      pointer to the hash entry of the topic or NULL
+ * \retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
@@ -1170,11 +1170,11 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
  *
  * \details topics are located within the subscribers section of the configuration file
  *
- * \param[in]   *profile    Pointer to a profile hash entry
+ * \param[in]   *profile	Pointer to a profile hash entry
  * \param[in]   *subscriber Pointer to a subscriber hash entry
  * \param[in]   xsubscriber Subscriber section of the configuration file
  *
- * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, switch_xml_t xsubscriber)
@@ -1234,10 +1234,10 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
  *
  * \details Connections located within the profile section of the configuration file
  *
- * \param[in]   xprofile    Profile section of the configuration file
- * \param[in]   *profile    Pointer to the profile hash that the newly parsed connections will be added to
+ * \param[in]   xprofile	Profile section of the configuration file
+ * \param[in]   *profile	Pointer to the profile hash that the newly parsed connections will be added to
  *
- * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profile_t *profile)
@@ -1353,7 +1353,7 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
  *
  * \param[in]   cfg		The top of the configuration file
  *
- * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_profiles(switch_xml_t cfg)
@@ -1405,7 +1405,7 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
  *
  * \param[in]   cfg		The top of the configuration file
  *
- * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_settings(switch_xml_t cfg)
@@ -1488,7 +1488,7 @@ static switch_status_t parse_settings(switch_xml_t cfg)
  *
  * \param[in]   cf	Name of the configuration file
  *
- * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
+ * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 switch_status_t mosquitto_load_config(const char *cf)

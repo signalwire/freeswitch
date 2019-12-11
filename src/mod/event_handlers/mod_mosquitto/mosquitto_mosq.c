@@ -61,18 +61,18 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 {
 	mosquitto_bgapi_job_t *job = NULL;
-    switch_stream_handle_t stream = { 0 };
-    switch_status_t status;
-    char *reply, *freply = NULL;
-    switch_event_t *event;
-    char *arg;
-    switch_memory_pool_t *pool;
+	switch_stream_handle_t stream = { 0 };
+	switch_status_t status;
+	char *reply, *freply = NULL;
+	switch_event_t *event;
+	char *arg;
+	switch_memory_pool_t *pool;
 
 	job = (mosquitto_bgapi_job_t *)obj;
 
-    if (!job) {
-        return NULL;
-    }
+	if (!job) {
+		return NULL;
+	}
 
 	switch_thread_rwlock_rdlock(mosquitto_globals.bgapi_rwlock);
 
@@ -455,6 +455,7 @@ void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const 
 			log_level = DEBUG;
 			break;
 	}
+
 	/* Print log messages after having converted the mosquitto levels into FreeSWITCH levels */
 	log(log_level, "mosq_log_callback(): %s\n", str);
 }
@@ -700,7 +701,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 	//*				The return value must be the length of the password.  “userdata” will be set to the calling mosquitto instance.
 	//*				The mosquitto userdata member variable can be retrieved using mosquitto_userdata.
 	rc = mosquitto_tls_set(connection->mosq, connection->cafile, connection->capath, connection->certfile, connection->certfile, NULL);
-	
+
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
 			log(INFO, "mosquitto_tls_set TLS profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
@@ -709,7 +710,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 		case MOSQ_ERR_INVAL:
 			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
-			return status;			
+			return status;
 		case MOSQ_ERR_NOMEM:
 			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
@@ -751,7 +752,7 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 	//* ciphers		a string describing the PSK ciphers available for use.
 	//*				See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
 	rc = mosquitto_tls_psk_set(connection->mosq, connection->psk, connection->identity, connection->psk_ciphers);
-	
+
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
 			log(INFO, "mosquitto_tls_psk_set profile: %s connection %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
@@ -760,7 +761,7 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 		case MOSQ_ERR_INVAL:
 			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
-			return status;			
+			return status;
 		case MOSQ_ERR_NOMEM:
 			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
@@ -813,7 +814,7 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 		case MOSQ_ERR_INVAL:
 			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
-			return status;			
+			return status;
 		case MOSQ_ERR_NOMEM:
 			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
@@ -886,7 +887,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			log(ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
-		
+
 	}
 
 	loop = mosquitto_loop_start(connection->mosq);
@@ -1037,7 +1038,7 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	}
 
 	log(DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
-	
+
 	//* id				String to use as the client id.  If NULL, a random client id will be generated.  If id is NULL, clean_session must be true.
 	//* clean_session	Set to true to instruct the broker to clean all messages and subscriptions on disconnect, false to instruct it to keep them.
 	//*					See the man page mqtt(7) for more details.  Note that a client will never discard its own outgoing messages on disconnect.
@@ -1082,20 +1083,20 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 	mosquitto_connection_t *connection;
 	int rc;
 
-    if (!profile) {
-        log(ERROR, "Profile not passed to mosq_subscribe()\n");
-        return SWITCH_STATUS_GENERR;
-    }
+	if (!profile) {
+		log(ERROR, "Profile not passed to mosq_subscribe()\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
-    if (!subscriber) {
-        log(ERROR, "Profile %s subscriber not passed to mosq_subscribe()\n", profile->name);
-        return SWITCH_STATUS_GENERR;
-    }
+	if (!subscriber) {
+		log(ERROR, "Profile %s subscriber not passed to mosq_subscribe()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
-    if (!topic) {
-        log(ERROR, "Profile %s subscriber %s topic not passed to mosq_subscribe()\n", profile->name, subscriber->name);
-        return SWITCH_STATUS_GENERR;
-    }
+	if (!topic) {
+		log(ERROR, "Profile %s subscriber %s topic not passed to mosq_subscribe()\n", profile->name, subscriber->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (!(connection = locate_connection(profile, topic->connection_name))) {
 		log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) is invalid\n", topic->name, topic->connection_name, profile->name);
@@ -1159,47 +1160,47 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *connection, mosquitto_topic_t *topic, int rc)
 {
 
-    if (!profile) {
-        log(ERROR, "Profile not passed to mosq_publish_results()\n");
+	if (!profile) {
+		log(ERROR, "Profile not passed to mosq_publish_results()\n");
 		return;
 	}
 
-    if (!connection) {
-        log(ERROR, "Profile %s connection not passed to mosq_publish_results()\n", profile->name);
-        return;
-    }
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to mosq_publish_results()\n", profile->name);
+		return;
+	}
 
-    if (!topic) {
-        log(ERROR, "Profile %s connection %s topic not passed to mosq_publish_results()\n", profile->name, connection->name);
-        return;
-    }
+	if (!topic) {
+		log(ERROR, "Profile %s connection %s topic not passed to mosq_publish_results()\n", profile->name, connection->name);
+		return;
+	}
 
-    switch (rc) {
-        case MOSQ_ERR_SUCCESS:
-            log(DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
-            break;
-        case MOSQ_ERR_INVAL:
-            log(DEBUG, "Event handler: failed to publish to [%s][%s] %s invalid input parameters \n", profile->name, connection->name, topic->pattern);
-            if (connection->enable) {
-                connection_initialize(profile, connection);
-            }
-            break;
-        case MOSQ_ERR_NOMEM:
-            log(DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
-            break;
-        case MOSQ_ERR_NO_CONN:
-            log(DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
-            break;
-        case MOSQ_ERR_PROTOCOL:
-            log(DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
-            break;
-        case MOSQ_ERR_PAYLOAD_SIZE:
-            log(DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
-            break;
-        default:
-            log(DEBUG, "Event handler: unknown return code %d from publish\n", rc);
-            break;
-    }
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
+			break;
+		case MOSQ_ERR_INVAL:
+			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s invalid input parameters \n", profile->name, connection->name, topic->pattern);
+			if (connection->enable) {
+				connection_initialize(profile, connection);
+			}
+			break;
+		case MOSQ_ERR_NOMEM:
+			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
+			break;
+		case MOSQ_ERR_NO_CONN:
+			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
+			break;
+		case MOSQ_ERR_PROTOCOL:
+			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
+			break;
+		case MOSQ_ERR_PAYLOAD_SIZE:
+			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
+			break;
+		default:
+			log(DEBUG, "Event handler: unknown return code %d from publish\n", rc);
+			break;
+	}
 }
 
 

@@ -57,7 +57,7 @@ SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdo
  * \brief	This function is called when FreeSWITCH loads the mod_mosquitto module
  *
  * \note	The definition of this function is performed by the macro SWITCH_MODULE_LOAD_FUNCTION that expands to
- *          switch_status_t mod_mosquitto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
+ *		  switch_status_t mod_mosquitto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
  *
  * \param[in]	switch_loadable_module_interface_t **module_interface
  * \param[in]	switch_memory_pool_t *pool
@@ -67,41 +67,41 @@ SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdo
  */
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
-		switch_api_interface_t *api_interface = NULL;
+	switch_api_interface_t *api_interface = NULL;
 
-		memset(&mosquitto_globals, 0, sizeof(mosquitto_globals));
-		mosquitto_globals.pool = pool;
+	memset(&mosquitto_globals, 0, sizeof(mosquitto_globals));
+	mosquitto_globals.pool = pool;
 
-		switch_mutex_init(&mosquitto_globals.mutex, SWITCH_MUTEX_NESTED, mosquitto_globals.pool);
-		switch_thread_rwlock_create(&mosquitto_globals.bgapi_rwlock, mosquitto_globals.pool);
-		switch_mutex_init(&mosquitto_globals.profiles_mutex, SWITCH_MUTEX_NESTED, mosquitto_globals.pool);
-		switch_core_hash_init(&mosquitto_globals.profiles);
+	switch_mutex_init(&mosquitto_globals.mutex, SWITCH_MUTEX_NESTED, mosquitto_globals.pool);
+	switch_thread_rwlock_create(&mosquitto_globals.bgapi_rwlock, mosquitto_globals.pool);
+	switch_mutex_init(&mosquitto_globals.profiles_mutex, SWITCH_MUTEX_NESTED, mosquitto_globals.pool);
+	switch_core_hash_init(&mosquitto_globals.profiles);
 
-		/* create a loadable module interface structure named with modname */
-		/* the module interface defines the different interfaces that this module has defined */
-		*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	/* create a loadable module interface structure named with modname */
+	/* the module interface defines the different interfaces that this module has defined */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-		/* create an api interface for the module command line interface (cli) */
-		add_cli_api(module_interface, api_interface);
+	/* create an api interface for the module command line interface (cli) */
+	add_cli_api(module_interface, api_interface);
 
-		if (mosquitto_load_config(MOSQUITTO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
-			log(ERROR, "Configuration failed to load\n");
-			return SWITCH_STATUS_TERM;
-		}
-		log(INFO, "Configuration loaded\n");
+	if (mosquitto_load_config(MOSQUITTO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
+		log(ERROR, "Configuration failed to load\n");
+		return SWITCH_STATUS_TERM;
+	}
+	log(INFO, "Configuration loaded\n");
 
-		mosquitto_globals.running = 1;
-		mosq_startup();
+	mosquitto_globals.running = 1;
+	mosq_startup();
 
-		/* indicate that the module should continue to be loaded */
-		return SWITCH_STATUS_SUCCESS;
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /**
  * \brief	This function is called when FreeSWITCH unloads the mod_mosquitto module
  *
  * \note	The definition of this function is performed by the macro SWITCH_MODULE_SHUTDOWN_FUNCTION that expands to
- *          switch_status_t mod_mosquitto_shutdown(void)
+ *		  switch_status_t mod_mosquitto_shutdown(void)
  *
  * \retval	switch_status_t
  *
@@ -109,28 +109,28 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown) {
 
-		switch_mutex_lock(mosquitto_globals.mutex);
-		mosquitto_globals.running = 0;
+	switch_mutex_lock(mosquitto_globals.mutex);
+	mosquitto_globals.running = 0;
 
-		switch_queue_term(mosquitto_globals.event_queue);
-		switch_event_unbind_callback(event_handler);
+	switch_queue_term(mosquitto_globals.event_queue);
+	switch_event_unbind_callback(event_handler);
 
-		remove_cli_api();
+	remove_cli_api();
 
-		mosq_shutdown();
+	mosq_shutdown();
 
-		switch_mutex_destroy(mosquitto_globals.profiles_mutex);
-		switch_mutex_unlock(mosquitto_globals.mutex);
-		switch_mutex_destroy(mosquitto_globals.mutex);
+	switch_mutex_destroy(mosquitto_globals.profiles_mutex);
+	switch_mutex_unlock(mosquitto_globals.mutex);
+	switch_mutex_destroy(mosquitto_globals.mutex);
 
-		return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /**
  * \brief	This is the runtime loop of the module, from here you can listen on sockets, spawn new threads to handle requests. etc.
  *
  * \note	The definition of this function is performed by the macro SWITCH_MODULE_RUNTIME_FUNCTION that expands to
- *          switch_status_t mod_mosquitto_runtime(void)
+ *			switch_status_t mod_mosquitto_runtime(void)
  *
  * \retval	switch_status_t
  *

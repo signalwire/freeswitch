@@ -163,23 +163,23 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 		return SWITCH_STATUS_GENERR;
 	}
 
-    if (!profile) {
-        log(ERROR, "Profile not passed to bind_event()\n");
-        return SWITCH_STATUS_GENERR;
-    }
+	if (!profile) {
+		log(ERROR, "Profile not passed to bind_event()\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
-    if (!publisher) {
-        log(ERROR, "Profile %s publisher not passed to bind_event()\n", profile->name);
-        return SWITCH_STATUS_GENERR;
-    }
-    if (!topic) {
-        log(ERROR, "Profile %s publisher %s topic not passed to bind_event()\n", profile->name, publisher->name);
-        return SWITCH_STATUS_GENERR;
-    }
-    if (!event) {
-        log(ERROR, "Profile %s publisher %s topic %s event not passed to bind_event()\n", profile->name, publisher->name, topic->name);
-        return SWITCH_STATUS_GENERR;
-    }
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to bind_event()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+	if (!topic) {
+		log(ERROR, "Profile %s publisher %s topic not passed to bind_event()\n", profile->name, publisher->name);
+		return SWITCH_STATUS_GENERR;
+	}
+	if (!event) {
+		log(ERROR, "Profile %s publisher %s topic %s event not passed to bind_event()\n", profile->name, publisher->name, topic->name);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	userdata = event->userdata;
 
@@ -234,19 +234,19 @@ switch_status_t unbind_event(mosquitto_profile_t *profile, mosquitto_publisher_t
 	}
 
 	if (!profile) {
-        log(ERROR, "Profile not passed to unbind_event()\n");
-        return SWITCH_STATUS_GENERR;
-    }
+		log(ERROR, "Profile not passed to unbind_event()\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
-    if (!publisher) {
-        log(ERROR, "Profile %s publisher not passed to unbind_event()\n", profile->name);
-        return SWITCH_STATUS_GENERR;
-    }
-    if (!topic) {
-        log(ERROR, "Profile %s publisher %s topic not passed to unbind_event()\n", profile->name, publisher->name);
-        return SWITCH_STATUS_GENERR;
-    }
-    if (!event) {
+	if (!publisher) {
+		log(ERROR, "Profile %s publisher not passed to unbind_event()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+	if (!topic) {
+		log(ERROR, "Profile %s publisher %s topic not passed to unbind_event()\n", profile->name, publisher->name);
+		return SWITCH_STATUS_GENERR;
+	}
+	if (!event) {
 		log(ERROR, "Profile %s publisher %s topic %s event not passed to unbind_event()\n", profile->name, publisher->name, topic->name);
 		return SWITCH_STATUS_GENERR;
 	}

@@ -552,7 +552,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			stream->write_function(stream, "		reconnect_exponential_backoff: %s\n", connection->reconnect_exponential_backoff ? "True" : "False");
 			stream->write_function(stream, "		tls\n");
 			if (connection->tls_enable == TLS_CERT) {
-				stream->write_function(stream, "		  enable: certificate\n");	
+				stream->write_function(stream, "		  enable: certificate\n");
 			} else if (connection->tls_enable == TLS_PSK) {
 				stream->write_function(stream, "		  enable: psk\n");
 			} else {
@@ -631,13 +631,13 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
  * \brief   This function is called when a command entered in the fs_cli console.
  *
  * \details The definition of this function is performed by the macro SWITCH_STANDARD_API that expands to
- *          switch_status_t exec_api_cmd(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
+ *		  switch_status_t exec_api_cmd(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
  *
  * \param[in]   *cmd	command entered on the fs_cli console
  * \param[in]   *session
  * \param[in]   *stream	output handle used for writing messages to the fs_api console
  *
- * \retval      switch_status_t
+ * \retval	  switch_status_t
  *
  */
 
