@@ -60,7 +60,10 @@
 #define MOSQUITTO_CONFIG_FILE		"mosquitto.conf"
 #define MOSQUITTO_DEFAULT_PROFILE	"default"
 #define EVENT_QUEUE_SIZE			50000
+#define RANDOM_STRING_LENGTH		127
+#define DESTINATION_STRING_LENGTH	255
 #define	UNIQUE_STRING_LENGTH		32
+#define MAX_EVENT_ID_LENGTH			255		// profile->name + publisher->name + topic->name
 
 typedef struct mosquitto_tls_s mosquitto_tls_t;
 typedef struct mosquitto_profile_s mosquitto_profile_t;
@@ -103,7 +106,7 @@ struct mosquitto_event_s {
 	switch_event_types_t event_type;
 	switch_event_node_t *node;
 	mosquitto_event_userdata_t *userdata;
-	char event_id[100];
+	char event_id[MAX_EVENT_ID_LENGTH];		// profile->name + publisher->name + topic->name
 	switch_bool_t bound;
 	unsigned count;
 };

@@ -1361,24 +1361,25 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 				} else if (!strncasecmp(var, "bind_address", 12) && !zstr(val)) {
 					connection->bind_address = switch_core_strdup(profile->pool, val);
 				} else if (!strncasecmp(var, "client_id", 9)) {
+					char random_string[RANDOM_STRING_LENGTH];
+					char destination_string[DESTINATION_STRING_LENGTH];
+					memset(destination_string, '\0', sizeof(destination_string));
 					if (!strncasecmp(val, "FreeSWITCH-Hostname-Unique", 26)) {
-						char random_string[50];
-						char dest[100];
 						rand_str(random_string, mosquitto_globals.unique_string_length);
-						strcpy(dest, switch_core_get_hostname());
-						strcat(dest, "-");
-						strcat(dest, random_string);
-						connection->client_id = switch_core_strdup(profile->pool, dest);
+						strcpy(destination_string, switch_core_get_hostname());
+						strcat(destination_string, "-");
+						strncat(destination_string, random_string, DESTINATION_STRING_LENGTH - 1);
+						connection->client_id = switch_core_strdup(profile->pool, destination_string);
+						memset(destination_string, '\0', sizeof(destination_string));
 					} else if (!strncasecmp(val, "FreeSWITCH-Hostname", 19)) {
 						connection->client_id = switch_core_strdup(profile->pool, switch_core_get_hostname());
 					} else if (!strncasecmp(val, "FreeSWITCH-Switchname-Unique", 28)) {
-						char random_string[50];
-						char dest[100];
 						rand_str(random_string, mosquitto_globals.unique_string_length);
-						strcpy(dest, switch_core_get_switchname());
-						strcat(dest, "-");
-						strcat(dest, random_string);
-						connection->client_id = switch_core_strdup(profile->pool, dest);
+						strcpy(destination_string, switch_core_get_switchname());
+						strcat(destination_string, "-");
+						strncat(destination_string, random_string, DESTINATION_STRING_LENGTH - 1);
+						connection->client_id = switch_core_strdup(profile->pool, destination_string);
+						memset(destination_string, '\0', sizeof(destination_string));
 					} else if (!strncasecmp(val, "FreeSWITCH-Switchname", 21)) {
 						connection->client_id = switch_core_strdup(profile->pool, switch_core_get_switchname());
 					} else if (!zstr(val)) {
@@ -1520,8 +1521,8 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 				size_t len = atoi(val);
 				if (!len) {
 					len = UNIQUE_STRING_LENGTH;
-				} else if (len > 49) {
-					len = 49;
+				} else if (len > RANDOM_STRING_LENGTH) {
+					len = RANDOM_STRING_LENGTH;
 				}
 				mosquitto_globals.unique_string_length = len;
 			} else if (!strncasecmp(var, "loglevel", 9) && !zstr(val)) {
