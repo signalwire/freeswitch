@@ -578,6 +578,12 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			stream->write_function(stream, "		  psk: %s\n", connection->tls.psk);
 			stream->write_function(stream, "		  identity: %s\n", connection->tls.identity);
 			stream->write_function(stream, "		  psk_ciphers: %s\n", connection->tls.psk_ciphers);
+			stream->write_function(stream, "		will\n");
+			stream->write_function(stream, "		  enable: %s\n", connection->will.enable ? "True" : "False");
+			stream->write_function(stream, "		  topic: %s\n", connection->will.topic);
+			stream->write_function(stream, "		  payload: %s\n", connection->will.payload);
+			stream->write_function(stream, "		  qos: %d\n", connection->will.qos);
+			stream->write_function(stream, "		  retain: %s\n", connection->will.retain ? "True" : "False");
 		}
 		stream->write_function(stream, "	publishers\n");
 		for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {

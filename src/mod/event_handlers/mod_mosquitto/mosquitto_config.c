@@ -58,6 +58,7 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name, switch_event_types_t event_type);
 static void rand_str(char *dest, size_t length);
 static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection);
+static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection);
 
 /**
  * \brief   This function is used to add a new profile to the hash
@@ -898,7 +899,65 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 
 
 /**
- * \brief   This function is used to parse the connection tls settings topics from the configuration file
+ * \brief	This function is used to parse the connection will settings from the configuration file
+ *
+ * \details	will settings are located within the connection section of the configuration file
+ *
+ * \param[in]   *profile	Pointer to a profile hash entry
+ * \param[in]   *connection	Pointer to a connection hash entry
+ * \param[in]   xconnection	Connection section of the configuration file
+ *
+ * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
+static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t param;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to parse_connection_will()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to parse_connection_will()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	//* Set default values for all the possible settings
+	connection->will.enable = SWITCH_FALSE;
+	connection->will.topic = NULL;
+	connection->will.payload = NULL;
+	connection->will.qos = 0;
+	connection->will.retain = SWITCH_FALSE;
+
+	for (param = switch_xml_child(xconnection, "param"); param; param = param->next) {
+		char *var = NULL;
+		char *val = NULL;
+		var = (char *) switch_xml_attr_soft(param, "name");
+		val = (char *) switch_xml_attr_soft(param, "value");
+
+		log(DEBUG,"var:%s val:%s\n", var, val);
+		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
+			connection->will.enable = switch_true(val);
+		} else if (!strncasecmp(var, "topic", 5) && !zstr(val)) {
+			connection->will.topic = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "payload", 7) && !zstr(val)) {
+			connection->will.payload = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "qos", 3) && !zstr(val)) {
+			connection->will.qos = atoi(val);
+		} else if (!strncasecmp(var, "retain", 6) && !zstr(val)) {
+			connection->will.retain = switch_true(val);
+		}
+	}
+
+	return status;
+}
+
+
+/**
+ * \brief   This function is used to parse the connection tls settings from the configuration file
  *
  * \details	tls settings are located within the connection section of the configuration file
  *
@@ -1273,6 +1332,7 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 			connection = add_connection(profile, name);
 
 			parse_connection_tls(profile, connection, switch_xml_child(xconnection, "tls"));
+			parse_connection_will(profile, connection, switch_xml_child(xconnection, "will"));
 
 			for (param = switch_xml_child(xconnection, "param"); param; param = param->next) {
 				char *var = NULL;

@@ -826,6 +826,69 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 }
 
 
+
+/*
+ * \brief	This routine configures a will for a client.
+ *
+ * \details	Configure will information for a mosquitto instance.
+ *          By default, clients do not have a will.
+ *          This must be called before calling mosquitto_connect.
+ *
+ * \param[in]	*connection Pointer to a connection structure
+ *
+ * \retval	status returned by the mosquitto library of the attempt to set a will.
+ */
+
+switch_status_t mosq_will_set(mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int rc;
+	int payloadlen = 0;
+
+	if (!connection) {
+		log(ERROR, "cannot execute mosquitto_will_set because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	payloadlen = strlen(connection->will.payload);
+
+	//* mosq		A valid mosquitto instance.
+	//* topic		The topic on which to publish the will.
+	//* payloadlen	The size of the payload (bytes).
+	//*             Valid values are between 0 and 268,435,455.
+	//* payload		Pointer to the data to send.
+	//*				If payloadlen > 0 this must be a valid memory location.
+	//* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the will.
+	//* retain		Set to true to make the will a retained message.
+	rc = mosquitto_will_set(connection->mosq, connection->will.topic, payloadlen, connection->will.payload, connection->will.qos, connection->will.retain);
+
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(INFO, "mosquitto_will_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		case MOSQ_ERR_INVAL:
+			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+		case MOSQ_ERR_NOMEM:
+			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+		case MOSQ_ERR_PAYLOAD_SIZE:
+			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d payload size %d is too large\n", connection->profile_name, connection->name, connection->host, connection->port, payloadlen);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+		case MOSQ_ERR_MALFORMED_UTF8:
+			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d the topic %s is not valid UTF-8\n", connection->profile_name, connection->name, connection->host, connection->port, connection->will.topic);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+	}
+
+	return status;
+}
+
+
 /**
  * \brief   This routine performs the actual connect attempt to an MQTT broker
  *
@@ -859,6 +922,12 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 		if (connection->tls.port) {
 			port = connection->tls.port;
 		}
+	}
+
+	if (connection->will.enable) {
+		mosq_will_set(connection);
+	} else {
+		mosquitto_will_clear(connection->mosq);
 	}
 
 	if (!connection->bind_address) {

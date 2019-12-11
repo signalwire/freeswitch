@@ -90,12 +90,12 @@ struct mosquitto_lib_s {
 };
 
 struct mosquitto_will_s {
-	char *name;
 	char *topic;
 	int payloadlen;
 	char *payload;
 	int qos;
 	switch_bool_t retain;
+	switch_bool_t enable;
 };
 
 struct mosquitto_event_s {
@@ -157,7 +157,7 @@ struct mosquitto_publisher_s {
 };
 
 struct mosquitto_tls_s {
-	int	enable;
+	int	enable;		// Not a bool because three values are allowed: 'certificate', 'psk', or NULL
 	switch_bool_t advanced_options;
 	unsigned port;
 	char *cafile;
