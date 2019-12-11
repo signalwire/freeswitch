@@ -1,6 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 
-noinst_PROGRAMS = switch_event switch_hash switch_ivr_originate switch_utils switch_core switch_console switch_vpx \
+noinst_PROGRAMS = switch_event switch_hash switch_ivr_originate switch_utils switch_core switch_console switch_vpx switch_core_file \
 			   switch_ivr_play_say switch_core_codec
 noinst_PROGRAMS+= switch_core_video
 AM_LDFLAGS  = -avoid-version -no-undefined $(SWITCH_AM_LDFLAGS) $(openssl_LIBS)

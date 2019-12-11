@@ -42,6 +42,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 
 	memset(&kazoo_globals, 0, sizeof(kazoo_globals));
 	kazoo_globals.pool = pool;
+	kz_set_hostname();
 	if(kazoo_load_config() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here?
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improper configuration!\n");
