@@ -907,6 +907,11 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	int loop;
 	unsigned port;
 
+	if (!connection) {
+		log(ERROR, "mosq_connect() failed because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	mosq_callbacks_set(connection);
 
 	connection->connected = SWITCH_FALSE;

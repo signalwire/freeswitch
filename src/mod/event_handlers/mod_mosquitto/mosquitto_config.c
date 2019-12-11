@@ -1013,6 +1013,9 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 			}
 		} else if (!strncasecmp(var, "port", 4) && !zstr(val)) {
 			connection->tls.port = atoi(val);
+			if (connection->tls.port > 65535) {
+				connection->tls.port = 65535;
+			}
 		} else if (!strncasecmp(var, "advanced_options", 16) && !zstr(val)) {
 			connection->tls.advanced_options = switch_true(val);
 		} else if (!strncasecmp(var, "cafile", 6) && !zstr(val)) {
@@ -1346,6 +1349,9 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 					connection->host = switch_core_strdup(profile->pool, val);
 				} else if (!strncasecmp(var, "port", 4) && !zstr(val)) {
 					connection->port = atoi(val);
+					if (connection->port > 65535) {
+						connection->port = 65535;
+					}
 				} else if (!strncasecmp(var, "keepalive", 9) && !zstr(val)) {
 					connection->keepalive = atoi(val);
 				} else if (!strncasecmp(var, "username", 8) && !zstr(val)) {
