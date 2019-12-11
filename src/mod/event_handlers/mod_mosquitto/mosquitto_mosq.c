@@ -279,9 +279,9 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 
 
 /**
- * \brief   This routine sets up callbacks for associated with a connection to an MQTT broker
+ * \brief   	This routine sets up callbacks for associated with a connection to an MQTT broker
  *
- * \details This callback routines are called when one of the related functions completes execution
+ * \details		Set the logging callback.  This should be used if you want event logging information from the client library.
  *
  * \param[in]   *connection	Pointer to a connection hash that these callbacks will be associated with
  */
@@ -335,6 +335,7 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 
 	log(DEBUG, "profile:%s connection:%s rc:%d disconnected", profile->name, connection->name, rc);
 	connection->connected = SWITCH_FALSE;
+	mosq_loop_stop(connection, SWITCH_TRUE);
 	//log(DEBUG, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
 }
 
@@ -427,9 +428,10 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, in
  *
  * \details This callback currently logs the message
  *
- * \param[in]   *mosq			Pointer to the mosquitto structure associated with the request
- * \param[in]   *userdata		Pointer to userdata that was set up when the connection was created
- * \param[in]   *str			Pointer to the message content
+ * \param[in]	mosq		The mosquitto instance making the callback.
+ * \param[in]	userdata	The user data provided in mosquitto_new
+ * \param[in]	level		The log message level from the values: MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_DEBUG
+ * \param[in]	str			The message string.
  */
 
 void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
@@ -470,6 +472,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 
 	if (!result) {
 		mosquitto_profile_t *profile = NULL;
+
 		log(CONSOLE, "mosq_connect_callback(): profile %s connection %s successful\n", connection->profile_name, connection->name);
 		connection->retry_count = 0;
 		connection->connected = SWITCH_TRUE;
@@ -642,6 +645,165 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 	return status;
 }
 
+/*
+ * \brief	This routine configures the client for certificate based SSL/TLS support.
+ *
+ * \details	The TLS configuration options specified in the 'connection' section define various
+ *			parameters related to setting up a TLS connection to a broker.  This routine takes
+ *			the settings and add them to the client mosq structure (prior to connecting to a broker).
+ *
+ * \param[in]	*connection Pointer to a connections structure
+ *
+ * \retval	status returned by the mosquitto library of the attempt to set the TLS parameters
+ */
+
+switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int rc;
+
+	if (!connection) {
+		log(ERROR, "cannot execute mosquitto_tls_set because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	//* mosq		a valid mosquitto instance.
+	//* cafile		path to a file containing the PEM encoded trusted CA certificate files.  Either cafile or capath must not be NULL.
+	//* capath		path to a directory containing the PEM encoded trusted CA certificate files.
+	//*				See mosquitto.conf for more details on configuring this directory.  Either cafile or capath must not be NULL.
+	//* certfile	path to a file containing the PEM encoded certificate file for this client.
+	//*				If NULL, keyfile must also be NULL and no client certificate will be used.
+	//* keyfile		path to a file containing the PEM encoded private key for this client.
+	//*				If NULL, certfile must also be NULL and no client certificate will be used.
+	//* pw_callback	if keyfile is encrypted, set pw_callback to allow your client to pass the correct password for decryption.
+	//*				If set to NULL, the password must be entered on the command line.
+	//*				Your callback must write the password into “buf”, which is “size” bytes long.
+	//*				The return value must be the length of the password.  “userdata” will be set to the calling mosquitto instance.
+	//*				The mosquitto userdata member variable can be retrieved using mosquitto_userdata.
+	rc = mosquitto_tls_set(connection->mosq, connection->cafile, connection->capath, connection->certfile, connection->certfile, NULL);
+	
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(INFO, "mosquitto_tls_set TLS profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		case MOSQ_ERR_INVAL:
+			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;			
+		case MOSQ_ERR_NOMEM:
+			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+	}
+
+	if (connection->advanced_options == SWITCH_TRUE) {
+		mosq_tls_opts_set(connection);
+	}
+
+	return status;
+}
+
+/*
+ * \brief	This routine configures a client for pre-shared-key based TLS support
+ *
+ * \details	Configure the client for pre-shared-key based TLS support.
+ *			Must be called before mosquitto_connect.
+ *			Cannot be used in conjunction with mosquitto_tls_set.
+ *
+ * \param[in]	*connection Pointer to a connections structure
+ *
+ * \retval	status returned by the mosquitto library of the attempt to set the pre-shared-key based TLS parameters
+ */
+
+switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int rc;
+
+	if (!connection) {
+		log(ERROR, "cannot execute mosquitto_tls_psk_set because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	//* mosq		a valid mosquitto instance.
+	//* psk			the pre-shared-key in hex format with no leading “0x”.
+	//* identity	the identity of this client.  May be used as the username depending on the server settings.
+	//* ciphers		a string describing the PSK ciphers available for use.
+	//*				See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	rc = mosquitto_tls_psk_set(connection->mosq, connection->psk, connection->identity, connection->psk_ciphers);
+	
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(INFO, "mosquitto_tls_psk_set profile: %s connection %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		case MOSQ_ERR_INVAL:
+			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;			
+		case MOSQ_ERR_NOMEM:
+			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+	}
+
+	if (connection->advanced_options == SWITCH_TRUE) {
+		mosq_tls_opts_set(connection);
+	}
+
+	return status;
+}
+
+
+/*
+ * \brief	This routine configures a client for advacned SSL/TLS options.
+ *
+ * \details	Configure the client for advanced SSL/TLS options.
+ *			Must be called before mosquitto_connect.
+ *
+ * \param[in]	*connection Pointer to a connection structure
+ *
+ * \retval	status returned by the mosquitto library of the attempt to set advanced SSL/TLS options.
+ */
+
+switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int rc;
+
+	if (!connection) {
+		log(ERROR, "cannot execute mosquitto_tls_opts_set because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	//* mosq		a valid mosquitto instance.
+	//* cert_reqs	an integer defining the verification requirements the client will impose on the server.  This can be one of:
+	//*				SSL_VERIFY_NONE (0): the server will not be verified in any way.
+	//*				SSL_VERIFY_PEER (1): the server certificate will be verified and the connection aborted if the verification fails.
+	//*				The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
+	//* tls_version	the version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.  The default value and the available values depend on the version of openssl that the library was compiled against.  For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.  For openssl < 1.0.1, only tlsv1 is available.
+	//* ciphers		a string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	rc = mosquitto_tls_opts_set(connection->mosq, connection->cert_reqs, connection->tls_version, connection->opts_ciphers);
+
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(INFO, "mosquitto_tls_opts_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		case MOSQ_ERR_INVAL:
+			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;			
+		case MOSQ_ERR_NOMEM:
+			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+	}
+
+	return status;
+}
+
 
 /**
  * \brief   This routine performs the actual connect attempt to an MQTT broker
@@ -659,28 +821,41 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int rc;
 	int loop;
+	unsigned port;
 
 	mosq_callbacks_set(connection);
 
 	connection->connected = SWITCH_FALSE;
 	connection->retry_count = 0;
+	port = connection->port;
+
+	if (connection->tls_enable != SWITCH_FALSE) {
+		if (connection->tls_enable == TLS_CERT) {
+			mosq_tls_set(connection);
+		} else if (connection->tls_enable == TLS_PSK) {
+				mosq_tls_psk_set(connection);
+		}
+		if (connection->tls_port) {
+			port = connection->tls_port;
+		}
+	}
+
 	if (!connection->bind_address) {
-		rc = mosquitto_connect(connection->mosq, connection->host, connection->port, connection->keepalive);
+		rc = mosquitto_connect(connection->mosq, connection->host, port, connection->keepalive);
 		log(DEBUG, "mosquitto_connect() rc:%d\n", rc);
 	} else {
 		if (!connection->srv) {
-			rc = mosquitto_connect_bind(connection->mosq, connection->host, connection->port, connection->keepalive, connection->bind_address);
+			rc = mosquitto_connect_bind(connection->mosq, connection->host, port, connection->keepalive, connection->bind_address);
 		} else {
 			rc = mosquitto_connect_srv(connection->mosq, connection->host, connection->keepalive, connection->bind_address);
 		}
 	}
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(DEBUG, "Connected to: %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->host, connection->port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
-			connection->connected = true;
+			log(DEBUG, "Attempting to connect to: profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "Failed connection to: %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->host, connection->port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			log(ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
@@ -689,19 +864,18 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
 		default:
-			log(ERROR, "Failed connection to: %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->host, connection->port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
+			log(ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
-			return SWITCH_STATUS_GENERR;
+		
 	}
-
 
 	loop = mosquitto_loop_start(connection->mosq);
-	if (loop != MOSQ_ERR_SUCCESS){
+	if (loop != MOSQ_ERR_SUCCESS) {
 		log(ERROR, "Unable to start loop: %i\n", loop);
 	}
-	return status;
 
+	return status;
 }
 
 
@@ -844,6 +1018,13 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	}
 
 	log(DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
+	
+	//* id				String to use as the client id.  If NULL, a random client id will be generated.  If id is NULL, clean_session must be true.
+	//* clean_session	Set to true to instruct the broker to clean all messages and subscriptions on disconnect, false to instruct it to keep them.
+	//*					See the man page mqtt(7) for more details.  Note that a client will never discard its own outgoing messages on disconnect.
+	//*					Calling mosquitto_connect or mosquitto_reconnect will cause the messages to be resent.
+	//*					Use mosquitto_reinitialise to reset a client to its original state.  Must be set to true if the id parameter is NULL.
+	//* obj				A user pointer that will be passed as an argument to any callbacks that are specified.
 	connection->mosq = mosquitto_new(connection->client_id, clean_session, userdata);
 
 	if (connection->mosq == NULL) {

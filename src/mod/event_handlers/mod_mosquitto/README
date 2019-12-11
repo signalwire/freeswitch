@@ -96,6 +96,41 @@ CONNECTION
 	reconnect_delay_max	- The maximum number of seconds to taie between reconnects.
 	reconnect_exponsntial_backoff - Use exponential backoff between reconnect attempts (true/false).
 
+	TLS
+		enable			- Should SSL/TLS be enabled for this connection
+						- 'certificate': The connection will be configured for certificated based SSL/TLS support.
+						- 'pks': The connection will be configured for pre-shared-key based TLS support.
+						- If not specified, the connection will NOT be configured for SSL/TLS and none of the settings below will have any effect.
+
+		port			- Overrides the connection port
+		cafile			- Path to a file containing the PEM encoded trusted CA certificate files.
+						- Either cafile or capath must not be NULL.
+		capath			- Path to a directory containing the PEM encoded trusted CA certificate files.
+						- Either cafile or capath must not be NULL.
+		certfile		- Path to a file containing the PEM encoded certificate file for this client.
+						- If NULL, keyfile must also be NULL and no client certificate will be used.
+		keyfile			- Path to a file containing the PEM encoded private key for this client.
+						- If NULL, certfile must also be NULL and no client certificate will be used.
+
+		advanced_options - enabled (true) / disabled (false): When enabled, 'cert_reqs', 'tls_version', and 'opts_ciphers' are set for the connection.
+		cert_reqs		- Verification requirements the connection will impose on the server
+						- 'SSL_VERIFY_NONE': The server will not be verified in any way.
+						- 'SSL_VERIFY_PEER': The server certificate will be verified and the connection aborted if the verification fails.
+						- The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
+		opts_ciphers	- A string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.
+						- If NULL, the default ciphers will be used.
+		tls_version		- The version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.
+						- The default value and the available values depend on the version of openssl that the library was compiled against.
+						- For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.
+						- For openssl < 1.0.1, only tlsv1 is available.
+
+		psk				- The pre-shared-key in hex format with no leading “0x”.
+		identity		- The identity of this client.  May be used as the username depending on the server settings.
+		psk_ciphers		- A string describing the PSK ciphers available for use.  See the “openssl ciphers” tool for more information.
+						- If NULL, the default ciphers will be used.
+
+
+
 PUBLISHER
 	name				- Name of this publisher.  Each publisher within a profile must have unique name.
 	enable				- Is this publisher enabled (true) / disabled (false).
@@ -172,6 +207,25 @@ An example configuration file:
 					<param name="reconnect_delay" value="1"/>
 					<param name="reconnect_delay_max" value="10"/>
 					<param name="reconnect_exponential_backoff" value="false"/>
+					<tls>
+                        <!-- <param name="enable" value="psk"/> -->
+                        <!-- <param name="enable" value="certificate"/> -->
+                        <param name="enable" value="certificate"/>
+                        <param name="advanced_options" value="true"/>
+                        <param name="port" value="8883"/>
+                        <param name="cafile" value=""/>
+                        <param name="capath" value="/etc/ssl/certs/"/>
+                        <param name="certfile" value=""/>
+                        <param name="keyfile" value=""/>
+                        <!-- <param name="cert_reqs" value="SSL_VERIFY_NONE"/> -->
+                        <!-- <param name="cert_reqs" value="SSL_VERIFY_PEER"/> -->
+                        <param name="cert_reqs" value=""/>
+                        <param name="tls_version" value=""/>
+                        <param name="opts_ciphers" value=""/>
+                        <param name="psk" value=""/>
+                        <param name="identity" value=""/>
+                        <param name="psk_ciphers" value=""/>
+                    </tls>
 				</connection>
 				<connection name="broker2">
 					<param name="host" value="broker2.example.com"/>
@@ -362,9 +416,7 @@ The list of available bgapi commands are available by entering "show api" in the
 Possible TODO items:
 
 	MQTT V5 support
-	TLS support
 	Throttle (circuit-breaker) support
 	Enhanced security around command execution
 	Enhanced CLI funcationality
 	Enhanced logging / statistics
-

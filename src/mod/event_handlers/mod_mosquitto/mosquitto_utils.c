@@ -540,12 +540,8 @@ switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connectio
 		mosq_message_retry_set(connection);
 		mosq_max_inflight_messages_set(connection);
 		mosq_username_pw_set(connection);
+
 		status = mosq_connect(connection);
-		if (status == SWITCH_STATUS_SUCCESS) {
-			log(DEBUG, "profile:%s connection:%s succesfully connected to broker\n", profile->name, connection->name);
-		} else {
-			log(DEBUG, "profile:%s connection:%s failed to connect to broker", profile->name, connection->name);
-		}
 	}
 
 	return status;

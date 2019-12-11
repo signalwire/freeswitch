@@ -550,6 +550,32 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			stream->write_function(stream, "		reconnect_delay: %d\n", connection->reconnect_delay);
 			stream->write_function(stream, "		reconnect_delay_max: %d\n", connection->reconnect_delay_max);
 			stream->write_function(stream, "		reconnect_exponential_backoff: %s\n", connection->reconnect_exponential_backoff ? "True" : "False");
+			stream->write_function(stream, "		tls\n");
+			if (connection->tls_enable == TLS_CERT) {
+				stream->write_function(stream, "		  enable: certificate\n");	
+			} else if (connection->tls_enable == TLS_PSK) {
+				stream->write_function(stream, "		  enable: psk\n");
+			} else {
+				stream->write_function(stream, "		  enable: NULL\n");
+			}
+			stream->write_function(stream, "		  port: %d\n", connection->tls_port);
+			stream->write_function(stream, "		  cafile: %s\n", connection->cafile);
+			stream->write_function(stream, "		  capath: %s\n", connection->capath);
+			stream->write_function(stream, "		  certfile: %s\n", connection->certfile);
+			stream->write_function(stream, "		  keyfile: %s\n", connection->keyfile);
+			stream->write_function(stream, "		  advanced_options: %s\n", connection->advanced_options ? "True" : "False");
+			if (connection->cert_reqs == SSL_VERIFY_NONE) {
+				stream->write_function(stream, "		  cert_reqs: SSL_VERIFY_NONE\n");
+			} else if (connection->cert_reqs == SSL_VERIFY_PEER) {
+				stream->write_function(stream, "		  cert_reqs: SSL_VERIFY_PEER\n");
+			} else {
+				stream->write_function(stream, "		  cert_reqs: NULL\n");
+			}
+			stream->write_function(stream, "		  tls_version: %s\n", connection->tls_version);
+			stream->write_function(stream, "		  opts_ciphers: %s\n", connection->opts_ciphers);
+			stream->write_function(stream, "		  psk: %s\n", connection->psk);
+			stream->write_function(stream, "		  identity: %s\n", connection->identity);
+			stream->write_function(stream, "		  psk_ciphers: %s\n", connection->psk_ciphers);
 		}
 		stream->write_function(stream, "	publishers\n");
 		for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {

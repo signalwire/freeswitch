@@ -55,7 +55,7 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
 static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, switch_xml_t xsubscriber);
 static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name, switch_event_types_t event_type);
 static void rand_str(char *dest, size_t length);
-
+static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection);
 
 /**
  * \brief   This function is used to add a new profile to the hash
@@ -896,12 +896,101 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 
 
 /**
- * \brief   This function is used to parse the publisher topics from the configuration file
+ * \brief   This function is used to parse the connection tls settings topics from the configuration file
  *
- * \details	topics are located withing the publishers section of the configuration file
+ * \details	tls settings are located within the connection section of the configuration file
  *
  * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *publisher	Pointer to a profile hash entry
+ * \param[in]   *connection	Pointer to a connection hash entry
+ * \param[in]   xconnection	Connection section of the configuration file
+ *
+ * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ */
+
+static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t param;
+
+	if (!profile) {
+		log(ERROR, "Profile not passed to parse_connection_tls()\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!connection) {
+		log(ERROR, "Profile %s connection not passed to parse_connection_tls()\n", profile->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	//* Set default values for all the possible settings
+	connection->tls_enable = SWITCH_FALSE;
+	connection->advanced_options = SWITCH_FALSE;
+	connection->cafile = NULL;
+	connection->capath = NULL;
+	connection->certfile = NULL;
+	connection->keyfile = NULL;
+	connection->cert_reqs = SSL_VERIFY_NONE;
+	connection->tls_version = NULL;
+	connection->opts_ciphers = NULL;
+	connection->psk_ciphers = NULL;
+	connection->psk = NULL;
+	connection->identity = NULL;
+	connection->tls_port = 0;
+
+	for (param = switch_xml_child(xconnection, "param"); param; param = param->next) {
+		char *var = NULL;
+		char *val = NULL;
+		var = (char *) switch_xml_attr_soft(param, "name");
+		val = (char *) switch_xml_attr_soft(param, "value");
+	
+		log(DEBUG,"var:%s val:%s\n", var, val);
+		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
+			if (!strncasecmp(val, "certificate", 11)) {
+				connection->tls_enable = TLS_CERT;
+			} else if (!strncasecmp(val, "psk", 3)) {
+				connection->tls_enable = TLS_PSK;
+			}
+		} else if (!strncasecmp(var, "port", 4) && !zstr(val)) {
+			connection->tls_port = atoi(val);
+		} else if (!strncasecmp(var, "advanced_options", 16) && !zstr(val)) {
+			connection->advanced_options = switch_true(val);
+		} else if (!strncasecmp(var, "cafile", 6) && !zstr(val)) {
+			connection->cafile = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "capath", 6) && !zstr(val)) {
+			connection->capath = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "certfile", 8) && !zstr(val)) {
+			connection->certfile = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "keyfile", 7) && !zstr(val)) {
+			connection->keyfile = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "cert_reqs", 9) && !zstr(val)) {
+			if (!strncasecmp(val, "SSL_VERIFY_NONE", 15)) {
+				connection->cert_reqs = SSL_VERIFY_NONE;
+			} else if (!strncasecmp(val, "SSL_VERIFY_PEER", 15)) {
+				connection->cert_reqs = SSL_VERIFY_PEER;
+			}
+		} else if (!strncasecmp(var, "tls_version", 11) && !zstr(val)) {
+			connection->tls_version = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "opts_ciphers", 12) && !zstr(val)) {
+			connection->opts_ciphers = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "psk_ciphers", 11) && !zstr(val)) {
+			connection->psk_ciphers = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "psk", 3) && !zstr(val)) {
+			connection->psk = switch_core_strdup(profile->pool, val);
+		} else if (!strncasecmp(var, "identity", 8) && !zstr(val)) {
+			connection->identity = switch_core_strdup(profile->pool, val);
+		}
+	}
+
+	return status;
+}
+
+/**
+ * \brief   This function is used to parse the publisher topics from the configuration file
+ *
+ * \details	topics are located within the publishers section of the configuration file
+ *
+ * \param[in]   *profile	Pointer to a profile hash entry
+ * \param[in]   *publisher	Pointer to a publisher hash entry
  * \param[in]   xpublisher	Publisher section of the configuration file
  *
  * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
@@ -1079,11 +1168,11 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 /**
  * \brief   This function is used to parse the subscriber topics from the configuration file
  *
- * \details topics are located withing the subscribers section of the configuration file
+ * \details topics are located within the subscribers section of the configuration file
  *
  * \param[in]   *profile    Pointer to a profile hash entry
- * \param[in]   *subscriber Pointer to a profile hash entry
- * \param[in]   xsubscriber Publisher section of the configuration file
+ * \param[in]   *subscriber Pointer to a subscriber hash entry
+ * \param[in]   xsubscriber Subscriber section of the configuration file
  *
  * \retval      SWITCH_STATUS_SUCCESS indicates this routine completed
  */
@@ -1180,6 +1269,8 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 			}
 
 			connection = add_connection(profile, name);
+
+			parse_connection_tls(profile, connection, switch_xml_child(xconnection, "tls"));
 
 			for (param = switch_xml_child(xconnection, "param"); param; param = param->next) {
 				char *var = NULL;

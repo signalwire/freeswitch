@@ -55,6 +55,11 @@
 		 switch_log_printf(SWITCH_CHANNEL_LOG, (severity), __VA_ARGS__); \
 	}
 
+#define SSL_VERIFY_NONE				0
+#define SSL_VERIFY_PEER				1
+#define TLS_CERT					2
+#define TLS_PSK						3
+
 #define MOSQUITTO_CONFIG_FILE		"mosquitto.conf"
 #define MOSQUITTO_DEFAULT_PROFILE	"default"
 #define EVENT_QUEUE_SIZE			50000
@@ -165,7 +170,7 @@ struct mosquitto_connection_s {
 	int send_maximum;
 	int receive_maximum;
 	char *host;
-	int port;
+	unsigned port;
 	int keepalive;
 	char *username;
 	char *password;
@@ -183,6 +188,21 @@ struct mosquitto_connection_s {
 	switch_bool_t srv;
 	mosquitto_mosq_userdata_t *userdata;
 	struct mosquitto *mosq;
+	//* tls specific settings
+	int tls_enable;
+	switch_bool_t advanced_options;
+	unsigned tls_port;
+	char *cafile;
+	char *capath;
+	char *certfile;
+	char *keyfile;
+	char *pw_callback;
+	int cert_reqs;
+	char *tls_version;
+	char *opts_ciphers;
+	char *psk;
+	char *identity;
+	char *psk_ciphers;
 };
 
 struct mosquitto_profile_s {
