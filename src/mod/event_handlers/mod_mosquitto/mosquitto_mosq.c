@@ -518,6 +518,28 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
  *
  * \details This routine sets up various options, such as the version of the MQTT protocol to used with the connection
  *
+ *			MOSQ_OPT_PROTOCOL_VERSION - Value must be set to either MQTT_PROTOCOL_V31, MQTT_PROTOCOL_V311, or MQTT_PROTOCOL_V5.
+ *			Must be set before the client connects.  Defaults to MQTT_PROTOCOL_V311.
+ *
+ *			MOSQ_OPT_RECEIVE_MAXIMUM - Value can be set between 1 and 65535 inclusive, and represents the maximum number of
+ *			incoming QoS 1 and QoS 2 messages that this client wants to process at once.
+ *			Defaults to 20.  This option is not valid for MQTT v3.1 or v3.1.1 clients.
+ *			Note that if the MQTT_PROP_RECEIVE_MAXIMUM property is in the proplist passed to mosquitto_connect_v5(),
+ *			then that property will override this option.  Using this option is the recommended method however.
+ *
+ *			MOSQ_OPT_SEND_MAXIMUM - Value can be set between 1 and 65535 inclusive, and represents the maximum number of
+ *			outgoing QoS 1 and QoS 2 messages that this client will attempt to have “in flight” at once.
+ *			Defaults to 20.  This option is not valid for MQTT v3.1 or v3.1.1 clients.  Note that if the broker being connected to
+ *			sends a MQTT_PROP_RECEIVE_MAXIMUM property that has a lower value than this option, then the broker provided value will be used.
+ *
+ *			MOSQ_OPT_SSL_CTX_WITH_DEFAULTS - If value is set to a non zero value, then the user specified SSL_CTX passed in using
+ *			MOSQ_OPT_SSL_CTX will have the default options applied to it.  This means that you only need to change the values that
+ *			are relevant to you.  If you use this option then you must configure the TLS options as normal, i.e.  you should use
+ *			mosquitto_tls_set to configure the cafile/capath as a minimum.  This option is only available for openssl 1.1.0 and higher.
+ *
+ *			MOSQ_OPT_TLS_OCSP_REQUIRED - Set whether OCSP checking on TLS connections is required.  Set to 1 to enable checking,
+ *			or 0 (the default) for no checking.
+ *
  * \param[in]   *connection	Pointer to a connection structure
  *
  * \retval	SWITCH_STATUS_SUCCESS
@@ -533,6 +555,9 @@ switch_status_t mosq_int_option(mosquitto_connection_t *connection)
 	//	protocol_version = MQTT_PROTOCOL_V311;
 	//}
 
+	//* mosq	A valid mosquitto instance.
+	//* option	The option to set.
+	//* value	The option specific value.
 	rc = mosquitto_int_option(connection->mosq, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V311);
 	log(DEBUG, "mosquitto_init_option() for profile [%s] connection [%s] Protocol Version [%s] rc %d\n", connection->profile_name, connection->name, connection->protocol_version, rc);
 	//rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_RECEIVE_MAXIMUM, connection->receive_maximum);
@@ -632,13 +657,15 @@ switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connectio
 /**
  * \brief   This routine sets the username and password used to connect to the MQTT broker
  *
- * \details This routine uses the configuration defined username and password
+ * \details Configure username and password for a mosquitto instance.
+ *			By default, no username or password will be sent.
+ *			For v3.1 and v3.1.1 clients, if username is NULL, the password argument is ignored.
+ *			This is must be called before calling mosquitto_connect.
  *
  * \param[in]   *connection	Pointer to a connection structure
  *
  * \retval	SWITCH_STATUS_SUCCESS
  */
-
 
 switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 {
@@ -646,6 +673,9 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (connection->username && connection->password) {
+		//* mosq		A valid mosquitto instance.
+		//* username	The username to send as a string, or NULL to disable authentication.
+		//* password	The password to send as a string.  Set to NULL when username is valid in order to send just a username.
 		rc = mosquitto_username_pw_set(connection->mosq, connection->username, connection->password);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
@@ -664,6 +694,7 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 	}
 	return status;
 }
+
 
 /*
  * \brief	This routine configures the client for certificate based SSL/TLS support.
@@ -723,6 +754,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 
 	return status;
 }
+
 
 /*
  * \brief	This routine configures a client for pre-shared-key based TLS support
@@ -826,9 +858,8 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 }
 
 
-
 /*
- * \brief	This routine configures a will for a client.
+ * \brief	This routine configures a Last Will and Testament (will) for a client.
  *
  * \details	Configure will information for a mosquitto instance.
  *          By default, clients do not have a will.
@@ -846,7 +877,7 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 	int payloadlen = 0;
 
 	if (!connection) {
-		log(ERROR, "cannot execute mosquitto_will_set because connection name is NULL\n");
+		log(ERROR, "Cannot execute mosquitto_will_set() because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -936,10 +967,20 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	}
 
 	if (!connection->bind_address) {
+		//* mosq		A valid mosquitto instance.
+		//* host		The hostname or ip address of the broker to connect to.
+		//* port		The network port to connect to.  Usually 1883.
+		//* keepalive	The number of seconds after which the broker should send a PING message to the client
+		//*				if no other messages have been exchanged in that time.
 		rc = mosquitto_connect(connection->mosq, connection->host, port, connection->keepalive);
-		log(DEBUG, "mosquitto_connect() rc:%d\n", rc);
 	} else {
 		if (!connection->srv) {
+			//* mosq			A valid mosquitto instance.
+			//* host			The hostname or ip address of the broker to connect to.
+			//* port			The network port to connect to.  Usually 1883.
+			//* keepalive		The number of seconds after which the broker should send a PING message to the client
+			//*					if no other messages have been exchanged in that time.
+			//* bind_address	The hostname or ip address of the local network interface to bind to.
 			rc = mosquitto_connect_bind(connection->mosq, connection->host, port, connection->keepalive, connection->bind_address);
 		} else {
 			rc = mosquitto_connect_srv(connection->mosq, connection->host, connection->keepalive, connection->bind_address);
@@ -990,7 +1031,11 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int rc = 0;
 
+	//* mosq	A valid mosquitto instance.
+	//* force	Set to true to force thread cancellation.
+	//*			If false, mosquitto_disconnect must have already been called.
 	rc = mosquitto_loop_stop(connection->mosq, force);
+
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
 			log(INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d successful\n", connection->profile_name, connection->name, rc);
@@ -1034,6 +1079,7 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 	connection->mosq = NULL;
 
 	if (connection->connected) {
+		//* mosq	A valid mosquitto instance.
 		int rc = mosquitto_disconnect(connection->mosq);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
@@ -1182,6 +1228,11 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 		return SWITCH_STATUS_GENERR;
 	}
 
+	//* mosq		A valid mosquitto instance.
+	//*	mid			A pointer to an int.  If not NULL, the function will set this to the message id of this particular message.
+	//*				This can be then used with the subscribe callback to determine when the message has been sent.
+	//*	sub			The subscription pattern.
+	//* qos			The requested Quality of Service for this subscription.
 	rc = mosquitto_subscribe(connection->mosq, topic->mid, topic->pattern, topic->qos);
 
 	switch (rc) {
@@ -1255,8 +1306,9 @@ void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *
 			log(DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_INVAL:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s invalid input parameters \n", profile->name, connection->name, topic->pattern);
+			log(WARNING, "Event handler: failed to publish to [%s][%s] %s invalid input parameters\n", profile->name, connection->name, topic->pattern);
 			if (connection->enable) {
+				log(WARNING, "Event handler: failed to publish to [%s][%s] %s trying to initialize the connection\n", profile->name, connection->name, topic->pattern);
 				connection_initialize(profile, connection);
 			}
 			break;

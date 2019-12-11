@@ -131,7 +131,6 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		}
 	}
 	switch_mutex_unlock(profile->subscribers_mutex);
-	switch_mutex_unlock(profile->mutex);
 
 	switch_mutex_lock(profile->connections_mutex);
 	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
@@ -150,6 +149,8 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		}
 	}
 	switch_mutex_unlock(profile->connections_mutex);
+	
+	switch_mutex_unlock(profile->mutex);
 	return status;
 }
 

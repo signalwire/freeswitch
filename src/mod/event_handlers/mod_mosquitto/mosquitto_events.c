@@ -65,17 +65,19 @@ void event_handler(switch_event_t *event)
 	const char *event_name = switch_event_get_header(event, "Event-Name");
 
 	if (!mosquitto_globals.running) {
+		log(ALERT, "Event handler: not processing because mod_mosquitto is being shutdown\n");
 		return;
 	}
 
 	if (event->bind_user_data) {
 		userdata = (mosquitto_event_userdata_t *)event->bind_user_data;
 	} else {
+		log(ERROR, "Event handler: not processing because there is no userdata (it is required)\n");
 		return;
 	}
 
 	if (!(profile = userdata->profile)) {
-		log(DEBUG, "Event handler: userdata has NULL profile\n");
+		log(DEBUG, "Event handler: userdata has NULL profile address\n");
 		return;
 	}
 
@@ -115,9 +117,9 @@ void event_handler(switch_event_t *event)
 			log(ERROR, "Cannot publish to topic %s because connection %s (profile %s) is disabled\n", topic->name, connection->name, profile->name);
 			return;
 		} else if (!connection->connected) {
-			log(ERROR, "Cannot publish to topic %s because connection %s (profile %s) is not connected\n", topic->name, connection->name, profile->name);
-			log(ERROR, "Confirm MQTT broker is reachable, then try command: mosquitto enable profile %s connection %s\n", profile->name, connection->name);
-			log(ERROR, "Attempting to automatically initialize the connection to profile %s connection %s\n", profile->name, connection->name);
+			log(ALERT, "Cannot publish to topic %s because connection %s (profile %s) is not connected\n", topic->name, connection->name, profile->name);
+			log(ALERT, "Confirm MQTT broker is reachable, then try command: mosquitto enable profile %s connection %s\n", profile->name, connection->name);
+			log(ALERT, "Attempting to automatically initialize the connection to profile %s connection %s\n", profile->name, connection->name);
 			connection_initialize(profile, connection);
 			return;
 		}
@@ -126,7 +128,18 @@ void event_handler(switch_event_t *event)
 	switch_event_serialize_json(event, &buf);
 	log(DEBUG, "event_handler(): %s\n", buf);
 
+	//* mosq		A valid mosquitto instance.
+	//* mid			Pointer to an int.  If not NULL, the function will set this to the message id of this particular message.
+	//*				This can be then used with the publish callback to determine when the message has been sent.
+	//*				Note that although the MQTT protocol doesn’t use message ids for messages with QoS=0,
+	//*				libmosquitto assigns them message ids so they can be tracked with this parameter.
+	//* topic		Null terminated string of the topic to publish to.
+	//* payloadlen	The size of the payload (bytes).  Valid values are between 0 and 268,435,455.
+	//* payload		Pointer to the data to send.  If payloadlen > 0 this must be a valid memory location.
+	//* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the message.
+	//* retain		Set to true to make the message retained.
 	rc = mosquitto_publish(connection->mosq, NULL, topic->pattern, strlen(buf)+1, buf, topic->qos, topic->retain);
+	
 	log(DEBUG, "Event %s published to Topic %s for profile %s publisher %s connection %s rc %d\n", event_name, topic->pattern, profile->name, publisher->name, connection->name, rc);
 	mosq_publish_results(profile, connection, topic, rc);
 	switch_safe_free(buf);
@@ -160,11 +173,6 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 	mosquitto_event_userdata_t *userdata = NULL;
 	mosquitto_connection_t *connection = NULL;
 
-	if (event->bound) {
-		log(DEBUG, "Event already bound: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
-		return SWITCH_STATUS_GENERR;
-	}
-
 	if (!profile) {
 		log(ERROR, "Profile not passed to bind_event()\n");
 		return SWITCH_STATUS_GENERR;
@@ -174,12 +182,19 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 		log(ERROR, "Profile %s publisher not passed to bind_event()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
+
 	if (!topic) {
 		log(ERROR, "Profile %s publisher %s topic not passed to bind_event()\n", profile->name, publisher->name);
 		return SWITCH_STATUS_GENERR;
 	}
+
 	if (!event) {
 		log(ERROR, "Profile %s publisher %s topic %s event not passed to bind_event()\n", profile->name, publisher->name, topic->name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (event->bound) {
+		log(WARNING, "Event already bound: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -190,7 +205,7 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 	userdata->topic = topic;
 
 	if (!(connection = locate_connection(profile, topic->connection_name))) {
-		log(ERROR, "Profile %s topic %s connection %s not found for bind_event()\n", profile->name, topic->name, topic->connection_name);
+		log(ERROR, "Profile %s publisher %s topic %s connection %s not found for bind_event()\n", profile->name, publisher->name, topic->name, topic->connection_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -199,7 +214,7 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 	snprintf(event->event_id, sizeof(event->event_id), "%s-%s-%s", profile->name, publisher->name, topic->name);
 
 	if ((switch_event_bind_removable(event->event_id, event->event_type, SWITCH_EVENT_SUBCLASS_ANY, event_handler, userdata, &event->node)) != SWITCH_STATUS_SUCCESS) {
-		log(ERROR, "failed to bind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(ERROR, "Failed to bind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		event->bound = SWITCH_FALSE;
 		return SWITCH_STATUS_GENERR;
 	} else {
@@ -231,7 +246,7 @@ switch_status_t unbind_event(mosquitto_profile_t *profile, mosquitto_publisher_t
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!event->bound) {
-		log(DEBUG, "Event already unbound: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
+		log(WARNING, "Event already unbound: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		return SWITCH_STATUS_GENERR;
 	}
 
