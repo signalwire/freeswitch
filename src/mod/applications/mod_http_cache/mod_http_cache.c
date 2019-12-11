@@ -160,7 +160,7 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t curl_data, cached_url_t *url, url_cache_t *cache);
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t *curl_data, cached_url_t *url, url_cache_t *cache);
 static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
@@ -1119,7 +1119,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		http_curl_setopts(&curl_handle, headers, get_data, url, cache);
+		http_curl_setopts(curl_handle, headers, &get_data, url, cache);
 		
 		curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
@@ -1189,7 +1189,7 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to delete %s via http_cache\n", url->url);
-	http_curl_setopts(&curl_handle, headers, del_data, url, cache);
+	http_curl_setopts(curl_handle, headers, &del_data, url, cache);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 
 	curl_status = switch_curl_easy_perform(curl_handle);
@@ -1245,7 +1245,7 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", exists_data.url->url);
-	http_curl_setopts(&curl_handle, headers, exists_data, url, cache);
+	http_curl_setopts(curl_handle, headers, &exists_data, url, cache);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 
 	curl_status = switch_curl_easy_perform(curl_handle);
@@ -1280,7 +1280,7 @@ done:
  * @return SWITCH_STATUS_SUCCESS if it exists 
  * Will want to make this generic for head & delete & maybe get together but for now just trying to add functionality
  */
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t curl_data, cached_url_t *url, url_cache_t *cache)
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, http_get_data_t *curl_data, cached_url_t *url, url_cache_t *cache)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	/* find profile for domain */
@@ -1291,9 +1291,9 @@ static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_s
 	if (headers) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, curl_data.url->url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url->url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &curl_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) curl_data);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");

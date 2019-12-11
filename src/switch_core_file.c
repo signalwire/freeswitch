@@ -97,7 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_exists(const char *file_path, s
 	else {
 		status = switch_file_exists(file_path, pool);
 	}
-	if (new_pool) {
+	if (new_pool != NULL) {
 		switch_core_destroy_memory_pool(&new_pool);
 	}
 	return status;
@@ -142,7 +142,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_remove( const char *file_path, 
 	} else {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	if (new_pool) {
+	if (new_pool != NULL) {
 		switch_core_destroy_memory_pool(&new_pool);
 	}
 	return status;
