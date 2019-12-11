@@ -436,8 +436,27 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, in
 
 void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
 {
-	/* Print all log messages regardless of level. */
-	log(DEBUG, "mosq_log_callback(): %s\n", str);
+	switch_log_level_t	log_level = DEBUG;
+
+	switch(level) {
+		case MOSQ_LOG_INFO:
+			log_level = INFO;
+			break;
+		case MOSQ_LOG_NOTICE:
+			log_level = NOTICE;
+			break;
+		case MOSQ_LOG_WARNING:
+			log_level = WARNING;
+			break;
+		case MOSQ_LOG_ERR:
+			log_level = ERROR;
+			break;
+		case MOSQ_LOG_DEBUG:
+			log_level = DEBUG;
+			break;
+	}
+	/* Print log messages after having converted the mosquitto levels into FreeSWITCH levels */
+	log(log_level, "mosq_log_callback(): %s\n", str);
 }
 
 
@@ -981,7 +1000,7 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	switch_bool_t clean_session = connection->clean_session;
 
 	if (connection->mosq) {
-		log(ERROR, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
+		log(WARNING, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
