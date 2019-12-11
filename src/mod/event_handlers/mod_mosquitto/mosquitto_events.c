@@ -35,6 +35,8 @@
  *
  */
 
+#include <switch.h>
+
 #include "mod_mosquitto.h"
 #include "mosquitto_utils.h"
 #include "mosquitto_events.h"

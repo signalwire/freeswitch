@@ -38,9 +38,6 @@
 #ifndef MOD_MOSQUITTO_H
 #define MOD_MOSQUITTO_H
 
-#include <switch.h>
-#include <switch_utils.h>
-
 #define DEBUG SWITCH_LOG_DEBUG
 #define INFO SWITCH_LOG_INFO
 #define NOTICE SWITCH_LOG_NOTICE

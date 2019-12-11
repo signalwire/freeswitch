@@ -65,7 +65,7 @@ SETTINGS
 	enable-connections	- Default setting if unspecified in the configuration file
 	enable-topics		- Default setting if unspecified in the configuration file
 	event-queue-size	- Number of pending events that the event queue can hold
-	unique-string-length- Lengh of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
+	unique-string-length- Length of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
 
 PROFILE
 	name				- Name of the profile. Each profile must have a unique name.

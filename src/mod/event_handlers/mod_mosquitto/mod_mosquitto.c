@@ -34,7 +34,7 @@
  * Mosquitto https://mosquitto.org/
  *
  */
-
+#include <switch.h>
 
 #include "mod_mosquitto.h"
 #include "mosquitto_config.h"
