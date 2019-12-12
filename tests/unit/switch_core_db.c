@@ -34,7 +34,7 @@
 
 #include <test/switch_test.h>
 
-FST_CORE_BEGIN("./conf")
+FST_CORE_DB_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_core_db)
 	{
