@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  *
- * Norm Brandinger <norm@goes.com>
+ * Norm Brandinger <n.brandinger@gmail.com>
  *
  * mod_mosquitto -- Interface to an MQTT broker using Mosquitto
  *				  Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto API library
@@ -653,7 +653,7 @@ SWITCH_STANDARD_API(exec_api_cmd)
 {
 	char *argv[1024] = { 0 };
 	int argc = 0;
-	char *mycmd = 0;
+	char *mycmd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mosquitto_command_t func = NULL;
 
@@ -716,7 +716,7 @@ SWITCH_STANDARD_API(exec_api_cmd)
 
 done:
 	switch_safe_free(mycmd)
-		return status;
+	return status;
 
 }
 

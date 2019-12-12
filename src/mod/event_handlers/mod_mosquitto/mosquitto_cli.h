@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  *
- * Norm Brandinger <norm@goes.com>
+ * Norm Brandinger <n.brandinger@gmail.com>
  *
  * mod_mosquitto -- Interface to an MQTT broker using Mosquitto
  *				  Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto API library
