@@ -334,9 +334,9 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 	}
 
 	log(DEBUG, "profile:%s connection:%s rc:%d disconnected", profile->name, connection->name, rc);
-	connection->connected = SWITCH_FALSE;
-	mosq_loop_stop(connection, SWITCH_TRUE);
-	//log(DEBUG, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
+	//connection->connected = SWITCH_FALSE;
+	//mosq_loop_stop(connection, SWITCH_TRUE);
+	log(ALERT, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
 }
 
 
@@ -1223,9 +1223,15 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 		log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) is invalid\n", topic->name, topic->connection_name, profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
+
 	if (!connection->mosq) {
-		log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) mosq is NULL\n", topic->name, connection->name, profile->name);
-		return SWITCH_STATUS_GENERR;
+		if (connection->enable) {
+			log(WARNING, "Trying to initialize the connection\n");
+			connection_initialize(profile, connection);
+		} else {
+			log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) mosq is NULL\n", topic->name, connection->name, profile->name)
+			return SWITCH_STATUS_GENERR;
+		}	
 	}
 
 	//* mosq		A valid mosquitto instance.
