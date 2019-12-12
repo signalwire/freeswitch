@@ -4909,6 +4909,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 	} else {
+		const char *sip_destination_prefix = switch_str_nil(switch_channel_get_variable(o_channel, "sip_destination_prefix"));
+
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
 			cause = SWITCH_CAUSE_INVALID_URL;
@@ -4932,13 +4934,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			profile_name = profile->domain_name;
 		}
 
-		if (!strncasecmp(dest, "sip:", 4) || !strncasecmp(dest, "sips:", 5)) {
-			char *c;
-			tech_pvt->dest = switch_core_session_strdup(nsession, dest);
-			if ((c = strchr(tech_pvt->dest, ':'))) {
-				c++;
-				tech_pvt->e_dest = switch_core_session_strdup(nsession, c);
-			}
+		if (!strncasecmp(dest, "sip:", 4)) {
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest + 4);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", sip_destination_prefix, tech_pvt->e_dest);
+		} else if (!strncasecmp(dest, "sips:", 5)) {
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest + 5);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sips:%s%s", sip_destination_prefix, tech_pvt->e_dest);
 		} else if (!mod && !strchr(dest, '@') && (host = strchr(dest, '%'))) {
 			char buf[1024];
 			*host = '@';
@@ -4984,9 +4985,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				}
 			}
 
-			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", sip_destination_prefix, dest);
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
-			switch_snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 		}
 	}
 
