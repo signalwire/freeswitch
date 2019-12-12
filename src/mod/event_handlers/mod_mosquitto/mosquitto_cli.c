@@ -556,13 +556,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			stream->write_function(stream, "		reconnect_delay_max: %d\n", connection->reconnect_delay_max);
 			stream->write_function(stream, "		reconnect_exponential_backoff: %s\n", connection->reconnect_exponential_backoff ? "True" : "False");
 			stream->write_function(stream, "		tls\n");
-			if (connection->tls.enable == TLS_CERT) {
-				stream->write_function(stream, "		  enable: certificate\n");
-			} else if (connection->tls.enable == TLS_PSK) {
-				stream->write_function(stream, "		  enable: psk\n");
-			} else {
-				stream->write_function(stream, "		  enable: NULL\n");
-			}
+			stream->write_function(stream, "		  enable: %s\n", connection->tls.enable ? "True" : "False");
+			stream->write_function(stream, "		  support: %s\n", connection->tls.support);
 			stream->write_function(stream, "		  port: %d\n", connection->tls.port);
 			stream->write_function(stream, "		  cafile: %s\n", connection->tls.cafile);
 			stream->write_function(stream, "		  capath: %s\n", connection->tls.capath);

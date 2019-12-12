@@ -57,9 +57,6 @@
 #define SSL_VERIFY_PEER	1
 #endif
 
-#define TLS_CERT		2
-#define TLS_PSK			3
-
 #define MOSQUITTO_CONFIG_FILE		"mosquitto.conf"
 #define MOSQUITTO_DEFAULT_PROFILE	"default"
 #define EVENT_QUEUE_SIZE			50000
@@ -163,7 +160,8 @@ struct mosquitto_publisher_s {
 };
 
 struct mosquitto_tls_s {
-	int	enable;		// Not a bool because three values are allowed: 'certificate', 'psk', or NULL
+	switch_bool_t enable;
+	char *support;
 	switch_bool_t advanced_options;
 	uint16_t port;
 	char *cafile;

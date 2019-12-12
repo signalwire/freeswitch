@@ -949,11 +949,11 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	connection->retry_count = 0;
 	port = connection->port;
 
-	if (connection->tls.enable != SWITCH_FALSE) {
-		if (connection->tls.enable == TLS_CERT) {
+	if (connection->tls.enable) {
+		if (!strncasecmp(connection->tls.support, "certificate", 11)) {
 			mosq_tls_set(connection);
-		} else if (connection->tls.enable == TLS_PSK) {
-				mosq_tls_psk_set(connection);
+		} else if (!strncasecmp(connection->tls.support, "psk", 3)) {
+			mosq_tls_psk_set(connection);
 		}
 		if (connection->tls.port) {
 			port = connection->tls.port;

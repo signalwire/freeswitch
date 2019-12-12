@@ -989,6 +989,7 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 
 	//* Set default values for all the possible settings
 	connection->tls.enable = SWITCH_FALSE;
+	connection->tls.support = NULL;
 	connection->tls.advanced_options = SWITCH_FALSE;
 	connection->tls.cafile = NULL;
 	connection->tls.capath = NULL;
@@ -1009,10 +1010,12 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 		val = (char *) switch_xml_attr_soft(param, "value");
 
 		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
-			if (!strncasecmp(val, "certificate", 11)) {
-				connection->tls.enable = TLS_CERT;
-			} else if (!strncasecmp(val, "psk", 3)) {
-				connection->tls.enable = TLS_PSK;
+			connection->tls.enable = switch_true(val);
+		} else if (!strncasecmp(var, "support", 7)) {
+			if (!strncasecmp(val, "certificate", 11))  {
+				connection->tls.support = switch_core_strdup(profile->pool, val);
+			} else if (!strncasecmp(var, "psk", 3))  {
+				connection->tls.support = switch_core_strdup(profile->pool, val);
 			}
 		} else if (!strncasecmp(var, "port", 4) && !zstr(val)) {
 			connection->tls.port = atoi(val);

@@ -133,8 +133,8 @@ CONNECTION
 	reconnect_exponsntial_backoff - Use exponential backoff between reconnect attempts (true/false).
 
 	TLS
-		enable			- Should SSL/TLS be enabled for this connection
-						- 'certificate': The connection will be configured for certificated based SSL/TLS support.
+		enable			- Enabled (true) / disabled (false): Should SSL/TLS be enabled for this connection
+		support			- 'certificate': The connection will be configured for certificated based SSL/TLS support.
 						- 'pks': The connection will be configured for pre-shared-key based TLS support.
 						- If not specified, the connection will NOT be configured for SSL/TLS and none of the settings below will have any effect.
 
@@ -254,8 +254,7 @@ An example configuration file:
 					<param name="reconnect_delay_max" value="10"/>
 					<param name="reconnect_exponential_backoff" value="false"/>
 					<tls>
-						<!-- <param name="enable" value="psk"/> -->
-						<!-- <param name="enable" value="certificate"/> -->
+						<param name="enable" value="true"/>
 						<param name="enable" value="certificate"/>
 						<param name="advanced_options" value="true"/>
 						<param name="port" value="8883"/>
