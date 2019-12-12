@@ -624,6 +624,7 @@ static switch_status_t parse_subscribers(switch_xml_t xprofile, mosquitto_profil
 			}
 
 			subscriber = add_subscriber(profile, name);
+			subscriber->enable = SWITCH_FALSE;
 
 			for (param = switch_xml_child(xsubscriber, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -677,6 +678,7 @@ static switch_status_t parse_publishers(switch_xml_t xprofile, mosquitto_profile
 			}
 
 			publisher = add_publisher(profile, name);
+			publisher->enable = SWITCH_FALSE;
 
 			for (param = switch_xml_child(xpublisher, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -1089,6 +1091,11 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
 			}
 
 			topic = add_publisher_topic(profile, publisher, name);
+			topic->enable = SWITCH_FALSE;
+			topic->connection_name = NULL;
+			topic->pattern = NULL;
+			topic->qos = 0;
+			topic->retain = SWITCH_FALSE;
 
 			for (param = switch_xml_child(xtopic, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -1259,6 +1266,13 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 			}
 
 			topic = add_subscriber_topic(profile, subscriber, name);
+			topic->enable = SWITCH_FALSE;
+			topic->connection_name = NULL;
+			topic->pattern = NULL;
+			topic->qos = 0;
+			topic->retain = SWITCH_FALSE;
+			topic->originate_authorized = SWITCH_FALSE;
+			topic->bgapi_authorized = SWITCH_FALSE;
 
 			for (param = switch_xml_child(xtopic, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -1329,6 +1343,23 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 			}
 
 			connection = add_connection(profile, name);
+			connection->enable = SWITCH_FALSE;
+			connection->host = NULL;
+			connection->port = 0;
+			connection->keepalive = 0;
+			connection->username = NULL;
+			connection->password = NULL;
+			connection->bind_address = NULL;
+			connection->client_id = NULL;
+			connection->clean_session = SWITCH_FALSE;
+			connection->retries = 0;
+			connection->max_inflight_messages = 0;
+			connection->reconnect_delay = 0;
+			connection->reconnect_delay_max = 0;
+			connection->reconnect_exponential_backoff = SWITCH_FALSE;
+			connection->protocol_version = NULL;
+			connection->receive_maximum = 0;
+			connection->send_maximum = 0;
 
 			parse_connection_tls(profile, connection, switch_xml_child(xconnection, "tls"));
 			parse_connection_will(profile, connection, switch_xml_child(xconnection, "will"));
@@ -1442,6 +1473,7 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 			}
 
 			profile = add_profile(name);
+			profile->enable = SWITCH_FALSE;
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;
