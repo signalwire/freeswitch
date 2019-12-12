@@ -138,10 +138,11 @@ void event_handler(switch_event_t *event)
 	//* payload		Pointer to the data to send.  If payloadlen > 0 this must be a valid memory location.
 	//* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the message.
 	//* retain		Set to true to make the message retained.
-	rc = mosquitto_publish(connection->mosq, NULL, topic->pattern, strlen(buf)+1, buf, topic->qos, topic->retain);
-	
-	log(DEBUG, "Event %s published to Topic %s for profile %s publisher %s connection %s rc %d\n", event_name, topic->pattern, profile->name, publisher->name, connection->name, rc);
+	rc = mosquitto_publish(connection->mosq, &topic->mid, topic->pattern, strlen(buf)+1, buf, topic->qos, topic->retain);
+
 	mosq_publish_results(profile, connection, topic, rc);
+	log(INFO, "Event %s queued to Topic %s for profile %s connection %s publisher %s (mid: %d) rc %d\n", event_name, topic->pattern, profile->name, connection->name, publisher->name, topic->mid, rc);
+
 	switch_safe_free(buf);
 
 	if (rc == 0) {

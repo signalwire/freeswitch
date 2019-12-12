@@ -125,7 +125,7 @@ struct mosquitto_topic_s {
 	switch_bool_t enable;
 	switch_bool_t subscribed;
 	char *pattern;
-	int *mid;
+	int mid;
 	int qos;
 	switch_bool_t retain;
 	char *connection_name;
@@ -151,10 +151,8 @@ struct mosquitto_publisher_s {
 	char *profile_name;
 	switch_mutex_t *mutex;
 	switch_thread_rwlock_t *rwlock;
-
 	switch_mutex_t *topics_mutex;
 	switch_hash_t *topics;
-
 	switch_bool_t enable;
 	unsigned count;
 };

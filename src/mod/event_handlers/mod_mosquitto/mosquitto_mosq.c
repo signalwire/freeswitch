@@ -352,7 +352,15 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 
 void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_id)
 {
-	log(DEBUG, "published message id: %d", message_id);
+	mosquitto_mosq_userdata_t *userdata;
+	mosquitto_profile_t *profile;
+	mosquitto_connection_t *connection;
+
+	userdata = (mosquitto_mosq_userdata_t *)user_data;
+	profile = userdata->profile;
+	connection = userdata->connection;
+
+	log(INFO, "mosq_publish_callback(): profile: %s connection: %s published (mid: %d)", profile->name, connection->name, message_id);
 }
 
 
@@ -413,12 +421,20 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
  * \param[in]   *granted_qos	Granted Quality of Service
  */
 
-void mosq_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int qos_count, const int *granted_qos)
+void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, int qos_count, const int *granted_qos)
 {
+	mosquitto_mosq_userdata_t *userdata;
+	mosquitto_profile_t *profile;
+	mosquitto_connection_t *connection;
 
-	log(DEBUG, "mosq_subscribe_callback(): Subscribed (mid: %d): %d", mid, granted_qos[0]);
+	userdata = (mosquitto_mosq_userdata_t *)user_data;
+	profile = userdata->profile;
+	connection = userdata->connection;
+
+	log(INFO, "mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d", profile->name, connection->name, mid, granted_qos[0]);
+	
 	for(int i=1; i<qos_count; i++){
-		log(DEBUG, ", %d", granted_qos[i]);
+		log(INFO, ", %d", granted_qos[i]);
 	}
 }
 
@@ -1239,11 +1255,11 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 	//*				This can be then used with the subscribe callback to determine when the message has been sent.
 	//*	sub			The subscription pattern.
 	//* qos			The requested Quality of Service for this subscription.
-	rc = mosquitto_subscribe(connection->mosq, topic->mid, topic->pattern, topic->qos);
+	rc = mosquitto_subscribe(connection->mosq, &topic->mid, topic->pattern, topic->qos);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "profile %s subscriber %s connection %s topic %s subscribed to pattern: %s\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(INFO, "profile %s subscriber %s connection %s topic %s queued to pattern: %s (mid: %d)\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern, topic->mid);
 			topic->subscribed = SWITCH_TRUE;
 			break;
 		case MOSQ_ERR_INVAL:
