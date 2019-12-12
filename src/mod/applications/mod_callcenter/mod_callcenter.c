@@ -53,6 +53,7 @@ SWITCH_MODULE_DEFINITION(mod_callcenter, mod_callcenter_load, mod_callcenter_shu
 
 static switch_status_t load_agent(const char *agent_name, switch_event_t *params, switch_xml_t x_agents_cfg);
 static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params, switch_xml_t x_tiers_cfg);
+
 static const char *global_cf = "callcenter.conf";
 
 struct cc_status_table {
@@ -258,6 +259,8 @@ static char tiers_sql[] =
  */
 "   level    INTEGER NOT NULL DEFAULT 1,\n"
 "   position INTEGER NOT NULL DEFAULT 1\n" ");\n";
+
+cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, size_t ret_result_size);
 
 static switch_xml_config_int_options_t config_int_0_86400 = { SWITCH_TRUE, 0, SWITCH_TRUE, 86400 };
 
@@ -930,22 +933,60 @@ done:
 cc_status_t cc_agent_del(const char *agent)
 {
 	switch_event_t *event;
-	cc_status_t result;
+	cc_status_t result = CC_STATUS_FALSE;
 
 	char *sql;
 	int deleted_row_count;
+	char ret[64];
+	cc_status_t res;
 
-	sql = switch_mprintf("DELETE FROM tiers WHERE agent = '%q';", agent);
-	cc_execute_sql(NULL, sql, NULL);
-	switch_safe_free(sql);
+	/* Check to see if agent exist and if status is Logged Out */
+	switch (res = cc_agent_get("status", agent, ret, sizeof(ret))) {
+		case CC_STATUS_SUCCESS:
+			if (strcasecmp(cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), ret)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s status [%s] is not Waiting, cannot be deleted\n", ret, agent);
+				result = CC_STATUS_AGENT_INVALID_STATUS;
 
-	sql = switch_mprintf("DELETE FROM agents WHERE name = '%q';",	agent);
+				goto done;
+			}
+			break;
+		case CC_STATUS_AGENT_NOT_FOUND:
+			result = CC_STATUS_AGENT_NOT_FOUND;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s doesn't exist, cannot be deleted\n", agent);
+			goto done;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown error code occur %d\n", (int)res);
+			goto done;
+	}
+
+	/* Check to see if agent state is Waiting */
+	switch (res = cc_agent_get("state", agent, ret, sizeof(ret))) {
+		case CC_STATUS_SUCCESS:
+			if (strcasecmp(cc_agent_status2str(CC_AGENT_STATE_WAITING), ret)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s state [%s] is not Waiting, cannot be deleted\n", ret, agent);
+				result = CC_STATUS_AGENT_INVALID_STATE;
+				goto done;
+			}
+			break;
+		case CC_STATUS_AGENT_NOT_FOUND:
+			result = CC_STATUS_AGENT_NOT_FOUND;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s doesn't exist, cannot be deleted\n", agent);
+			goto done;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown error code occur %d\n", (int)res);
+			goto done;
+	}
+
+	sql = switch_mprintf("DELETE FROM agents WHERE name = '%q' AND status = '%s' AND state = '%s';", agent, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_status2str(CC_AGENT_STATE_WAITING));
 	deleted_row_count = cc_execute_sql_affected_rows(sql);
 	switch_safe_free(sql);
 
-  if (deleted_row_count > 0) {
+	if (deleted_row_count > 0) {
+		sql = switch_mprintf("DELETE FROM tiers WHERE agent = '%q';", agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s\n", agent);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted Agent %s and associated tiers\n", agent);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
@@ -955,10 +996,10 @@ cc_status_t cc_agent_del(const char *agent)
 		result = CC_STATUS_SUCCESS;
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s not found, can not be deleted\n", agent);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s status or state changed, cannot be deleted\n", agent);
 		result = CC_STATUS_AGENT_NOT_FOUND;
 	}
-
+done:
 	return result;
 }
 
