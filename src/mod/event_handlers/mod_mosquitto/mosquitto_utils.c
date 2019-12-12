@@ -65,10 +65,10 @@ switch_status_t initialize_profiles(void)
 		switch_core_hash_this(profiles_hi, NULL, NULL, &val);
 		profile = (mosquitto_profile_t *)val;
 		if (profile->enable) {
-			log(DEBUG, "profile:%s activation in progress\n", profile->name);
+			log(INFO, "profile:%s activation in progress\n", profile->name);
 			status = profile_activate(profile);
 		} else {
-			log(DEBUG, "profile:%s deactivation in progress\n", profile->name);
+			log(INFO, "profile:%s deactivation in progress\n", profile->name);
 			status = profile_deactivate(profile);
 		}
 	}
@@ -107,10 +107,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(publishers_hi, NULL, NULL, &val);
 		publisher = (mosquitto_publisher_t *)val;
 		if (publisher->enable) {
-			log(DEBUG, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
+			log(INFO, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
 			status = publisher_activate(profile, publisher);
 		} else {
-			log(DEBUG, "profile:%s publisher:%s deactivation in progress\n", profile->name, publisher->name);
+			log(INFO, "profile:%s publisher:%s deactivation in progress\n", profile->name, publisher->name);
 			status = publisher_deactivate(profile, publisher);
 		}
 	}
@@ -123,10 +123,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
 		subscriber = (mosquitto_subscriber_t *)val;
 		if (subscriber->enable) {
-			log(DEBUG, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+			log(INFO, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
 			status = subscriber_activate(profile, subscriber);
 		} else {
-			log(DEBUG, "profile:%s subscriber:%s deactivation in progress\n", profile->name, subscriber->name);
+			log(INFO, "profile:%s subscriber:%s deactivation in progress\n", profile->name, subscriber->name);
 			status = subscriber_deactivate(profile, subscriber);
 		}
 	}
@@ -139,10 +139,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(connections_hi, NULL, NULL, &val);
 		connection = (mosquitto_connection_t *)val;
 		if (connection->enable) {
-			log(DEBUG, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+			log(INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
 			status = client_connect(profile, connection);
 		} else {
-			log(DEBUG, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+			log(INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
 			status = mosq_disconnect(connection);
 			connection->userdata = NULL;
 			connection->mosq = NULL;
@@ -174,7 +174,7 @@ switch_status_t profile_deactivate(mosquitto_profile_t *profile)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(DEBUG, "profile:%s deactivate in progress\n", profile->name);
+	log(INFO, "profile:%s deactivate in progress\n", profile->name);
 	return status;
 }
 
@@ -204,7 +204,7 @@ switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publi
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(DEBUG, "Profile %s publisher %s activation in progress\n", profile->name, publisher->name);
+	log(INFO, "Profile %s publisher %s activation in progress\n", profile->name, publisher->name);
 
 	switch_mutex_lock(publisher->topics_mutex);
 	for (switch_hash_index_t *topics_hi = switch_core_hash_first(publisher->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
@@ -353,7 +353,7 @@ switch_status_t publisher_deactivate(mosquitto_profile_t *profile, mosquitto_pub
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(DEBUG, "profile:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
+	log(INFO, "profile:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
 	return status;
 }
 
@@ -438,7 +438,7 @@ switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitt
 	}
 
 	if (topic->enable) {
-		log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+		log(INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
 		status = mosq_subscribe(profile, subscriber, topic);
 	}
 
@@ -476,7 +476,7 @@ switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosqui
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(DEBUG, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+	log(INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
 
 	return status;
 }
@@ -506,7 +506,7 @@ switch_status_t subscriber_deactivate(mosquitto_profile_t *profile, mosquitto_su
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(DEBUG, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
+	log(INFO, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
 	return status;
 }
 
@@ -642,10 +642,10 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	}
 
 	if (connection->enable) {
-		log(DEBUG, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+		log(INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
 		status = client_connect(profile, connection);
 	} else {
-		log(DEBUG, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+		log(INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
 		status = mosq_disconnect(connection);
 		connection->userdata = NULL;
 		connection->mosq = NULL;

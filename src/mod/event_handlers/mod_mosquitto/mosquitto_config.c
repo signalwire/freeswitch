@@ -277,7 +277,7 @@ switch_status_t remove_profile(const char *name)
 			void *val;
 			switch_core_hash_this(topics_hi, NULL, NULL, &val);
 			topic = (mosquitto_topic_t *)val;
-			log(DEBUG, "shutting down subscriber topic: %s\n", topic->name);
+			log(WARNING, "shutting down subscriber topic: %s\n", topic->name);
 			subscriber_topic_deactivate(profile, subscriber, topic);
 			switch_core_hash_delete(subscriber->topics, topic->name);
 		}
@@ -891,7 +891,7 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 	}
 
 	if (!(event = switch_core_hash_find_locked(topic->events, name, topic->events_mutex))) {
-		log(DEBUG, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
+		log(INFO, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
 	}
 
 	return event;
@@ -938,7 +938,6 @@ static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosqu
 		var = (char *) switch_xml_attr_soft(param, "name");
 		val = (char *) switch_xml_attr_soft(param, "value");
 
-		log(DEBUG,"var:%s val:%s\n", var, val);
 		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
 			connection->will.enable = switch_true(val);
 		} else if (!strncasecmp(var, "topic", 5) && !zstr(val)) {
@@ -1004,7 +1003,6 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 		var = (char *) switch_xml_attr_soft(param, "name");
 		val = (char *) switch_xml_attr_soft(param, "value");
 
-		log(DEBUG,"var:%s val:%s\n", var, val);
 		if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
 			if (!strncasecmp(val, "certificate", 11)) {
 				connection->tls.enable = TLS_CERT;
@@ -1076,7 +1074,6 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
 	}
 
 	if ((xtopics = switch_xml_child(xpublisher, "topics"))) {
-		log(DEBUG, "parse_publisher_topics() found topic\n");
 		for (xtopic = switch_xml_child(xtopics, "topic"); xtopic; xtopic = xtopic->next) {
 			mosquitto_topic_t *topic = NULL;
 			const char *name = switch_xml_attr(xtopic, "name");
@@ -1222,7 +1219,7 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 	}
 
 	if (!(topic = switch_core_hash_find_locked(subscriber->topics, name, subscriber->topics_mutex))) {
-		log(DEBUG, "Unable to locate profile %s subscriber %s topic %s\n", subscriber->profile_name, subscriber->name, name);
+		log(INFO, "Unable to locate profile %s subscriber %s topic %s\n", subscriber->profile_name, subscriber->name, name);
 	}
 
 	return topic;
@@ -1247,7 +1244,6 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if ((xtopics = switch_xml_child(xsubscriber, "topics"))) {
-		log(DEBUG, "parse_subscriber_topics() found topic\n");
 		for (xtopic = switch_xml_child(xtopics, "topic"); xtopic; xtopic = xtopic->next) {
 			mosquitto_topic_t *topic = NULL;
 			const char *name = switch_xml_attr(xtopic, "name");

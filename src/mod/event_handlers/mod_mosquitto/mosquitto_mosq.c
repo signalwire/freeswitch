@@ -1122,7 +1122,7 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	switch_bool_t clean_session = connection->clean_session;
 
 	if (connection->mosq) {
-		log(WARNING, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
+		log(DEBUG, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
