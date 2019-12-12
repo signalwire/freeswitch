@@ -36,6 +36,9 @@
  */
 
 #include <switch.h>
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
 
 #include "mod_mosquitto.h"
 #include "mosquitto_config.h"

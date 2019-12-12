@@ -52,8 +52,11 @@
 		 switch_log_printf(SWITCH_CHANNEL_LOG, (severity), __VA_ARGS__); \
 	}
 
+#ifndef HAVE_OPENSSL
 #define SSL_VERIFY_NONE	0
 #define SSL_VERIFY_PEER	1
+#endif
+
 #define TLS_CERT		2
 #define TLS_PSK			3
 
