@@ -4909,7 +4909,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 	} else {
-		const char *sip_destination_prefix = switch_str_nil(switch_channel_get_variable(o_channel, "sip_destination_prefix"));
+		const char *sip_destination_prefix = switch_str_nil(switch_event_get_header(var_event, "sip_destination_prefix"));
 
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
