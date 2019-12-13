@@ -121,7 +121,6 @@ struct mosquitto_topic_s {
 
 	switch_mutex_t *events_mutex;
 	switch_hash_t *events;
-
 	switch_bool_t enable;
 	switch_bool_t subscribed;
 	char *pattern;

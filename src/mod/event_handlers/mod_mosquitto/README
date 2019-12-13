@@ -210,13 +210,49 @@ TOPIC
 	bgapi_authorized	- Are bgapi commands authorized (true) / not authorized (false)
 
 
+An empty configuration file showing the structure:
+Note: Multiple profiles, connections, publishers, subscribers and topics are allowed.
+
+<configuration>
+	<settings>
+	</settings>
+	<profiles>
+		<profile>
+			<connections>
+				<connection>
+					<tls>
+					</tls>
+					<will>
+					</will>
+				</connection>
+			</connections>
+			<publishers>
+				<publisher>
+					<topics>
+						<topic>
+						</topic>
+					</topics>
+				</publisher>
+			</publishers>
+			<subscribers>
+				<subscriber>
+					<topics>
+						<topic>
+						</topic>
+					</topics>
+				</subscriber>
+			</subscribers>
+		</profile>
+	</profiles>
+</configuration>
+
+
 An example configuration file:
 
 <configuration name="mosquitto.conf" description="mod_mosquitto">
 	<settings>
 		<!-- Default Log Level - value is one of: debug,info,notice,warning,error,critical,alert,console -->
 		<param name="loglevel" value="debug"/>
-
 		<param name="enable-profiles" value="true"/>
 		<param name="enable-publishers" value="true"/>
 		<param name="enable-subscribers" value="true"/>
@@ -240,12 +276,12 @@ An example configuration file:
 					<param name="keepalive" value="10"/>
 					<param name="username" value="[REDACTED]"/>
 					<param name="password" value="[REDACTED]"/>
-					<!-- mod_mosquitto will generate a random client_id of none is specified -->
+					<!-- mod_mosquitto will generate a random client_id if not specified -->
 					<!-- FreeSWITCH-Hostname can be used to set the client_id to the FreeSWITCH hostname -->
 					<!-- FreeSWITCH-Switchname can be used to set the client_id to the FreeSWITCH switchname -->
-					<!-- FreeSWITCH-Switchname-Unique or FreeSWITCH-Hostname-Unique can be used to create a more unique client_id -->
-					<!-- This is done by appending unique characters after switchname or hostname -->
-					<!-- The number of characters appended is defined by the Setting 'unique-string-length' with a max of 49 characters -->
+					<!-- FreeSWITCH-Switchname-Unique or FreeSWITCH-Hostname-Unique can be used to create a unique client_id -->
+					<!-- This is done by appending random characters after the FreeSWITCH-Hostname or FreeSWITCH-Switchname -->
+					<!-- The number of random characters appended is defined by setting 'unique-string-length' (see above) -->
 					<!-- WARNING: Do not use the same client_id more than once per MQTT broker, this includes across profiles -->
 					<param name="client_id" value="FreeSWITCH-Switchname-Unique"/>
 					<param name="clean_session" value="false"/>
@@ -321,7 +357,7 @@ An example configuration file:
 							<param name="pattern" value="FreeSWITCH/command"/>
 							<param name="qos" value="0"/>
 							<!-- WARNING: THE FOLLOWING TWO SETTINGS WILL ALLOW THE MQTT BROKER TO INITIATE PHONE CALLS -->
-							<!-- WARNING: Allowing either of these permissons WILL allow phone calls to be initiated by the MQTT broker to FreeSWITCH. -->
+							<!-- WARNING: Setting either of these permissons to true WILL allow phone calls to be initiated by the MQTT broker to FreeSWITCH. -->
 							<!-- WARNING: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
 							<!-- WARNING: REPEATED: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
 							<!-- WARNING: REPEATED A THIRD TIME: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
