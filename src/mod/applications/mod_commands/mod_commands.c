@@ -4930,10 +4930,12 @@ SWITCH_STANDARD_API(break_function)
 		}
 	}
 
-
-
 	if (switch_channel_test_flag(channel, CF_BROADCAST)) {
 		switch_channel_stop_broadcast(channel);
+
+		if (all) {
+			switch_channel_set_flag(channel, CF_BREAK_ALL);
+		}
 	} else {
 		switch_channel_set_flag_value(channel, CF_BREAK, all ? 2 : 1);
 	}
