@@ -85,7 +85,7 @@ void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if ((status = switch_api_execute(job->cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
-		reply = stream.data;
+		reply = (char *)stream.data;
 	} else {
 		freply = switch_mprintf("%s: Command not found!\n", job->cmd);
 		reply = freply;
@@ -144,8 +144,7 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 	//char *cid_number = NULL;
 	char *aleg = NULL;
 	char *bleg = NULL;
-	char *dp = "XML";
-	char *context = "default";
+
 
 	mosquitto_profile_t *profile = userdata->profile;
 	mosquitto_connection_t *connection = userdata->connection;
@@ -213,6 +212,8 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 		switch_channel_set_caller_extension(channel, extension);
 		switch_channel_set_state(channel, CS_EXECUTE);
 	} else {
+		char *dp = "XML";
+		char *context = "default";
 		switch_ivr_session_transfer(session, bleg, dp, context);
 	}
 
@@ -241,11 +242,11 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
-	const char *p, *arg = payload_string;
+	const char *arg = payload_string;
 	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 
 	if (!strncasecmp(payload_string, "uuid:", 5)) {
-		p = payload_string + 5;
+		const char *p = payload_string + 5;
 		if ((arg = strchr(p, ' ')) && *arg++) {
 			switch_copy_string(my_uuid, p, arg - p);
 		}
@@ -257,7 +258,7 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 	}
 
 	switch_core_new_memory_pool(&pool);
-	job = switch_core_alloc(pool, sizeof(*job));
+	job = (mosquitto_bgapi_job_t *)switch_core_alloc(pool, sizeof(*job));
 	job->cmd = switch_core_strdup(pool, arg);
 	job->pool = pool;
 
@@ -653,10 +654,9 @@ switch_status_t mosq_message_retry_set(mosquitto_connection_t *connection)
 switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int rc;
 
 	if (connection->max_inflight_messages > 0) {
-		rc = mosquitto_max_inflight_messages_set(connection->mosq, connection->max_inflight_messages);
+		int rc = mosquitto_max_inflight_messages_set(connection->mosq, connection->max_inflight_messages);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
 				log(DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s]\n", connection->max_inflight_messages, connection->profile_name, connection->name);
@@ -686,13 +686,12 @@ switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connectio
 switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int rc;
 
 	if (connection->username && connection->password) {
 		//* mosq		A valid mosquitto instance.
 		//* username	The username to send as a string, or NULL to disable authentication.
 		//* password	The password to send as a string.  Set to NULL when username is valid in order to send just a username.
-		rc = mosquitto_username_pw_set(connection->mosq, connection->username, connection->password);
+		int rc = mosquitto_username_pw_set(connection->mosq, connection->username, connection->password);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
 				log(DEBUG, "Client username set to [%s]\n", connection->username);
@@ -1100,18 +1099,18 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
 				log(DEBUG, "Disconnected profile %s connection %s from the broker\n", connection->profile_name, connection->name);
-				connection->connected = false;
+				connection->connected = SWITCH_FALSE;
 				break;
 			case MOSQ_ERR_INVAL:
 				log(DEBUG, "Disconnection for profile %s connection %s returned: input parameters were invalid \n", connection->profile_name, connection->name);
 				return SWITCH_STATUS_GENERR;
 			case MOSQ_ERR_NO_CONN:
 				log(DEBUG, "Tried to disconnect profile %s connection %s but there was no connection to the broker\n", connection->profile_name, connection->name);
-				connection->connected = false;
+				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 			default:
 				log(DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code (%d)\n", connection->profile_name, connection->name, rc);
-				connection->connected = false;
+				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -1135,7 +1134,12 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mosquitto_mosq_userdata_t *userdata = NULL;
-	switch_bool_t clean_session = connection->clean_session;
+	switch_bool_t clean_session = SWITCH_TRUE;
+
+	if (!connection) {
+		log(ERROR, "mosq_new() called with NULL connection\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (connection->mosq) {
 		log(DEBUG, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
@@ -1147,22 +1151,16 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (!connection) {
-		log(ERROR, "mosq_new() called with NULL connection\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
 	if (!profile->enable || !connection->enable) {
 		log(DEBUG, "mosq_new_clint() profile: %s %s connection: %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!(userdata = switch_core_alloc(profile->pool, sizeof(mosquitto_mosq_userdata_t)))) {
+	if (!(userdata = (mosquitto_mosq_userdata_t *)switch_core_alloc(profile->pool, sizeof(mosquitto_mosq_userdata_t)))) {
 		log(CRIT, "mosq_new() failed to allocate memory for mosquitto_new() userdata structure profile: %s connection: %s\n", profile->name, connection->name);
 		return SWITCH_STATUS_GENERR;
 	} else {
 		connection->userdata = userdata;
-
 		userdata->profile = profile;
 		userdata->connection = connection;
 	}
@@ -1173,6 +1171,8 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 			clean_session = SWITCH_TRUE;
 		}
 	}
+
+	clean_session = connection->clean_session;
 
 	log(DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
 

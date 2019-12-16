@@ -36,6 +36,7 @@
  */
 
 #include <switch.h>
+
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -84,13 +85,13 @@ static mosquitto_profile_t *add_profile(const char *name)
 		return profile;
 	}
 
-	if (!(profile = switch_core_alloc(mosquitto_globals.pool, sizeof(*profile)))) {
+	if (!(profile = (mosquitto_profile_t *)switch_core_alloc(mosquitto_globals.pool, sizeof(*profile)))) {
 		log(ERROR, "Failed to allocate memory from pool for profile %s\n", name);
 		return profile;
 	}
 
 	switch_core_new_memory_pool(&pool);
-	profile = switch_core_alloc(pool, sizeof(*profile));
+	profile = (mosquitto_profile_t *)switch_core_alloc(pool, sizeof(*profile));
 	profile->pool = pool;
 	profile->name = switch_core_strdup(profile->pool, name);
 
@@ -130,7 +131,7 @@ mosquitto_profile_t *locate_profile(const char *name)
 		return profile;
 	}
 
-	if (!(profile = switch_core_hash_find_locked(mosquitto_globals.profiles, name, mosquitto_globals.profiles_mutex))) {
+	if (!(profile = (mosquitto_profile_t *)switch_core_hash_find_locked(mosquitto_globals.profiles, name, mosquitto_globals.profiles_mutex))) {
 		log(WARNING, "Unable to locate profile %s\n", name);
 	}
 
@@ -164,7 +165,7 @@ static mosquitto_connection_t *add_connection(mosquitto_profile_t *profile, cons
 		return connection;
 	}
 
-	if (!(connection = switch_core_alloc(profile->pool, sizeof(*connection)))) {
+	if (!(connection = (mosquitto_connection_t *)switch_core_alloc(profile->pool, sizeof(*connection)))) {
 		log(ERROR, "Failed to allocate memory from pool for connection %s\n", name);
 		return connection;
 	}
@@ -208,7 +209,7 @@ mosquitto_connection_t *locate_connection(mosquitto_profile_t *profile, const ch
 		return connection;
 	}
 
-	if (!(connection = switch_core_hash_find_locked(profile->connections, name, profile->connections_mutex))) {
+	if (!(connection = (mosquitto_connection_t *)switch_core_hash_find_locked(profile->connections, name, profile->connections_mutex))) {
 		log(WARNING, "Unable to locate connection: %s for profile %s\n", name, profile->name);
 	}
 
@@ -455,7 +456,7 @@ static mosquitto_publisher_t *add_publisher(mosquitto_profile_t *profile, const 
 		return NULL;
 	}
 
-	if (!(publisher = switch_core_alloc(profile->pool, sizeof(*publisher)))) {
+	if (!(publisher = (mosquitto_publisher_t *)switch_core_alloc(profile->pool, sizeof(*publisher)))) {
 		log(ERROR, "Failed to allocate memory from pool for profile %s publisher: %s\n", profile->name, name);
 		return publisher;
 	}
@@ -502,7 +503,7 @@ mosquitto_publisher_t *locate_publisher(mosquitto_profile_t *profile, const char
 		return publisher;
 	}
 
-	if (!(publisher = switch_core_hash_find_locked(profile->publishers, name, profile->publishers_mutex))) {
+	if (!(publisher = (mosquitto_publisher_t *)switch_core_hash_find_locked(profile->publishers, name, profile->publishers_mutex))) {
 		log(WARNING, "Unable to locate publisher: %s for provider: %s\n", name, profile->name);
 	}
 
@@ -540,7 +541,7 @@ static mosquitto_subscriber_t *add_subscriber(mosquitto_profile_t *profile, cons
 		return NULL;
 	}
 
-	if (!(subscriber = switch_core_alloc(profile->pool, sizeof(*subscriber)))) {
+	if (!(subscriber = (mosquitto_subscriber_t *)switch_core_alloc(profile->pool, sizeof(*subscriber)))) {
 		log(ERROR, "Failed to allocate memory from pool for profile %s subscriber:%s\n", profile->name, name);
 		return subscriber;
 	}
@@ -587,7 +588,7 @@ mosquitto_subscriber_t *locate_subscriber(mosquitto_profile_t *profile, const ch
 		return subscriber;
 	}
 
-	if (!(subscriber = switch_core_hash_find_locked(profile->subscribers, name, profile->subscribers_mutex))) {
+	if (!(subscriber = (mosquitto_subscriber_t *)switch_core_hash_find_locked(profile->subscribers, name, profile->subscribers_mutex))) {
 		log(WARNING, "Profile %s unable to locate subscriber: %s\n", profile->name, name);
 	}
 
@@ -741,7 +742,7 @@ static mosquitto_topic_t *add_publisher_topic(mosquitto_profile_t *profile, mosq
 		return NULL;
 	}
 
-	if (!(topic = switch_core_alloc(profile->pool, sizeof(*topic)))) {
+	if (!(topic = (mosquitto_topic_t *)switch_core_alloc(profile->pool, sizeof(*topic)))) {
 		log(ERROR, "Failed to allocate memory from profile %s publisher %s for topic %s\n", profile->name, publisher->name, name);
 		return topic;
 	}
@@ -799,12 +800,12 @@ static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile
 		return NULL;
 	}
 
-	if (!(event = switch_core_alloc(profile->pool, sizeof(*event)))) {
+	if (!(event = (mosquitto_event_t *)switch_core_alloc(profile->pool, sizeof(*event)))) {
 		log(ERROR, "Failed to allocate memory from profile %s publisher %s for topic %s event %s\n", profile->name, publisher->name, topic->name, name);
 		return event;
 	}
 
-	event->userdata = switch_core_alloc(profile->pool, sizeof(*userdata));
+	event->userdata = (mosquitto_event_userdata_t *)switch_core_alloc(profile->pool, sizeof(*userdata));
 
 	event->name = switch_core_strdup(profile->pool, name);
 	event->event_type = event_type;
@@ -849,7 +850,7 @@ mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitt
 		return NULL;
 	}
 
-	if (!(topic = switch_core_hash_find_locked(publisher->topics, name, publisher->topics_mutex))) {
+	if (!(topic = (mosquitto_topic_t *)switch_core_hash_find_locked(publisher->topics, name, publisher->topics_mutex))) {
 		log(WARNING, "Profile %s publisher %s topic %s not found\n", publisher->profile_name, publisher->name, name);
 	}
 
@@ -895,7 +896,7 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 		return event;
 	}
 
-	if (!(event = switch_core_hash_find_locked(topic->events, name, topic->events_mutex))) {
+	if (!(event = (mosquitto_event_t *)switch_core_hash_find_locked(topic->events, name, topic->events_mutex))) {
 		log(INFO, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
 	}
 
@@ -1181,7 +1182,7 @@ static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mos
 	}
 
 
-	if (!(topic = switch_core_alloc(profile->pool, sizeof(*topic)))) {
+	if (!(topic = (mosquitto_topic_t *)switch_core_alloc(profile->pool, sizeof(*topic)))) {
 		log(ERROR, "Failed to allocate memory from profile %s subscriber %s for topic %s\n", profile->name, subscriber->name, name);
 		return topic;
 	}
@@ -1231,7 +1232,7 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 		return topic;
 	}
 
-	if (!(topic = switch_core_hash_find_locked(subscriber->topics, name, subscriber->topics_mutex))) {
+	if (!(topic = (mosquitto_topic_t *)switch_core_hash_find_locked(subscriber->topics, name, subscriber->topics_mutex))) {
 		log(INFO, "Unable to locate profile %s subscriber %s topic %s\n", subscriber->profile_name, subscriber->name, name);
 	}
 

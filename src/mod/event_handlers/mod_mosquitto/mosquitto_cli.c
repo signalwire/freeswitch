@@ -36,6 +36,7 @@
  */
 
 #include <switch.h>
+
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -78,7 +79,7 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
-	const char *p, *arg = cmd;
+	const char *arg = cmd;
 	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 
 	if (!cmd) {
@@ -87,7 +88,7 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 	}
 
 	if (!strncasecmp(cmd, "uuid:", 5)) {
-		p = cmd + 5;
+		const char *p = cmd + 5;
 		if ((arg = strchr(p, ' ')) && *arg++) {
 			switch_copy_string(my_uuid, p, arg - p);
 		}
@@ -99,7 +100,7 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 	}
 
 	switch_core_new_memory_pool(&pool);
-	job = switch_core_alloc(pool, sizeof(*job));
+	job = (mosquitto_bgapi_job_t *)switch_core_alloc(pool, sizeof(*job));
 	job->cmd = switch_core_strdup(pool, arg);
 	job->pool = pool;
 
@@ -168,11 +169,9 @@ static switch_status_t cmd_loglevel(char **argv, int argc, switch_stream_handle_
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto enable|disable [profile|connection|publisher|subscriber] <name>
+ * \brief	This function is called by the fs_cli command: mosquitto enable [profile|connection|publisher|subscriber] <name>
  *
- * \details	This function is used to both enable or disable entries associated with the primary hashes that mod_mosquitto uses.
- *			The logic is currently similar for both operations to one function was written to handle them both.  If their operation
- *			diverges in the future, it may be reasonable to split this function into both enable/disable versions.
+ * \details	This function is used to enable entries associated with the primary hashes that mod_mosquitto uses.
  *
  * \param[in]	**argv	Standard C argument value list
  * \param[in]	argc	Standard C argument count
@@ -182,79 +181,153 @@ static switch_status_t cmd_loglevel(char **argv, int argc, switch_stream_handle_
  *
  */
 
-static switch_status_t cmd_enable_disable(char **argv, int argc, switch_stream_handle_t *stream)
+static switch_status_t cmd_enable(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mosquitto_profile_t *profile = NULL;
-	mosquitto_connection_t *connection = NULL;
-	mosquitto_publisher_t *publisher = NULL;
-	mosquitto_subscriber_t *subscriber = NULL;
 
-	char *enable_disable = NULL;
-	switch_bool_t enable_disable_bool = SWITCH_FALSE;
-
-	enable_disable = strncasecmp(argv[0], "enable", 6) ? "disable" : "enable";
-	enable_disable_bool = strncasecmp(argv[0], "enable", 6) ? SWITCH_FALSE : SWITCH_TRUE;
-
-	if (argc == 2) {
-		stream->write_function(stream, "mosquitto %s command requires: profile <name>\n", enable_disable);
+	if (argc == 1) {
+		stream->write_function(stream, "mosquitto enable command requires: profile <name>\n");
 		return status;
 	}
 
 	if (argc == 3) {
 		if (!strncasecmp(argv[1], "profile", 7)) {
 			if (!(profile = locate_profile(argv[2]))) {
-				stream->write_function(stream, "mosquitto %s profile %s failed: profile not found\n", enable_disable, argv[2]);
+				stream->write_function(stream, "mosquitto enable profile %s failed: profile not found\n", argv[2]);
 			} else {
-				stream->write_function(stream, "mosquitto %s profile %s successful\n", enable_disable, argv[2]);
-				profile->enable = enable_disable_bool;
+				stream->write_function(stream, "mosquitto enable profile %s successful\n", argv[2]);
+				profile->enable = SWITCH_TRUE;
 			}
 		}
 	}
 
 	if (argc == 4) {
-		stream->write_function(stream, "mosquitto %s command requires: profile <name> [connection|publisher|subscriber] <name>\n", enable_disable);
+		stream->write_function(stream, "mosquitto enable command requires: profile <name> [connection|publisher|subscriber] <name>\n");
 		return status;
 	}
 
 	if (argc > 4) {
 		if (!strncasecmp(argv[1], "profile", 7)) {
 			if (!(profile = locate_profile(argv[2]))) {
-				stream->write_function(stream, "mosquitto %s profile %s failed: profile not found\n", enable_disable, argv[2]);
+				stream->write_function(stream, "mosquitto enable profile %s failed: profile not found\n", argv[2]);
 			} else {
 				if (!strncasecmp(argv[3], "connection", 10)) {
+					mosquitto_connection_t *connection = NULL;
 					if (!(connection = locate_connection(profile, argv[4]))) {
-						stream->write_function(stream, "mosquitto %s profile %s connection %s failed: connection not found\n", enable_disable, argv[2], argv[4]);
+						stream->write_function(stream, "mosquitto enable profile %s connection %s failed: connection not found\n", argv[2], argv[4]);
 					} else {
-						stream->write_function(stream, "mosquitto %s profile %s connection %s successful\n", enable_disable, argv[2], argv[4]);
-						connection->enable = enable_disable_bool;
+						stream->write_function(stream, "mosquitto enable profile %s connection %s successful\n", argv[2], argv[4]);
+						connection->enable = SWITCH_TRUE;
 						connection_initialize(profile, connection);
 					}
 				} else if (!strncasecmp(argv[3], "publisher", 9)) {
+					mosquitto_publisher_t *publisher = NULL;
 					if (!(publisher = locate_publisher(profile, argv[4]))) {
-						stream->write_function(stream, "mosquitto %s profile %s publisher %s failed: publisher not found\n", enable_disable, argv[2], argv[4]);
+						stream->write_function(stream, "mosquitto enable profile %s publisher %s failed: publisher not found\n", argv[2], argv[4]);
 					} else {
-						stream->write_function(stream, "mosquitto %s profile %s publisher %s successful\n", enable_disable, argv[2], argv[4]);
-						publisher->enable = enable_disable_bool;
+						stream->write_function(stream, "mosquitto enable profile %s publisher %s successful\n", argv[2], argv[4]);
+						publisher->enable = SWITCH_TRUE;
 						publisher_activate(profile, publisher);
 					}
 				} else if (!strncasecmp(argv[3], "subscriber", 10)) {
+					mosquitto_subscriber_t *subscriber = NULL;
 					if (!(subscriber = locate_subscriber(profile, argv[4]))) {
-						stream->write_function(stream, "mosquitto %s profile %s subscriber %s failed: subscriber not found\n", enable_disable, argv[2], argv[4]);
+						stream->write_function(stream, "mosquitto enable profile %s subscriber %s failed: subscriber not found\n", argv[2], argv[4]);
 					} else {
-						stream->write_function(stream, "mosquitto %s profile %s subscriber %s successful\n", enable_disable, argv[2], argv[4]);
-						subscriber->enable = enable_disable_bool;
+						stream->write_function(stream, "mosquitto enable profile %s subscriber %s successful\n", argv[2], argv[4]);
+						subscriber->enable = SWITCH_TRUE;
 						subscriber_activate(profile, subscriber);
 					}
 				}
 			}
 		} else {
-			stream->write_function(stream, "mosquitto %s command requires: profile <name> [connection|publisher|subscriber] <name>\n", enable_disable);
+			stream->write_function(stream, "mosquitto enable command requires: profile <name> [connection|publisher|subscriber] <name>\n");
 		}
 	}
 	return status;
 }
 
+
+/**
+ * \brief	This function is called by the fs_cli command: mosquitto disable [profile|connection|publisher|subscriber] <name>
+ *
+ * \details	This function is used to disable entries associated with the primary hashes that mod_mosquitto uses.
+ *
+ * \param[in]	**argv	Standard C argument value list
+ * \param[in]	argc	Standard C argument count
+ * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ *
+ * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ *
+ */
+
+static switch_status_t cmd_disable(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	mosquitto_profile_t *profile = NULL;
+
+	if (argc == 1) {
+		stream->write_function(stream, "mosquitto disable command requires: profile <name>\n");
+		return status;
+	}
+
+	if (argc == 3) {
+		if (!strncasecmp(argv[1], "profile", 7)) {
+			if (!(profile = locate_profile(argv[2]))) {
+				stream->write_function(stream, "mosquitto disable profile %s failed: profile not found\n", argv[2]);
+			} else {
+				stream->write_function(stream, "mosquitto disable profile %s successful\n", argv[2]);
+				profile->enable = SWITCH_FALSE;
+			}
+		}
+	}
+
+	if (argc == 4) {
+		stream->write_function(stream, "mosquitto disable command requires: profile <name> [connection|publisher|subscriber] <name>\n");
+		return status;
+	}
+
+	if (argc > 4) {
+		if (!strncasecmp(argv[1], "profile", 7)) {
+			if (!(profile = locate_profile(argv[2]))) {
+				stream->write_function(stream, "mosquitto disable profile %s failed: profile not found\n", argv[2]);
+			} else {
+				if (!strncasecmp(argv[3], "connection", 10)) {
+					mosquitto_connection_t *connection = NULL;
+					if (!(connection = locate_connection(profile, argv[4]))) {
+						stream->write_function(stream, "mosquitto disable profile %s connection %s failed: connection not found\n", argv[2], argv[4]);
+					} else {
+						stream->write_function(stream, "mosquitto disable profile %s connection %s successful\n", argv[2], argv[4]);
+						connection->enable = SWITCH_FALSE;
+						connection_initialize(profile, connection);
+					}
+				} else if (!strncasecmp(argv[3], "publisher", 9)) {					
+					mosquitto_publisher_t *publisher = NULL;
+					if (!(publisher = locate_publisher(profile, argv[4]))) {
+						stream->write_function(stream, "mosquitto disable profile %s publisher %s failed: publisher not found\n", argv[2], argv[4]);
+					} else {
+						stream->write_function(stream, "mosquitto disable profile %s publisher %s successful\n", argv[2], argv[4]);
+						publisher->enable = SWITCH_FALSE;
+						publisher_activate(profile, publisher);
+					}
+				} else if (!strncasecmp(argv[3], "subscriber", 10)) {
+					mosquitto_subscriber_t *subscriber = NULL;
+					if (!(subscriber = locate_subscriber(profile, argv[4]))) {
+						stream->write_function(stream, "mosquitto disable profile %s subscriber %s failed: subscriber not found\n", argv[2], argv[4]);
+					} else {
+						stream->write_function(stream, "mosquitto disable profile %s subscriber %s successful\n", argv[2], argv[4]);
+						subscriber->enable = SWITCH_FALSE;
+						subscriber_activate(profile, subscriber);
+					}
+				}
+			}
+		} else {
+			stream->write_function(stream, "mosquitto disable command requires: profile <name> [connection|publisher|subscriber] <name>\n");
+		}
+	}
+	return status;
+}
 
 /**
  * \brief	This function is called by the fs_cli command: mosquitto connect profile <profile-name> connection <connection-name>
@@ -272,8 +345,6 @@ static switch_status_t cmd_enable_disable(char **argv, int argc, switch_stream_h
 static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	mosquitto_profile_t *profile = NULL;
-	mosquitto_connection_t *connection = NULL;
 
 	if (argc == 1 || argc == 2 || argc == 3 || argc == 4) {
 		stream->write_function(stream, "mosquitto connect command requires: profile <name> connection <connection-name>\n");
@@ -282,11 +353,13 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 
 	if (argc == 5) {
 		if (!strncasecmp(argv[1], "profile", 7)) {
+			mosquitto_profile_t *profile = NULL;
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto connect profile %s failed: profile not found\n", argv[2]);
 				return status;
 			} else {
 				if (!strncasecmp(argv[3], "connection", 10)) {
+					mosquitto_connection_t *connection = NULL;
 					if (!(connection = locate_connection(profile, argv[4]))) {
 						stream->write_function(stream, "mosquitto connect profile %s connection %s failed: connection not found\n", argv[2], argv[4]);
 						return status;
@@ -338,8 +411,6 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	mosquitto_profile_t *profile = NULL;
-	mosquitto_connection_t *connection = NULL;
 
 	stream->write_function(stream, "argc %d\n", argc);
 	for (int i=0; i<argc; i++) {
@@ -353,11 +424,13 @@ static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handl
 
 	if (argc <= 6) {
 		if (!strncasecmp(argv[1], "profile", 7)) {
+			mosquitto_profile_t *profile = NULL;
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto disconnect profile %s failed: profile not found\n", argv[2]);
 				return status;
 			} else {
 				if (!strncasecmp(argv[3], "connection", 10)) {
+					mosquitto_connection_t *connection = NULL;
 					if (!(connection = locate_connection(profile, argv[4]))) {
 						stream->write_function(stream, "mosquitto disconnect profile %s connection %s failed: connection not found\n", argv[2], argv[4]);
 						return status;
@@ -402,9 +475,6 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mosquitto_profile_t *profile = NULL;
-	mosquitto_connection_t *connection = NULL;
-	mosquitto_publisher_t *publisher = NULL;
-	mosquitto_subscriber_t *subscriber = NULL;
 
 	stream->write_function(stream, "argc %d\n", argc);
 	for (int i=0; i<argc; i++) {
@@ -442,6 +512,7 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 
 	if (argc == 5) {
 		if (!strncasecmp(argv[1], "profile", 7) && !strncasecmp(argv[3], "connection", 10)) {
+			mosquitto_connection_t *connection = NULL;
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto remove profile %s connection: %s failed: profile not found\n", argv[2], argv[4]);
 				return status;
@@ -457,6 +528,7 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 			switch_mutex_unlock(profile->connections_mutex);
 			stream->write_function(stream, "mosquitto remove profile %s connection: %s completed\n", argv[2], argv[4]);
 		} else if (!strncasecmp(argv[1], "profile", 7) && !strncasecmp(argv[3], "publisher", 9)) {
+			mosquitto_publisher_t *publisher = NULL;
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto remove profile %s publisher: %s failed: profile not found\n", argv[2], argv[4]);
 				return status;
@@ -470,6 +542,7 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 			switch_mutex_unlock(profile->publishers_mutex);
 			stream->write_function(stream, "mosquitto remove profile %s publisher: %s completed\n", argv[2], argv[4]);
 		} else if (!strncasecmp(argv[1], "profile", 7) && !strncasecmp(argv[3], "subscriber", 10)) {
+			mosquitto_subscriber_t *subscriber = NULL;
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto remove profile %s subscriber: %s failed: profile not found\n", argv[2], argv[4]);
 				return status;
@@ -507,7 +580,6 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 
 static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
-	mosquitto_profile_t *profile = NULL;
 	mosquitto_connection_t *connection = NULL;
 	mosquitto_publisher_t *publisher = NULL;
 	mosquitto_subscriber_t *subscriber = NULL;
@@ -533,6 +605,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	switch_mutex_lock(mosquitto_globals.mutex);
 	switch_mutex_lock(mosquitto_globals.profiles_mutex);
 	for (switch_hash_index_t *profiles_hi = switch_core_hash_first(mosquitto_globals.profiles); profiles_hi; profiles_hi = switch_core_hash_next(&profiles_hi)) {
+		mosquitto_profile_t *profile = NULL;
 		switch_core_hash_this(profiles_hi, NULL, NULL, &val);
 		profile = (mosquitto_profile_t *)val;
 		stream->write_function(stream, "  profile name: %s\n", profile->name);
@@ -691,9 +764,9 @@ SWITCH_STANDARD_API(exec_api_cmd)
 	} else if (!strncasecmp(argv[0], "loglevel", 8)) {
 		func = cmd_loglevel;
 	} else if (!strncasecmp(argv[0], "enable", 6)) {
-		func = cmd_enable_disable;
+		func = cmd_enable;
 	} else if (!strncasecmp(argv[0], "disable", 7)) {
-		func = cmd_enable_disable;
+		func = cmd_disable;
 	} else if (!strncasecmp(argv[0], "remove", 6)) {
 		func = cmd_remove;
 	} else if (!strncasecmp(argv[0], "connect", 7)) {
