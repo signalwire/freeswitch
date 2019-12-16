@@ -97,7 +97,7 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 	if (!strncasecmp(cmd, "uuid:", 5)) {
 		const char *p = cmd + 5;
 		if ((arg = strchr(p, ' ')) && *arg++) {
-			switch_copy_string(job->uuid_cli, p, arg - p);
+			switch_copy_string(job->uuid_cli, p, (switch_size_t)(arg - p));
 		}
 	}
 
