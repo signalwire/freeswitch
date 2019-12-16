@@ -65,10 +65,10 @@ switch_status_t initialize_profiles(void)
 		switch_core_hash_this(profiles_hi, NULL, NULL, &val);
 		profile = (mosquitto_profile_t *)val;
 		if (profile->enable) {
-			log(INFO, "profile:%s activation in progress\n", profile->name);
+			log(SWITCH_LOG_INFO, "profile:%s activation in progress\n", profile->name);
 			status = profile_activate(profile);
 		} else {
-			log(INFO, "profile:%s deactivation in progress\n", profile->name);
+			log(SWITCH_LOG_INFO, "profile:%s deactivation in progress\n", profile->name);
 			status = profile_deactivate(profile);
 		}
 	}
@@ -94,7 +94,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to profile_activate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to profile_activate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -107,10 +107,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(publishers_hi, NULL, NULL, &val);
 		publisher = (mosquitto_publisher_t *)val;
 		if (publisher->enable) {
-			log(INFO, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
+			log(SWITCH_LOG_INFO, "profile:%s publisher:%s activation in progress\n", profile->name, publisher->name);
 			status = publisher_activate(profile, publisher);
 		} else {
-			log(INFO, "profile:%s publisher:%s deactivation in progress\n", profile->name, publisher->name);
+			log(SWITCH_LOG_INFO, "profile:%s publisher:%s deactivation in progress\n", profile->name, publisher->name);
 			status = publisher_deactivate(profile, publisher);
 		}
 	}
@@ -123,10 +123,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(subscribers_hi, NULL, NULL, &val);
 		subscriber = (mosquitto_subscriber_t *)val;
 		if (subscriber->enable) {
-			log(INFO, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+			log(SWITCH_LOG_INFO, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
 			status = subscriber_activate(profile, subscriber);
 		} else {
-			log(INFO, "profile:%s subscriber:%s deactivation in progress\n", profile->name, subscriber->name);
+			log(SWITCH_LOG_INFO, "profile:%s subscriber:%s deactivation in progress\n", profile->name, subscriber->name);
 			status = subscriber_deactivate(profile, subscriber);
 		}
 	}
@@ -139,10 +139,10 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		switch_core_hash_this(connections_hi, NULL, NULL, &val);
 		connection = (mosquitto_connection_t *)val;
 		if (connection->enable) {
-			log(INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+			log(SWITCH_LOG_INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
 			status = client_connect(profile, connection);
 		} else {
-			log(INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+			log(SWITCH_LOG_INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
 			status = mosq_disconnect(connection);
 			connection->userdata = NULL;
 			connection->mosq = NULL;
@@ -170,11 +170,11 @@ switch_status_t profile_deactivate(mosquitto_profile_t *profile)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to profile_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to profile_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(INFO, "profile:%s deactivate in progress\n", profile->name);
+	log(SWITCH_LOG_INFO, "profile:%s deactivate in progress\n", profile->name);
 	return status;
 }
 
@@ -195,16 +195,16 @@ switch_status_t publisher_activate(mosquitto_profile_t *profile, mosquitto_publi
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to publisher_activate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to publisher_activate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!publisher) {
-		log(ERROR, "Profile %s publisher not passed to publisher_activate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher not passed to publisher_activate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(INFO, "Profile %s publisher %s activation in progress\n", profile->name, publisher->name);
+	log(SWITCH_LOG_INFO, "Profile %s publisher %s activation in progress\n", profile->name, publisher->name);
 
 	switch_mutex_lock(publisher->topics_mutex);
 	for (switch_hash_index_t *topics_hi = switch_core_hash_first(publisher->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
@@ -245,21 +245,21 @@ switch_status_t publisher_topic_activate(mosquitto_profile_t *profile, mosquitto
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to publisher_topic_activate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to publisher_topic_activate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!publisher) {
-		log(ERROR, "Profile %s publisher not passed to publisher_topic_activate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher not passed to publisher_topic_activate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s publisher %s topic not passed to publisher_topic_activate()\n", profile->name, publisher->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher %s topic not passed to publisher_topic_activate()\n", profile->name, publisher->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(NOTICE, "profile:%s publishser:%s topic:%s activation in progress\n", profile->name, publisher->name, topic->name);
+	log(SWITCH_LOG_NOTICE, "profile:%s publishser:%s topic:%s activation in progress\n", profile->name, publisher->name, topic->name);
 
 	if (topic->enable) {
 		switch_mutex_lock(topic->events_mutex);
@@ -294,22 +294,22 @@ switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquit
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to publisher_topic_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to publisher_topic_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!publisher) {
-		log(ERROR, "Profile %s publisher not passed to publisher_topic_deactivate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher not passed to publisher_topic_deactivate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s publisher %s topic not passed to publisher_topic_deactivate()\n", profile->name, publisher->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher %s topic not passed to publisher_topic_deactivate()\n", profile->name, publisher->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 
-	log(NOTICE, "profile:%s publisher:%s topic:%s deactivate in progress\n", profile->name, publisher->name, topic->name);
+	log(SWITCH_LOG_NOTICE, "profile:%s publisher:%s topic:%s deactivate in progress\n", profile->name, publisher->name, topic->name);
 
 	if (topic->enable) {
 		switch_mutex_lock(topic->events_mutex);
@@ -318,7 +318,7 @@ switch_status_t publisher_topic_deactivate(mosquitto_profile_t *profile, mosquit
 			void *val;
 			switch_core_hash_this(events_hi, NULL, NULL, &val);
 			event = (mosquitto_event_t *)val;
-			log(NOTICE, "profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
+			log(SWITCH_LOG_NOTICE, "profile:%s publisher:%s topic:%s event:%s unbind %d\n", profile->name, publisher->name, topic->name, event->name, status);
 			//status = unbind_event(profile, publisher, topic, event);
 		}
 		switch_mutex_unlock(topic->events_mutex);
@@ -344,16 +344,16 @@ switch_status_t publisher_deactivate(mosquitto_profile_t *profile, mosquitto_pub
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to publisher_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to publisher_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!publisher) {
-		log(ERROR, "Profile %s publisher not passed to publisher_deactivate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s publisher not passed to publisher_deactivate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(INFO, "profile:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
+	log(SWITCH_LOG_INFO, "profile:%s publisher:%s deactivate in progress\n", profile->name, publisher->name);
 	return status;
 }
 
@@ -373,16 +373,16 @@ switch_status_t subscriber_activate(mosquitto_profile_t *profile, mosquitto_subs
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to subscriber_activate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to subscriber_activate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!subscriber) {
-		log(ERROR, "Profile %s subscriber not passed to subscriber_activate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber not passed to subscriber_activate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(NOTICE, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
+	log(SWITCH_LOG_NOTICE, "profile:%s subscriber:%s activation in progress\n", profile->name, subscriber->name);
 
 	switch_mutex_lock(subscriber->topics_mutex);
 	for (switch_hash_index_t *topics_hi = switch_core_hash_first(subscriber->topics); topics_hi; topics_hi = switch_core_hash_next(&topics_hi)) {
@@ -423,22 +423,22 @@ switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitt
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to subscriber_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to subscriber_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!subscriber) {
-		log(ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s subscriber %s topic not passed to subscriber_deactivate()\n", profile->name, subscriber->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber %s topic not passed to subscriber_deactivate()\n", profile->name, subscriber->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (topic->enable) {
-		log(INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+		log(SWITCH_LOG_INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d activate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
 		status = mosq_subscribe(profile, subscriber, topic);
 	}
 
@@ -462,21 +462,21 @@ switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosqui
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to subscriber_topic_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to subscriber_topic_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!subscriber) {
-		log(ERROR, "Profile %s subscriber not passed to subscriber_topic_deactivate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber not passed to subscriber_topic_deactivate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s subscriber %s topic not passed to subscriber_topic_deactivate()\n", profile->name, subscriber->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber %s topic not passed to subscriber_topic_deactivate()\n", profile->name, subscriber->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
+	log(SWITCH_LOG_INFO, "profile:%s subscriber:%s topic:%s pattern: %s qos: %d deactivate in progress\n", profile->name, subscriber->name, topic->name, topic->pattern, topic->qos);
 
 	return status;
 }
@@ -497,16 +497,16 @@ switch_status_t subscriber_deactivate(mosquitto_profile_t *profile, mosquitto_su
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to subscriber_deactivate()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to subscriber_deactivate()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!subscriber) {
-		log(ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber not passed to subscriber_deactivate()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(INFO, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
+	log(SWITCH_LOG_INFO, "profile:%s subscriber:%s deactivate in progress\n", profile->name, subscriber->name);
 	return status;
 }
 
@@ -527,12 +527,12 @@ switch_status_t client_connect(mosquitto_profile_t *profile, mosquitto_connectio
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to client_connect()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to client_connect()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!connection) {
-		log(ERROR, "Profile %s connection not passed to client_connect()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s connection not passed to client_connect()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -567,17 +567,17 @@ mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquit
 	mosquitto_topic_t *found_topic = NULL;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to locate_connection_topic()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to locate_connection_topic()\n");
 		return NULL;
 	}
 
 	if (!connection) {
-		log(ERROR, "Profile %s connection not passed to locate_connection_topic()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s connection not passed to locate_connection_topic()\n", profile->name);
 		return NULL;
 	}
 
 	if (zstr(name)) {
-		log(ERROR, "profile:%s connection:%s topic name is NULL for locate_connection_topic()\n", profile->name, connection->name);
+		log(SWITCH_LOG_ERROR, "profile:%s connection:%s topic name is NULL for locate_connection_topic()\n", profile->name, connection->name);
 		return found_topic;
 	}
 
@@ -601,7 +601,7 @@ mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquit
 			}
 			if (!strcasecmp(topic->connection_name, connection->name)) {
 				if (!strcasecmp(topic->pattern, name)) {
-					log(INFO, "profile:%s connection:%s topic:%s pattern:%s found\n", profile->name,  connection->name, topic->name, topic->pattern);
+					log(SWITCH_LOG_INFO, "profile:%s connection:%s topic:%s pattern:%s found\n", profile->name,  connection->name, topic->name, topic->pattern);
 					found_topic = topic;
 					break;
 				}
@@ -632,20 +632,20 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to connection_initialize()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to connection_initialize()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!connection) {
-		log(ERROR, "Profile %s connection not passed to connection_initialize()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s connection not passed to connection_initialize()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (connection->enable) {
-		log(INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+		log(SWITCH_LOG_INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
 		status = client_connect(profile, connection);
 	} else {
-		log(INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+		log(SWITCH_LOG_INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
 		status = mosq_disconnect(connection);
 		connection->userdata = NULL;
 		connection->mosq = NULL;

@@ -75,8 +75,8 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 
 	mosquitto_bgapi_job_t *job = NULL;
 	switch_uuid_t uuid;
-	switch_memory_pool_t *pool;
-	switch_thread_t *thread;
+	switch_memory_pool_t *pool = NULL;
+	switch_thread_t *thread = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 
 	const char *arg = cmd;
@@ -302,7 +302,7 @@ static switch_status_t cmd_disable(char **argv, int argc, switch_stream_handle_t
 						connection->enable = SWITCH_FALSE;
 						connection_initialize(profile, connection);
 					}
-				} else if (!strncasecmp(argv[3], "publisher", 9)) {					
+				} else if (!strncasecmp(argv[3], "publisher", 9)) {
 					mosquitto_publisher_t *publisher = NULL;
 					if (!(publisher = locate_publisher(profile, argv[4]))) {
 						stream->write_function(stream, "mosquitto disable profile %s publisher %s failed: publisher not found\n", argv[2], argv[4]);
@@ -378,9 +378,9 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 						mosq_max_inflight_messages_set(connection);
 						mosq_username_pw_set(connection);
 						if (mosq_connect(connection) == SWITCH_STATUS_SUCCESS) {
-							log(INFO, "Succesfully connected to broker using profile: %s connection: %s", profile->name, connection->name);
+							log(SWITCH_LOG_INFO, "Succesfully connected to broker using profile: %s connection: %s", profile->name, connection->name);
 						} else {
-							log(WARNING, "Failed to connect to broker using profile: %s connection: %s", profile->name, connection->name);
+							log(SWITCH_LOG_WARNING, "Failed to connect to broker using profile: %s connection: %s", profile->name, connection->name);
 						}
 					}
 				}
@@ -441,9 +441,9 @@ static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handl
 						connection->enable = SWITCH_FALSE;
 					}
 					if (mosq_disconnect(connection) == SWITCH_STATUS_SUCCESS) {
-						log(DEBUG, "Succesfully disconnected from  broker using profile: %s connection: %s", profile->name, connection->name);
+						log(SWITCH_LOG_DEBUG, "Succesfully disconnected from  broker using profile: %s connection: %s", profile->name, connection->name);
 					} else {
-						log(DEBUG, "Failed to disconnect from broker using profile: %s connection: %s", profile->name, connection->name);
+						log(SWITCH_LOG_DEBUG, "Failed to disconnect from broker using profile: %s connection: %s", profile->name, connection->name);
 					}
 				}
 			}

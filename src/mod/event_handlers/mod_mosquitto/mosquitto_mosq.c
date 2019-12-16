@@ -158,24 +158,24 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 	topic = locate_connection_topic(profile, connection, message->topic);
 
 	if (!topic) {
-		log(ERROR, "Unknown topic: messsage topic %s within profile %s and connection %s\n", message->topic, profile->name, connection->name);
+		log(SWITCH_LOG_ERROR, "Unknown topic: messsage topic %s within profile %s and connection %s\n", message->topic, profile->name, connection->name);
 		return status;
 	} else {
-		log(DEBUG, "Matched topic topic %s\n", topic->name);
+		log(SWITCH_LOG_DEBUG, "Matched topic topic %s\n", topic->name);
 	}
 
 	if (!topic->originate_authorized) {
-		log(ERROR, "Topic %s not authorized to originate calls within profile %s and connection %s\n", message->topic, profile->name, connection->name);
+		log(SWITCH_LOG_ERROR, "Topic %s not authorized to originate calls within profile %s and connection %s\n", message->topic, profile->name, connection->name);
 		return status;
 	}
 
 	if (zstr(argv[1])) {
-		log(ERROR, "Aleg passed in from the originate is empty\n");
+		log(SWITCH_LOG_ERROR, "Aleg passed in from the originate is empty\n");
 		return status;
 	}
 
 	if (zstr(argv[2])) {
-		log(ERROR, "Bleg passed in from the originate is empty\n");
+		log(SWITCH_LOG_ERROR, "Bleg passed in from the originate is empty\n");
 		return status;
 	}
 
@@ -185,7 +185,7 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 	//status = switch_ivr_originate(session, NULL, &cause, NULL, timeout, NULL, cid_name, cid_number, NULL, originate_vars, SOF_NONE, NULL);
 	status = switch_ivr_originate(NULL, &session, &cause, aleg, timeout, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL, NULL);
 	if (status != SWITCH_STATUS_SUCCESS || !session) {
-		log(WARNING, "Originate to [%s] failed, cause: %s\n", aleg, switch_channel_cause2str(cause));
+		log(SWITCH_LOG_WARNING, "Originate to [%s] failed, cause: %s\n", aleg, switch_channel_cause2str(cause));
 		return status;
 	}
 
@@ -205,7 +205,7 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 		}
 
 		if ((extension = switch_caller_extension_new(session, app_name, arg)) == 0) {
-			log(CRIT, "Memory Error!\n");
+			log(SWITCH_LOG_CRIT, "Memory Error!\n");
 			abort();
 		}
 		switch_caller_extension_add_application(session, extension, app_name, arg);
@@ -253,7 +253,7 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 	}
 
 	if (zstr(arg)) {
-		log(ERROR, "-ERR Invalid syntax arg empty\n");
+		log(SWITCH_LOG_ERROR, "-ERR Invalid syntax arg empty\n");
 		return status;
 	}
 
@@ -272,7 +272,7 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 	switch_threadattr_create(&thd_attr, job->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	log(INFO, "+OK Job-UUID: %s\n", job->uuid_str);
+	log(SWITCH_LOG_INFO, "+OK Job-UUID: %s\n", job->uuid_str);
 	switch_thread_create(&thread, thd_attr, bgapi_exec, job, job->pool);
 
 	return status;
@@ -315,29 +315,29 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 	mosquitto_mosq_userdata_t *userdata = NULL;
 
 	if (!user_data) {
-		log(ERROR, "disconnect userdata NULL rc:%d\n", rc);
+		log(SWITCH_LOG_ERROR, "disconnect userdata NULL rc:%d\n", rc);
 		return;
 	} else {
 		userdata = (mosquitto_mosq_userdata_t *)user_data;
 	}
 
 	if (!userdata->connection) {
-		log(ERROR, "disconnect connection NULL rc:%d\n", rc);
+		log(SWITCH_LOG_ERROR, "disconnect connection NULL rc:%d\n", rc);
 		return;
 	} else {
 		connection = userdata->connection;
 	}
 	if (!userdata->profile) {
-		log(ERROR, "disconnect profile NULL rc:%d\n", rc);
+		log(SWITCH_LOG_ERROR, "disconnect profile NULL rc:%d\n", rc);
 		return;
 	} else {
 		profile = userdata->profile;
 	}
 
-	log(DEBUG, "profile:%s connection:%s rc:%d disconnected", profile->name, connection->name, rc);
+	log(SWITCH_LOG_DEBUG, "profile:%s connection:%s rc:%d disconnected", profile->name, connection->name, rc);
 	//connection->connected = SWITCH_FALSE;
 	//mosq_loop_stop(connection, SWITCH_TRUE);
-	log(ALERT, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
+	log(SWITCH_LOG_ALERT, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
 }
 
 
@@ -361,7 +361,7 @@ void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(INFO, "mosq_publish_callback(): profile: %s connection: %s published (mid: %d)", profile->name, connection->name, message_id);
+	log(SWITCH_LOG_INFO, "mosq_publish_callback(): profile: %s connection: %s published (mid: %d)", profile->name, connection->name, message_id);
 }
 
 
@@ -381,21 +381,21 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 	mosquitto_mosq_userdata_t *userdata = NULL;
 
 	if (!message->payloadlen) {
-		log(DEBUG, "mosq_message_callback(): Received topic: %s NULL message exiting.\n", (char *)message->topic);
+		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s NULL message exiting.\n", (char *)message->topic);
 		return;
 	}
 
 	if (!user_data) {
-		log(DEBUG, "mosq_message_callback(): Received topic: %s user_data NULL exiting.\n", (char *)message->topic);
+		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s user_data NULL exiting.\n", (char *)message->topic);
 		return;
 	}
 
-	log(DEBUG, "mosq_message_callback(): Received topic: %s payloadlen: %d message: %s\n", (char *)message->topic, message->payloadlen, (char *)message->payload);
+	log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s payloadlen: %d message: %s\n", (char *)message->topic, message->payloadlen, (char *)message->payload);
 
 	userdata = (mosquitto_mosq_userdata_t *)user_data;
 
 	if (!(payload_string = strndup((char *)message->payload, message->payloadlen))) {
-		log(ERROR, "mosq_message_callback(): Out of memory trying to duplicate %s\n", (char *)message->payload);
+		log(SWITCH_LOG_ERROR, "mosq_message_callback(): Out of memory trying to duplicate %s\n", (char *)message->payload);
 		return;
 	}
 
@@ -432,10 +432,10 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(INFO, "mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d", profile->name, connection->name, mid, granted_qos[0]);
-	
+	log(SWITCH_LOG_INFO, "mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d", profile->name, connection->name, mid, granted_qos[0]);
+
 	for(int i=1; i<qos_count; i++){
-		log(INFO, ", %d", granted_qos[i]);
+		log(SWITCH_LOG_INFO, ", %d", granted_qos[i]);
 	}
 }
 
@@ -447,29 +447,29 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
  *
  * \param[in]	mosq		The mosquitto instance making the callback.
  * \param[in]	userdata	The user data provided in mosquitto_new
- * \param[in]	level		The log message level from the values: MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_DEBUG
+ * \param[in]	level		The log message level from the values: MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_SWITCH_LOG_DEBUG
  * \param[in]	str			The message string.
  */
 
 void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
 {
-	switch_log_level_t	log_level = DEBUG;
+	switch_log_level_t	log_level = SWITCH_LOG_DEBUG;
 
 	switch(level) {
 		case MOSQ_LOG_INFO:
-			log_level = INFO;
+			log_level = SWITCH_LOG_INFO;
 			break;
 		case MOSQ_LOG_NOTICE:
-			log_level = NOTICE;
+			log_level = SWITCH_LOG_NOTICE;
 			break;
 		case MOSQ_LOG_WARNING:
-			log_level = WARNING;
+			log_level = SWITCH_LOG_WARNING;
 			break;
 		case MOSQ_LOG_ERR:
-			log_level = ERROR;
+			log_level = SWITCH_LOG_ERROR;
 			break;
 		case MOSQ_LOG_DEBUG:
-			log_level = DEBUG;
+			log_level = SWITCH_LOG_DEBUG;
 			break;
 	}
 
@@ -493,7 +493,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 	mosquitto_mosq_userdata_t *userdata = NULL;
 	mosquitto_connection_t *connection = NULL;
 
-	log(DEBUG, "mosq_connect_callback(): result: %d\n", result);
+	log(SWITCH_LOG_DEBUG, "mosq_connect_callback(): result: %d\n", result);
 
 	if (!user_data) {
 		return;
@@ -510,7 +510,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 	if (!result) {
 		mosquitto_profile_t *profile = NULL;
 
-		log(CONSOLE, "mosq_connect_callback(): profile %s connection %s successful\n", connection->profile_name, connection->name);
+		log(SWITCH_LOG_CONSOLE, "mosq_connect_callback(): profile %s connection %s successful\n", connection->profile_name, connection->name);
 		connection->retry_count = 0;
 		connection->connected = SWITCH_TRUE;
 		profile = locate_profile(connection->profile_name);
@@ -519,7 +519,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 		//mosquitto_subscribe(mosq, NULL, "$SYS/#", 2);
 	} else {
 		if (connection->retries && (connection->retry_count == connection->retries)) {
-			log(CONSOLE, "mosq_connect_callback(): profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
+			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback(): profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
 			mosquitto_disconnect(connection->mosq);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
@@ -567,20 +567,26 @@ switch_status_t mosq_int_option(mosquitto_connection_t *connection)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int rc;
 
+	/*
+	if (!strncasecmp(connection->protocol_version, "V311", 4)) {
+		protocol_version = MQTT_PROTOCOL_V311;
+	}
+	*/
 
-	//if (!strncasecmp(connection->protocol_version, "V311", 4)) {
-	//	protocol_version = MQTT_PROTOCOL_V311;
-	//}
-
-	//* mosq	A valid mosquitto instance.
-	//* option	The option to set.
-	//* value	The option specific value.
+	/*
+	* mosq	A valid mosquitto instance.
+	* option	The option to set.
+	* value	The option specific value.
+	*/
 	rc = mosquitto_int_option(connection->mosq, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V311);
-	log(DEBUG, "mosquitto_init_option() for profile [%s] connection [%s] Protocol Version [%s] rc %d\n", connection->profile_name, connection->name, connection->protocol_version, rc);
-	//rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_RECEIVE_MAXIMUM, connection->receive_maximum);
-	//rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_SEND_MAXIMUM, connection->send_maximum);
-	//rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_SSL_CTX_WITH_DEFAULTS, connection->ssl_ctx_with_defaults);
-	//rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_TLS_OCSP_REQUIRED, connection->tls_ocsp_required);
+	log(SWITCH_LOG_DEBUG, "mosquitto_init_option() for profile [%s] connection [%s] Protocol Version [%s] rc %d\n", connection->profile_name, connection->name, connection->protocol_version, rc);
+
+	/*
+	rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_RECEIVE_MAXIMUM, connection->receive_maximum);
+	rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_SEND_MAXIMUM, connection->send_maximum);
+	rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_SSL_CTX_WITH_DEFAULTS, connection->ssl_ctx_with_defaults);
+	rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_TLS_OCSP_REQUIRED, connection->tls_ocsp_required);
+	*/
 
 	return status;
 }
@@ -604,13 +610,13 @@ switch_status_t mosq_reconnect_delay_set(mosquitto_connection_t *connection)
 	rc = mosquitto_reconnect_delay_set(connection->mosq, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff);
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(DEBUG, "Succeeded setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s]\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Succeeded setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s]\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
 			break;
 		case MOSQ_ERR_INVAL:
-			log(DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] invalid parameters\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] invalid parameters\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
 			return SWITCH_STATUS_GENERR;
 		default:
-			log(DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] unknown return code (%d)\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled", rc);
+			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] unknown return code (%d)\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled", rc);
 			return SWITCH_STATUS_GENERR;
 	}
 
@@ -634,7 +640,7 @@ switch_status_t mosq_message_retry_set(mosquitto_connection_t *connection)
 
 	if (connection->message_retry > 0) {
 		mosquitto_message_retry_set(connection->mosq, connection->message_retry);
-		log(DEBUG, "Message retry set to %d for profile [%s] connection [%s]\n", connection->message_retry, connection->profile_name, connection->name);
+		log(SWITCH_LOG_DEBUG, "Message retry set to %d for profile [%s] connection [%s]\n", connection->message_retry, connection->profile_name, connection->name);
 	}
 
 	return status;
@@ -659,10 +665,10 @@ switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connectio
 		int rc = mosquitto_max_inflight_messages_set(connection->mosq, connection->max_inflight_messages);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
-				log(DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s]\n", connection->max_inflight_messages, connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s]\n", connection->max_inflight_messages, connection->profile_name, connection->name);
 				break;
 			case MOSQ_ERR_INVAL:
-				log(DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s] resulted in invalid parameter input\n", connection->max_inflight_messages, connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s] resulted in invalid parameter input\n", connection->max_inflight_messages, connection->profile_name, connection->name);
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -688,22 +694,24 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (connection->username && connection->password) {
-		//* mosq		A valid mosquitto instance.
-		//* username	The username to send as a string, or NULL to disable authentication.
-		//* password	The password to send as a string.  Set to NULL when username is valid in order to send just a username.
+		/*
+		* mosq		A valid mosquitto instance.
+		* username	The username to send as a string, or NULL to disable authentication.
+		* password	The password to send as a string.  Set to NULL when username is valid in order to send just a username.
+		*/
 		int rc = mosquitto_username_pw_set(connection->mosq, connection->username, connection->password);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
-				log(DEBUG, "Client username set to [%s]\n", connection->username);
+				log(SWITCH_LOG_DEBUG, "Client username set to [%s]\n", connection->username);
 				break;
 			case MOSQ_ERR_INVAL:
-				log(ERROR, "Setting username/pw [%s] failed invalid parameters\n", connection->username);
+				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] failed invalid parameters\n", connection->username);
 				return SWITCH_STATUS_GENERR;
 			case MOSQ_ERR_NOMEM:
-				log(ERROR, "Setting username/pw [%s] failed out of memory\n", connection->username);
+				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] failed out of memory\n", connection->username);
 				return SWITCH_STATUS_GENERR;
 			default:
-				log(ERROR, "Setting username/pw [%s] unknown return code (%d)\n", connection->username, rc);
+				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] unknown return code (%d)\n", connection->username, rc);
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -729,36 +737,38 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(ERROR, "cannot execute mosquitto_tls_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	//* mosq		a valid mosquitto instance.
-	//* cafile		path to a file containing the PEM encoded trusted CA certificate files.  Either cafile or capath must not be NULL.
-	//* capath		path to a directory containing the PEM encoded trusted CA certificate files.
-	//*				See mosquitto.conf for more details on configuring this directory.  Either cafile or capath must not be NULL.
-	//* certfile	path to a file containing the PEM encoded certificate file for this client.
-	//*				If NULL, keyfile must also be NULL and no client certificate will be used.
-	//* keyfile		path to a file containing the PEM encoded private key for this client.
-	//*				If NULL, certfile must also be NULL and no client certificate will be used.
-	//* pw_callback	if keyfile is encrypted, set pw_callback to allow your client to pass the correct password for decryption.
-	//*				If set to NULL, the password must be entered on the command line.
-	//*				Your callback must write the password into “buf”, which is “size” bytes long.
-	//*				The return value must be the length of the password.  “userdata” will be set to the calling mosquitto instance.
-	//*				The mosquitto userdata member variable can be retrieved using mosquitto_userdata.
+	/*
+	* mosq		a valid mosquitto instance.
+	* cafile		path to a file containing the PEM encoded trusted CA certificate files.  Either cafile or capath must not be NULL.
+	* capath		path to a directory containing the PEM encoded trusted CA certificate files.
+	*				See mosquitto.conf for more details on configuring this directory.  Either cafile or capath must not be NULL.
+	* certfile	path to a file containing the PEM encoded certificate file for this client.
+	*				If NULL, keyfile must also be NULL and no client certificate will be used.
+	* keyfile		path to a file containing the PEM encoded private key for this client.
+	*				If NULL, certfile must also be NULL and no client certificate will be used.
+	* pw_callback	if keyfile is encrypted, set pw_callback to allow your client to pass the correct password for decryption.
+	*				If set to NULL, the password must be entered on the command line.
+	*				Your callback must write the password into “buf”, which is “size” bytes long.
+	*				The return value must be the length of the password.  “userdata” will be set to the calling mosquitto instance.
+	*				The mosquitto userdata member variable can be retrieved using mosquitto_userdata.
+	*/
 	rc = mosquitto_tls_set(connection->mosq, connection->tls.cafile, connection->tls.capath, connection->tls.certfile, connection->tls.certfile, NULL);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "mosquitto_tls_set TLS profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_INFO, "mosquitto_tls_set TLS profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -789,28 +799,30 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(ERROR, "cannot execute mosquitto_tls_psk_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_psk_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	//* mosq		a valid mosquitto instance.
-	//* psk			the pre-shared-key in hex format with no leading “0x”.
-	//* identity	the identity of this client.  May be used as the username depending on the server settings.
-	//* ciphers		a string describing the PSK ciphers available for use.
-	//*				See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	/*
+	* mosq		a valid mosquitto instance.
+	* psk			the pre-shared-key in hex format with no leading “0x”.
+	* identity	the identity of this client.  May be used as the username depending on the server settings.
+	* ciphers		a string describing the PSK ciphers available for use.
+	*				See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	*/
 	rc = mosquitto_tls_psk_set(connection->mosq, connection->tls.psk, connection->tls.identity, connection->tls.psk_ciphers);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "mosquitto_tls_psk_set profile: %s connection %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_INFO, "mosquitto_tls_psk_set profile: %s connection %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_psk_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -841,30 +853,32 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(ERROR, "cannot execute mosquitto_tls_opts_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_opts_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	//* mosq		a valid mosquitto instance.
-	//* cert_reqs	an integer defining the verification requirements the client will impose on the server.  This can be one of:
-	//*				SSL_VERIFY_NONE (0): the server will not be verified in any way.
-	//*				SSL_VERIFY_PEER (1): the server certificate will be verified and the connection aborted if the verification fails.
-	//*				The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
-	//* version		the version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.  The default value and the available values depend on the version of openssl that the library was compiled against.  For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.  For openssl < 1.0.1, only tlsv1 is available.
-	//* ciphers		a string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	/*
+	* mosq		a valid mosquitto instance.
+	* cert_reqs	an integer defining the verification requirements the client will impose on the server.  This can be one of:
+	*				SSL_VERIFY_NONE (0): the server will not be verified in any way.
+	*				SSL_VERIFY_PEER (1): the server certificate will be verified and the connection aborted if the verification fails.
+	*				The default and recommended value is SSL_VERIFY_PEER.  Using SSL_VERIFY_NONE provides no security.
+	* version		the version of the SSL/TLS protocol to use as a string.  If NULL, the default value is used.  The default value and the available values depend on the version of openssl that the library was compiled against.  For openssl >= 1.0.1, the available options are tlsv1.2, tlsv1.1 and tlsv1, with tlv1.2 as the default.  For openssl < 1.0.1, only tlsv1 is available.
+	* ciphers		a string describing the ciphers available for use.  See the “openssl ciphers” tool for more information.  If NULL, the default ciphers will be used.
+	*/
 	rc = mosquitto_tls_opts_set(connection->mosq, connection->tls.cert_reqs, connection->tls.version, connection->tls.opts_ciphers);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "mosquitto_tls_opts_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_INFO, "mosquitto_tls_opts_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_opts_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -892,41 +906,43 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 	int payloadlen = 0;
 
 	if (!connection) {
-		log(ERROR, "Cannot execute mosquitto_will_set() because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "Cannot execute mosquitto_will_set() because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	payloadlen = strlen(connection->will.payload);
 
-	//* mosq		A valid mosquitto instance.
-	//* topic		The topic on which to publish the will.
-	//* payloadlen	The size of the payload (bytes).
-	//*             Valid values are between 0 and 268,435,455.
-	//* payload		Pointer to the data to send.
-	//*				If payloadlen > 0 this must be a valid memory location.
-	//* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the will.
-	//* retain		Set to true to make the will a retained message.
+	/*
+	* mosq		A valid mosquitto instance.
+	* topic		The topic on which to publish the will.
+	* payloadlen	The size of the payload (bytes).
+	*             Valid values are between 0 and 268,435,455.
+	* payload		Pointer to the data to send.
+	*				If payloadlen > 0 this must be a valid memory location.
+	* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the will.
+	* retain		Set to true to make the will a retained message.
+	*/
 	rc = mosquitto_will_set(connection->mosq, connection->will.topic, payloadlen, connection->will.payload, connection->will.qos, connection->will.retain);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "mosquitto_will_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_INFO, "mosquitto_will_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_PAYLOAD_SIZE:
-			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d payload size %d is too large\n", connection->profile_name, connection->name, connection->host, connection->port, payloadlen);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d payload size %d is too large\n", connection->profile_name, connection->name, connection->host, connection->port, payloadlen);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_MALFORMED_UTF8:
-			log(ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d the topic %s is not valid UTF-8\n", connection->profile_name, connection->name, connection->host, connection->port, connection->will.topic);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d the topic %s is not valid UTF-8\n", connection->profile_name, connection->name, connection->host, connection->port, connection->will.topic);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -954,7 +970,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	unsigned port;
 
 	if (!connection) {
-		log(ERROR, "mosq_connect() failed because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "mosq_connect() failed because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -982,20 +998,24 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	}
 
 	if (!connection->bind_address) {
-		//* mosq		A valid mosquitto instance.
-		//* host		The hostname or ip address of the broker to connect to.
-		//* port		The network port to connect to.  Usually 1883.
-		//* keepalive	The number of seconds after which the broker should send a PING message to the client
-		//*				if no other messages have been exchanged in that time.
+		/*
+		* mosq		A valid mosquitto instance.
+		* host		The hostname or ip address of the broker to connect to.
+		* port		The network port to connect to.  Usually 1883.
+		* keepalive	The number of seconds after which the broker should send a PING message to the client
+		*				if no other messages have been exchanged in that time.
+		*/
 		rc = mosquitto_connect(connection->mosq, connection->host, port, connection->keepalive);
 	} else {
 		if (!connection->srv) {
-			//* mosq			A valid mosquitto instance.
-			//* host			The hostname or ip address of the broker to connect to.
-			//* port			The network port to connect to.  Usually 1883.
-			//* keepalive		The number of seconds after which the broker should send a PING message to the client
-			//*					if no other messages have been exchanged in that time.
-			//* bind_address	The hostname or ip address of the local network interface to bind to.
+			/*
+			* mosq			A valid mosquitto instance.
+			* host			The hostname or ip address of the broker to connect to.
+			* port			The network port to connect to.  Usually 1883.
+			* keepalive		The number of seconds after which the broker should send a PING message to the client
+			*					if no other messages have been exchanged in that time.
+			* bind_address	The hostname or ip address of the local network interface to bind to.
+			*/
 			rc = mosquitto_connect_bind(connection->mosq, connection->host, port, connection->keepalive, connection->bind_address);
 		} else {
 			rc = mosquitto_connect_srv(connection->mosq, connection->host, connection->keepalive, connection->bind_address);
@@ -1003,10 +1023,10 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	}
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(DEBUG, "Attempting to connect to: profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Attempting to connect to: profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			log(SWITCH_LOG_ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
@@ -1015,7 +1035,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
 		default:
-			log(ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
+			log(SWITCH_LOG_ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
 
@@ -1023,7 +1043,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 
 	loop = mosquitto_loop_start(connection->mosq);
 	if (loop != MOSQ_ERR_SUCCESS) {
-		log(ERROR, "Unable to start loop: %i\n", loop);
+		log(SWITCH_LOG_ERROR, "Unable to start loop: %i\n", loop);
 	}
 
 	return status;
@@ -1044,24 +1064,25 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t force)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int rc = 0;
 
-	//* mosq	A valid mosquitto instance.
-	//* force	Set to true to force thread cancellation.
-	//*			If false, mosquitto_disconnect must have already been called.
-	rc = mosquitto_loop_stop(connection->mosq, force);
+	/*
+	* mosq	A valid mosquitto instance.
+	* force	Set to true to force thread cancellation.
+	*			If false, mosquitto_disconnect must have already been called.
+	*/
+	int rc = mosquitto_loop_stop(connection->mosq, force);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d successful\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d successful\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d input parameters were invalid\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d input parameters were invalid\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NOT_SUPPORTED:
-			log(INFO, "Shutting down profile: %s connection: %si mosquitto_loop_stop() %d thread support is not available\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %si mosquitto_loop_stop() %d thread support is not available\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_GENERR;
 			break;
 	}
@@ -1084,7 +1105,7 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!connection) {
-		log(ERROR, "mosq_disconnect() called with NULL connection\n");
+		log(SWITCH_LOG_ERROR, "mosq_disconnect() called with NULL connection\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1094,22 +1115,21 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 	connection->mosq = NULL;
 
 	if (connection->connected) {
-		//* mosq	A valid mosquitto instance.
 		int rc = mosquitto_disconnect(connection->mosq);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
-				log(DEBUG, "Disconnected profile %s connection %s from the broker\n", connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Disconnected profile %s connection %s from the broker\n", connection->profile_name, connection->name);
 				connection->connected = SWITCH_FALSE;
 				break;
 			case MOSQ_ERR_INVAL:
-				log(DEBUG, "Disconnection for profile %s connection %s returned: input parameters were invalid \n", connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Disconnection for profile %s connection %s returned: input parameters were invalid \n", connection->profile_name, connection->name);
 				return SWITCH_STATUS_GENERR;
 			case MOSQ_ERR_NO_CONN:
-				log(DEBUG, "Tried to disconnect profile %s connection %s but there was no connection to the broker\n", connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s but there was no connection to the broker\n", connection->profile_name, connection->name);
 				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 			default:
-				log(DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code (%d)\n", connection->profile_name, connection->name, rc);
+				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code (%d)\n", connection->profile_name, connection->name, rc);
 				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 		}
@@ -1137,27 +1157,27 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	switch_bool_t clean_session = SWITCH_TRUE;
 
 	if (!connection) {
-		log(ERROR, "mosq_new() called with NULL connection\n");
+		log(SWITCH_LOG_ERROR, "mosq_new() called with NULL connection\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (connection->mosq) {
-		log(DEBUG, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
+		log(SWITCH_LOG_DEBUG, "mosq_new() called, but the connection has an existing mosq structure exiting\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!profile) {
-		log(ERROR, "mosq_new() called with NULL profile\n");
+		log(SWITCH_LOG_ERROR, "mosq_new() called with NULL profile\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!profile->enable || !connection->enable) {
-		log(DEBUG, "mosq_new_clint() profile: %s %s connection: %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
+		log(SWITCH_LOG_DEBUG, "mosq_new_clint() profile: %s %s connection: %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(userdata = (mosquitto_mosq_userdata_t *)switch_core_alloc(profile->pool, sizeof(mosquitto_mosq_userdata_t)))) {
-		log(CRIT, "mosq_new() failed to allocate memory for mosquitto_new() userdata structure profile: %s connection: %s\n", profile->name, connection->name);
+		log(SWITCH_LOG_CRIT, "mosq_new() failed to allocate memory for mosquitto_new() userdata structure profile: %s connection: %s\n", profile->name, connection->name);
 		return SWITCH_STATUS_GENERR;
 	} else {
 		connection->userdata = userdata;
@@ -1167,33 +1187,35 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 
 	if (connection->client_id == NULL) {
 		if (connection->clean_session == SWITCH_FALSE) {
-			log(INFO, "mosquitto_new() profile: %s connection: %s called with NULL client_id, forcing clean_session to TRUE\n", profile->name, connection->name);
+			log(SWITCH_LOG_INFO, "mosquitto_new() profile: %s connection: %s called with NULL client_id, forcing clean_session to TRUE\n", profile->name, connection->name);
 			clean_session = SWITCH_TRUE;
 		}
 	}
 
 	clean_session = connection->clean_session;
 
-	log(DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
+	log(SWITCH_LOG_DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
 
-	//* id				String to use as the client id.  If NULL, a random client id will be generated.  If id is NULL, clean_session must be true.
-	//* clean_session	Set to true to instruct the broker to clean all messages and subscriptions on disconnect, false to instruct it to keep them.
-	//*					See the man page mqtt(7) for more details.  Note that a client will never discard its own outgoing messages on disconnect.
-	//*					Calling mosquitto_connect or mosquitto_reconnect will cause the messages to be resent.
-	//*					Use mosquitto_reinitialise to reset a client to its original state.  Must be set to true if the id parameter is NULL.
-	//* obj				A user pointer that will be passed as an argument to any callbacks that are specified.
+	/*
+	* id				String to use as the client id.  If NULL, a random client id will be generated.  If id is NULL, clean_session must be true.
+	* clean_session	Set to true to instruct the broker to clean all messages and subscriptions on disconnect, false to instruct it to keep them.
+	*					See the man page mqtt(7) for more details.  Note that a client will never discard its own outgoing messages on disconnect.
+	*					Calling mosquitto_connect or mosquitto_reconnect will cause the messages to be resent.
+	*					Use mosquitto_reinitialise to reset a client to its original state.  Must be set to true if the id parameter is NULL.
+	* obj				A user pointer that will be passed as an argument to any callbacks that are specified.
+	*/
 	connection->mosq = mosquitto_new(connection->client_id, clean_session, userdata);
 
 	if (connection->mosq == NULL) {
 		switch (errno) {
 			case ENOMEM:
-				log(ERROR, "mosquitto_new(%s, %d, NULL) out of memory\n", connection->client_id, connection->clean_session);
+				log(SWITCH_LOG_ERROR, "mosquitto_new(%s, %d, NULL) out of memory\n", connection->client_id, connection->clean_session);
 				return SWITCH_STATUS_GENERR;
 			case EINVAL:
-				log(ERROR, "mosquitto_new(%s, %d, NULL) invalid input parameters\n", connection->client_id, connection->clean_session);
+				log(SWITCH_LOG_ERROR, "mosquitto_new(%s, %d, NULL) invalid input parameters\n", connection->client_id, connection->clean_session);
 				return SWITCH_STATUS_GENERR;
 			default:
-				log(ERROR, "mosquitto_new(%s, %d, NULL) errno(%s)\n", connection->client_id, connection->clean_session, mosquitto_strerror(errno));
+				log(SWITCH_LOG_ERROR, "mosquitto_new(%s, %d, NULL) errno(%s)\n", connection->client_id, connection->clean_session, mosquitto_strerror(errno));
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -1221,69 +1243,71 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 	int rc;
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to mosq_subscribe()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to mosq_subscribe()\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!subscriber) {
-		log(ERROR, "Profile %s subscriber not passed to mosq_subscribe()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber not passed to mosq_subscribe()\n", profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s subscriber %s topic not passed to mosq_subscribe()\n", profile->name, subscriber->name);
+		log(SWITCH_LOG_ERROR, "Profile %s subscriber %s topic not passed to mosq_subscribe()\n", profile->name, subscriber->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!(connection = locate_connection(profile, topic->connection_name))) {
-		log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) is invalid\n", topic->name, topic->connection_name, profile->name);
+		log(SWITCH_LOG_ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) is invalid\n", topic->name, topic->connection_name, profile->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!connection->mosq) {
 		if (connection->enable) {
-			log(WARNING, "Trying to initialize the connection\n");
+			log(SWITCH_LOG_WARNING, "Trying to initialize the connection\n");
 			connection_initialize(profile, connection);
 		} else {
-			log(ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) mosq is NULL\n", topic->name, connection->name, profile->name)
+			log(SWITCH_LOG_ERROR, "Cannot subscribe to topic %s because connection %s (profile %s) mosq is NULL\n", topic->name, connection->name, profile->name)
 			return SWITCH_STATUS_GENERR;
-		}	
+		}
 	}
 
-	//* mosq		A valid mosquitto instance.
-	//*	mid			A pointer to an int.  If not NULL, the function will set this to the message id of this particular message.
-	//*				This can be then used with the subscribe callback to determine when the message has been sent.
-	//*	sub			The subscription pattern.
-	//* qos			The requested Quality of Service for this subscription.
+	/*
+	* mosq		A valid mosquitto instance.
+	*	mid			A pointer to an int.  If not NULL, the function will set this to the message id of this particular message.
+	*				This can be then used with the subscribe callback to determine when the message has been sent.
+	*	sub			The subscription pattern.
+	* qos			The requested Quality of Service for this subscription.
+	*/
 	rc = mosquitto_subscribe(connection->mosq, &topic->mid, topic->pattern, topic->qos);
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(INFO, "profile %s subscriber %s connection %s topic %s queued to pattern: %s (mid: %d)\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern, topic->mid);
+			log(SWITCH_LOG_INFO, "profile %s subscriber %s connection %s topic %s queued to pattern: %s (mid: %d)\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern, topic->mid);
 			topic->subscribed = SWITCH_TRUE;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the input parameters were invalid\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the input parameters were invalid\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NOMEM:
-			log(CRIT, "profile %s subscriber %s connection %s topic %s pattern: %s an out of memory condition occurred\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_CRIT, "profile %s subscriber %s connection %s topic %s pattern: %s an out of memory condition occurred\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NO_CONN:
-			log(WARNING, "profile %s subscriber %s connection %s topic %s pattern: %s not connected to an MQTT broker\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_WARNING, "profile %s subscriber %s connection %s topic %s pattern: %s not connected to an MQTT broker\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_MALFORMED_UTF8:
-			log(ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern is not valid UTF-8\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern is not valid UTF-8\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_OVERSIZE_PACKET:
-			log(ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern larger than the MQTT broker can support\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern larger than the MQTT broker can support\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
@@ -1309,45 +1333,45 @@ void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *
 {
 
 	if (!profile) {
-		log(ERROR, "Profile not passed to mosq_publish_results()\n");
+		log(SWITCH_LOG_ERROR, "Profile not passed to mosq_publish_results()\n");
 		return;
 	}
 
 	if (!connection) {
-		log(ERROR, "Profile %s connection not passed to mosq_publish_results()\n", profile->name);
+		log(SWITCH_LOG_ERROR, "Profile %s connection not passed to mosq_publish_results()\n", profile->name);
 		return;
 	}
 
 	if (!topic) {
-		log(ERROR, "Profile %s connection %s topic not passed to mosq_publish_results()\n", profile->name, connection->name);
+		log(SWITCH_LOG_ERROR, "Profile %s connection %s topic not passed to mosq_publish_results()\n", profile->name, connection->name);
 		return;
 	}
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_INVAL:
-			log(WARNING, "Event handler: failed to publish to [%s][%s] %s invalid input parameters\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_WARNING, "Event handler: failed to publish to [%s][%s] %s invalid input parameters\n", profile->name, connection->name, topic->pattern);
 			if (connection->enable) {
-				log(WARNING, "Event handler: failed to publish to [%s][%s] %s trying to initialize the connection\n", profile->name, connection->name, topic->pattern);
+				log(SWITCH_LOG_WARNING, "Event handler: failed to publish to [%s][%s] %s trying to initialize the connection\n", profile->name, connection->name, topic->pattern);
 				connection_initialize(profile, connection);
 			}
 			break;
 		case MOSQ_ERR_NOMEM:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_NO_CONN:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_PROTOCOL:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_PAYLOAD_SIZE:
-			log(DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
 			break;
 		default:
-			log(DEBUG, "Event handler: unknown return code %d from publish\n", rc);
+			log(SWITCH_LOG_DEBUG, "Event handler: unknown return code %d from publish\n", rc);
 			break;
 	}
 }
@@ -1376,7 +1400,7 @@ switch_status_t mosq_startup(void)
 	mosquitto_lib_init();
 
 	rc = mosquitto_lib_version(&major, &minor, &revision);
-	log(DEBUG, "Library rc=%d, version %d.%d.%d initialized\n", rc, major, minor, revision);
+	log(SWITCH_LOG_DEBUG, "Library rc=%d, version %d.%d.%d initialized\n", rc, major, minor, revision);
 
 	mosquitto_globals.mosquitto_lib.major = major;
 	mosquitto_globals.mosquitto_lib.minor = minor;

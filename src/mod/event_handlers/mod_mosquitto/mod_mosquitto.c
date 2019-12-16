@@ -44,12 +44,11 @@
 #include "mosquitto_mosq.h"
 
 struct globals_s mosquitto_globals;
+switch_loadable_module_interface_t *module_interface;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_mosquitto_runtime);
-
-switch_loadable_module_interface_t *module_interface = NULL;
 
 SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdown, mod_mosquitto_runtime);
 
@@ -85,10 +84,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
 	add_cli_api(module_interface, api_interface);
 
 	if (mosquitto_load_config(MOSQUITTO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
-		log(ERROR, "Configuration failed to load\n");
+		log(SWITCH_LOG_ERROR, "Configuration failed to load\n");
 		return SWITCH_STATUS_TERM;
 	}
-	log(INFO, "Configuration loaded\n");
+	log(SWITCH_LOG_INFO, "Configuration loaded\n");
 
 	mosquitto_globals.running = 1;
 	mosq_startup();

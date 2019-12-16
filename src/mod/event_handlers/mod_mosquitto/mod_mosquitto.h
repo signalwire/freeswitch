@@ -38,18 +38,9 @@
 #ifndef MOD_MOSQUITTO_H
 #define MOD_MOSQUITTO_H
 
-#define DEBUG SWITCH_LOG_DEBUG
-#define INFO SWITCH_LOG_INFO
-#define NOTICE SWITCH_LOG_NOTICE
-#define WARNING SWITCH_LOG_WARNING
-#define ERROR SWITCH_LOG_ERROR
-#define CRIT SWITCH_LOG_CRIT
-#define ALERT SWITCH_LOG_ALERT
-#define CONSOLE SWITCH_LOG_CONSOLE
-
 #define log(severity, ...) \
 	if (severity <= mosquitto_globals.loglevel) { \
-		 switch_log_printf(SWITCH_CHANNEL_LOG, (severity), __VA_ARGS__); \
+		 switch_log_printf(SWITCH_CHANNEL_LOG, severity, __VA_ARGS__); \
 	}
 
 #ifndef HAVE_OPENSSL
@@ -253,7 +244,7 @@ struct globals_s {
 	mosquitto_lib_t mosquitto_lib;
 
 	int running;
-	switch_log_level_t loglevel;
+	int loglevel;
 	switch_bool_t enable_profiles;
 	switch_bool_t enable_publishers;
 	switch_bool_t enable_subscribers;
