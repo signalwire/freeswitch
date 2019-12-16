@@ -66,7 +66,6 @@ SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdo
  */
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
-	switch_api_interface_t *api_interface = NULL;
 
 	memset(&mosquitto_globals, 0, sizeof(mosquitto_globals));
 	mosquitto_globals.pool = pool;
@@ -81,7 +80,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* create an api interface for the module command line interface (cli) */
-	add_cli_api(module_interface, api_interface);
+	add_cli_api(module_interface, &mosquitto_globals.api_interface);
 
 	if (mosquitto_load_config(MOSQUITTO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
 		log(SWITCH_LOG_ERROR, "Configuration failed to load\n");

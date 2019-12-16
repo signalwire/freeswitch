@@ -254,6 +254,7 @@ struct globals_s {
 	switch_bool_t enable_topics;
 	switch_bool_t enable_events;
 	size_t unique_string_length;
+	switch_api_interface_t api_interface;
 };
 extern struct globals_s mosquitto_globals;
 
