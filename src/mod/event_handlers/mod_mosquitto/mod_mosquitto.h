@@ -73,6 +73,8 @@ typedef struct mosquitto_mosq_userdata_s mosquitto_mosq_userdata_t;
 struct mosquitto_bgapi_s {
     char *cmd;
     char *arg;
+	switch_uuid_t uuid;
+	char uuid_cli[SWITCH_UUID_FORMATTED_LENGTH + 1];
     char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
     switch_memory_pool_t *pool;
 };

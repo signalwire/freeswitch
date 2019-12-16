@@ -72,26 +72,16 @@ typedef switch_status_t (*mosquitto_command_t) (char **argv, int argc, switch_st
 static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *arg = cmd;
 
 	mosquitto_bgapi_job_t *job = NULL;
-	switch_uuid_t uuid;
 	switch_memory_pool_t *pool = NULL;
 	switch_thread_t *thread = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 
-	const char *arg = cmd;
-	char my_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
-
 	if (!cmd) {
 		stream->write_function(stream, "-ERR Invalid syntax cmd empty\n");
 		return status;
-	}
-
-	if (!strncasecmp(cmd, "uuid:", 5)) {
-		const char *p = cmd + 5;
-		if ((arg = strchr(p, ' ')) && *arg++) {
-			switch_copy_string(my_uuid, p, arg - p);
-		}
 	}
 
 	if (zstr(arg)) {
@@ -104,11 +94,18 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 	job->cmd = switch_core_strdup(pool, arg);
 	job->pool = pool;
 
-	if (*my_uuid) {
-		switch_copy_string(job->uuid_str, my_uuid, strlen(my_uuid)+1);
+	if (!strncasecmp(cmd, "uuid:", 5)) {
+		const char *p = cmd + 5;
+		if ((arg = strchr(p, ' ')) && *arg++) {
+			switch_copy_string(job->uuid_cli, p, arg - p);
+		}
+	}
+
+	if (*job->uuid_cli) {
+		switch_copy_string(job->uuid_str, job->uuid_cli, strlen(job->uuid_cli)+1);
 	} else {
-		switch_uuid_get(&uuid);
-		switch_uuid_format(job->uuid_str, &uuid);
+		switch_uuid_get(&job->uuid);
+		switch_uuid_format(job->uuid_str, &job->uuid);
 	}
 
 	switch_threadattr_create(&thd_attr, job->pool);
