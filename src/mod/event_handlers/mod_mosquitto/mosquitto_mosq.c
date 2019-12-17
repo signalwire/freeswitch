@@ -361,8 +361,14 @@ void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(SWITCH_LOG_INFO, "mosq_publish_callback(): profile: %s connection: %s published (mid: %d)", profile->name, connection->name, message_id);
-	mosquitto_logger("mosq_publish_callback(): profile: %s connection: %s published (mid: %d)\n", profile->name, connection->name, message_id);
+	log(SWITCH_LOG_DEBUG, "profile %s connection %s message id %d published\n",
+		profile->name, connection->name, message_id);
+
+	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s message id %d published\n",
+		profile->name, connection->name, message_id);
+
+	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s message id %d published\n",
+		profile->name, connection->name, message_id);
 }
 
 
@@ -391,14 +397,18 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 		return;
 	}
 
-	log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s payloadlen: %d message: %s\n", (char *)message->topic, message->payloadlen, (char *)message->payload);
-
 	userdata = (mosquitto_mosq_userdata_t *)user_data;
 
 	if (!(payload_string = strndup((char *)message->payload, message->payloadlen))) {
 		log(SWITCH_LOG_ERROR, "mosq_message_callback(): Out of memory trying to duplicate %s\n", (char *)message->payload);
 		return;
 	}
+
+	log(SWITCH_LOG_DEBUG, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+
+	mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+
+	profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
 
 	if (!strncasecmp(payload_string, "bgapi", 5)) {
 		process_bgapi_message(userdata, payload_string, message);
@@ -433,12 +443,12 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(SWITCH_LOG_INFO, "mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d", profile->name, connection->name, mid, granted_qos[0]);
-	mosquitto_logger("mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d\n", profile->name, connection->name, mid, granted_qos[0]);
+	log(SWITCH_LOG_DEBUG, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
 
-	for(int i=1; i<qos_count; i++){
-		log(SWITCH_LOG_INFO, ", %d", granted_qos[i]);
-	}
+	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
+
+	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
+
 }
 
 
@@ -893,8 +903,8 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
  * \brief	This routine configures a Last Will and Testament (will) for a client.
  *
  * \details	Configure will information for a mosquitto instance.
- *          By default, clients do not have a will.
- *          This must be called before calling mosquitto_connect.
+ *		  By default, clients do not have a will.
+ *		  This must be called before calling mosquitto_connect.
  *
  * \param[in]	*connection Pointer to a connection structure
  *
@@ -918,7 +928,7 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 	* mosq		A valid mosquitto instance.
 	* topic		The topic on which to publish the will.
 	* payloadlen	The size of the payload (bytes).
-	*             Valid values are between 0 and 268,435,455.
+	*			 Valid values are between 0 and 268,435,455.
 	* payload		Pointer to the data to send.
 	*				If payloadlen > 0 this must be a valid memory location.
 	* qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the will.
@@ -1285,8 +1295,13 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_INFO, "profile %s subscriber %s connection %s topic %s queued to pattern: %s (mid: %d)\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern, topic->mid);
 			topic->subscribed = SWITCH_TRUE;
+			log(SWITCH_LOG_DEBUG, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
+			mosquitto_log(SWITCH_LOG_DEBUG, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
+			profile_log(SWITCH_LOG_DEBUG, profile, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
 			break;
 		case MOSQ_ERR_INVAL:
 			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the input parameters were invalid\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
@@ -1447,8 +1462,8 @@ switch_status_t mosq_shutdown(void)
 
 	switch_mutex_lock(mosquitto_globals.log.mutex);
 	if ((status = switch_file_close(mosquitto_globals.log.logfile)) != SWITCH_STATUS_SUCCESS) {
-      log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log.name);
-    }
+		log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log.name);
+	}
 	switch_mutex_unlock(mosquitto_globals.log.mutex);
 	switch_mutex_destroy(mosquitto_globals.log.mutex);
 

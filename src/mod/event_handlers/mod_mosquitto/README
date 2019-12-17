@@ -94,9 +94,12 @@ Configuration parameter definitions
 
 SETTINGS
 
-	loglevel			- log severity level is one of: debug,info,notice,warning,error,critical,alert,console
-	logdir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
-	logfile				- Name of the log file where mod_mosquitto messages will written.  Defaults to 'mosquitto.log'
+	log-enable			- Is logging enabled (true) / disabled (false)
+	log-level			- Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
+	log-dir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
+	log-file			- Name of the log file where mod_mosquitto messages will written.
+						- Defaults to 'mosquitto.log'
+	
 	enable-profiles		- Default setting if unspecified in the configuration file
 	enable-publishers	- Default setting if unspecified in the configuration file
 	enable-subscribers	- Default setting if unspecified in the configuration file
@@ -108,6 +111,12 @@ SETTINGS
 PROFILE
 	name				- Name of the profile. Each profile must have a unique name.
 	enable				- Is this profile enabled (true) / disabled (false).
+	
+	log-enable			- Is logging enabled (true) / disabled (false) for this profile
+	log-level			- Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
+	log-dir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
+	log-file			- Name of the log file where mod_mosquitto messages will written.
+						- Defaults to the profile name + '.log'.
 
 CONNECTIONS
 
@@ -253,8 +262,11 @@ An example configuration file:
 
 <configuration name="mosquitto.conf" description="mod_mosquitto">
 	<settings>
-		<!-- Default Log Level - value is one of: debug,info,notice,warning,error,critical,alert,console -->
-		<param name="loglevel" value="debug"/>
+		<param name="log-enable" value="true"/>
+        <!-- Default Log Level - value is one of: debug,info,notice,warning,error,critical,alert,console -->
+        <param name="log-level" value="debug"/>
+        <param name="log-dir" value="/usr/local/freeswitch/log"/>
+        <param name="log-file" value="mosquitto.log"/>
 		<param name="enable-profiles" value="true"/>
 		<param name="enable-publishers" value="true"/>
 		<param name="enable-subscribers" value="true"/>
@@ -266,6 +278,10 @@ An example configuration file:
 	<profiles>
 		<profile name="default">
 			<param name="enable" value="true"/>
+			<param name="log-enable" value="true"/>
+            <param name="log-level" value="debug"/>
+            <param name="log-dir" value="/usr/local/freeswitch/log"/>
+            <param name="log-file" value=""/>
 			<connections>
 				<param name="send_maximum" value="10"/>
 				<param name="bind_address" value=""/>

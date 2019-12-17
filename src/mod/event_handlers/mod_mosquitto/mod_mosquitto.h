@@ -39,7 +39,7 @@
 #define MOD_MOSQUITTO_H
 
 #define log(severity, ...) \
-	if (severity <= mosquitto_globals.loglevel) { \
+	if (severity <= mosquitto_globals.log.level) { \
 		 switch_log_printf(SWITCH_CHANNEL_LOG, severity, __VA_ARGS__); \
 	}
 
@@ -68,7 +68,7 @@ typedef struct mosquitto_event_s mosquitto_event_t;
 typedef struct mosquitto_event_userdata_s mosquitto_event_userdata_t;
 typedef struct mosquitto_topic_s mosquitto_topic_t;
 typedef struct mosquitto_mosq_userdata_s mosquitto_mosq_userdata_t;
-typedef struct mosquitto_logger_s mosquitto_logger_t;
+typedef struct mosquitto_log_s mosquitto_log_t;
 
 
 struct mosquitto_bgapi_s {
@@ -208,6 +208,8 @@ struct mosquitto_profile_s {
 	switch_mutex_t *mutex;
 	switch_thread_rwlock_t *rwlock;
 
+	mosquitto_log_t *log;
+
 	switch_mutex_t *connections_mutex;
 	switch_hash_t *connections;
 	switch_mutex_t *publishers_mutex;
@@ -234,9 +236,11 @@ struct mosquitto_mosq_userdata_s {
 	mosquitto_topic_t *topic;
 };
 
-struct mosquitto_logger_s {
+struct mosquitto_log_s {
 	switch_mutex_t *mutex;
+	switch_bool_t enable;
 	switch_file_t *logfile;
+	int level;
 	char *dir;
 	char *file;
 	char *name;
@@ -253,11 +257,11 @@ struct globals_s {
 	switch_queue_t *event_queue;
 	size_t event_queue_size;
 	mosquitto_lib_t mosquitto_lib;
-	
-	mosquitto_logger_t log;
+
+	mosquitto_log_t log;
 
 	int running;
-	int loglevel;
+
 	switch_bool_t enable_profiles;
 	switch_bool_t enable_publishers;
 	switch_bool_t enable_subscribers;

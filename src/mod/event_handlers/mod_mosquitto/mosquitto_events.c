@@ -60,7 +60,8 @@ void event_handler(switch_event_t *event)
 	mosquitto_publisher_t *publisher = NULL;
 	mosquitto_topic_t *topic = NULL;
 	mosquitto_connection_t *connection = NULL;
-	char *buf;
+	char *buf = NULL;
+	char *payload_string = NULL;
 	int rc;
 	const char *event_name = switch_event_get_header(event, "Event-Name");
 
@@ -139,12 +140,25 @@ void event_handler(switch_event_t *event)
 	 * payload		Pointer to the data to send.  If payloadlen > 0 this must be a valid memory location.
 	 * qos			Integer value 0, 1 or 2 indicating the Quality of Service to be used for the message.
 	 * retain		Set to true to make the message retained.
-     */
+	 */
 	rc = mosquitto_publish(connection->mosq, &topic->mid, topic->pattern, strlen(buf)+1, buf, topic->qos, topic->retain);
 
 	mosq_publish_results(profile, connection, topic, rc);
-	log(SWITCH_LOG_INFO, "Event %s queued to Topic %s for profile %s connection %s publisher %s (mid: %d) rc %d\n", event_name, topic->pattern, profile->name, connection->name, publisher->name, topic->mid, rc);
-	mosquitto_logger("Event %s queued to Topic %s for profile %s connection %s publisher %s (mid: %d) rc %d\n", event_name, topic->pattern, profile->name, connection->name, publisher->name, topic->mid, rc);
+
+	if (!(payload_string = strndup(buf, strlen(buf)+1))) {
+		log(SWITCH_LOG_ERROR, "Out of memory trying to duplicate %s\n", (char *)buf);
+		return;
+	}
+	
+	log(SWITCH_LOG_DEBUG, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload: %s\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
+	
+	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
+	
+	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
+	switch_safe_free(payload_string);
 
 	switch_safe_free(buf);
 

@@ -98,6 +98,9 @@ static mosquitto_profile_t *add_profile(const char *name)
 	switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 
+	profile->log = (mosquitto_log_t *)switch_core_alloc(pool, sizeof(*profile->log));
+	switch_mutex_init(&profile->log->mutex, SWITCH_MUTEX_DEFAULT, profile->pool);
+
 	switch_mutex_init(&profile->connections_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_core_hash_init(&profile->connections);
 	switch_mutex_init(&profile->publishers_mutex, SWITCH_MUTEX_NESTED, profile->pool);
@@ -301,6 +304,13 @@ switch_status_t remove_profile(const char *name)
 		switch_core_hash_delete(profile->connections, connection->name);
 	}
 	switch_mutex_unlock(profile->connections_mutex);
+
+	switch_mutex_lock(profile->log->mutex);
+	if ((status = switch_file_close(profile->log->logfile)) != SWITCH_STATUS_SUCCESS) {
+		log(SWITCH_LOG_ERROR, "Failed to close %s\n", profile->log->name);
+	}
+	switch_mutex_unlock(profile->log->mutex);
+	switch_mutex_destroy(profile->log->mutex);
 
 	status = SWITCH_STATUS_SUCCESS;
 	switch_core_hash_delete(mosquitto_globals.profiles, profile->name);
@@ -1480,7 +1490,13 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 			}
 
 			profile = add_profile(name);
+
 			profile->enable = SWITCH_FALSE;
+			profile->log->level = SWITCH_LOG_DEBUG;
+			profile->log->dir = NULL;
+			profile->log->file = NULL;
+			profile->log->name = NULL;
+			profile->log->logfile = NULL;
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -1490,8 +1506,41 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 				val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strncasecmp(var, "enable", 6) && !zstr(val)) {
 					profile->enable = switch_true(val);
+				} else if (!strncasecmp(var, "log-enable", 10) && !zstr(val)) {
+					profile->log->enable = switch_true(val);
+				} else if (!strncasecmp(var, "log-dir", 7) && !zstr(val)) {
+					profile->log->dir = switch_core_strdup(profile->pool, val);
+				} else if (!strncasecmp(var, "log-file", 8) && !zstr(val)) {
+					profile->log->file = switch_core_strdup(profile->pool, val);
+				} else if (!strncasecmp(var, "log-level", 9) && !zstr(val)) {
+					if (!strncasecmp(val, "debug", 5)) {
+						profile->log->level = SWITCH_LOG_DEBUG;
+					} else if (!strncasecmp(val, "info", 4)) {
+						profile->log->level = SWITCH_LOG_INFO;
+					} else if (!strncasecmp(val, "notice", 6)) {
+						profile->log->level = SWITCH_LOG_NOTICE;
+					} else if (!strncasecmp(val, "warning", 7)) {
+						profile->log->level = SWITCH_LOG_WARNING;
+					} else if (!strncasecmp(val, "error", 5)) {
+						profile->log->level = SWITCH_LOG_ERROR;
+					} else if (!strncasecmp(val, "critical", 8)) {
+						profile->log->level = SWITCH_LOG_CRIT;
+					} else if (!strncasecmp(val, "alert", 5)) {
+						profile->log->level = SWITCH_LOG_ALERT;
+					} else if (!strncasecmp(val, "console", 7)) {
+						profile->log->level = SWITCH_LOG_CONSOLE;
+					}
 				}
 			}
+
+			if (zstr(profile->log->dir)) {
+				profile->log->dir = switch_core_sprintf(profile->pool, "%s", SWITCH_GLOBAL_dirs.log_dir);
+			}
+			if (zstr(profile->log->file)) {
+				profile->log->file = switch_core_sprintf(profile->pool, "%s.log", profile->name);
+			}
+			profile->log->name = switch_core_sprintf(profile->pool, "%s%s%s", profile->log->dir, SWITCH_PATH_SEPARATOR, profile->log->file);
+
 			parse_connections(xprofile, profile);
 			parse_publishers(xprofile, profile);
 			parse_subscribers(xprofile, profile);
@@ -1517,7 +1566,7 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 	switch_xml_t settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	mosquitto_globals.loglevel = SWITCH_LOG_DEBUG;
+	mosquitto_globals.log.level = SWITCH_LOG_DEBUG;
 	mosquitto_globals.log.dir = NULL;
 	mosquitto_globals.log.file = NULL;
 	mosquitto_globals.log.name = NULL;
@@ -1539,9 +1588,11 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 			var = (char *) switch_xml_attr_soft(param, "name");
 			val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strncasecmp(var, "logdir", 6) && !zstr(val)) {
+			if (!strncasecmp(var, "log-enable", 10) && !zstr(val)) {
+				mosquitto_globals.log.enable = switch_true(val);
+			} else if (!strncasecmp(var, "log-dir", 7) && !zstr(val)) {
 				mosquitto_globals.log.dir = switch_core_strdup(mosquitto_globals.pool, val);
-			} else if (!strncasecmp(var, "logfile", 7) && !zstr(val)) {
+			} else if (!strncasecmp(var, "log-file", 8) && !zstr(val)) {
 				mosquitto_globals.log.file = switch_core_strdup(mosquitto_globals.pool, val);
 			} else if (!strncasecmp(var, "enable-profiles", 15) && !zstr(val)) {
 				mosquitto_globals.enable_profiles = switch_true(val);
@@ -1568,23 +1619,23 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 					len = RANDOM_STRING_LENGTH;
 				}
 				mosquitto_globals.unique_string_length = len;
-			} else if (!strncasecmp(var, "loglevel", 9) && !zstr(val)) {
+			} else if (!strncasecmp(var, "log-level", 9) && !zstr(val)) {
 				if (!strncasecmp(val, "debug", 5)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_DEBUG;
+					mosquitto_globals.log.level = SWITCH_LOG_DEBUG;
 				} else if (!strncasecmp(val, "info", 4)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_INFO;
+					mosquitto_globals.log.level = SWITCH_LOG_INFO;
 				} else if (!strncasecmp(val, "notice", 6)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_NOTICE;
+					mosquitto_globals.log.level = SWITCH_LOG_NOTICE;
 				} else if (!strncasecmp(val, "warning", 7)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_WARNING;
+					mosquitto_globals.log.level = SWITCH_LOG_WARNING;
 				} else if (!strncasecmp(val, "error", 5)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_ERROR;
+					mosquitto_globals.log.level = SWITCH_LOG_ERROR;
 				} else if (!strncasecmp(val, "critical", 8)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_CRIT;
+					mosquitto_globals.log.level = SWITCH_LOG_CRIT;
 				} else if (!strncasecmp(val, "alert", 5)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_ALERT;
+					mosquitto_globals.log.level = SWITCH_LOG_ALERT;
 				} else if (!strncasecmp(val, "console", 7)) {
-					mosquitto_globals.loglevel = SWITCH_LOG_CONSOLE;
+					mosquitto_globals.log.level = SWITCH_LOG_CONSOLE;
 				}
 			}
 		}
@@ -1597,7 +1648,7 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 		mosquitto_globals.log.file = switch_core_sprintf(mosquitto_globals.pool, "mosquitto.log");
 	}
 	mosquitto_globals.log.name = switch_core_sprintf(mosquitto_globals.pool, "%s%s%s", mosquitto_globals.log.dir, SWITCH_PATH_SEPARATOR, mosquitto_globals.log.file);
-	
+
 	return status;
 }
 

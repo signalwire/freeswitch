@@ -100,6 +100,15 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 
 	switch_mutex_lock(profile->mutex);
 
+	switch_mutex_lock(profile->log->mutex);
+	if (profile->log->enable) {
+		status = switch_file_open(&profile->log->logfile, profile->log->name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, profile->pool);
+		if (status != SWITCH_STATUS_SUCCESS) {
+			log(SWITCH_LOG_ERROR, "Failed to open %s\n", profile->log->name);
+		}
+	}
+	switch_mutex_unlock(profile->log->mutex);
+
 	switch_mutex_lock(profile->publishers_mutex);
 	for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {
 		mosquitto_publisher_t *publisher = NULL;
@@ -149,7 +158,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		}
 	}
 	switch_mutex_unlock(profile->connections_mutex);
-	
+
 	switch_mutex_unlock(profile->mutex);
 	return status;
 }
@@ -175,6 +184,13 @@ switch_status_t profile_deactivate(mosquitto_profile_t *profile)
 	}
 
 	log(SWITCH_LOG_INFO, "profile:%s deactivate in progress\n", profile->name);
+
+	switch_mutex_lock(profile->log->mutex);
+	if ((status = switch_file_close(profile->log->logfile)) != SWITCH_STATUS_SUCCESS) {
+	  log(SWITCH_LOG_ERROR, "Failed to close %s\n", profile->log->name);
+	}
+	switch_mutex_unlock(profile->log->mutex);
+
 	return status;
 }
 
@@ -642,10 +658,10 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	}
 
 	if (connection->enable) {
-		log(SWITCH_LOG_INFO, "profile:%s connection:%s activation in progress\n", profile->name, connection->name);
+		log(SWITCH_LOG_INFO, "profile %s connection %s activation in progress\n", profile->name, connection->name);
 		status = client_connect(profile, connection);
 	} else {
-		log(SWITCH_LOG_INFO, "profile:%s connection:%s deactivation in progress\n", profile->name, connection->name);
+		log(SWITCH_LOG_INFO, "profile %s connection %s deactivation in progress\n", profile->name, connection->name);
 		status = mosq_disconnect(connection);
 		connection->userdata = NULL;
 		connection->mosq = NULL;
@@ -654,7 +670,7 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	return status;
 }
 
-int mosquitto_logger(char *format, ...)
+int mosquitto_log(int severity, const char *format, ...)
 {
 	switch_time_exp_t tm;
 
@@ -662,12 +678,20 @@ int mosquitto_logger(char *format, ...)
 	int ret;
 	char *data;
 
+	if (!mosquitto_globals.log.enable) {
+		return -1;
+	}
+
+	if (severity > mosquitto_globals.log.level) {
+		return -1;
+	}
+
 	switch_mutex_lock(mosquitto_globals.log.mutex);
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
 	switch_file_printf(mosquitto_globals.log.logfile, "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d ",
 		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-        tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+		tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
 
 	va_start(ap, format);
 
@@ -685,6 +709,49 @@ int mosquitto_logger(char *format, ...)
 
 }
 
+
+int profile_log(int severity, mosquitto_profile_t *profile, const char *format, ...)
+{
+	switch_time_exp_t tm;
+
+	va_list ap;
+	int ret;
+	char *data;
+
+	if (!profile) {
+		return -1;
+	}
+
+	if (!profile->log->enable) {
+		return -1;
+	}
+
+	if (severity > profile->log->level) {
+		return -1;
+	}
+
+	switch_mutex_lock(profile->log->mutex);
+
+	switch_time_exp_lt(&tm, switch_micro_time_now());
+	switch_file_printf(profile->log->logfile, "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d ",
+		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+		tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+
+	va_start(ap, format);
+
+	if ((ret = switch_vasprintf(&data, format, ap)) != -1) {
+		switch_size_t bytes = strlen(data);
+		ret = switch_file_write(profile->log->logfile, data, &bytes);
+		free(data);
+	}
+
+	va_end(ap);
+
+	switch_mutex_unlock(profile->log->mutex);
+
+	return ret;
+
+}
 
 /* For Emacs:
  * Local Variables:

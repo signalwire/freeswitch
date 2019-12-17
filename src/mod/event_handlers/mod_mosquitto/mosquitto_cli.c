@@ -136,29 +136,29 @@ static switch_status_t cmd_loglevel(char **argv, int argc, switch_stream_handle_
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	if (argc == 1) {
-		stream->write_function(stream, "mosquitto loglevel: %s\n", switch_log_level2str(mosquitto_globals.loglevel));
+		stream->write_function(stream, "mosquitto loglevel: %s\n", switch_log_level2str(mosquitto_globals.log.level));
 		return status;
 	}
 
 	if (argc >= 2) {
 		if (!strncasecmp(argv[1], "debug", 5)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_DEBUG;
+			mosquitto_globals.log.level = SWITCH_LOG_DEBUG;
 		} else if (!strncasecmp(argv[1], "info", 4)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_INFO;
+			mosquitto_globals.log.level = SWITCH_LOG_INFO;
 		} else if (!strncasecmp(argv[1], "notice", 6)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_NOTICE;
+			mosquitto_globals.log.level = SWITCH_LOG_NOTICE;
 		} else if (!strncasecmp(argv[1], "warning", 7)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_WARNING;
+			mosquitto_globals.log.level = SWITCH_LOG_WARNING;
 		} else if (!strncasecmp(argv[1], "error", 5)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_ERROR;
+			mosquitto_globals.log.level = SWITCH_LOG_ERROR;
 		} else if (!strncasecmp(argv[1], "critical", 8)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_CRIT;
+			mosquitto_globals.log.level = SWITCH_LOG_CRIT;
 		} else if (!strncasecmp(argv[1], "alert", 5)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_ALERT;
+			mosquitto_globals.log.level = SWITCH_LOG_ALERT;
 		} else if (!strncasecmp(argv[1], "console", 7)) {
-			mosquitto_globals.loglevel = SWITCH_LOG_CONSOLE;
+			mosquitto_globals.log.level = SWITCH_LOG_CONSOLE;
 		}
-		stream->write_function(stream, "mosquitto loglevel set to: %s\n", switch_log_level2str(mosquitto_globals.loglevel));
+		stream->write_function(stream, "mosquitto loglevel set to: %s\n", switch_log_level2str(mosquitto_globals.log.level));
 	}
 
 	return status;
@@ -588,7 +588,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	stream->write_function(stream, "%s\n", line);
 	stream->write_function(stream, "mosquitto library version: %d.%d.%d\n", mosquitto_globals.mosquitto_lib.major, mosquitto_globals.mosquitto_lib.minor, mosquitto_globals.mosquitto_lib.revision);
 	stream->write_function(stream, "settings\n");
-	stream->write_function(stream, "  loglevel: %s\n", switch_log_level2str(mosquitto_globals.loglevel));
+	stream->write_function(stream, "  log-enable: %s\n", mosquitto_globals.log.enable ? "True" : "False");
+	stream->write_function(stream, "  log-level: %s\n", switch_log_level2str(mosquitto_globals.log.level));
+	stream->write_function(stream, "  log-dir: %s\n", mosquitto_globals.log.dir);
+	stream->write_function(stream, "  log-file: %s\n", mosquitto_globals.log.file);
 	stream->write_function(stream, "  enable-profiles: %s\n", mosquitto_globals.enable_profiles ? "True" : "False");
 	stream->write_function(stream, "  enable-publishers: %s\n", mosquitto_globals.enable_publishers ? "True" : "False");
 	stream->write_function(stream, "  enable-subscribers: %s\n", mosquitto_globals.enable_subscribers ? "True" : "False");
@@ -607,6 +610,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		profile = (mosquitto_profile_t *)val;
 		stream->write_function(stream, "  profile name: %s\n", profile->name);
 		stream->write_function(stream, "	enable: %s\n", profile->enable ? "True" : "False");
+		stream->write_function(stream, "	log-enable: %s\n", profile->log->enable ? "True" : "False");
+		stream->write_function(stream, "	log-level: %s\n", switch_log_level2str(profile->log->level));
+		stream->write_function(stream, "	log-dir: %s\n", profile->log->dir);
+		stream->write_function(stream, "	log-file: %s\n", profile->log->file);
 		stream->write_function(stream, "	connections\n");
 		for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
 			switch_core_hash_this(connections_hi, NULL, NULL, &val);
