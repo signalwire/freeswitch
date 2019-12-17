@@ -68,6 +68,7 @@ typedef struct mosquitto_event_s mosquitto_event_t;
 typedef struct mosquitto_event_userdata_s mosquitto_event_userdata_t;
 typedef struct mosquitto_topic_s mosquitto_topic_t;
 typedef struct mosquitto_mosq_userdata_s mosquitto_mosq_userdata_t;
+typedef struct mosquitto_logger_s mosquitto_logger_t;
 
 
 struct mosquitto_bgapi_s {
@@ -233,6 +234,14 @@ struct mosquitto_mosq_userdata_s {
 	mosquitto_topic_t *topic;
 };
 
+struct mosquitto_logger_s {
+	switch_mutex_t *mutex;
+	switch_file_t *logfile;
+	char *dir;
+	char *file;
+	char *name;
+};
+
 struct globals_s {
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
@@ -245,11 +254,7 @@ struct globals_s {
 	size_t event_queue_size;
 	mosquitto_lib_t mosquitto_lib;
 	
-	switch_mutex_t *logger_mutex;
-	switch_file_t *logfile;
-	char *log_dir;
-	char *log_file;
-	char *log_name;
+	mosquitto_logger_t log;
 
 	int running;
 	int loglevel;

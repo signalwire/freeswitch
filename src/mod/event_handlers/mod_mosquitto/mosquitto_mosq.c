@@ -1409,10 +1409,10 @@ switch_status_t mosq_startup(void)
 	mosquitto_globals.mosquitto_lib.revision = revision;
 	switch_mutex_unlock(mosquitto_globals.mutex);
 
-	switch_mutex_init(&mosquitto_globals.logger_mutex, SWITCH_MUTEX_DEFAULT, mosquitto_globals.pool);
-	status = switch_file_open(&mosquitto_globals.logfile, mosquitto_globals.log_name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, mosquitto_globals.pool);
+	switch_mutex_init(&mosquitto_globals.log.mutex, SWITCH_MUTEX_DEFAULT, mosquitto_globals.pool);
+	status = switch_file_open(&mosquitto_globals.log.logfile, mosquitto_globals.log.name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, mosquitto_globals.pool);
 	if (status != SWITCH_STATUS_SUCCESS) {
-		log(SWITCH_LOG_ERROR, "Failed to open %s\n", mosquitto_globals.log_name);
+		log(SWITCH_LOG_ERROR, "Failed to open %s\n", mosquitto_globals.log.name);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1445,12 +1445,12 @@ switch_status_t mosq_shutdown(void)
 
 	mosquitto_lib_cleanup();
 
-	switch_mutex_lock(mosquitto_globals.logger_mutex);
-	if ((status = switch_file_close(mosquitto_globals.logfile)) != SWITCH_STATUS_SUCCESS) {
-      log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log_name);
+	switch_mutex_lock(mosquitto_globals.log.mutex);
+	if ((status = switch_file_close(mosquitto_globals.log.logfile)) != SWITCH_STATUS_SUCCESS) {
+      log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log.name);
     }
-	switch_mutex_unlock(mosquitto_globals.logger_mutex);
-	switch_mutex_destroy(mosquitto_globals.logger_mutex);
+	switch_mutex_unlock(mosquitto_globals.log.mutex);
+	switch_mutex_destroy(mosquitto_globals.log.mutex);
 
 	return status;
 }

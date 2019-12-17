@@ -662,10 +662,10 @@ int mosquitto_logger(char *format, ...)
 	int ret;
 	char *data;
 
-	switch_mutex_lock(mosquitto_globals.logger_mutex);
+	switch_mutex_lock(mosquitto_globals.log.mutex);
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
-	switch_file_printf(mosquitto_globals.logfile, "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d ",
+	switch_file_printf(mosquitto_globals.log.logfile, "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d ",
 		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
         tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
 
@@ -673,13 +673,13 @@ int mosquitto_logger(char *format, ...)
 
 	if ((ret = switch_vasprintf(&data, format, ap)) != -1) {
 		switch_size_t bytes = strlen(data);
-		ret = switch_file_write(mosquitto_globals.logfile, data, &bytes);
+		ret = switch_file_write(mosquitto_globals.log.logfile, data, &bytes);
 		free(data);
 	}
 
 	va_end(ap);
 
-	switch_mutex_unlock(mosquitto_globals.logger_mutex);
+	switch_mutex_unlock(mosquitto_globals.log.mutex);
 
 	return ret;
 
