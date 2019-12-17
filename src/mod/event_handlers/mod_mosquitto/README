@@ -95,6 +95,8 @@ Configuration parameter definitions
 SETTINGS
 
 	loglevel			- log severity level is one of: debug,info,notice,warning,error,critical,alert,console
+	logdir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
+	logfile				- Name of the log file where mod_mosquitto messages will written.  Defaults to 'mosquitto.log'
 	enable-profiles		- Default setting if unspecified in the configuration file
 	enable-publishers	- Default setting if unspecified in the configuration file
 	enable-subscribers	- Default setting if unspecified in the configuration file

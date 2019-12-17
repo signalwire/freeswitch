@@ -1518,6 +1518,10 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	mosquitto_globals.loglevel = SWITCH_LOG_DEBUG;
+	mosquitto_globals.log_dir = NULL;
+	mosquitto_globals.log_file = NULL;
+	mosquitto_globals.log_name = NULL;
+	mosquitto_globals.logfile = NULL;
 	mosquitto_globals.enable_profiles = SWITCH_FALSE;
 	mosquitto_globals.enable_publishers = SWITCH_FALSE;
 	mosquitto_globals.enable_subscribers = SWITCH_FALSE;
@@ -1535,7 +1539,11 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 			var = (char *) switch_xml_attr_soft(param, "name");
 			val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strncasecmp(var, "enable-profiles", 15) && !zstr(val)) {
+			if (!strncasecmp(var, "logdir", 6) && !zstr(val)) {
+				mosquitto_globals.log_dir = switch_core_strdup(mosquitto_globals.pool, val);
+			} else if (!strncasecmp(var, "logfile", 7) && !zstr(val)) {
+				mosquitto_globals.log_file = switch_core_strdup(mosquitto_globals.pool, val);
+			} else if (!strncasecmp(var, "enable-profiles", 15) && !zstr(val)) {
 				mosquitto_globals.enable_profiles = switch_true(val);
 			} else if (!strncasecmp(var, "enable-publishers", 17) && !zstr(val)) {
 				mosquitto_globals.enable_publishers = switch_true(val);
@@ -1581,6 +1589,15 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 			}
 		}
 	}
+
+	if (zstr(mosquitto_globals.log_dir)) {
+		mosquitto_globals.log_dir = switch_core_sprintf(mosquitto_globals.pool, "%s", SWITCH_GLOBAL_dirs.log_dir);
+	}
+	if (zstr(mosquitto_globals.log_file)) {
+		mosquitto_globals.log_file = switch_core_sprintf(mosquitto_globals.pool, "mosquitto.log");
+	}
+	mosquitto_globals.log_name = switch_core_sprintf(mosquitto_globals.pool, "%s%s%s", mosquitto_globals.log_dir, SWITCH_PATH_SEPARATOR, mosquitto_globals.log_file);
+	
 	return status;
 }
 

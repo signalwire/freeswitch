@@ -362,6 +362,7 @@ void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_
 	connection = userdata->connection;
 
 	log(SWITCH_LOG_INFO, "mosq_publish_callback(): profile: %s connection: %s published (mid: %d)", profile->name, connection->name, message_id);
+	mosquitto_logger("mosq_publish_callback(): profile: %s connection: %s published (mid: %d)\n", profile->name, connection->name, message_id);
 }
 
 
@@ -433,6 +434,7 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
 	connection = userdata->connection;
 
 	log(SWITCH_LOG_INFO, "mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d", profile->name, connection->name, mid, granted_qos[0]);
+	mosquitto_logger("mosq_subscribe_callback(): profile: %s connection: %s subscribed (mid: %d) qos: %d\n", profile->name, connection->name, mid, granted_qos[0]);
 
 	for(int i=1; i<qos_count; i++){
 		log(SWITCH_LOG_INFO, ", %d", granted_qos[i]);
@@ -1407,6 +1409,13 @@ switch_status_t mosq_startup(void)
 	mosquitto_globals.mosquitto_lib.revision = revision;
 	switch_mutex_unlock(mosquitto_globals.mutex);
 
+	switch_mutex_init(&mosquitto_globals.logger_mutex, SWITCH_MUTEX_DEFAULT, mosquitto_globals.pool);
+	status = switch_file_open(&mosquitto_globals.logfile, mosquitto_globals.log_name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, mosquitto_globals.pool);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		log(SWITCH_LOG_ERROR, "Failed to open %s\n", mosquitto_globals.log_name);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	status = initialize_profiles();
 
 	return status;
@@ -1435,6 +1444,13 @@ switch_status_t mosq_shutdown(void)
 	switch_mutex_unlock(mosquitto_globals.profiles_mutex);
 
 	mosquitto_lib_cleanup();
+
+	switch_mutex_lock(mosquitto_globals.logger_mutex);
+	if ((status = switch_file_close(mosquitto_globals.logfile)) != SWITCH_STATUS_SUCCESS) {
+      log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log_name);
+    }
+	switch_mutex_unlock(mosquitto_globals.logger_mutex);
+	switch_mutex_destroy(mosquitto_globals.logger_mutex);
 
 	return status;
 }

@@ -244,6 +244,12 @@ struct globals_s {
 	switch_queue_t *event_queue;
 	size_t event_queue_size;
 	mosquitto_lib_t mosquitto_lib;
+	
+	switch_mutex_t *logger_mutex;
+	switch_file_t *logfile;
+	char *log_dir;
+	char *log_file;
+	char *log_name;
 
 	int running;
 	int loglevel;

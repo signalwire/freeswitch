@@ -144,6 +144,7 @@ void event_handler(switch_event_t *event)
 
 	mosq_publish_results(profile, connection, topic, rc);
 	log(SWITCH_LOG_INFO, "Event %s queued to Topic %s for profile %s connection %s publisher %s (mid: %d) rc %d\n", event_name, topic->pattern, profile->name, connection->name, publisher->name, topic->mid, rc);
+	mosquitto_logger("Event %s queued to Topic %s for profile %s connection %s publisher %s (mid: %d) rc %d\n", event_name, topic->pattern, profile->name, connection->name, publisher->name, topic->mid, rc);
 
 	switch_safe_free(buf);
 

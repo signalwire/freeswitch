@@ -654,6 +654,37 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	return status;
 }
 
+int mosquitto_logger(char *format, ...)
+{
+	switch_time_exp_t tm;
+
+	va_list ap;
+	int ret;
+	char *data;
+
+	switch_mutex_lock(mosquitto_globals.logger_mutex);
+
+	switch_time_exp_lt(&tm, switch_micro_time_now());
+	switch_file_printf(mosquitto_globals.logfile, "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d ",
+		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+        tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+
+	va_start(ap, format);
+
+	if ((ret = switch_vasprintf(&data, format, ap)) != -1) {
+		switch_size_t bytes = strlen(data);
+		ret = switch_file_write(mosquitto_globals.logfile, data, &bytes);
+		free(data);
+	}
+
+	va_end(ap);
+
+	switch_mutex_unlock(mosquitto_globals.logger_mutex);
+
+	return ret;
+
+}
+
 
 /* For Emacs:
  * Local Variables:

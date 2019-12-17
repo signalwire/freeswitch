@@ -55,8 +55,7 @@ switch_status_t subscriber_topic_activate(mosquitto_profile_t *profile, mosquitt
 switch_status_t subscriber_topic_deactivate(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic);
 mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquitto_connection_t *connection, const char *name);
 switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_connection_t *connection);
-void mosq_log(switch_log_level_t severity, char *fmt, ...);
-
+int mosquitto_logger(char *format, ...);
 
 #endif //MOSQUITTO_UTILS_H
 
