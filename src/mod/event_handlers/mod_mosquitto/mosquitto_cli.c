@@ -589,6 +589,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	stream->write_function(stream, "mosquitto library version: %d.%d.%d\n", mosquitto_globals.mosquitto_lib.major, mosquitto_globals.mosquitto_lib.minor, mosquitto_globals.mosquitto_lib.revision);
 	stream->write_function(stream, "settings\n");
 	stream->write_function(stream, "  log-enable: %s\n", mosquitto_globals.log.enable ? "True" : "False");
+	stream->write_function(stream, "  log-details: %s\n", mosquitto_globals.log.details ? "True" : "False");
 	stream->write_function(stream, "  log-level: %s\n", switch_log_level2str(mosquitto_globals.log.level));
 	stream->write_function(stream, "  log-dir: %s\n", mosquitto_globals.log.dir);
 	stream->write_function(stream, "  log-file: %s\n", mosquitto_globals.log.file);
@@ -611,6 +612,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		stream->write_function(stream, "  profile name: %s\n", profile->name);
 		stream->write_function(stream, "	enable: %s\n", profile->enable ? "True" : "False");
 		stream->write_function(stream, "	log-enable: %s\n", profile->log->enable ? "True" : "False");
+		stream->write_function(stream, "	log-details: %s\n", profile->log->details ? "True" : "False");
 		stream->write_function(stream, "	log-level: %s\n", switch_log_level2str(profile->log->level));
 		stream->write_function(stream, "	log-dir: %s\n", profile->log->dir);
 		stream->write_function(stream, "	log-file: %s\n", profile->log->file);

@@ -406,9 +406,18 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 
 	log(SWITCH_LOG_DEBUG, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
 
-	mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+	if (mosquitto_globals.log.details) {
+		mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+	} else {
+		mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s\n", userdata->profile->name, (char *)message->topic);
 
-	profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+	}
+
+	if (userdata->profile->log->details) {
+		profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+	} else {
+		profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s\n", userdata->profile->name, (char *)message->topic);
+	}
 
 	if (!strncasecmp(payload_string, "bgapi", 5)) {
 		process_bgapi_message(userdata, payload_string, message);

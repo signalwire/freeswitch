@@ -239,6 +239,7 @@ struct mosquitto_mosq_userdata_s {
 struct mosquitto_log_s {
 	switch_mutex_t *mutex;
 	switch_bool_t enable;
+	switch_bool_t details;
 	switch_file_t *logfile;
 	int level;
 	char *dir;

@@ -95,6 +95,7 @@ Configuration parameter definitions
 SETTINGS
 
 	log-enable			- Is logging enabled (true) / disabled (false)
+	log-details			- Is logging of message details enabled (true) / disabled (false)
 	log-level			- Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
 	log-dir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
 	log-file			- Name of the log file where mod_mosquitto messages will written.
@@ -113,6 +114,7 @@ PROFILE
 	enable				- Is this profile enabled (true) / disabled (false).
 	
 	log-enable			- Is logging enabled (true) / disabled (false) for this profile
+	log-details			- Is logging of message details enabled (true) / disabled (false)
 	log-level			- Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
 	log-dir				- Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
 	log-file			- Name of the log file where mod_mosquitto messages will written.

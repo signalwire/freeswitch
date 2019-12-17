@@ -153,11 +153,21 @@ void event_handler(switch_event_t *event)
 	log(SWITCH_LOG_DEBUG, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload: %s\n",
 		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
 	
-	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
+	if (mosquitto_globals.log.details) {
+		mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
 		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
-	
-	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
+	} else {
+		mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s publisher %s topic %s event %s message id %d queued\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid);
+	}
+
+	if (profile->log->details) {
+		profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
 		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
+	} else {
+		profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s publisher %s topic %s event %s message id %d queued\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid);
+	}
 	switch_safe_free(payload_string);
 
 	switch_safe_free(buf);

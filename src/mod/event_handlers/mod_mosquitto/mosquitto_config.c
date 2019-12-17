@@ -1492,6 +1492,8 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 			profile = add_profile(name);
 
 			profile->enable = SWITCH_FALSE;
+			profile->log->enable = SWITCH_FALSE;
+			profile->log->details = SWITCH_FALSE;
 			profile->log->level = SWITCH_LOG_DEBUG;
 			profile->log->dir = NULL;
 			profile->log->file = NULL;
@@ -1508,6 +1510,8 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 					profile->enable = switch_true(val);
 				} else if (!strncasecmp(var, "log-enable", 10) && !zstr(val)) {
 					profile->log->enable = switch_true(val);
+				} else if (!strncasecmp(var, "log-details", 11) && !zstr(val)) {
+					profile->log->details = switch_true(val);
 				} else if (!strncasecmp(var, "log-dir", 7) && !zstr(val)) {
 					profile->log->dir = switch_core_strdup(profile->pool, val);
 				} else if (!strncasecmp(var, "log-file", 8) && !zstr(val)) {
@@ -1567,6 +1571,8 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	mosquitto_globals.log.level = SWITCH_LOG_DEBUG;
+	mosquitto_globals.log.enable = SWITCH_FALSE;
+	mosquitto_globals.log.details = SWITCH_FALSE;
 	mosquitto_globals.log.dir = NULL;
 	mosquitto_globals.log.file = NULL;
 	mosquitto_globals.log.name = NULL;
@@ -1590,6 +1596,8 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 
 			if (!strncasecmp(var, "log-enable", 10) && !zstr(val)) {
 				mosquitto_globals.log.enable = switch_true(val);
+			} else if (!strncasecmp(var, "log-details", 11) && !zstr(val)) {
+				mosquitto_globals.log.details = switch_true(val);
 			} else if (!strncasecmp(var, "log-dir", 7) && !zstr(val)) {
 				mosquitto_globals.log.dir = switch_core_strdup(mosquitto_globals.pool, val);
 			} else if (!strncasecmp(var, "log-file", 8) && !zstr(val)) {
