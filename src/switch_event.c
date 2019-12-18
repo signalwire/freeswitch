@@ -571,9 +571,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
 
-		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-			switch_status_t st;
-			switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		for(x = 0; x < (uint32_t)MAX_DISPATCH; x++) {
+			if (EVENT_DISPATCH_QUEUE_THREADS[x]) {
+				switch_status_t st;
+				switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+			}
 		}
 	}
 
