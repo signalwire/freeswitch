@@ -1160,7 +1160,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	}
 
 	switch_core_session_get_write_impl(session, &write_impl);
-	rate_mult = (write_impl.actual_samples_per_second / 1000);
+
+	if (write_impl.actual_samples_per_second >= 1000) {
+		rate_mult = (write_impl.actual_samples_per_second / 1000);
+	} 
 
 	for (i = 0; i < argc; i++) {
 		dtmf.duration = switch_core_default_dtmf_duration(0);
