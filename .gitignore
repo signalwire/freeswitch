@@ -272,4 +272,9 @@ src/mod/applications/mod_http_cache/test/test_aws
 src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
 
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
