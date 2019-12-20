@@ -10891,9 +10891,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
 			const char *ipv6;
 			const char *tmp, *at, *url = NULL;
-
+			const char *tmp_user = switch_channel_get_variable(channel, "sip_to_user");
+			
+			user = switch_core_session_url_encode(session, tmp_user);
 			host = switch_channel_get_variable(channel, "sip_to_host");
-			user = switch_channel_get_variable(channel, "sip_to_user");
 
 			switch_channel_set_variable(channel, "sip_to_comment", sip->sip_to->a_comment);
 
