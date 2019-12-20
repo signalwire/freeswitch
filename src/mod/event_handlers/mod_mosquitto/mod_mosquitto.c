@@ -53,15 +53,15 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_mosquitto_runtime);
 SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdown, mod_mosquitto_runtime);
 
 /**
- * \brief	This function is called when FreeSWITCH loads the mod_mosquitto module
+ * @brief	This function is called when FreeSWITCH loads the mod_mosquitto module
  *
- * \note	The definition of this function is performed by the macro SWITCH_MODULE_LOAD_FUNCTION that expands to
+ * @notee	The definition of this function is performed by the macro SWITCH_MODULE_LOAD_FUNCTION that expands to
  *		  switch_status_t mod_mosquitto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
  *
  * \param[in]	switch_loadable_module_interface_t **module_interface
  * \param[in]	switch_memory_pool_t *pool
  *
- * \retval		switch_status_t
+ * @retval		switch_status_t
  *
  */
 
@@ -96,12 +96,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load) {
 }
 
 /**
- * \brief	This function is called when FreeSWITCH unloads the mod_mosquitto module
+ * @brief	This function is called when FreeSWITCH unloads the mod_mosquitto module
  *
- * \note	The definition of this function is performed by the macro SWITCH_MODULE_SHUTDOWN_FUNCTION that expands to
+ * @note	The definition of this function is performed by the macro SWITCH_MODULE_SHUTDOWN_FUNCTION that expands to
  *		  switch_status_t mod_mosquitto_shutdown(void)
  *
- * \retval	switch_status_t
+ * @retval	switch_status_t
  *
  */
 
@@ -125,12 +125,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown) {
 }
 
 /**
- * \brief	This is the runtime loop of the module, from here you can listen on sockets, spawn new threads to handle requests. etc.
+ * @brief	This is the runtime loop of the module, from here you can listen on sockets, spawn new threads to handle requests. etc.
  *
- * \note	The definition of this function is performed by the macro SWITCH_MODULE_RUNTIME_FUNCTION that expands to
+ * @notee	The definition of this function is performed by the macro SWITCH_MODULE_RUNTIME_FUNCTION that expands to
  *			switch_status_t mod_mosquitto_runtime(void)
  *
- * \retval	switch_status_t
+ * @retval	switch_status_t
  *
  */
 

@@ -45,12 +45,12 @@
 
 
 /**
- * \brief   This is the primary event handler.  It is called when a bound FreeSWITCH event is fired.
+ * @brief   This is the primary event handler.  It is called when a bound FreeSWITCH event is fired.
  *
- * \details This routine is called for ALL events regardless of the profile or publisher used.
+ * @details This routine is called for ALL events regardless of the profile or publisher used.
  *			Details around how to process the event are located in the userdata structure passed with event.
  *
- * \param[in]   *event	Pointer to an event structure
+ * @param[in]   *event	Pointer to an event structure
  */
 
 void event_handler(switch_event_t *event)
@@ -181,17 +181,17 @@ void event_handler(switch_event_t *event)
 }
 
 /**
- * \brief   This functions binds an event to FreeSWITCH.
+ * @brief   This functions binds an event to FreeSWITCH.
  *
- * \details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
+ * @details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
  *			be processed by the correct publisher.
  *
- * \param[in]   *profile	Pointer to the profile associated with this event
- * \param[in]   *publisher	Pointer to the publisher associated with this event
- * \param[in]   *topic		Pointer to the topic associated with this event
- * \param[in]	*event		Pointer to an event structure
+ * @param[in]   *profile	Pointer to the profile associated with this event
+ * @param[in]   *publisher	Pointer to the publisher associated with this event
+ * @param[in]   *topic		Pointer to the topic associated with this event
+ * @param[in]	*event		Pointer to an event structure
  *
- * \retval SWITCH_STATUS_GENERR if there was a problem binding to the event
+ * @retval SWITCH_STATUS_GENERR if there was a problem binding to the event
  *
  */
 
@@ -255,17 +255,17 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 
 
 /**
- * \brief   This functions unbinds an event to FreeSWITCH.
+ * @brief   This functions unbinds an event to FreeSWITCH.
  *
- * \details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
+ * @details This routine sets up the userdata structure and binds to an event.  The userdata allows the fired event to
  *			be processed by the correct publisher.
  *
- * \param[in]   *profile	Pointer to the profile associated with this event
- * \param[in]   *publisher	Pointer to the publisher associated with this event
- * \param[in]   *topic		Pointer to the topic associated with this event
- * \param[in]	*event		Pointer to an event structure
+ * @param[in]   *profile	Pointer to the profile associated with this event
+ * @param[in]   *publisher	Pointer to the publisher associated with this event
+ * @param[in]   *topic		Pointer to the topic associated with this event
+ * @param[in]	*event		Pointer to an event structure
  *
- * \retval SWITCH_STATUS_GENERR if there was a problem binding to the event
+ * @retval SWITCH_STATUS_GENERR if there was a problem binding to the event
  *
  */
 

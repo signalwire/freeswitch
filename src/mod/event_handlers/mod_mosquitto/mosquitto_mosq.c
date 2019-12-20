@@ -50,12 +50,12 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 
 
 /**
- * \brief   This is a threaded bgapi execution routine.
+ * @brief   This is a threaded bgapi execution routine.
  *
- * \details This routine is called 'in a new thread' to process a bgapi command.
+ * @details This routine is called 'in a new thread' to process a bgapi command.
  *
- * \param[in]   *thread  Pointer to a FreeSWITCH thread structure that this routine is called in
- * \param[in]   *obj	Pointer to the bgapi command and arguments
+ * @param[in]   *thread  Pointer to a FreeSWITCH thread structure that this routine is called in
+ * @param[in]   *obj	Pointer to the bgapi command and arguments
  */
 
 void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
@@ -120,15 +120,15 @@ void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 
 
 /**
- * \brief   This routine is called when an 'originate' message is received by a subscription
+ * @brief   This routine is called when an 'originate' message is received by a subscription
  *
- * \details This routine will set up and execute an originate command
+ * @details This routine will set up and execute an originate command
  *
- * \param[in]   *userdata	Pointer to a userdata structure set up when the connection associated with this subscription was performed.
- * \param[in]   *payload_string	Pointer to a local copy of the subscribed (received) message
- * \param[in]   *message	Pointer to the received message in a Mosquitto message data structure
+ * @param[in]   *userdata	Pointer to a userdata structure set up when the connection associated with this subscription was performed.
+ * @param[in]   *payload_string	Pointer to a local copy of the subscribed (received) message
+ * @param[in]   *message	Pointer to the received message in a Mosquitto message data structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *userdata, char *payload_string, const struct mosquitto_message *message)
@@ -222,15 +222,15 @@ static switch_status_t process_originate_message(mosquitto_mosq_userdata_t *user
 
 
 /**
- * \brief   This routine is called when an 'bgapi' message is received by a subscription
+ * @brief   This routine is called when an 'bgapi' message is received by a subscription
  *
- * \details This routine will set up and execute a bgapi command
+ * @details This routine will set up and execute a bgapi command
  *
- * \param[in]   *userdata	Pointer to a userdata structure set up when the connection associated with this subscription was performed.
- * \param[in]   *payload_string	Pointer to a local copy of the subscribed (received) message
- * \param[in]   *message	Pointer to the received message in a Mosquitto message data structure
+ * @param[in]   *userdata	Pointer to a userdata structure set up when the connection associated with this subscription was performed.
+ * @param[in]   *payload_string	Pointer to a local copy of the subscribed (received) message
+ * @param[in]   *message	Pointer to the received message in a Mosquitto message data structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata, char *payload_string, const struct mosquitto_message *message)
@@ -280,11 +280,11 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 
 
 /**
- * \brief   	This routine sets up callbacks for associated with a connection to an MQTT broker
+ * @brief   	This routine sets up callbacks for associated with a connection to an MQTT broker
  *
- * \details		Set the logging callback.  This should be used if you want event logging information from the client library.
+ * @details		Set the logging callback.  This should be used if you want event logging information from the client library.
  *
- * \param[in]   *connection	Pointer to a connection hash that these callbacks will be associated with
+ * @param[in]   *connection	Pointer to a connection hash that these callbacks will be associated with
  */
 
 void mosq_callbacks_set(mosquitto_connection_t *connection)
@@ -299,13 +299,13 @@ void mosq_callbacks_set(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine is called when a disconnect request is processed
+ * @brief   This routine is called when a disconnect request is processed
  *
- * \details This callback performs cleanup housekeeping
+ * @details This callback performs cleanup housekeeping
  *
- * \param[in]   *mosq		Pointer to the mosquitto structure associated with the request
- * \param[in]   *user_data	Pointer to userdata that was set up when the connection was created
- * \param[in]   *rc			Return code associated with the disconnect request
+ * @param[in]   *mosq		Pointer to the mosquitto structure associated with the request
+ * @param[in]   *user_data	Pointer to userdata that was set up when the connection was created
+ * @param[in]   *rc			Return code associated with the disconnect request
  */
 
 void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
@@ -342,13 +342,13 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 
 
 /**
- * \brief   This routine is called when a publish request is processed
+ * @brief   This routine is called when a publish request is processed
  *
- * \details This callback currently only logs the published message
+ * @details This callback currently only logs the published message
  *
- * \param[in]   *mosq		Pointer to the mosquitto structure associated with the request
- * \param[in]   *user_data	Pointer to userdata that was set up when the connection was created
- * \param[in]   *message_id	Message ID of the published message
+ * @param[in]   *mosq		Pointer to the mosquitto structure associated with the request
+ * @param[in]   *user_data	Pointer to userdata that was set up when the connection was created
+ * @param[in]   *message_id	Message ID of the published message
  */
 
 void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_id)
@@ -373,13 +373,13 @@ void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_
 
 
 /**
- * \brief   This routine is called when a message is received from an MQTT broker
+ * @brief   This routine is called when a message is received from an MQTT broker
  *
- * \details This callback processes and possbily takes action based on the content of the received message
+ * @details This callback processes and possbily takes action based on the content of the received message
  *
- * \param[in]   *mosq		Pointer to the mosquitto structure associated with the request
- * \param[in]   *user_data	Pointer to userdata that was set up when the connection was created
- * \param[in]   *message	Pointer to the mosquitto message structure
+ * @param[in]   *mosq		Pointer to the mosquitto structure associated with the request
+ * @param[in]   *user_data	Pointer to userdata that was set up when the connection was created
+ * @param[in]   *message	Pointer to the mosquitto message structure
  */
 
 void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct mosquitto_message *message)
@@ -431,15 +431,15 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 
 
 /**
- * \brief   This routine is called when a subscribe has been processed
+ * @brief   This routine is called when a subscribe has been processed
  *
- * \details This callback currently logs information related to the subscription
+ * @details This callback currently logs information related to the subscription
  *
- * \param[in]   *mosq			Pointer to the mosquitto structure associated with the request
- * \param[in]   *userdata		Pointer to userdata that was set up when the connection was created
- * \param[in]   *mid			Message ID
- * \param[in]   *qos_count		Quality of Service
- * \param[in]   *granted_qos	Granted Quality of Service
+ * @param[in]   *mosq			Pointer to the mosquitto structure associated with the request
+ * @param[in]   *userdata		Pointer to userdata that was set up when the connection was created
+ * @param[in]   *mid			Message ID
+ * @param[in]   *qos_count		Quality of Service
+ * @param[in]   *granted_qos	Granted Quality of Service
  */
 
 void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, int qos_count, const int *granted_qos)
@@ -462,14 +462,14 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
 
 
 /**
- * \brief   This routine is called for ALL messages, regardless of level
+ * @brief   This routine is called for ALL messages, regardless of level
  *
- * \details This callback currently logs the message
+ * @details This callback currently logs the message
  *
- * \param[in]	mosq		The mosquitto instance making the callback.
- * \param[in]	userdata	The user data provided in mosquitto_new
- * \param[in]	level		The log message level from the values: MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_SWITCH_LOG_DEBUG
- * \param[in]	str			The message string.
+ * @param[in]	mosq		The mosquitto instance making the callback.
+ * @param[in]	userdata	The user data provided in mosquitto_new
+ * @param[in]	level		The log message level from the values: MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_SWITCH_LOG_DEBUG
+ * @param[in]	str			The message string.
  */
 
 void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
@@ -500,13 +500,13 @@ void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const 
 
 
 /**
- * \brief   This routine is called when a connect request has been processed
+ * @brief   This routine is called when a connect request has been processed
  *
- * \details This callback performs housekeeping related to the connect request
+ * @details This callback performs housekeeping related to the connect request
  *
- * \param[in]   *mosq			Pointer to the mosquitto structure associated with the request
- * \param[in]   *user_data		Pointer to userdata that was set up when the connection was created
- * \param[in]   *result			Result of the connection
+ * @param[in]   *mosq			Pointer to the mosquitto structure associated with the request
+ * @param[in]   *user_data		Pointer to userdata that was set up when the connection was created
+ * @param[in]   *result			Result of the connection
  */
 
 void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
@@ -552,9 +552,9 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 
 
 /**
- * \brief   This routine is called to set some initialization options before a connection is requested
+ * @brief   This routine is called to set some initialization options before a connection is requested
  *
- * \details This routine sets up various options, such as the version of the MQTT protocol to used with the connection
+ * @details This routine sets up various options, such as the version of the MQTT protocol to used with the connection
  *
  *			MOSQ_OPT_PROTOCOL_VERSION - Value must be set to either MQTT_PROTOCOL_V31, MQTT_PROTOCOL_V311, or MQTT_PROTOCOL_V5.
  *			Must be set before the client connects.  Defaults to MQTT_PROTOCOL_V311.
@@ -578,9 +578,9 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
  *			MOSQ_OPT_TLS_OCSP_REQUIRED - Set whether OCSP checking on TLS connections is required.  Set to 1 to enable checking,
  *			or 0 (the default) for no checking.
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_int_option(mosquitto_connection_t *connection)
@@ -614,13 +614,13 @@ switch_status_t mosq_int_option(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine is called to set the reconnect options for the connection
+ * @brief   This routine is called to set the reconnect options for the connection
  *
- * \details This routine sets the reconnect_delay, reconnect_delay_max and reconnect_exponential_backup values for the connection
+ * @details This routine sets the reconnect_delay, reconnect_delay_max and reconnect_exponential_backup values for the connection
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_reconnect_delay_set(mosquitto_connection_t *connection)
@@ -646,13 +646,13 @@ switch_status_t mosq_reconnect_delay_set(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine sets the number of times that a message will be retried (if unsuccessful)
+ * @brief   This routine sets the number of times that a message will be retried (if unsuccessful)
  *
- * \details This routine sets the message_retry count to the user specified value
+ * @details This routine sets the message_retry count to the user specified value
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_message_retry_set(mosquitto_connection_t *connection)
@@ -669,13 +669,13 @@ switch_status_t mosq_message_retry_set(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine sets the number of inflight messages to an MQTT broker
+ * @brief   This routine sets the number of inflight messages to an MQTT broker
  *
- * \details This routine sets the mad_inflight_messages count to the user specified value
+ * @details This routine sets the mad_inflight_messages count to the user specified value
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connection)
@@ -698,16 +698,16 @@ switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connectio
 }
 
 /**
- * \brief   This routine sets the username and password used to connect to the MQTT broker
+ * @brief   This routine sets the username and password used to connect to the MQTT broker
  *
- * \details Configure username and password for a mosquitto instance.
+ * @details Configure username and password for a mosquitto instance.
  *			By default, no username or password will be sent.
  *			For v3.1 and v3.1.1 clients, if username is NULL, the password argument is ignored.
  *			This is must be called before calling mosquitto_connect.
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
@@ -741,15 +741,15 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 
 
 /*
- * \brief	This routine configures the client for certificate based SSL/TLS support.
+ * @brief	This routine configures the client for certificate based SSL/TLS support.
  *
- * \details	The TLS configuration options specified in the 'connection' section define various
+ * @details	The TLS configuration options specified in the 'connection' section define various
  *			parameters related to setting up a TLS connection to a broker.  This routine takes
  *			the settings and add them to the client mosq structure (prior to connecting to a broker).
  *
- * \param[in]	*connection Pointer to a connections structure
+ * @param[in]	*connection Pointer to a connections structure
  *
- * \retval	status returned by the mosquitto library of the attempt to set the TLS parameters
+ * @retval	status returned by the mosquitto library of the attempt to set the TLS parameters
  */
 
 switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
@@ -803,15 +803,15 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 
 
 /*
- * \brief	This routine configures a client for pre-shared-key based TLS support
+ * @brief	This routine configures a client for pre-shared-key based TLS support
  *
- * \details	Configure the client for pre-shared-key based TLS support.
+ * @details	Configure the client for pre-shared-key based TLS support.
  *			Must be called before mosquitto_connect.
  *			Cannot be used in conjunction with mosquitto_tls_set.
  *
- * \param[in]	*connection Pointer to a connections structure
+ * @param[in]	*connection Pointer to a connections structure
  *
- * \retval	status returned by the mosquitto library of the attempt to set the pre-shared-key based TLS parameters
+ * @retval	status returned by the mosquitto library of the attempt to set the pre-shared-key based TLS parameters
  */
 
 switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
@@ -858,14 +858,14 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 
 
 /*
- * \brief	This routine configures a client for advacned SSL/TLS options.
+ * @brief	This routine configures a client for advacned SSL/TLS options.
  *
- * \details	Configure the client for advanced SSL/TLS options.
+ * @details	Configure the client for advanced SSL/TLS options.
  *			Must be called before mosquitto_connect.
  *
- * \param[in]	*connection Pointer to a connection structure
+ * @param[in]	*connection Pointer to a connection structure
  *
- * \retval	status returned by the mosquitto library of the attempt to set advanced SSL/TLS options.
+ * @retval	status returned by the mosquitto library of the attempt to set advanced SSL/TLS options.
  */
 
 switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
@@ -909,15 +909,15 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 
 
 /*
- * \brief	This routine configures a Last Will and Testament (will) for a client.
+ * @brief	This routine configures a Last Will and Testament (will) for a client.
  *
- * \details	Configure will information for a mosquitto instance.
+ * @details	Configure will information for a mosquitto instance.
  *		  By default, clients do not have a will.
  *		  This must be called before calling mosquitto_connect.
  *
- * \param[in]	*connection Pointer to a connection structure
+ * @param[in]	*connection Pointer to a connection structure
  *
- * \retval	status returned by the mosquitto library of the attempt to set a will.
+ * @retval	status returned by the mosquitto library of the attempt to set a will.
  */
 
 switch_status_t mosq_will_set(mosquitto_connection_t *connection)
@@ -973,14 +973,14 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine performs the actual connect attempt to an MQTT broker
+ * @brief   This routine performs the actual connect attempt to an MQTT broker
  *
- * \details This routine uses the configuration defined settings to attempt a connection with an MQTT broker.
+ * @details This routine uses the configuration defined settings to attempt a connection with an MQTT broker.
  *			SRV lookups are supported, also is the setting of the local bind address
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_connect(mosquitto_connection_t *connection)
@@ -1072,14 +1072,14 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine stops the send/receive loop associated with a connection
+ * @brief   This routine stops the send/receive loop associated with a connection
  *
- * \details This routine is called after a connection disconnect request to stop the the send/receive loop
+ * @details This routine is called after a connection disconnect request to stop the the send/receive loop
  *
- * \param[in]   *connection	Pointer to a connection structure
- * \param[in]   *force		A flag to stop the loop even if a disconnect has not been performed
+ * @param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *force		A flag to stop the loop even if a disconnect has not been performed
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t force)
@@ -1112,13 +1112,13 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
 }
 
 /**
- * \brief   This routine disconnects a connection
+ * @brief   This routine disconnects a connection
  *
- * \details This routine dssconnects a connection, stops the mosquitto send/receive loop and clears the pointer to the mosquitto client structure
+ * @details This routine dssconnects a connection, stops the mosquitto send/receive loop and clears the pointer to the mosquitto client structure
  *
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
@@ -1161,14 +1161,14 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 
 
 /**
- * \brief   This routine creates a new mosquitto client data structure
+ * @brief   This routine creates a new mosquitto client data structure
  *
- * \details This routine sets up the userdata structure associated with this client connection
+ * @details This routine sets up the userdata structure associated with this client connection
  *
- * \param[in]   *profile	Pointer to the profile associated to with this connection
- * \param[in]   *connection	Pointer to a connection structure
+ * @param[in]   *profile	Pointer to the profile associated to with this connection
+ * @param[in]   *connection	Pointer to a connection structure
  *
- * \retval	SWITCH_STATUS_SUCCESS
+ * @retval	SWITCH_STATUS_SUCCESS
  */
 
 switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
@@ -1246,15 +1246,15 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 
 
 /**
- * \brief   This routine creates a new subscription
+ * @brief   This routine creates a new subscription
  *
- * \details This routine performs some sanity checks and then attempts to subscribe to a topic (pattern)
+ * @details This routine performs some sanity checks and then attempts to subscribe to a topic (pattern)
  *
- * \param[in]   *profile	Pointer to the profile associated to with this subscription
- * \param[in]   *subscriber	Pointer to the subscriber associated with this subscription
- * \param[in]   *topic		Pointer to the topic being subscribed to
+ * @param[in]   *profile	Pointer to the profile associated to with this subscription
+ * @param[in]   *subscriber	Pointer to the subscriber associated with this subscription
+ * @param[in]   *topic		Pointer to the topic being subscribed to
  *
- * \retval	SWITCH_STATUS_SUCCESS or SWITCH_STATUS_GENERR
+ * @retval	SWITCH_STATUS_SUCCESS or SWITCH_STATUS_GENERR
  */
 
 switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic)
@@ -1344,15 +1344,15 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 
 
 /**
- * \brief   This routine handle responses from publish requests
+ * @brief   This routine handle responses from publish requests
  *
- * \details This routine logs the results of publish requests and may attempt to fix the cause of a failure
+ * @details This routine logs the results of publish requests and may attempt to fix the cause of a failure
  *			such as reinitializing a connection
  *
- * \param[in]   *profile	Pointer to the profile associated to with this subscription
- * \param[in]   *subscriber	Pointer to the subscriber associated with this subscription
- * \param[in]   *topic		Pointer to the topic being subscribed to
- * \param[in]   *rc			Return code from the publish request
+ * @param[in]   *profile	Pointer to the profile associated to with this subscription
+ * @param[in]   *subscriber	Pointer to the subscriber associated with this subscription
+ * @param[in]   *topic		Pointer to the topic being subscribed to
+ * @param[in]   *rc			Return code from the publish request
  */
 
 void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *connection, mosquitto_topic_t *topic, int rc)
@@ -1404,9 +1404,9 @@ void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *
 
 
 /**
- * \brief   This routine handles mod_mosquitto startup processing
+ * @brief   This routine handles mod_mosquitto startup processing
  *
- * \details This routine is called by the mod_mosquitto initialization function
+ * @details This routine is called by the mod_mosquitto initialization function
  *
  */
 
@@ -1447,9 +1447,9 @@ switch_status_t mosq_startup(void)
 
 
 /**
- * \brief   This routine handles mod_mosquitto termination processing
+ * @brief   This routine handles mod_mosquitto termination processing
  *
- * \details This routine is called by the mod_mosquitto shutdown function
+ * @details This routine is called by the mod_mosquitto shutdown function
  *
  */
 

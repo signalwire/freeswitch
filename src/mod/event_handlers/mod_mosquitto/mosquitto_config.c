@@ -65,14 +65,14 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection);
 
 /**
- * \brief   This function is used to add a new profile to the hash
+ * @brief   This function is used to add a new profile to the hash
  *
- * \details This function will allocate memory for a profile hash entry, initialize generic data types
+ * @details This function will allocate memory for a profile hash entry, initialize generic data types
  *			such as mutexes and create hashes for publishers, subscribers, connections associated with the new profile.
  *
- * \param[in]   *name	Name of the profile being created
+ * @param[in]   *name	Name of the profile being created
  *
- * \retval		pointer to the newly defined profile hash entry or NULL if memory could not be allocated
+ * @retval		pointer to the newly defined profile hash entry or NULL if memory could not be allocated
  */
 
 static mosquitto_profile_t *add_profile(const char *name)
@@ -115,14 +115,14 @@ static mosquitto_profile_t *add_profile(const char *name)
 
 
 /**
- * \brief   This function is used to locate a profile by name
+ * @brief   This function is used to locate a profile by name
  *
- * \details This function searches the global profiles hash in an attempt to find a profile with a matching name.
+ * @details This function searches the global profiles hash in an attempt to find a profile with a matching name.
  *			The name is used as a key, so must be unique (no two profiles can have the same name)
  *
- * \param[in]   *name	Name of the profile being searched for
+ * @param[in]   *name	Name of the profile being searched for
  *
- * \retval		pointer to the hash of the profile or NULL
+ * @retval		pointer to the hash of the profile or NULL
  */
 
 mosquitto_profile_t *locate_profile(const char *name)
@@ -143,15 +143,15 @@ mosquitto_profile_t *locate_profile(const char *name)
 
 
 /**
- * \brief   This function is used to add a new connection to the hash (within a profile hash)
+ * @brief   This function is used to add a new connection to the hash (within a profile hash)
  *
- * \details This function will allocate memory for a connection hash entry and initialize generic data types
+ * @details This function will allocate memory for a connection hash entry and initialize generic data types
  *			such as mutexes.
  *
- * \param[in]   *profile	Pointer to the profile hash where the new connection should be added
- * \param[in]   *name		Name of the connection being created
+ * @param[in]   *profile	Pointer to the profile hash where the new connection should be added
+ * @param[in]   *name		Name of the connection being created
  *
- * \retval		pointer to the newly defined connection hash entry or NULL
+ * @retval		pointer to the newly defined connection hash entry or NULL
  */
 
 static mosquitto_connection_t *add_connection(mosquitto_profile_t *profile, const char *name)
@@ -186,16 +186,16 @@ static mosquitto_connection_t *add_connection(mosquitto_profile_t *profile, cons
 
 
 /**
- * \brief   This function is used to locate a connection by name
+ * @brief   This function is used to locate a connection by name
  *
- * \details This function searches the connections hash associated with the profile hash entry in an attempt
+ * @details This function searches the connections hash associated with the profile hash entry in an attempt
  *			to find a connection with a matching name.  the name is used as a key, so must be unique
  *			(two connections within the same profile cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *name		Name of the connection to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *name		Name of the connection to locate
  *
- * \retval		pointer to the hash entry of the connection or NULL
+ * @retval		pointer to the hash entry of the connection or NULL
  */
 
 mosquitto_connection_t *locate_connection(mosquitto_profile_t *profile, const char *name)
@@ -221,15 +221,15 @@ mosquitto_connection_t *locate_connection(mosquitto_profile_t *profile, const ch
 
 
 /**
- * \brief   This function is used to remove a profile by name
+ * @brief   This function is used to remove a profile by name
  *
- * \details This function searches the profiles hash for a matching name and if found, removes all
+ * @details This function searches the profiles hash for a matching name and if found, removes all
  *			publishers, subscribers, connections, topics, etc associated with this profile. Once the profile
  *			has been removed, its memory pool will be destroyed (allowing the system to reclaim memory).
  *
- * \param[in]   *profile	Name of the profile to remove
+ * @param[in]   *profile	Name of the profile to remove
  *
- * \retval		SWITCH_STATUS_GENERR if the profile could not be found
+ * @retval		SWITCH_STATUS_GENERR if the profile could not be found
  */
 
 switch_status_t remove_profile(const char *name)
@@ -320,15 +320,15 @@ switch_status_t remove_profile(const char *name)
 
 
 /**
- * \brief   This function is used to remove a connection by name
+ * @brief   This function is used to remove a connection by name
  *
- * \details This function searches the connections hash associated with a specific profile for a matching name and if found,
+ * @details This function searches the connections hash associated with a specific profile for a matching name and if found,
  *			removes it from the hash.  If any connections to brokers are active, they are first disconnected.
  *
- * \param[in]   *profile	Pointer to the profile containing the connections hash
- * \param[in]   *name		Name of the connection to be removed
+ * @param[in]   *profile	Pointer to the profile containing the connections hash
+ * @param[in]   *name		Name of the connection to be removed
  *
- * \retval		SWITCH_STATUS_GENERR if the connection could could not be found
+ * @retval		SWITCH_STATUS_GENERR if the connection could could not be found
  */
 
 switch_status_t remove_connection(mosquitto_profile_t *profile, const char *name)
@@ -360,15 +360,15 @@ switch_status_t remove_connection(mosquitto_profile_t *profile, const char *name
 
 
 /**
- * \brief   This function is used to remove a publisher by name
+ * @brief   This function is used to remove a publisher by name
  *
- * \details This function searches the publishers hash associated with a specific profile for a matching name and if found,
+ * @details This function searches the publishers hash associated with a specific profile for a matching name and if found,
  *			removes it from the hash.
  *
- * \param[in]   *profile	Pointer to the profile containing the publishers hash
- * \param[in]   *name		Name of the publisher to be removed
+ * @param[in]   *profile	Pointer to the profile containing the publishers hash
+ * @param[in]   *name		Name of the publisher to be removed
  *
- * \retval		SWITCH_STATUS_GENERR if the publisher could could not be found
+ * @retval		SWITCH_STATUS_GENERR if the publisher could could not be found
  */
 
 switch_status_t remove_publisher(mosquitto_profile_t *profile, const char *name)
@@ -398,15 +398,15 @@ switch_status_t remove_publisher(mosquitto_profile_t *profile, const char *name)
 
 
 /**
- * \brief   This function is used to remove a subscriber by name
+ * @brief   This function is used to remove a subscriber by name
  *
- * \details This function searches the subscribers hash associated with a specific profile for a matching name and if found,
+ * @details This function searches the subscribers hash associated with a specific profile for a matching name and if found,
  *			removes it from the hash.
  *
- * \param[in]   *profile	Pointer to the profile containing the subscribers hash
- * \param[in]   *name		Name of the subscriber to be removed
+ * @param[in]   *profile	Pointer to the profile containing the subscribers hash
+ * @param[in]   *name		Name of the subscriber to be removed
  *
- * \retval		SWITCH_STATUS_GENERR if the subscriber could could not be found
+ * @retval		SWITCH_STATUS_GENERR if the subscriber could could not be found
  */
 
 switch_status_t remove_subscriber(mosquitto_profile_t *profile, const char *name)
@@ -437,14 +437,14 @@ switch_status_t remove_subscriber(mosquitto_profile_t *profile, const char *name
 
 
 /**
- * \brief   This function is used to add a publisher to a profile
+ * @brief   This function is used to add a publisher to a profile
  *
- * \details This function created and adds a publisher has to the specified profile hash.
+ * @details This function created and adds a publisher has to the specified profile hash.
  *
- * \param[in]   *profile	Pointer to the profile containing the publishers hash
- * \param[in]   *name		Name of the publisher to be added
+ * @param[in]   *profile	Pointer to the profile containing the publishers hash
+ * @param[in]   *name		Name of the publisher to be added
  *
- * \retval		Pointer to the newly added publisher or NULL
+ * @retval		Pointer to the newly added publisher or NULL
  */
 
 static mosquitto_publisher_t *add_publisher(mosquitto_profile_t *profile, const char *name)
@@ -487,16 +487,16 @@ static mosquitto_publisher_t *add_publisher(mosquitto_profile_t *profile, const 
 
 
 /**
- * \brief   This function is used to locate a publisher by name
+ * @brief   This function is used to locate a publisher by name
  *
- * \details This function searches the publishers hash associated with the profile hash entry in an attempt
+ * @details This function searches the publishers hash associated with the profile hash entry in an attempt
  *			to find a publisher with a matching name.  the name is used as a key, so must be unique
  *			(two publishers within the same profile cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *name		Name of the publisher to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *name		Name of the publisher to locate
  *
- * \retval		pointer to the hash entry of the publisher or NULL
+ * @retval		pointer to the hash entry of the publisher or NULL
  */
 
 mosquitto_publisher_t *locate_publisher(mosquitto_profile_t *profile, const char *name)
@@ -522,14 +522,14 @@ mosquitto_publisher_t *locate_publisher(mosquitto_profile_t *profile, const char
 
 
 /**
- * \brief   This function is used to add a subscriber to a profile
+ * @brief   This function is used to add a subscriber to a profile
  *
- * \details This function created and adds a subscriber has to the specified profile hash.
+ * @details This function created and adds a subscriber has to the specified profile hash.
  *
- * \param[in]   *profile	Pointer to the profile containing the subscribers hash
- * \param[in]   *name		Name of the subscriber to be added
+ * @param[in]   *profile	Pointer to the profile containing the subscribers hash
+ * @param[in]   *name		Name of the subscriber to be added
  *
- * \retval		Pointer to the newly added subscriber or NULL
+ * @retval		Pointer to the newly added subscriber or NULL
  */
 
 static mosquitto_subscriber_t *add_subscriber(mosquitto_profile_t *profile, const char *name)
@@ -572,16 +572,16 @@ static mosquitto_subscriber_t *add_subscriber(mosquitto_profile_t *profile, cons
 
 
 /**
- * \brief   This function is used to locate a subscriber by name
+ * @brief   This function is used to locate a subscriber by name
  *
- * \details This function searches the subscribers hash associated with the profile hash entry in an attempt
+ * @details This function searches the subscribers hash associated with the profile hash entry in an attempt
  *			to find a subscriber with a matching name.  the name is used as a key, so must be unique
  *			(two subscribers within the same profile cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *name		Name of the subscriber to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *name		Name of the subscriber to locate
  *
- * \retval		pointer to the hash entry of the subscriber or NULL
+ * @retval		pointer to the hash entry of the subscriber or NULL
  */
 
 mosquitto_subscriber_t *locate_subscriber(mosquitto_profile_t *profile, const char *name)
@@ -607,14 +607,14 @@ mosquitto_subscriber_t *locate_subscriber(mosquitto_profile_t *profile, const ch
 
 
 /**
- * \brief   This function is used to parse the subscribers from the configuration file
+ * @brief   This function is used to parse the subscribers from the configuration file
  *
- * \details	Subscribers are located within the profile section of the configuration file
+ * @details	Subscribers are located within the profile section of the configuration file
  *
- * \param[in]   xprofile	Profile section of the configuration file
- * \param[in]   *profile	Pointer to the profile hash that the newly parsed subscribers will be added to
+ * @param[in]   xprofile	Profile section of the configuration file
+ * @param[in]   *profile	Pointer to the profile hash that the newly parsed subscribers will be added to
  *
- * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval		SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_subscribers(switch_xml_t xprofile, mosquitto_profile_t *profile)
@@ -661,14 +661,14 @@ static switch_status_t parse_subscribers(switch_xml_t xprofile, mosquitto_profil
 
 
 /**
- * \brief   This function is used to parse the publishers from the configuration file
+ * @brief   This function is used to parse the publishers from the configuration file
  *
- * \details	Publishers are located within the profile section of the configuration file
+ * @details	Publishers are located within the profile section of the configuration file
  *
- * \param[in]   xprofile	Profile section of the configuration file
- * \param[in]   *profile	Pointer to the profile hash that the newly parsed publishers will be added to
+ * @param[in]   xprofile	Profile section of the configuration file
+ * @param[in]   *profile	Pointer to the profile hash that the newly parsed publishers will be added to
  *
- * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval		SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_publishers(switch_xml_t xprofile, mosquitto_profile_t *profile)
@@ -717,15 +717,15 @@ static switch_status_t parse_publishers(switch_xml_t xprofile, mosquitto_profile
 
 
 /**
- * \brief   This function is used to add a new topic to an existing publisher
+ * @brief   This function is used to add a new topic to an existing publisher
  *
- * \details	Each publisher can have one or more associated topics
+ * @details	Each publisher can have one or more associated topics
  *
- * \param[in]   *profile	Pointer to the profile that the publisher belongs to
- * \param[in]   *publisher	Pointer to the publisher that the will have the topic added
- * \param[in]   name		Name of the topic to be added to the publisher
+ * @param[in]   *profile	Pointer to the profile that the publisher belongs to
+ * @param[in]   *publisher	Pointer to the publisher that the will have the topic added
+ * @param[in]   name		Name of the topic to be added to the publisher
  *
- * \retval		Address of the newly added topic or NULL
+ * @retval		Address of the newly added topic or NULL
  */
 
 static mosquitto_topic_t *add_publisher_topic(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, const char *name)
@@ -773,16 +773,16 @@ static mosquitto_topic_t *add_publisher_topic(mosquitto_profile_t *profile, mosq
 
 
 /**
- * \brief   This function is used to add an event to a publishers topic
+ * @brief   This function is used to add an event to a publishers topic
  *
- * \details	Each publisher topic can have one or more events bound to it
+ * @details	Each publisher topic can have one or more events bound to it
  *
- * \param[in]   *profile	Pointer to the profile that the publisher belongs to
- * \param[in]   *publisher	Pointer to the publisher that the topic belongs to
- * \param[in]   *topic		Pointer to the topic that will have the event added
- * \param[in]   name		Name of the event to be added to the topic
+ * @param[in]   *profile	Pointer to the profile that the publisher belongs to
+ * @param[in]   *publisher	Pointer to the publisher that the topic belongs to
+ * @param[in]   *topic		Pointer to the topic that will have the event added
+ * @param[in]   name		Name of the event to be added to the topic
  *
- * \retval		Address of the newly added event or NULL
+ * @retval		Address of the newly added event or NULL
  */
 
 static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name, switch_event_types_t event_type)
@@ -828,17 +828,17 @@ static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile
 
 
 /**
- * \brief   This function is used to locate a topic by name given a profile and publisher
+ * @brief   This function is used to locate a topic by name given a profile and publisher
  *
- * \details This function searches the topic hash asssociated with a publisher and profile in an attempt to
+ * @details This function searches the topic hash asssociated with a publisher and profile in an attempt to
  *		  to find a matching name.  The name is used as a key, so must be unique
  *		  (two topics within the same profile and publisher cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *publisher  Pointer to a publisher hash entry
- * \param[in]   *name	   Name of the topic name to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *publisher  Pointer to a publisher hash entry
+ * @param[in]   *name	   Name of the topic name to locate
  *
- * \retval	  pointer to the hash entry of the topic or NULL
+ * @retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, const char *name)
@@ -869,17 +869,17 @@ mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitt
 
 
 /**
- * \brief   This function is used to locate an event by name given a profile, publisher and topic
+ * @brief   This function is used to locate an event by name given a profile, publisher and topic
  *
- * \details This function searches the event hash asssociated with a publisher, profile and topic in an attempt to
+ * @details This function searches the event hash asssociated with a publisher, profile and topic in an attempt to
  *		  to find a matching name.  The name is used as a key, so must be unique
  *		  (two events within the same profile, publisher and topic cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *publisher  Pointer to a publisher hash entry
- * \param[in]   *name	   Name of the topic name to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *publisher  Pointer to a publisher hash entry
+ * @param[in]   *name	   Name of the topic name to locate
  *
- * \retval	  pointer to the hash entry of the topic or NULL
+ * @retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, mosquitto_topic_t *topic, const char *name)
@@ -915,15 +915,15 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 
 
 /**
- * \brief	This function is used to parse the connection will settings from the configuration file
+ * @brief	This function is used to parse the connection will settings from the configuration file
  *
- * \details	will settings are located within the connection section of the configuration file
+ * @details	will settings are located within the connection section of the configuration file
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *connection	Pointer to a connection hash entry
- * \param[in]   xconnection	Connection section of the configuration file
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *connection	Pointer to a connection hash entry
+ * @param[in]   xconnection	Connection section of the configuration file
  *
- * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval		SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection)
@@ -972,15 +972,15 @@ static switch_status_t parse_connection_will(mosquitto_profile_t *profile, mosqu
 
 
 /**
- * \brief   This function is used to parse the connection tls settings from the configuration file
+ * @brief   This function is used to parse the connection tls settings from the configuration file
  *
- * \details	tls settings are located within the connection section of the configuration file
+ * @details	tls settings are located within the connection section of the configuration file
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *connection	Pointer to a connection hash entry
- * \param[in]   xconnection	Connection section of the configuration file
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *connection	Pointer to a connection hash entry
+ * @param[in]   xconnection	Connection section of the configuration file
  *
- * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval		SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosquitto_connection_t *connection, switch_xml_t xconnection)
@@ -1066,15 +1066,15 @@ static switch_status_t parse_connection_tls(mosquitto_profile_t *profile, mosqui
 }
 
 /**
- * \brief   This function is used to parse the publisher topics from the configuration file
+ * @brief   This function is used to parse the publisher topics from the configuration file
  *
- * \details	topics are located within the publishers section of the configuration file
+ * @details	topics are located within the publishers section of the configuration file
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *publisher	Pointer to a publisher hash entry
- * \param[in]   xpublisher	Publisher section of the configuration file
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *publisher	Pointer to a publisher hash entry
+ * @param[in]   xpublisher	Publisher section of the configuration file
  *
- * \retval		SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval		SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosquitto_publisher_t *publisher, switch_xml_t xpublisher)
@@ -1161,15 +1161,15 @@ static switch_status_t parse_publisher_topics(mosquitto_profile_t *profile, mosq
 
 
 /**
- * \brief   This function is used to add a new topic to an existing subscriber
+ * @brief   This function is used to add a new topic to an existing subscriber
  *
- * \details Each subscriber can have one or more associated topics
+ * @details Each subscriber can have one or more associated topics
  *
- * \param[in]   *profile	Pointer to the profile that the subscriber belongs to
- * \param[in]   *subscriber Pointer to the subscriber that the will have the topic added
- * \param[in]   name		Name of the topic to be added to the subscriber
+ * @param[in]   *profile	Pointer to the profile that the subscriber belongs to
+ * @param[in]   *subscriber Pointer to the subscriber that the will have the topic added
+ * @param[in]   name		Name of the topic to be added to the subscriber
  *
- * \retval	  Address of the newly added topic or NULL
+ * @retval	  Address of the newly added topic or NULL
  */
 
 static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
@@ -1210,17 +1210,17 @@ static mosquitto_topic_t *add_subscriber_topic(mosquitto_profile_t *profile, mos
 
 
 /**
- * \brief   This function is used to locate a topic by name given a profile and subscriber
+ * @brief   This function is used to locate a topic by name given a profile and subscriber
  *
- * \details This function searches the topic hash asssociated with a subscriber and profile in an attempt to
+ * @details This function searches the topic hash asssociated with a subscriber and profile in an attempt to
  *		  to find a matching name.  The name is used as a key, so must be unique
  *		  (two topics within the same profile and subscriber cannot have the same name)
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *subscriber Pointer to a subscriber hash entry
- * \param[in]   *name	   Name of the topic name to locate
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *subscriber Pointer to a subscriber hash entry
+ * @param[in]   *name	   Name of the topic name to locate
  *
- * \retval	  pointer to the hash entry of the topic or NULL
+ * @retval	  pointer to the hash entry of the topic or NULL
  */
 
 mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, const char *name)
@@ -1251,15 +1251,15 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 
 
 /**
- * \brief   This function is used to parse the subscriber topics from the configuration file
+ * @brief   This function is used to parse the subscriber topics from the configuration file
  *
- * \details topics are located within the subscribers section of the configuration file
+ * @details topics are located within the subscribers section of the configuration file
  *
- * \param[in]   *profile	Pointer to a profile hash entry
- * \param[in]   *subscriber Pointer to a subscriber hash entry
- * \param[in]   xsubscriber Subscriber section of the configuration file
+ * @param[in]   *profile	Pointer to a profile hash entry
+ * @param[in]   *subscriber Pointer to a subscriber hash entry
+ * @param[in]   xsubscriber Subscriber section of the configuration file
  *
- * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, switch_xml_t xsubscriber)
@@ -1321,14 +1321,14 @@ static switch_status_t parse_subscriber_topics(mosquitto_profile_t *profile, mos
 
 
 /**
- * \brief   This function is used to parse the connections from the configuration file
+ * @brief   This function is used to parse the connections from the configuration file
  *
- * \details Connections located within the profile section of the configuration file
+ * @details Connections located within the profile section of the configuration file
  *
- * \param[in]   xprofile	Profile section of the configuration file
- * \param[in]   *profile	Pointer to the profile hash that the newly parsed connections will be added to
+ * @param[in]   xprofile	Profile section of the configuration file
+ * @param[in]   *profile	Pointer to the profile hash that the newly parsed connections will be added to
  *
- * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profile_t *profile)
@@ -1460,13 +1460,13 @@ static switch_status_t parse_connections(switch_xml_t xprofile, mosquitto_profil
 
 
 /**
- * \brief   This function is used to parse the profiles from the configuration file
+ * @brief   This function is used to parse the profiles from the configuration file
  *
- * \details Profiles are located at the top level of the configuration file
+ * @details Profiles are located at the top level of the configuration file
  *
- * \param[in]   cfg		The top of the configuration file
+ * @param[in]   cfg		The top of the configuration file
  *
- * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_profiles(switch_xml_t cfg)
@@ -1556,13 +1556,13 @@ static switch_status_t parse_profiles(switch_xml_t cfg)
 
 
 /**
- * \brief   This function is used to parse the global settings from the configuration file
+ * @brief   This function is used to parse the global settings from the configuration file
  *
- * \details The global settings are located at the top level of the configuration file
+ * @details The global settings are located at the top level of the configuration file
  *
- * \param[in]   cfg		The top of the configuration file
+ * @param[in]   cfg		The top of the configuration file
  *
- * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 static switch_status_t parse_settings(switch_xml_t cfg)
@@ -1662,13 +1662,13 @@ static switch_status_t parse_settings(switch_xml_t cfg)
 
 
 /**
- * \brief   This function is the entry routine to parse the configuration file
+ * @brief   This function is the entry routine to parse the configuration file
  *
- * \details This routine is called during mod_mosquitto module load processing.
+ * @details This routine is called during mod_mosquitto module load processing.
  *
- * \param[in]   cf	Name of the configuration file
+ * @param[in]   cf	Name of the configuration file
  *
- * \retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
+ * @retval	  SWITCH_STATUS_SUCCESS indicates this routine completed
  */
 
 switch_status_t mosquitto_load_config(const char *cf)
@@ -1694,14 +1694,14 @@ switch_status_t mosquitto_load_config(const char *cf)
 
 
 /**
- * \brief   This function creates a string of random characters
+ * @brief   This function creates a string of random characters
  *
- * \details There is a requirement for uniqueness in client_id's connected to the same MQTT broker
+ * @details There is a requirement for uniqueness in client_id's connected to the same MQTT broker
  *			This helper routine creates random strings that are appended to non-unique values such
  *			as switchname or hostname.
  *
- * \param[in]   dest	Pointer to a char buffer that will contain the random characters
- * \param[in]	length	Number of random characters to create
+ * @param[in]   dest	Pointer to a char buffer that will contain the random characters
+ * @param[in]	length	Number of random characters to create
  *
  */
 

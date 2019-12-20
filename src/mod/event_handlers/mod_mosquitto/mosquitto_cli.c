@@ -54,18 +54,18 @@
 typedef switch_status_t (*mosquitto_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto bgapi <command> [<arg>]
+ * @brief	This function is called by the fs_cli command: mosquitto bgapi <command> [<arg>]
  *
- * \details	The bgapi command will be executed in a new thread. Note that the output of the command will
+ * @details	The bgapi command will be executed in a new thread. Note that the output of the command will
  *			not be displayed on the console.  This is consistent with how the fs_cli bgapi command works.
  *			This command is primarily used for testing both the mod_mosquitto bgapi_exec routine and
  *			the BACKGROUND_JOB event that results.  BACKGROUND_JOB is an event that can be published to
  *			a MQTT broker.
  *
- * \param[in]	*cmd	command entered into the fs_api console
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	*cmd	command entered into the fs_api console
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the routine
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the routine
  *
  */
 
@@ -119,16 +119,16 @@ static switch_status_t cmd_bgapi(const char *cmd, switch_stream_handle_t *stream
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto loglevel [debug|info|notice|warning|error|critical|alert|console]
+ * @brief	This function is called by the fs_cli command: mosquitto loglevel [debug|info|notice|warning|error|critical|alert|console]
  *
- * \details	This function dynamically changes the level of logging that mod_mosquitto performs.
+ * @details	This function dynamically changes the level of logging that mod_mosquitto performs.
  *			The levels are listed in increasing severity (decreasing volume of messages logged).
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -166,15 +166,15 @@ static switch_status_t cmd_loglevel(char **argv, int argc, switch_stream_handle_
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto enable [profile|connection|publisher|subscriber] <name>
+ * @brief	This function is called by the fs_cli command: mosquitto enable [profile|connection|publisher|subscriber] <name>
  *
- * \details	This function is used to enable entries associated with the primary hashes that mod_mosquitto uses.
+ * @details	This function is used to enable entries associated with the primary hashes that mod_mosquitto uses.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -247,15 +247,15 @@ static switch_status_t cmd_enable(char **argv, int argc, switch_stream_handle_t 
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto disable [profile|connection|publisher|subscriber] <name>
+ * @brief	This function is called by the fs_cli command: mosquitto disable [profile|connection|publisher|subscriber] <name>
  *
- * \details	This function is used to disable entries associated with the primary hashes that mod_mosquitto uses.
+ * @details	This function is used to disable entries associated with the primary hashes that mod_mosquitto uses.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -327,15 +327,15 @@ static switch_status_t cmd_disable(char **argv, int argc, switch_stream_handle_t
 }
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto connect profile <profile-name> connection <connection-name>
+ * @brief	This function is called by the fs_cli command: mosquitto connect profile <profile-name> connection <connection-name>
  *
- * \details	This function is used to connect to an MQTT broker.  The connection definitions are located within the profile hash.
+ * @details	This function is used to connect to an MQTT broker.  The connection definitions are located within the profile hash.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -390,18 +390,18 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto disconnect profile <profile-name> connection <connection-name>
+ * @brief	This function is called by the fs_cli command: mosquitto disconnect profile <profile-name> connection <connection-name>
  *
- * \details	This function is used to disconnect from an MQTT broker.  The connection definitions are located within the profile hash.
+ * @details	This function is used to disconnect from an MQTT broker.  The connection definitions are located within the profile hash.
  *			The enable|disable parameter is used to change the behaviour of future connect operations.  Connect attempts will not be
  *			made to a connection that has been disabled.  This is useful for controlling any looping caused by auto retrying connect
  *			operations made to an MQTT broker that is down for more than a transient period.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -452,19 +452,19 @@ static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handl
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto remove profile <profile-name> [connection|publisher|subscriber] <name>
+ * @brief	This function is called by the fs_cli command: mosquitto remove profile <profile-name> [connection|publisher|subscriber] <name>
  *
- * \details	This function is used to remove one of the primary has types either by entry or completely. This allows for dynamic reconfiguration
+ * @details	This function is used to remove one of the primary has types either by entry or completely. This allows for dynamic reconfiguration
  *			of the the in-memory strucures, it does not update the configuration file itself..
  *
  *	\note	Excessive use of this function will result in increased memory consumption because some data is stored in pools tied to each profile
  *			This storage is not freed until the associated memory pool is destroyed.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -560,18 +560,18 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 
 
 /**
- * \brief	This function is called by the fs_cli command: mosquitto status
+ * @brief	This function is called by the fs_cli command: mosquitto status
  *
- * \details	This function displayes on the fs_cli console a complete status of each of the primary configuration hashes.
+ * @details	This function displayes on the fs_cli console a complete status of each of the primary configuration hashes.
  *
  * \note	It may be reasonable at some point to break this function down into smaller routines that focus on a single primary hash
  *			such as profile, publisher, subscriber, connection or topic.
  *
- * \param[in]	**argv	Standard C argument value list
- * \param[in]	argc	Standard C argument count
- * \param[in]	*stream	output handle used for writing messages to the fs_api console
+ * @param[in]	**argv	Standard C argument value list
+ * @param[in]	argc	Standard C argument count
+ * @param[in]	*stream	output handle used for writing messages to the fs_api console
  *
- * \retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
+ * @retval		SWITCH_STATUS_SUCCESS	Successful completion of the command
  *
  */
 
@@ -713,16 +713,16 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 
 /**
- * \brief   This function is called when a command entered in the fs_cli console.
+ * @brief   This function is called when a command entered in the fs_cli console.
  *
- * \details The definition of this function is performed by the macro SWITCH_STANDARD_API that expands to
+ * @details The definition of this function is performed by the macro SWITCH_STANDARD_API that expands to
  *		  switch_status_t exec_api_cmd(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
  *
- * \param[in]   *cmd	command entered on the fs_cli console
- * \param[in]   *session
- * \param[in]   *stream	output handle used for writing messages to the fs_api console
+ * @param[in]   *cmd	command entered on the fs_cli console
+ * @param[in]   *session
+ * @param[in]   *stream	output handle used for writing messages to the fs_api console
  *
- * \retval	  switch_status_t
+ * @retval	  switch_status_t
  *
  */
 
@@ -799,12 +799,12 @@ done:
 
 
 /**
- * \brief   This function is called to request that FreeSWITCH add a new API command.
+ * @brief   This function is called to request that FreeSWITCH add a new API command.
  *
- * \details Each new command created by this module should be added here.
+ * @details Each new command created by this module should be added here.
  *
- * \param[in]   **module_interface
- * \param[in]   *api_interface
+ * @param[in]   **module_interface
+ * @param[in]   *api_interface
  *
  */
 
@@ -825,9 +825,9 @@ void add_cli_api(switch_loadable_module_interface_t **module_interface, switch_a
 
 
 /**
- * \brief   This function is called when mod_mosquitto is being unloaded to remove the API commands.
+ * @brief   This function is called when mod_mosquitto is being unloaded to remove the API commands.
  *
- * \details	This will remove the command from being displayed by the fs_cli help function
+ * @details	This will remove the command from being displayed by the fs_cli help function
  *
  *
  */
