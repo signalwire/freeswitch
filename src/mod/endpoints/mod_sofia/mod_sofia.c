@@ -4775,6 +4775,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
+		profile = gateway_ptr->profile;
+
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
@@ -4814,8 +4816,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
@@ -5180,7 +5180,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	if (gateway_ptr) {
+	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
+	if (gateway_ptr && !profile) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
