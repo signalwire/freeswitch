@@ -191,29 +191,6 @@ void vectorToCArray(const std::vector<std::string>& args, char*** argv);
 void freeCArray(int argc, char*** argv);
   /// Free the array allocated by vectorToCArray
 
-void __init_system_dir();
-  /// Initialze system directory global map
-
-const std::string& system_prefix();
-
-const std::string& system_exec_prefix();
-
-const std::string& system_bindir();
-
-const std::string& system_sbindir();
-
-const std::string& system_libexecdir();
-
-const std::string& system_datadir();
-
-const std::string& system_confdir();
-
-const std::string& system_localstatedir();
-
-const std::string& system_includedir();
-
-const std::string& system_libdir();
-
 } // OSS
 
 
