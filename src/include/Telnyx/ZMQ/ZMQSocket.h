@@ -9,7 +9,6 @@
 
 #include "Telnyx/Telnyx.h"
 #include "Telnyx/UTL/CoreUtils.h"
-#include "Telnyx/Net/IPAddress.h"
 #include "Telnyx/UTL/Thread.h"
 #include "Telnyx/ZMQ/zmq.hpp"
 

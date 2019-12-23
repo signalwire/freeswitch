@@ -429,6 +429,29 @@ if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
 
+libfreeswitch_la_SOURCES += \
+	src/telnyx/json/Json.cpp \
+	src/telnyx/utl/Cache.cpp \
+	src/telnyx/utl/AdaptiveDelay.cpp \
+	src/telnyx/utl/ServiceDaemon.cpp \
+	src/telnyx/utl/Thread.cpp \
+	src/telnyx/utl/PropertyMapObject.cpp \
+	src/telnyx/utl/CoreUtils.cpp \
+	src/telnyx/utl/DynamicHashTable.cpp \
+	src/telnyx/utl/Application.cpp \
+	src/telnyx/utl/Endian.cpp \
+	src/telnyx/utl/Exception.cpp \
+	src/telnyx/utl/LogFile.cpp \
+	src/telnyx/utl/Logger.cpp \
+	src/telnyx/exec/Process.cpp \
+	src/telnyx/exec/Command.cpp \
+	src/telnyx/exec/ManagedDaemon.cpp \
+	src/telnyx/exec/stringtoargcargv.cpp \
+	src/telnyx/exec/ManagedDaemonRunner.cpp \
+	src/telnyx/zmq/ZMQSocket.cpp \
+	src/telnyx/Telnyx.cpp
+
+
 $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/modules.conf  
 
 src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h

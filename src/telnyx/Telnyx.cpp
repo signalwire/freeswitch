@@ -84,7 +84,6 @@ void TELNYX_init(int argc, char** argv, bool enableCrashHandling)
   gCalledInit = true;
   gArgc = argc;
   gArgv = argv;
-  Telnyx::__init_system_dir();
 
   for (static std::vector<boost::function<void()> >::iterator iter = _initFuncs.begin();
     iter != _initFuncs.end(); iter++) (*iter)();
