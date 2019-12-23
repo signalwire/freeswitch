@@ -1181,8 +1181,6 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to delete %s via http_cache\n", url->url);
 	http_curl_setopts(curl_handle, headers, url->url, cache);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 
@@ -1234,8 +1232,6 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", url->url);
 	http_curl_setopts(curl_handle, headers, url->url, cache);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 
