@@ -160,7 +160,7 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, cached_url_t *url, url_cache_t *cache);
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, const char *url, url_cache_t *cache);
 static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
 static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
@@ -320,7 +320,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	const char *mime_type = "application/octet-stream";
 	char *buf;
 
-	CURL *curl_handle = NULL;
+	switch_CURL *curl_handle = NULL;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
 
@@ -396,35 +396,15 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
+		http_curl_setopts(curl_handle, headers, full_url, cache);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
-
+		
 		/* we want to use our own read function so we can send a portion of the file */
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &block_info);
 
 		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE,(curl_off_t) content_length);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-		if (cache->connect_timeout > 0) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
-		}
-		if (!cache->ssl_verifypeer) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-		} else {
-			/* this is the file with all the trusted certificate authorities */
-			if (!zstr(cache->ssl_cacert)) {
-				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
-			}
-		}
-		/* verify that the host name matches the cert */
-		if (!cache->ssl_verifyhost) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-		}
 		switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, httpRes);
 		switch_curl_easy_cleanup(curl_handle);
@@ -1131,7 +1111,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		http_curl_setopts(curl_handle, headers, url, cache);
+		http_curl_setopts(curl_handle, headers, url->url, cache);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
 	
@@ -1198,7 +1180,9 @@ static switch_status_t http_delete(url_cache_t *cache, http_profile_t *profile, 
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to delete %s via http_cache\n", url->url);
-	http_curl_setopts(curl_handle, headers, url, cache);
+	http_curl_setopts(curl_handle, headers, url->url, cache);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 
@@ -1249,7 +1233,9 @@ static switch_status_t http_exists(url_cache_t *cache, http_profile_t *profile, 
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking to see if %s exists\n", url->url);
-	http_curl_setopts(curl_handle, headers, url, cache);
+	http_curl_setopts(curl_handle, headers, url->url, cache);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, empty_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 
@@ -1284,7 +1270,7 @@ done:
  * @return SWITCH_STATUS_SUCCESS if it exists 
  * Will want to make this generic for head & delete & maybe get together but for now just trying to add functionality
  */
-static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, cached_url_t *url, url_cache_t *cache)
+static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_slist_t *headers, const char *url, url_cache_t *cache)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	/* find profile for domain */
@@ -1295,9 +1281,7 @@ static switch_status_t http_curl_setopts(switch_CURL *curl_handle, switch_curl_s
 	if (headers) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url->url);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 	if (cache->connect_timeout > 0) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
