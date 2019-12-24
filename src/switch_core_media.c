@@ -1826,7 +1826,10 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
+		const char *a_crkey = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
+		const char *b_crkey = switch_stristr("AE", crypto);
+
+		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(a_crkey, b_crkey)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
 			got_crypto = 1;
 		} else {
@@ -1906,6 +1909,28 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
+		}
+		if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_stream_change")
+			&& engine->type == SWITCH_MEDIA_TYPE_VIDEO
+			&& sdp_type == SDP_TYPE_REQUEST && switch_channel_test_flag(session->channel, CF_REINVITE) )
+		{
+			switch_core_session_t *other_session;
+
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)
+			{
+				if(other_session->media_handle != NULL )
+				{
+					switch_rtp_engine_t *other_engine = &other_session->media_handle->engines[type];
+
+					other_engine->crypto_type = ctype;
+					other_engine->ssec[other_engine->crypto_type].crypto_tag = crypto_tag;
+
+					if (zstr(other_engine->ssec[other_engine->crypto_type].local_crypto_key)) {
+						switch_core_media_build_crypto(other_session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
+					}
+				}
+				switch_core_session_rwunlock(other_session);
+			}
 		}
 	}
 
@@ -10871,6 +10896,22 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+				if (sdp_type == SDP_TYPE_REQUEST)
+				{
+					switch_core_session_t *orig_session = NULL;
+
+					switch_core_session_get_partner(session, &orig_session);
+					if (orig_session)
+					{
+						switch_bool_t isContinue = false;
+						const char *ep = switch_channel_get_variable(orig_session->channel, "ep_codec_string");
+						if (ep && !switch_stristr(imp->iananame, ep))
+							isContinue = true;
+						switch_core_session_rwunlock(orig_session);
+						if ( isContinue )
+							continue;
+					}
+				}
 				has_vid = 1;
 				break;
 			}
@@ -10886,7 +10927,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							get_media_profile_name(session,
 												   (switch_channel_test_flag(session->channel, CF_SECURE)
 													&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+												   v_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
 		}
 	} else {
 		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -10920,7 +10961,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								get_media_profile_name(session,
 													   (loops == 0 && switch_channel_test_flag(session->channel, CF_SECURE)
 														&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-													   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+													   v_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
 
 
 
@@ -11322,7 +11363,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 						switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
 
-						if ((a_engine->crypto_type == j || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[j].local_crypto_key)) {
+						if ((v_engine->crypto_type == j || v_engine->crypto_type == CRYPTO_INVALID) && !zstr(v_engine->ssec[j].local_crypto_key)) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\r\n", v_engine->ssec[j].local_crypto_key);
 						}
 					}
