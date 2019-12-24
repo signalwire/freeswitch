@@ -1894,7 +1894,8 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
-	SMBF_READ_TEXT_STREAM = (1 << 25)
+	SMBF_READ_TEXT_STREAM = (1 << 25),
+	SMBF_FIRST = (1 << 26)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 

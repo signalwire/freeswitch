@@ -1007,6 +1007,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	displace_helper_t *dh;
 	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
+	switch_media_bug_flag_enum_t bug_flags = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1092,6 +1093,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		dh->loop++;
 	}
 
+	if (flags && strchr(flags, 'f')) {
+		bug_flags |= SMBF_FIRST;
+	}
+
 	if (flags && strchr(flags, 'r')) {
 		if (strchr(flags, 'w')) { // r&w mode, both sides can hear the same file
 			int len = dh->fh.samplerate / 10 * 2 * dh->fh.channels; // init with 100ms
@@ -1101,10 +1106,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		}
 
 		status = switch_core_media_bug_add(session, "displace", file,
-										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   read_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   write_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {

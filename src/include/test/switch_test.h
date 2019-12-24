@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2019, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -699,7 +699,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	fst_requires(fst_core > 1); \
 	fst_requires_module("mod_dptools"); \
 	switch_channel_set_variable(fst_channel, "detect_speech_result", ""); \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mrf") == SWITCH_STATUS_SUCCESS); \
 	args = switch_core_session_sprintf(fst_session, "%s detect:%s %s", prompt_filename, recognizer, grammar); \
 	fst_requires(switch_core_session_execute_application(fst_session, "play_and_detect_speech", args) == SWITCH_STATUS_SUCCESS); \
 	fst_asr_result = switch_channel_get_variable(fst_channel, "detect_speech_result"); \
@@ -729,7 +729,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	char *args = NULL; \
 	fst_asr_result = NULL; \
 	fst_requires(fst_core > 1); \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mrf") == SWITCH_STATUS_SUCCESS); \
 	switch_status_t status = switch_ivr_play_and_detect_speech(fst_session, prompt_filename, recognizer, grammar, (char **)&fst_asr_result, 0, input_args); \
 	fst_check(fst_asr_result != NULL); \
 }
