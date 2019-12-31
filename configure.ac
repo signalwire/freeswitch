@@ -1515,7 +1515,7 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
-PKG_CHECK_MODULES([MOSQUITTO], [libmosquitto >= 1.4.101],[
+PKG_CHECK_MODULES([MOSQUITTO], [libmosquitto >= 1.4.10],[
   AM_CONDITIONAL([HAVE_MOSQUITTO],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MOSQUITTO],[false])])
 
