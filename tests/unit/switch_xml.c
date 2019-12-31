@@ -34,7 +34,7 @@
 
 #include <test/switch_test.h>
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_xml)
 	{
@@ -62,9 +62,8 @@ FST_MINCORE_BEGIN()
 			xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
 			fst_requires(xml);
 			fst_check((xml->flags & SWITCH_XML_CDATA) == 0);
-			xml = xml->child;
-			fst_check_string_equals(xml->name, "tag");
-			fst_check(xml->flags & SWITCH_XML_CDATA);
+			fst_check_string_equals(xml->child->name, "tag");
+			fst_check(xml->child->flags & SWITCH_XML_CDATA);
 			switch_xml_free(xml);
 		}
 		FST_TEST_END()
