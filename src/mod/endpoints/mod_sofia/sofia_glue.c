@@ -852,7 +852,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
 
-	/* remove our params so we don't make any whiny moronic device piss it's pants and forget who it is for a half-hour */
+	/* remove our params so we don't make any whiny moronic device piss its pants and forget who it is for a half-hour */
 	if ((p = (char *) switch_stristr(";fs_", stripped))) {
 		*p = '\0';
 	}
@@ -1097,7 +1097,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if (!caller_profile) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 
@@ -1126,7 +1126,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Port Error!\n");
-		return status;
+		goto end;
 	}
 
 	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech_pvt->mparams.local_sdp_str)) {
@@ -1160,7 +1160,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (zstr(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "URL Error!\n");
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
 		if ((d_url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1))) {
@@ -1265,7 +1265,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_TLS) && sofia_glue_transport_has_tls(tech_pvt->transport)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "TLS not supported by profile\n");
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
 		if (zstr(tech_pvt->invite_contact)) {
@@ -1360,7 +1360,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (!strncasecmp(url_str, "tel:", 4)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session),
 								  SWITCH_LOG_ERROR, "URL Error! tel: uri's not supported at this time\n");
-				return SWITCH_STATUS_FALSE;
+				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
 			if (!s) {
 				s = url_str;
@@ -1386,7 +1386,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 							  invite_contact);
 
 			switch_safe_free(d_url);
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
 		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received")
@@ -1705,12 +1705,19 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   SIPTAG_PAYLOAD_STR(mp ? mp : tech_pvt->mparams.local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 	}
 
-	sofia_glue_free_destination(dst);
 	switch_safe_free(extra_headers);
 	switch_safe_free(mp);
 	tech_pvt->redirected = NULL;
 
-	return SWITCH_STATUS_SUCCESS;
+	status = SWITCH_STATUS_SUCCESS;
+
+end:
+
+	if (dst) {
+		sofia_glue_free_destination(dst);
+	}
+
+	return status;
 }
 
 void sofia_glue_do_xfer_invite(switch_core_session_t *session)
@@ -3336,6 +3343,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		switch_zmalloc(route_encoded, route_encoded_len);
 		switch_url_encode(route, route_encoded, route_encoded_len);
 		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
+		free(route);
 		free(full_contact_dup);
 		free(route_encoded);
 	}

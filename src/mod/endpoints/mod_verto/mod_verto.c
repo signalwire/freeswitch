@@ -1922,7 +1922,7 @@ static void client_run(jsock_t *jsock)
 							int rem = 0;
 							int dur = 0, j = 0;
 
-							if (!(size = atoi(p))) {
+							if ((size = atoi(p)) <= 0) {
 								continue;
 							}
 

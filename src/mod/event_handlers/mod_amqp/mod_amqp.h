@@ -134,6 +134,12 @@ typedef struct {
   char *queue;
   char *binding_key;
 
+  /* Queue properties */
+  switch_bool_t passive;
+  switch_bool_t durable;
+  switch_bool_t exclusive;
+  switch_bool_t auto_delete;
+
   /* Note: The AMQP channel is not reentrant this MUTEX serializes sending events. */
   mod_amqp_connection_t *conn_root;
   mod_amqp_connection_t *conn_active;

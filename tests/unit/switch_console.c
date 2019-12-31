@@ -25,7 +25,7 @@
  * Konstantin Molchanov <molchanov.kv@gmail.com>
  *
  *
- * switch_utils.c -- tests switch_utils
+ * switch_console.c -- tests switch_console
  *
  */
 
@@ -33,7 +33,7 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 
 FST_SUITE_BEGIN(SWITCH_STANDARD_STREAM)
 

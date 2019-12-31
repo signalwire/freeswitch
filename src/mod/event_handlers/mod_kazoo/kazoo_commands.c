@@ -104,7 +104,8 @@ static void process_history_item(char* value, cJSON *json)
 	switch_safe_free(item);
 }
 
-SWITCH_STANDARD_API(kz_json_history) {
+SWITCH_STANDARD_API(kz_json_history)
+{
 	char *mycmd = NULL, *argv[MAX_HISTORY] = { 0 };
 	int n, argc = 0;
 	cJSON *json = cJSON_CreateObject();
@@ -145,7 +146,8 @@ SWITCH_STANDARD_API(kz_json_history) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(kz_first_of) {
+SWITCH_STANDARD_API(kz_first_of)
+{
 	char delim = '|';
 	char *mycmd = NULL, *argv[MAX_FIRST_OF] = { 0 };
 	int n, argc = 0;
@@ -498,7 +500,20 @@ done:
 	return status;
 }
 
-void add_kz_commands(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface) {
+SWITCH_STANDARD_API(kz_expand_api)
+{
+	if (!zstr(cmd)) {
+		char * val = kz_expand(cmd);
+		stream->write_function(stream, "+OK %s", val);
+		switch_safe_free(val);
+	} else {
+		stream->write_function(stream, "ERR invalid input");
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
+	switch_api_interface_t *api_interface = NULL;
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi", UUID_SET_DESC, uuid_setvar_multi_function, UUID_MULTISET_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi_encoded", UUID_SET_DESC, uuid_setvar_multi_encoded_function, UUID_MULTISET_SYNTAX);
 	switch_console_set_complete("add kz_uuid_setvar_multi ::console::list_uuid");
@@ -510,5 +525,6 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface, swit
 	SWITCH_ADD_API(api_interface, "kz_http_put", KZ_HTTP_PUT_DESC, kz_http_put, KZ_HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api_interface, "first-of", KZ_FIRST_OF_DESC, kz_first_of, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_json_history", KZ_FIRST_OF_DESC, kz_json_history, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_expand", KZ_FIRST_OF_DESC, kz_expand_api, KZ_FIRST_OF_SYNTAX);
 }
 

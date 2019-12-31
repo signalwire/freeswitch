@@ -33,7 +33,7 @@
 #include <test/switch_test.h>
 #include "../mod_sofia.c"
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 
 FST_SUITE_BEGIN(switch_hash)
 

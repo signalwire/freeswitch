@@ -214,6 +214,12 @@ APR_DECLARE(apr_status_t) apr_pool_create_ex_debug(apr_pool_t **newpool,
 #define apr_pool_create_ex(newpool, parent, abort_fn, allocator)  \
     apr_pool_create_ex_debug(newpool, parent, abort_fn, allocator, \
                              APR_POOL__FILE_LINE__)
+
+APR_DECLARE(int) apr_pool_walk_tree_debug(apr_pool_t *pool,
+	int(*fn)(apr_pool_t *pool, void *data),
+	void *data);
+
+APR_DECLARE(void) apr_pool_get_stats(apr_pool_t *pool, unsigned int *alloc, unsigned int *total_alloc, unsigned int *clear);
 #endif
 
 /**

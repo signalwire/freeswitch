@@ -904,7 +904,7 @@ sres_sip_log_answers(sres_sip_t *srs,
       SU_DEBUG_5(("srs(%p): %s IN CNAME %s\n", (void *)srs, domain, cname));
     }
 #if SU_HAVE_IN6
-    else if (type == sres_type_cname) {
+    else if (type == sres_type_aaaa) {
       sres_aaaa_record_t const *aaaa = sr->sr_aaaa;
       su_inet_ntop(AF_INET6, &aaaa->aaaa_addr, addr, sizeof(addr));
       SU_DEBUG_5(("srs(%p): %s IN AAAA %s\n", (void *)srs, domain, addr));

@@ -586,7 +586,7 @@ libs/libzrtp/libzrtp.a:
 	cd libs/libzrtp && $(MAKE)
 
 libs/libvpx/Makefile: libs/libvpx/.update
-	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384 --extra-cflags="$(VISIBILITY_FLAG)"
+	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(VISIBILITY_FLAG)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384
 
 libs/libvpx/libvpx.a: libs/libvpx/Makefile libs/libvpx/.update
 	@cd libs/libvpx && $(MAKE)
@@ -684,7 +684,7 @@ is-scm:
 		echo ; echo ; \
 		echo "*****************************************************************************************************" ; \
 		echo "You cannot update a release tarball without a git tree.  Please clone FreeSWITCH as so:              " ; \
-		echo "  git clone https://freeswitch.org/stash/scm/fs/freeswitch.git                                       " ; \
+		echo "  git clone https://github.com/signalwire/freeswitch.git                                             " ; \
 		echo "*****************************************************************************************************" ; \
 		echo ; echo ; \
 		exit 1; \

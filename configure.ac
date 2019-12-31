@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.1-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.2-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [1-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [2-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -1052,14 +1052,17 @@ fi
 CFLAGS="$saved_CFLAGS"
 
 if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
+     saved_CFLAGS="$CFLAGS"
      # Next check added for Xcode 5 and systems with clang 5 llvm 3.3 or above, extended offset must be off
      AC_CACHE_CHECK([whether compiler supports -Wextended-offsetof], [ac_cv_clang_extended_offsetof], [
+       CFLAGS="$CFLAGS -Wno-extended-offsetof"
        AC_TRY_COMPILE([],[return 0;],[ac_cv_clang_extended_offsetof=yes],[ac_cv_clang_extended_offsetof=no])
      ])
      AC_MSG_RESULT($ac_cv_clang_extended_offsetof)
      if test x"$ac_cv_clang_extended_offsetof" = xyes; then
          APR_ADDTO(CFLAGS, -Wno-extended-offsetof)
      fi
+     CFLAGS="$saved_CFLAGS"
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
@@ -1661,7 +1664,7 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
    PHP=php
    PHP_CONFIG=php-config
    PHP_LDFLAGS="`$PHP_CONFIG --ldflags`"
-   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto)//g'`"
+   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre2-8|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto|argon2|sodium)//g'`"
    PHP_EXT_DIR="`$PHP_CONFIG --extension-dir`"
    PHP_INC_DIR="`$PHP -r 'echo ini_get("include_path");' | cut -d: -f2`"
    PHP_INI_DIR="`$PHP_CONFIG --configure-options | tr " " "\n" | grep -- --with-config-file-scan-dir | cut -f2 -d=`"

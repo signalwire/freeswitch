@@ -39,6 +39,10 @@ FST_CORE_BEGIN("./conf_playsay")
 	{
 		FST_SETUP_BEGIN()
 		{
+			fst_requires_module("mod_tone_stream");
+			fst_requires_module("mod_sndfile");
+			fst_requires_module("mod_dptools");
+			fst_requires_module("mod_test");
 		}
 		FST_SETUP_END()
 
@@ -257,6 +261,8 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_check_string_equals(cJSON_GetObjectCstr(recognition_result, "text"), "");
 			fst_check_string_equals(digits_collected, NULL);
 			fst_check(terminator_collected == 0);
+			if (recognition_result) cJSON_Delete(recognition_result);
+			recognition_result = NULL;
 		}
 		FST_SESSION_END()
 	}

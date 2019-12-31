@@ -459,7 +459,7 @@ SWITCH_STANDARD_API(mod_signalwire_api_function)
 					"  /____/_/\\__, /_/ /_/\\__,_/_/  |__/|__/_/_/   \\___/\n"
 					"         /____/\n"
 					"\n /=====================================================================\\\n"
-					"| Connection Token: %s               |\n"
+					"  Connection Token: %s\n"
 					" \\=====================================================================/\n"
 					" Go to https://signalwire.com to set up your Connector now!\n", globals.adoption_token);
 			} else {

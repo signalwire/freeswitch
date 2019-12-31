@@ -273,7 +273,7 @@ static void parse_domain(const char *url, char *domain_buf, int domain_buf_len)
 	if (!*start) {
 		return;
 	}
-	strncpy(domain_buf, start, domain_buf_len);
+	snprintf(domain_buf, domain_buf_len, "%s", start);
 	end = strchr(domain_buf, '/');
 	if (end) {
 		*end = '\0';
@@ -985,7 +985,7 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *url, cha
 	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
-	strncpy(uuid_dir, uuid_str, 2);
+	snprintf(uuid_dir, sizeof(uuid_dir), "%.2s", uuid_str);
 	dirname = switch_mprintf("%s%s%s", cache->location, SWITCH_PATH_SEPARATOR, uuid_dir);
 
 	/* create sub-directory if it doesn't exist */
@@ -1754,6 +1754,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
 	handle->channels = context->fh.channels;
+	handle->cur_channels = context->fh.real_channels;
 	handle->flags |= SWITCH_FILE_NOMUX;
 	handle->pre_buffer_datalen = 0;
 

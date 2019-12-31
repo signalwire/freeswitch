@@ -375,6 +375,9 @@ static void event_handler(switch_event_t *event)
 			if (!uuid || (l->session && strcmp(uuid, switch_core_session_get_uuid(l->session)))) {
 				send = 0;
 			}
+			if (!strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
+			    send = 1;
+			}
 		}
 
 		if (send) {
@@ -1499,6 +1502,7 @@ struct api_command_struct {
 	listener_t *listener;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int bg;
+	char bg_owner_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int ack;
 	int console_execute;
 	switch_memory_pool_t *pool;
@@ -1557,6 +1561,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Owner-UUID", acs->bg_owner_uuid_str);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
 			if (acs->arg) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
@@ -2357,6 +2362,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_uuid_get(&uuid);
 			switch_uuid_format(acs->uuid_str, &uuid);
 		}
+		switch_copy_string(acs->bg_owner_uuid_str, switch_core_session_get_uuid(listener->session), sizeof(acs->bg_owner_uuid_str));
 		switch_snprintf(reply, reply_len, "~Reply-Text: +OK Job-UUID: %s\nJob-UUID: %s\n\n", acs->uuid_str, acs->uuid_str);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 		sanity = 2000;
@@ -2631,9 +2637,16 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	if ((session = listener->session)) {
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to lock session!\n");
 			locked = 0;
 			goto done;
 		}
+	}
+
+	if (!listener->sock) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Listener socket is null!\n");
+		switch_clear_flag_locked(listener, LFLAG_RUNNING);
+		goto done;
 	}
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
@@ -2928,8 +2941,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	while (!prefs.done) {
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_UNSPEC, prefs.port, 0, pool);
-		if (rv)
+		if (rv) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot get information about IP address %s\n", prefs.ip);
 			goto fail;
+		}
 		rv = switch_socket_create(&listen_list.sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
 		if (rv)
 			goto sock_fail;

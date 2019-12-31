@@ -10,6 +10,8 @@
 #define VERSION "mod_kazoo v1.5.0-1 community"
 
 #define KZ_MAX_SEPARATE_STRINGS 10
+#define HOSTNAME_MAX 1024
+#define NODENAME_MAX 1024
 
 typedef enum {KAZOO_FETCH_PROFILE, KAZOO_EVENT_PROFILE} kazoo_profile_type;
 
@@ -139,25 +141,7 @@ struct ei_xml_agent_s {
 
 };
 
-typedef enum {
-	KZ_TWEAK_INTERACTION_ID,
-	KZ_TWEAK_EXPORT_VARS,
-	KZ_TWEAK_SWITCH_URI,
-	KZ_TWEAK_REPLACES_CALL_ID,
-	KZ_TWEAK_LOOPBACK_VARS,
-	KZ_TWEAK_CALLER_ID,
-	KZ_TWEAK_TRANSFERS,
-	KZ_TWEAK_BRIDGE,
-	KZ_TWEAK_BRIDGE_REPLACES_ALEG,
-	KZ_TWEAK_BRIDGE_REPLACES_CALL_ID,
-	KZ_TWEAK_BRIDGE_VARIABLES,
-	KZ_TWEAK_RESTORE_CALLER_ID_ON_BLIND_XFER,
-
-	/* No new flags below this line */
-	KZ_TWEAK_MAX
-} kz_tweak_t;
-
-struct globals_s {
+struct kz_globals_s {
 	switch_memory_pool_t *pool;
 	switch_atomic_t threads;
 	switch_socket_t *acceptor;
@@ -180,6 +164,7 @@ struct globals_s {
 	int ei_compat_rel;
 	char *ip;
 	char *hostname;
+	struct hostent* hostname_ent;
 	char *ei_cookie;
 	char *ei_nodename;
 	uint32_t flags;
@@ -209,8 +194,8 @@ struct globals_s {
 
 
 };
-typedef struct globals_s globals_t;
-extern globals_t kazoo_globals;
+typedef struct kz_globals_s kz_globals_t;
+extern kz_globals_t kazoo_globals;
 
 /* kazoo_event_stream.c */
 ei_event_stream_t *find_event_stream(ei_event_stream_t *event_streams, const erlang_pid *from);
@@ -253,7 +238,7 @@ void fetch_config();
 
 switch_status_t kazoo_load_config();
 void kazoo_destroy_config();
-
+void kz_set_hostname();
 
 #define _ei_x_encode_string(buf, string) { ei_x_encode_binary(buf, string, strlen(string)); }
 

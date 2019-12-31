@@ -1459,7 +1459,6 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_t
 		tzdef = switch_lookup_timezone(tz_name);
 	} else {
 		/* We set the default timezone to GMT. */
-		tz_name = "GMT";
 		tzdef = "GMT";
 	}
 

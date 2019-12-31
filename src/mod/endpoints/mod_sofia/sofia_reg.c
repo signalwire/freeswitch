@@ -2624,9 +2624,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 						sip_auth_password = dup_pass;
 					}
 				}
-
-				switch_xml_free(x_user);
 			}
+			switch_xml_free(x_user);
 		}
 
 		switch_event_destroy(&locate_params);
@@ -2929,7 +2928,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s] from %s\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
-						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
+						  "and you must configure your device to use the proper domain in its authentication credentials.\n", username, domain_name,
 						  ip, domain_name, username);
 
 		ret = AUTH_FORBIDDEN;
@@ -2937,7 +2936,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	} else {
 		const char *type = switch_xml_attr(user, "type");
 		if (type && !strcasecmp(type, "pointer")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant register a pointer.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't register a pointer.\n");
 			ret = AUTH_FORBIDDEN;
 			goto end;
 		}

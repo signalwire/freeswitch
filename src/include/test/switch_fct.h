@@ -3663,9 +3663,12 @@ with. If we fail a setup up, then we go directly to a teardown mode. */
            fct_ts__add_test(                                             \
                 fctkern_ptr__->ns.ts_curr, fctkern_ptr__->ns.curr_test   \
                 );                                                       \
+       } else {                                                          \
+         fct_test__del(fctkern_ptr__->ns.curr_test);                     \
+         fctkern_ptr__->ns.curr_test = NULL;                             \
        }                                                                 \
     } else {                                                             \
-       switch_assert("invalid condition for fct_req!");                         \
+       switch_assert("invalid condition for fct_req!");                  \
        _fct_req((_CNDTN_));                                              \
     }
 

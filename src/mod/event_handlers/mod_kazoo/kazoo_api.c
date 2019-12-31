@@ -516,8 +516,9 @@ SWITCH_STANDARD_API(exec_api_cmd)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-void add_cli_api(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface)
+void add_cli_api(switch_loadable_module_interface_t **module_interface)
 {
+	switch_api_interface_t *api_interface = NULL;
 	SWITCH_ADD_API(api_interface, "erlang", KAZOO_DESC, exec_api_cmd, KAZOO_SYNTAX);
 	switch_console_set_complete("add erlang status");
 	switch_console_set_complete("add erlang event_filter");
