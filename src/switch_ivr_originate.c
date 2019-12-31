@@ -3838,7 +3838,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							continue;
 						}
 						*cause = switch_channel_get_cause(originate_status[i].peer_channel);
-						break;
+						if (*cause != SWITCH_CAUSE_NO_ANSWER || *cause != SWITCH_CAUSE_NO_USER_RESPONSE) {
+							break;
+						}
 					}
 				}
 
