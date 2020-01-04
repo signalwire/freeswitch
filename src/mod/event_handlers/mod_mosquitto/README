@@ -365,6 +365,7 @@ An example configuration file:
 							<param name="qos" value="0"/>
 							<param name="retain" value="false"/>
 						</topic>
+					</topics>
 				</publisher>
 			</publishers>
 			<subscribers>
