@@ -1233,6 +1233,17 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 	}
 }
 
+static void send_record_error_event(switch_channel_t *channel, const char* file, const char* error)
+{
+	switch_event_t *event;
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "record_session_error") == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Error", error);
+		switch_event_fire(&event);
+	}
+}
+
 static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *obj)
 {
 	switch_media_bug_t *bug = (switch_media_bug_t *) obj;
@@ -2822,6 +2833,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			send_record_error_event(channel, file, "Error opening file");
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -2874,6 +2886,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			send_record_error_event(channel, in_file, "Error opening file");
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -2884,6 +2897,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			send_record_error_event(channel, out_file, "Error opening file");
 			return SWITCH_STATUS_GENERR;
 		}
 
