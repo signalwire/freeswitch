@@ -2085,6 +2085,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *ent_aleg_uuid = NULL;
 	switch_core_session_t *a_session = session, *l_session = NULL;
 	char *event_string;
+	switch_event_t * post_originate_event = NULL;
+	int fire_post_originate_event = 0;
+	const char* current_session_uuid = 0;
 	
 	if (!bridgeto || dh) {
 		bridgeto = "";
@@ -2658,6 +2661,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	switch_epoch_time_now(&global_start);
 	last_retry_start = switch_micro_time_now();
+	
+	switch_event_create_subclass(&post_originate_event, SWITCH_EVENT_CUSTOM, "post_originate_event");
 
 	for (try = 0; try < retries; try++) {
 
@@ -3060,6 +3065,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				oglobals.originate_status[i].peer_channel = switch_core_session_get_channel(new_session);
 				oglobals.originate_status[i].caller_profile = switch_channel_get_caller_profile(oglobals.originate_status[i].peer_channel);
 				oglobals.originate_status[i].peer_session = new_session;
+				current_session_uuid = switch_core_session_get_uuid(new_session);
 
 				switch_channel_set_flag(oglobals.originate_status[i].peer_channel, CF_ORIGINATING);
 
@@ -3198,6 +3204,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					switch_channel_execute_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
 					switch_channel_api_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE);
+					
+					if (!fire_post_originate_event) {
+						const char* telnyx_session_uuid = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "telnyx_session_uuid");
+						const char* telnyx_uuid = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "telnyx_uuid");
+
+						if (!zstr(telnyx_session_uuid) && !zstr(telnyx_uuid)) {
+							switch_event_add_header_string(post_originate_event, SWITCH_STACK_BOTTOM, "telnyx_session_uuid", telnyx_session_uuid);
+							switch_event_add_header_string(post_originate_event, SWITCH_STACK_BOTTOM, "telnyx_uuid", telnyx_uuid);
+							fire_post_originate_event = 1;
+						}
+					}
 				}
 
 				if (table) {
@@ -4178,6 +4195,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_safe_free(odata);
 	switch_safe_free(oglobals.file);
 	switch_safe_free(oglobals.error_file);
+	
+	if (post_originate_event && fire_post_originate_event) {
+		if (!zstr(current_session_uuid)) {
+			switch_event_add_header_string(post_originate_event, SWITCH_STACK_BOTTOM, "Last-Channel-Unique-ID", current_session_uuid);
+		}
+		switch_event_fire(&post_originate_event);
+	} else if (post_originate_event) {
+		switch_event_destroy(&post_originate_event);
+	}
 
 	if (bleg && status != SWITCH_STATUS_SUCCESS) {
 		*bleg = NULL;

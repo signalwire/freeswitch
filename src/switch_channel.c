@@ -3309,13 +3309,65 @@ SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
 	}
 }
 
+static switch_bool_t is_delay_disconnect(switch_channel_t *channel)
+{
+	//char* min_connect_duration;
+	switch_caller_profile_t* profile = 0;
+	switch_time_t duration = 0;
+	switch_time_t elapsed  = 0;
+	const char* uuid = switch_channel_get_uuid(channel);
+	const char* enforce_min_connect_time = switch_channel_get_variable(channel, "enforce_min_connect_time");
+	const char* min_connect_time_enforced = switch_channel_get_variable(channel, "min_connect_time_enforced");
+	const char* sip_term_remote_bye = switch_channel_get_variable(channel, "sip_term_remote_bye");
+	int min_connect_time = -1;
+
+	if (switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_direction(channel) != SWITCH_CALL_DIRECTION_OUTBOUND) {
+		return SWITCH_FALSE;
+	}
+	
+	if (!zstr(sip_term_remote_bye) && switch_true(sip_term_remote_bye)) {
+		return SWITCH_FALSE;
+	}
+	
+	if (!zstr(min_connect_time_enforced) && switch_true(min_connect_time_enforced)) {
+		return SWITCH_FALSE;
+	}
+	
+	if (!zstr(enforce_min_connect_time)) {
+		min_connect_time = atol(enforce_min_connect_time);
+	}
+	
+	profile = switch_channel_get_caller_profile(channel);
+
+	if (profile && profile->times) {
+		if (profile->times->answered) {
+			elapsed = switch_micro_time_now() - profile->times->answered;
+			duration = ((elapsed / 1000) / 1000);
+		}
+	} else {
+		return SWITCH_FALSE;
+	}
+	
+	if (min_connect_time > 0 && duration < min_connect_time) {
+		time_t when = switch_epoch_time_now(NULL) + min_connect_time;
+		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+		switch_channel_set_variable(channel, "min_connect_time_enforced", "true");
+		switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+		return SWITCH_TRUE;
+	}
+	
+	return SWITCH_FALSE;
+}
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel,
 																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause)
 {
 	int ok = 0;
-
 	switch_assert(channel != NULL);
+
+	if (is_delay_disconnect(channel)) {
+		return channel->state; 
+	}
 
 	/* one per customer */
 	switch_mutex_lock(channel->state_mutex);

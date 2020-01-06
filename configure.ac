@@ -865,6 +865,7 @@ if test "x$have_libresolv" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
 
+# Telnyx C++ Dependencies
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lboost_thread -lboost_program_options -lboost_system -lboost_filesystem -lPocoFoundation -lPocoNetSSL -lPocoNet -lpcap -lzmq])
 
 AC_SUBST(SWITCH_AM_CFLAGS)
