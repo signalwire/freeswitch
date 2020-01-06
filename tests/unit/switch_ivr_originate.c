@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -461,9 +461,8 @@ FST_CORE_BEGIN("./conf")
 			status = switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(session);
-			switch_yield(1000000);
+			switch_yield(2000000);
 			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
-			switch_yield(1000000);
 			switch_core_session_rwunlock(session);
 			switch_event_unbind_callback(loopback_group_confirm_event_handler);
 			fst_check(application_hit == 1);
@@ -486,6 +485,150 @@ FST_CORE_BEGIN("./conf")
 			fst_check(application_hit == 1);
 		}
 		FST_SESSION_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_leg_timeout_not_finished)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "leg_timeout", "4");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://6000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_requires(status == SWITCH_STATUS_FALSE);
+			fst_check(session == NULL);
+			fst_check_duration(4500, 600); // (>= 3.9 sec, <= 5.1 sec)
+			switch_dial_handle_destroy(&dh);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_leg_timeout_finished)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "leg_timeout", "6");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://2000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(session);
+			fst_xcheck(switch_channel_test_flag(switch_core_session_get_channel(session), CF_WINNER), "Expect session is group confirm winner");
+			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_core_session_rwunlock(session);
+			switch_dial_handle_destroy(&dh);
+			fst_check_duration(4000, 500);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_timeout_leg)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "leg_timeout", "15");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://10000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_timeout", "3");
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_requires(status == SWITCH_STATUS_FALSE);
+			fst_check(session == NULL);
+			switch_dial_handle_destroy(&dh);
+			fst_check_duration(5500, 600); // (> 4.9 sec < 6.1 sec) only 1 second resolution with these timeouts
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_timeout_global)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "leg_timeout", "15");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://10000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+			switch_dial_handle_add_global_var(dh, "group_confirm_timeout", "3");
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_requires(status == SWITCH_STATUS_FALSE);
+			fst_check(session == NULL);
+			fst_check_duration(5500, 600); // (>= 4.9 sec, <= 6.1 sec) only 1 second resolution with these timeouts
+			switch_dial_handle_destroy(&dh);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_group_confirm_cancel_timeout_global)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "leg_timeout", "3");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://2000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+			switch_dial_handle_add_global_var(dh, "group_confirm_cancel_timeout", "true");
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(session);
+			fst_xcheck(switch_channel_test_flag(switch_core_session_get_channel(session), CF_WINNER), "Expect session is group confirm winner");
+			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_core_session_rwunlock(session);
+			switch_dial_handle_destroy(&dh);
+			fst_check_duration(4500, 600); // (>= 3.9 sec, <= 5.1 sec)
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }

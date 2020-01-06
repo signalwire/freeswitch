@@ -129,6 +129,7 @@ typedef struct {
 	char *file;
 	char *error_file;
 	int confirm_timeout;
+	int confirm_read_timeout;
 	char key[80];
 	uint8_t early_ok;
 	uint8_t ring_ready;
@@ -169,7 +170,7 @@ struct key_collect {
 	char *key;
 	char *file;
 	char *error_file;
-	int confirm_timeout;
+	int confirm_read_timeout;
 	switch_core_session_t *session;
 };
 
@@ -244,7 +245,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		status = switch_ivr_read(collect->session,
 								 (uint32_t)len,
 								 (uint32_t)len,
-								 file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
+								 file, NULL, buf, sizeof(buf), collect->confirm_read_timeout, NULL, 0);
 
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
@@ -450,7 +451,7 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 	}
 }
 
-static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, switch_call_cause_t *force_reason)
+static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, switch_call_cause_t *force_reason, time_t start)
 {
 
 	uint32_t i;
@@ -769,8 +770,26 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 
 			if (!zstr(oglobals->key) || !zstr(group_confirm_key)) {
 				struct key_collect *collect;
+				const char *group_confirm_timeout = switch_channel_get_variable(oglobals->originate_status[i].peer_channel, "group_confirm_timeout");
+				int extend_timeout = 0;
+				int cancel_timeout = 0;
+				if (group_confirm_timeout && switch_is_number(group_confirm_timeout)) {
+					// leg var overrides global group_confirm_timeout
+					extend_timeout = atoi(group_confirm_timeout);
+					if (extend_timeout == 0) {
+						cancel_timeout = 1;
+					}
+				} else {
+					extend_timeout = oglobals->confirm_timeout;
+				}
 
-				if (oglobals->cancel_timeout == SWITCH_TRUE) {
+				if (extend_timeout > 0) {
+					/* extend timeout for this leg only */
+					time_t elapsed = switch_epoch_time_now(NULL) - start;
+					oglobals->originate_status[i].per_channel_progress_timelimit_sec = elapsed + extend_timeout;
+					oglobals->originate_status[i].per_channel_timelimit_sec = elapsed + extend_timeout;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "elapsed %" SWITCH_TIME_T_FMT ", timelimit extended to %u\n", elapsed, oglobals->originate_status[i].per_channel_timelimit_sec);
+				} else if (oglobals->cancel_timeout || cancel_timeout) {
 					/* cancel timeout for this leg only */
 					oglobals->originate_status[i].per_channel_progress_timelimit_sec = 0;
 					oglobals->originate_status[i].per_channel_timelimit_sec = 0;
@@ -793,10 +812,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 						collect->error_file = switch_core_session_strdup(oglobals->originate_status[i].peer_session, oglobals->error_file);
 					}
 
-					if (oglobals->confirm_timeout) {
-						collect->confirm_timeout = oglobals->confirm_timeout;
+					if (oglobals->confirm_read_timeout) {
+						collect->confirm_read_timeout = oglobals->confirm_read_timeout;
 					} else {
-						collect->confirm_timeout = 5000;
+						collect->confirm_read_timeout = 5000;
 					}
 
 					switch_channel_audio_sync(oglobals->originate_status[i].peer_channel);
@@ -2304,6 +2323,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "group_confirm_cancel_timeout")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "group_confirm_timeout")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "forked_dial")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "fail_on_single_reject")) {
@@ -2381,7 +2402,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 #endif
 
-	if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
+	if ((var = switch_event_get_header(var_event, "group_confirm_timeout"))) {
+		// has precedence over group_confirm_cancel_timeout
+		if (switch_is_number(var)) {
+			oglobals.confirm_timeout = atoi(var);
+			if (oglobals.confirm_timeout == 0) {
+				oglobals.cancel_timeout = SWITCH_TRUE;
+			}
+		}
+	} else if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
 		oglobals.cancel_timeout = SWITCH_TRUE;
 	}
 
@@ -2401,7 +2430,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			int tmp = atoi(var);
 
 			if (tmp >= 0) {
-				oglobals.confirm_timeout = tmp;
+				oglobals.confirm_read_timeout = tmp;
 			}
 
 		}
@@ -3252,9 +3281,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
-				   check_channel_status(&oglobals, and_argc, &force_reason)) {
+					check_channel_status(&oglobals, and_argc, &force_reason, start)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
-
 				read_packet = 0;
 
 				if (cancel_cause && *cancel_cause > 0) {
