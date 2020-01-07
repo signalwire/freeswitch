@@ -10,7 +10,8 @@ steps:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
       - echo "applications/mod_test" >> modules.conf
-      - ./configure
+      - export ASAN_OPTIONS=log_path=stdout;
+      - ./configure --enable-address-sanitizer
       - echo "#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./build-status.txt\nmake install\n" > build.sh
       - chmod +x build.sh
       - ./build.sh
@@ -44,6 +45,6 @@ trigger:
   - push
 ---
 kind: signature
-hmac: ee1de4cb1fa925cf61ac67c76c54d553e4376b3a828480d39ce99a67fabae298
+hmac: 5ebcc916118f95811470ed7e622a2acb71e84790e33f9b172c04fe3e119d78fe
 
 ...
