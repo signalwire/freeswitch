@@ -282,7 +282,6 @@ static switch_status_t switch_opusfile_open(switch_file_handle_t *handle, const 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "[OGG/OPUS File] Channels: %i\n", head->channel_count);
 			if (head->input_sample_rate) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "[OGG/OPUS File] Original sampling rate: %lu Hz\n", (unsigned long)head->input_sample_rate);
-				handle->samplerate = context->samplerate = head->input_sample_rate;
 			}
 		}
 		if (op_seekable(context->of)) {
