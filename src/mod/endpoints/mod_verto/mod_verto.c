@@ -1256,7 +1256,7 @@ static void attach_calls(jsock_t *jsock)
 			}
 
 			tech_reattach(tech_pvt, jsock);
-			cJSON_AddItemToArray(reattached_sessions, cJSON_CreateString(jsock->uuid_str));
+			cJSON_AddItemToArray(reattached_sessions, cJSON_CreateString(switch_core_session_get_uuid(tech_pvt->session)));
 		}
 	}
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
