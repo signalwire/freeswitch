@@ -708,10 +708,10 @@ AC_SUBST([POSTGRESQL_LIBDIR], [$POSTGRESQL_LIBDIR])
 
 PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   AM_CONDITIONAL([HAVE_MARIADB],[true])],[
-    AC_MSG_RESULT([no]);
-    PKG_CHECK_MODULES([MARIADB], [mariadb >= 3.0.9],[
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])
-    ])
+  PKG_CHECK_MODULES([MARIADB], [mariadb >= 3.0.9],[
+    AM_CONDITIONAL([HAVE_MARIADB],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])
+  ])
 ])
 
 AC_ARG_ENABLE(deprecated-core-db-events,
