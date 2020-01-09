@@ -692,6 +692,10 @@ static switch_status_t handle_request_command(ei_node_t *ei_node, erlang_pid *pi
 		return erlang_response_badarg(rbuf);
 	}
 
+	if (zstr_buf(uuid_str) || !(session = switch_core_session_locate(uuid_str))) {
+		return erlang_response_baduuid(rbuf);
+	}
+
 	switch_uuid_get(&cmd_uuid);
 	switch_uuid_format(cmd_uuid_str, &cmd_uuid);
 
@@ -703,9 +707,6 @@ static switch_status_t handle_request_command(ei_node_t *ei_node, erlang_pid *pi
 	log_sendmsg_request(uuid_str, event);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-uuid", cmd_uuid_str);
 
-	if (zstr_buf(uuid_str) || !(session = switch_core_session_locate(uuid_str))) {
-		return erlang_response_baduuid(rbuf);
-	}
 	switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);
 	switch_core_session_rwunlock(session);
 
@@ -767,6 +768,10 @@ static switch_status_t handle_request_sendmsg(ei_node_t *ei_node, erlang_pid *pi
 		return erlang_response_badarg(rbuf);
 	}
 
+	if (zstr_buf(uuid_str) || !(session = switch_core_session_locate(uuid_str))) {
+		return erlang_response_baduuid(rbuf);
+	}
+
 	switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE);
 	if (build_event(event, buf) != SWITCH_STATUS_SUCCESS) {
 		return erlang_response_badarg(rbuf);
@@ -774,9 +779,6 @@ static switch_status_t handle_request_sendmsg(ei_node_t *ei_node, erlang_pid *pi
 
 	log_sendmsg_request(uuid_str, event);
 
-	if (zstr_buf(uuid_str) || !(session = switch_core_session_locate(uuid_str))) {
-		return erlang_response_baduuid(rbuf);
-	}
 	switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);
 	switch_core_session_rwunlock(session);
 
