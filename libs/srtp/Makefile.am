@@ -17,7 +17,7 @@ libsrtp_la_SOURCES =    srtp/srtp.c srtp/ekt.c crypto/cipher/cipher.c crypto/cip
 			crypto/kernel/err.c \
 			crypto/replay/rdb.c crypto/replay/rdbx.c crypto/replay/ut_sim.c 
 
-libsrtp_la_LDFLAGS = 	-version-info 1:42:1
+libsrtp_la_LDFLAGS = 	-version-info 2:3:0
 
 EXTRA_DIST=
 
@@ -27,10 +27,6 @@ libsrtp_la_SOURCES += crypto/hash/hmac_ossl.c
 else
 libsrtp_la_SOURCES += crypto/hash/sha1.c crypto/hash/hmac.c 
 libsrtp_la_SOURCES += crypto/cipher/aes_icm.c crypto/cipher/aes.c
-endif
-
-if GDOI
-libsrtp_la_SOURCES += gdoi/srtp+gdoi.c
 endif
 
 library_includedir =  $(prefix)/include/srtp
