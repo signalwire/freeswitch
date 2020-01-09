@@ -547,6 +547,7 @@ $(switch_builddir)/modules.conf:
 src/mod/modules.inc: $(switch_builddir)/modules.conf
 	@echo "OUR_MODULES=$(OUR_MODS)" > $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_CLEAN_MODULES=$(OUR_CLEAN_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_TEST_MODULES=$(OUR_TEST_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_INSTALL_MODULES=$(OUR_INSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_UNINSTALL_MODULES=$(OUR_UNINSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_DISABLED_MODULES=$(OUR_DISABLED_MODS)" >> $(switch_builddir)/src/mod/modules.inc
@@ -847,6 +848,10 @@ modclean: $(switch_builddir)/modules.conf src/mod/modules.inc
 
 modwipe:
 	rm -f $(modulesdir)/*.so $(modulesdir)/*.la $(modulesdir)/*.dll $(modulesdir)/*.dylib
+
+print_tests: libfreeswitch.la $(switch_builddir)/modules.conf src/mod/modules.inc
+	@cd tests/unit && $(MAKE) $(AM_MAKEFLAGS) print_tests
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) print_tests
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
