@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2019, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -66,7 +66,7 @@ static char *fst_getenv_default(const char *env, char *default_value, switch_boo
 /**
  * initialize FS core from optional configuration dir
  */
-static switch_status_t fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal)
+static switch_status_t fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal, switch_core_flag_t flags)
 {
 	switch_status_t status;
 	const char *err;
@@ -113,7 +113,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	switch_core_set_globals();
 
 	if (!minimal) {
-		status = switch_core_init_and_modload(SCF_USE_SQL, SWITCH_TRUE, &err);
+		status = switch_core_init_and_modload(flags, SWITCH_TRUE, &err);
 		switch_sleep(1 * 1000000);
 		switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
 		if (status != SWITCH_STATUS_SUCCESS && err) {
@@ -256,7 +256,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_core) { \
-			fst_init_core_and_modload(NULL, NULL, 0); /* shuts up compiler */ \
+			fst_init_core_and_modload(NULL, NULL, 0, 0); /* shuts up compiler */ \
 		} \
 		{ \
 
@@ -274,7 +274,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  * Define the beginning of a freeswitch core test driver.  Only one per test application allowed.
  * @param confdir directory containing freeswitch.xml configuration
  */
-#define FST_CORE_BEGIN(confdir) \
+#define FST_CORE_EX_BEGIN(confdir, flags) \
 	FCT_BGN() \
 	{ \
 		int fst_core = 0; \
@@ -283,7 +283,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, confdir, 0) == SWITCH_STATUS_SUCCESS) { \
+		if (fst_init_core_and_modload(confdir, confdir, 0, flags) == SWITCH_STATUS_SUCCESS) { \
 			fst_core = 2; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
@@ -305,6 +305,9 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	} \
 	FCT_END()
 
+#define FST_CORE_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, 0)
+#define FST_CORE_DB_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, SCF_USE_SQL)
+
 /**
  * Minimal FS core load
  */
@@ -317,7 +320,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, NULL, 1) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
+		if (fst_init_core_and_modload(confdir, NULL, 1, 0) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
 			fst_core = 1; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
@@ -699,7 +702,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	fst_requires(fst_core > 1); \
 	fst_requires_module("mod_dptools"); \
 	switch_channel_set_variable(fst_channel, "detect_speech_result", ""); \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mrf") == SWITCH_STATUS_SUCCESS); \
 	args = switch_core_session_sprintf(fst_session, "%s detect:%s %s", prompt_filename, recognizer, grammar); \
 	fst_requires(switch_core_session_execute_application(fst_session, "play_and_detect_speech", args) == SWITCH_STATUS_SUCCESS); \
 	fst_asr_result = switch_channel_get_variable(fst_channel, "detect_speech_result"); \
@@ -729,7 +732,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	char *args = NULL; \
 	fst_asr_result = NULL; \
 	fst_requires(fst_core > 1); \
-	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mr") == SWITCH_STATUS_SUCCESS); \
+	fst_requires(switch_ivr_displace_session(fst_session, input_filename, 0, "mrf") == SWITCH_STATUS_SUCCESS); \
 	switch_status_t status = switch_ivr_play_and_detect_speech(fst_session, prompt_filename, recognizer, grammar, (char **)&fst_asr_result, 0, input_args); \
 	fst_check(fst_asr_result != NULL); \
 }

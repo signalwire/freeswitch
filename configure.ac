@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.2-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.3-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [2-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [3-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -708,7 +708,11 @@ AC_SUBST([POSTGRESQL_LIBDIR], [$POSTGRESQL_LIBDIR])
 
 PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   AM_CONDITIONAL([HAVE_MARIADB],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])])
+  PKG_CHECK_MODULES([MARIADB], [mariadb >= 3.0.9],[
+    AM_CONDITIONAL([HAVE_MARIADB],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])
+  ])
+])
 
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])

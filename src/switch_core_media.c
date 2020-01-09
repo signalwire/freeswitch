@@ -1802,6 +1802,9 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		return 0;
 	}
 
+	if (!crypto) {
+		return 0;
+	}
 	engine = &session->media_handle->engines[type];
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
@@ -1826,7 +1829,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
+		if (engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
 			got_crypto = 1;
 		} else {
@@ -5216,7 +5219,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 											  switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
 							switch_core_session_rwunlock(other_session);
 
-							pass = 0;
 							match = 0;
 							fmatch = 0;
 							goto done;
@@ -6065,7 +6067,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			vmatch = 0;
 			almost_vmatch = 0;
-			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
 			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
@@ -10778,7 +10779,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
 		const char *mult;
 
-		i = 0;
 
 		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
 			cng_type = smh->mparams->cng_pt;
@@ -13529,7 +13529,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND || prefer_sdp) {
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					match = 0;
 
 					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 						continue;
@@ -13563,7 +13562,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						continue;
 					}
 					for (map = m->m_rtpmaps; map; map = map->rm_next) {
-						match = 0;
 
 						if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 							continue;
@@ -13601,7 +13599,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND || prefer_sdp) {
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					match = 0;
 
 					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 						continue;
@@ -13646,7 +13643,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 					}
 
 					for (map = m->m_rtpmaps; map; map = map->rm_next) {
-						match = 0;
 
 						if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 							continue;
@@ -16082,7 +16078,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				enc_frame->ssrc = frame->ssrc;
 				enc_frame->payload = enc_frame->codec->implementation->ianacode;
 				write_frame = enc_frame;
-				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_NOT_INITALIZED:
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
@@ -16236,7 +16231,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					enc_frame->ssrc = frame->ssrc;
 					enc_frame->payload = enc_frame->codec->implementation->ianacode;
 					write_frame = enc_frame;
-					status = SWITCH_STATUS_SUCCESS;
 					break;
 				case SWITCH_STATUS_NOT_INITALIZED:
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");

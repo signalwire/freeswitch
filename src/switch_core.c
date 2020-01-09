@@ -2809,7 +2809,11 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		{
 			int x = 19;
 			uint32_t count;
-
+			switch_event_t *shutdown_requested_event = NULL;
+			if (switch_event_create(&shutdown_requested_event, SWITCH_EVENT_SHUTDOWN_REQUESTED) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(shutdown_requested_event, SWITCH_STACK_BOTTOM, "Event-Info", "%s", cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "elegant");
+				switch_event_fire(&shutdown_requested_event);
+			}
 			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 			if (cmd == SCSC_SHUTDOWN_ASAP) {
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
