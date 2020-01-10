@@ -9238,6 +9238,11 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
 	return rtp_session->private_data;
 }
 
+SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t *rtp_session)
+{
+	return rtp_session->session;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

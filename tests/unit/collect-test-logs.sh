@@ -10,7 +10,12 @@ for name in $logs
 do
 	logname=$(basename $name)
 	testname=$(echo $logname | awk -F 'log_run-tests_' '{print $2}' | awk -F '.html' '{print $1}')
-	html+="<tr align=\"left\"><td><a href="$logname">$testname</a></td></tr>"
+	html+="<tr align=\"left\"><td><a href="$logname">$testname</a>"
+	backtrace="backtrace_$testname.txt"
+	if test -f "${LOG_DIR}/$backtrace"; then
+	    html+=". Core dumped, backtrace is available <a href=\"$backtrace\">here</a>"
+	fi
+	html+="</td></tr>"
 	logs_found=1
 done
 
