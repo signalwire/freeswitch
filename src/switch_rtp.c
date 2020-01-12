@@ -7950,6 +7950,17 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 	switch_size_t bytes = 0;
 	switch_dtmf_t *_dtmf = NULL;
 	void *pop;
+	switch_channel_t *channel = NULL;
+	switch_bool_t sensitive = SWITCH_FALSE;
+
+	if (rtp_session->session) {
+		if (!channel) { 
+			channel = switch_core_session_get_channel(rtp_session->session); 
+		}
+		if (channel) {
+			sensitive =	switch_true(switch_channel_get_variable_dup(channel, SWITCH_SENSITIVE_DTMF_VARIABLE, SWITCH_FALSE, -1));
+		}
+	}
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return bytes;
@@ -7958,9 +7969,11 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
 	if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_inqueue, &pop) == SWITCH_STATUS_SUCCESS) {
 
-		_dtmf = (switch_dtmf_t *) pop;
+		_dtmf = (switch_dtmf_t *)pop;
 		*dtmf = *_dtmf;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTP RECV DTMF %c:%d\n", dtmf->digit, dtmf->duration);
+		if (!sensitive) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,"RTP RECV DTMF %c:%d\n", dtmf->digit, dtmf->duration);
+		}
 		bytes++;
 		free(pop);
 	}
