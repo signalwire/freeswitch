@@ -217,13 +217,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml,...);
 ///\param prn_header add <?xml version..> header too
 ///\param use_utf8_encoding encoding into ampersand entities for UTF-8 chars
 ///\return the ampersanded html text string to display xml
-#define switch_xml_toxml(xml, prn_header) switch_xml_toxml_ex(xml, prn_header, USE_UTF_8_ENCODING)
-#define switch_xml_toxml_nolock(xml, prn_header) switch_xml_toxml_nolock_ex(xml, prn_header, USE_UTF_8_ENCODING)
-#define switch_xml_tohtml(xml, prn_header) switch_xml_tohtml_ex(xml, prn_header, USE_UTF_8_ENCODING)
+SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_toxml_nolock(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_tohtml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
 
-SWITCH_DECLARE(char *) switch_xml_toxml_ex(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header, switch_bool_t use_utf8_encoding);
-SWITCH_DECLARE(char *) switch_xml_toxml_nolock_ex(switch_xml_t xml, _In_ switch_bool_t prn_header, switch_bool_t use_utf8_encoding);
-SWITCH_DECLARE(char *) switch_xml_tohtml_ex(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header, switch_bool_t use_utf8_encoding);
+SWITCH_DECLARE(char *) switch_xml_toxml_ex(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header, _In_ switch_bool_t use_utf8_encoding);
+SWITCH_DECLARE(char *) switch_xml_toxml_nolock_ex(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header, _In_ switch_bool_t use_utf8_encoding);
+SWITCH_DECLARE(char *) switch_xml_tohtml_ex(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header, _In_ switch_bool_t use_utf8_encoding);
 
 ///\brief Converts an switch_xml structure back to xml using the buffer passed in the parameters.
 ///\param xml the xml node
@@ -233,10 +233,8 @@ SWITCH_DECLARE(char *) switch_xml_tohtml_ex(_In_ switch_xml_t xml, _In_ switch_b
 ///\param prn_header add <?xml version..> header too
 ///\param use_utf8_encoding encoding into ampersand entities for UTF-8 chars
 ///\return the xml text string
-#define switch_xml_toxml_buf(xml, buf, buflen, offset, prn_header) switch_xml_toxml_buf_ex(xml, buf, buflen, offset, prn_header, USE_UTF_8_ENCODING);
-SWITCH_DECLARE(char *) switch_xml_toxml_buf_ex(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset,
-											_In_ switch_bool_t prn_header, switch_bool_t use_utf8_encoding);
-
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset, _In_ switch_size_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_toxml_buf_ex(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset, _In_ switch_bool_t prn_header, _In_ switch_bool_t use_utf8_encoding);
 
 ///\brief returns a NULL terminated array of processing instructions for the given
 ///\ target

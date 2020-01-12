@@ -2682,6 +2682,16 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 }
 
+SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_header) { return switch_xml_toxml_ex(xml, prn_header, USE_UTF_8_ENCODING); }
+SWITCH_DECLARE(char *) switch_xml_toxml_nolock(switch_xml_t xml, switch_bool_t prn_header) { return switch_xml_toxml_nolock_ex(xml, prn_header, USE_UTF_8_ENCODING); }
+SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_header) { return switch_xml_tohtml_ex(xml, prn_header, USE_UTF_8_ENCODING); }
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
+{
+	return switch_xml_toxml_buf_ex(xml, buf, buflen, offset, prn_header, USE_UTF_8_ENCODING);
+}
+
+
+
 SWITCH_DECLARE(char *) switch_xml_toxml_nolock_ex(switch_xml_t xml, switch_bool_t prn_header, switch_bool_t use_utf8_encoding)
 {
 	char *s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);

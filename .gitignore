@@ -59,7 +59,6 @@ TAGS
 
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat
-!/w32/Console/FreeSwitchConsole.vcproj.user
 !/w32/Setup/inno_setup/vcredist_x64.exe
 !/w32/Setup/inno_setup/vcredist_x86.exe
 
