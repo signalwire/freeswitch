@@ -589,7 +589,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 
 	if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
-		int need = *len * 2 * fh->real_channels;
+		int need = *len * 2 * (fh->real_channels > fh->channels ? fh->real_channels : fh->channels);
 
 		if (need > fh->muxlen) {
 			fh->muxbuf = realloc(fh->muxbuf, need);
