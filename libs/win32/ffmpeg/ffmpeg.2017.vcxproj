@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>ffmpeg</ProjectName>
     <RootNamespace>ffmpeg</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}</ProjectGuid>
   </PropertyGroup>
   <Import Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Project="$(CUDA_PATH)\extras\visual_studio_integration\MSBuildExtensions\CUDA *.props" />
