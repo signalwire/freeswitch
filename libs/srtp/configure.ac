@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
+AC_INIT(srtp, 2.3.0, mcgrew@cisco.com)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE
 
