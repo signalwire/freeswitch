@@ -595,9 +595,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 			fh->muxbuf = realloc(fh->muxbuf, need);
 			switch_assert(fh->muxbuf);
 			fh->muxlen = need;
+		}
+
+		if (fh->muxbuf) {
 			memcpy(fh->muxbuf, data, fh->muxlen);
 			data = fh->muxbuf;
-
 		}
 
 		switch_mux_channels((int16_t *) data, *len, fh->real_channels, fh->channels);
