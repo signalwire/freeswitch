@@ -548,6 +548,7 @@ src/mod/modules.inc: $(switch_builddir)/modules.conf
 	@echo "OUR_MODULES=$(OUR_MODS)" > $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_CLEAN_MODULES=$(OUR_CLEAN_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_TEST_MODULES=$(OUR_TEST_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_CHECK_MODULES=$(OUR_CHECK_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_INSTALL_MODULES=$(OUR_INSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_UNINSTALL_MODULES=$(OUR_UNINSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
 	@echo "OUR_DISABLED_MODULES=$(OUR_DISABLED_MODS)" >> $(switch_builddir)/src/mod/modules.inc

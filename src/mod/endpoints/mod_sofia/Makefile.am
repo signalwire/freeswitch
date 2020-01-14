@@ -42,7 +42,7 @@ BUILT_SOURCES = $(SOFIALA)
 noinst_PROGRAMS = test/test_sofia_funcs
 
 test_test_sofia_funcs_SOURCES = test/test_sofia_funcs.c
-test_test_sofia_funcs_CFLAGS = $(AM_CFLAGS) -I $(libsofiamod_la_CFLAGS) 
+test_test_sofia_funcs_CFLAGS = $(AM_CFLAGS) -I $(libsofiamod_la_CFLAGS) -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
 test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(SOFIALA)
 test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIALA)
 TESTS = $(noinst_PROGRAMS)
