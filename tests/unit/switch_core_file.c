@@ -127,6 +127,64 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(test_switch_core_file_write_mono)
+		{
+			switch_status_t status = SWITCH_STATUS_FALSE;
+			switch_file_handle_t fhw = { 0 };
+			static char filename[] = "/tmp/fs_write_unit_test.wav";
+			char *buf;
+			int nr_frames = 3, i;
+			switch_size_t len;
+
+			len = 160;
+			switch_malloc(buf, len * sizeof(int16_t));
+
+			status = switch_core_file_open(&fhw, filename, 1, 8000, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			for (i = 0; i < nr_frames; i++) {
+				memset(buf, i, len * sizeof(int16_t));
+				switch_core_file_write(&fhw, buf, &len);
+			}
+
+			status = switch_core_file_close(&fhw);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_safe_free(buf);
+			unlink(filename);
+		}
+		FST_TEST_END()
+		FST_TEST_BEGIN(test_switch_core_file_write_mono_to_stereo)
+		{
+			switch_status_t status = SWITCH_STATUS_FALSE;
+			switch_file_handle_t fhw = { 0 };
+			static char filename[] = "/tmp/fs_write_unit_test.wav";
+			char *buf;
+			int nr_frames = 3, i, want_channels = 2;
+			switch_size_t len;
+
+			len = 160;
+			switch_malloc(buf, len * sizeof(int16_t));
+
+			status = switch_core_file_open(&fhw, filename, want_channels, 8000, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			fhw.real_channels = 1; 
+
+			for (i = 0; i < nr_frames; i++) {
+				memset(buf, i, len * sizeof(int16_t));
+				status = switch_core_file_write(&fhw, buf, &len);
+				fst_requires(status == SWITCH_STATUS_SUCCESS);
+			}
+
+			status = switch_core_file_close(&fhw);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_safe_free(buf);
+			unlink(filename);
+
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
