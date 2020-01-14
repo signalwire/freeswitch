@@ -890,7 +890,6 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 {
 	this_check((char *)"");
 	sanity_check((char *)"");
-	switch_bool_t sensitive = SWITCH_FALSE;
 	begin_allow_threads();
 	char terminator;
 
@@ -902,16 +901,9 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 									terminators,
 									&terminator,
 									(uint32_t) timeout, (uint32_t)interdigit, (uint32_t)abstimeout);
-
-	if (session) {
-		if (!channel) { 
-			channel = switch_core_session_get_channel(session); 
-		}
-		if (channel) {
-			sensitive =	switch_true(switch_channel_get_variable_dup(channel, SWITCH_SENSITIVE_DTMF_VARIABLE, SWITCH_FALSE, -1));
-		}
-	}
-	if (!sensitive) {
+									
+	/* Only log DTMF buffer if sensitive_dtmf channel variable not set to true */
+	if (!(switch_channel_var_true(switch_core_session_get_channel(session), SWITCH_SENSITIVE_DTMF_VARIABLE))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	}
 	
