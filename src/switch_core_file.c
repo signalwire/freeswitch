@@ -598,7 +598,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		}
 
 		if (fh->muxbuf) {
-			memcpy(fh->muxbuf, data, fh->muxlen);
+			memcpy(fh->muxbuf, data, *len * 2);
 			data = fh->muxbuf;
 		}
 
