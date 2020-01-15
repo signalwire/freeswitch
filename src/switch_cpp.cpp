@@ -83,7 +83,7 @@ SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subc
 
 	if (node_index <= SWITCH_EVENT_ALL &&
 		switch_event_bind_removable(__FILE__, event_id, subclass_name, event_handler, this, &enodes[node_index]) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
 		node_index++;
 		return 1;
 	}

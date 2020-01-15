@@ -1158,11 +1158,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 				if (!MONO || time_sync == runtime.time_sync) {
 #if defined(HAVE_CLOCK_NANOSLEEP)
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on.\n");
 #else
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "If you see this message many times consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "If you see this message many times consider a nicer machine to run me on.\n");
 #endif
 				}
 			} else {
