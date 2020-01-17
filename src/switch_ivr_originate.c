@@ -788,7 +788,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 					time_t elapsed = switch_epoch_time_now(NULL) - start;
 					oglobals->originate_status[i].per_channel_progress_timelimit_sec = elapsed + extend_timeout;
 					oglobals->originate_status[i].per_channel_timelimit_sec = elapsed + extend_timeout;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "elapsed %" SWITCH_TIME_T_FMT ", timelimit extended to %u\n", elapsed, oglobals->originate_status[i].per_channel_timelimit_sec);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "elapsed %" TIME_T_FMT ", timelimit extended to %u\n", elapsed, oglobals->originate_status[i].per_channel_timelimit_sec);
 				} else if (oglobals->cancel_timeout || cancel_timeout) {
 					/* cancel timeout for this leg only */
 					oglobals->originate_status[i].per_channel_progress_timelimit_sec = 0;
