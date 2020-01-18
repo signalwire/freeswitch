@@ -5,6 +5,7 @@ clean: $(OUR_CLEAN_MODULES) $(OUR_DISABLED_CLEAN_MODULES)
 install: $(OUR_INSTALL_MODULES)
 uninstall: $(OUR_UNINSTALL_MODULES) $(OUR_DISABLED_UNINSTALL_MODULES)
 print_tests: $(OUR_TEST_MODULES)
+check: $(OUR_CHECK_MODULES)
 
 mod_skypopen-all: mod_gsmopen-all
 mod_gsmopen-all: mod_spandsp-all
@@ -12,7 +13,7 @@ mod_unimrcp-all: mod_sofia-all
 mod_rayo-all: mod_dingaling-all
 mod_ssml-all: mod_rayo-all
 
-$(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODULES) $(OUR_DISABLED_MODULES) $(OUR_DISABLED_CLEAN_MODULES) $(OUR_DISABLED_INSTALL_MODULES) $(OUR_DISABLED_UNINSTALL_MODULES) $(OUR_TEST_MODULES):
+$(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODULES) $(OUR_DISABLED_MODULES) $(OUR_DISABLED_CLEAN_MODULES) $(OUR_DISABLED_INSTALL_MODULES) $(OUR_DISABLED_UNINSTALL_MODULES) $(OUR_TEST_MODULES) $(OUR_CHECK_MODULES):
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	target=`echo $@ | sed -e 's|^.*-||'`; \
 	modname=`echo $@ | sed -e 's|-.*||' | sed -e 's|^.*/||'`; \
