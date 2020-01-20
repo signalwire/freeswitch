@@ -158,7 +158,7 @@ struct kz_globals_s {
 
 	switch_hash_t *event_filter;
 	int epmdfd;
-	int num_worker_threads;
+	int node_worker_threads;
 	switch_bool_t nat_map;
 	switch_bool_t ei_shortname;
 	int ei_compat_rel;
@@ -233,6 +233,8 @@ int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char 
 int ei_decode_string_or_binary(char *buf, int *index, char **dst);
 switch_status_t create_acceptor();
 switch_hash_t *create_default_filter();
+void kz_erl_init();
+void kz_erl_shutdown();
 
 void fetch_config();
 
