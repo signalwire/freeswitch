@@ -53,16 +53,17 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(member_test)
 		{
 			char path[4096];
-			const char *logo = "{position=left-bot,text_x=center,"
-				"center_offset=190,text=#000000:transparent:font/AEH.ttf:50:"
-				"'FREESWITCH ROCKS',alt_text_x=center,alt_center_offset=190,"
-				"alt_text_y=88,alt_text=#ffffff:transparent:font/AEH.ttf:40:"
-				"'freeswitch'}";
+			char logo[1024];
 			conference_member_t smember = { 0 };
 			conference_member_t *member = &smember;
 			switch_image_t *img;
 			int i;
 
+			sprintf(logo, "%s%s%s%s%s%s%s", "{position=left-bot,text_x=center,"
+			"center_offset=190,text=#000000:transparent:", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "font/AEH.ttf:50:"
+			"'FREESWITCH ROCKS',alt_text_x=center,alt_center_offset=190,"
+			"alt_text_y=88,alt_text=#ffffff:transparent:", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "font/AEH.ttf:40:"
+			"'freeswitch'}");
 			sprintf(path, "%s%s%s%s", logo, SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire.png");
 			switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, fst_pool);
 			switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, fst_pool);
