@@ -25,7 +25,7 @@
  * Konstantin Molchanov <molchanov.kv@gmail.com>
  *
  *
- * switch_utils.c -- tests switch_utils
+ * switch_console.c -- tests switch_console
  *
  */
 

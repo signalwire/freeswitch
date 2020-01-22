@@ -14,3 +14,8 @@ install-modules: install
 uninstall-modules: uninstall
 distclean-modules: distclean
 extraclean-modules: extraclean
+
+print_tests:
+	@set +e; \
+	test -z "$(TESTS)" || for i in $(TESTS); do echo $(subdir)/$$i; done;
+	

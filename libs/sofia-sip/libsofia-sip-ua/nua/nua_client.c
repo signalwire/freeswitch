@@ -1040,6 +1040,10 @@ int nua_client_response(nua_client_request_t *cr,
   if (cr->cr_restarting)
     return 0;
 
+  if (cr->cr_status == 200 && status < 200) { // ignore 183 follows 200
+    return 0;
+  }
+
   nua_client_request_ref(cr);
 
   cr->cr_status = status;

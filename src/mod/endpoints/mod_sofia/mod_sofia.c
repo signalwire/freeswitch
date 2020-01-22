@@ -4775,6 +4775,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
+		profile = gateway_ptr->profile;
+
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
@@ -4814,8 +4816,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
@@ -5180,7 +5180,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	if (gateway_ptr) {
+	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
+	if (gateway_ptr && !profile) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
@@ -5384,6 +5385,9 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						sofia_glue_free_destination(dst);
+						switch_safe_free(route_uri);
+						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5410,9 +5414,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5465,9 +5469,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			}
@@ -5647,6 +5651,7 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
+					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5776,9 +5781,11 @@ void general_event_handler(switch_event_t *event)
 				nua_handle_unref(nh);
 			}
 
-			sofia_glue_release_profile(profile);
-
 		  done:
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
 
 			switch_safe_free(local_dup);
 

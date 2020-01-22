@@ -223,6 +223,7 @@ static char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
+	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
 
@@ -571,9 +572,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
 
-		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-			switch_status_t st;
-			switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		for(x = 0; x < (uint32_t)MAX_DISPATCH; x++) {
+			if (EVENT_DISPATCH_QUEUE_THREADS[x]) {
+				switch_status_t st;
+				switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+			}
 		}
 	}
 
@@ -3067,7 +3070,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 		cJSON_Delete(ecd->json);
 		ecd->json = NULL;
 		destroy_ecd(&ecd);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s\n", event_channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s, status = %d\n", event_channel, status);
 	} else {
 		ecd = NULL;
 	}

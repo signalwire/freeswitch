@@ -842,7 +842,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 
 		if (elapsed > 30000) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "No %s stun for a long time!\n", rtp_type(rtp_session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "No %s stun for a long time!\n", rtp_type(rtp_session));
 			rtp_session->last_stun = switch_micro_time_now();
 			//status = SWITCH_STATUS_GENERR;
 			//goto end;
@@ -9039,7 +9039,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		data = frame->data;
 		len = frame->datalen;
 		ts = rtp_session->flags[SWITCH_RTP_FLAG_RAW_WRITE] ? (uint32_t) frame->timestamp : 0;
-		if (!ts) ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 	}
 
 	/*
@@ -9237,6 +9236,11 @@ SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *pri
 SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
 {
 	return rtp_session->private_data;
+}
+
+SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t *rtp_session)
+{
+	return rtp_session->session;
 }
 
 /* For Emacs:

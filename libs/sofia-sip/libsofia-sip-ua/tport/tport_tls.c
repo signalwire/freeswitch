@@ -969,12 +969,19 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
   if (events & SU_WAIT_HUP && !self->tp_closed)
     tport_hup_event(self);
 
-  if (self->tp_closed)
+  if (self->tp_closed) {
+    SU_DEBUG_9(("%s(%p): tport was closed during connect. Returning, but set secondary timer first.\n",
+                __func__, (void *)self));
+    tport_set_secondary_timer(self);
     return 0;
+  }
 
   error = su_soerror(self->tp_socket);
   if (error) {
     tport_error_report(self, error, NULL);
+    SU_DEBUG_9(("%s(%p): socket error during connect. Returning, but set secondary timer first.\n",
+                __func__, (void *)self));
+    tport_set_secondary_timer(self);
     return 0;
   }
 

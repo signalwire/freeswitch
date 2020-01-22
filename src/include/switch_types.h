@@ -1894,7 +1894,8 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
-	SMBF_READ_TEXT_STREAM = (1 << 25)
+	SMBF_READ_TEXT_STREAM = (1 << 25),
+	SMBF_FIRST = (1 << 26)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1937,7 +1938,8 @@ typedef enum {
 	SWITCH_FILE_NOMUX = (1 << 17),
 	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18),
 	SWITCH_FILE_FLAG_VIDEO = (1 << 19),
-	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20)
+	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20),
+	SWITCH_FILE_PRE_CLOSED = (1 << 21)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 
@@ -2047,6 +2049,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CALL_SETUP_RESULT
     SWITCH_EVENT_CALL_DETAIL
     SWITCH_EVENT_DEVICE_STATE
+    SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -2142,6 +2145,7 @@ typedef enum {
 	SWITCH_EVENT_CALL_DETAIL,
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
+	SWITCH_EVENT_SHUTDOWN_REQUESTED,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -2317,6 +2321,7 @@ typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
+typedef struct switch_coredb_handle switch_coredb_handle_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_database_interface_handle switch_database_interface_handle_t;
 

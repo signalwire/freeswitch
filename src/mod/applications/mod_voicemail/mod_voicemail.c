@@ -5979,7 +5979,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 
 	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Can't locate user.\n");
-		switch_xml_free(x_user);
 		goto done;
 	}
 
@@ -6105,6 +6104,10 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 	stream->write_function(stream, "-OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
+
+	if (x_user) {
+		switch_xml_free(x_user);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

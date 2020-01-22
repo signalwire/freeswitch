@@ -233,8 +233,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 		}
 
 
-		if (switch_test_flag(read_frame, SFF_CNG) ||
-			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
+		if (read_frame && (switch_test_flag(read_frame, SFF_CNG) ||
+			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED))) {
 			continue;
 		}
 
@@ -670,7 +670,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				} else {
 					switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				}
-				bypass_media_after_bridge = 0;
 				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
 			}

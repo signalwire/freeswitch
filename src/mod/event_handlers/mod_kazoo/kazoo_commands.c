@@ -419,6 +419,7 @@ SWITCH_STANDARD_API(kz_http_put)
 	if (fstat(fd, &file_info) == -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
 		stream->write_function(stream, "-ERR fstat error\n");
+		close(fd);
 		goto done;
 	}
 	close(fd);

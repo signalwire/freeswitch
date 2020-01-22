@@ -589,15 +589,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 
 	if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
-		int need = *len * 2 * fh->real_channels;
+		int need = *len * 2 * (fh->real_channels > fh->channels ? fh->real_channels : fh->channels);
 
 		if (need > fh->muxlen) {
 			fh->muxbuf = realloc(fh->muxbuf, need);
 			switch_assert(fh->muxbuf);
 			fh->muxlen = need;
-			memcpy(fh->muxbuf, data, fh->muxlen);
-			data = fh->muxbuf;
+		}
 
+		if (fh->muxbuf) {
+			memcpy(fh->muxbuf, data, *len * 2);
+			data = fh->muxbuf;
 		}
 
 		switch_mux_channels((int16_t *) data, *len, fh->real_channels, fh->channels);
@@ -915,6 +917,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 	}
 
 	switch_clear_flag_locked(fh, SWITCH_FILE_OPEN);
+	switch_set_flag_locked(fh, SWITCH_FILE_PRE_CLOSED);
 
 	if (fh->file_interface->file_pre_close) {
 		status = fh->file_interface->file_pre_close(fh);
@@ -929,9 +932,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		status = switch_core_file_pre_close(fh);
-	} else {
+	} else if (!switch_test_flag(fh, SWITCH_FILE_PRE_CLOSED)) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	switch_clear_flag_locked(fh, SWITCH_FILE_PRE_CLOSED);
 
 	fh->file_interface->file_close(fh);
 
