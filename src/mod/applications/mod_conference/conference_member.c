@@ -1293,6 +1293,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 				//conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 				conference->endconference_time = switch_epoch_time_now(NULL);
 			}
+			conference->endconference_time = switch_epoch_time_now(NULL);
 		}
 
 		conference_send_presence(conference);
