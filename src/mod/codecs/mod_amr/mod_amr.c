@@ -655,11 +655,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 20000,	/* number of microseconds per frame */
 										 160,	/* number of samples per frame */
 										 320,	/* number of bytes per frame decompressed */
-#ifndef AMR_PASSTHROUGH
-										 SWITCH_AMR_OUT_MAX_SIZE,	/* number of bytes per frame compressed */
-#else
 										 0,	/* number of bytes per frame compressed */
-#endif
 										 1,	/* number of channels represented */
 										 1,	/* number of frames per network packet */
 										 switch_amr_init,	/* function to initialize a codec handle using this implementation */
@@ -680,11 +676,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 20000,	/* number of microseconds per frame */
 										 160,	/* number of samples per frame */
 										 320,	/* number of bytes per frame decompressed */
-#ifndef AMR_PASSTHROUGH
-										 SWITCH_AMR_OUT_MAX_SIZE,	/* number of bytes per frame compressed */
-#else
 										 0,	/* number of bytes per frame compressed */
-#endif
 										 1,	/* number of channels represented */
 										 1,	/* number of frames per network packet */
 										 switch_amr_init,	/* function to initialize a codec handle using this implementation */

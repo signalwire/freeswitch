@@ -998,7 +998,7 @@ char *sofia_glue_session_id_header(switch_core_session_t *session, sofia_profile
  * \param sdp The parsed SDP content
  */
 void sofia_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
-switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r_sdp);
+switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r_sdp, switch_sdp_type_t type);
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);

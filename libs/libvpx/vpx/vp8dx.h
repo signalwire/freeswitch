@@ -111,6 +111,19 @@ enum vp8_dec_control_id {
    */
   VP9_SET_SKIP_LOOP_FILTER,
 
+  /** control function to decode SVC stream up to the x spatial layers,
+   * where x is passed in through the control, and is 0 for base layer.
+   */
+  VP9_DECODE_SVC_SPATIAL_LAYER,
+
+  /*!\brief Codec control function to get last decoded frame quantizer.
+   *
+   * Return value uses internal quantizer scale defined by the codec.
+   *
+   * Supported in codecs: VP8, VP9
+   */
+  VPXD_GET_LAST_QUANTIZER,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -150,6 +163,8 @@ VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED, int *)
 #define VPX_CTRL_VP8D_GET_FRAME_CORRUPTED
 VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED, int *)
 #define VPX_CTRL_VP8D_GET_LAST_REF_USED
+VPX_CTRL_USE_TYPE(VPXD_GET_LAST_QUANTIZER, int *)
+#define VPX_CTRL_VPXD_GET_LAST_QUANTIZER
 VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR, vpx_decrypt_init *)
 #define VPX_CTRL_VPXD_SET_DECRYPTOR
 VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR, vpx_decrypt_init *)
@@ -162,6 +177,10 @@ VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_FRAME_SIZE
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 #define VPX_CTRL_VP9_INVERT_TILE_DECODE_ORDER
+#define VPX_CTRL_VP9_DECODE_SVC_SPATIAL_LAYER
+VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
+#define VPX_CTRL_VP9_SET_SKIP_LOOP_FILTER
+VPX_CTRL_USE_TYPE(VP9_SET_SKIP_LOOP_FILTER, int)
 
 /*!\endcond */
 /*! @} - end defgroup vp8_decoder */

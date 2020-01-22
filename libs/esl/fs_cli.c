@@ -674,7 +674,7 @@ static void redisplay(void)
 	esl_mutex_lock(MUTEX);
 	{
 #ifdef HAVE_LIBEDIT
-#ifdef XHAVE_DECL_EL_REFRESH
+#ifdef HAVE_DECL_EL_REFRESH
 #ifdef HAVE_EL_WSET
 		/* Current libedit versions don't implement EL_REFRESH in eln.c so
 		 * use the wide version instead. */
@@ -1002,10 +1002,13 @@ static const char *basic_gets(int *cnt)
 	for (x = 0; x < (sizeof(command_buf) - 1); x++) {
 		int c = getchar();
 		if (c < 0) {
+			size_t command_buf_len;
 			if (fgets(command_buf, sizeof(command_buf) - 1, stdin) != command_buf) {
 				break;
+			}			
+			if ((command_buf_len = strlen(command_buf)) > 0) {
+				command_buf[command_buf_len - 1] = '\0'; /* remove endline */
 			}
-			command_buf[strlen(command_buf)-1] = '\0'; /* remove endline */
 			break;
 		}
 		command_buf[x] = (char) c;

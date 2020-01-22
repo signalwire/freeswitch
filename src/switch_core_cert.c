@@ -91,6 +91,10 @@ SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void)
 		OPENSSL_free(ssl_mutexes);
 		ssl_count--;
 	}
+
+	if (ssl_pool) {
+		switch_core_destroy_memory_pool(&ssl_pool);
+	}
 }
 
 static const EVP_MD *get_evp_by_name(const char *name)

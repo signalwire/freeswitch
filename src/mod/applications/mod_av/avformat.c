@@ -49,7 +49,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 #define swr_get_out_samples avresample_get_out_samples
 #define swr_get_out_samples avresample_get_out_samples
 #define swr_convert(ctx, odata, osamples, idata, isamples) \
-	avresample_convert(ctx, odata, osamples, 0, (uint8_t **)idata, isamples, 0)
+	avresample_convert(ctx, odata, 0, osamples, (uint8_t **)idata, 0, isamples)
 #else
 #include <libswresample/swresample.h>
 #endif
@@ -1029,7 +1029,7 @@ void show_formats(switch_stream_handle_t *stream) {
 #if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
 		while ((ofmt = av_oformat_next(ofmt))) {
 #else
-		void *i;
+		void *i = 0;
 
 		while ((ofmt = av_muxer_iterate(&i))) {
 #endif
@@ -1047,6 +1047,7 @@ void show_formats(switch_stream_handle_t *stream) {
 #if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
 		while ((ifmt = av_iformat_next(ifmt))) {
 #else
+		i = 0;
 		while ((ifmt = av_demuxer_iterate(&i))) {
 #endif
 			is_dev = is_device(ifmt->priv_class);

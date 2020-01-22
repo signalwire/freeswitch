@@ -389,7 +389,7 @@ void idct16_rows_dspr2(const int16_t *input, int16_t *output,
   }
 }
 
-void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
+void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride) {
   int i;
   int step1_0, step1_1, step1_2, step1_3, step1_4, step1_5, step1_6, step1_7;
   int step1_8, step1_9, step1_10, step1_11;
@@ -712,14 +712,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "add      %[load6],         %[step1_1],         %[step1_6]      \n\t"
         "add      %[load6],         %[load6],           %[step1_14]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "add      %[load5],         %[step1_2],         %[step1_5]      \n\t"
@@ -731,14 +731,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "add      %[load6],         %[step1_3],         %[step1_4]      \n\t"
         "add      %[load6],         %[load6],           %[step1_12]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "sub      %[load5],         %[step1_3],         %[step1_4]      \n\t"
@@ -750,14 +750,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "sub      %[load6],         %[step1_2],         %[step1_5]      \n\t"
         "add      %[load6],         %[load6],           %[step1_10]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "sub      %[load5],         %[step1_1],         %[step1_6]      \n\t"
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
@@ -769,14 +769,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "sub      %[load6],         %[step1_0],         %[step1_7]      \n\t"
         "add      %[load6],         %[load6],           %[step1_8]      \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "sub      %[load5],         %[step1_0],         %[step1_7]      \n\t"
@@ -788,14 +788,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "sub      %[load6],         %[step1_1],         %[step1_6]      \n\t"
         "sub      %[load6],         %[load6],           %[step1_9]      \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "sub      %[load5],         %[step1_2],         %[step1_5]      \n\t"
@@ -807,14 +807,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "sub      %[load6],         %[step1_3],         %[step1_4]      \n\t"
         "sub      %[load6],         %[load6],           %[step1_11]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "add      %[load5],         %[step1_3],         %[step1_4]      \n\t"
@@ -826,14 +826,14 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "add      %[load6],         %[step1_2],         %[step1_5]      \n\t"
         "sub      %[load6],         %[load6],           %[step1_13]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
         "add      %[load8],         %[load8],           %[load6]        \n\t"
         "lbux     %[load6],         %[load8](%[cm])                     \n\t"
         "sb       %[load6],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
 
         "lbu      %[load7],         0(%[dest_pix])                      \n\t"
         "add      %[load5],         %[step1_1],         %[step1_6]      \n\t"
@@ -845,7 +845,7 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         "add      %[load6],         %[step1_0],         %[step1_7]      \n\t"
         "sub      %[load6],         %[load6],           %[step1_15]     \n\t"
         "sb       %[load5],         0(%[dest_pix])                      \n\t"
-        "addu     %[dest_pix],      %[dest_pix],        %[dest_stride]  \n\t"
+        "addu     %[dest_pix],      %[dest_pix],        %[stride]       \n\t"
         "lbu      %[load8],         0(%[dest_pix])                      \n\t"
         "addi     %[load6],         %[load6],           32              \n\t"
         "sra      %[load6],         %[load6],           6               \n\t"
@@ -856,7 +856,7 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
         : [load5] "=&r"(load5), [load6] "=&r"(load6), [load7] "=&r"(load7),
           [load8] "=&r"(load8), [dest_pix] "+r"(dest_pix)
         :
-        [cm] "r"(cm), [dest_stride] "r"(dest_stride), [step1_0] "r"(step1_0),
+        [cm] "r"(cm), [stride] "r"(stride), [step1_0] "r"(step1_0),
         [step1_1] "r"(step1_1), [step1_2] "r"(step1_2), [step1_3] "r"(step1_3),
         [step1_4] "r"(step1_4), [step1_5] "r"(step1_5), [step1_6] "r"(step1_6),
         [step1_7] "r"(step1_7), [step1_8] "r"(step1_8), [step1_9] "r"(step1_9),
@@ -869,7 +869,7 @@ void idct16_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride) {
 }
 
 void vpx_idct16x16_256_add_dspr2(const int16_t *input, uint8_t *dest,
-                                 int dest_stride) {
+                                 int stride) {
   DECLARE_ALIGNED(32, int16_t, out[16 * 16]);
   uint32_t pos = 45;
 
@@ -880,11 +880,11 @@ void vpx_idct16x16_256_add_dspr2(const int16_t *input, uint8_t *dest,
   idct16_rows_dspr2(input, out, 16);
 
   // Then transform columns and add to dest
-  idct16_cols_add_blk_dspr2(out, dest, dest_stride);
+  idct16_cols_add_blk_dspr2(out, dest, stride);
 }
 
 void vpx_idct16x16_10_add_dspr2(const int16_t *input, uint8_t *dest,
-                                int dest_stride) {
+                                int stride) {
   DECLARE_ALIGNED(32, int16_t, out[16 * 16]);
   int16_t *outptr = out;
   uint32_t i;
@@ -924,11 +924,11 @@ void vpx_idct16x16_10_add_dspr2(const int16_t *input, uint8_t *dest,
   }
 
   // Then transform columns
-  idct16_cols_add_blk_dspr2(out, dest, dest_stride);
+  idct16_cols_add_blk_dspr2(out, dest, stride);
 }
 
 void vpx_idct16x16_1_add_dspr2(const int16_t *input, uint8_t *dest,
-                               int dest_stride) {
+                               int stride) {
   uint32_t pos = 45;
   int32_t out;
   int32_t r;
@@ -975,13 +975,54 @@ void vpx_idct16x16_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "sw             %[vector_2],    4(%[dest])                      \n\t"
           "sw             %[vector_3],    8(%[dest])                      \n\t"
           "sw             %[vector_4],    12(%[dest])                     \n\t"
-          "add            %[dest],        %[dest],        %[dest_stride]  \n\t"
+          "add            %[dest],        %[dest],        %[stride]       \n\t"
 
           : [t1] "=&r"(t1), [t2] "=&r"(t2), [t3] "=&r"(t3), [t4] "=&r"(t4),
             [vector_1] "=&r"(vector_1), [vector_2] "=&r"(vector_2),
             [vector_3] "=&r"(vector_3), [vector_4] "=&r"(vector_4),
             [dest] "+&r"(dest)
-          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
+          : [stride] "r"(stride), [vector_a1] "r"(vector_a1));
+    }
+  } else if (a1 > 255) {
+    int32_t a11, a12, vector_a11, vector_a12;
+
+    /* use quad-byte
+     * input and output memory are four byte aligned */
+    a11 = a1 >> 1;
+    a12 = a1 - a11;
+    __asm__ __volatile__(
+        "replv.qb       %[vector_a11],  %[a11]     \n\t"
+        "replv.qb       %[vector_a12],  %[a12]     \n\t"
+
+        : [vector_a11] "=&r"(vector_a11), [vector_a12] "=&r"(vector_a12)
+        : [a11] "r"(a11), [a12] "r"(a12));
+
+    for (r = 16; r--;) {
+      __asm__ __volatile__(
+          "lw             %[t1],          0(%[dest])                      \n\t"
+          "lw             %[t2],          4(%[dest])                      \n\t"
+          "lw             %[t3],          8(%[dest])                      \n\t"
+          "lw             %[t4],          12(%[dest])                     \n\t"
+          "addu_s.qb      %[vector_1],    %[t1],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_2],    %[t2],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_3],    %[t3],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_4],    %[t4],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_3],    %[vector_3],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_4],    %[vector_4],    %[vector_a12]   \n\t"
+          "sw             %[vector_1],    0(%[dest])                      \n\t"
+          "sw             %[vector_2],    4(%[dest])                      \n\t"
+          "sw             %[vector_3],    8(%[dest])                      \n\t"
+          "sw             %[vector_4],    12(%[dest])                     \n\t"
+          "add            %[dest],        %[dest],        %[stride]       \n\t"
+
+          : [t1] "=&r"(t1), [t2] "=&r"(t2), [t3] "=&r"(t3), [t4] "=&r"(t4),
+            [vector_1] "=&r"(vector_1), [vector_2] "=&r"(vector_2),
+            [vector_3] "=&r"(vector_3), [vector_4] "=&r"(vector_4),
+            [dest] "+&r"(dest)
+          : [stride] "r"(stride), [vector_a11] "r"(vector_a11),
+            [vector_a12] "r"(vector_a12));
     }
   } else {
     /* use quad-byte
@@ -1005,13 +1046,13 @@ void vpx_idct16x16_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "sw             %[vector_2],    4(%[dest])                      \n\t"
           "sw             %[vector_3],    8(%[dest])                      \n\t"
           "sw             %[vector_4],    12(%[dest])                     \n\t"
-          "add            %[dest],        %[dest],        %[dest_stride]  \n\t"
+          "add            %[dest],        %[dest],        %[stride]       \n\t"
 
           : [t1] "=&r"(t1), [t2] "=&r"(t2), [t3] "=&r"(t3), [t4] "=&r"(t4),
             [vector_1] "=&r"(vector_1), [vector_2] "=&r"(vector_2),
             [vector_3] "=&r"(vector_3), [vector_4] "=&r"(vector_4),
             [dest] "+&r"(dest)
-          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
+          : [stride] "r"(stride), [vector_a1] "r"(vector_a1));
     }
   }
 }

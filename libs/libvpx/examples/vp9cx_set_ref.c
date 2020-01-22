@@ -304,6 +304,7 @@ int main(int argc, char **argv) {
   const char *height_arg = NULL;
   const char *infile_arg = NULL;
   const char *outfile_arg = NULL;
+  const char *update_frame_num_arg = NULL;
   unsigned int limit = 0;
 
   vp9_zero(ecodec);
@@ -318,18 +319,21 @@ int main(int argc, char **argv) {
   height_arg = argv[2];
   infile_arg = argv[3];
   outfile_arg = argv[4];
+  update_frame_num_arg = argv[5];
 
   encoder = get_vpx_encoder_by_name("vp9");
   if (!encoder) die("Unsupported codec.");
 
-  update_frame_num = atoi(argv[5]);
+  update_frame_num = (unsigned int)strtoul(update_frame_num_arg, NULL, 0);
   // In VP9, the reference buffers (cm->buffer_pool->frame_bufs[i].buf) are
   // allocated while calling vpx_codec_encode(), thus, setting reference for
   // 1st frame isn't supported.
-  if (update_frame_num <= 1) die("Couldn't parse frame number '%s'\n", argv[5]);
+  if (update_frame_num <= 1) {
+    die("Couldn't parse frame number '%s'\n", update_frame_num_arg);
+  }
 
   if (argc > 6) {
-    limit = atoi(argv[6]);
+    limit = (unsigned int)strtoul(argv[6], NULL, 0);
     if (update_frame_num > limit)
       die("Update frame number couldn't larger than limit\n");
   }

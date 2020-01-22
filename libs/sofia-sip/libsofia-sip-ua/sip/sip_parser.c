@@ -64,11 +64,21 @@ char const sip_version_2_0[] = "SIP/2.0";
 extern msg_mclass_t sip_mclass[];
 
 static msg_mclass_t const *_default = sip_mclass;
+static msg_mclass_t *_default_parser_cloned = NULL;
 
 /** Return a built-in SIP parser object. */
 msg_mclass_t const *sip_default_mclass(void)
 {
   return _default;
+}
+
+/** Release SIP parser object if it was cloned. */
+void sip_cloned_parser_destroy(void)
+{
+	if (_default_parser_cloned) {
+		free(_default_parser_cloned);
+		_default_parser_cloned = NULL;
+	}
 }
 
 /** Update the default SIP parser.
@@ -128,10 +138,12 @@ msg_mclass_t *sip_extend_mclass(msg_mclass_t *input)
 {
   msg_mclass_t *mclass;
 
-  if (input == NULL || input == _default)
-    mclass = msg_mclass_clone(_default, 0, 0);
-  else
+  if (input == NULL || input == _default) {
+    _default_parser_cloned = msg_mclass_clone(_default, 0, 0);
+    mclass = _default_parser_cloned;
+  } else {
     mclass = input;
+  }
 
   if (mclass) {
     extern msg_hclass_t * const sip_extensions[];
@@ -143,8 +155,10 @@ msg_mclass_t *sip_extend_mclass(msg_mclass_t *input)
 	continue;
 
       if (msg_mclass_insert_header(mclass, hclass, 0) < 0) {
-	if (input != mclass)
+	if (input != mclass) {
 	  free(mclass);
+	  _default_parser_cloned = NULL;
+	}
 	return mclass = NULL;
       }
     }

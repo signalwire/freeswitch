@@ -23,7 +23,7 @@ FST_CORE_BEGIN("./conf")
 		{
 			switch_status_t status;
 			switch_codec_t codec = { 0 };
-			switch_codec_settings_t codec_settings = { 0 };
+			switch_codec_settings_t codec_settings = {{ 0 }};
 
 			// switch_set_string(codec_settings.video.config_profile_name, "conference");
 			codec_settings.video.width = 1280;
@@ -82,6 +82,7 @@ FST_CORE_BEGIN("./conf")
 			fst_check(frame.m == 1);
 			fst_check(packets > 0);
 
+			switch_img_free(&img);
 			switch_core_codec_destroy(&codec);
 		}
 		FST_TEST_END()

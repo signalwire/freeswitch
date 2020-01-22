@@ -40,6 +40,7 @@ struct vp8_extracfg {
   vp8e_tuning tuning;
   unsigned int cq_level; /* constrained quality level */
   unsigned int rc_max_intra_bitrate_pct;
+  unsigned int gf_cbr_boost_pct;
   unsigned int screen_content_mode;
 };
 
@@ -65,6 +66,7 @@ static struct vp8_extracfg default_extracfg = {
   0,  /* tuning*/
   10, /* cq_level */
   0,  /* rc_max_intra_bitrate_pct */
+  0,  /* gf_cbr_boost_pct */
   0,  /* screen_content_mode */
 };
 
@@ -315,6 +317,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
 
   oxcf->target_bandwidth = cfg.rc_target_bitrate;
   oxcf->rc_max_intra_bitrate_pct = vp8_cfg.rc_max_intra_bitrate_pct;
+  oxcf->gf_cbr_boost_pct = vp8_cfg.gf_cbr_boost_pct;
 
   oxcf->best_allowed_q = cfg.rc_min_quantizer;
   oxcf->worst_allowed_q = cfg.rc_max_quantizer;
@@ -555,6 +558,13 @@ static vpx_codec_err_t set_rc_max_intra_bitrate_pct(vpx_codec_alg_priv_t *ctx,
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
   extra_cfg.rc_max_intra_bitrate_pct =
       CAST(VP8E_SET_MAX_INTRA_BITRATE_PCT, args);
+  return update_extracfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t ctrl_set_rc_gf_cbr_boost_pct(vpx_codec_alg_priv_t *ctx,
+                                                    va_list args) {
+  struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
+  extra_cfg.gf_cbr_boost_pct = CAST(VP8E_SET_GF_CBR_BOOST_PCT, args);
   return update_extracfg(ctx, &extra_cfg);
 }
 
@@ -1159,6 +1169,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] = {
   { VP8E_SET_CQ_LEVEL, set_cq_level },
   { VP8E_SET_MAX_INTRA_BITRATE_PCT, set_rc_max_intra_bitrate_pct },
   { VP8E_SET_SCREEN_CONTENT_MODE, set_screen_content_mode },
+  { VP8E_SET_GF_CBR_BOOST_PCT, ctrl_set_rc_gf_cbr_boost_pct },
   { -1, NULL },
 };
 
@@ -1205,6 +1216,7 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
         50,  /* rc_two_pass_vbrbias  */
         0,   /* rc_two_pass_vbrmin_section */
         400, /* rc_two_pass_vbrmax_section */
+        0,   // rc_2pass_vbr_corpus_complexity (only has meaningfull for VP9)
 
         /* keyframing settings (kf) */
         VPX_KF_AUTO, /* g_kfmode*/

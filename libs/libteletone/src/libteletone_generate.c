@@ -206,7 +206,7 @@ static int ensure_buffer(teletone_generation_session_t *ts, int need)
 TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	/*teletone_process_t period = (1.0 / ts->rate) / ts->channels;*/
-	int i, c;
+	int i;
 	int freqlen = 0;
 	teletone_dds_state_t tones[TELETONE_MAX_TONES+1];
 	//int decay = 0;
@@ -215,6 +215,7 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 	int32_t sample;
 	int32_t dc = 0;
 	float vol = ts->volume;
+
 	ts->samples = 0;
 	memset(tones, 0, sizeof(tones[0]) * TELETONE_MAX_TONES);
 	duration = (ts->tmp_duration > -1) ? ts->tmp_duration : ts->duration;
@@ -225,13 +226,9 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, 0);
 			teletone_dds_state_set_tx_level(&tones[freqlen], vol);
 		}
-	
-		if (ts->channels > 1) {
-			duration *= ts->channels;
-		}
 
 		if (ts->dynamic) {
-			if (ensure_buffer(ts, duration)) {
+			if (ensure_buffer(ts, duration * ts->channels)) {
 				return -1;
 			}
 		}
@@ -260,23 +257,17 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 				sample /= freqlen;
 			}
 			ts->buffer[ts->samples] = (teletone_audio_t)sample;
-			
-			for (c = 1; c < ts->channels; c++) {
-				ts->buffer[ts->samples+1] = ts->buffer[ts->samples];
-				ts->samples++;
-			}
-			
 		}
 	}
+
 	if (ts->dynamic) {
-		if (ensure_buffer(ts, wait)) {
+		if (ensure_buffer(ts, wait * ts->channels)) {
 			return -1;
 		}
 	}
-	for (c = 0; c < ts->channels; c++) {
-		for (i = 0; i < wait && ts->samples < ts->datalen; i++) {
-			ts->buffer[ts->samples++] = 0;
-		}
+
+	for (i = 0; i < wait && ts->samples < ts->datalen; i++) {
+		ts->buffer[ts->samples++] = 0;
 	}
 
 	if (ts->debug && ts->debug_stream) {
@@ -304,7 +295,7 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 					ts->samples * 2);
 		}
 	}	
-	return ts->samples / ts->channels;
+	return ts->samples;
 }
 
 /* don't ask */

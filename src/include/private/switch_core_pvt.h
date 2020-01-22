@@ -313,6 +313,7 @@ struct switch_runtime {
 	char *core_db_inner_post_trans_execute;
 	int events_use_dispatch;
 	uint32_t port_alloc_flags;
+	char *event_channel_key_separator;
 };
 
 extern struct switch_runtime runtime;

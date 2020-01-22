@@ -2360,8 +2360,35 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_CPF_SOFT_LOOKUP);
 					}
+				} else if (!strcasecmp(var, "event-channel-key-separator") && !zstr(val)) {
+					runtime.event_channel_key_separator = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "event-channel-enable-hierarchy-deliver") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
+					}
+				} else if (!strcasecmp(var, "event-channel-hierarchy-deliver-once") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					}
+				} else if (!strcasecmp(var, "event-channel-log-undeliverable-json") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					}
 				}
 			}
+		}
+
+		if (runtime.event_channel_key_separator == NULL) {
+			runtime.event_channel_key_separator = switch_core_strdup(runtime.memory_pool, ".");
 		}
 
 		if ((settings = switch_xml_child(cfg, "variables"))) {
@@ -2782,7 +2809,11 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		{
 			int x = 19;
 			uint32_t count;
-
+			switch_event_t *shutdown_requested_event = NULL;
+			if (switch_event_create(&shutdown_requested_event, SWITCH_EVENT_SHUTDOWN_REQUESTED) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(shutdown_requested_event, SWITCH_STACK_BOTTOM, "Event-Info", "%s", cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "elegant");
+				switch_event_fire(&shutdown_requested_event);
+			}
 			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 			if (cmd == SCSC_SHUTDOWN_ASAP) {
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
@@ -3373,6 +3404,11 @@ SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port()
 	end_port = (uint16_t)switch_rtp_set_end_port((switch_port_t)end_port);
 
 	return end_port;
+}
+
+SWITCH_DECLARE(const char *) switch_core_get_event_channel_key_separator(void)
+{
+	return runtime.event_channel_key_separator;
 }
 
 /* For Emacs:

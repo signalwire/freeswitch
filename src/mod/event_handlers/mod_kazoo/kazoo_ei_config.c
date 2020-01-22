@@ -95,6 +95,19 @@ static int read_cookie_from_file(char *filename) {
 	}
 }
 
+void kz_set_hostname()
+{
+	if (kazoo_globals.hostname == NULL) {
+		char hostname[NODENAME_MAX];
+		memcpy(hostname, switch_core_get_hostname(), NODENAME_MAX);
+		kazoo_globals.hostname_ent = gethostbyname(hostname);
+		if(kazoo_globals.hostname_ent != NULL) {
+			kazoo_globals.hostname = switch_core_strdup(kazoo_globals.pool, kazoo_globals.hostname_ent->h_name);
+		} else {
+			kazoo_globals.hostname = switch_core_strdup(kazoo_globals.pool, hostname);
+		}
+	}
+}
 
 switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	switch_xml_t child, param;
@@ -192,9 +205,9 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "io-fault-tolerance")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);
 				kazoo_globals.io_fault_tolerance = atoi(val);
-			} else if (!strcmp(var, "num-worker-threads")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set num-worker-threads: %s\n", val);
-				kazoo_globals.num_worker_threads = atoi(val);
+			} else if (!strcmp(var, "node-worker-threads")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set node-worker-threads: %s\n", val);
+				kazoo_globals.node_worker_threads = atoi(val);
 			} else if (!strcmp(var, "json-term-encoding")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set json-term-encoding: %s\n", val);
 				if(!strcmp(val, "map")) {
@@ -203,16 +216,28 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "legacy-events")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set legacy-events: %s\n", val);
 				kazoo_globals.legacy_events = switch_true(val);
+			} else if (!strcmp(var, "expand-headers-on-fetch")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set expand-headers-on-fetch: %s\n", val);
+				kazoo_globals.expand_headers_on_fetch = switch_true(val);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unknown config option %s : %s\n", var, val);
 			}
 		}
 	}
 
 	if ((child = switch_xml_child(cfg, "tweaks"))) {
+		char *default_tweaks = (char *) switch_xml_attr_soft(param, "default");
+		if (default_tweaks) {
+			int i, v = switch_true(default_tweaks) ? 1 : 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak default : %s\n", default_tweaks);
+			for (i = 0; i < KZ_TWEAK_MAX; i++) kazoo_globals.tweaks[i] = v;
+		}
 		for (param = switch_xml_child(child, "tweak"); param; param = param->next) {
 			kz_tweak_t tweak = KZ_TWEAK_MAX;
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if(var && val && kz_name_tweak(var, &tweak) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak %s : %s\n", var, val);
 				if(switch_true(val)) {
 					kz_set_tweak(tweak);
 				} else {
@@ -227,6 +252,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if(var && val) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set core variable %s : %s\n", var, val);
 				switch_core_set_variable(var, val);
 			}
 		}
@@ -295,9 +321,9 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 		kazoo_globals.profile_vars_prefixes[i] = switch_core_strdup(kazoo_globals.pool, sep_array[i]);
 	}
 
-	if (!kazoo_globals.num_worker_threads) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Number of worker threads not found in configuration, using default\n");
-		kazoo_globals.num_worker_threads = 10;
+	if (!kazoo_globals.node_worker_threads) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Number of node worker threads not found in configuration, using default\n");
+		kazoo_globals.node_worker_threads = 10;
 	}
 
 	if (zstr(kazoo_globals.ip)) {
@@ -398,12 +424,9 @@ switch_status_t kazoo_config_handlers(switch_xml_t cfg)
 
 		if(events == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get default handler for events\n");
-			if(kazoo_globals.event_handlers != event_handlers) destroy_config(&event_handlers);
-			if(kazoo_globals.fetch_handlers != fetch_handlers) destroy_config(&fetch_handlers);
-			if(kazoo_globals.definitions != definitions) destroy_config(&definitions);
-			switch_xml_free(def);
-			switch_safe_free(xml);
-			return SWITCH_STATUS_GENERR;
+			destroy_config(&event_handlers);
+			event_handlers = kazoo_config_event_handlers(definitions, def);
+			events = (kazoo_event_profile_ptr) switch_core_hash_find(event_handlers->hash, "default");
 		}
 
 		if(kazoo_globals.events != events) {

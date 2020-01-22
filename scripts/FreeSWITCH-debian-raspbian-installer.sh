@@ -133,10 +133,10 @@ config_fs_repos() {
 	curl https://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub | apt-key add -
 	if [ "$FS_REV" = "master" ]; then
 		echo "deb http://files.freeswitch.org/repo/deb/debian-unstable/ jessie main" >/etc/apt/sources.list.d/freeswitch.list
-		REPO="https://freeswitch.org/stash/scm/fs/freeswitch.git"
+		REPO="https://github.com/signalwire/freeswitch.git"
 	elif [ "$FS_REV" = "1.6" ]; then
 		echo "deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main" > /etc/apt/sources.list.d/freeswitch.list
-		REPO="-b v1.6 https://silik0n@freeswitch.org/stash/scm/fs/freeswitch.git"
+		REPO="-b v1.6 https://github.com/signalwire/freeswitch.git"
 	fi
 	apt-get update 2>&1 >/dev/null
 }

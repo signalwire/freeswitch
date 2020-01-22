@@ -371,9 +371,12 @@ const char *const kVP9TestVectors[] = {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   "vp90-2-20-big_superframe-01.webm",
   "vp90-2-20-big_superframe-02.webm",
+  "vp90-2-22-svc_1280x720_1.webm",
   RESIZE_TEST_VECTORS
 };
+const char *const kVP9TestVectorsSvc[] = { "vp90-2-22-svc_1280x720_3.ivf" };
 const int kNumVP9TestVectors = NELEMENTS(kVP9TestVectors);
+const int kNumVP9TestVectorsSvc = NELEMENTS(kVP9TestVectorsSvc);
 const char *const kVP9TestVectorsResize[] = { RESIZE_TEST_VECTORS };
 const int kNumVP9TestVectorsResize = NELEMENTS(kVP9TestVectorsResize);
 #undef RESIZE_TEST_VECTORS

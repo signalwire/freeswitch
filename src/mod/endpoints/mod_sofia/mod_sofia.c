@@ -360,7 +360,6 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
@@ -376,13 +375,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		}
 
 		if (!zstr(tech_pvt->call_id)) {
-			switch_mutex_lock(tech_pvt->profile->flag_mutex);
-			if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
-				free(uuid);
-				uuid = NULL;
-				switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
-			}
-			switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+			switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->call_id, tech_pvt->profile->flag_mutex);
 		}
 
 
@@ -461,7 +454,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key && !sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
-		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
+		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
 	if (session && tech_pvt->profile->pres_type) {
@@ -880,7 +873,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 
-				if (zstr(r_sdp) || sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+				if (zstr(r_sdp) || sofia_media_tech_media(tech_pvt, r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 					//switch_mutex_lock(tech_pvt->sofia_mutex);
 					//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
@@ -1772,7 +1765,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 
 					switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-					if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_tech_media(tech_pvt, r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 						status = SWITCH_STATUS_FALSE;
 						goto end_lock;
@@ -2575,7 +2568,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 
 							switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-							if (zstr(r_sdp) || sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+							if (zstr(r_sdp) || sofia_media_tech_media(tech_pvt, r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 												  "CODEC NEGOTIATION ERROR.  SDP:\n%s\n", r_sdp ? r_sdp : "NO SDP!");
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
@@ -4782,6 +4775,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
+		profile = gateway_ptr->profile;
+
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
@@ -4821,8 +4816,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
@@ -5187,7 +5180,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	if (gateway_ptr) {
+	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
+	if (gateway_ptr && !profile) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
@@ -5391,6 +5385,9 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						sofia_glue_free_destination(dst);
+						switch_safe_free(route_uri);
+						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5417,9 +5414,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5472,9 +5469,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			}
@@ -5654,6 +5651,7 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
+					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5783,9 +5781,11 @@ void general_event_handler(switch_event_t *event)
 				nua_handle_unref(nh);
 			}
 
-			sofia_glue_release_profile(profile);
-
 		  done:
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
 
 			switch_safe_free(local_dup);
 
@@ -6472,6 +6472,12 @@ void mod_sofia_shutdown_cleanup() {
 	}
 
 	su_deinit();
+
+	/* 
+		Release the clone of the default SIP parser 
+		created by `sip_update_default_mclass(sip_extend_mclass(NULL))` call with NULL argument
+	*/
+	sip_cloned_parser_destroy();
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);

@@ -1221,6 +1221,8 @@
   }
 #define PCKEV_B2_SB(...) PCKEV_B2(v16i8, __VA_ARGS__)
 #define PCKEV_B2_UB(...) PCKEV_B2(v16u8, __VA_ARGS__)
+#define PCKEV_B2_SH(...) PCKEV_B2(v8i16, __VA_ARGS__)
+#define PCKEV_B2_SW(...) PCKEV_B2(v4i32, __VA_ARGS__)
 
 #define PCKEV_B4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, \
                  out2, out3)                                                \

@@ -58,8 +58,12 @@ int arm_cpu_caps(void) {
 
 #elif defined(_MSC_VER) /* end !CONFIG_RUNTIME_CPU_DETECT */
 /*For GetExceptionCode() and EXCEPTION_ILLEGAL_INSTRUCTION.*/
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef WIN32_EXTRA_LEAN
 #define WIN32_EXTRA_LEAN
+#endif
 #include <windows.h>
 
 int arm_cpu_caps(void) {

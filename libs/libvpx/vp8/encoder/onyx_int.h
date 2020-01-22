@@ -249,6 +249,10 @@ typedef struct {
 
   int filter_level;
 
+  int frames_since_last_drop_overshoot;
+
+  int force_maxqp;
+
   int last_frame_percent_intra;
 
   int count_mb_ref_frame_usage[MAX_REF_FRAMES];
@@ -413,6 +417,9 @@ typedef struct VP8_COMP {
 
   int drop_frames_allowed; /* Are we permitted to drop frames? */
   int drop_frame;          /* Drop this frame? */
+#if defined(DROP_UNCODED_FRAMES)
+  int drop_frame_count;
+#endif
 
   vp8_prob frame_coef_probs[BLOCK_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                            [ENTROPY_NODES];
@@ -468,6 +475,8 @@ typedef struct VP8_COMP {
   int zeromv_count;
   int lf_zeromv_pct;
 
+  unsigned char *skin_map;
+
   unsigned char *segmentation_map;
   signed char segment_feature_data[MB_LVL_MAX][MAX_MB_SEGMENTS];
   int segment_encode_breakout[MAX_MB_SEGMENTS];
@@ -500,12 +509,18 @@ typedef struct VP8_COMP {
   int mse_source_denoised;
 
   int force_maxqp;
+  int frames_since_last_drop_overshoot;
+
+  // GF update for 1 pass cbr.
+  int gf_update_onepass_cbr;
+  int gf_interval_onepass_cbr;
+  int gf_noboost_onepass_cbr;
 
 #if CONFIG_MULTITHREAD
   /* multithread data */
-  int *mt_current_mb_col;
+  vpx_atomic_int *mt_current_mb_col;
   int mt_sync_range;
-  int b_multi_threaded;
+  vpx_atomic_int b_multi_threaded;
   int encoding_thread_count;
   int b_lpf_running;
 
@@ -677,6 +692,9 @@ typedef struct VP8_COMP {
     int token_costs[BLOCK_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                    [MAX_ENTROPY_TOKENS];
   } rd_costs;
+
+  // Use the static threshold from ROI settings.
+  int use_roi_static_threshold;
 } VP8_COMP;
 
 void vp8_initialize_enc(void);

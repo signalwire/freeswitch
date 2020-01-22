@@ -78,10 +78,12 @@
 %endmacro
 
 %macro UPDATE_FLIMIT 0
-        movdqa      xmm2,       XMMWORD PTR [rbx]
-        movdqa      [rsp],      xmm2
+        movdqu      xmm2,       XMMWORD PTR [rbx]
+        movdqu      [rsp],      xmm2
         add         rbx,        16
 %endmacro
+
+SECTION .text
 
 ;void vpx_post_proc_down_and_across_mb_row_sse2
 ;(
@@ -230,11 +232,11 @@ sym(vpx_post_proc_down_and_across_mb_row_sse2):
     ret
 %undef flimit
 
-;void vpx_mbpost_proc_down_xmm(unsigned char *dst,
-;                            int pitch, int rows, int cols,int flimit)
+;void vpx_mbpost_proc_down_sse2(unsigned char *dst,
+;                               int pitch, int rows, int cols,int flimit)
 extern sym(vpx_rv)
-global sym(vpx_mbpost_proc_down_xmm) PRIVATE
-sym(vpx_mbpost_proc_down_xmm):
+global sym(vpx_mbpost_proc_down_sse2) PRIVATE
+sym(vpx_mbpost_proc_down_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -462,10 +464,10 @@ sym(vpx_mbpost_proc_down_xmm):
 %undef flimit4
 
 
-;void vpx_mbpost_proc_across_ip_xmm(unsigned char *src,
-;                                int pitch, int rows, int cols,int flimit)
-global sym(vpx_mbpost_proc_across_ip_xmm) PRIVATE
-sym(vpx_mbpost_proc_across_ip_xmm):
+;void vpx_mbpost_proc_across_ip_sse2(unsigned char *src,
+;                                    int pitch, int rows, int cols,int flimit)
+global sym(vpx_mbpost_proc_across_ip_sse2) PRIVATE
+sym(vpx_mbpost_proc_across_ip_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5

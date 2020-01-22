@@ -32,7 +32,9 @@
 
 #undef NOMINMAX
 #define NOMINMAX
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <winnt.h>
 
@@ -111,8 +113,8 @@ class RegisterStateCheck {
     int64_t post_store[8];
     vpx_push_neon(post_store);
     for (int i = 0; i < 8; ++i) {
-      EXPECT_EQ(pre_store_[i], post_store[i]) << "d" << i + 8
-                                              << " has been modified";
+      EXPECT_EQ(pre_store_[i], post_store[i])
+          << "d" << i + 8 << " has been modified";
     }
   }
 

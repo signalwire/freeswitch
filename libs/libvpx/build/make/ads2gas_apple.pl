@@ -120,18 +120,6 @@ while (<STDIN>)
     s/DCD(.*)/.long $1/;
     s/DCB(.*)/.byte $1/;
 
-    # Build a hash of all the register - alias pairs.
-    if (s/(.*)RN(.*)/$1 .req $2/g)
-    {
-        $register_aliases{trim($1)} = trim($2);
-        next;
-    }
-
-    while (($key, $value) = each(%register_aliases))
-    {
-        s/\b$key\b/$value/g;
-    }
-
     # Make function visible to linker, and make additional symbol with
     # prepended underscore
     s/EXPORT\s+\|([\$\w]*)\|/.globl _$1\n\t.globl $1/;

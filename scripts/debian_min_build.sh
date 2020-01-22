@@ -12,7 +12,7 @@ apt-get update && apt-get install -y libtool libjpeg62-turbo-dev ntpdate libfree
 
 cd /usr/src
 
-git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
+git clone https://github.com/signalwire/freeswitch.git freeswitch.git
 
 cd freeswitch.git
 

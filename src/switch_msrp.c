@@ -36,8 +36,6 @@
 
 #define MSRP_BUFF_SIZE (SWITCH_RTP_MAX_BUF_LEN - 32)
 #define DEBUG_MSRP 0
-#define MSRP_LISTEN_PORT 2855
-#define MSRP_SSL_LISTEN_PORT 2856
 
 struct msrp_socket_s {
 	switch_port_t port;
@@ -107,6 +105,10 @@ static void msrp_deinit_ssl()
 	if (globals.ssl_ctx) {
 		SSL_CTX_free(globals.ssl_ctx);
 		globals.ssl_ctx = NULL;
+	}
+	if (globals.ssl_client_ctx) {
+		SSL_CTX_free(globals.ssl_client_ctx);
+		globals.ssl_client_ctx = NULL;
 	}
 }
 
@@ -293,35 +295,41 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_init()
 	memset(&globals, 0, sizeof(globals));
 	set_global_ip("0.0.0.0");
 	globals.pool = pool;
-	globals.msock.port = (switch_port_t)MSRP_LISTEN_PORT;
-	globals.msock_ssl.port = (switch_port_t)MSRP_SSL_LISTEN_PORT;
+	globals.msock.port = (switch_port_t)0;
+	globals.msock_ssl.port = (switch_port_t)0;
 	globals.msock_ssl.secure = 1;
 	globals.message_buffer_size = 50;
 	globals.debug = DEBUG_MSRP;
 
 	load_config();
 
-	globals.running = 1;
+	if (globals.msock.port) {
+		globals.running = 1;
 
-	status = msock_init(globals.ip, globals.msock.port, &globals.msock.sock, pool);
+		status = msock_init(globals.ip, globals.msock.port, &globals.msock.sock, pool);
 
-	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_threadattr_create(&thd_attr, pool);
-		// switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, msrp_listener, &globals.msock, pool);
-		globals.msock.thread = thread;
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_threadattr_create(&thd_attr, pool);
+			// switch_threadattr_detach_set(thd_attr, 1);
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			switch_thread_create(&thread, thd_attr, msrp_listener, &globals.msock, pool);
+			globals.msock.thread = thread;
+		}
 	}
 
-	msrp_init_ssl();
-	status = msock_init(globals.ip, globals.msock_ssl.port, &globals.msock_ssl.sock, pool);
+	if (globals.msock_ssl.port) {
+		globals.running = 1;
 
-	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_threadattr_create(&thd_attr, pool);
-		// switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, msrp_listener, &globals.msock_ssl, pool);
-		globals.msock_ssl.thread = thread;
+		msrp_init_ssl();
+		status = msock_init(globals.ip, globals.msock_ssl.port, &globals.msock_ssl.sock, pool);
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_threadattr_create(&thd_attr, pool);
+			// switch_threadattr_detach_set(thd_attr, 1);
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			switch_thread_create(&thread, thd_attr, msrp_listener, &globals.msock_ssl, pool);
+			globals.msock_ssl.thread = thread;
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -407,7 +415,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_
 switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, switch_msrp_msg_t *msg)
 {
 	switch_mutex_lock(ms->mutex);
-	
+
 	if (ms->last_msg == NULL) {
 		ms->last_msg = msg;
 		ms->msrp_msg = msg;

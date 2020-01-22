@@ -57,7 +57,7 @@
         var result = sdpLine.match(pattern);
         return (result && result.length == 2) ? result[1] : null;
     }
-    
+
     // Returns a new m= line with the specified codec as the first one.
     function setDefaultCodec(mLine, payload) {
         var elements = mLine.split(' ');
@@ -242,7 +242,7 @@
 	    console.error('Error attaching stream to element.');
 	}
     }
-    
+
     function onRemoteStream(self, stream) {
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'block';
@@ -259,9 +259,9 @@
         console.log("REMOTE STREAM", stream, element);
 
 	FSRTCattachMediaStream(element, stream);
-	
 
-	
+
+
         //self.options.useAudio.play();
         self.remoteStream = stream;
         onRemoteStreamSuccess(self, stream);
@@ -297,38 +297,20 @@
         }
 
         if (self.localStream && !self.options.useStream) {
-            if(typeof self.localStream.stop == 'function') {
-                self.localStream.stop();
-            } else {
-		if (self.localStream.active){
-                    var tracks = self.localStream.getTracks();
-                    console.log(tracks);
-		    tracks.forEach(function(track, index){
-			console.log(track);
-			track.stop();
-		    })
-                }
-            }
+            var tracks = self.localStream.getTracks();
+            console.log("Stopping localStream tracks:", tracks);
+            tracks.forEach(function(track){ track.stop() })
             self.localStream = null;
         }
 
         if (self.options.localVideo) {
-      deactivateLocalVideo(self.options.localVideo);
+            deactivateLocalVideo(self.options.localVideo);
         }
 
-	if (self.options.localVideoStream && !self.options.useStream) {
-            if(typeof self.options.localVideoStream.stop == 'function') {
-	        self.options.localVideoStream.stop();
-            } else {
-		if (self.options.localVideoStream.active){
-                    var tracks = self.options.localVideoStream.getTracks();
-                    console.log(tracks);
-		    tracks.forEach(function(track, index){
-			console.log(track);
-			track.stop();
-		    })
-                }
-            }
+        if (self.options.localVideoStream && !self.options.useStream) {
+            var tracks = self.options.localVideoStream.getTracks();
+            console.log("Stopping localVideoStream tracks:", tracks);
+            tracks.forEach(function(track){ track.stop() })
         }
 
         if (self.peer) {
@@ -347,7 +329,7 @@
     if (!self.localStream) {
         return false;
     }
-	var audioTracks = self.localStream.getAudioTracks();	
+	var audioTracks = self.localStream.getAudioTracks();
 
 	for (var i = 0, len = audioTracks.length; i < len; i++ ) {
 	    switch(what) {
@@ -379,7 +361,7 @@
     if (!self.localStream) {
         return false;
     }
-	var videoTracks = self.localStream.getVideoTracks();	
+	var videoTracks = self.localStream.getVideoTracks();
 
 	for (var i = 0, len = videoTracks.length; i < len; i++ ) {
 	    switch(what) {
@@ -546,15 +528,15 @@
 		if (obj.options.useCamera) {
 		    opt.push({sourceId: obj.options.useCamera});
 		}
-		
+
 		if (bestFrameRate) {
 		    opt.push({minFrameRate: bestFrameRate});
 		    opt.push({maxFrameRate: bestFrameRate});
 		}
-		
+
 		video = {
 		    mandatory: obj.options.videoParams,
-		    optional: opt		
+		    optional: opt
 		};
 	    }
 	} else {
@@ -564,9 +546,9 @@
 		width: {min: obj.options.videoParams.minWidth, max: obj.options.videoParams.maxWidth},
 		height: {min: obj.options.videoParams.minHeight, max: obj.options.videoParams.maxHeight}
 	    };
-	    
-            
-	    
+
+
+
 	    var useVideo = obj.options.useVideo;
 
 	    if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
@@ -574,7 +556,7 @@
 		//video.optional = [];
 		//}
 
-		
+
 		if (obj.options.useCamera !== "any") {
 		    //video.optional.push({sourceId: obj.options.useCamera});
         video = assignMediaIdToConstraint(obj.options.useCamera, video);
@@ -595,10 +577,10 @@
 
 	return {audio: audio, video: video, useVideo: useVideo};
     }
-    
+
     $.FSRTC.prototype.call = function(profile) {
         checkCompat();
-	
+
         var self = this;
 	var screen = false;
 
@@ -610,13 +592,13 @@
 
         function onSuccess(stream) {
 	    self.localStream = stream;
-	    
+
 	    if (screen) {
 		self.constraints.offerToReceiveVideo = false;
 		self.constraints.offerToReceiveAudio = false;
 		self.constraints.offerToSendAudio = false;
 	    }
-	    
+
             self.peer = FSRTCPeerConnection({
                 type: self.type,
                 attachStream: self.localStream,
@@ -696,7 +678,7 @@
     // 2013, @muazkh - github.com/muaz-khan
     // MIT License - https://www.webrtc-experiment.com/licence/
     // Documentation - https://github.com/muaz-khan/WebRTC-Experiment/tree/master/RTCPeerConnection
-    
+
     function FSRTCPeerConnection(options) {
 	var gathering = false, done = false;
 	var config = {};
@@ -730,7 +712,7 @@
             if (options.onICEComplete) {
                 options.onICEComplete();
             }
-	    
+
             if (options.type == "offer") {
                 options.onICESDP(peer.localDescription);
             } else {
@@ -749,7 +731,7 @@
 	    if (!gathering) {
 		gathering = setTimeout(ice_handler, 1000);
 	    }
-	    
+
 	    if (event) {
 		if (event.candidate) {
 		    options.onICE(event.candidate);
@@ -785,23 +767,22 @@
             }
         }
 
-        peer.onaddstream = function(event) {
-            var remoteMediaStream = event.stream;
+        // peer.onaddstream = function(event) { // OLD API
+        peer.ontrack = function(event) {
+            console.log('Peer Track', event)
+            // var remoteMediaStream = event.stream;
+            var remoteMediaStream = event.streams[0];
 
-            // onRemoteStreamEnded(MediaStream)
             remoteMediaStream.oninactive = function () {
                 if (options.onRemoteStreamEnded) options.onRemoteStreamEnded(remoteMediaStream);
             };
 
-            // onRemoteStream(MediaStream)
             if (options.onRemoteStream) options.onRemoteStream(remoteMediaStream);
-
-            //console.debug('on:add:stream', remoteMediaStream);
         };
 
         //var constraints = options.constraints || {
 	  //  offerToReceiveAudio: true,
-	    //offerToReceiveVideo: true   
+	    //offerToReceiveVideo: true
         //};
 
         // onOfferSDP(RTCSessionDescription)
@@ -959,16 +940,13 @@
             },
 
             stop: function() {
-                peer.close();
-                if (options.attachStream) {
-                  if(typeof options.attachStream.stop == 'function') {
-                    options.attachStream.stop();
-                  } else {
-                    options.attachStream.active = false;
-                  }
+                if (options.attachStream instanceof MediaStream) {
+                    var tracks = options.attachStream.getTracks();
+                    tracks.forEach(function(track){ track.stop() })
+                    options.attachStream = null
                 }
+                peer.close();
             }
-
         };
     }
 
@@ -1060,7 +1038,6 @@
             console.error('Unexpected error on media id assurance attempts:', error, 'Options:', options);
         });
     }
-
     $.FSRTC.resSupported = function(w, h) {
 	for (var i in $.FSRTC.validRes) {
 	    if ($.FSRTC.validRes[i][0] == w && $.FSRTC.validRes[i][1] == h) {
@@ -1095,9 +1072,9 @@
                'validRes': $.FSRTC.validRes,
                'bestResSupported': $.FSRTC.bestResSupported()
             };
-	    
+
 	    localStorage.setItem("res_" + cam, $.toJSON(res));
-	    
+
 	    if (func) return func(res);
 	    return;
 	}
@@ -1115,23 +1092,21 @@
     video = assignMediaIdToConstraint(cam, video);
   }
 
-	getUserMedia({
-	    constraints: {
-                audio: ttl++ == 0,
-                video: video	    
-	    },
+	    getUserMedia({
+	    constraints: { audio: ttl++ == 0, video: video },
 	    onsuccess: function(e) {
-		e.getTracks().forEach(function(track) {track.stop();});
-		console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+            e.getTracks().forEach(function(track) { track.stop() });
+            console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);
+        },
 	    onerror: function(e) {console.warn( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
-    
+
 
     $.FSRTC.getValidRes = function (cam, func) {
 	var used = [];
 	var cached = localStorage.getItem("res_" + cam);
-	
+
 	if (cached) {
 	    var cache = $.parseJSON(cached);
 
@@ -1152,33 +1127,26 @@
     }
 
     $.FSRTC.checkPerms = function (runtime, check_audio, check_video) {
-	getUserMedia({
-	    constraints: {
-		audio: check_audio,
-		video: check_video,
-	    },
-	    onsuccess: function(e) {
-
-		e.getTracks().forEach(function(track) {track.stop();});
-		
-		console.info("media perm init complete"); 
-		if (runtime) {
+        getUserMedia({
+            constraints: { audio: check_audio, video: check_video },
+            onsuccess: function(e) {
+                e.getTracks().forEach(function(track) { track.stop() });
+                console.info("media perm init complete");
+                if (runtime) {
                     setTimeout(runtime, 100, true);
-		}
+                }
             },
-	    onerror: function(e) {
-		if (check_video && check_audio) {
-		    console.error("error, retesting with audio params only");
-		    return $.FSRTC.checkPerms(runtime, check_audio, false);
-		}
-
-		console.error("media perm init error");
-
-		if (runtime) {
-		    runtime(false)
-		}
-	    }
-	});
+            onerror: function(e) {
+                if (check_video && check_audio) {
+                    console.error("error, retesting with audio params only");
+                    return $.FSRTC.checkPerms(runtime, check_audio, false);
+                }
+                console.error("media perm init error");
+                if (runtime) {
+                    runtime(false)
+                }
+            }
+        });
     }
 
 })(jQuery);

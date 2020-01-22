@@ -22,6 +22,7 @@
 #include "vp8/common/systemdependent.h"
 #include "encodemv.h"
 #include "vpx_dsp/vpx_dsp_common.h"
+#include "vpx_ports/system_state.h"
 
 #define MIN_BPB_FACTOR 0.01
 #define MAX_BPB_FACTOR 50
@@ -296,7 +297,7 @@ static void calc_iframe_target_size(VP8_COMP *cpi) {
   uint64_t target;
 
   /* Clear down mmx registers to allow floating point in what follows */
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   if (cpi->oxcf.fixed_q >= 0) {
     int Q = cpi->oxcf.key_q;
@@ -497,11 +498,9 @@ static void calc_gf_params(VP8_COMP *cpi) {
    * This is updated once the real frame size/boost is known.
    */
   if (cpi->oxcf.fixed_q == -1) {
-    if (cpi->pass == 2) /* 2 Pass */
-    {
+    if (cpi->pass == 2) { /* 2 Pass */
       cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
-    } else /* 1 Pass */
-    {
+    } else { /* 1 Pass */
       cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
 
       if (cpi->last_boost > 750) cpi->frames_till_gf_update_due++;
@@ -884,61 +883,61 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
   /* Adjust target frame size for Golden Frames: */
   if (cpi->oxcf.error_resilient_mode == 0 &&
       (cpi->frames_till_gf_update_due == 0) && !cpi->drop_frame) {
-    int Q =
-        (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME] : cpi->oxcf.fixed_q;
+    if (!cpi->gf_update_onepass_cbr) {
+      int Q = (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME]
+                                      : cpi->oxcf.fixed_q;
 
-    int gf_frame_useage = 0; /* Golden frame useage since last GF */
-    int tot_mbs = cpi->recent_ref_frame_usage[INTRA_FRAME] +
-                  cpi->recent_ref_frame_usage[LAST_FRAME] +
-                  cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
-                  cpi->recent_ref_frame_usage[ALTREF_FRAME];
+      int gf_frame_useage = 0; /* Golden frame useage since last GF */
+      int tot_mbs = cpi->recent_ref_frame_usage[INTRA_FRAME] +
+                    cpi->recent_ref_frame_usage[LAST_FRAME] +
+                    cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
+                    cpi->recent_ref_frame_usage[ALTREF_FRAME];
 
-    int pct_gf_active = (100 * cpi->gf_active_count) /
-                        (cpi->common.mb_rows * cpi->common.mb_cols);
+      int pct_gf_active = (100 * cpi->gf_active_count) /
+                          (cpi->common.mb_rows * cpi->common.mb_cols);
 
-    if (tot_mbs) {
-      gf_frame_useage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
-                         cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
-                        100 / tot_mbs;
-    }
-
-    if (pct_gf_active > gf_frame_useage) gf_frame_useage = pct_gf_active;
-
-    /* Is a fixed manual GF frequency being used */
-    if (cpi->auto_gold) {
-      /* For one pass throw a GF if recent frame intra useage is
-       * low or the GF useage is high
-       */
-      if ((cpi->pass == 0) &&
-          (cpi->this_frame_percent_intra < 15 || gf_frame_useage >= 5)) {
-        cpi->common.refresh_golden_frame = 1;
-
-        /* Two pass GF descision */
-      } else if (cpi->pass == 2) {
-        cpi->common.refresh_golden_frame = 1;
+      if (tot_mbs) {
+        gf_frame_useage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
+                           cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
+                          100 / tot_mbs;
       }
-    }
+
+      if (pct_gf_active > gf_frame_useage) gf_frame_useage = pct_gf_active;
+
+      /* Is a fixed manual GF frequency being used */
+      if (cpi->auto_gold) {
+        /* For one pass throw a GF if recent frame intra useage is
+         * low or the GF useage is high
+         */
+        if ((cpi->pass == 0) &&
+            (cpi->this_frame_percent_intra < 15 || gf_frame_useage >= 5)) {
+          cpi->common.refresh_golden_frame = 1;
+
+          /* Two pass GF descision */
+        } else if (cpi->pass == 2) {
+          cpi->common.refresh_golden_frame = 1;
+        }
+      }
 
 #if 0
 
-        /* Debug stats */
-        if (0)
-        {
-            FILE *f;
+          /* Debug stats */
+          if (0) {
+              FILE *f;
 
-            f = fopen("gf_useaget.stt", "a");
-            fprintf(f, " %8ld %10ld %10ld %10ld %10ld\n",
-                    cpi->common.current_video_frame,  cpi->gfu_boost, GFQ_ADJUSTMENT, cpi->gfu_boost, gf_frame_useage);
-            fclose(f);
-        }
+              f = fopen("gf_useaget.stt", "a");
+              fprintf(f, " %8ld %10ld %10ld %10ld %10ld\n",
+                      cpi->common.current_video_frame,  cpi->gfu_boost,
+                      GFQ_ADJUSTMENT, cpi->gfu_boost, gf_frame_useage);
+              fclose(f);
+          }
 
 #endif
 
-    if (cpi->common.refresh_golden_frame == 1) {
+      if (cpi->common.refresh_golden_frame == 1) {
 #if 0
 
-            if (0)
-            {
+            if (0) {
                 FILE *f;
 
                 f = fopen("GFexit.stt", "a");
@@ -948,61 +947,76 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
 
 #endif
 
-      if (cpi->auto_adjust_gold_quantizer) {
-        calc_gf_params(cpi);
-      }
-
-      /* If we are using alternate ref instead of gf then do not apply the
-       * boost It will instead be applied to the altref update Jims
-       * modified boost
-       */
-      if (!cpi->source_alt_ref_active) {
-        if (cpi->oxcf.fixed_q < 0) {
-          if (cpi->pass == 2) {
-            /* The spend on the GF is defined in the two pass
-             * code for two pass encodes
-             */
-            cpi->this_frame_target = cpi->per_frame_bandwidth;
-          } else {
-            int Boost = cpi->last_boost;
-            int frames_in_section = cpi->frames_till_gf_update_due + 1;
-            int allocation_chunks = (frames_in_section * 100) + (Boost - 100);
-            int bits_in_section = cpi->inter_frame_target * frames_in_section;
-
-            /* Normalize Altboost and allocations chunck down to
-             * prevent overflow
-             */
-            while (Boost > 1000) {
-              Boost /= 2;
-              allocation_chunks /= 2;
-            }
-
-            /* Avoid loss of precision but avoid overflow */
-            if ((bits_in_section >> 7) > allocation_chunks) {
-              cpi->this_frame_target =
-                  Boost * (bits_in_section / allocation_chunks);
-            } else {
-              cpi->this_frame_target =
-                  (Boost * bits_in_section) / allocation_chunks;
-            }
-          }
-        } else {
-          cpi->this_frame_target =
-              (estimate_bits_at_q(1, Q, cpi->common.MBs, 1.0) *
-               cpi->last_boost) /
-              100;
+        if (cpi->auto_adjust_gold_quantizer) {
+          calc_gf_params(cpi);
         }
 
-      }
-      /* If there is an active ARF at this location use the minimum
-       * bits on this frame even if it is a contructed arf.
-       * The active maximum quantizer insures that an appropriate
-       * number of bits will be spent if needed for contstructed ARFs.
-       */
-      else {
-        cpi->this_frame_target = 0;
-      }
+        /* If we are using alternate ref instead of gf then do not apply the
+         * boost It will instead be applied to the altref update Jims
+         * modified boost
+         */
+        if (!cpi->source_alt_ref_active) {
+          if (cpi->oxcf.fixed_q < 0) {
+            if (cpi->pass == 2) {
+              /* The spend on the GF is defined in the two pass
+               * code for two pass encodes
+               */
+              cpi->this_frame_target = cpi->per_frame_bandwidth;
+            } else {
+              int Boost = cpi->last_boost;
+              int frames_in_section = cpi->frames_till_gf_update_due + 1;
+              int allocation_chunks = (frames_in_section * 100) + (Boost - 100);
+              int bits_in_section = cpi->inter_frame_target * frames_in_section;
 
+              /* Normalize Altboost and allocations chunck down to
+               * prevent overflow
+               */
+              while (Boost > 1000) {
+                Boost /= 2;
+                allocation_chunks /= 2;
+              }
+
+              /* Avoid loss of precision but avoid overflow */
+              if ((bits_in_section >> 7) > allocation_chunks) {
+                cpi->this_frame_target =
+                    Boost * (bits_in_section / allocation_chunks);
+              } else {
+                cpi->this_frame_target =
+                    (Boost * bits_in_section) / allocation_chunks;
+              }
+            }
+          } else {
+            cpi->this_frame_target =
+                (estimate_bits_at_q(1, Q, cpi->common.MBs, 1.0) *
+                 cpi->last_boost) /
+                100;
+          }
+        } else {
+          /* If there is an active ARF at this location use the minimum
+           * bits on this frame even if it is a contructed arf.
+           * The active maximum quantizer insures that an appropriate
+           * number of bits will be spent if needed for contstructed ARFs.
+          */
+          cpi->this_frame_target = 0;
+        }
+
+        cpi->current_gf_interval = cpi->frames_till_gf_update_due;
+      }
+    } else {
+      // Special case for 1 pass CBR: fixed gf period.
+      // TODO(marpan): Adjust this boost/interval logic.
+      // If gf_cbr_boost_pct is small (below threshold) set the flag
+      // gf_noboost_onepass_cbr = 1, which forces the gf to use the same
+      // rate correction factor as last.
+      cpi->gf_noboost_onepass_cbr = (cpi->oxcf.gf_cbr_boost_pct <= 100);
+      cpi->baseline_gf_interval = cpi->gf_interval_onepass_cbr;
+      // Skip this update if the zero_mvcount is low.
+      if (cpi->zeromv_count > (cpi->common.MBs >> 1)) {
+        cpi->common.refresh_golden_frame = 1;
+        cpi->this_frame_target =
+            (cpi->this_frame_target * (100 + cpi->oxcf.gf_cbr_boost_pct)) / 100;
+      }
+      cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
       cpi->current_gf_interval = cpi->frames_till_gf_update_due;
     }
   }
@@ -1019,13 +1033,14 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var) {
   int projected_size_based_on_q = 0;
 
   /* Clear down mmx registers to allow floating point in what follows */
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   if (cpi->common.frame_type == KEY_FRAME) {
     rate_correction_factor = cpi->key_frame_rate_correction_factor;
   } else {
-    if (cpi->oxcf.number_of_layers == 1 && (cpi->common.refresh_alt_ref_frame ||
-                                            cpi->common.refresh_golden_frame)) {
+    if (cpi->oxcf.number_of_layers == 1 && !cpi->gf_noboost_onepass_cbr &&
+        (cpi->common.refresh_alt_ref_frame ||
+         cpi->common.refresh_golden_frame)) {
       rate_correction_factor = cpi->gf_rate_correction_factor;
     } else {
       rate_correction_factor = cpi->rate_correction_factor;
@@ -1101,8 +1116,9 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var) {
   if (cpi->common.frame_type == KEY_FRAME) {
     cpi->key_frame_rate_correction_factor = rate_correction_factor;
   } else {
-    if (cpi->oxcf.number_of_layers == 1 && (cpi->common.refresh_alt_ref_frame ||
-                                            cpi->common.refresh_golden_frame)) {
+    if (cpi->oxcf.number_of_layers == 1 && !cpi->gf_noboost_onepass_cbr &&
+        (cpi->common.refresh_alt_ref_frame ||
+         cpi->common.refresh_golden_frame)) {
       cpi->gf_rate_correction_factor = rate_correction_factor;
     } else {
       cpi->rate_correction_factor = rate_correction_factor;
@@ -1117,7 +1133,6 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     cpi->active_worst_quality = cpi->worst_quality;
     return cpi->worst_quality;
   }
-
   /* Reset Zbin OQ value */
   cpi->mb.zbin_over_quant = 0;
 
@@ -1127,10 +1142,12 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     if (cpi->common.frame_type == KEY_FRAME) {
       Q = cpi->oxcf.key_q;
     } else if (cpi->oxcf.number_of_layers == 1 &&
-               cpi->common.refresh_alt_ref_frame) {
+               cpi->common.refresh_alt_ref_frame &&
+               !cpi->gf_noboost_onepass_cbr) {
       Q = cpi->oxcf.alt_q;
     } else if (cpi->oxcf.number_of_layers == 1 &&
-               cpi->common.refresh_golden_frame) {
+               cpi->common.refresh_golden_frame &&
+               !cpi->gf_noboost_onepass_cbr) {
       Q = cpi->oxcf.gold_q;
     }
   } else {
@@ -1144,7 +1161,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     if (cpi->common.frame_type == KEY_FRAME) {
       correction_factor = cpi->key_frame_rate_correction_factor;
     } else {
-      if (cpi->oxcf.number_of_layers == 1 &&
+      if (cpi->oxcf.number_of_layers == 1 && !cpi->gf_noboost_onepass_cbr &&
           (cpi->common.refresh_alt_ref_frame ||
            cpi->common.refresh_golden_frame)) {
         correction_factor = cpi->gf_rate_correction_factor;
@@ -1198,6 +1215,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
       if (cpi->common.frame_type == KEY_FRAME) {
         zbin_oqmax = 0;
       } else if (cpi->oxcf.number_of_layers == 1 &&
+                 !cpi->gf_noboost_onepass_cbr &&
                  (cpi->common.refresh_alt_ref_frame ||
                   (cpi->common.refresh_golden_frame &&
                    !cpi->source_alt_ref_active))) {
@@ -1302,7 +1320,7 @@ static int estimate_keyframe_frequency(VP8_COMP *cpi) {
 
 void vp8_adjust_key_frame_context(VP8_COMP *cpi) {
   /* Clear down mmx registers to allow floating point in what follows */
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   /* Do we have any key frame overspend to recover? */
   /* Two-pass overspend handled elsewhere. */
@@ -1422,12 +1440,33 @@ int vp8_pick_frame_size(VP8_COMP *cpi) {
 // If this just encoded frame (mcomp/transform/quant, but before loopfilter and
 // pack_bitstream) has large overshoot, and was not being encoded close to the
 // max QP, then drop this frame and force next frame to be encoded at max QP.
-// Condition this on 1 pass CBR with screen content mode and frame dropper off.
+// Allow this for screen_content_mode = 2, or if drop frames is allowed.
 // TODO(marpan): Should do this exit condition during the encode_frame
 // (i.e., halfway during the encoding of the frame) to save cycles.
 int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
-  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
-      cpi->drop_frames_allowed == 0 && cpi->common.frame_type != KEY_FRAME) {
+  int force_drop_overshoot = 0;
+#if CONFIG_MULTI_RES_ENCODING
+  // Only check for dropping due to overshoot on the lowest stream.
+  // If the lowest stream of the multi-res encoding was dropped due to
+  // overshoot, then force dropping on all upper layer streams
+  // (mr_encoder_id > 0).
+  LOWER_RES_FRAME_INFO *low_res_frame_info =
+      (LOWER_RES_FRAME_INFO *)cpi->oxcf.mr_low_res_mode_info;
+  if (cpi->oxcf.mr_total_resolutions > 1 && cpi->oxcf.mr_encoder_id > 0) {
+    force_drop_overshoot = low_res_frame_info->is_frame_dropped_overshoot_maxqp;
+    if (!force_drop_overshoot) {
+      cpi->force_maxqp = 0;
+      cpi->frames_since_last_drop_overshoot++;
+      return 0;
+    }
+  }
+#endif
+  if (cpi->common.frame_type != KEY_FRAME &&
+      (cpi->oxcf.screen_content_mode == 2 ||
+       (cpi->drop_frames_allowed &&
+        (force_drop_overshoot ||
+         (cpi->rate_correction_factor < (4.0f * MIN_BPB_FACTOR) &&
+          cpi->frames_since_last_drop_overshoot > (int)cpi->framerate))))) {
     // Note: the "projected_frame_size" from encode_frame() only gives estimate
     // of mode/motion vector rate (in non-rd mode): so below we only require
     // that projected_frame_size is somewhat greater than per-frame-bandwidth,
@@ -1438,17 +1477,20 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
     // Rate threshold, in bytes.
     int thresh_rate = 2 * (cpi->av_per_frame_bandwidth >> 3);
     // Threshold for the average (over all macroblocks) of the pixel-sum
-    // residual error over 16x16 block. Should add QP dependence on threshold?
-    int thresh_pred_err_mb = (256 << 4);
+    // residual error over 16x16 block.
+    int thresh_pred_err_mb = (200 << 4);
     int pred_err_mb = (int)(cpi->mb.prediction_error / cpi->common.MBs);
-    if (Q < thresh_qp && cpi->projected_frame_size > thresh_rate &&
-        pred_err_mb > thresh_pred_err_mb) {
+    // Reduce/ignore thresh_rate if pred_err_mb much larger than its threshold,
+    // give more weight to pred_err metric for overshoot detection.
+    if (cpi->drop_frames_allowed && pred_err_mb > (thresh_pred_err_mb << 4))
+      thresh_rate = thresh_rate >> 3;
+    if ((Q < thresh_qp && cpi->projected_frame_size > thresh_rate &&
+         pred_err_mb > thresh_pred_err_mb) ||
+        force_drop_overshoot) {
+      unsigned int i;
       double new_correction_factor;
-      const int target_size = cpi->av_per_frame_bandwidth;
       int target_bits_per_mb;
-      // Drop this frame: advance frame counters, and set force_maxqp flag.
-      cpi->common.current_video_frame++;
-      cpi->frames_since_key++;
+      const int target_size = cpi->av_per_frame_bandwidth;
       // Flag to indicate we will force next frame to be encoded at max QP.
       cpi->force_maxqp = 1;
       // Reset the buffer levels.
@@ -1479,14 +1521,40 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       if (cpi->rate_correction_factor > MAX_BPB_FACTOR) {
         cpi->rate_correction_factor = MAX_BPB_FACTOR;
       }
+      // Drop this frame: update frame counters.
+      cpi->common.current_video_frame++;
+      cpi->frames_since_key++;
+      cpi->temporal_pattern_counter++;
+      cpi->frames_since_last_drop_overshoot = 0;
+      if (cpi->oxcf.number_of_layers > 1) {
+        // Set max_qp and rate correction for all temporal layers if overshoot
+        // is detected.
+        for (i = 0; i < cpi->oxcf.number_of_layers; ++i) {
+          LAYER_CONTEXT *lc = &cpi->layer_context[i];
+          lc->force_maxqp = 1;
+          lc->frames_since_last_drop_overshoot = 0;
+          lc->rate_correction_factor = cpi->rate_correction_factor;
+        }
+      }
+#if CONFIG_MULTI_RES_ENCODING
+      if (cpi->oxcf.mr_total_resolutions > 1)
+        low_res_frame_info->is_frame_dropped_overshoot_maxqp = 1;
+#endif
       return 1;
-    } else {
-      cpi->force_maxqp = 0;
-      return 0;
     }
     cpi->force_maxqp = 0;
+    cpi->frames_since_last_drop_overshoot++;
+#if CONFIG_MULTI_RES_ENCODING
+    if (cpi->oxcf.mr_total_resolutions > 1)
+      low_res_frame_info->is_frame_dropped_overshoot_maxqp = 0;
+#endif
     return 0;
   }
   cpi->force_maxqp = 0;
+  cpi->frames_since_last_drop_overshoot++;
+#if CONFIG_MULTI_RES_ENCODING
+  if (cpi->oxcf.mr_total_resolutions > 1)
+    low_res_frame_info->is_frame_dropped_overshoot_maxqp = 0;
+#endif
   return 0;
 }

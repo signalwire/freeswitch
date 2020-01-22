@@ -1836,15 +1836,13 @@ static char get_media_type_char(enum AVMediaType type)
 	}
 }
 
-static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev,
+static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev, void **index,
 										int encoder)
 {
 #if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,10,100))
 	while ((prev = av_codec_next(prev))) {
 #else
-	void *i;
-
-	while ((prev = av_codec_iterate(&i))) {
+	while ((prev = av_codec_iterate(index))) {
 #endif
 		if (prev->id == id &&
 			(encoder ? av_codec_is_encoder(prev) : av_codec_is_decoder(prev)))
@@ -1887,10 +1885,11 @@ static unsigned get_codecs_sorted(const AVCodecDescriptor ***rcodecs)
 static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID id, int encoder)
 {
 	const AVCodec *codec = NULL;
+	void *index = 0;
 
 	stream->write_function(stream, " (%s: ", encoder ? "encoders" : "decoders");
 
-	while ((codec = next_codec_for_id(id, codec, encoder))) {
+	while ((codec = next_codec_for_id(id, codec, &index, encoder))) {
 		stream->write_function(stream, "%s ", codec->name);
 	}
 
@@ -1916,6 +1915,7 @@ void show_codecs(switch_stream_handle_t *stream)
 	for (i = 0; i < nb_codecs; i++) {
 		const AVCodecDescriptor *desc = codecs[i];
 		const AVCodec *codec = NULL;
+		void *index = 0;
 
 		stream->write_function(stream, " ");
 		stream->write_function(stream, avcodec_find_decoder(desc->id) ? "D" : ".");
@@ -1930,14 +1930,14 @@ void show_codecs(switch_stream_handle_t *stream)
 
 		/* print decoders/encoders when there's more than one or their
 		 * names are different from codec name */
-		while ((codec = next_codec_for_id(desc->id, codec, 0))) {
+		while ((codec = next_codec_for_id(desc->id, codec, &index, 0))) {
 			if (strcmp(codec->name, desc->name)) {
 				print_codecs_for_id(stream ,desc->id, 0);
 				break;
 			}
 		}
-		codec = NULL;
-		while ((codec = next_codec_for_id(desc->id, codec, 1))) {
+		codec = NULL; index = 0;
+		while ((codec = next_codec_for_id(desc->id, codec, &index, 1))) {
 			if (strcmp(codec->name, desc->name)) {
 				print_codecs_for_id(stream, desc->id, 1);
 				break;

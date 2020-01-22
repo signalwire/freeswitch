@@ -19,6 +19,7 @@
 #include <limits.h>
 #include "vpx/vpx_encoder.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/system_state.h"
 #include "bitstream.h"
 
 #include "defaultcoefcounts.h"
@@ -499,8 +500,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
         }
 
         write_uv_mode(w, mi->uv_mode, pc->fc.uv_mode_prob);
-      } else /* inter coded */
-      {
+      } else { /* inter coded */
         int_mv best_mv;
         vp8_prob mv_ref_p[VP8_MVREFS - 1];
 
@@ -843,7 +843,7 @@ int vp8_estimate_entropy_savings(VP8_COMP *cpi) {
   int new_intra, new_last, new_garf, oldtotal, newtotal;
   int ref_frame_cost[MAX_REF_FRAMES];
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   if (cpi->common.frame_type != KEY_FRAME) {
     if (!(new_intra = rf_intra * 255 / (rf_intra + rf_inter))) new_intra = 1;
@@ -908,7 +908,7 @@ void vp8_update_coef_probs(VP8_COMP *cpi) {
 #endif
   int savings = 0;
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   do {
     int j = 0;
@@ -1295,7 +1295,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
 
 #endif
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
   pack_coef_probs(cpi);
@@ -1415,7 +1415,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
     vp8_start_encode(&cpi->bc[1], cx_data, cx_data_end);
 
 #if CONFIG_MULTITHREAD
-    if (cpi->b_multi_threaded) {
+    if (vpx_atomic_load_acquire(&cpi->b_multi_threaded)) {
       pack_mb_row_tokens(cpi, &cpi->bc[1]);
     } else {
       vp8_pack_tokens(&cpi->bc[1], cpi->tok, cpi->tok_count);

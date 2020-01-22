@@ -80,8 +80,6 @@ VP8_COMMON_SRCS-$(CONFIG_POSTPROC) += common/postproc.c
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/dequantize_mmx.asm
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/idct_blk_mmx.c
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/idctllm_mmx.asm
-VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/iwalsh_mmx.asm
-VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp8_loopfilter_mmx.asm
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/recon_mmx.asm
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/subpixel_mmx.asm
 VP8_COMMON_SRCS-$(HAVE_SSE2) += common/x86/copy_sse2.asm
@@ -117,6 +115,14 @@ VP8_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/idct_msa.c
 VP8_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/loopfilter_filters_msa.c
 VP8_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/sixtap_filter_msa.c
 VP8_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp8_macros_msa.h
+
+# common (c)
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/sixtap_filter_mmi.c
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/loopfilter_filters_mmi.c
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/idctllm_mmi.c
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/dequantize_mmi.c
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/copymem_mmi.c
+VP8_COMMON_SRCS-$(HAVE_MMI) += common/mips/mmi/idct_blk_mmi.c
 
 ifeq ($(CONFIG_POSTPROC),yes)
 VP8_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/mfqe_msa.c

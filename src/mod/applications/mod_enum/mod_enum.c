@@ -75,6 +75,9 @@ static struct {
 	int retries;
 	int random;
 	char *nameserver[ENUM_MAXNAMESERVERS];
+#ifdef _MSC_VER
+	char *nameserver_buf;
+#endif
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
@@ -164,7 +167,6 @@ static switch_status_t load_config(void)
 	if (!globals.nameserver[0]) {
 		HKEY hKey;
 		DWORD data_sz;
-		char* buf;
 		RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
 			0, KEY_QUERY_VALUE, &hKey);
@@ -172,15 +174,15 @@ static switch_status_t load_config(void)
 		if (hKey) {
 			RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, NULL, &data_sz);
 			if (data_sz) {
-				buf = (char*)malloc(data_sz + 1);
+				globals.nameserver_buf = (char*)malloc(data_sz + 1);
 
-				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
+				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)globals.nameserver_buf, &data_sz);
 
-				if(buf[data_sz - 1] != 0) {
-					buf[data_sz] = 0;
+				if(globals.nameserver_buf[data_sz - 1] != 0) {
+					globals.nameserver_buf[data_sz] = 0;
 				}
-				switch_replace_char(buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
-				globals.nameserver[0] = buf;
+				switch_replace_char(globals.nameserver_buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
+				globals.nameserver[0] = globals.nameserver_buf;
 			}
 			
 			RegCloseKey(hKey);
@@ -924,6 +926,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 
 	switch_safe_free(globals.root);
 	switch_safe_free(globals.isn_root);
+#ifdef _MSC_VER
+	switch_safe_free(globals.nameserver_buf);
+#endif
 
 	return SWITCH_STATUS_UNLOAD;
 }

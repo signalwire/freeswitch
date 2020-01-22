@@ -196,18 +196,18 @@
                  out2, out3)                                                  \
   {                                                                           \
     v8i16 madd_s0_m, madd_s1_m, madd_s2_m, madd_s3_m;                         \
-    v4i32 tmp0_m, tmp1_m, tmp2_m, tmp3_m;                                     \
+    v4i32 tmp0_madd, tmp1_madd, tmp2_madd, tmp3_madd;                         \
                                                                               \
     ILVRL_H2_SH(inp1, inp0, madd_s1_m, madd_s0_m);                            \
     ILVRL_H2_SH(inp3, inp2, madd_s3_m, madd_s2_m);                            \
     DOTP_SH4_SW(madd_s1_m, madd_s0_m, madd_s1_m, madd_s0_m, cst0, cst0, cst1, \
-                cst1, tmp0_m, tmp1_m, tmp2_m, tmp3_m);                        \
-    SRARI_W4_SW(tmp0_m, tmp1_m, tmp2_m, tmp3_m, DCT_CONST_BITS);              \
-    PCKEV_H2_SH(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out0, out1);                  \
+                cst1, tmp0_madd, tmp1_madd, tmp2_madd, tmp3_madd);            \
+    SRARI_W4_SW(tmp0_madd, tmp1_madd, tmp2_madd, tmp3_madd, DCT_CONST_BITS);  \
+    PCKEV_H2_SH(tmp1_madd, tmp0_madd, tmp3_madd, tmp2_madd, out0, out1);      \
     DOTP_SH4_SW(madd_s3_m, madd_s2_m, madd_s3_m, madd_s2_m, cst2, cst2, cst3, \
-                cst3, tmp0_m, tmp1_m, tmp2_m, tmp3_m);                        \
-    SRARI_W4_SW(tmp0_m, tmp1_m, tmp2_m, tmp3_m, DCT_CONST_BITS);              \
-    PCKEV_H2_SH(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out2, out3);                  \
+                cst3, tmp0_madd, tmp1_madd, tmp2_madd, tmp3_madd);            \
+    SRARI_W4_SW(tmp0_madd, tmp1_madd, tmp2_madd, tmp3_madd, DCT_CONST_BITS);  \
+    PCKEV_H2_SH(tmp1_madd, tmp0_madd, tmp3_madd, tmp2_madd, out2, out3);      \
   }
 
 /* idct 8x8 macro */

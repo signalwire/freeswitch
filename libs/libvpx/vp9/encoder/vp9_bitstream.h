@@ -17,7 +17,23 @@ extern "C" {
 
 #include "vp9/encoder/vp9_encoder.h"
 
+typedef struct VP9BitstreamWorkerData {
+  uint8_t *dest;
+  int dest_size;
+  vpx_writer bit_writer;
+  int tile_idx;
+  unsigned int max_mv_magnitude;
+  // The size of interp_filter_selected in VP9_COMP is actually
+  // MAX_REFERENCE_FRAMES x SWITCHABLE. But when encoding tiles, all we ever do
+  // is increment the very first index (index 0) for the first dimension. Hence
+  // this is sufficient.
+  int interp_filter_selected[1][SWITCHABLE];
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+} VP9BitstreamWorkerData;
+
 int vp9_get_refresh_mask(VP9_COMP *cpi);
+
+void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi);
 
 void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size);
 

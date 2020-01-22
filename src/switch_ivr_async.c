@@ -1007,6 +1007,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	displace_helper_t *dh;
 	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
+	switch_media_bug_flag_enum_t bug_flags = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1092,6 +1093,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		dh->loop++;
 	}
 
+	if (flags && strchr(flags, 'f')) {
+		bug_flags |= SMBF_FIRST;
+	}
+
 	if (flags && strchr(flags, 'r')) {
 		if (strchr(flags, 'w')) { // r&w mode, both sides can hear the same file
 			int len = dh->fh.samplerate / 10 * 2 * dh->fh.channels; // init with 100ms
@@ -1101,10 +1106,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		}
 
 		status = switch_core_media_bug_add(session, "displace", file,
-										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   read_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   write_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -4593,7 +4598,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	if (!state.done) {
 		switch_ivr_detect_speech_start_input_timers(session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
-		while (switch_channel_ready(channel)) {
+		while (!state.done && switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
 
 			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
@@ -4673,9 +4678,9 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
 
-			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_MORE_DATA) {
 				goto done;
-			} else if (status == SWITCH_STATUS_SUCCESS) {
+			} else {
 				/* Try to fetch extra information for this result, the return value doesn't really matter here - it's just optional data. */
 				switch_core_asr_get_result_headers(sth->ah, &headers, &flags);
 			}
@@ -4727,6 +4732,14 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+
+					if (headers) {
+						switch_event_merge(event, headers);
+					}
+
+					switch_event_add_body(event, "%s", xmlstr);
+				} else if (status == SWITCH_STATUS_MORE_DATA) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-partial-speech");
 
 					if (headers) {
 						switch_event_merge(event, headers);

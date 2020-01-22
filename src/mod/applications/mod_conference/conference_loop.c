@@ -939,6 +939,10 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			goto do_continue;
 		}
 
+		if (!switch_channel_test_flag(channel, CF_AUDIO)) {
+			goto do_continue;
+		}
+		
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
 		if (((conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_member_test_flag(member, MFLAG_HOLD)) ||
@@ -1189,7 +1193,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 			member->last_score = member->score;
 
-			if (member->id == member->conference->floor_holder) {
+			if ((switch_channel_test_flag(channel, CF_VIDEO) || member->avatar_png_img) && (member->id == member->conference->floor_holder)) {
 				if (member->id != member->conference->video_floor_holder &&
 					(member->floor_packets > member->conference->video_floor_packets || member->energy_level == 0)) {
 					conference_video_set_floor_holder(member->conference, member, SWITCH_FALSE);
@@ -1228,7 +1232,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 			if (datalen) {
 				switch_size_t ok = 1;
-
+				
 				/* Write the audio into the input buffer */
 				switch_mutex_lock(member->audio_in_mutex);
 				if (switch_buffer_inuse(member->audio_buffer) > flush_len) {

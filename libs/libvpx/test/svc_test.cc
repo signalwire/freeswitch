@@ -438,7 +438,7 @@ TEST_F(SvcTest, SetAutoAltRefOption) {
 // Test that decoder can handle an SVC frame as the first frame in a sequence.
 TEST_F(SvcTest, OnePassEncodeOneFrame) {
   codec_enc_.g_pass = VPX_RC_ONE_PASS;
-  vpx_fixed_buf output = { 0 };
+  vpx_fixed_buf output = vpx_fixed_buf();
   Pass2EncodeNFrames(NULL, 1, 2, &output);
   DecodeNFrames(&output, 1);
   FreeBitstreamBuffers(&output, 1);

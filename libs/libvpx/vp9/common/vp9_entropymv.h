@@ -27,12 +27,9 @@ void vp9_init_mv_probs(struct VP9Common *cm);
 
 void vp9_adapt_mv_probs(struct VP9Common *cm, int usehp);
 
-// Integer pel reference mv threshold for use of high-precision 1/8 mv
-#define COMPANDED_MVREF_THRESH 8
-
 static INLINE int use_mv_hp(const MV *ref) {
-  return (abs(ref->row) >> 3) < COMPANDED_MVREF_THRESH &&
-         (abs(ref->col) >> 3) < COMPANDED_MVREF_THRESH;
+  const int kMvRefThresh = 64;  // threshold for use of high-precision 1/8 mv
+  return abs(ref->row) < kMvRefThresh && abs(ref->col) < kMvRefThresh;
 }
 
 #define MV_UPDATE_PROB 252

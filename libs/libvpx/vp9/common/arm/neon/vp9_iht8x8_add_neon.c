@@ -76,10 +76,10 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q5s32 = vmlsl_s16(q5s32, d22s16, d3s16);
   q6s32 = vmlsl_s16(q6s32, d23s16, d3s16);
 
-  d8s16 = vqrshrn_n_s32(q2s32, 14);
-  d9s16 = vqrshrn_n_s32(q3s32, 14);
-  d10s16 = vqrshrn_n_s32(q5s32, 14);
-  d11s16 = vqrshrn_n_s32(q6s32, 14);
+  d8s16 = vrshrn_n_s32(q2s32, 14);
+  d9s16 = vrshrn_n_s32(q3s32, 14);
+  d10s16 = vrshrn_n_s32(q5s32, 14);
+  d11s16 = vrshrn_n_s32(q6s32, 14);
   q4s16 = vcombine_s16(d8s16, d9s16);
   q5s16 = vcombine_s16(d10s16, d11s16);
 
@@ -93,10 +93,10 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q9s32 = vmlal_s16(q9s32, d22s16, d2s16);
   q13s32 = vmlal_s16(q13s32, d23s16, d2s16);
 
-  d14s16 = vqrshrn_n_s32(q2s32, 14);
-  d15s16 = vqrshrn_n_s32(q3s32, 14);
-  d12s16 = vqrshrn_n_s32(q9s32, 14);
-  d13s16 = vqrshrn_n_s32(q13s32, 14);
+  d14s16 = vrshrn_n_s32(q2s32, 14);
+  d15s16 = vrshrn_n_s32(q3s32, 14);
+  d12s16 = vrshrn_n_s32(q9s32, 14);
+  d13s16 = vrshrn_n_s32(q13s32, 14);
   q6s16 = vcombine_s16(d12s16, d13s16);
   q7s16 = vcombine_s16(d14s16, d15s16);
 
@@ -115,10 +115,10 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   d0s16 = vdup_n_s16(cospi_24_64);
   d1s16 = vdup_n_s16(cospi_8_64);
 
-  d18s16 = vqrshrn_n_s32(q2s32, 14);
-  d19s16 = vqrshrn_n_s32(q3s32, 14);
-  d22s16 = vqrshrn_n_s32(q13s32, 14);
-  d23s16 = vqrshrn_n_s32(q15s32, 14);
+  d18s16 = vrshrn_n_s32(q2s32, 14);
+  d19s16 = vrshrn_n_s32(q3s32, 14);
+  d22s16 = vrshrn_n_s32(q13s32, 14);
+  d23s16 = vrshrn_n_s32(q15s32, 14);
   *q9s16 = vcombine_s16(d18s16, d19s16);
   *q11s16 = vcombine_s16(d22s16, d23s16);
 
@@ -132,10 +132,10 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q8s32 = vmlal_s16(q8s32, d28s16, d0s16);
   q12s32 = vmlal_s16(q12s32, d29s16, d0s16);
 
-  d26s16 = vqrshrn_n_s32(q2s32, 14);
-  d27s16 = vqrshrn_n_s32(q3s32, 14);
-  d30s16 = vqrshrn_n_s32(q8s32, 14);
-  d31s16 = vqrshrn_n_s32(q12s32, 14);
+  d26s16 = vrshrn_n_s32(q2s32, 14);
+  d27s16 = vrshrn_n_s32(q3s32, 14);
+  d30s16 = vrshrn_n_s32(q8s32, 14);
+  d31s16 = vrshrn_n_s32(q12s32, 14);
   *q13s16 = vcombine_s16(d26s16, d27s16);
   *q15s16 = vcombine_s16(d30s16, d31s16);
 
@@ -165,10 +165,10 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q11s32 = vmlal_s16(q11s32, d26s16, d16s16);
   q12s32 = vmlal_s16(q12s32, d27s16, d16s16);
 
-  d10s16 = vqrshrn_n_s32(q9s32, 14);
-  d11s16 = vqrshrn_n_s32(q10s32, 14);
-  d12s16 = vqrshrn_n_s32(q11s32, 14);
-  d13s16 = vqrshrn_n_s32(q12s32, 14);
+  d10s16 = vrshrn_n_s32(q9s32, 14);
+  d11s16 = vrshrn_n_s32(q10s32, 14);
+  d12s16 = vrshrn_n_s32(q11s32, 14);
+  d13s16 = vrshrn_n_s32(q12s32, 14);
   q5s16 = vcombine_s16(d10s16, d11s16);
   q6s16 = vcombine_s16(d12s16, d13s16);
 
@@ -180,7 +180,6 @@ static INLINE void IDCT8x8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   *q13s16 = vsubq_s16(q2s16, q5s16);
   *q14s16 = vsubq_s16(q1s16, q6s16);
   *q15s16 = vsubq_s16(q0s16, q7s16);
-  return;
 }
 
 static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
@@ -243,8 +242,8 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q1s32 = vsubq_s32(q1s32, q5s32);
   q2s32 = vsubq_s32(q2s32, q6s32);
 
-  d22s16 = vqrshrn_n_s32(q11s32, 14);
-  d23s16 = vqrshrn_n_s32(q12s32, 14);
+  d22s16 = vrshrn_n_s32(q11s32, 14);
+  d23s16 = vrshrn_n_s32(q12s32, 14);
   *q11s16 = vcombine_s16(d22s16, d23s16);
 
   q12s32 = vaddq_s32(q3s32, q7s32);
@@ -252,12 +251,12 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q3s32 = vsubq_s32(q3s32, q7s32);
   q4s32 = vsubq_s32(q4s32, q8s32);
 
-  d2s16 = vqrshrn_n_s32(q1s32, 14);
-  d3s16 = vqrshrn_n_s32(q2s32, 14);
-  d24s16 = vqrshrn_n_s32(q12s32, 14);
-  d25s16 = vqrshrn_n_s32(q15s32, 14);
-  d6s16 = vqrshrn_n_s32(q3s32, 14);
-  d7s16 = vqrshrn_n_s32(q4s32, 14);
+  d2s16 = vrshrn_n_s32(q1s32, 14);
+  d3s16 = vrshrn_n_s32(q2s32, 14);
+  d24s16 = vrshrn_n_s32(q12s32, 14);
+  d25s16 = vrshrn_n_s32(q15s32, 14);
+  d6s16 = vrshrn_n_s32(q3s32, 14);
+  d7s16 = vrshrn_n_s32(q4s32, 14);
   *q12s16 = vcombine_s16(d24s16, d25s16);
 
   d0s16 = vdup_n_s16(cospi_10_64);
@@ -292,10 +291,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q2s32 = vsubq_s32(q2s32, q10s32);
   q6s32 = vsubq_s32(q6s32, q9s32);
 
-  d28s16 = vqrshrn_n_s32(q14s32, 14);
-  d29s16 = vqrshrn_n_s32(q15s32, 14);
-  d4s16 = vqrshrn_n_s32(q2s32, 14);
-  d5s16 = vqrshrn_n_s32(q6s32, 14);
+  d28s16 = vrshrn_n_s32(q14s32, 14);
+  d29s16 = vrshrn_n_s32(q15s32, 14);
+  d4s16 = vrshrn_n_s32(q2s32, 14);
+  d5s16 = vrshrn_n_s32(q6s32, 14);
   *q14s16 = vcombine_s16(d28s16, d29s16);
 
   q9s32 = vaddq_s32(q4s32, q0s32);
@@ -306,10 +305,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   d30s16 = vdup_n_s16(cospi_8_64);
   d31s16 = vdup_n_s16(cospi_24_64);
 
-  d18s16 = vqrshrn_n_s32(q9s32, 14);
-  d19s16 = vqrshrn_n_s32(q10s32, 14);
-  d8s16 = vqrshrn_n_s32(q4s32, 14);
-  d9s16 = vqrshrn_n_s32(q5s32, 14);
+  d18s16 = vrshrn_n_s32(q9s32, 14);
+  d19s16 = vrshrn_n_s32(q10s32, 14);
+  d8s16 = vrshrn_n_s32(q4s32, 14);
+  d9s16 = vrshrn_n_s32(q5s32, 14);
   *q9s16 = vcombine_s16(d18s16, d19s16);
 
   q5s32 = vmull_s16(d2s16, d30s16);
@@ -342,10 +341,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q5s32 = vsubq_s32(q5s32, q1s32);
   q6s32 = vsubq_s32(q6s32, q3s32);
 
-  d18s16 = vqrshrn_n_s32(q14s32, 14);
-  d19s16 = vqrshrn_n_s32(q15s32, 14);
-  d10s16 = vqrshrn_n_s32(q5s32, 14);
-  d11s16 = vqrshrn_n_s32(q6s32, 14);
+  d18s16 = vrshrn_n_s32(q14s32, 14);
+  d19s16 = vrshrn_n_s32(q15s32, 14);
+  d10s16 = vrshrn_n_s32(q5s32, 14);
+  d11s16 = vrshrn_n_s32(q6s32, 14);
   *q9s16 = vcombine_s16(d18s16, d19s16);
 
   q1s32 = vaddq_s32(q7s32, q10s32);
@@ -353,10 +352,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q7s32 = vsubq_s32(q7s32, q10s32);
   q0s32 = vsubq_s32(q0s32, q2s32);
 
-  d28s16 = vqrshrn_n_s32(q1s32, 14);
-  d29s16 = vqrshrn_n_s32(q3s32, 14);
-  d14s16 = vqrshrn_n_s32(q7s32, 14);
-  d15s16 = vqrshrn_n_s32(q0s32, 14);
+  d28s16 = vrshrn_n_s32(q1s32, 14);
+  d29s16 = vrshrn_n_s32(q3s32, 14);
+  d14s16 = vrshrn_n_s32(q7s32, 14);
+  d15s16 = vrshrn_n_s32(q0s32, 14);
   *q14s16 = vcombine_s16(d28s16, d29s16);
 
   d30s16 = vdup_n_s16(cospi_16_64);
@@ -375,10 +374,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q13s32 = vmlsl_s16(q13s32, d24s16, d30s16);
   q1s32 = vmlsl_s16(q1s32, d25s16, d30s16);
 
-  d4s16 = vqrshrn_n_s32(q2s32, 14);
-  d5s16 = vqrshrn_n_s32(q3s32, 14);
-  d24s16 = vqrshrn_n_s32(q13s32, 14);
-  d25s16 = vqrshrn_n_s32(q1s32, 14);
+  d4s16 = vrshrn_n_s32(q2s32, 14);
+  d5s16 = vrshrn_n_s32(q3s32, 14);
+  d24s16 = vrshrn_n_s32(q13s32, 14);
+  d25s16 = vrshrn_n_s32(q1s32, 14);
   q2s16 = vcombine_s16(d4s16, d5s16);
   *q12s16 = vcombine_s16(d24s16, d25s16);
 
@@ -392,10 +391,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   q11s32 = vmlsl_s16(q11s32, d14s16, d30s16);
   q0s32 = vmlsl_s16(q0s32, d15s16, d30s16);
 
-  d20s16 = vqrshrn_n_s32(q13s32, 14);
-  d21s16 = vqrshrn_n_s32(q1s32, 14);
-  d12s16 = vqrshrn_n_s32(q11s32, 14);
-  d13s16 = vqrshrn_n_s32(q0s32, 14);
+  d20s16 = vrshrn_n_s32(q13s32, 14);
+  d21s16 = vrshrn_n_s32(q1s32, 14);
+  d12s16 = vrshrn_n_s32(q11s32, 14);
+  d13s16 = vrshrn_n_s32(q0s32, 14);
   *q10s16 = vcombine_s16(d20s16, d21s16);
   q6s16 = vcombine_s16(d12s16, d13s16);
 
@@ -405,11 +404,10 @@ static INLINE void IADST8X8_1D(int16x8_t *q8s16, int16x8_t *q9s16,
   *q11s16 = vsubq_s16(q5s16, q2s16);
   *q13s16 = vsubq_s16(q5s16, q6s16);
   *q15s16 = vsubq_s16(q5s16, q4s16);
-  return;
 }
 
-void vp9_iht8x8_64_add_neon(const tran_low_t *input, uint8_t *dest,
-                            int dest_stride, int tx_type) {
+void vp9_iht8x8_64_add_neon(const tran_low_t *input, uint8_t *dest, int stride,
+                            int tx_type) {
   int i;
   uint8_t *d1, *d2;
   uint8x8_t d0u8, d1u8, d2u8, d3u8;
@@ -431,9 +429,8 @@ void vp9_iht8x8_64_add_neon(const tran_low_t *input, uint8_t *dest,
 
   switch (tx_type) {
     case 0:  // idct_idct is not supported. Fall back to C
-      vp9_iht8x8_64_add_c(input, dest, dest_stride, tx_type);
+      vp9_iht8x8_64_add_c(input, dest, stride, tx_type);
       return;
-      break;
     case 1:  // iadst_idct
       // generate IDCT constants
       // GENERATE_IDCT_CONSTANTS
@@ -511,13 +508,13 @@ void vp9_iht8x8_64_add_neon(const tran_low_t *input, uint8_t *dest,
     }
 
     d0u64 = vld1_u64((uint64_t *)d1);
-    d1 += dest_stride;
+    d1 += stride;
     d1u64 = vld1_u64((uint64_t *)d1);
-    d1 += dest_stride;
+    d1 += stride;
     d2u64 = vld1_u64((uint64_t *)d1);
-    d1 += dest_stride;
+    d1 += stride;
     d3u64 = vld1_u64((uint64_t *)d1);
-    d1 += dest_stride;
+    d1 += stride;
 
     q8u16 = vaddw_u8(vreinterpretq_u16_s16(q8s16), vreinterpret_u8_u64(d0u64));
     q9u16 = vaddw_u8(vreinterpretq_u16_s16(q9s16), vreinterpret_u8_u64(d1u64));
@@ -532,13 +529,12 @@ void vp9_iht8x8_64_add_neon(const tran_low_t *input, uint8_t *dest,
     d3u8 = vqmovun_s16(vreinterpretq_s16_u16(q11u16));
 
     vst1_u64((uint64_t *)d2, vreinterpret_u64_u8(d0u8));
-    d2 += dest_stride;
+    d2 += stride;
     vst1_u64((uint64_t *)d2, vreinterpret_u64_u8(d1u8));
-    d2 += dest_stride;
+    d2 += stride;
     vst1_u64((uint64_t *)d2, vreinterpret_u64_u8(d2u8));
-    d2 += dest_stride;
+    d2 += stride;
     vst1_u64((uint64_t *)d2, vreinterpret_u64_u8(d3u8));
-    d2 += dest_stride;
+    d2 += stride;
   }
-  return;
 }

@@ -13,6 +13,7 @@
 #include <limits.h>
 #include "args.h"
 
+#include "vpx/vpx_integer.h"
 #include "vpx_ports/msvc.h"
 
 #if defined(__GNUC__) && __GNUC__
@@ -118,13 +119,13 @@ void arg_show_usage(FILE *fp, const struct arg_def *const *defs) {
 }
 
 unsigned int arg_parse_uint(const struct arg *arg) {
-  long int rawval;
+  uint32_t rawval;
   char *endptr;
 
-  rawval = strtol(arg->val, &endptr, 10);
+  rawval = (uint32_t)strtoul(arg->val, &endptr, 10);
 
   if (arg->val[0] != '\0' && endptr[0] == '\0') {
-    if (rawval >= 0 && rawval <= UINT_MAX) return (unsigned int)rawval;
+    if (rawval <= UINT_MAX) return rawval;
 
     die("Option %s: Value %ld out of range for unsigned int\n", arg->name,
         rawval);
@@ -135,10 +136,10 @@ unsigned int arg_parse_uint(const struct arg *arg) {
 }
 
 int arg_parse_int(const struct arg *arg) {
-  long int rawval;
+  int32_t rawval;
   char *endptr;
 
-  rawval = strtol(arg->val, &endptr, 10);
+  rawval = (int32_t)strtol(arg->val, &endptr, 10);
 
   if (arg->val[0] != '\0' && endptr[0] == '\0') {
     if (rawval >= INT_MIN && rawval <= INT_MAX) return (int)rawval;

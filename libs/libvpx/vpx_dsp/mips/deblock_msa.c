@@ -9,6 +9,7 @@
  */
 
 #include <stdlib.h>
+
 #include "./macros_msa.h"
 
 extern const int16_t vpx_rv[];
@@ -295,6 +296,7 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
   uint8_t *p_dst_st = dst_ptr;
   uint8_t *f_orig = f;
   uint16_t col;
+  uint64_t out0, out1, out2, out3;
   v16u8 above2, above1, below2, below1;
   v16u8 src, ref, ref_temp;
   v16u8 inter0, inter1, inter2, inter3, inter4, inter5, inter6;
@@ -344,6 +346,67 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     p_src += 16;
     p_dst += 16;
     f += 16;
+  }
+
+  if (0 != (cols / 16)) {
+    ref = LD_UB(f);
+    LD_UB2(p_src - 2 * src_stride, src_stride, above2, above1);
+    src = LD_UB(p_src);
+    LD_UB2(p_src + 1 * src_stride, src_stride, below1, below2);
+    VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref, inter0);
+    above2 = LD_UB(p_src + 3 * src_stride);
+    VPX_AVER_IF_RETAIN(above1, src, below1, below2, above2, ref, inter1);
+    above1 = LD_UB(p_src + 4 * src_stride);
+    VPX_AVER_IF_RETAIN(src, below1, below2, above2, above1, ref, inter2);
+    src = LD_UB(p_src + 5 * src_stride);
+    VPX_AVER_IF_RETAIN(below1, below2, above2, above1, src, ref, inter3);
+    below1 = LD_UB(p_src + 6 * src_stride);
+    VPX_AVER_IF_RETAIN(below2, above2, above1, src, below1, ref, inter4);
+    below2 = LD_UB(p_src + 7 * src_stride);
+    VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref, inter5);
+    above2 = LD_UB(p_src + 8 * src_stride);
+    VPX_AVER_IF_RETAIN(above1, src, below1, below2, above2, ref, inter6);
+    above1 = LD_UB(p_src + 9 * src_stride);
+    VPX_AVER_IF_RETAIN(src, below1, below2, above2, above1, ref, inter7);
+    src = LD_UB(p_src + 10 * src_stride);
+    VPX_AVER_IF_RETAIN(below1, below2, above2, above1, src, ref, inter8);
+    below1 = LD_UB(p_src + 11 * src_stride);
+    VPX_AVER_IF_RETAIN(below2, above2, above1, src, below1, ref, inter9);
+    below2 = LD_UB(p_src + 12 * src_stride);
+    VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref, inter10);
+    above2 = LD_UB(p_src + 13 * src_stride);
+    VPX_AVER_IF_RETAIN(above1, src, below1, below2, above2, ref, inter11);
+    above1 = LD_UB(p_src + 14 * src_stride);
+    VPX_AVER_IF_RETAIN(src, below1, below2, above2, above1, ref, inter12);
+    src = LD_UB(p_src + 15 * src_stride);
+    VPX_AVER_IF_RETAIN(below1, below2, above2, above1, src, ref, inter13);
+    below1 = LD_UB(p_src + 16 * src_stride);
+    VPX_AVER_IF_RETAIN(below2, above2, above1, src, below1, ref, inter14);
+    below2 = LD_UB(p_src + 17 * src_stride);
+    VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref, inter15);
+    out0 = __msa_copy_u_d((v2i64)inter0, 0);
+    out1 = __msa_copy_u_d((v2i64)inter1, 0);
+    out2 = __msa_copy_u_d((v2i64)inter2, 0);
+    out3 = __msa_copy_u_d((v2i64)inter3, 0);
+    SD4(out0, out1, out2, out3, p_dst, dst_stride);
+
+    out0 = __msa_copy_u_d((v2i64)inter4, 0);
+    out1 = __msa_copy_u_d((v2i64)inter5, 0);
+    out2 = __msa_copy_u_d((v2i64)inter6, 0);
+    out3 = __msa_copy_u_d((v2i64)inter7, 0);
+    SD4(out0, out1, out2, out3, p_dst + 4 * dst_stride, dst_stride);
+
+    out0 = __msa_copy_u_d((v2i64)inter8, 0);
+    out1 = __msa_copy_u_d((v2i64)inter9, 0);
+    out2 = __msa_copy_u_d((v2i64)inter10, 0);
+    out3 = __msa_copy_u_d((v2i64)inter11, 0);
+    SD4(out0, out1, out2, out3, p_dst + 8 * dst_stride, dst_stride);
+
+    out0 = __msa_copy_u_d((v2i64)inter12, 0);
+    out1 = __msa_copy_u_d((v2i64)inter13, 0);
+    out2 = __msa_copy_u_d((v2i64)inter14, 0);
+    out3 = __msa_copy_u_d((v2i64)inter15, 0);
+    SD4(out0, out1, out2, out3, p_dst + 12 * dst_stride, dst_stride);
   }
 
   f = f_orig;
@@ -454,12 +517,12 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
   v16u8 tmp = { 0 };
   v16i8 zero = { 0 };
   v8u16 sum_h, src_r_h, src_l_h;
-  v4u32 src_r_w, src_l_w;
+  v4u32 src_r_w;
   v4i32 flimit_vec;
 
   flimit_vec = __msa_fill_w(flimit);
   for (row = rows; row--;) {
-    int32_t sum_sq = 0;
+    int32_t sum_sq;
     int32_t sum = 0;
     src0 = (v16u8)__msa_fill_b(src_dup[0]);
     ST8x1_UB(src0, (src_dup - 8));
@@ -473,9 +536,8 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
     src[15] = 0;
     ILVRL_B2_UH(zero, src, src_r_h, src_l_h);
     src_r_w = __msa_dotp_u_w(src_r_h, src_r_h);
-    src_l_w = __msa_dotp_u_w(src_l_h, src_l_h);
-    sum_sq = HADD_SW_S32(src_r_w);
-    sum_sq += HADD_SW_S32(src_l_w);
+    src_r_w += __msa_dotp_u_w(src_l_h, src_l_h);
+    sum_sq = HADD_SW_S32(src_r_w) + 16;
     sum_h = __msa_hadd_u_h(src, src);
     sum = HADD_UH_U32(sum_h);
     {
@@ -574,7 +636,6 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
 void vpx_mbpost_proc_down_msa(uint8_t *dst_ptr, int32_t pitch, int32_t rows,
                               int32_t cols, int32_t flimit) {
   int32_t row, col, cnt, i;
-  const int16_t *rv3 = &vpx_rv[63 & rand()];
   v4i32 flimit_vec;
   v16u8 dst7, dst8, dst_r_b, dst_l_b;
   v16i8 mask;
@@ -602,7 +663,7 @@ void vpx_mbpost_proc_down_msa(uint8_t *dst_ptr, int32_t pitch, int32_t rows,
 
     dst = LD_UB(dst_tmp);
     for (cnt = (col << 4), i = 0; i < 16; ++cnt) {
-      rv2[i] = rv3 + ((cnt * 17) & 127);
+      rv2[i] = vpx_rv + (i & 7);
       ++i;
     }
     for (cnt = -8; cnt < 0; ++cnt) {

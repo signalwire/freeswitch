@@ -188,6 +188,16 @@ static inline int sem_destroy(sem_t *sem) {
 #endif
 
 #include "vpx_util/vpx_thread.h"
+#include "vpx_util/vpx_atomics.h"
+
+static INLINE void vp8_atomic_spin_wait(
+    int mb_col, const vpx_atomic_int *last_row_current_mb_col,
+    const int nsync) {
+  while (mb_col > (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
+    x86_pause_hint();
+    thread_sleep(1);
+  }
+}
 
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
 

@@ -593,6 +593,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_ack_bitrate(switch_rtp_t *rtp_session
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session);
 
+SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t *rtp_session);
 /*!
   \}
 */

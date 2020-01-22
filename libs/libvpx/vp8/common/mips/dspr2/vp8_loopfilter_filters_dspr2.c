@@ -306,6 +306,7 @@ void vp8_loop_filter_horizontal_edge_mips(unsigned char *s, int p,
   uint32_t hev;
   uint32_t pm1, p0, p1, p2, p3, p4, p5, p6;
   unsigned char *sm1, *s0, *s1, *s2, *s3, *s4, *s5, *s6;
+  (void)count;
 
   mask = 0;
   hev = 0;
@@ -498,6 +499,7 @@ void vp8_loop_filter_uvhorizontal_edge_mips(unsigned char *s, int p,
   uint32_t hev;
   uint32_t pm1, p0, p1, p2, p3, p4, p5, p6;
   unsigned char *sm1, *s0, *s1, *s2, *s3, *s4, *s5, *s6;
+  (void)count;
 
   mask = 0;
   hev = 0;
@@ -918,6 +920,7 @@ void vp8_loop_filter_uvvertical_edge_mips(unsigned char *s, int p,
   uint32_t pm1, p0, p1, p2, p3, p4, p5, p6;
   unsigned char *s1, *s2, *s3, *s4;
   uint32_t prim1, prim2, sec3, sec4, prim3, prim4;
+  (void)count;
 
   /* loop filter designed to work using chars so that we can make maximum use
    * of 8 bit simd instructions.
@@ -1612,6 +1615,7 @@ void vp8_mbloop_filter_uvhorizontal_edge_mips(unsigned char *s, int p,
   uint32_t mask, hev;
   uint32_t pm1, p0, p1, p2, p3, p4, p5, p6;
   unsigned char *sm1, *s0, *s1, *s2, *s3, *s4, *s5, *s6;
+  (void)count;
 
   mask = 0;
   hev = 0;
@@ -1915,6 +1919,7 @@ void vp8_mbloop_filter_uvvertical_edge_mips(unsigned char *s, int p,
   uint32_t pm1, p0, p1, p2, p3, p4, p5, p6;
   unsigned char *s1, *s2, *s3, *s4;
   uint32_t prim1, prim2, sec3, sec4, prim3, prim4;
+  (void)count;
 
   mask = 0;
   hev = 0;

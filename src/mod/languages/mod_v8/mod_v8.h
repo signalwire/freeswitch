@@ -83,6 +83,19 @@ typedef struct {
 }
 v8_event_t;
 
+#define ISOLATE_DATA_OBJECT		0
+#define ISOLATE_DATA_DEBUG		1
+#define ISOLATE_DATA_PRIVATE	2
+
+/* Isolate Private Data */
+typedef struct {
+	std::string str_task_id;	/* JavaScript task id */
+	std::string input_code;		/* Path to JavaScript source */
+	switch_time_t start_time;	/* Script start_time */
+	
+	v8::HeapStatistics stats;
+} js_isolate_private_data_t;
+
 SWITCH_END_EXTERN_C
 
 void v8_add_event_handler(void *event_handler);

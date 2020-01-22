@@ -26,6 +26,7 @@
 #include "vpx_scale/vpx_scale.h"
 #include "encodemb.h"
 #include "vp8/common/extend.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/swapyv12buffer.h"
 #include "rdopt.h"
@@ -499,7 +500,7 @@ void vp8_first_pass(VP8_COMP *cpi) {
 
   zero_ref_mv.as_int = 0;
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   x->src = *cpi->Source;
   xd->pre = *lst_yv12;
@@ -741,10 +742,10 @@ void vp8_first_pass(VP8_COMP *cpi) {
     /* extend the recon for intra prediction */
     vp8_extend_mb_row(new_yv12, xd->dst.y_buffer + 16, xd->dst.u_buffer + 8,
                       xd->dst.v_buffer + 8);
-    vp8_clear_system_state();
+    vpx_clear_system_state();
   }
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
   {
     double weight = 0.0;
 
@@ -1184,9 +1185,9 @@ static int estimate_kf_group_q(VP8_COMP *cpi, double section_err,
     current_spend_ratio = (double)cpi->long_rolling_actual_bits /
                           (double)cpi->long_rolling_target_bits;
     current_spend_ratio =
-        (current_spend_ratio > 10.0) ? 10.0 : (current_spend_ratio < 0.1)
-                                                  ? 0.1
-                                                  : current_spend_ratio;
+        (current_spend_ratio > 10.0)
+            ? 10.0
+            : (current_spend_ratio < 0.1) ? 0.1 : current_spend_ratio;
   }
 
   /* Calculate a correction factor based on the quality of prediction in
@@ -1272,8 +1273,9 @@ void vp8_init_second_pass(VP8_COMP *cpi) {
    * sum duration is not. Its calculated based on the actual durations of
    * all frames from the first pass.
    */
-  vp8_new_framerate(cpi, 10000000.0 * cpi->twopass.total_stats.count /
-                             cpi->twopass.total_stats.duration);
+  vp8_new_framerate(cpi,
+                    10000000.0 * cpi->twopass.total_stats.count /
+                        cpi->twopass.total_stats.duration);
 
   cpi->output_framerate = cpi->framerate;
   cpi->twopass.bits_left = (int64_t)(cpi->twopass.total_stats.duration *
@@ -1655,7 +1657,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   cpi->twopass.gf_group_bits = 0;
   cpi->twopass.gf_decay_rate = 0;
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   start_pos = cpi->twopass.stats_in;
 
@@ -2268,7 +2270,7 @@ void vp8_second_pass(VP8_COMP *cpi) {
     return;
   }
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   if (EOF == input_stats(cpi, &this_frame)) return;
 
@@ -2543,7 +2545,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   memset(&next_frame, 0, sizeof(next_frame));
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
   start_position = cpi->twopass.stats_in;
 
   cpi->common.frame_type = KEY_FRAME;

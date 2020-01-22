@@ -18,24 +18,23 @@
 #if HAVE_DSPR2
 static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
                               uint32_t no_rows) {
-  int16_t step1_0, step1_1, step1_2, step1_3, step1_4, step1_5, step1_6;
-  int16_t step1_7, step1_8, step1_9, step1_10, step1_11, step1_12, step1_13;
-  int16_t step1_14, step1_15, step1_16, step1_17, step1_18, step1_19, step1_20;
-  int16_t step1_21, step1_22, step1_23, step1_24, step1_25, step1_26, step1_27;
-  int16_t step1_28, step1_29, step1_30, step1_31;
-  int16_t step2_0, step2_1, step2_2, step2_3, step2_4, step2_5, step2_6;
-  int16_t step2_7, step2_8, step2_9, step2_10, step2_11, step2_12, step2_13;
-  int16_t step2_14, step2_15, step2_16, step2_17, step2_18, step2_19, step2_20;
-  int16_t step2_21, step2_22, step2_23, step2_24, step2_25, step2_26, step2_27;
-  int16_t step2_28, step2_29, step2_30, step2_31;
-  int16_t step3_8, step3_9, step3_10, step3_11, step3_12, step3_13, step3_14;
-  int16_t step3_15, step3_16, step3_17, step3_18, step3_19, step3_20, step3_21;
-  int16_t step3_22, step3_23, step3_24, step3_25, step3_26, step3_27, step3_28;
-  int16_t step3_29, step3_30, step3_31;
+  int step1_0, step1_1, step1_2, step1_3, step1_4, step1_5, step1_6;
+  int step1_7, step1_8, step1_9, step1_10, step1_11, step1_12, step1_13;
+  int step1_14, step1_15, step1_16, step1_17, step1_18, step1_19, step1_20;
+  int step1_21, step1_22, step1_23, step1_24, step1_25, step1_26, step1_27;
+  int step1_28, step1_29, step1_30, step1_31;
+  int step2_0, step2_1, step2_2, step2_3, step2_4, step2_5, step2_6;
+  int step2_7, step2_8, step2_9, step2_10, step2_11, step2_12, step2_13;
+  int step2_14, step2_15, step2_16, step2_17, step2_18, step2_19, step2_20;
+  int step2_21, step2_22, step2_23, step2_24, step2_25, step2_26, step2_27;
+  int step2_28, step2_29, step2_30, step2_31;
+  int step3_8, step3_9, step3_10, step3_11, step3_12, step3_13, step3_14;
+  int step3_15, step3_16, step3_17, step3_18, step3_19, step3_20, step3_21;
+  int step3_22, step3_23, step3_24, step3_25, step3_26, step3_27, step3_28;
+  int step3_29, step3_30, step3_31;
   int temp0, temp1, temp2, temp3;
   int load1, load2, load3, load4;
   int result1, result2;
-  int temp21;
   int i;
   const int const_2_power_13 = 8192;
   const int32_t *input_int;
@@ -147,9 +146,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_16] "=r"(step1_16),
-          [step1_17] "=r"(step1_17), [step1_30] "=r"(step1_30),
-          [step1_31] "=r"(step1_31)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3),
+          [step1_16] "=&r"(step1_16), [step1_17] "=&r"(step1_17),
+          [step1_30] "=&r"(step1_30), [step1_31] "=&r"(step1_31)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_31_64] "r"(cospi_31_64), [cospi_1_64] "r"(cospi_1_64),
           [cospi_4_64] "r"(cospi_4_64), [cospi_17_64] "r"(cospi_17_64),
@@ -207,9 +206,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_18] "=r"(step1_18),
-          [step1_19] "=r"(step1_19), [step1_28] "=r"(step1_28),
-          [step1_29] "=r"(step1_29)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3),
+          [step1_18] "=&r"(step1_18), [step1_19] "=&r"(step1_19),
+          [step1_28] "=&r"(step1_28), [step1_29] "=&r"(step1_29)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_23_64] "r"(cospi_23_64), [cospi_9_64] "r"(cospi_9_64),
           [cospi_4_64] "r"(cospi_4_64), [cospi_7_64] "r"(cospi_7_64),
@@ -267,9 +266,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_20] "=r"(step1_20),
-          [step1_21] "=r"(step1_21), [step1_26] "=r"(step1_26),
-          [step1_27] "=r"(step1_27)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3),
+          [step1_20] "=&r"(step1_20), [step1_21] "=&r"(step1_21),
+          [step1_26] "=&r"(step1_26), [step1_27] "=&r"(step1_27)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_27_64] "r"(cospi_27_64), [cospi_5_64] "r"(cospi_5_64),
           [cospi_11_64] "r"(cospi_11_64), [cospi_21_64] "r"(cospi_21_64),
@@ -289,7 +288,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac1,                 %[load1],       %[cospi_19_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_13_64]  \n\t"
         "extp     %[temp0],             $ac1,           31              \n\t"
-
         "madd     $ac3,                 %[load1],       %[cospi_13_64]  \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_19_64]  \n\t"
         "extp     %[temp3],             $ac3,           31              \n\t"
@@ -302,7 +300,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac2,                 %[load3],       %[cospi_3_64]   \n\t"
         "msub     $ac2,                 %[load4],       %[cospi_29_64]  \n\t"
         "extp     %[temp1],             $ac2,           31              \n\t"
-
         "madd     $ac1,                 %[load3],       %[cospi_29_64]  \n\t"
         "madd     $ac1,                 %[load4],       %[cospi_3_64]   \n\t"
         "extp     %[temp2],             $ac1,           31              \n\t"
@@ -314,12 +311,10 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         "sub      %[load1],             %[temp1],       %[temp0]        \n\t"
         "sub      %[load2],             %[temp2],       %[temp3]        \n\t"
-
         "msub     $ac1,                 %[load1],       %[cospi_12_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_20_64]  \n\t"
         "msub     $ac3,                 %[load1],       %[cospi_20_64]  \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_12_64]  \n\t"
-
         "extp     %[step1_22],          $ac1,           31              \n\t"
         "extp     %[step1_25],          $ac3,           31              \n\t"
         "add      %[step1_23],          %[temp0],       %[temp1]        \n\t"
@@ -327,9 +322,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_22] "=r"(step1_22),
-          [step1_23] "=r"(step1_23), [step1_24] "=r"(step1_24),
-          [step1_25] "=r"(step1_25)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3),
+          [step1_22] "=&r"(step1_22), [step1_23] "=&r"(step1_23),
+          [step1_24] "=&r"(step1_24), [step1_25] "=&r"(step1_25)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_19_64] "r"(cospi_19_64), [cospi_13_64] "r"(cospi_13_64),
           [cospi_3_64] "r"(cospi_3_64), [cospi_29_64] "r"(cospi_29_64),
@@ -349,7 +344,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac1,                 %[load1],       %[cospi_30_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_2_64]   \n\t"
         "extp     %[temp0],             $ac1,           31              \n\t"
-
         "madd     $ac3,                 %[load1],       %[cospi_2_64]   \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_30_64]  \n\t"
         "extp     %[temp3],             $ac3,           31              \n\t"
@@ -362,7 +356,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac2,                 %[load3],       %[cospi_14_64]  \n\t"
         "msub     $ac2,                 %[load4],       %[cospi_18_64]  \n\t"
         "extp     %[temp1],             $ac2,           31              \n\t"
-
         "madd     $ac1,                 %[load3],       %[cospi_18_64]  \n\t"
         "madd     $ac1,                 %[load4],       %[cospi_14_64]  \n\t"
         "extp     %[temp2],             $ac1,           31              \n\t"
@@ -374,12 +367,10 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         "sub      %[load1],             %[temp0],       %[temp1]        \n\t"
         "sub      %[load2],             %[temp3],       %[temp2]        \n\t"
-
         "msub     $ac1,                 %[load1],       %[cospi_8_64]   \n\t"
         "madd     $ac1,                 %[load2],       %[cospi_24_64]  \n\t"
         "madd     $ac3,                 %[load1],       %[cospi_24_64]  \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_8_64]   \n\t"
-
         "extp     %[step2_9],           $ac1,           31              \n\t"
         "extp     %[step2_14],          $ac3,           31              \n\t"
         "add      %[step2_8],           %[temp0],       %[temp1]        \n\t"
@@ -387,9 +378,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step2_8] "=r"(step2_8),
-          [step2_9] "=r"(step2_9), [step2_14] "=r"(step2_14),
-          [step2_15] "=r"(step2_15)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step2_8] "=&r"(step2_8),
+          [step2_9] "=&r"(step2_9), [step2_14] "=&r"(step2_14),
+          [step2_15] "=&r"(step2_15)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_30_64] "r"(cospi_30_64), [cospi_2_64] "r"(cospi_2_64),
           [cospi_14_64] "r"(cospi_14_64), [cospi_18_64] "r"(cospi_18_64),
@@ -409,7 +400,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac1,                 %[load1],       %[cospi_22_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_10_64]  \n\t"
         "extp     %[temp0],             $ac1,           31              \n\t"
-
         "madd     $ac3,                 %[load1],       %[cospi_10_64]  \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_22_64]  \n\t"
         "extp     %[temp3],             $ac3,           31              \n\t"
@@ -422,7 +412,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac2,                 %[load3],       %[cospi_6_64]   \n\t"
         "msub     $ac2,                 %[load4],       %[cospi_26_64]  \n\t"
         "extp     %[temp1],             $ac2,           31              \n\t"
-
         "madd     $ac1,                 %[load3],       %[cospi_26_64]  \n\t"
         "madd     $ac1,                 %[load4],       %[cospi_6_64]   \n\t"
         "extp     %[temp2],             $ac1,           31              \n\t"
@@ -434,12 +423,10 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         "sub      %[load1],             %[temp1],       %[temp0]        \n\t"
         "sub      %[load2],             %[temp2],       %[temp3]        \n\t"
-
         "msub     $ac1,                 %[load1],       %[cospi_24_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_8_64]   \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_24_64]  \n\t"
         "msub     $ac3,                 %[load1],       %[cospi_8_64]   \n\t"
-
         "extp     %[step2_10],          $ac1,           31              \n\t"
         "extp     %[step2_13],          $ac3,           31              \n\t"
         "add      %[step2_11],          %[temp0],       %[temp1]        \n\t"
@@ -447,9 +434,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step2_10] "=r"(step2_10),
-          [step2_11] "=r"(step2_11), [step2_12] "=r"(step2_12),
-          [step2_13] "=r"(step2_13)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3),
+          [step2_10] "=&r"(step2_10), [step2_11] "=&r"(step2_11),
+          [step2_12] "=&r"(step2_12), [step2_13] "=&r"(step2_13)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_22_64] "r"(cospi_22_64), [cospi_10_64] "r"(cospi_10_64),
           [cospi_6_64] "r"(cospi_6_64), [cospi_26_64] "r"(cospi_26_64),
@@ -462,21 +449,18 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "sub      %[temp0],             %[temp0],       %[step2_9]      \n\t"
         "add      %[temp0],             %[temp0],       %[step2_10]     \n\t"
         "madd     $ac0,                 %[temp0],       %[cospi_16_64]  \n\t"
-
         "mtlo     %[const_2_power_13],  $ac1                            \n\t"
         "mthi     $zero,                $ac1                            \n\t"
         "sub      %[temp1],             %[step2_14],    %[step2_13]     \n\t"
         "add      %[temp1],             %[temp1],       %[step2_9]      \n\t"
         "sub      %[temp1],             %[temp1],       %[step2_10]     \n\t"
         "madd     $ac1,                 %[temp1],       %[cospi_16_64]  \n\t"
-
         "mtlo     %[const_2_power_13],  $ac2                            \n\t"
         "mthi     $zero,                $ac2                            \n\t"
         "sub      %[temp0],             %[step2_15],    %[step2_12]     \n\t"
         "sub      %[temp0],             %[temp0],       %[step2_8]      \n\t"
         "add      %[temp0],             %[temp0],       %[step2_11]     \n\t"
         "madd     $ac2,                 %[temp0],       %[cospi_16_64]  \n\t"
-
         "mtlo     %[const_2_power_13],  $ac3                            \n\t"
         "mthi     $zero,                $ac3                            \n\t"
         "sub      %[temp1],             %[step2_15],    %[step2_12]     \n\t"
@@ -488,122 +472,159 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "add      %[step3_9],           %[step2_9],     %[step2_10]     \n\t"
         "add      %[step3_14],          %[step2_13],    %[step2_14]     \n\t"
         "add      %[step3_15],          %[step2_12],    %[step2_15]     \n\t"
-
         "extp     %[step3_10],          $ac0,           31              \n\t"
         "extp     %[step3_13],          $ac1,           31              \n\t"
         "extp     %[step3_11],          $ac2,           31              \n\t"
         "extp     %[step3_12],          $ac3,           31              \n\t"
 
-        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1), [step3_8] "=r"(step3_8),
-          [step3_9] "=r"(step3_9), [step3_10] "=r"(step3_10),
-          [step3_11] "=r"(step3_11), [step3_12] "=r"(step3_12),
-          [step3_13] "=r"(step3_13), [step3_14] "=r"(step3_14),
-          [step3_15] "=r"(step3_15)
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1), [step3_8] "=&r"(step3_8),
+          [step3_9] "=&r"(step3_9), [step3_10] "=&r"(step3_10),
+          [step3_11] "=&r"(step3_11), [step3_12] "=&r"(step3_12),
+          [step3_13] "=&r"(step3_13), [step3_14] "=&r"(step3_14),
+          [step3_15] "=&r"(step3_15)
         : [const_2_power_13] "r"(const_2_power_13), [step2_8] "r"(step2_8),
           [step2_9] "r"(step2_9), [step2_10] "r"(step2_10),
           [step2_11] "r"(step2_11), [step2_12] "r"(step2_12),
           [step2_13] "r"(step2_13), [step2_14] "r"(step2_14),
           [step2_15] "r"(step2_15), [cospi_16_64] "r"(cospi_16_64));
 
-    step2_18 = step1_17 - step1_18;
-    step2_29 = step1_30 - step1_29;
-
     __asm__ __volatile__(
         "mtlo     %[const_2_power_13],  $ac0                            \n\t"
         "mthi     $zero,                $ac0                            \n\t"
-        "msub     $ac0,                 %[step2_18],    %[cospi_8_64]   \n\t"
-        "madd     $ac0,                 %[step2_29],    %[cospi_24_64]  \n\t"
-        "extp     %[step3_18],          $ac0,           31              \n\t"
-
-        : [step3_18] "=r"(step3_18)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_18] "r"(step2_18),
-          [step2_29] "r"(step2_29), [cospi_24_64] "r"(cospi_24_64),
-          [cospi_8_64] "r"(cospi_8_64));
-
-    temp21 = step2_18 * cospi_24_64 + step2_29 * cospi_8_64;
-    step3_29 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
-
-    step2_19 = step1_16 - step1_19;
-    step2_28 = step1_31 - step1_28;
-
-    __asm__ __volatile__(
-        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
-        "mthi     $zero,                $ac0                            \n\t"
-        "msub     $ac0,                 %[step2_19],    %[cospi_8_64]   \n\t"
-        "madd     $ac0,                 %[step2_28],    %[cospi_24_64]  \n\t"
-        "extp     %[step3_19],          $ac0,           31              \n\t"
-
-        : [step3_19] "=r"(step3_19)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_19] "r"(step2_19),
-          [step2_28] "r"(step2_28), [cospi_24_64] "r"(cospi_24_64),
-          [cospi_8_64] "r"(cospi_8_64));
-
-    temp21 = step2_19 * cospi_24_64 + step2_28 * cospi_8_64;
-    step3_28 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
-
-    step3_16 = step1_16 + step1_19;
-    step3_17 = step1_17 + step1_18;
-    step3_30 = step1_29 + step1_30;
-    step3_31 = step1_28 + step1_31;
-
-    step2_20 = step1_23 - step1_20;
-    step2_27 = step1_24 - step1_27;
-
-    __asm__ __volatile__(
-        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
-        "mthi     $zero,                $ac0                            \n\t"
-        "msub     $ac0,                 %[step2_20],    %[cospi_24_64]  \n\t"
-        "msub     $ac0,                 %[step2_27],    %[cospi_8_64]   \n\t"
-        "extp     %[step3_20],          $ac0,           31              \n\t"
-
-        : [step3_20] "=r"(step3_20)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_20] "r"(step2_20),
-          [step2_27] "r"(step2_27), [cospi_24_64] "r"(cospi_24_64),
-          [cospi_8_64] "r"(cospi_8_64));
-
-    temp21 = -step2_20 * cospi_8_64 + step2_27 * cospi_24_64;
-    step3_27 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
-
-    step2_21 = step1_22 - step1_21;
-    step2_26 = step1_25 - step1_26;
-
-    __asm__ __volatile__(
         "mtlo     %[const_2_power_13],  $ac1                            \n\t"
         "mthi     $zero,                $ac1                            \n\t"
-        "msub     $ac1,                 %[step2_21],    %[cospi_24_64]  \n\t"
-        "msub     $ac1,                 %[step2_26],    %[cospi_8_64]   \n\t"
-        "extp     %[step3_21],          $ac1,           31              \n\t"
+        "sub      %[temp0],             %[step1_17],    %[step1_18]     \n\t"
+        "sub      %[temp1],             %[step1_30],    %[step1_29]     \n\t"
+        "add      %[step3_17],          %[step1_17],    %[step1_18]     \n\t"
+        "add      %[step3_30],          %[step1_30],    %[step1_29]     \n\t"
 
-        : [step3_21] "=r"(step3_21)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_21] "r"(step2_21),
-          [step2_26] "r"(step2_26), [cospi_24_64] "r"(cospi_24_64),
+        "msub     $ac0,                 %[temp0],       %[cospi_8_64]   \n\t"
+        "madd     $ac0,                 %[temp1],       %[cospi_24_64]  \n\t"
+        "extp     %[step3_18],          $ac0,           31              \n\t"
+        "madd     $ac1,                 %[temp0],       %[cospi_24_64]  \n\t"
+        "madd     $ac1,                 %[temp1],       %[cospi_8_64]   \n\t"
+        "extp     %[step3_29],          $ac1,           31              \n\t"
+
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
+          [step3_18] "=&r"(step3_18), [step3_29] "=&r"(step3_29),
+          [step3_17] "=&r"(step3_17), [step3_30] "=&r"(step3_30)
+        : [const_2_power_13] "r"(const_2_power_13), [step1_17] "r"(step1_17),
+          [step1_18] "r"(step1_18), [step1_30] "r"(step1_30),
+          [step1_29] "r"(step1_29), [cospi_24_64] "r"(cospi_24_64),
           [cospi_8_64] "r"(cospi_8_64));
 
-    temp21 = -step2_21 * cospi_8_64 + step2_26 * cospi_24_64;
-    step3_26 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
+    __asm__ __volatile__(
+        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
+        "mthi     $zero,                $ac0                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac1                            \n\t"
+        "mthi     $zero,                $ac1                            \n\t"
+        "sub      %[temp0],             %[step1_16],    %[step1_19]     \n\t"
+        "sub      %[temp1],             %[step1_31],    %[step1_28]     \n\t"
+        "add      %[step3_16],          %[step1_16],    %[step1_19]     \n\t"
+        "add      %[step3_31],          %[step1_31],    %[step1_28]     \n\t"
 
-    step3_22 = step1_21 + step1_22;
-    step3_23 = step1_20 + step1_23;
-    step3_24 = step1_24 + step1_27;
-    step3_25 = step1_25 + step1_26;
+        "msub     $ac0,                 %[temp0],       %[cospi_8_64]   \n\t"
+        "madd     $ac0,                 %[temp1],       %[cospi_24_64]  \n\t"
+        "extp     %[step3_19],          $ac0,           31              \n\t"
+        "madd     $ac1,                 %[temp0],       %[cospi_24_64]  \n\t"
+        "madd     $ac1,                 %[temp1],       %[cospi_8_64]   \n\t"
+        "extp     %[step3_28],          $ac1,           31              \n\t"
 
-    step2_16 = step3_16 + step3_23;
-    step2_17 = step3_17 + step3_22;
-    step2_18 = step3_18 + step3_21;
-    step2_19 = step3_19 + step3_20;
-    step2_20 = step3_19 - step3_20;
-    step2_21 = step3_18 - step3_21;
-    step2_22 = step3_17 - step3_22;
-    step2_23 = step3_16 - step3_23;
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
+          [step3_16] "=&r"(step3_16), [step3_31] "=&r"(step3_31),
+          [step3_19] "=&r"(step3_19), [step3_28] "=&r"(step3_28)
+        : [const_2_power_13] "r"(const_2_power_13), [step1_16] "r"(step1_16),
+          [step1_19] "r"(step1_19), [step1_31] "r"(step1_31),
+          [step1_28] "r"(step1_28), [cospi_24_64] "r"(cospi_24_64),
+          [cospi_8_64] "r"(cospi_8_64));
 
-    step2_24 = step3_31 - step3_24;
-    step2_25 = step3_30 - step3_25;
-    step2_26 = step3_29 - step3_26;
-    step2_27 = step3_28 - step3_27;
-    step2_28 = step3_28 + step3_27;
-    step2_29 = step3_29 + step3_26;
-    step2_30 = step3_30 + step3_25;
-    step2_31 = step3_31 + step3_24;
+    __asm__ __volatile__(
+        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
+        "mthi     $zero,                $ac0                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac1                            \n\t"
+        "mthi     $zero,                $ac1                            \n\t"
+        "sub      %[temp0],             %[step1_23],    %[step1_20]     \n\t"
+        "sub      %[temp1],             %[step1_24],    %[step1_27]     \n\t"
+        "add      %[step3_23],          %[step1_23],    %[step1_20]     \n\t"
+        "add      %[step3_24],          %[step1_24],    %[step1_27]     \n\t"
+
+        "msub     $ac0,                 %[temp0],       %[cospi_8_64]   \n\t"
+        "madd     $ac0,                 %[temp1],       %[cospi_24_64]  \n\t"
+        "extp     %[step3_27],          $ac0,           31              \n\t"
+        "msub     $ac1,                 %[temp0],       %[cospi_24_64]  \n\t"
+        "msub     $ac1,                 %[temp1],       %[cospi_8_64]   \n\t"
+        "extp     %[step3_20],          $ac1,           31              \n\t"
+
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
+          [step3_23] "=&r"(step3_23), [step3_24] "=&r"(step3_24),
+          [step3_20] "=&r"(step3_20), [step3_27] "=&r"(step3_27)
+        : [const_2_power_13] "r"(const_2_power_13), [step1_23] "r"(step1_23),
+          [step1_20] "r"(step1_20), [step1_24] "r"(step1_24),
+          [step1_27] "r"(step1_27), [cospi_24_64] "r"(cospi_24_64),
+          [cospi_8_64] "r"(cospi_8_64));
+
+    __asm__ __volatile__(
+        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
+        "mthi     $zero,                $ac0                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac1                            \n\t"
+        "mthi     $zero,                $ac1                            \n\t"
+        "sub      %[temp0],             %[step1_22],    %[step1_21]     \n\t"
+        "sub      %[temp1],             %[step1_25],    %[step1_26]     \n\t"
+        "add      %[step3_22],          %[step1_22],    %[step1_21]     \n\t"
+        "add      %[step3_25],          %[step1_25],    %[step1_26]     \n\t"
+
+        "msub     $ac0,                 %[temp0],       %[cospi_24_64]  \n\t"
+        "msub     $ac0,                 %[temp1],       %[cospi_8_64]   \n\t"
+        "extp     %[step3_21],          $ac0,           31              \n\t"
+        "msub     $ac1,                 %[temp0],       %[cospi_8_64]   \n\t"
+        "madd     $ac1,                 %[temp1],       %[cospi_24_64]  \n\t"
+        "extp     %[step3_26],          $ac1,           31              \n\t"
+
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
+          [step3_22] "=&r"(step3_22), [step3_25] "=&r"(step3_25),
+          [step3_21] "=&r"(step3_21), [step3_26] "=&r"(step3_26)
+        : [const_2_power_13] "r"(const_2_power_13), [step1_22] "r"(step1_22),
+          [step1_21] "r"(step1_21), [step1_25] "r"(step1_25),
+          [step1_26] "r"(step1_26), [cospi_24_64] "r"(cospi_24_64),
+          [cospi_8_64] "r"(cospi_8_64));
+
+    __asm__ __volatile__(
+        "add      %[step2_16],          %[step3_16],    %[step3_23]     \n\t"
+        "add      %[step2_17],          %[step3_17],    %[step3_22]     \n\t"
+        "add      %[step2_18],          %[step3_18],    %[step3_21]     \n\t"
+        "add      %[step2_19],          %[step3_19],    %[step3_20]     \n\t"
+        "sub      %[step2_20],          %[step3_19],    %[step3_20]     \n\t"
+        "sub      %[step2_21],          %[step3_18],    %[step3_21]     \n\t"
+        "sub      %[step2_22],          %[step3_17],    %[step3_22]     \n\t"
+        "sub      %[step2_23],          %[step3_16],    %[step3_23]     \n\t"
+
+        : [step2_16] "=&r"(step2_16), [step2_17] "=&r"(step2_17),
+          [step2_18] "=&r"(step2_18), [step2_19] "=&r"(step2_19),
+          [step2_20] "=&r"(step2_20), [step2_21] "=&r"(step2_21),
+          [step2_22] "=&r"(step2_22), [step2_23] "=&r"(step2_23)
+        : [step3_16] "r"(step3_16), [step3_23] "r"(step3_23),
+          [step3_17] "r"(step3_17), [step3_22] "r"(step3_22),
+          [step3_18] "r"(step3_18), [step3_21] "r"(step3_21),
+          [step3_19] "r"(step3_19), [step3_20] "r"(step3_20));
+
+    __asm__ __volatile__(
+        "sub      %[step2_24],          %[step3_31],    %[step3_24]     \n\t"
+        "sub      %[step2_25],          %[step3_30],    %[step3_25]     \n\t"
+        "sub      %[step2_26],          %[step3_29],    %[step3_26]     \n\t"
+        "sub      %[step2_27],          %[step3_28],    %[step3_27]     \n\t"
+        "add      %[step2_28],          %[step3_28],    %[step3_27]     \n\t"
+        "add      %[step2_29],          %[step3_29],    %[step3_26]     \n\t"
+        "add      %[step2_30],          %[step3_30],    %[step3_25]     \n\t"
+        "add      %[step2_31],          %[step3_31],    %[step3_24]     \n\t"
+
+        : [step2_24] "=&r"(step2_24), [step2_28] "=&r"(step2_28),
+          [step2_25] "=&r"(step2_25), [step2_29] "=&r"(step2_29),
+          [step2_26] "=&r"(step2_26), [step2_30] "=&r"(step2_30),
+          [step2_27] "=&r"(step2_27), [step2_31] "=&r"(step2_31)
+        : [step3_31] "r"(step3_31), [step3_24] "r"(step3_24),
+          [step3_30] "r"(step3_30), [step3_25] "r"(step3_25),
+          [step3_29] "r"(step3_29), [step3_26] "r"(step3_26),
+          [step3_28] "r"(step3_28), [step3_27] "r"(step3_27));
 
     __asm__ __volatile__(
         "lh       %[load1],             0(%[input])                     \n\t"
@@ -627,29 +648,25 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac3,                 %[load3],       %[cospi_24_64]  \n\t"
         "msub     $ac3,                 %[load4],       %[cospi_8_64]   \n\t"
         "extp     %[temp2],             $ac3,           31              \n\t"
-
         "mtlo     %[const_2_power_13],  $ac1                            \n\t"
         "mthi     $zero,                $ac1                            \n\t"
         "madd     $ac1,                 %[load3],       %[cospi_8_64]   \n\t"
         "madd     $ac1,                 %[load4],       %[cospi_24_64]  \n\t"
         "extp     %[temp3],             $ac1,           31              \n\t"
-
-        "add      %[step1_0],          %[temp0],        %[temp3]        \n\t"
-        "add      %[step1_1],          %[temp1],        %[temp2]        \n\t"
-        "sub      %[step1_2],          %[temp1],        %[temp2]        \n\t"
-        "sub      %[step1_3],          %[temp0],        %[temp3]        \n\t"
+        "add      %[step1_0],           %[temp0],       %[temp3]        \n\t"
+        "add      %[step1_1],           %[temp1],       %[temp2]        \n\t"
+        "sub      %[step1_2],           %[temp1],       %[temp2]        \n\t"
+        "sub      %[step1_3],           %[temp0],       %[temp3]        \n\t"
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [result1] "=&r"(result1),
           [result2] "=&r"(result2), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_0] "=r"(step1_0),
-          [step1_1] "=r"(step1_1), [step1_2] "=r"(step1_2),
-          [step1_3] "=r"(step1_3)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_0] "=&r"(step1_0),
+          [step1_1] "=&r"(step1_1), [step1_2] "=&r"(step1_2),
+          [step1_3] "=&r"(step1_3)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
-          [cospi_16_64] "r"(cospi_16_64), [cospi_24_64] "r"(cospi_24_64),
-          [cospi_8_64] "r"(cospi_8_64)
-
-            );
+          [cospi_24_64] "r"(cospi_24_64), [cospi_8_64] "r"(cospi_8_64),
+          [cospi_16_64] "r"(cospi_16_64));
 
     __asm__ __volatile__(
         "lh       %[load1],             8(%[input])                     \n\t"
@@ -665,7 +682,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac1,                 %[load1],       %[cospi_28_64]  \n\t"
         "msub     $ac1,                 %[load2],       %[cospi_4_64]   \n\t"
         "extp     %[temp0],             $ac1,           31              \n\t"
-
         "madd     $ac3,                 %[load1],       %[cospi_4_64]   \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_28_64]  \n\t"
         "extp     %[temp3],             $ac3,           31              \n\t"
@@ -678,7 +694,6 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "madd     $ac2,                 %[load3],       %[cospi_12_64]  \n\t"
         "msub     $ac2,                 %[load4],       %[cospi_20_64]  \n\t"
         "extp     %[temp1],             $ac2,           31              \n\t"
-
         "madd     $ac1,                 %[load3],       %[cospi_20_64]  \n\t"
         "madd     $ac1,                 %[load4],       %[cospi_12_64]  \n\t"
         "extp     %[temp2],             $ac1,           31              \n\t"
@@ -691,11 +706,9 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
         "sub      %[load1],             %[temp3],       %[temp2]        \n\t"
         "sub      %[load1],             %[load1],       %[temp0]        \n\t"
         "add      %[load1],             %[load1],       %[temp1]        \n\t"
-
         "sub      %[load2],             %[temp0],       %[temp1]        \n\t"
         "sub      %[load2],             %[load2],       %[temp2]        \n\t"
         "add      %[load2],             %[load2],       %[temp3]        \n\t"
-
         "madd     $ac1,                 %[load1],       %[cospi_16_64]  \n\t"
         "madd     $ac3,                 %[load2],       %[cospi_16_64]  \n\t"
 
@@ -706,129 +719,246 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 
         : [load1] "=&r"(load1), [load2] "=&r"(load2), [load3] "=&r"(load3),
           [load4] "=&r"(load4), [temp0] "=&r"(temp0), [temp1] "=&r"(temp1),
-          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_4] "=r"(step1_4),
-          [step1_5] "=r"(step1_5), [step1_6] "=r"(step1_6),
-          [step1_7] "=r"(step1_7)
+          [temp2] "=&r"(temp2), [temp3] "=&r"(temp3), [step1_4] "=&r"(step1_4),
+          [step1_5] "=&r"(step1_5), [step1_6] "=&r"(step1_6),
+          [step1_7] "=&r"(step1_7)
         : [const_2_power_13] "r"(const_2_power_13), [input] "r"(input),
           [cospi_20_64] "r"(cospi_20_64), [cospi_12_64] "r"(cospi_12_64),
           [cospi_4_64] "r"(cospi_4_64), [cospi_28_64] "r"(cospi_28_64),
           [cospi_16_64] "r"(cospi_16_64));
 
-    step2_0 = step1_0 + step1_7;
-    step2_1 = step1_1 + step1_6;
-    step2_2 = step1_2 + step1_5;
-    step2_3 = step1_3 + step1_4;
-    step2_4 = step1_3 - step1_4;
-    step2_5 = step1_2 - step1_5;
-    step2_6 = step1_1 - step1_6;
-    step2_7 = step1_0 - step1_7;
+    __asm__ __volatile__(
+        "add      %[step2_0],          %[step1_0],    %[step1_7]     \n\t"
+        "add      %[step2_1],          %[step1_1],    %[step1_6]     \n\t"
+        "add      %[step2_2],          %[step1_2],    %[step1_5]     \n\t"
+        "add      %[step2_3],          %[step1_3],    %[step1_4]     \n\t"
+        "sub      %[step2_4],          %[step1_3],    %[step1_4]     \n\t"
+        "sub      %[step2_5],          %[step1_2],    %[step1_5]     \n\t"
+        "sub      %[step2_6],          %[step1_1],    %[step1_6]     \n\t"
+        "sub      %[step2_7],          %[step1_0],    %[step1_7]     \n\t"
 
-    step1_0 = step2_0 + step3_15;
-    step1_1 = step2_1 + step3_14;
-    step1_2 = step2_2 + step3_13;
-    step1_3 = step2_3 + step3_12;
-    step1_4 = step2_4 + step3_11;
-    step1_5 = step2_5 + step3_10;
-    step1_6 = step2_6 + step3_9;
-    step1_7 = step2_7 + step3_8;
-    step1_8 = step2_7 - step3_8;
-    step1_9 = step2_6 - step3_9;
-    step1_10 = step2_5 - step3_10;
-    step1_11 = step2_4 - step3_11;
-    step1_12 = step2_3 - step3_12;
-    step1_13 = step2_2 - step3_13;
-    step1_14 = step2_1 - step3_14;
-    step1_15 = step2_0 - step3_15;
+        : [step2_0] "=&r"(step2_0), [step2_4] "=&r"(step2_4),
+          [step2_1] "=&r"(step2_1), [step2_5] "=&r"(step2_5),
+          [step2_2] "=&r"(step2_2), [step2_6] "=&r"(step2_6),
+          [step2_3] "=&r"(step2_3), [step2_7] "=&r"(step2_7)
+        : [step1_0] "r"(step1_0), [step1_7] "r"(step1_7),
+          [step1_1] "r"(step1_1), [step1_6] "r"(step1_6),
+          [step1_2] "r"(step1_2), [step1_5] "r"(step1_5),
+          [step1_3] "r"(step1_3), [step1_4] "r"(step1_4));
+
+    // stage 7
+    __asm__ __volatile__(
+        "add      %[step1_0],          %[step2_0],    %[step3_15]     \n\t"
+        "add      %[step1_1],          %[step2_1],    %[step3_14]     \n\t"
+        "add      %[step1_2],          %[step2_2],    %[step3_13]     \n\t"
+        "add      %[step1_3],          %[step2_3],    %[step3_12]     \n\t"
+        "sub      %[step1_12],         %[step2_3],    %[step3_12]     \n\t"
+        "sub      %[step1_13],         %[step2_2],    %[step3_13]     \n\t"
+        "sub      %[step1_14],         %[step2_1],    %[step3_14]     \n\t"
+        "sub      %[step1_15],         %[step2_0],    %[step3_15]     \n\t"
+
+        : [step1_0] "=&r"(step1_0), [step1_12] "=&r"(step1_12),
+          [step1_1] "=&r"(step1_1), [step1_13] "=&r"(step1_13),
+          [step1_2] "=&r"(step1_2), [step1_14] "=&r"(step1_14),
+          [step1_3] "=&r"(step1_3), [step1_15] "=&r"(step1_15)
+        : [step2_0] "r"(step2_0), [step3_15] "r"(step3_15),
+          [step2_1] "r"(step2_1), [step3_14] "r"(step3_14),
+          [step2_2] "r"(step2_2), [step3_13] "r"(step3_13),
+          [step2_3] "r"(step2_3), [step3_12] "r"(step3_12));
+
+    __asm__ __volatile__(
+        "add      %[step1_4],          %[step2_4],    %[step3_11]     \n\t"
+        "add      %[step1_5],          %[step2_5],    %[step3_10]     \n\t"
+        "add      %[step1_6],          %[step2_6],    %[step3_9]      \n\t"
+        "add      %[step1_7],          %[step2_7],    %[step3_8]      \n\t"
+        "sub      %[step1_8],          %[step2_7],    %[step3_8]      \n\t"
+        "sub      %[step1_9],          %[step2_6],    %[step3_9]      \n\t"
+        "sub      %[step1_10],         %[step2_5],    %[step3_10]     \n\t"
+        "sub      %[step1_11],         %[step2_4],    %[step3_11]     \n\t"
+
+        : [step1_4] "=&r"(step1_4), [step1_8] "=&r"(step1_8),
+          [step1_5] "=&r"(step1_5), [step1_9] "=&r"(step1_9),
+          [step1_6] "=&r"(step1_6), [step1_10] "=&r"(step1_10),
+          [step1_7] "=&r"(step1_7), [step1_11] "=&r"(step1_11)
+        : [step2_4] "r"(step2_4), [step3_11] "r"(step3_11),
+          [step2_5] "r"(step2_5), [step3_10] "r"(step3_10),
+          [step2_6] "r"(step2_6), [step3_9] "r"(step3_9),
+          [step2_7] "r"(step2_7), [step3_8] "r"(step3_8));
 
     __asm__ __volatile__(
         "sub      %[temp0],             %[step2_27],    %[step2_20]     \n\t"
+        "add      %[temp1],             %[step2_27],    %[step2_20]     \n\t"
+        "sub      %[temp2],             %[step2_26],    %[step2_21]     \n\t"
+        "add      %[temp3],             %[step2_26],    %[step2_21]     \n\t"
+
         "mtlo     %[const_2_power_13],  $ac0                            \n\t"
         "mthi     $zero,                $ac0                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac1                            \n\t"
+        "mthi     $zero,                $ac1                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac2                            \n\t"
+        "mthi     $zero,                $ac2                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac3                            \n\t"
+        "mthi     $zero,                $ac3                            \n\t"
+
         "madd     $ac0,                 %[temp0],       %[cospi_16_64]  \n\t"
+        "madd     $ac1,                 %[temp1],       %[cospi_16_64]  \n\t"
+        "madd     $ac2,                 %[temp2],       %[cospi_16_64]  \n\t"
+        "madd     $ac3,                 %[temp3],       %[cospi_16_64]  \n\t"
+
         "extp     %[step1_20],          $ac0,           31              \n\t"
+        "extp     %[step1_27],          $ac1,           31              \n\t"
+        "extp     %[step1_21],          $ac2,           31              \n\t"
+        "extp     %[step1_26],          $ac3,           31              \n\t"
 
-        : [temp0] "=&r"(temp0), [step1_20] "=r"(step1_20)
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1), [temp2] "=&r"(temp2),
+          [temp3] "=&r"(temp3), [step1_20] "=&r"(step1_20),
+          [step1_27] "=&r"(step1_27), [step1_21] "=&r"(step1_21),
+          [step1_26] "=&r"(step1_26)
         : [const_2_power_13] "r"(const_2_power_13), [step2_20] "r"(step2_20),
-          [step2_27] "r"(step2_27), [cospi_16_64] "r"(cospi_16_64));
-
-    temp21 = (step2_20 + step2_27) * cospi_16_64;
-    step1_27 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
-
-    __asm__ __volatile__(
-        "sub      %[temp0],             %[step2_26],    %[step2_21]     \n\t"
-        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
-        "mthi     $zero,                $ac0                            \n\t"
-        "madd     $ac0,                 %[temp0],       %[cospi_16_64]  \n\t"
-        "extp     %[step1_21],          $ac0,           31              \n\t"
-
-        : [temp0] "=&r"(temp0), [step1_21] "=r"(step1_21)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_26] "r"(step2_26),
-          [step2_21] "r"(step2_21), [cospi_16_64] "r"(cospi_16_64));
-
-    temp21 = (step2_21 + step2_26) * cospi_16_64;
-    step1_26 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
+          [step2_27] "r"(step2_27), [step2_21] "r"(step2_21),
+          [step2_26] "r"(step2_26), [cospi_16_64] "r"(cospi_16_64));
 
     __asm__ __volatile__(
         "sub      %[temp0],             %[step2_25],    %[step2_22]     \n\t"
+        "add      %[temp1],             %[step2_25],    %[step2_22]     \n\t"
+        "sub      %[temp2],             %[step2_24],    %[step2_23]     \n\t"
+        "add      %[temp3],             %[step2_24],    %[step2_23]     \n\t"
+
         "mtlo     %[const_2_power_13],  $ac0                            \n\t"
         "mthi     $zero,                $ac0                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac1                            \n\t"
+        "mthi     $zero,                $ac1                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac2                            \n\t"
+        "mthi     $zero,                $ac2                            \n\t"
+        "mtlo     %[const_2_power_13],  $ac3                            \n\t"
+        "mthi     $zero,                $ac3                            \n\t"
+
         "madd     $ac0,                 %[temp0],       %[cospi_16_64]  \n\t"
+        "madd     $ac1,                 %[temp1],       %[cospi_16_64]  \n\t"
+        "madd     $ac2,                 %[temp2],       %[cospi_16_64]  \n\t"
+        "madd     $ac3,                 %[temp3],       %[cospi_16_64]  \n\t"
+
         "extp     %[step1_22],          $ac0,           31              \n\t"
+        "extp     %[step1_25],          $ac1,           31              \n\t"
+        "extp     %[step1_23],          $ac2,           31              \n\t"
+        "extp     %[step1_24],          $ac3,           31              \n\t"
 
-        : [temp0] "=&r"(temp0), [step1_22] "=r"(step1_22)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_25] "r"(step2_25),
-          [step2_22] "r"(step2_22), [cospi_16_64] "r"(cospi_16_64));
-
-    temp21 = (step2_22 + step2_25) * cospi_16_64;
-    step1_25 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
-
-    __asm__ __volatile__(
-        "sub      %[temp0],             %[step2_24],    %[step2_23]     \n\t"
-        "mtlo     %[const_2_power_13],  $ac0                            \n\t"
-        "mthi     $zero,                $ac0                            \n\t"
-        "madd     $ac0,                 %[temp0],       %[cospi_16_64]  \n\t"
-        "extp     %[step1_23],          $ac0,           31              \n\t"
-
-        : [temp0] "=&r"(temp0), [step1_23] "=r"(step1_23)
-        : [const_2_power_13] "r"(const_2_power_13), [step2_24] "r"(step2_24),
-          [step2_23] "r"(step2_23), [cospi_16_64] "r"(cospi_16_64));
-
-    temp21 = (step2_23 + step2_24) * cospi_16_64;
-    step1_24 = (temp21 + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
+        : [temp0] "=&r"(temp0), [temp1] "=&r"(temp1), [temp2] "=&r"(temp2),
+          [temp3] "=&r"(temp3), [step1_22] "=&r"(step1_22),
+          [step1_25] "=&r"(step1_25), [step1_23] "=&r"(step1_23),
+          [step1_24] "=&r"(step1_24)
+        : [const_2_power_13] "r"(const_2_power_13), [step2_22] "r"(step2_22),
+          [step2_25] "r"(step2_25), [step2_23] "r"(step2_23),
+          [step2_24] "r"(step2_24), [cospi_16_64] "r"(cospi_16_64));
 
     // final stage
-    output[0 * 32] = step1_0 + step2_31;
-    output[1 * 32] = step1_1 + step2_30;
-    output[2 * 32] = step1_2 + step2_29;
-    output[3 * 32] = step1_3 + step2_28;
-    output[4 * 32] = step1_4 + step1_27;
-    output[5 * 32] = step1_5 + step1_26;
-    output[6 * 32] = step1_6 + step1_25;
-    output[7 * 32] = step1_7 + step1_24;
-    output[8 * 32] = step1_8 + step1_23;
-    output[9 * 32] = step1_9 + step1_22;
-    output[10 * 32] = step1_10 + step1_21;
-    output[11 * 32] = step1_11 + step1_20;
-    output[12 * 32] = step1_12 + step2_19;
-    output[13 * 32] = step1_13 + step2_18;
-    output[14 * 32] = step1_14 + step2_17;
-    output[15 * 32] = step1_15 + step2_16;
-    output[16 * 32] = step1_15 - step2_16;
-    output[17 * 32] = step1_14 - step2_17;
-    output[18 * 32] = step1_13 - step2_18;
-    output[19 * 32] = step1_12 - step2_19;
-    output[20 * 32] = step1_11 - step1_20;
-    output[21 * 32] = step1_10 - step1_21;
-    output[22 * 32] = step1_9 - step1_22;
-    output[23 * 32] = step1_8 - step1_23;
-    output[24 * 32] = step1_7 - step1_24;
-    output[25 * 32] = step1_6 - step1_25;
-    output[26 * 32] = step1_5 - step1_26;
-    output[27 * 32] = step1_4 - step1_27;
-    output[28 * 32] = step1_3 - step2_28;
-    output[29 * 32] = step1_2 - step2_29;
-    output[30 * 32] = step1_1 - step2_30;
-    output[31 * 32] = step1_0 - step2_31;
+    __asm__ __volatile__(
+        "add      %[temp0],            %[step1_0],    %[step2_31]     \n\t"
+        "add      %[temp1],            %[step1_1],    %[step2_30]     \n\t"
+        "add      %[temp2],            %[step1_2],    %[step2_29]     \n\t"
+        "add      %[temp3],            %[step1_3],    %[step2_28]     \n\t"
+        "sub      %[load1],            %[step1_3],    %[step2_28]     \n\t"
+        "sub      %[load2],            %[step1_2],    %[step2_29]     \n\t"
+        "sub      %[load3],            %[step1_1],    %[step2_30]     \n\t"
+        "sub      %[load4],            %[step1_0],    %[step2_31]     \n\t"
+        "sh       %[temp0],          0(%[output])                     \n\t"
+        "sh       %[temp1],         64(%[output])                     \n\t"
+        "sh       %[temp2],        128(%[output])                     \n\t"
+        "sh       %[temp3],        192(%[output])                     \n\t"
+        "sh       %[load1],       1792(%[output])                     \n\t"
+        "sh       %[load2],       1856(%[output])                     \n\t"
+        "sh       %[load3],       1920(%[output])                     \n\t"
+        "sh       %[load4],       1984(%[output])                     \n\t"
+
+        : [temp0] "=&r"(temp0), [load1] "=&r"(load1), [temp1] "=&r"(temp1),
+          [load2] "=&r"(load2), [temp2] "=&r"(temp2), [load3] "=&r"(load3),
+          [temp3] "=&r"(temp3), [load4] "=&r"(load4)
+        : [step1_0] "r"(step1_0), [step2_31] "r"(step2_31),
+          [step1_1] "r"(step1_1), [step2_30] "r"(step2_30),
+          [step1_2] "r"(step1_2), [step2_29] "r"(step2_29),
+          [step1_3] "r"(step1_3), [step2_28] "r"(step2_28),
+          [output] "r"(output));
+
+    __asm__ __volatile__(
+        "add      %[temp0],            %[step1_4],    %[step1_27]     \n\t"
+        "add      %[temp1],            %[step1_5],    %[step1_26]     \n\t"
+        "add      %[temp2],            %[step1_6],    %[step1_25]     \n\t"
+        "add      %[temp3],            %[step1_7],    %[step1_24]     \n\t"
+        "sub      %[load1],            %[step1_7],    %[step1_24]     \n\t"
+        "sub      %[load2],            %[step1_6],    %[step1_25]     \n\t"
+        "sub      %[load3],            %[step1_5],    %[step1_26]     \n\t"
+        "sub      %[load4],            %[step1_4],    %[step1_27]     \n\t"
+        "sh       %[temp0],        256(%[output])                     \n\t"
+        "sh       %[temp1],        320(%[output])                     \n\t"
+        "sh       %[temp2],        384(%[output])                     \n\t"
+        "sh       %[temp3],        448(%[output])                     \n\t"
+        "sh       %[load1],       1536(%[output])                     \n\t"
+        "sh       %[load2],       1600(%[output])                     \n\t"
+        "sh       %[load3],       1664(%[output])                     \n\t"
+        "sh       %[load4],       1728(%[output])                     \n\t"
+
+        : [temp0] "=&r"(temp0), [load1] "=&r"(load1), [temp1] "=&r"(temp1),
+          [load2] "=&r"(load2), [temp2] "=&r"(temp2), [load3] "=&r"(load3),
+          [temp3] "=&r"(temp3), [load4] "=&r"(load4)
+        : [step1_4] "r"(step1_4), [step1_27] "r"(step1_27),
+          [step1_5] "r"(step1_5), [step1_26] "r"(step1_26),
+          [step1_6] "r"(step1_6), [step1_25] "r"(step1_25),
+          [step1_7] "r"(step1_7), [step1_24] "r"(step1_24),
+          [output] "r"(output));
+
+    __asm__ __volatile__(
+        "add      %[temp0],            %[step1_8],     %[step1_23]     \n\t"
+        "add      %[temp1],            %[step1_9],     %[step1_22]     \n\t"
+        "add      %[temp2],            %[step1_10],    %[step1_21]     \n\t"
+        "add      %[temp3],            %[step1_11],    %[step1_20]     \n\t"
+        "sub      %[load1],            %[step1_11],    %[step1_20]     \n\t"
+        "sub      %[load2],            %[step1_10],    %[step1_21]     \n\t"
+        "sub      %[load3],            %[step1_9],     %[step1_22]     \n\t"
+        "sub      %[load4],            %[step1_8],     %[step1_23]     \n\t"
+        "sh       %[temp0],        512(%[output])                      \n\t"
+        "sh       %[temp1],        576(%[output])                      \n\t"
+        "sh       %[temp2],        640(%[output])                      \n\t"
+        "sh       %[temp3],        704(%[output])                      \n\t"
+        "sh       %[load1],       1280(%[output])                      \n\t"
+        "sh       %[load2],       1344(%[output])                      \n\t"
+        "sh       %[load3],       1408(%[output])                      \n\t"
+        "sh       %[load4],       1472(%[output])                      \n\t"
+
+        : [temp0] "=&r"(temp0), [load1] "=&r"(load1), [temp1] "=&r"(temp1),
+          [load2] "=&r"(load2), [temp2] "=&r"(temp2), [load3] "=&r"(load3),
+          [temp3] "=&r"(temp3), [load4] "=&r"(load4)
+        : [step1_8] "r"(step1_8), [step1_23] "r"(step1_23),
+          [step1_9] "r"(step1_9), [step1_22] "r"(step1_22),
+          [step1_10] "r"(step1_10), [step1_21] "r"(step1_21),
+          [step1_11] "r"(step1_11), [step1_20] "r"(step1_20),
+          [output] "r"(output));
+
+    __asm__ __volatile__(
+        "add      %[temp0],            %[step1_12],    %[step2_19]     \n\t"
+        "add      %[temp1],            %[step1_13],    %[step2_18]     \n\t"
+        "add      %[temp2],            %[step1_14],    %[step2_17]     \n\t"
+        "add      %[temp3],            %[step1_15],    %[step2_16]     \n\t"
+        "sub      %[load1],            %[step1_15],    %[step2_16]     \n\t"
+        "sub      %[load2],            %[step1_14],    %[step2_17]     \n\t"
+        "sub      %[load3],            %[step1_13],    %[step2_18]     \n\t"
+        "sub      %[load4],            %[step1_12],    %[step2_19]     \n\t"
+        "sh       %[temp0],        768(%[output])                      \n\t"
+        "sh       %[temp1],        832(%[output])                      \n\t"
+        "sh       %[temp2],        896(%[output])                      \n\t"
+        "sh       %[temp3],        960(%[output])                      \n\t"
+        "sh       %[load1],       1024(%[output])                      \n\t"
+        "sh       %[load2],       1088(%[output])                      \n\t"
+        "sh       %[load3],       1152(%[output])                      \n\t"
+        "sh       %[load4],       1216(%[output])                      \n\t"
+
+        : [temp0] "=&r"(temp0), [load1] "=&r"(load1), [temp1] "=&r"(temp1),
+          [load2] "=&r"(load2), [temp2] "=&r"(temp2), [load3] "=&r"(load3),
+          [temp3] "=&r"(temp3), [load4] "=&r"(load4)
+        : [step1_12] "r"(step1_12), [step2_19] "r"(step2_19),
+          [step1_13] "r"(step1_13), [step2_18] "r"(step2_18),
+          [step1_14] "r"(step1_14), [step2_17] "r"(step2_17),
+          [step1_15] "r"(step1_15), [step2_16] "r"(step2_16),
+          [output] "r"(output));
 
     input += 32;
     output += 1;
@@ -836,7 +966,7 @@ static void idct32_rows_dspr2(const int16_t *input, int16_t *output,
 }
 
 void vpx_idct32x32_1024_add_dspr2(const int16_t *input, uint8_t *dest,
-                                  int dest_stride) {
+                                  int stride) {
   DECLARE_ALIGNED(32, int16_t, out[32 * 32]);
   int16_t *outptr = out;
   uint32_t pos = 45;
@@ -850,7 +980,7 @@ void vpx_idct32x32_1024_add_dspr2(const int16_t *input, uint8_t *dest,
   idct32_rows_dspr2(input, outptr, 32);
 
   // Columns
-  vpx_idct32_cols_add_blk_dspr2(out, dest, dest_stride);
+  vpx_idct32_cols_add_blk_dspr2(out, dest, stride);
 }
 
 void vpx_idct32x32_34_add_dspr2(const int16_t *input, uint8_t *dest,
@@ -941,7 +1071,7 @@ void vpx_idct32x32_1_add_dspr2(const int16_t *input, uint8_t *dest,
         "abs        %[absa1],     %[a1]         \n\t"
         "replv.qb   %[vector_a1], %[absa1]      \n\t"
 
-        : [absa1] "=r"(absa1), [vector_a1] "=r"(vector_a1)
+        : [absa1] "=&r"(absa1), [vector_a1] "=&r"(vector_a1)
         : [a1] "r"(a1));
 
     for (r = 32; r--;) {
@@ -980,12 +1110,71 @@ void vpx_idct32x32_1_add_dspr2(const int16_t *input, uint8_t *dest,
             [dest] "+&r"(dest)
           : [stride] "r"(stride), [vector_a1] "r"(vector_a1));
     }
+  } else if (a1 > 255) {
+    int32_t a11, a12, vector_a11, vector_a12;
+
+    /* use quad-byte
+     * input and output memory are four byte aligned */
+    a11 = a1 >> 1;
+    a12 = a1 - a11;
+    __asm__ __volatile__(
+        "replv.qb       %[vector_a11],  %[a11]     \n\t"
+        "replv.qb       %[vector_a12],  %[a12]     \n\t"
+
+        : [vector_a11] "=&r"(vector_a11), [vector_a12] "=&r"(vector_a12)
+        : [a11] "r"(a11), [a12] "r"(a12));
+
+    for (r = 32; r--;) {
+      __asm__ __volatile__(
+          "lw             %[t1],          0(%[dest])                      \n\t"
+          "lw             %[t2],          4(%[dest])                      \n\t"
+          "lw             %[t3],          8(%[dest])                      \n\t"
+          "lw             %[t4],          12(%[dest])                     \n\t"
+          "addu_s.qb      %[vector_1],    %[t1],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_2],    %[t2],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_3],    %[t3],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_4],    %[t4],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_3],    %[vector_3],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_4],    %[vector_4],    %[vector_a12]   \n\t"
+          "sw             %[vector_1],    0(%[dest])                      \n\t"
+          "sw             %[vector_2],    4(%[dest])                      \n\t"
+          "sw             %[vector_3],    8(%[dest])                      \n\t"
+          "sw             %[vector_4],    12(%[dest])                     \n\t"
+
+          "lw             %[t1],          16(%[dest])                     \n\t"
+          "lw             %[t2],          20(%[dest])                     \n\t"
+          "lw             %[t3],          24(%[dest])                     \n\t"
+          "lw             %[t4],          28(%[dest])                     \n\t"
+          "addu_s.qb      %[vector_1],    %[t1],          %[vector_a11]    \n\t"
+          "addu_s.qb      %[vector_2],    %[t2],          %[vector_a11]    \n\t"
+          "addu_s.qb      %[vector_3],    %[t3],          %[vector_a11]    \n\t"
+          "addu_s.qb      %[vector_4],    %[t4],          %[vector_a11]    \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_3],    %[vector_3],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_4],    %[vector_4],    %[vector_a12]   \n\t"
+          "sw             %[vector_1],    16(%[dest])                     \n\t"
+          "sw             %[vector_2],    20(%[dest])                     \n\t"
+          "sw             %[vector_3],    24(%[dest])                     \n\t"
+          "sw             %[vector_4],    28(%[dest])                     \n\t"
+
+          "add            %[dest],        %[dest],        %[stride]       \n\t"
+
+          : [t1] "=&r"(t1), [t2] "=&r"(t2), [t3] "=&r"(t3), [t4] "=&r"(t4),
+            [vector_1] "=&r"(vector_1), [vector_2] "=&r"(vector_2),
+            [vector_3] "=&r"(vector_3), [vector_4] "=&r"(vector_4),
+            [dest] "+&r"(dest)
+          : [stride] "r"(stride), [vector_a11] "r"(vector_a11),
+            [vector_a12] "r"(vector_a12));
+    }
   } else {
     /* use quad-byte
      * input and output memory are four byte aligned */
     __asm__ __volatile__("replv.qb       %[vector_a1],   %[a1]     \n\t"
 
-                         : [vector_a1] "=r"(vector_a1)
+                         : [vector_a1] "=&r"(vector_a1)
                          : [a1] "r"(a1));
 
     for (r = 32; r--;) {

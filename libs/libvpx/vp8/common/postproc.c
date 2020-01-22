@@ -12,6 +12,7 @@
 #include "vpx_dsp_rtcd.h"
 #include "vp8_rtcd.h"
 #include "vpx_dsp/postproc.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_scale_rtcd.h"
 #include "vpx_scale/yv12config.h"
 #include "postproc.h"
@@ -321,7 +322,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest,
     }
   }
 
-  vp8_clear_system_state();
+  vpx_clear_system_state();
 
   if ((flags & VP8D_MFQE) && oci->postproc_state.last_frame_valid &&
       oci->current_video_frame >= 2 &&
@@ -363,7 +364,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest,
         oci->postproc_state.last_noise != noise_level) {
       double sigma;
       struct postproc_state *ppstate = &oci->postproc_state;
-      vp8_clear_system_state();
+      vpx_clear_system_state();
       sigma = noise_level + .5 + .6 * q / 63.0;
       ppstate->clamp =
           vpx_setup_noise(sigma, ppstate->generated_noise, oci->Width + 256);

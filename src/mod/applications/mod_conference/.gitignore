@@ -1,0 +1,5 @@
+conf/freeswitch.xml.fsxml
+test/images/logo-*.png
+test/images/signalwire-scaled-*.png
+test/test_image
+test/test_member

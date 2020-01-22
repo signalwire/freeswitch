@@ -4570,7 +4570,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	char *lbuf = NULL;
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 3) {
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
 		thresh = atoi(argv[0]);
 		silence_hits = atoi(argv[1]);
 		listen_hits = atoi(argv[2]);
@@ -4592,7 +4592,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 #define DETECT_AUDIO_SYNTAX "<threshold> <audio_hits> <timeout_ms> [<file>]"
 SWITCH_STANDARD_APP(detect_audio_function)
 {
-	char *argv[5] = { 0 };
+	char *argv[4] = { 0 };
 	uint32_t thresh, audio_hits, timeout_ms = 0;
 	int argc;
 	char *lbuf = NULL;
@@ -4603,12 +4603,8 @@ SWITCH_STANDARD_APP(detect_audio_function)
 		audio_hits = atoi(argv[1]);
 		timeout_ms = atoi(argv[2]);
 
-		if (argv[3]) {
-			timeout_ms = switch_atoui(argv[3]);
-		}
-
 		if (thresh > 0 && audio_hits > 0) {
-			switch_ivr_detect_audio(session, thresh, audio_hits, timeout_ms, argv[4]);
+			switch_ivr_detect_audio(session, thresh, audio_hits, timeout_ms, argv[3]);
 			return;
 		}
 
@@ -4620,7 +4616,7 @@ SWITCH_STANDARD_APP(detect_audio_function)
 #define DETECT_SILENCE_SYNTAX "<threshold> <silence_hits> <timeout_ms> [<file>]"
 SWITCH_STANDARD_APP(detect_silence_function)
 {
-	char *argv[5] = { 0 };
+	char *argv[4] = { 0 };
 	uint32_t thresh, silence_hits, timeout_ms = 0;
 	int argc;
 	char *lbuf = NULL;
@@ -4631,12 +4627,8 @@ SWITCH_STANDARD_APP(detect_silence_function)
 		silence_hits = atoi(argv[1]);
 		timeout_ms = atoi(argv[2]);
 
-		if (argv[3]) {
-			timeout_ms = switch_atoui(argv[3]);
-		}
-
 		if (thresh > 0 && silence_hits > 0) {
-			switch_ivr_detect_silence(session, thresh, silence_hits, timeout_ms, argv[4]);
+			switch_ivr_detect_silence(session, thresh, silence_hits, timeout_ms, argv[3]);
 			return;
 		}
 

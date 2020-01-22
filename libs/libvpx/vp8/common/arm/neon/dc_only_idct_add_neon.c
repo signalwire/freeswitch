@@ -10,6 +10,8 @@
 
 #include <arm_neon.h>
 
+#include "./vp8_rtcd.h"
+
 void vp8_dc_only_idct_add_neon(int16_t input_dc, unsigned char *pred_ptr,
                                int pred_stride, unsigned char *dst_ptr,
                                int dst_stride) {

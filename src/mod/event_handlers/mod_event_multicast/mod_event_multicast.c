@@ -324,7 +324,7 @@ static void event_handler(switch_event_t *event)
 									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
 					outlen += tmplen;
 					EVP_EncryptFinal(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
-					EVP_CIPHER_CTX_cleanup(ctx);
+					EVP_CIPHER_CTX_free(ctx);
 #else
 					EVP_CIPHER_CTX_init(&ctx);
 					EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
@@ -493,6 +493,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 	globals.running = 0;
 	switch_event_unbind_callback(event_handler);
 
+	switch_mutex_lock(globals.mutex);
 	if (globals.udp_socket) {
 		switch_socket_shutdown(globals.udp_socket, 2);
 	}
@@ -501,11 +502,16 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 	switch_event_free_subclass(MULTICAST_PEERUP);
 	switch_event_free_subclass(MULTICAST_PEERDOWN);
 
-	switch_core_hash_destroy(&globals.event_hash);
-	switch_core_hash_destroy(&globals.peer_hash);
+	if (globals.event_hash) {
+		switch_core_hash_destroy(&globals.event_hash);
+	}
+	if (globals.peer_hash) {
+		switch_core_hash_destroy(&globals.peer_hash);
+	}
 
 	switch_safe_free(globals.address);
 	switch_safe_free(globals.bindings);
+	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -571,7 +577,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			EVP_DecryptInit(ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
 			EVP_DecryptUpdate(ctx, (unsigned char *) tmp, &outl, (unsigned char *) packet, (int) len);
 			EVP_DecryptFinal(ctx, (unsigned char *) tmp + outl, &tmplen);
-			EVP_CIPHER_CTX_cleanup(ctx);
+			EVP_CIPHER_CTX_free(ctx);
 #else
 			EVP_CIPHER_CTX_init(&ctx);
 			EVP_DecryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);

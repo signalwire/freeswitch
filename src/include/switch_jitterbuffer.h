@@ -64,6 +64,8 @@ SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_
 SWITCH_DECLARE(void) switch_jb_ts_mode(switch_jb_t *jb, uint32_t samples_per_frame, uint32_t samples_per_second);
 SWITCH_DECLARE(void) switch_jb_set_flag(switch_jb_t *jb, switch_jb_flag_t flag);
 SWITCH_DECLARE(void) switch_jb_clear_flag(switch_jb_t *jb, switch_jb_flag_t flag);
+SWITCH_DECLARE(uint32_t) switch_jb_get_nack_success(switch_jb_t *jb);
+SWITCH_DECLARE(uint32_t) switch_jb_get_packets_per_frame(switch_jb_t *jb);
 
 SWITCH_END_EXTERN_C
 #endif

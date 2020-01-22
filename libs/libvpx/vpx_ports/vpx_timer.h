@@ -21,6 +21,8 @@
 /*
  * Win32 specific includes
  */
+#undef NOMINMAX
+#define NOMINMAX
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -81,7 +83,7 @@ static INLINE int64_t vpx_usec_timer_elapsed(struct vpx_usec_timer *t) {
   struct timeval diff;
 
   timersub(&t->end, &t->begin, &diff);
-  return diff.tv_sec * 1000000 + diff.tv_usec;
+  return (int64_t)diff.tv_sec * 1000000 + diff.tv_usec;
 #endif
 }
 

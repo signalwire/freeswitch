@@ -99,9 +99,10 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
                                     vp9_cat6_prob;
   const int cat6_bits =
 #if CONFIG_VP9_HIGHBITDEPTH
-      (xd->bd == VPX_BITS_12) ? 18 : (xd->bd == VPX_BITS_10) ? 16 :
+      (xd->bd == VPX_BITS_12) ? 18
+                              : (xd->bd == VPX_BITS_10) ? 16 :
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-                                                             14;
+                                                        14;
   // Keep value, range, and count as locals.  The compiler produces better
   // results with the locals than using r directly.
   BD_VALUE value = r->value;
@@ -170,7 +171,12 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
                   read_coeff(r, vp9_cat1_prob, 1, &value, &count, &range);
           }
         }
+#if CONFIG_VP9_HIGHBITDEPTH
+        // val may use 18-bits
+        v = (int)(((int64_t)val * dqv) >> dq_shift);
+#else
         v = (val * dqv) >> dq_shift;
+#endif
       } else {
         if (read_bool(r, p[1], &value, &count, &range)) {
           token_cache[scan[c]] = 3;
@@ -188,9 +194,8 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
     }
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
-    dqcoeff[scan[c]] =
-        highbd_check_range(read_bool(r, 128, &value, &count, &range) ? -v : v),
-                           xd->bd);
+    dqcoeff[scan[c]] = highbd_check_range(
+        read_bool(r, 128, &value, &count, &range) ? -v : v, xd->bd);
 #else
     dqcoeff[scan[c]] =
         check_range(read_bool(r, 128, &value, &count, &range) ? -v : v);

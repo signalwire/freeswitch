@@ -4,7 +4,7 @@ How to Contribute Patches to FreeSWITCH
 Download the Source Code
 ------------------------
 
-    git clone https://freeswitch.org/stash/scm/fs/freeswitch.git
+    git clone https://github.com/signalwire/freeswitch.git
     cd freeswitch
 
 Ensure Git is Setup
@@ -42,18 +42,18 @@ Create a Pull Request
 
     # create an account in JIRA and create a new issue
 
-    # navigate to FreeSWITCH Stash
-    chromium https://freeswitch.org/stash
+    # navigate to FreeSWITCH github
+    chromium https://github.com/signalwire/freeswitch
 
-    # Using the same credentials as Jira, login to Stash; create a forked FS repository; read
+    # Using your github credentials, login to github; create a forked FS repository; read
     # the details here:
     chromium https://freeswitch.org/confluence/display/FREESWITCH/Pull+Requests
 
     # add your repository as a remote (change to your username)
-    git remote add stash ssh://git@freeswitch.org:7999/~johndoe/freeswitch.git
+    git remote add fs git@github.com:signalwire/freeswitch.git
 
     # push your changes to a branch
-    git push stash +HEAD:myfeature
+    git push fs +HEAD:myfeature
 
     # create a pull request as described here:
     chromium https://freeswitch.org/confluence/display/FREESWITCH/Pull+Requests

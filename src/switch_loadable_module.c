@@ -1360,7 +1360,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "json_api");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
@@ -2229,7 +2229,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	}
 	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", precf);
 	}
 
 	if (switch_core_sqldb_init(&err) != SWITCH_STATUS_SUCCESS)
@@ -2515,6 +2515,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.limit_hash);
 	switch_core_hash_destroy(&loadable_modules.database_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
+	switch_core_hash_destroy(&loadable_modules.secondary_recover_hash);
 
 	switch_core_destroy_memory_pool(&loadable_modules.pool);
 }

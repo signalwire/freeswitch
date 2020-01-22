@@ -121,6 +121,12 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
                 goto err;
 	}
 
+	/* Default queue properties, set to match formerly hardcoded values */
+	profile->passive = SWITCH_FALSE;
+	profile->durable = SWITCH_FALSE;
+	profile->exclusive = SWITCH_FALSE;
+	profile->auto_delete = SWITCH_TRUE;
+
 	if ((params = switch_xml_child(cfg, "params")) != NULL) {
 		for (param = switch_xml_child(params, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -147,6 +153,14 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 				queue = mod_amqp_expand_header(profile->pool, event, val);
 			} else if (!strncmp(var, "binding_key", 11)) {
 				binding_key = mod_amqp_expand_header(profile->pool, event, val);
+			} else if (!strncmp(var, "queue-passive", 13)) {
+				profile->passive = switch_true(val);
+			} else if (!strncmp(var, "queue-durable", 13)) {
+				profile->durable = switch_true(val);
+			} else if (!strncmp(var, "queue-exclusive", 15)) {
+				profile->exclusive = switch_true(val);
+			} else if (!strncmp(var, "queue-auto-delete", 17)) {
+				profile->auto_delete = switch_true(val);
 			}
 		}
 	}
@@ -308,8 +322,10 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			recv_queue = amqp_queue_declare(profile->conn_active->state, // state
 											1,                           // channel
 											profile->queue ? amqp_cstring_bytes(profile->queue) : amqp_empty_bytes, // queue name
-											0, 0,                        // passive, durable
-											0, 1,                        // exclusive, auto-delete
+											profile->passive,
+											profile->durable,
+											profile->exclusive,
+											profile->auto_delete,
 											amqp_empty_table);           // args
 
 			if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring queue\n")) {

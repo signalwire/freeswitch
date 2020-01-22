@@ -10,8 +10,14 @@
 
 #include <arm_neon.h>
 
+#include "./vp8_rtcd.h"
+
 static const int16_t cospi8sqrt2minus1 = 20091;
-static const int16_t sinpi8sqrt2 = 35468;
+// 35468 exceeds INT16_MAX and gets converted to a negative number. Because of
+// the way it is used in vqdmulh, where the result is doubled, it can be divided
+// by 2 beforehand. This saves compensating for the negative value as well as
+// shifting the result.
+static const int16_t sinpi8sqrt2 = 35468 >> 1;
 
 void vp8_dequant_idct_add_neon(int16_t *input, int16_t *dq, unsigned char *dst,
                                int stride) {
@@ -60,10 +66,8 @@ void vp8_dequant_idct_add_neon(int16_t *input, int16_t *dq, unsigned char *dst,
   q3 = vqdmulhq_n_s16(q2, sinpi8sqrt2);
   q4 = vqdmulhq_n_s16(q2, cospi8sqrt2minus1);
 
-  q3 = vshrq_n_s16(q3, 1);
   q4 = vshrq_n_s16(q4, 1);
 
-  q3 = vqaddq_s16(q3, q2);
   q4 = vqaddq_s16(q4, q2);
 
   d10 = vqsub_s16(vget_low_s16(q3), vget_high_s16(q4));
@@ -90,10 +94,8 @@ void vp8_dequant_idct_add_neon(int16_t *input, int16_t *dq, unsigned char *dst,
   d12 = vqadd_s16(d2tmp2.val[0], d2tmp3.val[0]);
   d13 = vqsub_s16(d2tmp2.val[0], d2tmp3.val[0]);
 
-  q3 = vshrq_n_s16(q3, 1);
   q4 = vshrq_n_s16(q4, 1);
 
-  q3 = vqaddq_s16(q3, q2);
   q4 = vqaddq_s16(q4, q2);
 
   d10 = vqsub_s16(vget_low_s16(q3), vget_high_s16(q4));

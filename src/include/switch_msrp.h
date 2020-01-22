@@ -34,9 +34,6 @@
 
 #include <switch.h>
 
-#define MSRP_LISTEN_PORT 2855
-#define MSRP_SSL_LISTEN_PORT 2856
-
 enum {
 	MSRP_ST_WAIT_HEADER,
 	MSRP_ST_PARSE_HEADER,

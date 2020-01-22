@@ -1126,6 +1126,22 @@ static int apr_pool_walk_tree(apr_pool_t *pool,
     return rv;
 }
 
+APR_DECLARE(int) apr_pool_walk_tree_debug(apr_pool_t *pool,
+	int(*fn)(apr_pool_t *pool, void *data),
+	void *data)
+{
+	return apr_pool_walk_tree(pool, fn, data);
+}
+
+APR_DECLARE(void) apr_pool_get_stats(apr_pool_t *pool, unsigned int *alloc, unsigned int *total_alloc, unsigned int *clear)
+{
+	if (pool) {
+		*alloc = pool->stat_alloc;
+		*total_alloc = pool->stat_total_alloc;
+		*clear = pool->stat_clear;
+	}
+}
+
 #if (APR_POOL_DEBUG & APR_POOL_DEBUG_VERBOSE_ALL)
 static void apr_pool_log_event(apr_pool_t *pool, const char *event,
                                const char *file_line, int deref)
@@ -1432,7 +1448,7 @@ static void pool_clear_debug(apr_pool_t *pool, const char *file_line)
 
         for (index = 0; index < node->index; index++) {
             memset(node->beginp[index], POOL_POISON_BYTE,
-                   node->endp[index] - node->beginp[index]);
+                   (char *)node->endp[index] - (char *)node->beginp[index]);
             free(node->beginp[index]);
         }
 

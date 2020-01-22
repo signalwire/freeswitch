@@ -1160,6 +1160,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 						if (!mod_sofia_globals.profile_hash) {
 							switch_console_free_matches(&matches);
+							sofia_glue_release_profile(profile);
 							goto done;
 						}
 
@@ -1413,6 +1414,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
+					sofia_glue_release_profile(profile);
 					goto done;
 				}
 
@@ -5000,7 +5002,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				abort();
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
+			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find_locked(profile->chat_hash, hash_key, profile->flag_mutex))) {
 				switch_core_session_queue_event(tech_pvt->session, &event);
 			} else {
 				switch_core_chat_send(proto, event);

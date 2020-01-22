@@ -192,24 +192,13 @@ void idct8_rows_dspr2(const int16_t *input, int16_t *output, uint32_t no_rows) {
   }
 }
 
-void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
-                                 int dest_stride) {
+void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest, int stride) {
   int step1_0, step1_1, step1_2, step1_3, step1_4, step1_5, step1_6, step1_7;
   int Temp0, Temp1, Temp2, Temp3;
   int i;
   const int const_2_power_13 = 8192;
+  const int const_255 = 255;
   uint8_t *dest_pix;
-  uint8_t *cm = vpx_ff_cropTbl;
-
-  /* prefetch vpx_ff_cropTbl */
-  prefetch_load(vpx_ff_cropTbl);
-  prefetch_load(vpx_ff_cropTbl + 32);
-  prefetch_load(vpx_ff_cropTbl + 64);
-  prefetch_load(vpx_ff_cropTbl + 96);
-  prefetch_load(vpx_ff_cropTbl + 128);
-  prefetch_load(vpx_ff_cropTbl + 160);
-  prefetch_load(vpx_ff_cropTbl + 192);
-  prefetch_load(vpx_ff_cropTbl + 224);
 
   for (i = 0; i < 8; ++i) {
     dest_pix = (dest + i);
@@ -356,70 +345,94 @@ void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "add      %[Temp0],             %[step1_1],     %[step1_6]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "add      %[Temp0],             %[step1_2],     %[step1_5]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "add      %[Temp0],             %[step1_3],     %[step1_4]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "sub      %[Temp0],             %[step1_3],     %[step1_4]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "sub      %[Temp0],             %[step1_2],     %[step1_5]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "sub      %[Temp0],             %[step1_1],     %[step1_6]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
         "sub      %[Temp0],             %[step1_0],     %[step1_7]      \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
-        "addu     %[dest_pix],          %[dest_pix],    %[dest_stride]  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
+        "addu     %[dest_pix],          %[dest_pix],    %[stride]       \n\t"
 
         "lbu      %[Temp1],             0(%[dest_pix])                  \n\t"
         "addi     %[Temp0],             %[Temp0],       16              \n\t"
         "sra      %[Temp0],             %[Temp0],       5               \n\t"
         "add      %[Temp1],             %[Temp1],       %[Temp0]        \n\t"
-        "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
-        "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
+        "slt      %[Temp2],             %[Temp1],       %[const_255]    \n\t"
+        "slt      %[Temp3],             $zero,          %[Temp1]        \n\t"
+        "movz     %[Temp1],             %[const_255],   %[Temp2]        \n\t"
+        "movz     %[Temp1],             $zero,          %[Temp3]        \n\t"
+        "sb       %[Temp1],             0(%[dest_pix])                  \n\t"
 
         : [step1_0] "=&r"(step1_0), [step1_1] "=&r"(step1_1),
           [step1_2] "=&r"(step1_2), [step1_3] "=&r"(step1_3),
@@ -427,19 +440,18 @@ void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
           [step1_6] "=&r"(step1_6), [step1_7] "=&r"(step1_7),
           [Temp0] "=&r"(Temp0), [Temp1] "=&r"(Temp1), [Temp2] "=&r"(Temp2),
           [Temp3] "=&r"(Temp3), [dest_pix] "+r"(dest_pix)
-        : [const_2_power_13] "r"(const_2_power_13),
+        : [const_2_power_13] "r"(const_2_power_13), [const_255] "r"(const_255),
           [cospi_16_64] "r"(cospi_16_64), [cospi_28_64] "r"(cospi_28_64),
           [cospi_4_64] "r"(cospi_4_64), [cospi_12_64] "r"(cospi_12_64),
           [cospi_20_64] "r"(cospi_20_64), [cospi_8_64] "r"(cospi_8_64),
-          [cospi_24_64] "r"(cospi_24_64), [input] "r"(input), [cm] "r"(cm),
-          [dest_stride] "r"(dest_stride));
+          [cospi_24_64] "r"(cospi_24_64), [input] "r"(input),
+          [stride] "r"(stride));
 
     input += 8;
   }
 }
 
-void vpx_idct8x8_64_add_dspr2(const int16_t *input, uint8_t *dest,
-                              int dest_stride) {
+void vpx_idct8x8_64_add_dspr2(const int16_t *input, uint8_t *dest, int stride) {
   DECLARE_ALIGNED(32, int16_t, out[8 * 8]);
   int16_t *outptr = out;
   uint32_t pos = 45;
@@ -451,11 +463,10 @@ void vpx_idct8x8_64_add_dspr2(const int16_t *input, uint8_t *dest,
   idct8_rows_dspr2(input, outptr, 8);
 
   // Then transform columns and add to dest
-  idct8_columns_add_blk_dspr2(&out[0], dest, dest_stride);
+  idct8_columns_add_blk_dspr2(&out[0], dest, stride);
 }
 
-void vpx_idct8x8_12_add_dspr2(const int16_t *input, uint8_t *dest,
-                              int dest_stride) {
+void vpx_idct8x8_12_add_dspr2(const int16_t *input, uint8_t *dest, int stride) {
   DECLARE_ALIGNED(32, int16_t, out[8 * 8]);
   int16_t *outptr = out;
   uint32_t pos = 45;
@@ -490,11 +501,10 @@ void vpx_idct8x8_12_add_dspr2(const int16_t *input, uint8_t *dest,
       : [outptr] "r"(outptr));
 
   // Then transform columns and add to dest
-  idct8_columns_add_blk_dspr2(&out[0], dest, dest_stride);
+  idct8_columns_add_blk_dspr2(&out[0], dest, stride);
 }
 
-void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
-                             int dest_stride) {
+void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest, int stride) {
   uint32_t pos = 45;
   int32_t out;
   int32_t r;
@@ -533,11 +543,47 @@ void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "subu_s.qb    %[vector_2],    %[t2],          %[vector_a1]    \n\t"
           "sw           %[vector_1],    0(%[dest])                      \n\t"
           "sw           %[vector_2],    4(%[dest])                      \n\t"
-          "add          %[dest],        %[dest],        %[dest_stride]  \n\t"
+          "add          %[dest],        %[dest],        %[stride]       \n\t"
 
           : [t1] "=&r"(t1), [t2] "=&r"(t2), [vector_1] "=&r"(vector_1),
             [vector_2] "=&r"(vector_2), [dest] "+&r"(dest)
-          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
+          : [stride] "r"(stride), [vector_a1] "r"(vector_a1));
+    }
+  } else if (a1 > 255) {
+    int32_t a11, a12, vector_a11, vector_a12;
+
+    /* use quad-byte
+     * input and output memory are four byte aligned */
+    a11 = a1 >> 2;
+    a12 = a1 - (a11 * 3);
+
+    __asm__ __volatile__(
+        "replv.qb      %[vector_a11],  %[a11]     \n\t"
+        "replv.qb      %[vector_a12],  %[a12]     \n\t"
+
+        : [vector_a11] "=&r"(vector_a11), [vector_a12] "=&r"(vector_a12)
+        : [a11] "r"(a11), [a12] "r"(a12));
+
+    for (r = 8; r--;) {
+      __asm__ __volatile__(
+          "lw             %[t1],          0(%[dest])                      \n\t"
+          "lw             %[t2],          4(%[dest])                      \n\t"
+          "addu_s.qb      %[vector_1],    %[t1],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_2],    %[t2],          %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a11]   \n\t"
+          "addu_s.qb      %[vector_1],    %[vector_1],    %[vector_a12]   \n\t"
+          "addu_s.qb      %[vector_2],    %[vector_2],    %[vector_a12]   \n\t"
+          "sw             %[vector_1],    0(%[dest])                      \n\t"
+          "sw             %[vector_2],    4(%[dest])                      \n\t"
+          "add            %[dest],        %[dest],        %[stride]       \n\t"
+
+          : [t1] "=&r"(t1), [t2] "=&r"(t2), [vector_1] "=&r"(vector_1),
+            [vector_2] "=&r"(vector_2), [dest] "+r"(dest)
+          : [stride] "r"(stride), [vector_a11] "r"(vector_a11),
+            [vector_a12] "r"(vector_a12));
     }
   } else {
     /* use quad-byte
@@ -555,11 +601,11 @@ void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "addu_s.qb    %[vector_2],    %[t2],          %[vector_a1]    \n\t"
           "sw           %[vector_1],    0(%[dest])                      \n\t"
           "sw           %[vector_2],    4(%[dest])                      \n\t"
-          "add          %[dest],        %[dest],        %[dest_stride]  \n\t"
+          "add          %[dest],        %[dest],        %[stride]       \n\t"
 
           : [t1] "=&r"(t1), [t2] "=&r"(t2), [vector_1] "=&r"(vector_1),
             [vector_2] "=&r"(vector_2), [dest] "+r"(dest)
-          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
+          : [stride] "r"(stride), [vector_a1] "r"(vector_a1));
     }
   }
 }

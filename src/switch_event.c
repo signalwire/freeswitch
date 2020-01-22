@@ -223,6 +223,7 @@ static char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
+	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
 
@@ -571,9 +572,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
 
-		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-			switch_status_t st;
-			switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		for(x = 0; x < (uint32_t)MAX_DISPATCH; x++) {
+			if (EVENT_DISPATCH_QUEUE_THREADS[x]) {
+				switch_status_t st;
+				switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+			}
 		}
 	}
 
@@ -2915,24 +2918,63 @@ static void destroy_ecd(event_channel_data_t **ecdP)
 	free(ecd);
 }
 
+#ifndef SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS
+#define SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS 10
+#endif
+
 static void ecd_deliver(event_channel_data_t **ecdP)
 {
 	event_channel_data_t *ecd = *ecdP;
-	char *p;
+	char *key;
+	uint32_t t = 0;
 
 	*ecdP = NULL;
 
-	_switch_event_channel_broadcast(ecd->event_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+	t = _switch_event_channel_broadcast(ecd->event_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
 
-	if ((p = strchr(ecd->event_channel, '.'))) {
-		char *main_channel = strdup(ecd->event_channel);
-		switch_assert(main_channel);
-		p = strchr(main_channel, '.');
-		*p = '\0';
-		_switch_event_channel_broadcast(main_channel, ecd->event_channel, ecd->json, ecd->key, ecd->id);
-		free(main_channel);
+	key = strdup(ecd->event_channel);
+	if (switch_core_test_flag(SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY)) {
+		const char *sep = switch_core_get_event_channel_key_separator();
+		char *x_argv[SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS] = { 0 };
+		int x_argc = switch_separate_string_string(key, (char*) sep, x_argv, SWITCH_CHANNEL_DISPATCH_MAX_KEY_PARTS);
+		char buf[1024];
+		int i, r;
+		for(i=x_argc - 1; i > 0; i--) {
+			int z;
+			memset(buf, 0, 1024);
+			sprintf(buf, "%s", x_argv[0]);
+			for(z=1; z < i; z++) {
+				strcat(buf, sep);
+				strcat(buf, x_argv[z]);
+			}
+			r = _switch_event_channel_broadcast(buf, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+			t += r;
+			if (r && switch_core_test_flag(SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE)) {
+				break;
+			}
+		}
+	} else {
+		char *p = NULL;
+		if ((p = strchr(key, '.'))) {
+			*p = '\0';
+			t += _switch_event_channel_broadcast(key, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+		}
 	}
-	_switch_event_channel_broadcast(SWITCH_EVENT_CHANNEL_GLOBAL, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+	switch_safe_free(key);
+
+	t += _switch_event_channel_broadcast(SWITCH_EVENT_CHANNEL_GLOBAL, ecd->event_channel, ecd->json, ecd->key, ecd->id);
+
+	if(t == 0) {
+		if (switch_core_test_flag(SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON)) {
+			char *json = cJSON_Print(ecd->json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s => %s\n", ecd->event_channel, ecd->key, json);
+			switch_safe_free(json);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no subscribers for %s , %s\n", ecd->event_channel, ecd->key);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "delivered to %u subscribers for %s\n", t, ecd->event_channel);
+	}
 
 	destroy_ecd(&ecd);
 }
@@ -3028,7 +3070,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 		cJSON_Delete(ecd->json);
 		ecd->json = NULL;
 		destroy_ecd(&ecd);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s\n", event_channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s, status = %d\n", event_channel, status);
 	} else {
 		ecd = NULL;
 	}

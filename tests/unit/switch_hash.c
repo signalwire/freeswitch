@@ -4,7 +4,7 @@
 
 // #define BENCHMARK 1
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 
 FST_SUITE_BEGIN(switch_hash)
 
