@@ -70,6 +70,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 {
 	switch_status_t status;
 	const char *err;
+	unsigned long pid = switch_getpid();
 	// Let FreeSWITCH core pick these
 	//SWITCH_GLOBAL_dirs.base_dir = strdup("/usr/local/freeswitch");
 	//SWITCH_GLOBAL_dirs.mod_dir = strdup("/usr/local/freeswitch/mod");
@@ -101,12 +102,12 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		SWITCH_GLOBAL_dirs.conf_dir = switch_mprintf("%s%sconf", basedir, SWITCH_PATH_SEPARATOR);
 	}
 
-	SWITCH_GLOBAL_dirs.log_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.log_dir = switch_mprintf("%s%s%lu%s", basedir, SWITCH_PATH_SEPARATOR, pid, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.run_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.recordings_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.sounds_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.cache_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
-	SWITCH_GLOBAL_dirs.db_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
+	SWITCH_GLOBAL_dirs.db_dir = switch_mprintf("%s%s%lu%s", basedir, SWITCH_PATH_SEPARATOR, pid, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.script_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.htdocs_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
 	SWITCH_GLOBAL_dirs.grammar_dir = switch_mprintf("%s%s", basedir, SWITCH_PATH_SEPARATOR);
