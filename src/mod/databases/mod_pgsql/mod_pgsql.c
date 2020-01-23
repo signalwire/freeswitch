@@ -853,8 +853,8 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 
 	result = pgsql_SQLEndTran(handle, SWITCH_TRUE);
-	result = result && pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE);
-	result = result && pgsql_finish_results(handle);
+	result = pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = pgsql_finish_results(handle) && result;
 
 	return result;
 }
@@ -862,6 +862,7 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 {
 	switch_pgsql_handle_t *handle;
+	switch_status_t result;
 
 	if (!dih) {
 		return SWITCH_STATUS_FALSE;
@@ -872,10 +873,11 @@ switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 	if (!handle)
 		return SWITCH_STATUS_FALSE;
 
-	pgsql_SQLEndTran(handle, SWITCH_FALSE);
-	// Is that enought?
+	result = pgsql_SQLEndTran(handle, SWITCH_FALSE);
+	result = pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = pgsql_finish_results(handle) && result;
 
-	return SWITCH_STATUS_SUCCESS;
+	return result;
 }
 
 switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char *func, int line,
