@@ -854,14 +854,15 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 
 	result = mariadb_SQLEndTran(handle, SWITCH_TRUE);
-	result = result && database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE);
-	result = result && mariadb_finish_results(handle);
+	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = mariadb_finish_results(handle) && result;
 
 	return result;
 }
 
 switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 {
+	switch_status_t result;
 	mariadb_handle_t *handle;
 
 	if (!dih) {
@@ -874,9 +875,11 @@ switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	mariadb_SQLEndTran(handle, SWITCH_FALSE);
+	result = mariadb_SQLEndTran(handle, SWITCH_FALSE);
+	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = mariadb_finish_results(handle) && result;
 
-	return SWITCH_STATUS_SUCCESS;
+	return result;
 }
 
 switch_status_t mariadb_handle_callback_exec_detailed(const char *file, const char *func, int line,
