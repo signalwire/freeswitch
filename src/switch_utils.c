@@ -4534,7 +4534,7 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 	return text;
 }
 
-SWITCH_DECLARE(unsigned long) switch_getpid()
+SWITCH_DECLARE(unsigned long) switch_getpid(void)
 {
 #ifndef WIN32
 	pid_t pid = getpid();
