@@ -696,11 +696,19 @@ static switch_status_t kz_att_xfer_hanguphook(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	const char *id = NULL;
+	const char *peer_uuid = NULL;
 
 	if (state == CS_HANGUP || state == CS_ROUTING) {
 		if ((id = switch_channel_get_variable(channel, "xfer_uuids"))) {
 			switch_stream_handle_t stream = { 0 };
 			SWITCH_STANDARD_STREAM(stream);
+			if ((peer_uuid = switch_channel_get_variable(channel, "xfer_peer_uuid"))) {
+				switch_core_session_t *peer_session = NULL;
+				if ((peer_session = switch_core_session_locate(peer_uuid)) != NULL ) {
+					switch_ivr_transfer_recordings(session, peer_session);
+					switch_core_session_rwunlock(peer_session);
+				}
+			}
 			switch_api_execute("uuid_bridge", id, NULL, &stream);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nHangup Command uuid_bridge(%s):\n%s\n", id,
 							  switch_str_nil((char *) stream.data));
@@ -734,9 +742,12 @@ void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	switch_channel_t *channel = switch_core_session_get_channel(session), *peer_channel = NULL;
 	const char *bond = NULL;
-	switch_core_session_t *b_session = NULL;
 	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
 	const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
+	int br = 0;
+	switch_event_t *event = NULL;
+	switch_core_session_t *b_session = NULL;
+	switch_channel_t *b_channel = NULL;
 
 	att->running = 1;
 
@@ -746,17 +757,11 @@ void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
 
 	bond = switch_channel_get_partner_uuid(channel);
 	if ((b_session = switch_core_session_locate(bond)) == NULL) {
-		switch_core_session_rwunlock(peer_session);
+		switch_core_session_rwunlock(session);
 		return NULL;
 	}
-
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_core_event_hook_add_state_change(session, kz_att_xfer_tmp_hanguphook);
-
-	if (follow_recording && (b_session = switch_core_session_locate(bond))) {
-		switch_ivr_transfer_recordings(b_session, session);
-		switch_core_session_rwunlock(b_session);
-	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
@@ -799,45 +804,39 @@ void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
 	switch_channel_clear_flag(channel, CF_INNER_BRIDGE);
 
-	if (zstr(bond) && switch_channel_down(peer_channel)) {
+	if (switch_channel_down(peer_channel)) {
 		switch_core_session_rwunlock(peer_session);
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
 	}
 
-	if (bond) {
-		int br = 0;
+	/*
+	 * we're emiting the transferee event so that callctl can update
+	 */
+	b_channel = switch_core_session_get_channel(b_session);
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sofia::transferee") == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(b_channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(peer_session));
+		switch_event_fire(&event);
+	}
 
-		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+	if (!switch_channel_ready(channel)) {
+		switch_status_t status;
 
-		if (!switch_channel_down(peer_channel)) {
-			/*
-			 * we're emiting the transferee event so that callctl can update
-			 */
-			switch_event_t *event = NULL;
-			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sofia::transferee") == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(b_channel, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(peer_session));
-				switch_event_fire(&event);
-			}
-			if (!switch_channel_ready(channel)) {
-				switch_status_t status;
-
-				if (follow_recording) {
-					switch_ivr_transfer_recordings(session, peer_session);
-				}
-				status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
-				kz_att_xfer_set_result(peer_channel, status);
-				br++;
-			} else {
-				switch_channel_set_variable_printf(b_channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
-				switch_channel_set_variable_printf(channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), bond);
-
-				switch_core_event_hook_add_state_change(session, kz_att_xfer_hanguphook);
-				switch_core_event_hook_add_state_change(b_session, kz_att_xfer_hanguphook);
-			}
+		if (follow_recording) {
+			switch_ivr_transfer_recordings(session, peer_session);
 		}
+		status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+		kz_att_xfer_set_result(peer_channel, status);
+		br++;
+	} else {
+		// switch_channel_set_variable_printf(b_channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
+		switch_channel_set_variable_printf(channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), bond);
+		switch_channel_set_variable(channel, "xfer_peer_uuid", switch_core_session_get_uuid(peer_session));
+
+		switch_core_event_hook_add_state_change(session, kz_att_xfer_hanguphook);
+		// switch_core_event_hook_add_state_change(b_session, kz_att_xfer_hanguphook);
+	}
 
 /*
  * this was commented so that the existing bridge
@@ -848,8 +847,6 @@ void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
 			att_xfer_set_result(channel, status);
 		}
 */
-
-	}
 
 	switch_core_session_rwunlock(peer_session);
 
