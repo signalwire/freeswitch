@@ -1306,8 +1306,12 @@ struct null_private_object {
 	switch_frame_t read_frame;
 	int16_t *null_buf;
 	int rate;
-	int pre_answer; // pre answer the channel
-	int auto_answer; // answer after in ms
+	/* pre answer the channel */
+	int pre_answer;
+	/* enable_auto_answer (enabled by default) */
+	int enable_auto_answer;
+	/* auto_answer_delay (0 ms by default) */
+	int auto_answer_delay;
 };
 
 typedef struct null_private_object null_private_t;
@@ -1463,14 +1467,15 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 		switch_channel_mark_pre_answered(channel);
 	}
 
-	if (tech_pvt->auto_answer > 0) {
-		int sanity = tech_pvt->auto_answer;
+	if (tech_pvt->enable_auto_answer) {
+		switch_time_t start_time = switch_time_now();
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer_delay);
 
-		while(switch_channel_ready(channel) && sanity > 0) {
-			switch_yield(1000 * 1000);
-			sanity -= 1000;
+		if (tech_pvt->auto_answer_delay > 0) {
+			while (switch_channel_ready(channel) && ((int)((switch_time_now() - start_time) / 1000)) < tech_pvt->auto_answer_delay) {
+				switch_yield(1000 * 20);
+			}
 		}
 
 		switch_channel_mark_answered(channel);
@@ -1610,7 +1615,8 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 {
 	char name[128];
 	switch_channel_t *ochannel = NULL;
-	const char *auto_answer = switch_event_get_header(var_event, "null_auto_answer");
+	const char *enable_auto_answer = switch_event_get_header(var_event, "null_enable_auto_answer");
+	const char *auto_answer_delay = switch_event_get_header(var_event, "null_auto_answer_delay");
 	const char *pre_answer = switch_event_get_header(var_event, "null_pre_answer");
 	const char *hangup_cause = switch_event_get_header(var_event, "null_hangup_cause");
 
@@ -1646,13 +1652,21 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 
 			tech_pvt->pre_answer = switch_true(pre_answer);
 
-			if (auto_answer) {
-				tech_pvt->auto_answer = atoi(auto_answer);
-
-				if (tech_pvt->auto_answer < 0) tech_pvt->auto_answer = 0;
-				if (tech_pvt->auto_answer > 60000) tech_pvt->auto_answer = 60000;
+			if (!enable_auto_answer) {
+				/* if not set - enabled by default */
+				tech_pvt->enable_auto_answer = SWITCH_TRUE;
 			} else {
-				tech_pvt->auto_answer = 1;
+				tech_pvt->enable_auto_answer = switch_true(enable_auto_answer);
+			}
+
+			if (!auto_answer_delay) {
+				/* if not set - 0 ms by default */
+				tech_pvt->auto_answer_delay = 0;
+			} else {
+				tech_pvt->auto_answer_delay = atoi(auto_answer_delay);
+
+				if (tech_pvt->auto_answer_delay < 0) tech_pvt->auto_answer_delay = 0;
+				if (tech_pvt->auto_answer_delay > 60000) tech_pvt->auto_answer_delay = 60000;
 			}
 
 			channel = switch_core_session_get_channel(*new_session);

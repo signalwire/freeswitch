@@ -274,7 +274,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://1000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
-			switch_dial_handle_add_global_var(dh, "null_auto_answer", "2000");
+			switch_dial_handle_add_global_var(dh, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_global_var(dh, "null_auto_answer_delay", "2000");
 
 			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
@@ -303,7 +304,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://1000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
-			switch_dial_handle_add_global_var(dh, "null_auto_answer", "2000");
+			switch_dial_handle_add_global_var(dh, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_global_var(dh, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_global_var(dh, "null_pre_answer", "true");
 
 			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
@@ -333,7 +335,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://1000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
-			switch_dial_handle_add_global_var(dh, "null_auto_answer", "2000");
+			switch_dial_handle_add_global_var(dh, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_global_var(dh, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_global_var(dh, "null_pre_answer", "true");
 			switch_dial_handle_add_global_var(dh, "group_confirm_early_ok", "false");
 
@@ -364,7 +367,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://1000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
-			switch_dial_handle_add_global_var(dh, "null_auto_answer", "2000");
+			switch_dial_handle_add_global_var(dh, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_global_var(dh, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_global_var(dh, "null_pre_answer", "true");
 			switch_dial_handle_add_global_var(dh, "ignore_early_media", "true");
 
@@ -500,7 +504,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_handle_add_leg_list(dh, &ll);
 
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
-			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_leg_var(leg, "leg_timeout", "4");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://6000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
@@ -527,7 +532,8 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_handle_add_leg_list(dh, &ll);
 
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
-			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_leg_var(leg, "leg_timeout", "6");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://2000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
@@ -558,7 +564,8 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "leg_timeout", "15");
-			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://10000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_timeout", "3");
@@ -586,7 +593,8 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "leg_timeout", "15");
-			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://10000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
 			switch_dial_handle_add_global_var(dh, "group_confirm_timeout", "3");
@@ -614,7 +622,8 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
 			switch_dial_handle_add_leg_var(leg, "leg_timeout", "3");
-			switch_dial_handle_add_leg_var(leg, "null_auto_answer", "2000");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "1");
+			switch_dial_handle_add_leg_var(leg, "null_auto_answer_delay", "2000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://2000");
 			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
 			switch_dial_handle_add_global_var(dh, "group_confirm_cancel_timeout", "true");
