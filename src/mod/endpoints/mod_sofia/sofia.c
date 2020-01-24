@@ -2807,8 +2807,23 @@ void event_handler(switch_event_t *event)
 		if (mod_sofia_globals.rewrite_multicasted_fs_path && contact_str) {
 			const char *needle = ";fs_path=";
 			char *sptr, *eptr = NULL;
-			/* allocate enough room for worst-case scenario */
-			size_t len = strlen(contact_str) + strlen(to_host) + 14;
+			/* allocate enough room for worst-case scenario, depends on rewrite_multicased_fs_path setting */
+			size_t len;
+			switch (mod_sofia_globals.rewrite_multicasted_fs_path) {
+				case 1:
+					len = strlen(contact_str) + strlen(to_host) + 14;
+				break;
+				case 2:
+					len = strlen(contact_str) + strlen(orig_server_host) + 14;
+				break;
+				case 3:
+					len = strlen(contact_str) + strlen(orig_hostname) + 14;
+				break;
+				default:
+					len = strlen(contact_str) + strlen(to_host) + 14;
+				break;
+			}
+
 			fixed_contact_str = malloc(len);
 			switch_assert(fixed_contact_str);
 			switch_copy_string(fixed_contact_str, contact_str, len);
