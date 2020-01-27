@@ -224,5 +224,102 @@ static inline std::string get_switch_ip4()
 	return guess_ip4;
 }
 
+static inline bool get_uri_head(const std::string& uri, std::string& head)
+{
+	std::size_t head_index = uri.find("sip:");
+	std::size_t offset = 4;
+	if (head_index == std::string::npos) {
+		if ((head_index = uri.find("sips:")) == std::string::npos)
+		{
+			return false;
+		}
+		offset = 5;
+	}
+	head = uri.substr(0, head_index + offset);
+	return true;
+}
+
+static inline bool split_uri(const std::string& uri, std::string& head, std::string& tail)
+{
+	if (!get_uri_head(uri, head)) {
+		return false;
+	}
+	tail = uri.substr(head.length());
+	return true;
+}
+
+static inline bool get_uri_user_from_tail(const std::string& tail, std::string& user)
+{
+	std::size_t index = tail.find("@");
+	if (index == std::string::npos) {
+		return false;
+	}
+	user = tail.substr(0, index);
+	return true;
+}
+
+static inline bool get_uri_user(const std::string& uri, std::string& user)
+{
+	std::string head;
+	std::string tail;
+
+	if (!split_uri(uri, head, tail)) {
+		return false;
+	}
+	return get_uri_user_from_tail(tail, user);
+}
+
+static inline bool get_uri_user_host_port_from_tail(const std::string& tail, std::string& user, std::string& host_port)
+{
+	get_uri_user_from_tail(tail, user);
+	std::string newTail(tail);
+	if (!user.empty()) {
+		newTail = tail.substr(user.length() + 1);
+	}
+	for (std::string::iterator iter = newTail.begin(); iter != newTail.end(); iter++)
+	{
+		if (*iter != ';' && *iter != '>' ) {
+			host_port.push_back(*iter);
+		} else {
+			break;
+		}
+	}
+	return !host_port.empty();
+}
+
+static inline bool get_uri_user_host_port(const std::string& uri, std::string& user, std::string& host_port)
+{
+	std::string head;
+	std::string tail;
+	user = "";
+	host_port = "";
+
+	if (!split_uri(uri, head, tail)) {
+		return false;
+	}
+	return get_uri_user_host_port_from_tail(tail, user, host_port);
+}
+
+static inline bool change_uri_host_port(std::string& uri, const std::string& new_host_port)
+{
+	std::string head;
+	std::string tail;
+	std::string user;
+	std::string host_port;
+
+	if (!split_uri(uri, head, tail) || !get_uri_user_host_port_from_tail(tail, user, host_port)) {
+		return false;
+	}
+
+	std::ostringstream strm;
+	if (!user.empty()) {
+		strm << head << user << "@" << new_host_port << tail.substr(user.length() + host_port.length() + 1);
+	} else {
+		strm << head << new_host_port << tail.substr(host_port.length());
+	}
+	uri = strm.str();
+	return true;
+}
+
 #endif /* MOD_UTILS_H */
 
