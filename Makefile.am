@@ -448,6 +448,7 @@ libfreeswitch_la_SOURCES += \
 	src/telnyx/exec/ManagedDaemon.cpp \
 	src/telnyx/exec/stringtoargcargv.cpp \
 	src/telnyx/exec/ManagedDaemonRunner.cpp \
+	src/telnyx/net/Pinger.cpp \
 	src/telnyx/zmq/ZMQSocket.cpp \
 	src/telnyx/Telnyx.cpp
 
