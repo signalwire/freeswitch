@@ -118,11 +118,14 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.send_all_headers = 0;
 	kazoo_globals.send_all_private_headers = 1;
 	kazoo_globals.connection_timeout = 500;
-	kazoo_globals.receive_timeout = 200;
+	kazoo_globals.ei_receive_timeout = 200;
 	kazoo_globals.receive_msg_preallocate = 2000;
 	kazoo_globals.event_stream_preallocate = KZ_DEFAULT_STREAM_PRE_ALLOCATE;
 	kazoo_globals.send_msg_batch = 10;
 	kazoo_globals.event_stream_framing = 2;
+	kazoo_globals.event_stream_queue_timeout = 200000;
+	kazoo_globals.node_receiver_queue_timeout = 100000;
+	kazoo_globals.node_sender_queue_timeout = 0;
 	kazoo_globals.port = 0;
 	kazoo_globals.io_fault_tolerance = 10;
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
@@ -189,7 +192,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 				kazoo_globals.connection_timeout = atoi(val);
 			} else if (!strcmp(var, "receive-timeout")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set receive-timeout: %s\n", val);
-				kazoo_globals.receive_timeout = atoi(val);
+				kazoo_globals.ei_receive_timeout = atoi(val);
 			} else if (!strcmp(var, "receive-msg-preallocate")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set receive-msg-preallocate: %s\n", val);
 				kazoo_globals.receive_msg_preallocate = atoi(val);
@@ -219,6 +222,15 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "expand-headers-on-fetch")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set expand-headers-on-fetch: %s\n", val);
 				kazoo_globals.expand_headers_on_fetch = switch_true(val);
+			} else if (!strcmp(var, "node-receiver-queue-timeout")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.node_receiver_queue_timeout = atoi(val);
+			} else if (!strcmp(var, "node-sender-queue-timeout")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.node_sender_queue_timeout = atoi(val);
+			} else if (!strcmp(var, "event-stream-queue-timeout")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.event_stream_queue_timeout = atoi(val);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unknown config option %s : %s\n", var, val);
 			}

@@ -1038,6 +1038,14 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	return SWITCH_STATUS_TERM;
 }
 
+SWITCH_DECLARE(switch_status_t) ei_queue_pop(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
+{
+	if (timeout == 0) {
+		return switch_queue_trypop(queue, data);
+	} else {
+		return switch_queue_pop_timeout(queue, data, timeout);
+	}
+}
 /* For Emacs:
  * Local Variables:
  * mode:c

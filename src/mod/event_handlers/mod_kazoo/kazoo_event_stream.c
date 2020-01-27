@@ -302,7 +302,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 		}
 
 		/* if there was an event waiting in our queue send it to the client */
-		if (switch_queue_pop_timeout(event_stream->queue, &pop, 200000) == SWITCH_STATUS_SUCCESS) {
+		if (ei_queue_pop(event_stream->queue, &pop, event_stream->queue_timeout) == SWITCH_STATUS_SUCCESS) {
 			ei_x_buff *ebuf = (ei_x_buff *) pop;
 
 			if (event_stream->socket) {
@@ -401,6 +401,7 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	event_stream->connected = SWITCH_FALSE;
 	event_stream->node = ei_node;
 	event_stream->event_stream_framing = ei_node->event_stream_framing;
+	event_stream->queue_timeout = ei_node->event_stream_queue_timeout;
 	memcpy(&event_stream->pid, from, sizeof(erlang_pid));
 	switch_queue_create(&event_stream->queue, MAX_QUEUE_LEN, pool);
 
