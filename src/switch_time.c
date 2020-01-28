@@ -2256,7 +2256,6 @@ static int tzparse(const char *name, register struct state *const sp, const int 
 			 ** Initially we're assumed to be in standard time.
 			 */
 			isdst = FALSE;
-			theiroffset = theirstdoffset;
 			/*
 			 ** Now juggle transition times and types
 			 ** tracking offsets as you do.
