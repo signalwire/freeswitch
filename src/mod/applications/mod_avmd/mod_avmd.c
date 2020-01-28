@@ -691,6 +691,7 @@ static void avmd_unregister_all_events(void) {
 static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info,
         switch_time_t detection_start_time, switch_time_t detection_stop_time, switch_time_t start_time, switch_time_t stop_time, uint8_t resolution, uint8_t offset, uint8_t idx) {
     int res;
+    switch_channel_t    *channel;
     switch_event_t      *event;
     switch_time_t       detection_time, total_time;
     switch_status_t     status;
@@ -701,6 +702,13 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
     if (status != SWITCH_STATUS_SUCCESS) {
         return;
     }
+
+    // Add channel session variables in event
+    channel = switch_core_session_get_channel(fs_s);
+    if (channel != NULL) {
+        switch_channel_event_set_data(channel, event);
+    }
+
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(fs_s));
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-command", "avmd");
     switch (type)
@@ -1968,6 +1976,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
     detection_time = s->detection_stop_time - s->detection_start_time;                                          /* detection time length    */
     switch_channel_set_variable_printf(channel, "avmd_total_time", "[%" PRId64 "]", detection_time / 1000);
     switch_channel_execute_on(channel, "execute_on_avmd_beep");
+    switch_channel_api_on(channel, "api_on_avmd_beep");
     switch_channel_set_variable(channel, "avmd_detect", "TRUE");
     switch (mode) {
 
