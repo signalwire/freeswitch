@@ -4149,7 +4149,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	bflags |= SMBF_NO_PAUSE;
 
 	if (cont->bug_running) {
-		status = SWITCH_STATUS_SUCCESS;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
 	} else {
 		cont->bug_running = 1;
