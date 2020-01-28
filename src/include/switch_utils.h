@@ -1452,6 +1452,8 @@ SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t);
 
 SWITCH_DECLARE(char *)switch_html_strip(const char *str);
 
+SWITCH_DECLARE(unsigned long) switch_getpid(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

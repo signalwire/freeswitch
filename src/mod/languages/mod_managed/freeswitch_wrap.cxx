@@ -45807,6 +45807,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_rtp_video_loss___(vo
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_rtp_get_core_session___(void * jarg1) {
+  void * jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_core_session_t *result = 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  result = (switch_core_session_t *)switch_rtp_get_core_session(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_log_node_t_data_set___(void * jarg1, char * jarg2) {
   switch_log_node_t *arg1 = (switch_log_node_t *) 0 ;
   char *arg2 = (char *) 0 ;

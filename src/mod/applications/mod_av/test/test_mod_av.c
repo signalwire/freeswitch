@@ -130,6 +130,7 @@ FST_CORE_BEGIN("conf")
 			fst_check(packets > 0);
 
 			switch_core_codec_destroy(&codec);
+			switch_img_free(&img);
 		}
 		FST_TEST_END()
 

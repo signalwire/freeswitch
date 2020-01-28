@@ -866,7 +866,9 @@ void tport_log_msg(tport_t *self, msg_t *msg,
       }
 
       n = su_strncspn(s, end - s, "\r\n");
-
+      if (buffer_pos > buffer_size) {
+        break;
+      } 
       bytes_written = snprintf(buffer + buffer_pos, buffer_size - buffer_pos, "%.*s", (int)n, s);
       if (bytes_written > 0) {
         buffer_pos += bytes_written;
