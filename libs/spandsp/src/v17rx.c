@@ -72,6 +72,12 @@
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/v17rx.h"
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#if !defined(SPANDSP_USE_FIXED_POINTx) 
+#define SPANDSP_USE_FIXED_POINTx
+#endif
+#endif
+
 #if defined(SPANDSP_USE_FIXED_POINTx)
 #define FP_SCALE(x)                     FP_Q6_10(x)
 #define FP_FACTOR                       1024
@@ -455,6 +461,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     float new_distances[8];
     float min;
 #endif
+    int space_map = s->space_map;
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
     re = (z->re + FP_CONSTELLATION_SCALE(9.0f)) >> (FP_CONSTELLATION_SHIFT_FACTOR - 1);
@@ -494,9 +501,45 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     min = 9999999.0f;
 #endif
     min_index = 0;
+    if (space_map > 3 || space_map < 0) {
+       space_map = 0;
+    }
     for (i = 0;  i < 8;  i++)
     {
-        nearest = constel_maps[s->space_map][re][im][i];
+	nearest = constel_maps[space_map][re][im][i];
+	if (nearest < 0) {
+		nearest = 0;
+	}
+	switch (s->bits_per_symbol)
+	{
+	case 6:
+	    if (nearest >= 128) {
+		    nearest = 127;
+	    }
+	    break;
+	case 5:
+	    if (nearest >= 64) {
+		    nearest = 63;
+	    }
+	    break;
+	case 4:
+	    if (nearest >= 32) {
+		    nearest = 31;
+	    }
+	    break;
+	case 3:
+	    if (nearest >= 16) {
+		    nearest = 15;
+	    }
+	    break;
+	case 2:
+	    if (nearest >= 4) {
+		    nearest = 3;
+	    }
+	    break;
+	default:
+	    nearest = 0;
+	}
 #if defined(SPANDSP_USE_FIXED_POINTx)
         ci = complex_seti32(s->constellation[nearest].re*DIST_FACTOR,
                             s->constellation[nearest].im*DIST_FACTOR);
@@ -516,7 +559,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
        tracking. This is a compromise. It means we will use the correct error
        less often, but using the output of the traceback would put more lag
        into the feedback path. */
-    constellation_state = constel_maps[s->space_map][re][im][min_index];
+    constellation_state = constel_maps[space_map][re][im][min_index];
     track_carrier(s, z, &s->constellation[constellation_state]);
     //tune_equalizer(s, z, &s->constellation[constellation_state]);
 
@@ -552,7 +595,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
 #else
         new_distances[i] = s->distances[k]*0.9f + distances[tcm_paths[i][min_index]]*0.1f;
 #endif
-        s->full_path_to_past_state_locations[s->trellis_ptr][i] = constel_maps[s->space_map][re][im][tcm_paths[i][min_index]];
+        s->full_path_to_past_state_locations[s->trellis_ptr][i] = constel_maps[space_map][re][im][tcm_paths[i][min_index]];
         s->past_state_locations[s->trellis_ptr][i] = k;
     }
     /*endfor*/
@@ -1609,6 +1652,7 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
     s->carrier_phase_rate_save = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);
+    s->bit_rate = bit_rate;
     v17_rx_restart(s, bit_rate, s->short_train);
     return s;
 }

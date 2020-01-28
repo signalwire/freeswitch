@@ -56,7 +56,7 @@ struct fax_modems_state_s
     /*! \brief A V.21 FSK modem context used when receiving HDLC over V.21
                messages. */
     fsk_rx_state_t v21_rx;
-    union
+    struct
     {
         /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
                    12000bps or 14400bps */
