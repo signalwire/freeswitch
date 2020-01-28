@@ -80,7 +80,7 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 			inuse = switch_buffer_inuse(text_buffer);
 
 			if (inuse && (switch_channel_test_flag(channel, CF_TEXT_IDLE) || switch_test_flag(read_frame, SFF_TEXT_LINE_BREAK))) {
-				int bytes = 0;
+				int bytes;
 
 				if (inuse + 4 > text_framesize) {
 					void *tmp = malloc(inuse + 1024);
@@ -114,7 +114,6 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 				*(text_framedata + bytes) = '\r';
 				*(text_framedata + bytes + 1) = '\n';
 				*(text_framedata + bytes + 2) = '\0';
-				bytes += 2;
 
 				frame.data = text_framedata;
 				frame.datalen = strlen((char *)frame.data);
