@@ -76,6 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *fp = NULL;
 	int to = 0;
 	int force_channels = 0;
+	uint32_t core_channel_limit;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -359,6 +360,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 		UNPROTECT_INTERFACE(fh->file_interface);
 		goto fail;
+	}
+
+	if (fh->channels > 2) {
+		/* just show a warning for more than 2 channels, no matter if we allow them or not */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more than 2 channels: [%u]\n", file_path, fh->channels);
+	}
+
+	core_channel_limit = switch_core_max_audio_channels(0);
+	if (core_channel_limit && fh->channels > core_channel_limit) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more channels (%u) than limit (%u). Closing.\n", file_path, fh->channels, core_channel_limit);
+		fh->file_interface->file_close(fh);
+		UNPROTECT_INTERFACE(fh->file_interface);
+		switch_goto_status(SWITCH_STATUS_FALSE, fail);
 	}
 
 	if (!force_channels && !fh->real_channels) {
