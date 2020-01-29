@@ -1298,7 +1298,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_vp9_emms_mmx_asm.obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
     </CustomBuild>
 
