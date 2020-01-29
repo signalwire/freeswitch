@@ -4416,6 +4416,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "abort-on-empty-external-ip")) {
+				mod_sofia_globals.abort_on_empty_external_ip = switch_true(val);
 			} else if (!strcasecmp(var, "tracelevel")) {
 				mod_sofia_globals.tracelevel = switch_log_str2level(val);
 			} else if (!strcasecmp(var, "debug-presence")) {
@@ -5059,7 +5061,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
-							switch_goto_status(SWITCH_STATUS_GENERR, done);
+							if (mod_sofia_globals.abort_on_empty_external_ip) {
+								switch_goto_status(SWITCH_STATUS_GENERR, done);
+							}
 						}
 					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
