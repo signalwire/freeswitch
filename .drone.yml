@@ -2,6 +2,9 @@
 kind: pipeline
 name: unit-tests
 
+node:
+  freeswitch: public
+
 steps:
     - name: run-tests
       image: signalwire/freeswitch-public-base
@@ -49,6 +52,6 @@ trigger:
   - push
 ---
 kind: signature
-hmac: d43f842f682df8328dc4cfbf16051bf8a8e481a051b63349b444447962709435
+hmac: 55dc56b2c540a026a1d81df52be401ce67a76ecec12e8f36802c29314142b21e
 
 ...
