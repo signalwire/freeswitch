@@ -1292,10 +1292,8 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			if (!--conference->end_count) {
 				//conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 				conference->endconference_time = switch_epoch_time_now(NULL);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ROOOOODR: Ending Conference due to Normal endconf");
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ROOOOODR: Ending Conference due to CHANGED endconf");
-			conference->endconference_time = switch_epoch_time_now(NULL);
+			conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 		}
 
 		conference_send_presence(conference);
