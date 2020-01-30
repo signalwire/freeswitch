@@ -897,10 +897,16 @@ bindSocketToPort(int              const fd,
         *errorP = NULL;
 }
 
-
-
 void
 ChanSwitchUnixCreate(unsigned short const portNumber,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP) {
+    ChanSwitchUnixCreateEx(NULL, portNumber, chanSwitchPP, errorP);
+}
+
+void
+ChanSwitchUnixCreateEx(struct in_addr * const addrP,
+                     unsigned short const portNumber,
                      TChanSwitch ** const chanSwitchPP,
                      const char **  const errorP) {
 /*----------------------------------------------------------------------------
@@ -921,7 +927,7 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
 
         setSocketOptions(socketFd, errorP);
         if (!*errorP) {
-            bindSocketToPort(socketFd, NULL, portNumber, errorP);
+            bindSocketToPort(socketFd, addrP, portNumber, errorP);
                 
             if (!*errorP) {
                 bool const userSupplied = false;

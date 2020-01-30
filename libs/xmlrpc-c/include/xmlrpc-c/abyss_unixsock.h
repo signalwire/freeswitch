@@ -13,6 +13,12 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
                      const char **  const errorP);
 
 void
+ChanSwitchUnixCreateEx(struct in_addr * const addrP,
+                     unsigned short const portNumber,
+                     TChanSwitch ** const chanSwitchPP,
+                     const char **  const errorP);
+
+void
 ChanSwitchUnixCreateFd(int            const fd,
                        TChanSwitch ** const chanSwitchPP,
                        const char **  const errorP);

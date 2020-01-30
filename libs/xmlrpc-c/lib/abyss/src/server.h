@@ -39,6 +39,7 @@ struct _TServer {
            (The alternative is the user supplies a TCP-connected socket
            for each transaction)
         */
+    struct in_addr * addr;
     uint16_t port;
         /* Meaningful only when 'chanSwitchBound' is false: TCP port
            number to which we should bind the switch.

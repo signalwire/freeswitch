@@ -20,6 +20,9 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/inttypes.h>
@@ -140,9 +143,10 @@ XMLRPC_DLLEXPORT
 abyss_bool
 ServerCreate(TServer *       const serverP,
              const char *    const name,
-             xmlrpc_uint16_t const port,
-             const char *    const filespath,
-             const char *    const logfilename);
+             struct in_addr *   const addrP,
+             xmlrpc_uint16_t const portNumber,
+             const char *    const filesPath,
+             const char *    const logFileName);
 
 XMLRPC_DLLEXPORT
 void

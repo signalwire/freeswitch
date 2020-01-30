@@ -1099,7 +1099,7 @@ createServerBare(xmlrpc_env *                      const envP,
         else {
             abyss_bool success;
 
-            success = ServerCreate(serverP, "XmlRpcServer", portNumber,
+            success = ServerCreate(serverP, "XmlRpcServer", NULL, portNumber,
                                    DEFAULT_DOCS, logFileName);
 
             if (!success)
@@ -1524,7 +1524,7 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
     TServer server;
     abyss_bool success;
 
-    success = ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    success = ServerCreate(&server, "XmlRpcServer", NULL, 8080, DEFAULT_DOCS, NULL);
 
     if (!success)
         xmlrpc_faultf(envP, "Failed to create Abyss server object");
@@ -1721,7 +1721,7 @@ xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED,
 
     abyss_bool success;
 
-    success = ServerCreate(&globalSrv, "XmlRpcServer", 8080,
+    success = ServerCreate(&globalSrv, "XmlRpcServer", NULL, 8080,
                            DEFAULT_DOCS, NULL);
 
     if (!success)
