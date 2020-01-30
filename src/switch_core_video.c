@@ -2134,7 +2134,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	char *argv[6] = { 0 };
 	switch_rgb_color_t bgcolor = { 0 };
 	int pre_width = 0, width = 0, font_size = 0, height = 0;
-	int len = 0;
 	char *duptxt = strdup(text);
 	switch_img_txt_handle_t *txthandle = NULL;
 	switch_image_t *txtimg = NULL;
@@ -2177,11 +2176,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 	while (*txt == ' ') txt++;
 	while (end_of(txt) == ' ') end_of(txt) = '\0';
-
-	len = strlen(txt);
-
-	if (len < 5) len = 5;
-
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 
