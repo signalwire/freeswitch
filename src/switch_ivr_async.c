@@ -2001,10 +2001,9 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	}
 
 	if (nframe) {
-		switch_frame_t frame = {0};
+		switch_frame_t frame = *nframe;
 		uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = "";
 		
-		frame = *nframe;
 		frame.data = buf;
 		frame.codec = nframe->codec;
 		
