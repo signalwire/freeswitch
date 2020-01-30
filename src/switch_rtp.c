@@ -6221,8 +6221,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 
 				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
-					stat = 0;
-					
 					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
 						stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
 					} else {
@@ -6468,7 +6466,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					}
 					if (!xcheck_jitter) {
 						check_jitter(rtp_session);
-						xcheck_jitter = *bytes;
 					}
 				}
 				break;
@@ -6508,7 +6505,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				if (!xcheck_jitter) {
 					check_jitter(rtp_session);
-					xcheck_jitter = *bytes;
 				}
 			}
 		}
