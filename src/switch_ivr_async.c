@@ -5312,7 +5312,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	switch_channel_t *channel;
-	switch_core_session_t *session, *master;
+	switch_core_session_t *session;
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
 	const char *other_uuid = NULL;
@@ -5324,7 +5324,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	switch_assert(path);
 
-	if (!(master = session = switch_core_session_locate(uuid))) {
+	if (!(session = switch_core_session_locate(uuid))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -5380,7 +5380,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		}
 
 		switch_core_session_rwunlock(other_session);
-		master = other_session;
 		other_session = NULL;
 	}
 
@@ -5413,7 +5412,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 					switch_channel_set_flag(channel, CF_BROADCAST_DROP_MEDIA);
 			}
 		}
-		master = session;
 	}
 
 	if (cause) {
