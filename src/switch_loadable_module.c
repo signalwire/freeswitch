@@ -1762,7 +1762,6 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		}
 
 		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
-			err = "Could not allocate memory\n";
 			abort();
 		}
 
