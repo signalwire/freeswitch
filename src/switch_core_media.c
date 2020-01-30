@@ -5046,7 +5046,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_validate_common_audio_sdp(switch_core_
 					ptime = dptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime")) {
 					maxptime = dmaxptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+					got_crypto = 1;
 				}
+
 			}
 
 			if (switch_rtp_has_dtls() && dtls_ok(session)) {
