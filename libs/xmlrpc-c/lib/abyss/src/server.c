@@ -129,6 +129,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const noAccept,
                     TChanSwitch *     const chanSwitchP,
                     bool              const userChanSwitch,
+	            struct in_addr *  const addrP,
                     unsigned short    const port,
                     const char **     const errorP) {
     
@@ -148,6 +149,7 @@ initChanSwitchStuff(struct _TServer * const srvP,
         srvP->serverAcceptsConnections = TRUE;
         srvP->chanSwitchP = NULL;
         srvP->weCreatedChanSwitch = FALSE;
+	srvP->addr = addrP;
         srvP->port = port;
     }
 }
@@ -159,6 +161,7 @@ createServer(struct _TServer ** const srvPP,
              bool               const noAccept,
              TChanSwitch *      const chanSwitchP,
              bool               const userChanSwitch,
+             struct in_addr *   const addrP,
              unsigned short     const portNumber,             
              const char **      const errorP) {
 
@@ -173,7 +176,7 @@ createServer(struct _TServer ** const srvPP,
         srvP->terminationRequested = false;
 
         initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
-                            portNumber, errorP);
+                            addrP, portNumber, errorP);
 
         if (!*errorP) {
             srvP->builtinHandlerP = HandlerCreate();
@@ -238,6 +241,7 @@ setNamePathLog(TServer *    const serverP,
 abyss_bool
 ServerCreate(TServer *       const serverP,
              const char *    const name,
+	     struct in_addr *   const addrP,
              xmlrpc_uint16_t const portNumber,
              const char *    const filesPath,
              const char *    const logFileName) {
@@ -250,7 +254,7 @@ ServerCreate(TServer *       const serverP,
 
     createServer(&serverP->srvP, noAcceptFalse,
                  NULL, userChanSwitchFalse,
-                 portNumber, &error);
+                 addrP, portNumber, &error);
 
     if (error) {
         TraceMsg(error);
@@ -325,7 +329,7 @@ ServerCreateSocket(TServer *    const serverP,
 
         createServer(&serverP->srvP, noAcceptFalse,
                      chanSwitchP, userChanSwitchFalse,
-                     0, &error);
+                     0, 0, &error);
 
         if (error) {
             TraceMsg(error);
@@ -359,7 +363,7 @@ ServerCreateNoAccept(TServer *    const serverP,
 
     createServer(&serverP->srvP, noAcceptTrue,
                  NULL, userChanSwitchFalse,
-                 0, &error);
+                 0, 0, &error);
 
     if (error) {
         TraceMsg(error);
@@ -388,7 +392,7 @@ ServerCreateSwitch(TServer *     const serverP,
 
     createServer(&serverP->srvP, noAcceptFalse,
                  chanSwitchP, userChanSwitchTrue,
-                 0, errorP);
+                 0, 0, errorP);
 }
 
 
@@ -758,7 +762,20 @@ createSwitchFromPortNum(unsigned short const portNumber,
 #else
     ChanSwitchUnixCreate(portNumber, chanSwitchPP, errorP);
 #endif
-}    
+}
+
+static void
+createSwitchFromAddressPortNum(struct in_addr * const addrP,
+                        unsigned short const portNumber,
+                        TChanSwitch ** const chanSwitchPP,
+                        const char **  const errorP) {
+
+#ifdef WIN32
+    ChanSwitchWinCreate(portNumber, chanSwitchPP, errorP);
+#else
+    ChanSwitchUnixCreateEx(addrP, portNumber, chanSwitchPP, errorP);
+#endif
+}  
 
 
 
@@ -772,7 +789,7 @@ createChanSwitch(struct _TServer * const srvP,
     /* Not valid to call this when channel switch already exists: */
     assert(srvP->chanSwitchP == NULL);
 
-    createSwitchFromPortNum(srvP->port, &chanSwitchP, &error);
+    createSwitchFromAddressPortNum(srvP->addr, srvP->port, &chanSwitchP, &error);
 
     if (error) {
         xmlrpc_asprintf(errorP,
