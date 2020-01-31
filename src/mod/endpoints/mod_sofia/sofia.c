@@ -10097,7 +10097,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
 
-		if (sip->sip_payload && sip->sip_payload->pl_data) {
+		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 			if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
 				switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
 				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
