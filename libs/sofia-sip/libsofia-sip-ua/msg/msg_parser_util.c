@@ -1762,7 +1762,7 @@ issize_t msg_unquoted_e(char *b, isize_t bsiz, char const *s)
       s++;
     }
     else {
-      if (e + n <= bsiz)
+      if (b && (e + n <= bsiz))
 	memcpy(b + e, s, n);
       e += n;
       s += n;
