@@ -2139,6 +2139,10 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	switch_image_t *txtimg = NULL;
 	int x = 0, y = 0;
 
+	if (!duptxt) {
+		return NULL;
+	}
+
 	if (strchr(text, ':')) {
 		argc = switch_split(duptxt, ':', argv);
 
