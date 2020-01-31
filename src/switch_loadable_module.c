@@ -2678,7 +2678,13 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 
 	for (i = 0; i < arraylen; i++) {
-		int this_ptime = array[i]->microseconds_per_packet / 1000;
+		int this_ptime;
+
+		if (!array[i]) {
+			continue;
+		}
+
+		this_ptime = array[i]->microseconds_per_packet / 1000;
 
 		if (!strcasecmp(array[i]->iananame, "ilbc")) {
 			this_ptime = 20;
