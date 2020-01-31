@@ -771,7 +771,6 @@ int nua_register_client_request(nua_client_request_t *cr,
 	sip_header_remove(msg, sip, (sip_header_t *)sip->sip_contact);
       while (m->m_next)
 	sip_header_remove(msg, sip, (sip_header_t *)m->m_next);
-      contacts = m;
       break;
     }
 
