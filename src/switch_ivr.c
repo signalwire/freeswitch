@@ -989,9 +989,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			timeout_cause = switch_channel_str2cause(cause_str + 1);
 		}
 
-		if ((timeout = atoi(to)) < 0) {
-			timeout = 0;
-		} else {
+		if ((timeout = atoi(to)) >= 0) {
 			expires = switch_epoch_time_now(NULL) + timeout;
 		}
 		switch_channel_set_variable(channel, "park_timeout", NULL);
