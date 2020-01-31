@@ -1384,7 +1384,6 @@ issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
     usize_t current, rest;
 
     current = msg->m_buffer->mb_size - msg->m_buffer->mb_used;
-    rest = body_len - current;
 
     /* Use all the data from our current buffer */
     msg_buf_used(msg, current);
