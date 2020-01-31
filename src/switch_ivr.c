@@ -1414,7 +1414,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	if (digit_timeout && first_timeout) {
 		eff_timeout = first_timeout;
 	} else if (digit_timeout && !first_timeout) {
-		first_timeout = eff_timeout = digit_timeout;
+		eff_timeout = digit_timeout;
 	} else if (first_timeout) {
 		digit_timeout = eff_timeout = first_timeout;
 	}
