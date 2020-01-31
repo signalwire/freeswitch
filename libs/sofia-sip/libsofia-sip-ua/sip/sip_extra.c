@@ -887,7 +887,7 @@ static
 issize_t sip_info_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
   sip_call_info_t *ci = h->sh_call_info;
-  char *end = s + slen;
+  char *end;
 
   for(;;) {
 	  ci = h->sh_call_info;
