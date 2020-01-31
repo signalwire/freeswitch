@@ -1299,7 +1299,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-			switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			switch_status_t ostatus = SWITCH_STATUS_FALSE;
+			if (args->input_callback) {
+				ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			}
 			if (ostatus != SWITCH_STATUS_SUCCESS) {
 				status = ostatus;
 			}
