@@ -32,13 +32,13 @@ steps:
       - cd logs && ls -la
 
     - name: notify
-      image: signalwire/unit-tests-notify
+      image: signalwire/public-unit-tests-notify
       pull: true
       environment:
         GITHUB_CI_APP_PEM:
           from_secret: github_ci_app_pem
         SSH_KEY:
-          from_secret: ssh_key
+          from_secret: artifacts_ssh_key
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
       commands:
@@ -46,12 +46,12 @@ steps:
       
 trigger:
   branch:
-  - master
+  - public_artifacts
   event:
   - pull_request
   - push
 ---
 kind: signature
-hmac: 55dc56b2c540a026a1d81df52be401ce67a76ecec12e8f36802c29314142b21e
+hmac: 856c5ccd1750d348c6c9c15eabea710ac703b8f20fd49802652f7fd5b8165686
 
 ...

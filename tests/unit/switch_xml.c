@@ -54,6 +54,7 @@ FST_MINCORE_BEGIN("./conf")
 			switch_xml_t xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
 
 			fst_requires(xml);
+abort();
 			fst_check(xml->flags & SWITCH_XML_CDATA);
 			switch_xml_free(xml);
 
