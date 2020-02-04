@@ -170,7 +170,8 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
                 return 0;
             }
         }
-        j = (rotation + steps - 1)%steps;
+        if (steps) 
+            j = (rotation + steps - 1)%steps;
         if (pattern[j].f1 != test[9].f1  ||  pattern[j].f2 != test[9].f2)
             return 0;
         if (pattern[j].max_duration < test[9].min_duration*SUPER_TONE_BINS)
