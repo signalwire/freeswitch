@@ -234,6 +234,9 @@ TPORT_DLL int tport_release(tport_t *self, int pendd,
 			    msg_t *msg, msg_t *reply, tp_client_t *client,
 			    int still_pending);
 
+/** Return true if transport is recoverable. */
+TPORT_DLL int tport_is_recoverable(tport_t const *self);
+
 /** Return true if transport is master. */
 TPORT_DLL int tport_is_master(tport_t const *self);
 
