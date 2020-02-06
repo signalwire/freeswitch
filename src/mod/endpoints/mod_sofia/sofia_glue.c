@@ -2246,6 +2246,16 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
+	// replace "local_media_ip" and "advertised_media_ip" channel variables, with
+	// values from local server's profile. This would enable an instance to recover
+	// calls tracked by a different instance.
+	switch_channel_set_variable_printf(channel, "local_media_ip", "%s", *profile->rtpip);
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		switch_channel_set_variable_printf(channel, "advertised_media_ip", "%s", profile->extrtpip);
+	} else {
+		switch_channel_set_variable_printf(channel, "advertised_media_ip", "%s", *profile->rtpip);
+	}
+
 	tech_pvt->mparams.remote_ip = (char *) switch_channel_get_variable(channel, "sip_network_ip");
 	tech_pvt->mparams.remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
 	tech_pvt->caller_profile = switch_channel_get_caller_profile(channel);
