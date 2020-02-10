@@ -373,13 +373,13 @@ static switch_status_t switch_opusfile_read(switch_file_handle_t *handle, void *
 	switch_mutex_unlock(context->audio_mutex);
 
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] rb: [%lu] bytes: [%lu]\n", rb, bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] rb: [%"SWITCH_SIZE_T_FMT"] bytes: [%"SWITCH_SIZE_T_FMT"]\n", rb, bytes);
 	}
 
 	if (!rb && (context->eof)) {
 		if (globals.debug) {
 			// should be same as returned by op_pcm_total()
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] EOF. sample count: [%lu]\n", handle->sample_count);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] EOF. sample count: [%"SWITCH_SIZE_T_FMT"]\n", handle->sample_count);
 		}
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
@@ -387,7 +387,7 @@ static switch_status_t switch_opusfile_read(switch_file_handle_t *handle, void *
 	if (rb) {
 		*len = rb / sizeof(int16_t) / handle->real_channels;
 		if (globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] rb: [%lu] *len: [%lu]\n", rb, *len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS File] rb: [%"SWITCH_SIZE_T_FMT"] *len: [%"SWITCH_SIZE_T_FMT"]\n", rb, *len);
 		}
 	} else {
 		newbytes = (2 * handle->samplerate * handle->real_channels) * context->buffer_seconds;
