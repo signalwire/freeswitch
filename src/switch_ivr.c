@@ -2766,7 +2766,7 @@ static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const 
 	if (!zstr(var) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
 		if ((data = malloc(dlen))) {
 			memset(data, 0, dlen);
-			switch_url_encode(val, data, dlen);
+			switch_url_encode_opt(val, data, dlen, SWITCH_TRUE);
 			switch_xml_set_txt_d(variable, data);
 			free(data);
 		} else abort();
