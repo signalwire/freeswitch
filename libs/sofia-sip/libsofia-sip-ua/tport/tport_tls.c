@@ -394,7 +394,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                       ti->key));
         } else {
           long options = SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SINGLE_DH_USE;
-          options = SSL_CTX_set_options(tls->ctx, options);
+          SSL_CTX_set_options(tls->ctx, options);
           SU_DEBUG_3(("%s\n", "tls: initialized DHE"));
         }
         DH_free(dh);
