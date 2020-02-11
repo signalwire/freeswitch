@@ -2131,7 +2131,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 					EVENT_NODES[n->event_id] = n->next;
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
 				FREE(n->subclass_name);
 				FREE(n->id);
 				FREE(n);
@@ -2171,7 +2171,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node)
 			} else {
 				EVENT_NODES[n->event_id] = n->next;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
 			FREE(n->subclass_name);
 			FREE(n->id);
 			FREE(n);
