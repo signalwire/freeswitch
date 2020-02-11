@@ -310,7 +310,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	char *argv[10] = { 0 };
 	uint32_t mask = 0;
 	char *p = strdup(str);
-	switch_log_level_t level;
+	switch_log_level_t level = SWITCH_LOG_INVALID;
 
 	switch_assert(p);
 
