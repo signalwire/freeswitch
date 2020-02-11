@@ -243,7 +243,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		status = switch_ivr_read(collect->session,
 								 (uint32_t)len,
 								 (uint32_t)len,
-								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
+								 file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
 
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
