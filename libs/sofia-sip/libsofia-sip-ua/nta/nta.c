@@ -6932,7 +6932,7 @@ void incoming_retransmit_reply(nta_incoming_t *irq, tport_t *tport)
       }
     }
 
-    tport = tport_tsend(tport, msg, irq->irq_tpn,
+    tport_tsend(tport, msg, irq->irq_tpn,
 			IF_SIGCOMP_TPTAG_COMPARTMENT(irq->irq_cc)
 			TPTAG_MTU(INT_MAX), TAG_END());
     irq->irq_agent->sa_stats->as_sent_msg++;
