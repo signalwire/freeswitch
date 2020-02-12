@@ -1079,7 +1079,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 
 	switch_time_sync();
-	time_sync = runtime.time_sync;
 
 	globals.STARTED = globals.RUNNING = 1;
 	switch_mutex_lock(runtime.throttle_mutex);
