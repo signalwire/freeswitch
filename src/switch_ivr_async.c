@@ -4624,7 +4624,9 @@ done:
 	if (state.done) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	*result = state.result;
+	if (result) {
+		*result = state.result;
+	}
 
 	arg_recursion_check_stop(args);
 
