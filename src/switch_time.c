@@ -1043,7 +1043,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
 	int tfd = -1;
-	uint32_t time_sync = runtime.time_sync;
+	uint32_t time_sync;
 
 #ifdef HAVE_TIMERFD_CREATE
 	int last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
