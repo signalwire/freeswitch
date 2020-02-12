@@ -1336,6 +1336,8 @@ int sdp_zone_cmp(sdp_zone_t const *a, sdp_zone_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1;
   n = a->z_number_of_adjustments < b->z_number_of_adjustments
     ? a->z_number_of_adjustments : b->z_number_of_adjustments;
   for (i = 0; i < n; i++) {
