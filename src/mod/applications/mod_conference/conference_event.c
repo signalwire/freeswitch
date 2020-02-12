@@ -108,7 +108,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action ? action : "N/A", cid);
 
 	if (zstr(action)) {
 		goto end;
