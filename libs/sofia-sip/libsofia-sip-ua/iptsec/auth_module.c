@@ -690,8 +690,6 @@ void auth_check_digest(auth_mod_t *am,
     return;
   }
 
-  phrase = "Bad authorization";
-
 #define PA "Authorization missing "
 
   if ((!ar->ar_username && (phrase = PA "username")) ||
