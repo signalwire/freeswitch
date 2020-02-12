@@ -315,9 +315,9 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     int k1;
     int k2;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    int32_t res[SUPER_TONE_BINS/2];
+    int32_t res[SUPER_TONE_BINS/2] = {0};
 #else
-    float res[SUPER_TONE_BINS/2];
+    float res[SUPER_TONE_BINS/2] = {0};
 #endif
 
     for (i = 0;  i < s->desc->monitored_frequencies;  i++)
