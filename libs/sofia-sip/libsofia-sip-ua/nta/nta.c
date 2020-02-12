@@ -10551,6 +10551,7 @@ outgoing_naptr_tport(nta_outgoing_t *orq, sres_record_t *answers[])
 
   struct sipdns_resolver *sr = orq->orq_resolver;
 
+  prefs[0] = 0;
   for (j = 0; sr->sr_tports[j]; j++) {
     tport = sr->sr_tports[j];
 
