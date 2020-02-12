@@ -10985,7 +10985,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (v_engine->codec_negotiated) {
-					const char *of;
 					payload_map_t *pmap;
 
 					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
@@ -11006,12 +11005,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					} else {
 
 						pass_fmtp = NULL;
-
-						if (switch_channel_get_partner_uuid(session->channel)) {
-							if ((of = switch_channel_get_variable_partner(session->channel, "rtp_video_fmtp"))) {
-								pass_fmtp = of;
-							}
-						}
 
 						if (ov_fmtp) {
 							pass_fmtp = ov_fmtp;
