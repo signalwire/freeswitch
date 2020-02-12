@@ -10077,7 +10077,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (profile && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-		if (channel && sip->sip_call_info) {
+		if (channel && sip && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
 				if (switch_stristr("appearance", call_info)) {
