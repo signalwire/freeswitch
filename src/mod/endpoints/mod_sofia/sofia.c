@@ -9210,7 +9210,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					switch_core_session_t *a_session;
 					switch_channel_t *channel;
 					const char *xfer_context = NULL;
-
+/* nightmareXfer */
                                         xfer_context = switch_channel_get_variable(channel_a, "force_nightmare_xfer_dialplan");
 
                                         if (!zstr(xfer_context)) {
