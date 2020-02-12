@@ -1520,7 +1520,9 @@ EOF
         check_header pthread.h && check_lib -lpthread <<EOF && add_extralibs -lpthread || disable_feature pthread_h
 #include <pthread.h>
 #include <stddef.h>
-int main(void) { return pthread_create(NULL, NULL, NULL, NULL); }
+void *thread_check (void *);
+void *thread_check (void *obj){ return obj;};
+int main(void) { pthread_t thread_id; return pthread_create(&thread_id, NULL, thread_check, NULL); }
 EOF
         ;;
     esac
