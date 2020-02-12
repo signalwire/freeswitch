@@ -68,6 +68,7 @@ typedef struct {
 	char *grammar;
 	char *channel_uuid;
 	switch_vad_t *vad;
+	int partial;
 } test_asr_t;
 
 
@@ -268,12 +269,17 @@ static switch_status_t test_asr_get_results(switch_asr_handle_t *ah, char **resu
 	}
 
 	if (switch_test_flag(context, ASRFLAG_RESULT)) {
+		int is_partial = context->partial-- > 0 ? 1 : 0;
 
 		*resultstr = switch_mprintf("{\"grammar\": \"%s\", \"text\": \"%s\", \"confidence\": %f}", context->grammar, context->result_text, context->result_confidence);
 
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_ERROR, "Result: %s\n", *resultstr);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_NOTICE, "%sResult: %s\n", is_partial ? "Partial " : "Final ", *resultstr);
 
-		status = SWITCH_STATUS_SUCCESS;
+		if (is_partial) {
+			status = SWITCH_STATUS_MORE_DATA;
+		} else {
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	} else if (switch_test_flag(context, ASRFLAG_NOINPUT_TIMEOUT)) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "Result: NO INPUT\n");
 
@@ -361,6 +367,9 @@ static void test_asr_text_param(switch_asr_handle_t *ah, char *param, const char
 		} else if (!strcasecmp("confidence", param) && fval >= 0.0) {
 			context->result_confidence = fval;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "confidence = %f\n", fval);
+		} else if (!strcasecmp("partial", param) && switch_true(val)) {
+			context->partial = 3;
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "partial = %d\n", context->partial);
 		}
 	}
 }

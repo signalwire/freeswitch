@@ -3192,7 +3192,15 @@ typedef struct {
 	char terminator;
 	switch_time_t last_digit_time;
 	switch_bool_t is_speech;
+	switch_input_args_t *original_args;
 } switch_collect_input_state_t;
+
+static void deliver_asr_event(switch_core_session_t *session, switch_event_t *event, switch_input_args_t *args)
+{
+	if (args && args->input_callback) {
+		args->input_callback(session, (void *)event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+	}
+}
 
 static switch_status_t switch_collect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, unsigned int len)
 {
@@ -3209,13 +3217,15 @@ static switch_status_t switch_collect_input_callback(switch_core_session_t *sess
 
 		if (zstr(speech_type)) return SWITCH_STATUS_SUCCESS;
 
+		deliver_asr_event(session, event, state->original_args);
+
 		if (!strcasecmp(speech_type, "detected-speech")) {
 			const char *result = switch_event_get_body(event);
 
 			/* stop waiting for speech */
 			switch_set_flag(state, SWITCH_COLLECT_INPUT_SPEECH_DONE);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH %s\n", switch_channel_get_name(channel), speech_type);
 
 			if (!zstr(result)) {
 				state->recognition_result = cJSON_Parse(result);
@@ -3230,15 +3240,12 @@ static switch_status_t switch_collect_input_callback(switch_core_session_t *sess
 				}
 			}
 			return SWITCH_STATUS_BREAK;
-		}
-
-		if (!strcasecmp("closed", speech_type)) {
+		} else if (!strcasecmp(speech_type, "detected-partial-speech")) {
+		} else if (!strcasecmp("closed", speech_type)) {
 			/* stop waiting for speech */
 			switch_set_flag(state, SWITCH_COLLECT_INPUT_SPEECH_DONE);
 			return SWITCH_STATUS_BREAK;
-		}
-
-		if (!strcasecmp(speech_type, "begin-speaking")) {
+		} else if (!strcasecmp(speech_type, "begin-speaking")) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
 			state->is_speech = SWITCH_TRUE;
 
@@ -3246,6 +3253,8 @@ static switch_status_t switch_collect_input_callback(switch_core_session_t *sess
 				/* barge in on prompt */
 				return SWITCH_STATUS_BREAK;
 			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Unhandled Speech-Type %s\n", speech_type);
 		}
 	}
 
@@ -3360,10 +3369,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 		}
 	}
 
-	if (!args) {
-		args = &myargs;
-	}
-
 	/* start speech recognition, if enabled */
 	if (recognizer_grammar && recognizer_mod_name) {
 		if ((status = switch_ivr_detect_speech(session, recognizer_mod_name, recognizer_grammar, "", NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
@@ -3380,14 +3385,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 	}
 
 	/* play the prompt, looking for input result */
-	args->input_callback = switch_collect_input_callback;
-	args->buf = &state;
-	args->buflen = sizeof(state);
+
+	if (args) {
+		state.original_args = args;
+		myargs.dmachine = args->dmachine;
+	}
+
+	myargs.input_callback = switch_collect_input_callback;
+	myargs.buf = &state;
+	myargs.buflen = sizeof(state);
+
+
 	switch_set_flag(&state, SWITCH_COLLECT_INPUT_PROMPT);
-	status = switch_ivr_play_file(session, NULL, prompt, args);
+	status = switch_ivr_play_file(session, NULL, prompt, &myargs);
 	switch_clear_flag(&state, SWITCH_COLLECT_INPUT_PROMPT);
 
-	if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
+	if (args && args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
 		switch_set_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE);
 		switch_set_flag(&state, SWITCH_COLLECT_INPUT_SPEECH_DONE);
 		status = SWITCH_STATUS_SUCCESS;
@@ -3412,9 +3425,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 		while ((!switch_test_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE) || !switch_test_flag(&state, SWITCH_COLLECT_INPUT_SPEECH_DONE))
 			   && switch_channel_ready(channel)) {
 
-			status = switch_ivr_sleep(session, sleep_time, SWITCH_FALSE, args);
+			status = switch_ivr_sleep(session, sleep_time, SWITCH_FALSE, &myargs);
 
-			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
+			if (args && args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
 				// dmachine done
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) DMACHINE DONE\n", switch_channel_get_name(channel));
 				switch_set_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE);
