@@ -1244,6 +1244,8 @@ int sdp_connection_cmp(sdp_connection_t const *a, sdp_connection_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1; 
   if (a->c_nettype != b->c_nettype)
     return a->c_nettype < b->c_nettype ? -1 : 1;
   if (a->c_addrtype != b->c_addrtype)
