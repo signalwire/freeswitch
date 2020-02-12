@@ -774,7 +774,6 @@ static int nua_invite_client_request(nua_client_request_t *cr,
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss;
   int offer_sent = 0, retval;
-  sip_time_t invite_timeout;
 
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
@@ -784,11 +783,6 @@ static int nua_invite_client_request(nua_client_request_t *cr,
   if (ss->ss_state >= nua_callstate_terminating)
     return nua_client_return(cr, 900, "Session is terminating", msg);
 
-  invite_timeout = NH_PGET(nh, invite_timeout);
-  if (invite_timeout == 0)
-    invite_timeout = UINT_MAX;
-  /* Send CANCEL if we don't get response within timeout*/
-  /* nua_dialog_usage_set_expires(du, invite_timeout); Xyzzy */
   nua_dialog_usage_reset_refresh(du);
 
   /* Add session timer headers */
