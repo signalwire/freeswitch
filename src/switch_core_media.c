@@ -15881,7 +15881,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				goto error;
 			}
 			if (ptime_mismatch && status != SWITCH_STATUS_GENERR) {
-				status = perform_write(session, frame, flags, stream_id);
+				perform_write(session, frame, flags, stream_id);
 				status = SWITCH_STATUS_SUCCESS;
 				goto error;
 			}
