@@ -33,6 +33,34 @@
 
 #include <test/switch_test.h>
 
+static switch_status_t partial_play_and_collect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, __attribute__((unused))unsigned int len)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int *count = (int *)data;
+
+	if (input_type == SWITCH_INPUT_TYPE_EVENT) {
+		switch_event_t *event = (switch_event_t *)input;
+
+		if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH) {
+			const char *speech_type = switch_event_get_header(event, "Speech-Type");
+
+			if (zstr(speech_type) || strcmp(speech_type, "detected-partial-speech")) {
+				return status;
+			}
+
+			(*count)++;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "partial events count: %d\n", *count);
+
+			char *body = switch_event_get_body(event);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "body=[%s]\n", body);
+		}
+	} else if (input_type == SWITCH_INPUT_TYPE_DTMF) {
+		// never mind
+	}
+
+	return status;
+}
+
 FST_CORE_BEGIN("./conf_playsay")
 {
 	FST_SUITE_BEGIN(switch_ivr_play_say)
@@ -77,15 +105,16 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_sched_recv_dtmf("+2", "2");
 			fst_sched_recv_dtmf("+3", "3");
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_string_equals(cJSON_GetObjectCstr(recognition_result, "text"), NULL);
 			fst_check_string_equals(digits_collected, "123");
 			fst_check(terminator_collected == 0);
+			cJSON_Delete(recognition_result);
 		}
 		FST_SESSION_END()
 
-		FST_SESSION_BEGIN(play_and_collect_input)
+		FST_SESSION_BEGIN(play_and_collect_input_success)
 		{
 			char terminator_collected = 0;
 			char *digits_collected = NULL;
@@ -113,7 +142,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check_duration(2500, 1000); // should return immediately when term digit is received
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
@@ -145,7 +174,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(7000, 1000); // should return after timeout when prompt finishes playing
@@ -161,7 +190,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(2500, 1000); // should return after timeout when prompt finishes playing
@@ -182,7 +211,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(10000, 1000); // should return when dtmf terminator is pressed
@@ -201,7 +230,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_requires(recognition_result);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(2500, 1000); // returns when utterance is done
@@ -218,7 +247,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(2500, 1000); // returns when single digit is pressed
@@ -236,7 +265,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_check(recognition_result == NULL);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(2000, 1000); // returns when single digit is pressed
@@ -254,7 +283,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			recognition_result = NULL;
 			fst_time_mark();
 			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
-
+			fst_requires(recognition_result);
 			// check results
 			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
 			fst_check_duration(7000, 1000); // inter-digit timeout after 2nd digit pressed
@@ -263,6 +292,72 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_check(terminator_collected == 0);
 			if (recognition_result) cJSON_Delete(recognition_result);
 			recognition_result = NULL;
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(play_and_collect_input_partial)
+		{
+			char terminator_collected = 0;
+			char *digits_collected = NULL;
+			cJSON *recognition_result = NULL;
+
+			// args
+			const char *play_files = "silence_stream://1000";
+			const char *speech_engine = "test";
+			const char *terminators = "#";
+			int min_digits = 1;
+			int max_digits = 99;
+			int digit_timeout = 500;
+			int no_input_timeout = digit_timeout;
+			int speech_complete_timeout = digit_timeout;
+			int speech_recognition_timeout = 60000;
+			char *speech_grammar_args = switch_core_session_sprintf(fst_session, "{start-input-timers=false,no-input-timeout=%d,vad-silence-ms=%d,speech-timeout=%d,language=en-US,partial=true}default",
+											no_input_timeout, speech_complete_timeout, speech_recognition_timeout);
+			switch_status_t status;
+
+			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
+			terminator_collected = 0;
+			digits_collected = NULL;
+			if (recognition_result) cJSON_Delete(recognition_result);
+			recognition_result = NULL;
+			fst_time_mark();
+			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, NULL);
+			fst_requires(recognition_result);
+			// check results
+			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
+			fst_check_duration(2500, 1000); // returns when utterance is done
+			fst_check_string_equals(cJSON_GetObjectCstr(recognition_result, "text"), "agent");
+			fst_check_string_equals(digits_collected, NULL);
+			fst_check(terminator_collected == 0);
+
+
+			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
+			terminator_collected = 0;
+			digits_collected = NULL;
+			if (recognition_result) cJSON_Delete(recognition_result);
+			recognition_result = NULL;
+
+			switch_input_args_t collect_input_args = { 0 };
+			switch_input_args_t *args = NULL;
+			int count = 0;
+
+			args = &collect_input_args;
+			args->input_callback = partial_play_and_collect_input_callback;
+			args->buf = &count;
+			args->buflen = sizeof(int);
+
+			fst_time_mark();
+			status = switch_ivr_play_and_collect_input(fst_session, play_files, speech_engine, speech_grammar_args, min_digits, max_digits, terminators, digit_timeout, &recognition_result, &digits_collected, &terminator_collected, args);
+			fst_requires(recognition_result);
+			// check results
+			fst_check(status == SWITCH_STATUS_SUCCESS); // might be break?
+			fst_check_duration(2500, 1000); // returns when utterance is done
+			fst_check_string_equals(cJSON_GetObjectCstr(recognition_result, "text"), "agent");
+			fst_check_string_equals(digits_collected, NULL);
+			fst_check(terminator_collected == 0);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "xxx count = %d\n", count);
+			fst_check(count == 3); // 3 partial results
+			cJSON_Delete(recognition_result);
 		}
 		FST_SESSION_END()
 	}
