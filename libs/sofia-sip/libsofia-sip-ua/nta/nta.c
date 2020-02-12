@@ -6967,7 +6967,7 @@ enum {
 static void
 _nta_incoming_timer(nta_agent_t *sa)
 {
-  uint32_t now = su_time_ms(su_now());
+  uint32_t now;
   nta_incoming_t *irq, *irq_next;
   size_t retransmitted = 0, timeout = 0, terminated = 0, destroyed = 0;
   size_t unconfirmed =
