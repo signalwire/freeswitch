@@ -496,7 +496,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
-					fh->samples_in += rlen;
 					if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 						switch_mux_channels((int16_t *) fh->pre_buffer_data, rlen, fh->real_channels, fh->channels);
 					}
@@ -506,6 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		}
 
 		rlen = switch_buffer_read(fh->pre_buffer, data, asis ? *len : *len * 2 * fh->channels);
+		fh->samples_in += rlen;
 		*len = asis ? rlen : rlen / 2 / fh->channels;
 
 		if (*len == 0) {
