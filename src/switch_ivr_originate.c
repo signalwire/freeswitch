@@ -1977,7 +1977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 switch_dial_handle_t *dh)
 {
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
-	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
+	switch_originate_flag_t dftflags = SOF_NONE, myflags;
 	char *pipe_names[MAX_PEERS] = { 0 };
 	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
