@@ -667,8 +667,10 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
   }
 
   if (error < 0) {
-    nua_stack_event(nh->nh_nua, nh, NULL, event,
+    if (nh) {
+      nua_stack_event(nh->nh_nua, nh, NULL, event,
 		    NUA_ERROR_AT(__FILE__, __LINE__), NULL);
+    }
   }
 
   su_msg_destroy(nua->nua_signal);

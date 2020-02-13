@@ -853,6 +853,9 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
   struct notifier_usage *nu = nua_dialog_usage_private(du);
   //nua_client_request_t *cr = du->du_cr;
 
+  if (!nu)
+    return -1;
+
   nu->nu_substate = nua_substate_terminated;
 #if 0
   if (cr) {

@@ -1370,6 +1370,9 @@ int sdp_key_cmp(sdp_key_t const *a, sdp_key_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1;
+
   if (a->k_method != b->k_method)
     return a->k_method < b->k_method ? -1 : 1;
   if (a->k_method == sdp_key_x &&

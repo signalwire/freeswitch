@@ -2406,6 +2406,11 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
     }
   }
 
+  if (!via) {
+      SU_DEBUG_9(("nta: agent_init_via failed\n" VA_NONE));
+      goto error;
+  }
+
   /* Duplicate the list bind to the transports */
   new_via = sip_via_dup(self->sa_home, via);
   /* Duplicate the complete list shown to the application */
@@ -3346,7 +3351,7 @@ void agent_recv_response(nta_agent_t *agent,
     return;
   }
 
-  if (sip->sip_cseq->cs_method == sip_method_ack) {
+  if (sip->sip_cseq && sip->sip_cseq->cs_method == sip_method_ack) {
     /* Drop response messages to ACK */
     agent->sa_stats->as_bad_response++;
     agent->sa_stats->as_bad_message++;
@@ -9160,7 +9165,7 @@ outgoing_remove_fork(nta_outgoing_t *orq)
   nta_outgoing_t **slot;
 
   for (slot = &orq->orq_forking->orq_forks;
-       *slot;
+       slot && *slot;
        slot = &(*slot)->orq_forks) {
     if (orq == *slot) {
       *slot = orq->orq_forks;
