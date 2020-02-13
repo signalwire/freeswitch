@@ -1207,6 +1207,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	uint32_t buflen = 0;
 	int flags;
 	int cumulative = 0;
+	int last_speed = -1;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1591,7 +1592,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		for (;;) {
 			int do_speed = 1;
-			int last_speed = -1;
 			int f;
 
 			if (!switch_channel_ready(channel)) {
