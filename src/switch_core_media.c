@@ -9113,7 +9113,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY TEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9125,12 +9124,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(t_engine->rtp_session)) {
 					switch_rtp_set_default_payload(t_engine->rtp_session, t_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
@@ -9428,7 +9421,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9440,12 +9432,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(v_engine->rtp_session)) {
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
