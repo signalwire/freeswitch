@@ -217,6 +217,8 @@ SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
 {
     uint8_t buf[3];
+   
+    if (!s) return; 
 
     buf[0] = s->p.s_regs[3];
     buf[1] = s->p.s_regs[4];
