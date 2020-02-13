@@ -3601,8 +3601,11 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       sr_status(sr, SIP_500_INTERNAL_SERVER_ERROR);
     }
     else {
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
-      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
+      sr->sr_answer_sent = 1;
+      if (ss) {
+        ss->ss_oa_sent = Answer;
+        ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
+      }
     }
   }
 

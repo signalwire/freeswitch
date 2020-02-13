@@ -1244,7 +1244,7 @@ issize_t msg_parse_next_field(su_home_t *home, msg_header_t *prev,
 msg_header_t *msg_header_d(su_home_t *home, msg_t const *msg, char const *b)
 {
   msg_mclass_t const *mc = msg->m_class;
-  msg_href_t const *hr = mc->mc_unknown;
+  msg_href_t const *hr;
   isize_t n;			/* Length of header contents */
   isize_t name_len, xtra;
   msg_header_t *h;
