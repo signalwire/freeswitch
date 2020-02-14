@@ -1139,6 +1139,9 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 					memcpy(hv, "|:", 2);
 					hv += 2;
 				}
+				if (!header->array[j]) { 
+					continue;
+				}
 				memcpy(hv, header->array[j], strlen(header->array[j]));
 				hv += strlen(header->array[j]);
 			}
