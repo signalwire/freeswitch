@@ -222,7 +222,7 @@ APU_DECLARE(apr_status_t) apr_queue_trypush(apr_queue_t *queue, void *data)
     }
 
     if (apr_queue_full(queue)) {
-        rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+        apr_thread_mutex_unlock(queue->one_big_mutex);
         return APR_EAGAIN;
     }
     
@@ -397,7 +397,7 @@ APU_DECLARE(apr_status_t) apr_queue_trypop(apr_queue_t *queue, void **data)
     }
 
     if (apr_queue_empty(queue)) {
-        rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+        apr_thread_mutex_unlock(queue->one_big_mutex);
         return APR_EAGAIN;
     } 
 
