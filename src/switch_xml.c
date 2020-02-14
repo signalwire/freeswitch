@@ -2591,7 +2591,6 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 
   tailrecurse:
 	off = 0;
-	lcount = 0;
 	txt = "";
 
 	if (loops++) {
