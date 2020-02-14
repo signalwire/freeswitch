@@ -803,7 +803,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	int do_extra_handlers = 1;
 	int silly = 0;
 	int index = 0;
-	switch_channel_state_t state = switch_channel_get_state(session->channel), midstate = state;
+	switch_channel_state_t state = switch_channel_get_state(session->channel), midstate;
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
