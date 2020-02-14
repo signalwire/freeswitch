@@ -130,7 +130,7 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
                                              apr_pool_t *pool)
 {
     apr_status_t status;
-    apr_finfo_t finfo;
+    apr_finfo_t finfo = {0};
 
     /* Don't do anything if we can't handle the requested attributes */
     if (!(attr_mask & (APR_FILE_ATTR_READONLY
@@ -185,7 +185,7 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
                                               apr_pool_t *pool)
 {
     apr_status_t status;
-    apr_finfo_t finfo;
+    apr_finfo_t finfo = {0};
 
     status = apr_stat(&finfo, fname, APR_FINFO_ATIME, pool);
     if (status) {
