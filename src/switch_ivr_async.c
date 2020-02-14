@@ -737,7 +737,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			 */
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf) {
-					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
