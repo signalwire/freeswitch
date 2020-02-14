@@ -706,7 +706,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (switch_core_session_dequeue_event(session_a, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (input_callback) {
-				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
+				input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
 
 			if ((event->event_id != SWITCH_EVENT_COMMAND && event->event_id != SWITCH_EVENT_MESSAGE)
