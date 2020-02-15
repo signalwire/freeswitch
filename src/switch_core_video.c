@@ -1614,7 +1614,7 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
-		switch_yuv_color_t yuv;
+		switch_yuv_color_t yuv = {0};
 
 		switch_img_get_yuv_pixel(img, &yuv, x, y);
 		switch_color_yuv2rgb(&yuv, rgb);
