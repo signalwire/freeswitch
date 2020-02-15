@@ -289,7 +289,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
 
     /* Ignore flags for now. */
     flags = 0;
-    assert(flags=0);
+    assert(flags==0);
 
     if (hdtr->numheaders > 0) {
         apr_size_t hdrbytes;
