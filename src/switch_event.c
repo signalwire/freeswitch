@@ -503,7 +503,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 	subclass->owner = DUP(owner);
 	subclass->name = DUP(subclass_name);
 
-	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
+	status = switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		free(subclass->owner);
+		free(subclass->name);
+		free(subclass);
+	}
 
 end:
 
