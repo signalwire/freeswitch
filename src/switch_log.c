@@ -304,6 +304,30 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 	return LEVELS[level];
 }
 
+static int switch_log_to_mask(switch_log_level_t level)
+{
+	switch (level) {
+	case SWITCH_LOG_DEBUG:
+		return (1<<7);
+	case SWITCH_LOG_INFO:
+		return (1<<6);
+	case SWITCH_LOG_NOTICE:
+		return (1<<5);
+	case SWITCH_LOG_WARNING:
+		return (1<<4);
+	case SWITCH_LOG_ERROR:
+		return (1<<3);
+	case SWITCH_LOG_CRIT:
+		return (1<<2);
+	case SWITCH_LOG_ALERT:
+		return (1<<1);
+	case SWITCH_LOG_CONSOLE:
+		return (1<<0);
+	default:
+		return 0;
+	}
+}
+
 SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 {
 	int argc = 0, x = 0;
@@ -321,8 +345,9 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 				break;
 			} else {
 				level = switch_log_str2level(argv[x]);
+
 				if (level != SWITCH_LOG_INVALID) {
-					mask |= (1 << level);
+					mask |= switch_log_to_mask(level);
 				}
 			}
 		}
