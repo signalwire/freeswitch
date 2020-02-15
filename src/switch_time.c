@@ -1103,7 +1103,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 	}
 
-	ts = 0;
 	last = 0;
 	fwd_errs = rev_errs = 0;
 
@@ -1317,7 +1316,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	if (tfd > -1) {
 		close(tfd);
-		tfd = -1;
 	}
 
 

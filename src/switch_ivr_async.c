@@ -5389,7 +5389,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((flags & SMF_ECHO_ALEG)) {
 		if ((flags & SMF_EXEC_INLINE)) {
-			nomedia = 0;
 			switch_core_session_execute_application(session, app, path);
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
