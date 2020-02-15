@@ -1637,7 +1637,7 @@ new_req:
 		goto done;
 	}
 
-	if (!strncmp(request.method, "POST", 4) && request.content_length &&
+	if (!strncmp(request.method, "POST", 4) && request.content_length && request.content_type &&
 		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
 
 		char *buffer = NULL;
