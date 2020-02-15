@@ -2182,8 +2182,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			const char *group_name = switch_channel_get_variable(tchannel, "eavesdrop_group");
 			/* If we don't have a group, then return */
 			if (!group_name) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 			/* Separate the group */
 			data = strdup(group_name);
@@ -2198,8 +2197,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_safe_free(data);
 			/* If we didn't find any match, then end */
 			if (!ok) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 		}
 
@@ -2224,7 +2222,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
-			switch_core_session_rwunlock(tsession);
 			goto end;
 		}
 
@@ -2584,8 +2581,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 		switch_core_session_receive_message(session, &msg);
 
-
-
+		status = SWITCH_STATUS_SUCCESS;
 	  end:
 
 		if (codec_initialized)
@@ -2610,7 +2606,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		}
 
 		switch_core_session_rwunlock(tsession);
-		status = SWITCH_STATUS_SUCCESS;
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	}
