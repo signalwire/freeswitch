@@ -420,9 +420,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	inner_bridge = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
 
 	if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && (bridge_answer_timeout = switch_channel_get_variable(chan_a, "bridge_answer_timeout"))) {
-		if ((answer_timeout = atoi(bridge_answer_timeout)) < 0) {
-			answer_timeout = 0;
-		} else {
+		if ((answer_timeout = atoi(bridge_answer_timeout)) >= 0) {
 			answer_limit = switch_epoch_time_now(NULL) + answer_timeout;
 		}
 	}
