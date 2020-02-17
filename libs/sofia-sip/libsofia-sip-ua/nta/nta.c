@@ -10551,7 +10551,7 @@ struct sipdns_tport const *
 outgoing_naptr_tport(nta_outgoing_t *orq, sres_record_t *answers[])
 {
   int i, j, order, pref;
-  int orders[SIPDNS_TRANSPORTS] = {0}, prefs[SIPDNS_TRANSPORTS];
+  int orders[SIPDNS_TRANSPORTS] = {0}, prefs[SIPDNS_TRANSPORTS] = {0};
   struct sipdns_tport const *tport;
 
   struct sipdns_resolver *sr = orq->orq_resolver;
