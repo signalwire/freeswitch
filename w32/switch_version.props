@@ -21,6 +21,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Microsoft.Build.Framework;
+using System.Diagnostics;
 
     public class SwitchVersionTask : Microsoft.Build.Utilities.Task
     {
@@ -28,12 +29,43 @@ using Microsoft.Build.Framework;
         private string TemplatePath;
         private string DestinationPath;
 
+		private static string sys(string cmd, string args, string stdIn, out string err)
+        {
+            err = null;
+            using (Process p = new Process())
+            {
+                p.StartInfo.RedirectStandardInput = true;
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.StartInfo.FileName = cmd;
+                p.StartInfo.Arguments = args;
+                p.Start();
+                p.StandardInput.Write(stdIn);
+                p.StandardInput.Close();
+                string output = p.StandardOutput.ReadToEnd();
+                err = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+                return output;
+            }
+        }
+
         public override bool Execute()
         {
             basedir = Path.GetFullPath(@"$(BaseDir)");
 
             Log.LogMessage(MessageImportance.High,
-                  "Parsing FreeSWITCH version.");                    
+                  "Parsing FreeSWITCH version.");
+            string err;
+            string revision = sys("git", @"-C """ + basedir.Substring(0, basedir.Length-1) + @""" rev-parse --short HEAD", null, out err);
+            if (!string.IsNullOrWhiteSpace(err))
+            {
+                    revision = "";
+            }
+            else
+            {
+                    revision = revision.Trim();
+            }
 
             string ConfigureAC = File.ReadAllText(@"$(BaseDir)configure.ac");                
             string pattern = @"AC_SUBST\((SWITCH_VERSION_[A-Z_]+),.*\[(.*)\]\)";
@@ -49,9 +81,14 @@ using Microsoft.Build.Framework;
                    string[] tokens = value.Split('-');
                    value = tokens[0];
                }        
-               v.Add(m.Groups[1].Value.Trim(), value.Trim());
-               Log.LogMessage(MessageImportance.High,
-                    m.Groups[1].Value + " = '" + value.Trim() + "'");                    
+               var name = m.Groups[1].Value.Trim();
+               value = value.Trim();
+               if (name.StartsWith("SWITCH_VERSION_REVISION") && string.IsNullOrWhiteSpace(value))
+               {
+                   value = revision;
+               }
+               v.Add(name, value);
+               Log.LogMessage(MessageImportance.High, name + " = '" + value + "'");
             }
             
             //---------------------------------------------------------            
