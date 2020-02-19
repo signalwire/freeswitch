@@ -3460,7 +3460,7 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
   sres_record_t **reply;
   sres_server_t *dns;
 
-  struct sockaddr_storage from[1];
+  struct sockaddr_storage from[1] = { 0 };
   socklen_t fromlen = sizeof from;
 
   SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_receive",
