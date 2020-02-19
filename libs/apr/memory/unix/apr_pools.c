@@ -821,8 +821,17 @@ APR_DECLARE(apr_status_t) apr_pool_create_ex(apr_pool_t **newpool,
     if (!abort_fn && parent)
         abort_fn = parent->abort_fn;
 
-    if (allocator == NULL)
+    if (allocator == NULL) {
+        if (!parent) {
+            /* There is no way to continue without an allocator when no parent */
+            if (abort_fn)
+                abort_fn(APR_EINVAL);
+
+            return APR_EINVAL;
+        }
+
         allocator = parent->allocator;
+    }
 
     if ((node = allocator_alloc(allocator,
                                 MIN_ALLOC - APR_MEMNODE_T_SIZE)) == NULL) {
