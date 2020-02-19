@@ -1636,6 +1636,8 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	}
 
 	fnode->sh = member->sh;
+	member->sh->session = member->session;
+	
 	/* Begin Generation */
 	switch_sleep(200000);
 
