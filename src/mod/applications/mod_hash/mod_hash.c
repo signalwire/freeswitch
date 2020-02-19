@@ -869,7 +869,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								limit_hash_item_t *item;
 								switch_thread_rwlock_wrlock(remote->rwlock);
 								if (!(item = switch_core_hash_find(remote->index, argv[0]))) {
-									item = malloc(sizeof(*item));
+									switch_zmalloc(item, sizeof(*item));
 									switch_core_hash_insert_auto_free(remote->index, argv[0], item);
 								}
 								item->total_usage = atoi(argv[1]);
