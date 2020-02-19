@@ -16,3 +16,5 @@ RUN make mod_conference
 FROM talkdesk/freeswitch-kazoo:1.10.1
 
 COPY --from=builder /home/tduser/freeswitch/src/mod/applications/mod_conference/.libs/mod_conference.so /usr/lib/freeswitch/mod/
+# Add Limits Configuration
+COPY docker/master/build/freeswitch.limits.conf /etc/security/limits.d/
