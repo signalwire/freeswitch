@@ -86,6 +86,36 @@ static switch_status_t valet_on_dtmf(switch_core_session_t *session, void *input
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *terminators;
+
+			if ((terminators = switch_channel_get_variable(channel, "valet_parking_orbit_terminators"))) {
+				if (strchr(terminators, dtmf->digit)) {
+					const char *dp;
+					const char *exten;
+					const char *context;
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digit pressed '%d' matched valet_parking_orbit_terminators '%s'\n", dtmf->digit, terminators);
+
+					dp = switch_channel_get_variable(channel, "valet_parking_orbin_dialplan");
+					if (zstr(dp)) {
+						dp = switch_channel_get_variable(channel, "XML");
+					}
+
+					context = switch_channel_get_variable(channel, "valet_parking_orbit_context");
+					if (zstr(context)) {
+						context = switch_channel_get_variable(channel, "context");
+					}
+
+					exten = switch_channel_get_variable(channel, "valet_parking_orbit_exten");
+					if (!zstr(exten)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "transferring session to '%s %s %s'\n", exten, dp, context);
+						switch_ivr_session_transfer(session, exten, dp, context);
+					}
+
+					return SWITCH_STATUS_BREAK;
+				}
+			}
 
 			if (dtmf->digit == '#') {
 				return SWITCH_STATUS_BREAK;
@@ -433,8 +463,8 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		char *dest;
 		int in = -1;
 
-		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context;
-		char *timeout_str = "", *orbit_exten_str = "", *orbit_dialplan_str = "", *orbit_context_str = "";
+		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context, *orbit_exit_key;
+		char *timeout_str = "", *orbit_exten_str = "", *orbit_dialplan_str = "", *orbit_context_str = "", *orbit_terminators_str = "";
 
 		lot = valet_find_lot(lot_name, SWITCH_TRUE);
 		switch_assert(lot);
@@ -606,16 +636,21 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			orbit_context_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_context=%s,", orbit_context);
 		}
 
+		if ((orbit_exit_key = switch_channel_get_variable(channel, "valet_parking_orbit_terminators"))) {
+			orbit_terminators_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_terminators=%s,", orbit_exit_key);
+		}
+
 		if ((timeout = switch_channel_get_variable(channel, "valet_parking_timeout"))) {
 			timeout_str = switch_core_session_sprintf(session, "set:valet_parking_timeout=%s,", timeout);
 		}
 
-		dest = switch_core_session_sprintf(session, "%s%s%s%s"
+		dest = switch_core_session_sprintf(session, "%s%s%s%s%s"
 										   "set:valet_ticket=%s,set:valet_hold_music='%s',sleep:1000,valet_park:%s %s",
 										   timeout_str,
 										   orbit_exten_str,
 										   orbit_dialplan_str,
 										   orbit_context_str,
+										   orbit_terminators_str,
 										   token->uuid, music, lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
 
@@ -632,6 +667,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 						switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 					}
+
 					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
 					switch_core_session_rwunlock(b_session);
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
