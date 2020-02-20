@@ -559,7 +559,7 @@ void gsm0610_rpe_encoding(gsm0610_state_t *s,
                           int16_t *Mc,
                           int16_t xMc[13])
 {
-    int16_t x[40];
+    int16_t x[40] = {0};
     int16_t xM[13];
     int16_t xMp[13];
     int16_t mant;
