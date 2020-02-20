@@ -463,7 +463,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		char *dest;
 		int in = -1;
 
-		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context, *orbit_exit_key;
+		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context, *orbit_terminators;
 		char *timeout_str = "", *orbit_exten_str = "", *orbit_dialplan_str = "", *orbit_context_str = "", *orbit_terminators_str = "";
 
 		lot = valet_find_lot(lot_name, SWITCH_TRUE);
@@ -636,8 +636,8 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			orbit_context_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_context=%s,", orbit_context);
 		}
 
-		if ((orbit_exit_key = switch_channel_get_variable(channel, "valet_parking_orbit_terminators"))) {
-			orbit_terminators_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_terminators=%s,", orbit_exit_key);
+		if ((orbit_terminators = switch_channel_get_variable(channel, "valet_parking_orbit_terminators"))) {
+			orbit_terminators_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_terminators=%s,", orbit_terminators);
 		}
 
 		if ((timeout = switch_channel_get_variable(channel, "valet_parking_timeout"))) {
