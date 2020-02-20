@@ -147,7 +147,7 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
                         int rotation)
 {
     int i;
-    int j;
+    int j = 0;
 
     if (rotation >= 0)
     {
