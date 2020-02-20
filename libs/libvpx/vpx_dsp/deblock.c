@@ -52,6 +52,11 @@ void vpx_post_proc_down_and_across_mb_row_c(unsigned char *src,
   assert(size >= 8);
   assert(cols >= 8);
 
+#ifdef __clang_analyzer__
+  /* older clang analyzer doesnt understand asserts, insert this until we ugrade analyzer */
+  if (cols < 8) return;
+#endif
+
   for (row = 0; row < size; row++) {
     /* post_proc_down for one row */
     p_src = src;
