@@ -10694,22 +10694,24 @@ outgoing_answer_srv(sres_context_t *orq, sres_query_t *q,
     if (N > 1 && weight > 0) {
       unsigned rand = su_randint(0,  weight - 1);
 
-      while (rand >= (*tail)->sq_weight) {
+      while (*tail && rand >= (*tail)->sq_weight) {
 	rand -= (*tail)->sq_weight;
 	tail = &(*tail)->sq_next;
       }
     }
 
     /* Remove selected */
-    sq = *tail; *tail = sq->sq_next; assert(sq->sq_priority == priority);
+    if (*tail) {
+      sq = *tail; *tail = sq->sq_next; assert(sq->sq_priority == priority);
 
-    /* Append at *at */
-    sq->sq_next = *at; *at = sq; at = &sq->sq_next; if (!*at) sr->sr_tail = at;
+      /* Append at *at */
+      sq->sq_next = *at; *at = sq; at = &sq->sq_next; if (!*at) sr->sr_tail = at;
 
-    SU_DEBUG_5(("nta: %s IN SRV %u %u  %s %s (%s)\n",
-		sq0->sq_domain,
-		(unsigned)sq->sq_priority, (unsigned)sq->sq_weight,
-		sq->sq_port, sq->sq_domain, sq->sq_proto));
+      SU_DEBUG_5(("nta: %s IN SRV %u %u  %s %s (%s)\n",
+		  sq0->sq_domain,
+		  (unsigned)sq->sq_priority, (unsigned)sq->sq_weight,
+		  sq->sq_port, sq->sq_domain, sq->sq_proto));
+    }
   }
 
   /* This is not needed anymore (?) */
