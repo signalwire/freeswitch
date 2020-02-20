@@ -313,7 +313,7 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
       assert(t == t_end); assert(b == end); (void)end;
     }
     else
-      p = e + 1;
+      p = ee + 1;
 
     ee->ee_nua = nua_stack_ref(nua);
     e->e_event = event;
