@@ -3431,7 +3431,7 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *msg = NULL, *dialog = NULL, *txt = NULL;
+	cJSON *msg = NULL, *dialog = NULL, *txt = NULL, *jevent = NULL;
 	const char *call_id = NULL, *dtmf = NULL;
 	switch_bool_t r = SWITCH_TRUE;
 	char *proto = VERTO_CHAT_PROTO;
@@ -3449,17 +3449,42 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		switch_core_session_t *session = NULL;
 
 		if ((session = switch_core_session_locate(call_id))) {
+			verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+
+			if (!tech_pvt) {
+				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Invalid channel"));
+				switch_core_session_rwunlock(session);
+				err = 1; goto cleanup;
+			}
 
 			parse_user_vars(dialog, session);
 
-			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {
-				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-				char *send;
+			if ((jevent = cJSON_GetObjectItem(params, "command"))) {
+				switch_event_t *event = NULL;
 
-				if (!tech_pvt) {
-					cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Invalid channel"));
-					err = 1; goto cleanup;
+				if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+					char *json_text;
+
+					json_text = cJSON_PrintUnformatted(jevent);
+					switch_assert(json_text);
+
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/json");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-source", "verto");
+					switch_event_add_body(event, "%s", json_text);
+
+					switch_safe_free(json_text);
+					
+					if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
+						switch_event_destroy(&event);
+						cJSON_AddItemToObject(*response, "message", cJSON_CreateString("Unexpected Error"));
+						switch_core_session_rwunlock(session);
+						err = 1; goto cleanup;
+					}
 				}
+			}
+			
+			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {
+				char *send;
 
 				send = switch_mprintf("~%s", dtmf);
 
