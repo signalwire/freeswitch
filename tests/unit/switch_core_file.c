@@ -132,7 +132,7 @@ FST_CORE_BEGIN("./conf")
 			switch_status_t status = SWITCH_STATUS_FALSE;
 			switch_file_handle_t fhw = { 0 };
 			static char filename[] = "/tmp/fs_write_unit_test.wav";
-			char *buf;
+			int16_t *buf;
 			int nr_frames = 3, i;
 			switch_size_t len;
 
@@ -159,7 +159,7 @@ FST_CORE_BEGIN("./conf")
 			switch_status_t status = SWITCH_STATUS_FALSE;
 			switch_file_handle_t fhw = { 0 };
 			static char filename[] = "/tmp/fs_write_unit_test.wav";
-			char *buf;
+			int16_t *buf;
 			int nr_frames = 3, i, want_channels = 2;
 			switch_size_t len;
 
