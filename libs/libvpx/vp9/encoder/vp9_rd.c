@@ -589,7 +589,7 @@ void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x, uint8_t *ref_y_buffer,
                       x->mbmi_ext->ref_mvs[ref_frame][1].as_int;
 
   // Get the sad for each candidate reference mv.
-  for (i = 0; i < num_mv_refs; ++i) {
+  for (i = 0; i < num_mv_refs && i < MAX_MV_REF_CANDIDATES + 1; ++i) {
     const MV *this_mv = &pred_mv[i];
     int fp_row, fp_col;
     if (this_mv->row == INT16_MAX || this_mv->col == INT16_MAX) continue;
