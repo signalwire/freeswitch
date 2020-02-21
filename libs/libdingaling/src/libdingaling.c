@@ -930,7 +930,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	char *node = NULL;
 	char *ns = NULL;
 	ldl_handle_t *handle = user_data;
-	iks *iq, *query, *tag;
+	iks *iq = NULL, *query, *tag;
 	uint8_t send = 0;
 	int x;
 
