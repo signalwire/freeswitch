@@ -224,7 +224,7 @@ static int sres_sofia_update(sres_sofia_t *srs,
 	if (!(srs->srs_reg + i)->reg_ptr)
 	  break;
       }
-      if (i > N)
+      if (i >= N)
 	return su_seterrno(ENOMEM);
 
       reg = srs->srs_reg + i;
