@@ -5977,7 +5977,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			t_engine->cur_payload_map = red_pmap;
+			if (red_pmap) {
+				t_engine->cur_payload_map = red_pmap;
+			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
