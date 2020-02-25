@@ -150,6 +150,9 @@ static switch_bool_t switch_amr_unpack_oa(unsigned char *buf, uint8_t *tmp, int 
 	int index;
 	int framesz;
 
+	if (!buf) {
+		return SWITCH_FALSE;
+	}
 	buf++; /* CMR skip */
 	tocs = buf;
 	index = ((tocs[0]>>3) & 0xf);
