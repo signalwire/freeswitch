@@ -1350,7 +1350,6 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	}
 	*dest++ = '\0';
 
-	profile = skinny_find_profile(profile_name);
 	if (!(profile = skinny_find_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Profile %s\n", profile_name);
 		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
