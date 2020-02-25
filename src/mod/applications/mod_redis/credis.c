@@ -177,8 +177,10 @@ static int cr_morebulk(cr_multibulk *mb, int size)
 
   iptr = realloc(mb->idxs, total * sizeof(int));
 
-  if (iptr == NULL)
+  if (iptr == NULL) {
+    free(cptr);
     return CREDIS_ERR_NOMEM;
+   }
 
   mb->bulks = cptr;
   mb->idxs = iptr;
