@@ -683,10 +683,6 @@ static switch_status_t vlc_file_av_open(switch_file_handle_t *handle, const char
     vlc_file_context_t *acontext = handle->private_info;
 	vlc_video_context_t *vcontext;
 
-	if (acontext) {
-		vcontext = acontext->vcontext;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for reading\n", acontext->path);
 
 	vcontext = switch_core_alloc(acontext->pool, sizeof(vlc_video_context_t));
