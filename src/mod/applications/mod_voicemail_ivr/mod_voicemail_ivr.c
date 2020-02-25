@@ -68,7 +68,7 @@ SWITCH_STANDARD_APP(voicemail_ivr_function)
 	if (argv[2])
 		domain = argv[2];
 
-	if (!strcasecmp(argv[0], "check")) {
+	if (argv[0] && !strcasecmp(argv[0], "check")) {
 		if (argv[3])
 			id = argv[3];
 
