@@ -270,6 +270,14 @@ SWITCH_STANDARD_API(pa_cmd);
 */
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
+	switch_channel_t *channel;
+
+	if (session) {
+		if ((channel = switch_core_session_get_channel(session))) {
+			switch_channel_set_flag(channel, CF_AUDIO);
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1189,6 +1197,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_channel_set_state(channel, CS_INIT);
+	switch_channel_set_flag(channel, CF_AUDIO);
 	return SWITCH_CAUSE_SUCCESS;
 
 error:
