@@ -1722,7 +1722,7 @@ new_req:
 			*auth_pass++ = '\0';
 		}
 
-		if (vhost->auth_user && vhost->auth_pass &&
+		if (vhost->auth_user && vhost->auth_pass && auth_pass &&
 			!strcmp(vhost->auth_user, auth_user) &&
 			!strcmp(vhost->auth_pass, auth_pass)) {
 			goto authed;
