@@ -1656,7 +1656,7 @@ end:
 static switch_status_t playback_array(switch_core_session_t *session, const char *str) {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	if (str && !strncmp(str, "ARRAY::", 7)) {
-		char *i = (char*) str + 7, *j = i;
+		char *i = (char*) str + 7, *j;
 		while (1) {
 			if ((j = strstr(i, "::"))) {
 				*j = 0;
