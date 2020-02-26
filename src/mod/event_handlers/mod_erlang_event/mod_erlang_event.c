@@ -1376,7 +1376,9 @@ static listener_t *new_outbound_listener_locked(char *node)
 		listener->peer_nodename = switch_core_strdup(listener->pool, node);
 	}
 
-	switch_thread_rwlock_rdlock(listener->rwlock);
+	if (listener) {
+		switch_thread_rwlock_rdlock(listener->rwlock);
+	}
 
 	return listener;
 }
