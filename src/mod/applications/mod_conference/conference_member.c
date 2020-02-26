@@ -1544,6 +1544,7 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	int channels = 0;
 	switch_event_t *params = NULL;
 	const char *position = NULL;
+	const char *tts_engine = NULL, *tts_voice = NULL;
 
 	if (member == NULL || zstr(text))
 		return SWITCH_STATUS_FALSE;
@@ -1551,10 +1552,6 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	conference = member->conference;
 	switch_assert(conference != NULL);
 	channels = conference->channels;
-
-	if (!(conference->tts_engine && conference->tts_voice)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	/* Setup a memory pool to use. */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -1590,21 +1587,25 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	fnode->leadin = leadin;
 	fnode->pool = pool;
 
+	
+	if (params) {
+		tts_engine = switch_event_get_header(params, "tts_engine");
+		tts_voice = switch_event_get_header(params, "tts_voice");
 
-	if (params && (position = switch_event_get_header(params, "position"))) {
-		if (conference->channels != 2) {
-			position = NULL;
-		} else {
-			channels = 1;
-			fnode->al = conference_al_create(pool);
-			if (conference_al_parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
-				fnode->al = NULL;
-				channels = conference->channels;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+		if ((position = switch_event_get_header(params, "position"))) {
+			if (conference->channels != 2) {
+				position = NULL;
+			} else {
+				channels = 1;
+				fnode->al = conference_al_create(pool);
+				if (conference_al_parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+					fnode->al = NULL;
+					channels = conference->channels;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+				}
 			}
 		}
 	}
-
 
 	if (member->sh && member->last_speech_channels != channels) {
 		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
@@ -1612,12 +1613,26 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 		member->sh = NULL;
 	}
 
+	if (!tts_engine) {
+		tts_engine = conference->tts_engine;
+	}
+
+	if (!tts_voice) {
+		tts_voice = conference->tts_voice;
+	}
+
+	if (zstr(tts_engine) || zstr(tts_voice)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing TTS engine or voice\n");
+		status = SWITCH_STATUS_FALSE;                                                                                                                       
+		goto end;
+	}
+
 	if (!member->sh) {
 		memset(&member->lsh, 0, sizeof(member->lsh));
-		if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice,
+		if (switch_core_speech_open(&member->lsh, tts_engine, tts_voice,
 									conference->rate, conference->interval, channels, &flags, switch_core_session_get_pool(member->session)) !=
 			SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", tts_engine);
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
@@ -1650,7 +1665,7 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 			switch_core_speech_text_param_tts(fnode->sh, "voice", voice);
 		}
 	} else {
-		switch_core_speech_text_param_tts(fnode->sh, "voice", conference->tts_voice);
+		switch_core_speech_text_param_tts(fnode->sh, "voice", tts_voice);
 	}
 
 	switch_core_speech_feed_tts(fnode->sh, text, &flags);
