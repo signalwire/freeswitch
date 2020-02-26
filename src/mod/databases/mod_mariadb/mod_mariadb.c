@@ -685,15 +685,10 @@ error:
 	err_str = mariadb_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		if (zstr(er)) {
-			err_str = strdup((char *)"SQL ERROR!");
-		} else {
-			err_str = er;
-		}
+		switch_safe_free(err_str);
+		err_str = (er) ? er : strdup((char *)"SQL ERROR!");
 	} else {
-		if (!zstr(er)) {
-			free(er);
-		}
+		switch_safe_free(er);
 	}
 
 	if (err_str) {

@@ -565,7 +565,9 @@ switch_status_t database_handle_exec_string(switch_database_interface_handle_t *
 		goto error;
 	}
 
-	if (result) {
+	if (!result) {
+		goto done;
+	} else {
 		switch (result->status) {
 #if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
 		case PGRES_SINGLE_TUPLE:
