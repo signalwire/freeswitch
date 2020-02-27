@@ -478,6 +478,7 @@ static int cr_receivereply(REDIS rhnd, char recvtype)
 
 static void cr_delete(REDIS rhnd)
 {
+  if (!rhnd) return;
   if (rhnd->reply.multibulk.bulks != NULL)
     free(rhnd->reply.multibulk.bulks);
   if (rhnd->reply.multibulk.idxs != NULL)
