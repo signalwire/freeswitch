@@ -597,7 +597,6 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	opts[0] = *vlc_args;
 	if (acontext) opts[1] = switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path);
 
-	vcontext = acontext->vcontext;
 	pool = acontext->pool;
 
 
