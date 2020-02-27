@@ -3701,8 +3701,6 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 	}
 
-	arg = 0;
-
 	if (argv[7]) {
 		if ((etime = atol(argv[7]))) {
 			switch_size_t retsize;
