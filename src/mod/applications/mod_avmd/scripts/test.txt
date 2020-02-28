@@ -1,0 +1,370 @@
+#author Piotr Gregor <piotr@dataandsignal.com>
+#date	27th Dec 2019
+
+Test dialplan
+=============
+
+    <extension name="avmd1">
+      <condition field="destination_number" expression="^avmd1$">
+	<action application="playback" data="voicemail/8000/twenty_gold_bomb.wav"/>
+      </condition>
+    </extension>
+    
+    <extension name="avmd2">
+      <condition field="destination_number" expression="^avmd2$">
+	<action application="avmd_start"/>
+	<action application="playback" data="voicemail/8000/twenty_gold_bomb.wav"/>
+	<action application="avmd_stop"/>
+      </condition>
+    </extension>
+
+
+Test machine
+============
+
+CPU is 8-core Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz.
+
+
+Test results
+===========
+
+Obtained from output of top (running in multiple core mode, so max value of CPU for this case of 8-core CPU is 800%).
+
+Running command
+./avmd_originate_multiple.pl avmd1 piotr X
+then Freeswitch starts two legs for each call (AND I configured avmd to start on both of them).
+then Freeswitch's command "show calls" is showing 2*X calls, so if I run ./avmd_originate_multiple.pl avmd1 piotr 10 
+then if I do "show calls" in cli it displays "20 total", as it counts "-a" and "-b" loopback legs.
+
+So for test extension "avmd2" where avmd_start app is executed Freeswitch starts two legs for each call and avmd is running on inbound.
+
+This table uses X as calls (so if you did "show calls" in cli you would actually see twice as the number in top row).
+
+ext/#calls	10	50	100	150	200 
+avmd1		10%	26	50	63	78
+avmd2		103	257	382 510	760(GUI lagging)
+
+Results are values shown as %CPU from "top" command (here that would be 63.3%):
+Obtained from output of top (running in multiple core mode, so max value of CPU for this case of 8-core CPU is 800%).
+
+top -p `pidof freeswitch`
+
+top - 02:26:45 up 13 days, 13:48,  1 user,  load average: 0.62, 0.39, 0.34
+Tasks:   1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  7.9 us,  0.6 sy,  0.0 ni, 89.8 id,  0.0 wa,  0.0 hi,  1.7 si,  0.0 st
+MiB Mem :  24034.2 total,   4879.0 free,  11671.8 used,   7483.4 buff/cache
+MiB Swap:  24502.0 total,  24502.0 free,      0.0 used.  11040.5 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND                                                                                                                                                                                         
+ 8765 root      -2 -10 4370088 115872  20780 S  63.3   0.5   1:42.73 freeswitch  
+
+
+Test script (for up to date version see avmd_originate_multiple.pl)
+===========
+
+#!/usr/bin/perl -w
+
+
+#brief  Make multiple calls. This script can be used to check CPU usage on calls running avmd (see test.txt).
+#author Piotr Gregor <piotr@dataandsignal.com>
+#date   15 Sept 2016 02:44 PM
+#changed 27th Dec 2019
+
+
+use strict;
+use warnings;
+require ESL;
+use POSIX;
+use Time::HiRes;
+
+my $host = "127.0.0.1";
+my $port = "8021";
+my $pass = "ClueCon";
+my $extension_base = "sofia/internal/1000\@192.168.1.1";
+
+my $playback = 'local_stream://moh';
+my $context = 'default'; 
+#Example:
+#my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/box_b/840534002  \&park()";
+#my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/%s/%s  \&park()";
+my $endpoint;
+my $gateway;
+my $dest;
+my $callerid;
+my $thread_n;
+my $idx = 0;
+
+
+if ($#ARGV + 1 eq 3) {
+    $dest = $ARGV[0];
+    $callerid = $ARGV[1];
+    $thread_n = $ARGV[2];
+    print "Dialing [" .$thread_n ."] calls simultaneously to[" .$dest ."] as [" .$callerid ."]\n";
+} else {
+    die "Please specify destination number, caller id and number of calls to make\n";
+}
+
+my $con  = new ESL::ESLconnection($host, $port, $pass);
+if (!$con) {
+    die "Unable to establish connection to $host:$port\n";
+}
+if ($con->connected()) {
+    print "OK, Connected.\n";
+} else {
+    die "Connection failure.\n";
+}
+
+while($con->connected() && ($idx < $thread_n)) {
+    call_once($dest, $callerid, $idx);
+    $idx++;
+    Time::HiRes::sleep(0.11);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
+}
+
+print "Disconnected.\n\n";
+
+sub call_once {
+    my ($dest, $callerid, $idx) = @_;
+    my $originate_string =
+    'originate ' .
+    '{ignore_early_media=true,' .
+    'originator_codec=PCMA,' .
+    'origination_uuid=%s,' . 
+    'originate_timeout=60,' .
+    'origination_caller_id_number=' . $callerid . ',' .
+    'origination_caller_id_name=' . $callerid . '}';
+
+    if(defined($endpoint)) {
+        $originate_string = '';
+        $originate_string .= $endpoint;
+    } else {
+        $originate_string .= 'loopback/' . $dest . '/' . $context;
+        $originate_string .=  ' ' . '&playback(' . $playback . ')';
+    }
+
+    my $uuid = $con->api('create_uuid')->getBody();
+    my ($time_epoch, $time_hires) = Time::HiRes::gettimeofday();
+    printf("[%s]\tCalling with uuid [%s] [%s]... [%s]\n", $idx + 1, $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $originate_string);
+
+    $con->bgapi(sprintf($originate_string, $uuid));
+    $con->api('uuid_setvar ' . $uuid .' execute_on_answer avmd_start');
+}
+
+CPU info
+=========
+peter@photon:/usr/local/freeswitch/conf/dialplan$ cat /proc/cpuinfo 
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.008
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 0
+cpu cores	: 4
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 799.969
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 1
+cpu cores	: 4
+apicid		: 2
+initial apicid	: 2
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 2
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 799.992
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 2
+cpu cores	: 4
+apicid		: 4
+initial apicid	: 4
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 3
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.021
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 3
+cpu cores	: 4
+apicid		: 6
+initial apicid	: 6
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 4
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.038
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 0
+cpu cores	: 4
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 5
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.241
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 1
+cpu cores	: 4
+apicid		: 3
+initial apicid	: 3
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 6
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.199
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 2
+cpu cores	: 4
+apicid		: 5
+initial apicid	: 5
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 7
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 60
+model name	: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+stepping	: 3
+microcode	: 0x19
+cpu MHz		: 800.031
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 8
+core id		: 3
+cpu cores	: 4
+apicid		: 7
+initial apicid	: 7
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm abm cpuid_fault invpcid_single pti tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 7999.38
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+

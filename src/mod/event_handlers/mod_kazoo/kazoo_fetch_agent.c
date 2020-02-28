@@ -309,8 +309,9 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 						  ,reply.uuid_str
 						  ,(unsigned int) (switch_micro_time_now() - now) / 1000
 						  ,reply.xml_str);
-
-		xml = switch_xml_parse_str_dynamic(reply.xml_str, SWITCH_FALSE);
+		if ((xml = switch_xml_parse_str_dynamic(reply.xml_str, SWITCH_FALSE)) == NULL) {
+			switch_safe_free(reply.xml_str);
+		}
 	} else {
 		/* facepalm */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Request for %s XML (%s) timed-out after %dms\n"
@@ -327,6 +328,8 @@ void bind_fetch_profile(ei_xml_agent_t *agent, kazoo_config_ptr fetch_handlers)
 	switch_hash_index_t *hi;
 	kazoo_fetch_profile_ptr val = NULL, ptr = NULL;
 
+	if (!fetch_handlers) return;
+
 	for (hi = switch_core_hash_first(fetch_handlers->hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, (void**) &val);
 		if (val && val->section == agent->section) {
@@ -335,6 +338,7 @@ void bind_fetch_profile(ei_xml_agent_t *agent, kazoo_config_ptr fetch_handlers)
 		}
 	}
 	agent->profile = ptr;
+	switch_safe_free(hi);
 }
 
 void rebind_fetch_profiles(kazoo_config_ptr fetch_handlers)

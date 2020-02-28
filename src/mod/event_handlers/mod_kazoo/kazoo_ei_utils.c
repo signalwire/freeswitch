@@ -514,10 +514,6 @@ switch_status_t create_acceptor() {
     char ipbuf[48];
     const char *ip_addr;
 
-#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
-	ei_init();
-#endif
-
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
 	if (kazoo_globals.ei_compat_rel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", kazoo_globals.ei_compat_rel);
@@ -882,6 +878,7 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 		kazoo_globals.config_fetched = 1;
 		switch_xml_free(xml);
 	}
+	switch_event_destroy(&params);
 
 }
 
@@ -901,6 +898,7 @@ static void fetch_config_handlers(switch_memory_pool_t *pool)
 		kazoo_globals.config_fetched = 1;
 		switch_xml_free(xml);
 	}
+	switch_event_destroy(&params);
 
 }
 
@@ -935,6 +933,60 @@ void fetch_config() {
 
 }
 
+#ifdef WITH_KAZOO_ERL_SHUTDOWN
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	typedef struct ei_mutex_s {
+	#ifdef __WIN32__
+	  HANDLE lock;
+	#elif VXWORKS
+	  SEM_ID lock;
+	#else /* unix */
+	#if defined(HAVE_MIT_PTHREAD_H) || defined(HAVE_PTHREAD_H)
+	  pthread_mutex_t *lock;
+	#else /* ! (HAVE_MIT_PTHREAD_H || HAVE_PTHREAD_H) */
+	  void *dummy;   /* Actually never used */
+	#endif /* ! (HAVE_MIT_PTHREAD_H || HAVE_PTHREAD_H) */
+	#endif /* unix */
+	} ei_mutex_t;
+
+	typedef struct ei_socket_info_s {
+	    int socket;
+	    ei_socket_callbacks *cbs;
+	    void *ctx;
+	    int dist_version;
+	    ei_cnode cnode;	/* A copy, not a pointer. We don't know when freed */
+	    char cookie[EI_MAX_COOKIE_SIZE+1];
+	} ei_socket_info;
+
+	extern ei_socket_info *ei_sockets;
+	extern ei_mutex_t* ei_sockets_lock;
+	extern int ei_n_sockets;
+	extern int ei_sz_sockets;
+
+	int ei_mutex_free(ei_mutex_t *l, int nblock);
+
+#endif
+#endif
+
+void kz_erl_init()
+{
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_init();
+#endif
+}
+
+void kz_erl_shutdown()
+{
+#ifdef WITH_KAZOO_ERL_SHUTDOWN
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_mutex_free(ei_sockets_lock, 1);
+	ei_sockets_lock = NULL;
+	free(ei_sockets);
+	ei_sockets = NULL;
+	ei_n_sockets = ei_sz_sockets = 0;
+#endif
+#endif
+}
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	switch_os_socket_t os_socket;
@@ -986,6 +1038,14 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	return SWITCH_STATUS_TERM;
 }
 
+SWITCH_DECLARE(switch_status_t) ei_queue_pop(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
+{
+	if (timeout == 0) {
+		return switch_queue_trypop(queue, data);
+	} else {
+		return switch_queue_pop_timeout(queue, data, timeout);
+	}
+}
 /* For Emacs:
  * Local Variables:
  * mode:c

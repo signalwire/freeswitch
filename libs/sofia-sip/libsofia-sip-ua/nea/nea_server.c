@@ -844,7 +844,7 @@ int nea_view_update(nea_server_t *nes,
     nea_view_queue(nes, evv, evq);
 
   SU_DEBUG_7(("nea_server_update(%p): %s (%s)\n", (void *)nes,
-	      ev->ev_event->o_type, evv->evv_content_type->c_type));
+	      ev->ev_event->o_type, (evv->evv_content_type ? evv->evv_content_type->c_type : "N/A")));
 
   return 1;
 }

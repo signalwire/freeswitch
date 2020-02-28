@@ -3,7 +3,7 @@
 
 #brief      Test module avmd by calling voicemails from avmd test suite
 #           and print detection results to the console.
-#author     Piotr Gregor <piotrgregor@rsyncme.org>
+#author     Piotr Gregor <piotr@dataandsignal.com>
 #details    If you are testing serving voicemails from dialplan then avmd
 #           must be set to inbound mode, either globally (by avmd set inbound
 #           in fs_cli) or in dialplan settings (<action application="avmd_start"

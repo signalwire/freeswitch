@@ -39,6 +39,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
+#include <sys/types.h>
+#include <unistd.h>
+#else
+ /* process.h is required for _getpid() */
+#include <process.h>
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
@@ -65,6 +70,11 @@ struct switch_network_list {
 	switch_memory_pool_t *pool;
 	char *name;
 };
+
+SWITCH_DECLARE(void *) switch_calloc(size_t nmemb, size_t size)
+{
+	return calloc(nmemb, size);
+}
 
 #ifndef WIN32
 SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
@@ -4529,6 +4539,16 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 	return text;
 }
 
+SWITCH_DECLARE(unsigned long) switch_getpid(void)
+{
+#ifndef WIN32
+	pid_t pid = getpid();
+#else
+	int pid = _getpid();
+#endif
+
+	return (unsigned long)pid;
+}
 
 
 /* For Emacs:

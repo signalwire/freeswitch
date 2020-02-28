@@ -4263,7 +4263,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 5 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
 					continue;
 				}
@@ -5977,7 +5977,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			t_engine->cur_payload_map = red_pmap;
+			if (red_pmap) {
+				t_engine->cur_payload_map = red_pmap;
+			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {

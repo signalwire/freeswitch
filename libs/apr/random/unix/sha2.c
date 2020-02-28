@@ -444,6 +444,16 @@ void apr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
 
         /* Clean up */
         a = b = c = d = e = f = g = h = T1 = T2 = 0;
+        assert(a==0);
+        assert(b==0);
+        assert(c==0);
+        assert(d==0);
+        assert(e==0);
+        assert(f==0);
+        assert(g==0);
+        assert(h==0);
+        assert(T1==0);
+        assert(T2==0);
 }
 
 #endif /* SHA2_UNROLL_TRANSFORM */
@@ -478,6 +488,8 @@ void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) 
                         context->bitcount += len << 3;
                         /* Clean up: */
                         usedspace = freespace = 0;
+                        assert(usedspace==0);
+                        assert(freespace==0);
                         return;
                 }
         }
@@ -495,6 +507,8 @@ void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) 
         }
         /* Clean up: */
         usedspace = freespace = 0;
+        assert(usedspace==0);
+        assert(freespace==0);
 }
 
 void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
@@ -559,6 +573,7 @@ void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         /* Clean up state data: */
         MEMSET_BZERO(context, sizeof(*context));
         usedspace = 0;
+        assert(usedspace==0);
 }
 
 char *apr__SHA256_End(SHA256_CTX* context, char buffer[]) {
@@ -768,6 +783,16 @@ void apr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
 
         /* Clean up */
         a = b = c = d = e = f = g = h = T1 = T2 = 0;
+        assert(a==0);
+        assert(b==0);
+        assert(c==0);
+        assert(d==0);
+        assert(e==0);
+        assert(f==0);
+        assert(g==0);
+        assert(h==0);
+        assert(T1==0);
+        assert(T2==0);
 }
 
 #endif /* SHA2_UNROLL_TRANSFORM */
@@ -802,6 +827,8 @@ void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) 
                         ADDINC128(context->bitcount, len << 3);
                         /* Clean up: */
                         usedspace = freespace = 0;
+                        assert(usedspace==0);
+                        assert(freespace==0);
                         return;
                 }
         }
@@ -819,6 +846,8 @@ void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) 
         }
         /* Clean up: */
         usedspace = freespace = 0;
+        assert(usedspace==0);
+        assert(freespace==0);
 }
 
 void apr__SHA512_Last(SHA512_CTX* context) {

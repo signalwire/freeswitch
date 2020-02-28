@@ -14068,6 +14068,12 @@ else
     freeswitchPINVOKE.switch_rtp_video_loss(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
   }
 
+  public static SWIGTYPE_p_switch_core_session switch_rtp_get_core_session(SWIGTYPE_p_switch_rtp rtp_session) {
+    global::System.IntPtr cPtr = freeswitchPINVOKE.switch_rtp_get_core_session(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+    SWIGTYPE_p_switch_core_session ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
+    return ret;
+  }
+
   public static SWIGTYPE_p_cJSON switch_log_node_to_json(switch_log_node_t node, int log_level, switch_log_json_format_t json_format, switch_event chan_vars) {
     global::System.IntPtr cPtr = freeswitchPINVOKE.switch_log_node_to_json(switch_log_node_t.getCPtr(node), log_level, switch_log_json_format_t.getCPtr(json_format), switch_event.getCPtr(chan_vars));
     SWIGTYPE_p_cJSON ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_cJSON(cPtr, false);
@@ -26165,6 +26171,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_video_loss___")]
   public static extern void switch_rtp_video_loss(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_get_core_session___")]
+  public static extern global::System.IntPtr switch_rtp_get_core_session(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_log_node_t_data_set___")]
   public static extern void switch_log_node_t_data_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);

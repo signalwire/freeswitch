@@ -89,6 +89,7 @@ typedef struct client_profile_s {
 	switch_hash_t *vars_map;
 	long auth_scheme;
 	int timeout;
+	int connect_timeout;
 	profile_perms_t perms;
 	char *ua;
 
@@ -1610,6 +1611,10 @@ static switch_status_t httapi_sync(client_t *client)
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, client->profile->timeout);
 	}
 
+	if (client->profile->connect_timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, client->profile->connect_timeout);
+	}
+
 	if (client->profile->ssl_cert_file) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, client->profile->ssl_cert_file);
 	}
@@ -1759,6 +1764,7 @@ static switch_status_t do_config(void)
 		char *method = NULL;
 		int disable100continue = 1;
 		int timeout = 0;
+		int connect_timeout = 0;
 		uint32_t enable_cacert_check = 0;
 		char *ssl_cert_file = NULL;
 		char *ssl_key_file = NULL;
@@ -1823,6 +1829,13 @@ static switch_status_t do_config(void)
 						timeout = tmp;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
+					}
+				} else if (!strcasecmp(var, "connect-timeout")) {
+					int tmp = atoi(val);
+					if (tmp >= 0) {
+						connect_timeout = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative connect-timeout!\n");
 					}
 				} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 					enable_cacert_check = 1;
@@ -2091,6 +2104,7 @@ static switch_status_t do_config(void)
 
 		profile->auth_scheme = auth_scheme;
 		profile->timeout = timeout;
+		profile->connect_timeout = connect_timeout;
 		profile->url = switch_core_strdup(globals.pool, url);
 		switch_assert(profile->url);
 
@@ -2542,6 +2556,10 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	if (client->profile->timeout) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, client->profile->timeout);
+	}
+
+	if (client->profile->connect_timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, client->profile->connect_timeout);
 	}
 
 	if (client->profile->ssl_cert_file) {

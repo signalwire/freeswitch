@@ -81,6 +81,7 @@ struct ei_event_stream_s {
 	uint32_t flags;
 	ei_node_t *node;
 	short event_stream_framing;
+	switch_interval_time_t queue_timeout;
 	struct ei_event_stream_s *next;
 };
 
@@ -103,6 +104,9 @@ struct ei_node_s {
 	uint32_t flags;
 	int legacy;
 	short event_stream_framing;
+	switch_interval_time_t event_stream_queue_timeout;
+	switch_interval_time_t receiver_queue_timeout;
+	switch_interval_time_t sender_queue_timeout;
 	struct ei_node_s *next;
 };
 
@@ -158,7 +162,7 @@ struct kz_globals_s {
 
 	switch_hash_t *event_filter;
 	int epmdfd;
-	int num_worker_threads;
+	int node_worker_threads;
 	switch_bool_t nat_map;
 	switch_bool_t ei_shortname;
 	int ei_compat_rel;
@@ -171,11 +175,14 @@ struct kz_globals_s {
 	int send_all_headers;
 	int send_all_private_headers;
 	int connection_timeout;
-	int receive_timeout;
+	int ei_receive_timeout;
+	switch_interval_time_t node_sender_queue_timeout;
+	switch_interval_time_t node_receiver_queue_timeout;
 	int receive_msg_preallocate;
 	int event_stream_preallocate;
 	int send_msg_batch;
 	short event_stream_framing;
+	switch_interval_time_t event_stream_queue_timeout;
 	switch_port_t port;
 	int config_fetched;
 	int io_fault_tolerance;
@@ -233,6 +240,9 @@ int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char 
 int ei_decode_string_or_binary(char *buf, int *index, char **dst);
 switch_status_t create_acceptor();
 switch_hash_t *create_default_filter();
+void kz_erl_init();
+void kz_erl_shutdown();
+SWITCH_DECLARE(switch_status_t) ei_queue_pop(switch_queue_t *queue, void **data, switch_interval_time_t timeout);
 
 void fetch_config();
 

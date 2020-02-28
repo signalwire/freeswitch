@@ -1756,20 +1756,20 @@ issize_t msg_unquoted_e(char *b, isize_t bsiz, char const *s)
     size_t n = strcspn(s, "\"\\");
 
     if (n == 0) {
-      if (e + 2 <= bsiz)
+      if (b && e + 2 <= bsiz)
 	b[e] = '\\', b[e + 1] = s[0];
       e += 2;
       s++;
     }
     else {
-      if (e + n <= bsiz)
+      if (b && (e + n <= bsiz))
 	memcpy(b + e, s, n);
       e += n;
       s += n;
     }
   }
 
-  if (e < bsiz)
+  if (b && e < bsiz)
     b[e] = '"';
   e++;
 

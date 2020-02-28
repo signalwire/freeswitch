@@ -5,6 +5,34 @@
       <prompt phrase="Raute" filename="35.wav"/>
       <prompt phrase="Stern" filename="42.wav"/>
       <prompt phrase="Punkt" filename="46.wav"/>
+      <prompt phrase="Bindestrich" filename="45.wav"/>
+      <prompt phrase="Ausrufezeichen" filename="33.wav"/>
+      <prompt phrase="Ät" filename="64.wav"/>
+      <prompt phrase="Dollar-Zeichen" filename="36.wav"/>
+      <prompt phrase="Prozent-Zeichen" filename="37.wav"/>
+      <prompt phrase="Kaufmännisches Und-Zeichen" filename="38.wav"/>
+      <prompt phrase="Doppelte Anführungszeichen" filename="34.wav"/>
+      <prompt phrase="Einfache Anführungszeichen" filename="39.wav"/>
+      <prompt phrase="Schrägstrich" filename="47.wav"/>
+      <prompt phrase="Unterstrich" filename="95.wav"/>
+      <prompt phrase="Backslash" filename="92.wav"/>
+      <prompt phrase="Tilde" filename="126.wav"/>
+      <prompt phrase="Gleichheitszeichen" filename="61.wav"/>
+      <prompt phrase="Doppelpunkt" filename="58.wav"/>
+      <prompt phrase="Strichpunkt" filename="59.wav"/>
+      <prompt phrase="Zirkumflex" filename="94.wav"/>
+      <prompt phrase="senkrechter Strich" filename="124.wav"/>
+      <prompt phrase="Plus" filename="43.wav"/>
+      <prompt phrase="linke Klammer" filename="40.wav"/>
+      <prompt phrase="rechte Klammer" filename="41.wav"/>
+      <prompt phrase="linke geschweifte Klammer" filename="123.wav"/>
+      <prompt phrase="rechte geschweifte Klammer" filename="125.wav"/>
+      <prompt phrase="linke eckige Klammer" filename="91.wav"/>
+      <prompt phrase="rechte eckige Klammer" filename="93.wav"/>
+      <prompt phrase="Komma" filename="44.wav"/>
+      <prompt phrase="Gravis-Zeichen" filename="96.wav"/>
+      <prompt phrase="kleiner als Zeichen" filename="60.wav"/>
+      <prompt phrase="größer als Zeichen" filename="62.wav"/>
       <prompt phrase="A" filename="97.wav"/>
       <prompt phrase="B" filename="98.wav"/>
       <prompt phrase="C" filename="99.wav"/>
@@ -67,6 +95,8 @@
       <prompt phrase="Ökonom"  filename="201.wav"/>
       <prompt phrase="Übermut" filename="202.wav"/>
       <prompt phrase="Eszet"   filename="203.wav"/>
+      <prompt phrase="Stern" filename="42.wav"/>
+      <prompt phrase="Raute" filename="35.wav"/>
     </phonetic-ascii>
     <digits>
       <prompt phrase="Null" filename="0.wav"/>
@@ -98,49 +128,125 @@
       <prompt phrase="Achtzig" filename="80.wav"/>
       <prompt phrase="Neunzig" filename="90.wav"/>
       <prompt phrase="Punkt" filename="dot.wav"/>
-      <prompt phrase="Erstes" filename="h-1.wav"/>
-      <prompt phrase="Zweites" filename="h-2.wav"/>
-      <prompt phrase="Drittes" filename="h-3.wav"/>
-      <prompt phrase="Viertes" filename="h-4.wav"/>
-      <prompt phrase="Fünftes" filename="h-5.wav"/>
-      <prompt phrase="Sechstes" filename="h-6.wav"/>
-      <prompt phrase="Siebtes" filename="h-7.wav"/>
-      <prompt phrase="Achtes" filename="h-8.wav"/>
-      <prompt phrase="Neuntes" filename="h-9.wav"/>
-      <prompt phrase="Zehntes" filename="h-10.wav"/>
-      <prompt phrase="Elftes" filename="h-11.wav"/>
-      <prompt phrase="Zwölftes" filename="h-12.wav"/>
-      <prompt phrase="Dreizehntes" filename="h-13.wav"/>
-      <prompt phrase="Vierzehntes" filename="h-14.wav"/>
-      <prompt phrase="Fünfzehntes" filename="h-15.wav"/>
-      <prompt phrase="Sechzehntes" filename="h-16.wav"/>
-      <prompt phrase="Siebzehntes" filename="h-17.wav"/>
-      <prompt phrase="Achtzehntes" filename="h-18.wav"/>
-      <prompt phrase="Neunzehntes" filename="h-19.wav"/>
-      <prompt phrase="Zwanzigstes" filename="h-20.wav"/>
-      <prompt phrase="Dreissigstes" filename="h-30.wav"/>
+      <prompt phrase="Erste" filename="h-1.wav"/>
+      <prompt phrase="Zweite" filename="h-2.wav"/>
+      <prompt phrase="Dritte" filename="h-3.wav"/>
+      <prompt phrase="Vierte" filename="h-4.wav"/>
+      <prompt phrase="Fünfte" filename="h-5.wav"/>
+      <prompt phrase="Sechste" filename="h-6.wav"/>
+      <prompt phrase="Siebte" filename="h-7.wav"/>
+      <prompt phrase="Achte" filename="h-8.wav"/>
+      <prompt phrase="Neunte" filename="h-9.wav"/>
+      <prompt phrase="Zehnte" filename="h-10.wav"/>
+      <prompt phrase="Elfte" filename="h-11.wav"/>
+      <prompt phrase="Zwölfte" filename="h-12.wav"/>
+      <prompt phrase="Dreizehnte" filename="h-13.wav"/>
+      <prompt phrase="Vierzehnte" filename="h-14.wav"/>
+      <prompt phrase="Fünfzehnte" filename="h-15.wav"/>
+      <prompt phrase="Sechzehnte" filename="h-16.wav"/>
+      <prompt phrase="Siebzehnte" filename="h-17.wav"/>
+      <prompt phrase="Achtzehnte" filename="h-18.wav"/>
+      <prompt phrase="Neunzehnte" filename="h-19.wav"/>
+      <prompt phrase="Zwanzigste" filename="h-20.wav"/>
+      <prompt phrase="Dreissigste" filename="h-30.wav"/>
+      <prompt phrase="Erster" filename="h-1_m.wav"/>
+      <prompt phrase="Zweiter" filename="h-2_m.wav"/>
+      <prompt phrase="Dritter" filename="h-3_m.wav"/>
+      <prompt phrase="Vierter" filename="h-4_m.wav"/>
+      <prompt phrase="Fünfter" filename="h-5_m.wav"/>
+      <prompt phrase="Sechster" filename="h-6_m.wav"/>
+      <prompt phrase="Siebter" filename="h-7_m.wav"/>
+      <prompt phrase="Achter" filename="h-8_m.wav"/>
+      <prompt phrase="Neunter" filename="h-9_m.wav"/>
+      <prompt phrase="Zehnter" filename="h-10_m.wav"/>
+      <prompt phrase="Elfter" filename="h-11_m.wav"/>
+      <prompt phrase="Zwölfter" filename="h-12_m.wav"/>
+      <prompt phrase="Dreizehnter" filename="h-13_m.wav"/>
+      <prompt phrase="Vierzehnter" filename="h-14_m.wav"/>
+      <prompt phrase="Fünfzehnter" filename="h-15_m.wav"/>
+      <prompt phrase="Sechzehnter" filename="h-16_m.wav"/>
+      <prompt phrase="Siebzehnter" filename="h-17_m.wav"/>
+      <prompt phrase="Achtzehnter" filename="h-18_m.wav"/>
+      <prompt phrase="Neunzehnter" filename="h-19_m.wav"/>
+      <prompt phrase="Zwanzigster" filename="h-20_m.wav"/>
+      <prompt phrase="Dreissigster" filename="h-30_m.wav"/>
+      <prompt phrase="Erste" filename="h-1_f.wav"/>
+      <prompt phrase="Zweite" filename="h-2_f.wav"/>
+      <prompt phrase="Dritte" filename="h-3_f.wav"/>
+      <prompt phrase="Vierte" filename="h-4_f.wav"/>
+      <prompt phrase="Fünfte" filename="h-5_f.wav"/>
+      <prompt phrase="Sechste" filename="h-6_f.wav"/>
+      <prompt phrase="Siebte" filename="h-7_f.wav"/>
+      <prompt phrase="Achte" filename="h-8_f.wav"/>
+      <prompt phrase="Neunte" filename="h-9_f.wav"/>
+      <prompt phrase="Zehnte" filename="h-10_f.wav"/>
+      <prompt phrase="Elfte" filename="h-11_f.wav"/>
+      <prompt phrase="Zwölfte" filename="h-12_f.wav"/>
+      <prompt phrase="Dreizehnte" filename="h-13_f.wav"/>
+      <prompt phrase="Vierzehnte" filename="h-14_f.wav"/>
+      <prompt phrase="Fünfzehnte" filename="h-15_f.wav"/>
+      <prompt phrase="Sechzehnte" filename="h-16_f.wav"/>
+      <prompt phrase="Siebzehnte" filename="h-17_f.wav"/>
+      <prompt phrase="Achtzehnte" filename="h-18_f.wav"/>
+      <prompt phrase="Neunzehnte" filename="h-19_f.wav"/>
+      <prompt phrase="Zwanzigste" filename="h-20_f.wav"/>
+      <prompt phrase="Dreissigste" filename="h-30_f.wav"/>
+      <prompt phrase="Erstes" filename="h-1_n.wav"/>
+      <prompt phrase="Zweites" filename="h-2_n.wav"/>
+      <prompt phrase="Drittes" filename="h-3_n.wav"/>
+      <prompt phrase="Viertes" filename="h-4_n.wav"/>
+      <prompt phrase="Fünftes" filename="h-5_n.wav"/>
+      <prompt phrase="Sechstes" filename="h-6_n.wav"/>
+      <prompt phrase="Siebtes" filename="h-7_n.wav"/>
+      <prompt phrase="Achtes" filename="h-8_n.wav"/>
+      <prompt phrase="Neuntes" filename="h-9_n.wav"/>
+      <prompt phrase="Zehntes" filename="h-10_n.wav"/>
+      <prompt phrase="Elftes" filename="h-11_n.wav"/>
+      <prompt phrase="Zwölftes" filename="h-12_n.wav"/>
+      <prompt phrase="Dreizehntes" filename="h-13_n.wav"/>
+      <prompt phrase="Vierzehntes" filename="h-14_n.wav"/>
+      <prompt phrase="Fünfzehntes" filename="h-15_n.wav"/>
+      <prompt phrase="Sechzehntes" filename="h-16_n.wav"/>
+      <prompt phrase="Siebzehntes" filename="h-17_n.wav"/>
+      <prompt phrase="Achtzehntes" filename="h-18_n.wav"/>
+      <prompt phrase="Neunzehntes" filename="h-19_n.wav"/>
+      <prompt phrase="Zwanzigstes" filename="h-20_n.wav"/>
+      <prompt phrase="Dreissigstes" filename="h-30_n.wav"/>
       <prompt phrase="Hundert" filename="hundred.wav"/>
+      <prompt phrase="Tausend" filename="thousand.wav"/>
       <prompt phrase="Millionen" filename="million.wav"/>
+      <prompt phrase="Millionen" filename="millionen.wav"/>
+      <prompt phrase="Milliarden" filename="milliarden.wav"/>
       <prompt phrase="Komma" filename="period.wav"/>
       <prompt phrase="Punkt" filename="point.wav"/>
       <prompt phrase="Raute" filename="pound.wav"/>
       <prompt phrase="Stern" filename="star.wav"/>
-      <prompt phrase="Tausend" filename="thousand.wav"/>
+      <prompt phrase="Ein" filename="1_m.wav"/>
+      <prompt phrase="Eine" filename="1_f.wav"/>
+      <prompt phrase="Ein" filename="1_n.wav"/>
+      <prompt phrase="Ein und" filename="1-and.wav"/>
+      <prompt phrase="Zwei und" filename="2-and.wav"/>
+      <prompt phrase="Drei und" filename="3-and.wav"/>
+      <prompt phrase="Vier und" filename="4-and.wav"/>
+      <prompt phrase="Fünf und" filename="5-and.wav"/>
+      <prompt phrase="Sechs und" filename="6-and.wav"/>
+      <prompt phrase="Sieben und" filename="7-and.wav"/>
+      <prompt phrase="Acht und" filename="8-and.wav"/>
+      <prompt phrase="Neun und" filename="9-and.wav"/>
     </digits>
     <currency>
       <prompt phrase="Und" filename="and.wav"/>
       <prompt phrase="Cent" filename="cent.wav"/>
-      <!-- vvv ??? -->
-      <prompt phrase="Zentral" filename="central.wav"/>
+      <prompt phrase="Zentrale" filename="central.wav"/>
       <prompt phrase="Cent pro Minute" filename="cents-per-minute.wav"/>
       <prompt phrase="Cent" filename="cents.wav"/>
       <prompt phrase="Euro" filename="dollar.wav"/>
       <prompt phrase="Euro" filename="dollars.wav"/>
       <prompt phrase="Minus" filename="minus.wav"/>
-      <prompt phrase="Negativ" filename="negative.wav"/>
+      <prompt phrase="Minus" filename="negative.wav"/>
     </currency>
     <time>
-      <prompt phrase="A.M." filename="a-m.wav"/>
+      <prompt phrase="vormittags" filename="a-m.wav"/>
       <prompt phrase="um" filename="at.wav"/>
       <prompt phrase="Sonntag" filename="day-0.wav"/>
       <prompt phrase="Montag" filename="day-1.wav"/>
@@ -153,6 +259,8 @@
       <prompt phrase="Stunden" filename="hours.wav"/>
       <prompt phrase="Minute" filename="minute.wav"/>
       <prompt phrase="Minuten" filename="minutes.wav"/>
+      <prompt phrase="Sekunde" filename="second.wav"/>
+      <prompt phrase="Sekunden" filename="seconds.wav"/>
       <prompt phrase="Januar" filename="mon-0.wav"/>
       <prompt phrase="Febuar" filename="mon-1.wav"/>
       <prompt phrase="März" filename="mon-2.wav"/>
@@ -167,55 +275,573 @@
       <prompt phrase="Dezember" filename="mon-11.wav"/>
       <prompt phrase="Uhr" filename="oclock.wav"/>
       <prompt phrase="oh" filename="oh.wav"/>
-      <prompt phrase="P.M." filename="p-m.wav"/>
-      <prompt phrase="Sekunde" filename="second.wav"/>
-      <prompt phrase="Sekunden" filename="seconds.wav"/>
+      <prompt phrase="nachmittags" filename="p-m.wav"/>
       <prompt phrase="Heute" filename="today.wav"/>
       <prompt phrase="Morgen" filename="tomorrow.wav"/>
       <prompt phrase="Gestern" filename="yesterday.wav"/>
     </time>
     <voicemail>
+      <prompt phrase="Die Person unter der Durchwahl" filename="vm-person.wav"/>
+      <prompt phrase="als dringend markiert" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="als neu markiert" filename="vm-marked_new.wav"/>
+      <prompt phrase="per E-Mail verschickt" filename="vm-emailed.wav"/>
       <prompt phrase="Sie haben" filename="vm-you_have.wav"/>
+      <prompt phrase="Nachricht von" filename="vm-from.wav"/>
       <prompt phrase="Bitte geben Sie Ihren Benutzernamen ein, gefolgt von" filename="vm-enter_id.wav"/>
       <prompt phrase="Bitte geben Sie Ihr Passwort ein, gefolgt von" filename="vm-enter_pass.wav"/>
       <prompt phrase="Benutzerdaten falsch" filename="vm-fail_auth.wav"/>
       <prompt phrase="Willkommen in Ihrem Postfach" filename="vm-hello.wav"/>
       <prompt phrase="Auf Wiedersehen" filename="vm-goodbye.wav"/>
       <prompt phrase="Sagen Sie Ihren Namen nach dem Ton, drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden." filename="vm-record_name1.wav"/>
-      <prompt phrase="Wählen Sie eine Ansage zwischen 1 und 3" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="Wählen Sie eine Ansage zwischen 1 und 9" filename="vm-choose_greeting_choose.wav"/>
       <prompt phrase="Ungültige Eingabe" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="Zu viele Fehlversuche" filename="vm-abort.wav"/>
-      <prompt phrase="Sprechen Sie nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_greeting.wav"/>
-      <prompt phrase="Sprechen Sie nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_message.wav"/>
+      <prompt phrase="Um Ihr Passwort zu ändern" filename="vm-change_password.wav"/>
+      <prompt phrase="Sprechen Sie Ihre Ansage nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden." filename="vm-record_greeting.wav"/>
+      <prompt phrase="Sprechen Sie Ihre Nachricht nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden." filename="vm-record_message.wav"/>
       <prompt phrase="ist nicht verfügbar" filename="vm-play_greeting.wav"/>
       <prompt phrase="dringend, neu" filename="vm-urgent-new.wav"/>
       <prompt phrase="neu" filename="vm-new.wav"/>
       <prompt phrase="dringend, gespeichert" filename="vm-urgent-saved.wav"/>
       <prompt phrase="gespeichert" filename="vm-saved.wav"/>
       <prompt phrase="Nachricht" filename="vm-message.wav"/>
+      <prompt phrase="Nachricht" filename="vm-message_alt.wav"/>
       <prompt phrase="Nachrichten" filename="vm-messages.wav"/>
+      <prompt phrase="Nachrichten" filename="vm-messages_alt.wav"/>
+      <prompt phrase="keine weiteren Nachrichten" filename="vm-no_more_messages.wav"/>
+      <prompt phrase="um diese Nachricht zu wiederholen" filename="vm-repeat_message.wav"/>
+      <prompt phrase="um diese Nachricht zu löschen" filename="vm-delete_message.wav"/>
+      <prompt phrase="um diese Nachricht zu speichern" filename="vm-save_message.wav"/>
+      <prompt phrase="um die nächste Nachricht abzuspielen" filename="vm-play_next_message.wav"/>
+      <prompt phrase="um die letzte Nachricht abzuspielen" filename="vm-play_previous_message.wav"/>
+      <prompt phrase="um das Löschen dieser Nachricht rückgängig zu machen" filename="vm-undelete_message.wav"/>
+      <prompt phrase="um diese Nachricht jetzt zu senden" filename="vm-send_message_now.wav"/>
+      <prompt phrase="um den Umschlag der Nachricht zu hören" filename="vm-message_envelope.wav"/>
+      <prompt phrase="wurde geändert in" filename="vm-has_been_changed_to.wav"/>
       <prompt phrase="drücken Sie" filename="vm-press.wav"/>
+      <prompt phrase="empfangene" filename="vm-received.wav"/>
+      <prompt phrase="gefolgt von" filename="vm-followed_by.wav"/>
+      <prompt phrase="Das war eine ungültige Durchwahl." filename="vm-that_was_an_invalid_ext.wav"/>
+      <prompt phrase="Löschen rückgängig gemacht." filename="vm-undeleted.wav"/>
+      <prompt phrase="gefolgt von der Raute Taste." filename="vm-followed_by_pound.wav"/>
+      <prompt phrase="nächste" filename="vm-next.wav"/>
       <prompt phrase="zum anhören neuer Nachrichten" filename="vm-listen_new.wav"/>
       <prompt phrase="zum anhören gespeicherter Nachrichten" filename="vm-listen_saved.wav"/>
       <prompt phrase="für erweiterte Optionen" filename="vm-advanced.wav"/>
+      <prompt phrase="für erweiterte Optionen" filename="vm-advanced_alt.wav"/>
       <prompt phrase="zum verlassen" filename="vm-to_exit.wav"/>
-      <prompt phrase="zum aufnehmen einer Ansage" filename="vm-record_greeting.wav"/>
+      <prompt phrase="zum verlassen" filename="vm-to_exit_alt.wav"/>
+      <prompt phrase="zum aufnehmen einer Ansage" filename="vm-to_record_greeting.wav"/>
       <prompt phrase="zum auswählen einer Ansage" filename="vm-choose_greeting.wav"/>
       <prompt phrase="zum aufnehmen Ihres Namens" filename="vm-record_name2.wav"/>
       <prompt phrase="für das Hauptmenü" filename="vm-main_menu.wav"/>
       <prompt phrase="zum anhören dieser Nachricht" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="zum speichern der Nachricht" filename="vm-save_recording.wav"/>
       <prompt phrase="zum erneuten Aufnehmen" filename="vm-rerecord.wav"/>
-      <prompt phrase="um diese Nachricht als dringen zu markieren" filename="vm-mark_urgent.wav"/>
+      <prompt phrase="um diese Nachricht als dringend zu markieren" filename="vm-mark-urgent.wav"/>
+      <prompt phrase="um diese Nachricht als neu zu markieren" filename="vm-mark_message_new.wav"/>
       <prompt phrase="zum Fortfahren" filename="vm-continue.wav"/>
       <prompt phrase="zum erneuten anhören dieser Nachricht" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="zum löschen dieser Nachricht" filename="vm-delete_recording.wav"/>
-      <prompt phrase="um diese Nachricht an Ihre EMailadresse weiter zu leiten" filename="vm-forward_to_email.wav"/>
+      <prompt phrase="um diese Nachricht an Ihre E-Mail-Adresse weiterzuleiten" filename="vm-forward_to_email.wav"/>
+      <prompt phrase="um diese Nachricht an ein anderes Postfach weiterzuleiten" filename="vm-to_forward.wav"/>
+      <prompt phrase="Bitte geben Die die Durchwahl an, an die diese Nachricht weitergeleitet werden soll" filename="vm-forward_enter_ext.wav"/>
+      <prompt phrase="Um eine Einleitung zu dieser Nachricht hinzuzufügen" filename="vm-forward_add_intro.wav"/>
       <prompt phrase="Ansage" filename="vm-greeting.wav"/>
       <prompt phrase="ausgewählt" filename="vm-selected.wav"/>
-      <prompt phrase="ist nicht verfügbar" filename="vm-not_avaliable.wav"/>
+      <prompt phrase="ist nicht verfügbar" filename="vm-not_available.wav"/>
       <prompt phrase="Nachricht nummer" filename="vm-message_number.wav"/>
       <prompt phrase="gelöscht" filename="vm-deleted.wav"/>
+      <prompt phrase="Ihre Aufnahme ist kürzer als die erlaubte Mindestlänge. Bitte versuchen Sie es erneut." filename="vm-too-small.wav"/>
+      <prompt phrase="im Posteingang" filename="vm-in_folder.wav"/>
+      <prompt phrase="um jetzt zurückzurufen" filename="vm-return_call.wav"/>
+      <prompt phrase="dringend" filename="vm-urgent.wav"/>
+      <prompt phrase="Dieses Postfach ist voll. Bitte versuchen Sie es später erneut." filename="vm-mailbox_full.wav"/>
+      <prompt phrase="Willkommen in Ihrem neuen Sprach-Postfach. Für eine Erklärung und um Ihr Postfach einzurichten, drücken Sie bitte 1, zum Überspringen 2." filename="vm-tutorial_yes_no.wav"/>
+      <prompt phrase="Bitte sprechen Sie Ihren Vor- und Nachnamen. Diese Aufnahme wird in der Telefonanlage auch für das Verzeichnis der Nebenstellen verwendet." filename="vm-tutorial_record_name.wav"/>
+      <prompt phrase="Ihr persönlicher Zugangs-Code, auch PIN genannt, wird verwendet, damit andere nicht auf Ihr Sprach-Postfach zugreifen können. Wollen Sie die PIN jetzt ändern?" filename="vm-tutorial_change_pin.wav"/>
+      <prompt phrase="Die Person, die Sie erreichen wollen, ist im Moment nicht verfügbar und hat kein Sprach-Postfach." filename="vm-not_available_no_voicemail.wav"/>
+      <prompt phrase="Die von Ihnen eingegebene PIN ist kürzer als die erlaubte Mindestlänge." filename="vm-pin_below_minimum_length.wav"/>
+      <prompt phrase="Die minimale PIN-Länge ist" filename="vm-minimum_pin_length_is.wav"/>
+      <prompt phrase="Ihr Passwort wurde geändert." filename="vm-password_has_been_changed.wav"/>
+      <prompt phrase="Bitte geben Sie Ihr neues Passwort ein, gefolgt von der Raute Taste. " filename="vm-enter_new_pin.wav"/>
+      <prompt phrase="Das von Ihnen eingegebene Passwort ist in diesem System nicht gültig." filename="vm-password_not_valid.wav"/>
+      <prompt phrase="Ein Passwort wie zum Beispiel 1 1 1 1 oder 1 2 3 4 ist nicht sicher." filename="vm-password_is_not_secure.wav"/>
+      <prompt phrase="Bitte geben wählen Sie ein Passwort aus, das nicht nur aus gleichen oder aufeinanderfolgenden Ziffern besteht." filename="vm-choose_password.wav"/>
+      <prompt phrase="Bitte denken Sie daran, dass das Passwort für Ihr Sprach-Postfach auf für das Web Interface genutzt wird." filename="vm-voicemail_password_is_web_password.wav"/>
+      <prompt phrase="Nachricht von" filename="vm-message_from.wav"/>
+      <prompt phrase="Niemand hinterlässt derzeit eine Nachricht in diesem Postfach." filename="vm-nobody_leaving_message.wav"/>
+      <prompt phrase="letzte" filename="vm-last.wav"/>
+      <prompt phrase="Um die Ansage zu löschen" filename="vm-delete_greeting.wav"/>
+      <prompt phrase="Um die Ansage anzuhören" filename="vm-listen_to_greeting.wav"/>
+      <prompt phrase="Für das Hauptmenü" filename="vm-main_menu_alt.wav"/>
+      <prompt phrase="Nachricht weitergeleitet" filename="vm-message_forwarded.wav"/>
+      <prompt phrase="Der von Ihnen angerufene Teilnehmer antwortet nicht und hat auch keinen Anrufbeantworter." filename="vm-no_answer_no_vm.wav"/>
     </voicemail>
+    <directory>
+      <prompt phrase="Bitte geben Sie ein die ersten paar Buchstaben des" filename="dir-enter_person.wav"/>
+      <prompt phrase="Nachnamen" filename="dir-last_name.wav"/>
+      <prompt phrase="Zur Suche nach" filename="dir-to_search_by.wav"/>
+      <prompt phrase="Vornamen" filename="dir-first_name.wav"/>
+      <prompt phrase="Es gab keine übereinstimmenden Ergebnisse." filename="dir-no_matching_results.wav"/>
+      <prompt phrase="Ergebnisse stimmen mit Ihrer Suche überein." filename="dir-result_match.wav"/>
+      <prompt phrase="Ihre Suche ergab zu viele Ergebnisse." filename="dir-too_many_result.wav"/>
+      <prompt phrase="Keine weiteren Ergebnisse." filename="dir-no_more_results.wav"/>
+      <prompt phrase="Ergebnis Nummer" filename="dir-result_number.wav"/>
+      <prompt phrase="mit der Durchwahl" filename="dir-at_extension.wav"/>
+      <prompt phrase="Um diesen Eintrag auszuwählen" filename="dir-to_select_entry.wav"/>
+      <prompt phrase="Für den nächsten Eintrag" filename="dir-for_next.wav"/>
+      <prompt phrase="Für den vorhergehenden Eintrag" filename="dir-for_prev.wav"/>
+      <prompt phrase="Um eine neue Suche zu starten" filename="dir-start_new_search.wav"/>
+      <prompt phrase="Bitte nennen Sie mindestens" filename="dir-specify_mininum.wav"/>
+      <prompt phrase="Buchstaben des Namens der Person." filename="dir-letters_of_person_name.wav"/>
+      <prompt phrase="Bitte versuchen Sie es erneut." filename="dir-please_try_again.wav"/>
+      <prompt phrase="drücken Sie" filename="dir-press.wav" info="we can copy vm/vm-press.wav"/>
+      <prompt phrase="Für den nächsten Eintrag" filename="dir-for_next.wav" note="re-recorded because original was wrong"/>
+      <prompt phrase="Bitte geben Sie die ersten paar Buchstaben des Vor- oder Nachnamens der Person ein." filename="dir-enter_person_first_or_last.wav"/>
+      <prompt phrase="Bitte geben Sie ein die ersten paar Buchstaben des" filename="dir-enter-person.wav"/>
+      <prompt phrase="Ihre Suche hat keine Ergebnisse gefunden. Bitte versuchen Sie es erneut." filename="dir-no_match_entry.wav"/>
+      <prompt phrase="Keine weiteren Ergebnisse." filename="dir-no_more_result.wav"/>
+      <prompt phrase="Die Eingabe erfordert die Angabe von mindestens" filename="dir-specify_mininum_first.wav"/>
+      <prompt phrase="Um eine neue Suche zu beginnen" filename="dir-to_make_new_search.wav"/>
+      <prompt phrase="Ihre Suche ergab zu viele Ergebnisse. Bitte versuchen Sie es erneut." filename="dir-to_many_result.wav"/>
+    </directory>
+    <conference>
+      <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
+      <prompt phrase="Sie sind jetzt stumm geschaltet." filename="conf-muted.wav"/>
+      <prompt phrase="Sie sind jetzt nicht mehr stumm geschaltet." filename="conf-unmuted.wav"/>
+      <prompt phrase="Sie sind derzeit die einzige Person in dieser Konferenz." filename="conf-alone.wav"/>
+      <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="conf-enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-exit.wav" type="tone"/>
+      <prompt phrase="Sie sind von der Konferenz ausgeschlossen worden." filename="conf-kicked.wav"/>
+      <prompt phrase="Diese Konferenz ist gesperrt." filename="conf-locked.wav"/>
+      <prompt phrase="Diese Konferenz ist jetzt gesperrt." filename="conf-is-locked.wav"/>
+      <prompt phrase="Diese Konferenz ist jetzt nicht mehr gesperrt." filename="conf-is-unlocked.wav"/>
+      <prompt phrase="Bitte geben Sie die PIN Nummer der Konferenz ein." filename="conf-pin.wav"/>
+      <prompt phrase="Ungültige PIN Nummer. Bitte versuchen Sie es erneut." filename="conf-bad-pin.wav"/>
+      <prompt phrase="Auf Wiedersehen." filename="conf-goodbye.wav"/>
+      <prompt phrase="Willkommen zur Konferenz." filename="conf-welcome.wav"/>
+      <prompt phrase="Bitte geben Sie die Konferenz Nummer ein, gefolgt von der Raute Taste." filename="conf-enter_conf_number.wav"/>
+      <prompt phrase="Bitte geben Sie die PIN Nummer der Konferenz ein, gefolgt von der Raute Taste." filename="conf-enter_conf_pin.wav"/>
+      <prompt phrase="nimmt jetzt an der Konferenz teil." filename="conf-has_joined.wav"/>
+      <prompt phrase="hat die Konferenz verlassen." filename="conf-has_left.wav"/>
+      <prompt phrase="Sie sind bereits stumm geschaltet." filename="conf-you_are_already_muted.wav"/>
+      <prompt phrase="Sie sind jetzt in beiden Richtungen stumm geschaltet." filename="conf-you_are_now_bidirectionally_muted.wav"/>
+      <prompt phrase="Geben Sie die Zahl der Zuhörer an diesem Ort ein, gefolgt von der Raute Taste." filename="conf-number_of_listeners.wav"/>
+      <prompt phrase="Zuhörer in dieser Konferenz." filename="conf-listeners_in_conference.wav"/>
+      <prompt phrase="Zuhörer in dieser Konferenz." filename="conf-listener_in_conference.wav"/>
+      <prompt phrase="Mitglieder in dieser Konferenz." filename="conf-members_in_conference.wav"/>
+      <prompt phrase="Diese Konferenz ist jetzt im Fragen und Antworten Modus." filename="conf-conference_is_in_qna_mode.wav"/>
+      <prompt phrase="Fragen und Antworten Modus" filename="conf-qna_mode.wav"/>
+      <prompt phrase="Signalton beim Betreten" filename="conf-entry_sound.wav"/>
+      <prompt phrase="Signalton beim Verlassen" filename="conf-exit_sound.wav"/>
+      <prompt phrase="Diese Konferenz ist voll. Bitte fragen Sie den Konferenz-Moderator." filename="conf-conference_is_full.wav"/>
+      <prompt phrase="Ihre Konferenz wird in Kürze beginnen. Bitte bleiben Sie in der Leitung." filename="conf-conference_will_start_shortly.wav"/>
+      <prompt phrase="andere Personen in dieser Konferenz." filename="conf-other_persons_conference.wav"/>
+      <prompt phrase="Es ist eine weitere Person in dieser Konferenz." filename="conf-one_other_person_conference.wav"/>
+      <prompt phrase="Es ist ein weiteres Mitglied in dieser Konferenz." filename="conf-one_other_member_conference.wav"/>
+      <prompt phrase="Diese Konferenz wird aufgezeichnet." filename="conf-being_recorded.wav"/>
+      <prompt phrase="Diese Konferenz wird nicht mehr aufgezeichnet." filename="conf-no_longer_being_recorded.wav"/>
+    </conference>
+    <ivr>
+      <prompt phrase="Kontonummer" filename="ivr-account_number.wav"/>
+      <prompt phrase="Mit dem Anrufer verbinden" filename="ivr-connect_to_caller.wav"/>
+      <prompt phrase="Wenn Sie die Durchwahl der gewünschten Person kennen, geben Sie diese bitte jetzt ein." filename="ivr-enter_ext_pound.wav"/>
+      <prompt phrase="Bitte geben Sie eine Durchwahl ein, gefolgt von der Raute Taste." filename="ivr-enter_ext.wav"/>
+      <prompt phrase="Um diese Person" filename="ivr-for_this_person.wav"/>
+      <prompt phrase="Bitte warten Sie, während Ihr Anruf verbunden wird." filename="ivr-hold_connect_call.wav"/>
+      <prompt phrase="Es tut uns leid." filename="ivr-im_sorry.wav"/>
+      <prompt phrase="Bitte" filename="ivr-please.wav"/>
+      <prompt phrase="Bitte rufen Sie zurück unter" filename="ivr-please_return_our_call_at.wav"/>
+      <prompt phrase="Bezüglich der Referenz Nummer" filename="ivr-regarding_reference_number.wav"/>
+      <prompt phrase="Dies ist ein Beispiel-Untermenü des Ai Wee Arr." filename="ivr-sample_submenu.wav"/>
+      <prompt phrase="Bitte sagen Sie Ihren Namen nach dem Ton." filename="ivr-say_name.wav"/>
+      <prompt phrase="Leite diesen Anrufer zum Anrufbeantworter weiter" filename="ivr-send_to_voicemail.wav"/>
+      <prompt phrase="Um mit einem Mitarbeiter des Kundenservice zu sprechen" filename="ivr-speak_to_a_customer_service_representative.wav"/>
+      <prompt phrase="Eine Nachricht aufnehmen" filename="ivr-take_a_message.wav"/>
+      <prompt phrase="Das war ein ungültiger Eintrag" filename="ivr-that_was_an_invalid_entry.wav"/>
+      <prompt phrase="Dies ist ein Anruf von" filename="ivr-this_is_a_call_from.wav"/>
+      <prompt phrase="Dieser Ai Wee Arr ermöglicht Ihnen den Test einiger Funktionen" filename="ivr-this_ivr_will_let_you_test_features.wav"/>
+      <prompt phrase="Um die FreeSWITCH Konferenz anzurufen" filename="ivr-to_call_the_freeswitch_conference.wav"/>
+      <prompt phrase="Um einen FreeSWITCH echo test zu machen" filename="ivr-to_do_a_freeswitch_echo_test.wav"/>
+      <prompt phrase="Um einen vorwärts echo test zu machen" filename="ivr-to_do_a_fwd_echo_test.wav"/>
+      <prompt phrase="Um ein Beispiel-Untermenü des Ai Wee Arr zu hören" filename="ivr-to_hear_sample_submenu.wav"/>
+      <prompt phrase="Um schreiende Affen zu hören" filename="ivr-to_hear_screaming_monkeys.wav"/>
+      <prompt phrase="Um Wartemusik zu hören" filename="ivr-to_listen_to_moh.wav"/>
+      <prompt phrase="Um diese Optionen zu wiederholen" filename="ivr-to_repeat_these_options.wav"/>
+      <prompt phrase="Um zum vorherigen Menü zurückzukehren" filename="ivr-to_return_to_previous_menu.wav"/>
+      <prompt phrase="Um mit der Vermittlung zu sprechen" filename="ivr-to_speak_with_an_operator.wav"/>
+      <prompt phrase="Willkommen bei FreeSWITCH, der Zukunft der Telefonie" filename="ivr-welcome_to_freeswitch.wav"/>
+      <prompt phrase="Sie können jederzeit beenden, indem Sie einfach auflegen." filename="ivr-you_may_exit_by_hanging_up.wav"/>
+      <prompt phrase="oder" filename="ivr-or.wav"/>
+      <prompt phrase="nicht" filename="ivr-not.wav"/>
+      <prompt phrase="Anruf" filename="ivr-call.wav"/>
+      <prompt phrase="Sie können" filename="ivr-you_may.wav"/>
+      <prompt phrase="Hallo" filename="ivr-hello.wav"/>
+      <prompt phrase="Indem Sie die Tasten Ihres Telefons benutzen" filename="ivr-use_telephone_keypad.wav"/>
+      <prompt phrase="Bitte buchstabieren Sie den Namen der Person, die Sie versuchen zu erreichen" filename="ivr-spell_name.wav"/>
+      <prompt phrase="Nachname zuerst" filename="ivr-last_name_first.wav"/>
+      <prompt phrase="Vorname zuerst" filename="ivr-first_name_first.wav"/>
+      <prompt phrase="Drücken Sie 1 für Q oder Z" filename="ivr-press_one_q_or_z.wav"/>
+      <prompt phrase="Vertrieb" filename="ivr-sales.wav"/>
+      <prompt phrase="Kundendienst" filename="ivr-customer_service.wav"/>
+      <prompt phrase="Technischer Support" filename="ivr-technical_support.wav"/>
+      <prompt phrase="Vermittlung" filename="ivr-operator.wav"/>
+      <prompt phrase="Sie haben eine ungültige Durchwahl gewählt." filename="ivr-you_have_dialed_an_invalid_extension.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer Ihrer Nebenstelle ein, gefolgt von der Raute Taste." filename="ivr-please_enter_extension_followed_by_pound.wav"/>
+      <prompt phrase="Bitte geben Sie Ihre PIN Nummer ein, gefolgt von der Raute Taste." filename="ivr-please_enter_pin_followed_by_pound.wav"/>
+      <prompt phrase="Ihre PIN Nummer oder Nebenstelle ist ungültig." filename="ivr-pin_or_extension_is-invalid.wav"/>
+      <prompt phrase="Sie sind gerade dabei, dieses Telefon für Ihr Nutzerkonto einzurichten." filename="ivr-you_are_about_to_provision_this_phone.wav"/>
+      <prompt phrase="Bitte geben Sie die PIN Nummer erneut ein, um zu bestätigen." filename="ivr-please_reenter_your_pin.wav"/>
+      <prompt phrase="Um sich für die ClueCon anzumelden, drücken Sie bitte" filename="ivr-register_for_cluecon.wav"/>
+      <prompt phrase="Um sich anzumelden" filename="ivr-to_log_in.wav"/>
+      <prompt phrase="Um sich abzumelden" filename="ivr-to_log_out.wav"/>
+      <prompt phrase="Sie sind jetzt angemeldet." filename="ivr-you_are_now_logged_in.wav"/>
+      <prompt phrase="Sie sind jetzt abgemeldet." filename="ivr-you_are_now_logged_out.wav"/>
+      <prompt phrase="Bitte versuchen Sie es erneut." filename="ivr-please_try_again.wav"/>
+      <prompt phrase="Sie sind gerade dabei, dieses Telefon permanent für Ihre Nebenstelle einzurichten." filename="ivr-provision_phone_permanently_to_extension.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer der Nebenstelle ein, für die Sie dieses Telefon einrichten wollen, gefolgt von der Raute Taste." filename="ivr-extension_to_provision_this_phone.wav"/>
+      <prompt phrase="Danke. Dieses Telefon wird jetzt neu gestartet." filename="ivr-this_phone_will_now_reboot.wav"/>
+      <prompt phrase="Danke. Ihre Aufnahme wurde gespeichert." filename="ivr-recording_saved.wav"/>
+      <prompt phrase="Drücken Sie 1, um Ihre Aufnahme zu speichern. Drücken Sie 2, um Ihre Aufnahme anzuhören. Drücken Sie 3, um sie erneut aufzunehmen." filename="ivr-save_review_record.wav"/>
+      <prompt phrase="Das System kann Ihre Aufnahmne derzeit nicht speichern. Bitte versuchen Sie es später erneut." filename="ivr-unable_save.wav"/>
+      <prompt phrase="Sie sind Nummer" filename="ivr-you_are_number.wav"/>
+      <prompt phrase="in der Warteschlange." filename="ivr-in_line.wav"/>
+      <prompt phrase="Vielen Dank für Ihre Geduld." filename="ivr-thank_you_for_holding.wav"/>
+      <prompt phrase="Die geschätzte Wartezeit ist" filename="ivr-estimated_hold_time.wav"/>
+      <prompt phrase="Mehr als" filename="ivr-more_than.wav"/>
+      <prompt phrase="Weniger als" filename="ivr-less_than.wav"/>
+      <prompt phrase="Beginne mit der Aufnahme" filename="ivr-begin_recording.wav"/>
+      <prompt phrase="Anrufweiterleitung wurde abgebrochen." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
+      <prompt phrase="Anrufweiterleitung wurde aktiviert." filename="ivr-call_forwarding_has_been_set.wav"/>
+      <prompt phrase="Bitte geben Sie die Telefonnummer ein." filename="ivr-please_enter_the_phone_number.wav"/>
+      <prompt phrase="Bitte sagen Sie Ihren Namen und den Grund Ihres Anrufs." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/>
+      <prompt phrase="Um zu akzeptieren, drücken Sie 1. Um abzulehnen, drücken Sie 2. Für Weiterleitung zum Anrufbeantworter drücken Sie 3." filename="ivr-accept_reject_voicemail.wav"/>
+      <prompt phrase="Um zu akzeptieren, drücken Sie 1. Um abzulehnen, drücken Sie 2." filename="ivr-accept_reject.wav"/>
+      <prompt phrase="Um zu akzeptieren, drücken Sie 1." filename="ivr-to_accept_press_one.wav"/>
+      <prompt phrase="Eingehender Anruf." filename="ivr-incoming_call.wav"/>
+      <prompt phrase="Vielen Dank für Ihren Anruf." filename="ivr-thank_you_for_calling.wav"/>
+      <prompt phrase="Bitte warten Sie. Ihr Anruf wird sofort beantwortet." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
+      <prompt phrase="Ihr Anruf wird weitergeleitet." filename="ivr-call_being_transferred.wav"/>
+      <prompt phrase="Bitte genießen Sie die Musik, während Ihr Anruf weitergeleitet wird." filename="ivr-enjoy_music_while_transfer.wav"/>
+      <prompt phrase="Sie haben einen Anruf von" filename="ivr-call_from.wav"/>
+      <prompt phrase="Dieses Menü enthält keine Einträge. Bitte kontaktieren Sie den Administrator." filename="ivr-no_menu_items.wav"/>
+      <prompt phrase="Für ein Verzeichnis, drücken Sie" filename="ivr-for_directory_press.wav"/>
+      <prompt phrase="Indem Sie die Tasten Ihres Telefons benutzen" filename="ivr-using_telephone_keypad.wav"/>
+      <prompt phrase="Bitte geben Sie die ersten paar Buchstaben des Nachnamens der Person ein." filename="ivr-enter_letters_last_name.wav"/>
+      <prompt phrase="Bitte geben Sie die ersten paar Buchstaben des Vornamens der Person ein." filename="ivr-enter_letters_first_name.wav"/>
+      <prompt phrase="Bitte geben Sie die ersten paar Buchstaben des Vor oder Nachnamens der Person ein." filename="ivr-enter_letters_first_or_last_name.wav"/>
+      <prompt phrase="Wenn dies korrekt ist, drücken Sie" filename="ivr-if_correct_press.wav"/>
+      <prompt phrase="Wenn nicht, drücken Sie" filename="ivr-if_not_press.wav"/>
+      <prompt phrase="Wenn Sie fertig sind, drücken Sie die Raute Taste." filename="ivr-finished_pound_hash_key.wav"/>
+      <prompt phrase="Bitte nicht stören wurde aktiviert." filename="ivr-dnd_activated.wav"/>
+      <prompt phrase="Bitte nicht stören wurde deaktiviert." filename="ivr-dnd_cancelled.wav"/>
+      <prompt phrase="Drücken Sie irgendeine andere Ziffer" filename="ivr-any_other_digit.wav"/>
+      <prompt phrase="Drücken Sie 1 für ja, 2 für nein." filename="ivr-one_yes_two_no.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer der Warteschlange ein, gefolgt von der Raute Taste." filename="ivr-enter_queue_number.wav"/>
+      <prompt phrase="Bitte geben Sie ein die" filename="ivr-please_enter_the.wav"/>
+      <prompt phrase="Nummer" filename="ivr-number.wav"/>
+      <prompt phrase="gefolgt von der Raute Taste." filename="ivr-followed_by_pound.wav"/>
+      <prompt phrase="Der Kontostand ist" filename="ivr-account_balance_is.wav"/>
+      <prompt phrase="Datei" filename="ivr-file.wav"/>
+      <prompt phrase="Dateien" filename="ivr-files.wav"/>
+      <prompt phrase="Für einen Weckruf" filename="ivr-for_a_wakeup_call.wav"/>
+      <prompt phrase="Dies ist Ihre Weckruf." filename="ivr-this_is_your_wakeup_call.wav"/>
+      <prompt phrase="Um einen Weckruf anzufordern" filename="ivr-request_wakeup_call.wav"/>
+      <prompt phrase="Um den Weckruf zu bestätigen" filename="ivr-confirm_wakeup_call.wav"/>
+      <prompt phrase="Um den Weckruf zu löschen" filename="ivr-cancel_wakeup_call.wav"/>
+      <prompt phrase="Sie haben einen Weckruf angefordert um" filename="ivr-requested_wakeup_call_for.wav"/>
+      <prompt phrase="Sie haben keinen Weckruf angefordert." filename="ivr-not_requested_wakeup_call.wav"/>
+      <prompt phrase="Ihr Weckruf wurde gelöscht." filename="ivr-wakeup_call_cancelled.wav"/>
+      <prompt phrase="Für einen täglichen Wegruf" filename="ivr-for_daily_wakeup_call.wav"/>
+      <prompt phrase="Täglichen Weckruf" filename="ivr-daily_wakeup_call.wav"/>
+      <prompt phrase="Für tägliche Weckrufe" filename="ivr-for_daily_wakeup_calls.wav"/>
+      <prompt phrase="Für einen einmaligen Weckruf" filename="ivr-for_one_time_wakeup_call.wav"/>
+      <prompt phrase="Einmaliger Weckruf" filename="ivr-one_time_wakeup_call.wav"/>
+      <prompt phrase="Weckruf" filename="ivr-wakeup_call.wav"/>
+      <prompt phrase="Einen wunderschönen guten Morgen! Wach auf! Die Sonne scheint!" filename="ivr-wakey_wakey_sunshine.wav"/>
+      <prompt phrase="Willkommen." filename="ivr-welcome.wav"/>
+      <prompt phrase="Willkommen bei" filename="ivr-welcome_to.wav"/>
+      <prompt phrase="Guten Morgen." filename="ivr-good_morning.wav"/>
+      <prompt phrase="Guten Tag." filename="ivr-good_afternoon.wav"/>
+      <prompt phrase="Guten Abend." filename="ivr-good_evening.wav"/>
+      <prompt phrase="Danke." filename="ivr-thank_you.wav"/>
+      <prompt phrase="Um" filename="ivr-for.wav"/>
+      <prompt phrase="Die Wartezeiten sind derzeit länger als normal." filename="ivr-longer_than_usual_hold_times.wav"/>
+      <prompt phrase="Sie sind der" filename="ivr-you_are_the.wav"/>
+      <prompt phrase="Bitte warten Sie einen Moment." filename="ivr-one_moment_please.wav"/>
+      <prompt phrase="Ihr Anruf wird in der Reihenfolge des Eingangs bearbeitet." filename="ivr-call_answered_order_received.wav"/>
+      <prompt phrase="Sie haben eingegeben" filename="ivr-you_entered.wav"/>
+      <prompt phrase="Durchwahl" filename="ivr-extension_number.wav"/>
+      <prompt phrase="Bitte warten Sie, während Ihr Anruf verbunden wird." filename="ivr-please_hold_while_party_contacted.wav"/>
+      <prompt phrase="Bitte genießen Sie die Musik, während Ihr Anruf verbunden wird." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
+      <prompt phrase="Vielen Dank für Ihren Anruf. Wenn Sie die Durchwahl der gewünschten Person kennen, geben Sie diese bitte jetzt ein. Um stattdessen ein Verzeichnis der Nebenstellen zu bekommen, drücken Sie bitte 9." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="Wenn das korrekt ist, drücken Sie bitte 1, ansonsten 2." filename="ivr-if_correct_one_if_not_two.wav"/>
+      <prompt phrase="Um diese information zu wiederholen." filename="ivr-repeat_this_information.wav"/>
+      <prompt phrase="Nein Nein Nein" filename="ivr-no_no_no.wav"/>
+      <prompt phrase="Wollten Sie wirklich diese Taste drücken?" filename="ivr-did_you_mean_to_press_key.wav"/>
+      <prompt phrase="Mal ganz im Ernst, wollten Sie WIRKLICH diese Taste drücken?" filename="ivr-seriously_mean_to_press_key.wav"/>
+      <prompt phrase="Oh ... wie auch immer." filename="ivr-oh_whatever.wav"/>
+      <prompt phrase="Es reicht! Noch so ein Fehler und ich werde auflegen!" filename="ivr-one_more_mistake.wav"/>
+      <prompt phrase="Herzlichen Glückwunsch. Sie haben Stern gedrückt. Das bedeutet nicht, dass Sie ein Star sind. Es heißt nur, dass Sie Tasten drücken können und wahrscheinlich Finger haben." filename="ivr-congratulations_you_pressed_star.wav"/>
+      <prompt phrase="Alle unsere Techniker sind derzeit beschäftigt. Sie helfen den Vertrieblern bei Vorführungen, wie toll unser System ist." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
+      <prompt phrase="Diese Nachricht wird sich selbst zerstören in fünf ... vier ... drei ... zwei ... eins" filename="ivr-message_self_destruct.wav"/>
+      <prompt phrase="Alle Ihre Anrufe gehören uns." filename="ivr-all_your_call_are_belong_to_us.wav"/>
+      <prompt phrase="Ich liebe die Art, wie Du diese Tasten drückst." filename="ivr-love_those_touch_tones.wav"/>
+      <prompt phrase="Ja, wir haben keine Bananen." filename="ivr-yes_we_have_no_bananas.wav"/>
+      <prompt phrase="Hey Mann, Du nervst." filename="ivr-dude_you_suck.wav"/>
+      <prompt phrase="Ihr Anruf liegt uns sehr am Herzen, aber Ihr Verstand nicht. Darum wird es uns eine Freude sein, Sie für immer in unserer Warteschleife hängen zu lassen, um Sie mit unserer nervigen Wartemusik zu quälen." filename="ivr-on_hold_indefinitely.wav"/>
+      <prompt phrase="hat das Gebäude verlassen." filename="ivr-has_left_the_building.wav"/>
+      <prompt phrase="Dieses Telefon ist nicht zugewiesen und darf keine externen Nummern anrufen." filename="ivr-phone_is_unassigned.wav"/>
+      <prompt phrase="Dieses Telefon ist nicht richtig konfiguriert." filename="ivr-phone_not_configured.wav"/>
+      <prompt phrase="Herzlichen Glückwunsch. Dieses Telefon ist korrekt configuriert und kann jetzt einem Nutzer zugewiesen werden." filename="ivr-phone_is_configured_properly.wav"/>
+      <prompt phrase="Bitten Sie den Systemadministrator um Hilfe." filename="ivr-contact_system_administrator.wav"/>
+      <prompt phrase="Es warten keine Anrufe in dieser Warteschlange." filename="ivr-no_calls_waiting_in_queue.wav"/>
+      <prompt phrase="Sie sind Anrufer Nummer eins. Natürlich bekommt in unserem System jeder Anrufer die Nummer eins. Darum müssen Sie jetzt vielleicht ein bisschen warten." filename="ivr-you_are_number_one.wav"/>
+      <prompt phrase="hat den Notruf gewählt." filename="ivr-has_called_emergency_services.wav"/>
+      <prompt phrase="Es sind" filename="ivr-there_are.wav"/>
+      <prompt phrase="Bitte geben Sie die Quell-Telefonnummer ein, dann drücken Sie die Raute Taste." filename="ivr-enter_source_telephone_number.wav"/>
+      <prompt phrase="Bitte geben Sie die Ziel-Telefonnummer ein, dann drücken Sie die Raute Taste." filename="ivr-enter_destination_telephone_number.wav"/>
+      <prompt phrase="Aufnahme gestartet." filename="ivr-recording_started.wav"/>
+      <prompt phrase="Aufnahme beendet." filename="ivr-recording_stopped.wav"/>
+      <prompt phrase="Aufnahme-Pause." filename="ivr-recording_paused.wav"/>
+      <prompt phrase="Aufnahme gelöscht." filename="ivr-recording_deleted.wav"/>
+      <prompt phrase="Sie sind nicht mehr in der Warteschlange." filename="ivr-no_longer_in_queue.wav"/>
+      <prompt phrase="zurückgezogen." filename="ivr-withdrawn.wav"/>
+      <prompt phrase="Frage" filename="ivr-question.wav"/>
+      <prompt phrase="Fragen" filename="ivr-questions.wav"/>
+      <prompt phrase="wurde beantwortet." filename="ivr-has_been_answered.wav"/>
+      <prompt phrase="wurde entfernt." filename="ivr-has_been_removed.wav"/>
+      <prompt phrase="Keine Fragen in der Warteschlange." filename="ivr-no_questions_in_queue.wav"/>
+      <prompt phrase="ist jetzt ein." filename="ivr-is_now_on.wav"/>
+      <prompt phrase="ist jetzt aus." filename="ivr-is_now_off.wav"/>
+      <prompt phrase="Dieses Telefon darf keine externen Nummern anrufen." filename="ivr-phone_not_make_external_calls.wav"/>
+      <prompt phrase="Identifikationsnummer" filename="ivr-id_number.wav"/>
+      <prompt phrase="Um diese Anleitung zu überspringen" filename="ivr-skip_instructions.wav"/>
+      <prompt phrase="Um die Aufnahme zu verwerfen, legen Sie auf, ohne eine Taste zu drücken." filename="ivr-hangup_to_discard.wav"/>
+      <prompt phrase="oder drücken Sie" filename="ivr-or_press.wav"/>
+      <prompt phrase="Für Englisch, drücken Sie" filename="ivr-for_english_press.wav"/>
+      <prompt phrase="Kein Anschluss unter dieser Nummer." filename="ivr-call_cannot_be_completed_as_dialed.wav"/>
+      <prompt phrase="Bitte überprüfen Sie die Nummer und versuchen Sie es erneut." filename="ivr-please_check_number_try_again.wav"/>
+      <prompt phrase="Der Grund für den Fehler ist" filename="ivr-failure_reason_is.wav"/>
+      <prompt phrase="nicht vergebene Nummer" filename="ivr-unallocated_number.wav"/>
+      <prompt phrase="keine Antwort" filename="ivr-no_user_response.wav"/>
+      <prompt phrase="ungültiges Zahlenformat" filename="ivr-invalid_number_format.wav"/>
+      <prompt phrase="ungültige Sprachansage" filename="ivr-invalid_sound_prompt.wav"/>
+      <prompt phrase="Netzübergang außer Betrieb" filename="ivr-gateway_down.wav"/>
+      <prompt phrase="keine Route zum Ziel" filename="ivr-no_route_destination.wav"/>
+      <prompt phrase="Benutzer besetzt" filename="ivr-user_busy.wav"/>
+      <prompt phrase="Anruf wurde abgewiesen" filename="ivr-call_rejected.wav"/>
+      <prompt phrase="Grund nicht angegeben" filename="ivr-normal_unspecified.wav"/>
+      <prompt phrase="Inkompatibles Ziel" filename="ivr-incompatible_destination.wav"/>
+      <prompt phrase="Normaler Verbindungsabbau" filename="ivr-normal_clearing.wav"/>
+      <prompt phrase="Sie haben nicht das Recht, diese Aktion durchzuführen." filename="ivr-not_have_permission.wav"/>
+      <prompt phrase="Sie machen es falsch, aber ich werde trotzdem versuchen, Sie zu Verbinden. Dummkopf!" filename="ivr-youre_doing_it_wrong.wav"/>
+      <prompt phrase="drei ... zwei ... eins ... wir sind ASTERISK los!" filename="ivr-were_asterisk_free.wav"/>
+      <prompt phrase="Vielen Dank für Ihren Anruf bei der Dusche Telekom A G. Bei uns fühlen sich Ihre Anrufe niemals nicht so frisch an! " filename="ivr-douche_telecom.wav"/>
+      <prompt phrase="Um mehr über FreeSWITCH zu erfahren" filename="ivr-to_learn_more_about_freeswitch.wav"/>
+      <prompt phrase="Es gibt" filename="ivr-there_is.wav"/>
+      <prompt phrase="Diese Nummer ist auf der Sperrliste." filename="ivr-do_not_call_list.wav"/>
+      <prompt phrase="Der Verbindungsaufbau wurde abgebrochen." filename="ivr-call_attempt_aborted.wav"/>
+      <prompt phrase="Bitte bleiben Sie in der Leitung, um auf den nächsten freien Bearbeiter zu warten." filename="ivr-to_wait_stay_on_the_line.wav"/>
+      <prompt phrase="Wenn Sie möchten, dass wir Sie zurückrufen, drücken Sie bitte" filename="ivr-if_you_would_like_us_to_call_back.wav"/>
+      <prompt phrase="Die von Ihnen übermittelte Rufnummer ist" filename="ivr-it_appears_that_your_phone_number_is.wav"/>
+      <prompt phrase="Möchten Sie einen Rückruf unter dieser Nummer?" filename="ivr-would_you_like_to_receive_a_call_at_this_number.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer ein, unter der wir Sie erreichen können." filename="ivr-please_enter_the_number_where_we_can_reach_you.wav"/>
+      <prompt phrase="Wir werden so schnell wie möglich zurückrufen." filename="ivr-we_will_return_your_call_at_this_number.wav"/>
+      <prompt phrase="Anonymer Anrufer." filename="ivr-anonymous_caller.wav"/>
+      <prompt phrase="Bitte nehmen Sie sich ein Stück kostenlose, klebrige Torte" filename="ivr-freeguipy.wav"/>
+      <prompt phrase="Mehr Informationen erhalten Sie unter F R E E G U I P Y punkt org" filename="ivr-learn_more_freeguipydotorg.wav"/>
+      <prompt phrase="Irgendetwas ist ganz, ganz fürchterlich schiefgelaufen. Wie peinlich!" filename="ivr-terribly_wrong_awkward.wav"/>
+      <prompt phrase="Ich glaub's ja nicht. Es war DIESER Fehler!" filename="ivr-it_was_that_bug.wav"/>
+      <prompt phrase="Konzentrieren Sie sich. Achten Sie auf den Hasen! ACHTEN SIE AUF DEN HASEN!" filename="ivr-concentrate.wav"/>
+      <prompt phrase="Wenn Sie es nicht mögen, können Sie ein Ticket aufmachen." filename="ivr-file_a_jira.wav"/>
+      <prompt phrase="Darf ich Ihnen vorstellen, den Gründer von FreeSOURCE, Anthony Ministrone." filename="ivr-founder_of_freesource.wav"/>
+      <prompt phrase="Hey Mann, das ist dumm. SAUDUMM." filename="ivr-cold_foolish.wav"/>
+      <prompt phrase="Herzlichen Glückwunsch. Sie haben diesen Monat 1500 Überlaberungs-Minuten verdient." filename="ivr-trollover_minutes.wav"/>
+      <prompt phrase="Alter!" filename="ivr-yuno_silent_drill.wav"/>
+      <prompt phrase="Weile, die Stimmen warn zimlich gutt." filename="ivr-beacuase.wav"/>
+      <prompt phrase="Tag-Modus" filename="ivr-day_mode.wav"/>
+      <prompt phrase="Nacht-Modus" filename="ivr-night_mode.wav"/>
+      <prompt phrase="Mittagspausen-Modus" filename="ivr-lunch_mode.wav"/>
+      <prompt phrase="Nutzerspezifischer Modus Nummer" filename="ivr-custom_mode_number.wav"/>
+      <prompt phrase="Sie haben keine Berechtigung für die Änderung von" filename="ivr-not_have_permission_to_edit.wav"/>
+      <prompt phrase="Diesem Merkmal." filename="ivr-this_feature.wav"/>
+      <prompt phrase="Merkmal." filename="ivr-feature.wav"/>
+      <prompt phrase="Automatische Anrufbeantworter." filename="ivr-automated_attendants.wav"/>
+      <prompt phrase="Automatischer Anrufbeantworter." filename="ivr-automated_attendant.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer der Nebenstelle ein, von dem" filename="ivr-please_enter_extension_number_of.wav"/>
+      <prompt phrase="das Sie ändern wollen." filename="ivr-that_you_would_like_to_modify.wav"/>
+      <prompt phrase="Ungültige Nebenstelle. Bitte versuchen Sie es erneut." filename="ivr-invalid_extension_try_again.wav"/>
+      <prompt phrase="Für die Änderung einer Haupt-Ansage" filename="ivr-modify_main_prompts.wav"/>
+      <prompt phrase="Für die Änderung einer Options-Ansage" filename="ivr-modify_option_prompts.wav"/>
+      <prompt phrase="Um Nutzungsstatistiken anzuhören" filename="ivr-hear_usage_stats.wav"/>
+      <prompt phrase="Nach dem Signalton" filename="ivr-at_the_tone.wav"/>
+      <prompt phrase="Bite nehmen Sie die Ansage auf." filename="ivr-record_prompt.wav"/>
+      <prompt phrase="Bitte nehmen Sie die kurz-Begrüßung auf." filename="ivr-record_short_greeting.wav"/>
+      <prompt phrase="Bitte nehmen Sie den ungültig-Ton auf." filename="ivr-record_invalid_sound.wav"/>
+      <prompt phrase="Bite nehmen Sie den verlassen-Ton auf." filename="ivr-record_exit_sound.wav"/>
+      <prompt phrase="Wenn Sie fertig sind, drücken Sie bitte irgendeine Taste." filename="ivr-when_finished_press_any_key.wav"/>
+      <prompt phrase="Bitte drücken Sie die Taste der Ansage, die Sie ändern möchten." filename="ivr-press_key_of_prompt_to_modify.wav"/>
+      <prompt phrase="Taste" filename="ivr-key.wav"/>
+      <prompt phrase="enthält keine Aufnahme." filename="ivr-does_not_contain_a_recording.wav"/>
+      <prompt phrase="enthält bereits eine Aufnahme." filename="ivr-already_contains_a_recording.wav"/>
+      <prompt phrase="Option" filename="ivr-option.wav"/>
+      <prompt phrase="hatte" filename="ivr-has_had.wav"/>
+      <prompt phrase="Besucher." filename="ivr-visitors.wav"/>
+      <prompt phrase="Besucher." filename="ivr-visitor.wav"/>
+      <prompt phrase="Um die Zähler der Nutzungsstatistik zurückzusetzen" filename="ivr-reset_usage_totals.wav"/>
+      <prompt phrase="Sie haben die Zähler-Rücksetzung ausgewählt." filename="ivr-reset_usage_totals_confirm.wav"/>
+      <prompt phrase="um zu bestätigen." filename="ivr-to_confirm.wav"/>
+      <prompt phrase="Die Zähler der Nutzungsstatistik wurden auf Null zurückgesetzt." filename="ivr-usage_totals_have_been_reset.wav"/>
+      <prompt phrase="Um zu ändern" filename="ivr-to_modify.wav"/>
+      <prompt phrase="Für die Änderung einer Haupt-Ansage" filename="ivr-to_modify_main_prompt.wav"/>
+      <prompt phrase="der kurz-Begrüßung." filename="ivr-short_greeting.wav"/>
+      <prompt phrase="des ungültig-Tons." filename="ivr-ivalid_sound_prompt.wav"/>
+      <prompt phrase="des verlassen-Tons." filename="ivr-exit_sound_prompt.wav"/>
+      <prompt phrase="Diese Person akzeptiert keine anonymen Anrufe." filename="ivr-not_accept_anonymous_calls.wav"/>
+      <prompt phrase="Um zu akzeptieren, drücken Sie bitte" filename="ivr-to_accept_press.wav"/>
+      <prompt phrase="Um abzuweisen" filename="ivr-to_reject.wav"/>
+      <prompt phrase="legen Sie auf." filename="ivr-hang_up.wav"/>
+      <prompt phrase="Um abzuweisen, legen Sie auf, ohne eine Taste zu drücken." filename="ivr-to_reject_hangup.wav"/>
+      <prompt phrase="Zugang verweigert." filename="ivr-access_denied.wav"/>
+      <prompt phrase="Um einen D T M F test zu machen, drücken Sie bitte" filename="ivr-perform_dtmf_test.wav"/>
+      <prompt phrase="Um einen Echo-test zu machen, drücken Sie bitte" filename="ivr-perform_echo_test.wav"/>
+      <prompt phrase="Um einen verzögerten Echo-test zu machen, drücken Sie bitte" filename="ivr-perform_delayed_echo_test.wav"/>
+      <prompt phrase="Legen Sie auf, um den Test zu beenden." filename="ivr-hangup_to_end_test.wav"/>
+      <prompt phrase="Drücken Sie eine oder mehrere Tasten. Jede gedrückte Taste wird Ihnen vorgelesen." filename="ivr-read_each_key_press_back.wav"/>
+      <prompt phrase="Nach dem Signalton wird Ihr Audio-Signal an Sie zurückgesendet." filename="ivr-echo_your_audio_back.wav"/>
+      <prompt phrase="Nach dem Signalton wird Ihr Audio-Signal zeitverzögert an Sie zurückgesendet." filename="ivr-delayed_echo_your_audio_back.wav"/>
+      <prompt phrase="Um ein Fax zu senden, drücken Sie bitte" filename="ivr-send_fax.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer ein, an die dieses Fax gesendet werden soll. Dann drücken Sie bitte die Raute Taste." filename="ivr-enter_number_send_fax.wav"/>
+      <prompt phrase="Verschicke Ihr Fax jetzt." filename="ivr-send_fax_now.wav"/>
+      <prompt phrase="wurde auf die Sperrliste gesetzt." filename="ivr-has_been_added_to_the_blacklist.wav"/>
+      <prompt phrase="wurde von der Sperrliste entfernt." filename="ivr-has_been_removed_from_blacklist.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer ein, die zur Sperrliste hinzugefügt werden soll." filename="ivr-enter_number_to_add_to_blacklist.wav"/>
+      <prompt phrase="Bitte geben Sie die Nummer ein, die zur Sperrliste entfernt werden soll." filename="ivr-enter_number_to_remove_from_blacklist.wav"/>
+      <prompt phrase="ist nicht auf der Sperrliste." filename="ivr-is_not_on_the_blacklist.wav"/>
+      <prompt phrase="ist bereits auf der Sperrliste." filename="ivr-is_already_on_the_blacklist.wav"/>
+      <prompt phrase="Für weitere Optionen, drücken Sie bitte" filename="ivr-for_other_options.wav"/>
+      <prompt phrase="Die von Ihnen übermittelte Rufnummer ist" filename="ivr-your_caller_id_information_is.wav"/>
+      <prompt phrase="Rufnummernunterdrückung wurde aktiviert." filename="ivr-call_screening_enabled.wav"/>
+      <prompt phrase="Rufnummernunterdrückung wurde deaktiviert." filename="ivr-call_screening_disabled.wav"/>
+      <prompt phrase="Ansage." filename="ivr-prompt.wav"/>
+      <prompt phrase="aktiviert." filename="ivr-enabled.wav"/>
+      <prompt phrase="deaktiviert." filename="ivr-disabled.wav"/>
+      <prompt phrase="Niemand hat doch Zeit für sowas!" filename="ivr-aint_nobody_got_time_for_that.wav"/>
+      <prompt phrase="Wir würden Ihnen ja helfen bis Ihnen Hören und Sehen vergeht, wenn Sie doch nur unsere Anrufe und E-Mails beantworten würden." filename="ivr-we_would_support.wav"/>
+      <prompt phrase="nerven." filename="ivr-suck.wav"/>
+      <prompt phrase="nervt." filename="ivr-sucks.wav"/>
+      <prompt phrase="Um Ihre letzte Nummer erneut zu wählen" filename="ivr-to_redial_last_call.wav"/>
+      <prompt phrase="Um die Funktion Ihres Dienstes sicherzustellen" filename="ivr-ensure_service_keeps_working.wav"/>
+      <prompt phrase="Bitte wenden Sie sich an" filename="ivr-please_contact.wav"/>
+      <prompt phrase="die Rechnungs-Abteilung" filename="ivr-the_billing_department.wav"/>
+      <prompt phrase="durch Wahl von" filename="ivr-by_dialing.wav"/>
+      <prompt phrase="Die hinterlegte Kreditkarten Nummer konnte nicht belastet werden." filename="ivr-credit_card_could_not_be_charged.wav"/>
+      <prompt phrase="Einheiten" filename="ivr-units.wav"/>
+      <prompt phrase="pro Minute." filename="ivr-per_minute.wav"/>
+      <prompt phrase="Die von Ihnen übermittelte Rufnummer ist gesperrt." filename="ivr-your_caller_id_number_is_blocked.wav"/>
+      <prompt phrase="Sie müssen die von Ihnen übermittelte Rufnummer entsprerren, um die Anruf-Karte ohne PIN benutzen zu können." filename="ivr-unblock_caller_id.wav"/>
+      <prompt phrase="Alternativ können Sie auch eine PIN für Ihr Konto verwenden." filename="ivr-request_or_use_pin.wav"/> 
+      <prompt phrase="Sie haben genutzt" filename="ivr-you_have_used.wav"/>
+      <prompt phrase="von" filename="ivr-out_of.wav"/>
+      <prompt phrase="Der nächste Abrechnungszeitraum beginnt am" filename="ivr-next_billing_cycle.wav"/> 
+      <prompt phrase="Nichts." filename="ivr-nothing.wav"/>
+      <prompt phrase="Zum Überspringen der" filename="ivr-to_skip.wav"/>
+      <prompt phrase="Bitte warten Sie. Wir verbinden Sie mit der Vermittlung." filename="ivr_connect_live_operator.wav"/>
+      <prompt phrase="Bitte warten Sie. Wir verbinden Sie mit einem echten Menschen." filename="ivr-connect_actual_human_being.wav"/>
+      <prompt phrase="Das System wird für Wartungsarbeiten heruntergefahren." filename="ivr-system_down_for_maintenance.wav"/>
+      <prompt phrase="Das System wird wieder zur Verfügung stehen in etwa" filename="ivr-system_back_up_in_approximately.wav"/>
+      <prompt phrase="Da haben wir es, Schwarz auf Weiß, kristallklar! Sie haben kohlensäurehaltige Drinks gestohlen! Sie sind an die Decke gestoßen, die jetzt gewaschen und sterilisiert werden muss, damit man sich nichts holt! Sie verlieren! Guten Tag der Herr!" filename="ivr-you_lose.wav"/>
+      <prompt phrase="Für ein kaltes Getränk, drücken Sie bitte" filename="ivr-cold_pop.wav"/>
+      <prompt phrase="Wenn Sie dachten dass jemand grillt, drücken Sie bitte" filename="ivr-barbecuing.wav"/>
+      <prompt phrase="Wenn Sie keine Schuhe und nichts anderes mitgenommen haben und um Ihr Leben gerannt sind, drücken Sie bitte" filename="ivr-no_shoes.wav"/>
+      <prompt phrase="Wenn bei Ihnen Rauch hereingelassen wurde, drücken Sie bitte" filename="ivr-smoke_got_you.wav"/>
+      <prompt phrase="Wenn Sie eine Bronchitis haben, drücken Sie bitte" filename="ivr-got_bronchitis.wav"/>
+      <prompt phrase="Wenn Sie keine Zeit für sowas haben, drücken Sie bitte" filename="ivr-nobody_got_time_for_that.wav"/>
+      <prompt phrase="Dies ist eine Erinnerung an" filename="ivr-reminder_for.wav"/>
+      <prompt phrase="Sie haben einen Termin um" filename="ivr-appointment_schedule_for.wav"/>
+      <prompt phrase="Ihre PIN ist" filename="ivr-Your_verification_PIN_is.wav"/>
+      <prompt phrase="Um das Fliegender-Wechsel-Menü zu hören, geben Sie bitte die Nummer Ihrer Nebenstelle ein, gefolgt von der Raute Taste." filename="ivr-hotseat_intro.wav"/>
+      <prompt phrase="Um die Haupt-Ansage zu ändern" filename="ivr-modify_main_prompt.wav"/>
+      <prompt phrase="Bitte geben Sie Ihre PIN ein, gefolgt von der Raute Taste." filename="ivr-hotseat_pin.wav"/>
+      <prompt phrase="Um dieses Telefon Ihrer Nebenstelle zuzuordnen, drücken Sie bitte 1. Um die Zuordnung zu löschen, drücken Sie 2." filename="ivr-hotseat_options.wav"/>
+      <!-- The following phrases still need to be recorded -->
+      <prompt phrase="Sie haben die maximale Anzahl von Kanälen erreicht." filename="ivr-maximum_number_of_channels.wav"/>
+      <prompt phrase="Um einen Echo-Test zu machen" filename="ivr-to_do_a_echo_test.wav"/>
+    </ivr>
+    <misc>
+      <prompt phrase="Dieser Anruf wurde gesichert" filename="call_secured.wav"/>
+      <prompt phrase="gefolgt von der Raute Taste" filename="followed.wav"/>
+      <prompt phrase="Wenn Sie diese Person sind" filename="if_you_are_this_person.wav"/>
+      <prompt phrase="Wenn Sie möchten" filename="if_you_would_like_to.wav"/>
+      <prompt phrase="Angabe der Referenznummer" filename="provide_reference_number.wav"/>
+      <prompt phrase="Bitte geben Sie die Durchwahl ein, an die Sie weiterleiten wollen" filename="transfer1.wav"/>
+      <prompt phrase="Weiterleiten" filename="transfer2.wav"/>
+      <prompt phrase="Wir versuchen zu erreichen" filename="we_are_trying_to_reach.wav"/>
+      <prompt phrase="Es ist ein Fehler aufgetreten. Bitte benachrichtigen Sie den Administrator." filename="error.wav"/>
+      <prompt phrase="Ihr Anruf wird beendet in" filename="misc-your_call_will_be_terminated_in.wav"/>
+      <prompt phrase="Ihr Anruf wurde beendet." filename="misc-your_call_has_been_terminated.wav"/>
+      <prompt phrase="Um etwas über die ClueCon zu erfahren" filename="misc-to_hear_about_cluecon.wav"/>
+      <prompt phrase="Die ClueCon ist die wichtigste Konferenz für Open Source Telefonie Entwickler." filename="misc-cluecon_is_premier_conference.wav"/>
+      <prompt phrase="Sie findet jeden Sommer in Chicago statt." filename="misc-chicago_each_summer.wav"/>
+      <prompt phrase="Die ClueCon bringt ein breites Spektrum von VoIP Ingenieuren, Software-Entwicklern und Geschäftsleuten zusammen." filename="misc-wide_range_of_persons.wav"/>
+      <prompt phrase="Indem Sie an der ClueCon teilnehmen, zeigen Sie nicht nur Unterstützung für FreeSwitch, sondern auch für das ganze Spektrum der Open Source Telefonie Software." filename="misc-support_open_source_by_attending.wav"/>
+      <prompt phrase="FreeSWITCH ist eine Open Source Software, die von der Open Source Telephony Advancement Group OSTAG unterstützt wird." filename="misc-freeswitch_sponsored_by_ostag.wav"/>
+      <prompt phrase="OSTAG treibt die nächste Generation der Telefonie durch Open Source Software voran. Mehr Informationen erhalten Sie unter W W W punkt OSTAG punkt org." filename="misc-ostag_learn_more.wav"/>
+      <prompt phrase="Um mehr über FreeSWITCH Lösungen zu erfahren, drücken Sie bitte" filename="misc-learn_more_about_freeswitch_solutions.wav"/>
+      <prompt phrase="Um mehr über FreeSWITCH zu erfahren, drücken Sie bitte" filename="misc-information_about_freeswitch.wav"/>
+      <prompt phrase="FreeSWITCH ist eine Telekommunikations-Plattform auf dem neuesten Stand der Technik." filename="misc-freeswitch_is_state_of_the_art.wav"/>
+      <prompt phrase="Sie ist stabil, hoch skalierbar und erweiterbar." filename="misc-it_is_stable_scalable_extensible.wav"/>
+      <prompt phrase="Und das beste ist: jedermann kann sie kostenlos herunterladen und benutzen." filename="misc-free_to_download.wav"/>
+      <prompt phrase="Besuchen Sie W W W punkt freeswitch punkt org um mehr über unser Projekt und die weltweite Gemeinschaft zu erfahren." filename="misc-freeswitch_dot_org_more.wav"/>
+      <prompt phrase="Sangoma." filename="misc-Sangoma.wav"/>
+      <prompt phrase="FreeSWITCH Solutions bietet das beste FreeSWITCH consulting, das man für Geld kaufen kann." filename="misc-fss_best_consulting.wav"/>
+      <prompt phrase="Wir haben ein Netzwerk von FreeSWITCH experten, das auch die Kern-Entwickler von FreeSWITCH umfasst." filename="misc-fss_network_of_experts.wav"/>
+      <prompt phrase="Nehmen Sie mit uns Kontakt auf unter W W W punkt freeswitch solutions punkt com um zu erfahren wie wir Sie unterstützen können, ihre FreeSWITCH Erfahrung auf ein ganz neues Niveau zu bringen." filename="misc-fss_contact_us.wav"/>
+      <prompt phrase="Das ist so ein Scheiß für Helikopter-Eltern." filename="misc-soccer_mom.wav"/>
+      <prompt phrase="Möchten Sie live mit anderen Mitgliedern der FreeSWITCH Gemeinschaft reden?" filename="misc-speak_live_with_community.wav"/>
+      <prompt phrase="Machen Sie mit, jeden Mittwoch um 13 Uhr nordamerikanischer Ostküsten-Zeit beziehungsweise 19 Uhr mitteleuropäischer Zeit, bei der öffentlichen FreeSWITCH Konferenz." filename="misc-join_us_each_wed.wav"/>
+      <prompt phrase="Weitere Informationen gibt es online unter wiki punkt FreeSwitch punkt org." filename="misc-more_info_wiki.wav"/>
+      <prompt phrase="Willkommen bei der FreeSWITCH Telefonkonferenz!" filename="misc-welcome_freeswitch_conf_call.wav"/>
+      <prompt phrase="E hundert vierundsechtzig punkt org" filename="misc-e164_dot_org.wav"/>
+      <prompt phrase="Dieses Telefon darf keine externen Nummern wählen." filename="phone_not_auth.wav"/>
+      <prompt phrase="Es tut mir leid." filename="sorry.wav"/>
+      <prompt phrase="Dieser Anruf kann zur Qualitätssicherung oder für Trainings-Zwecke überwacht oder aufgenommen werden." filename="call_monitoring_blurb.wav"/>
+      <prompt phrase="Spanisch." filename="es.wav"/>
+      <prompt phrase="Das ist eine ungültige Durchwahl." filename="invalid_extension.wav"/>
+      <prompt phrase="Englisch." filename="en.wav"/>
+    </misc>
+    <zrtp>
+      <!-- Event prompts -->
+      <prompt phrase="Willkommen bei der Anmeldung zum Z R T P Sicherheits-System." filename="zrtp-enroll_welcome.wav"/>
+      <prompt phrase="Sie müssen den Authentisierungs-String mit Ihrem Gesprächspartner vergleichen. Wenn er nicht übereinstimmt, ist dies ein Hinweis darauf, dass das Gespräch abgehört wird." filename="zrtp-check_sas.wav"/>
+      <prompt phrase="Nur authentisierte Telefone können so konfiguriert werden, dass sie diesem System vertrauen bezüglich der Vermittlung von Verbindungen die mit Z R T P gesichert sind.  Ihr Telefon ist nicht authentisiert, daher wird dieser Anruf nicht vermittelt." filename="zrtp-enroll_not_sip_registered.wav"/>
+      <prompt phrase="Ihr Telefon signalisiert, dass es diesem System bereits vertraut bezüglich der Vermittlung von Verbindungen die mit Z R T P gesichert sind.  Sie müssen deshalb nichts weiter tun." filename="zrtp-enroll_already_enrolled.wav"/>
+      <prompt phrase="Nur Telefone, die das Z R T P Protokoll unterstützen, können diese Nebenstelle Nutzen. Ihr Telefon unterstützt Z R T P nicht, daher wird dieser Anruf nicht vermittelt." filename="zrtp-enroll_notzrtp.wav"/>
+      <prompt phrase="Dieses System ist für die Verarbeitung von mit Z R T P verschlüsselten Telefonanrufen ausgestattet. Sie müssen entscheiden, ob Sie zulassen möchten, dass dieses System Ihre sicheren Telefonanrufe abfangen und möglicherweise überwachen kann. Sie können auflegen, nachdem Sie dies getan haben." filename="zrtp-enroll_confirmed.wav"/>
+      <prompt phrase="Vergleichen Sie diesen Authentifizierungscode mit Ihrem Gesprächspartner, indem Sie sich diesen Code vorlesen." filename="zrtp-is_secure.wav"/>
+      <prompt phrase="Der Authentifizierungscode ist derzeit nicht überprüft." filename="zrtp-is_unverified.wav"/>
+      <prompt phrase="Der Authentifizierungscode ist jetzt überprüft." filename="zrtp-is_verified.wav"/>
+      <prompt phrase="Vielen Dank für Ihren Anruf. Auf Wiedersehen." filename="zrtp-thankyou_goodbye.wav"/>
+      <prompt phrase="Etwas stimmt nicht." filename="zrtp-somethings_wrong.wav"/>
+      <prompt phrase="Fehler." filename="zrtp-status_error.wav"/>
+      <prompt phrase="Verbindung ist nicht sicher." filename="zrtp-status_notsecure.wav"/>
+      <prompt phrase="Verbindung ist sicher." filename="zrtp-status_secure.wav"/>
+      <prompt phrase="Sichere die Verbindung." filename="zrtp-status_securing.wav"/>
+    </zrtp>
   </de>
 </language>
+<!--
+For Emacs:
+Local Variables:
+mode:xml
+indent-tabs-mode:nil
+tab-width:2
+c-basic-offset:2
+End:
+For VIM:
+vim:set softtabstop=2 shiftwidth=2 tabstop=2 expandtab:
+-->

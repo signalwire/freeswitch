@@ -485,8 +485,9 @@ tagi_t *t_filter(tagi_t *dst,
     size_t d = 0;
 
     for (f = filter; f; f = t_next(f)) {
-      if (TAG_TYPE_OF(f)->tt_filter)
-	d += (size_t)TAG_TYPE_OF(f)->tt_filter(NULL, f, src, bb);
+      tag_type_t tt_f = TAG_TYPE_OF(f);
+      if (tt_f->tt_filter)
+	d += (size_t)tt_f->tt_filter(NULL, f, src, bb);
       else if (tt == f->t_tag) {
 	d += t_len(src);
 	*bb = (char *)*bb + t_xtra(src, (size_t)*bb);

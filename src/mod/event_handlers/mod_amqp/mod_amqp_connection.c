@@ -126,7 +126,9 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 		}
 	}
 
-	*active = connection_attempt;
+	if (active) {
+		*active = connection_attempt;
+	}
 
 	if (!connection_attempt) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] could not connect to any AMQP brokers\n", profile_name);

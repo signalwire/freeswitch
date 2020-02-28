@@ -32,7 +32,11 @@ static apr_status_t socket_cleanup(void *sock)
 {
     apr_socket_t *thesocket = sock;
 
-	if (thesocket && thesocket->socketdes == -1) {
+	if (!thesocket) {
+		return APR_ENOTSOCK;
+	}
+
+	if (thesocket->socketdes == -1) {
 		return APR_SUCCESS;
 	}
 

@@ -274,6 +274,8 @@ static void vlc_media_av_state_callback(const libvlc_event_t * event, void * dat
 		if (!(vcontext = acontext->vcontext)) {
 			return;
 		}
+	} else {
+		return;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
@@ -357,6 +359,8 @@ void vlc_file_play_audio_callback(void *data, const void *samples, unsigned coun
 		if (!(vcontext = acontext->vcontext)) {
 			return;
 		}
+	} else {
+		return;
 	}
 
 	switch_mutex_lock(vcontext->audio_mutex);
@@ -585,15 +589,14 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	int32_t offset = 250;
 	const char *tmp;
     vlc_file_context_t *acontext = handle->private_info;
-	const char * opts[25] = {
-		*vlc_args,
-		switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path)
-	};
+	const char * opts[25] = {0};
 	int argc = 2;
 	vlc_video_context_t *vcontext;
 
 
-	vcontext = acontext->vcontext;
+	opts[0] = *vlc_args;
+	if (acontext) opts[1] = switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path);
+
 	pool = acontext->pool;
 
 
@@ -682,10 +685,6 @@ static switch_status_t vlc_file_av_open(switch_file_handle_t *handle, const char
 	libvlc_event_manager_t *m_event_manager;
     vlc_file_context_t *acontext = handle->private_info;
 	vlc_video_context_t *vcontext;
-
-	if (acontext) {
-		vcontext = acontext->vcontext;
-	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for reading\n", acontext->path);
 
@@ -967,9 +966,11 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 		if (!(vcontext = acontext->vcontext)) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
 
-	if (vcontext->err) {
+	if (vcontext && vcontext->err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC ended\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1126,6 +1127,8 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		if (!(vcontext = acontext->vcontext)) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (vcontext->err) {

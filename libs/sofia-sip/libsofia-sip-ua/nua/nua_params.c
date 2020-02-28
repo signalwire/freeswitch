@@ -1122,7 +1122,7 @@ int nhp_save_params(nua_handle_t *nh,
   su_home_t *home = nh->nh_home;
   nua_t *nua = nh->nh_nua;
   nua_handle_t *dnh = nua->nua_dhandle;
-  nua_handle_preferences_t *dst = nh->nh_prefs, old[1];
+  nua_handle_preferences_t *dst, old[1];
 
   if (gsrc) {
     *nua->nua_prefs = *gsrc;	/* No pointers this far */

@@ -2,6 +2,9 @@
 kind: pipeline
 name: unit-tests
 
+node:
+  freeswitch: public
+
 steps:
     - name: run-tests
       image: signalwire/freeswitch-public-base
@@ -10,7 +13,11 @@ steps:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
       - echo "applications/mod_test" >> modules.conf
-      - export ASAN_OPTIONS=log_path=stdout;
+      - sed -i '/applications\/mod_http_cache/s/^#//g' modules.conf
+      - sed -i '/event_handlers\/mod_rayo/s/^#//g' modules.conf
+      - sed -i '/formats\/mod_opusfile/s/^#//g' modules.conf
+      - sed -i '/languages\/mod_lua/s/^#//g' modules.conf
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
       - ./configure --enable-address-sanitizer
       - echo "#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./build-status.txt\nmake install\n" > build.sh
       - chmod +x build.sh
@@ -45,6 +52,6 @@ trigger:
   - push
 ---
 kind: signature
-hmac: 5ebcc916118f95811470ed7e622a2acb71e84790e33f9b172c04fe3e119d78fe
+hmac: 55dc56b2c540a026a1d81df52be401ce67a76ecec12e8f36802c29314142b21e
 
 ...

@@ -1149,7 +1149,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "loopback_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -1302,6 +1304,8 @@ struct null_private_object {
 	switch_frame_t read_frame;
 	int16_t *null_buf;
 	int rate;
+	int pre_answer; // pre answer the channel
+	int auto_answer; // answer after in ms
 };
 
 typedef struct null_private_object null_private_t;
@@ -1451,9 +1455,17 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA\n");
 
-	switch_channel_mark_answered(channel);
+	if (tech_pvt->pre_answer) {
+		switch_channel_mark_pre_answered(channel);
+	}
+
+	if (tech_pvt->auto_answer > 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer);
+		switch_yield(tech_pvt->auto_answer * 1000);
+		switch_channel_mark_answered(channel);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1588,12 +1600,16 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 {
 	char name[128];
 	switch_channel_t *ochannel = NULL;
+	const char *auto_answer = switch_event_get_header(var_event, "null_auto_answer");
+	const char *pre_answer = switch_event_get_header(var_event, "null_pre_answer");
 
 	if (session) {
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "null_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -1616,6 +1632,17 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			}
 
 			tech_pvt->rate = rate;
+
+			tech_pvt->pre_answer = switch_true(pre_answer);
+
+			if (auto_answer) {
+				tech_pvt->auto_answer = atoi(auto_answer);
+
+				if (tech_pvt->auto_answer < 0) tech_pvt->auto_answer = 0;
+				if (tech_pvt->auto_answer > 60000) tech_pvt->auto_answer = 60000;
+			} else {
+				tech_pvt->auto_answer = 1;
+			}
 
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "null/%s", outbound_profile->destination_number);

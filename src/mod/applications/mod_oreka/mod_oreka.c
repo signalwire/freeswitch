@@ -494,7 +494,6 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
 
                 raw_frame.data = raw_data;
                 raw_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-                linear_frame = &raw_frame;
 
                 while (switch_core_media_bug_read(bug, &raw_frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
                     linear_frame = &raw_frame;

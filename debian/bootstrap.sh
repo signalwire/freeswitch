@@ -943,7 +943,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: freeswitch-all-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch-meta-all (= \${binary:Version}), freeswitch-meta-all-dbg (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -953,7 +953,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: freeswitch-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -963,7 +963,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: libfreeswitch1-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, libfreeswitch1 (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -1066,7 +1066,7 @@ Description: ${description} for FreeSWITCH
 
 Package: freeswitch-${module_name//_/-}-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends},
  freeswitch-${module_name//_/-} (= \${binary:Version})
