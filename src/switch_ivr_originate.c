@@ -899,6 +899,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int timelimit = SWITCH_DEFAULT_TIMEOUT;
+	int timelimit_seconds = SWITCH_DEFAULT_TIMEOUT;
 	const char *var;
 	switch_time_t start = 0;
 	const char *cancel_key = NULL;
@@ -914,22 +915,63 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		caller_channel = switch_core_session_get_channel(session);
 	}
 
-	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
+	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: already answered\n");
 		goto end;
+	}
+	
+	if (caller_channel && (var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+		timelimit_seconds = atoi(var);
+		if (timelimit_seconds < 0) {
+			timelimit_seconds = SWITCH_DEFAULT_TIMEOUT;
+		}
+	}
+
+	timelimit = timelimit_seconds * 1000000;
+	start = switch_micro_time_now();
+	
+	/* Handle CF_EARLY_MEDIA here */
+	if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+		if (session == peer_session) {
+			/* Not called from a switch_ivr_bridge.c function since both session and peer_session are the same */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: CF_EARLY_MEDIA detected and not called from a bridge function (call_timeout = %d seconds) - wait for answer...\n", timelimit_seconds);
+			if (caller_channel) {
+				wait_state = switch_channel_get_state(caller_channel);
+			}
+			while (!switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+				/* Wait for answer here and timeout if no answer */
+				int diff = (int)(switch_micro_time_now() - start);
+				switch_ivr_parse_all_messages(session);
+				if (caller_channel && switch_channel_get_state(caller_channel) != wait_state) {
+					/* State change - this route will be taken when the outbound fails eg. USER_BUSY */
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: state change detected - return immediately\n");
+					goto end;
+				}
+				if (diff > timelimit) {
+					/* No answer */
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: NO_ANSWER\n");
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
+					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+					status = SWITCH_STATUS_FALSE;
+					return status;
+				}
+			}
+			/* Answered */
+			goto end;
+		}
+		else {
+			/* Called from switch_ivr_bridge.c function therefore return this function to the previous way it worked (ie. goto end when CF_EARLY_MEDIA) */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: CF_EARLY_MEDIA detected and called from a bridge function - return immediately\n");
+			goto end;
+		}
+	}
+	else {
+		/* Not CF_EARLY_MEDIA if here */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: CF_EARLY_MEDIA not detected (call_timeout = %d seconds) - wait for answer...\n", timelimit_seconds);
 	}
 
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-
-	if (caller_channel && (var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
-		timelimit = atoi(var);
-		if (timelimit < 0) {
-			timelimit = SWITCH_DEFAULT_TIMEOUT;
-		}
-	}
-
-	timelimit *= 1000000;
-	start = switch_micro_time_now();
 
 	if (caller_channel) {
 		cancel_key = switch_channel_get_variable(caller_channel, "origination_cancel_key");
@@ -1177,7 +1219,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	if (!switch_channel_media_ready(peer_channel)) {
 		if (switch_channel_up_nosig(peer_channel)) {
-			switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			if (status == SWITCH_STATUS_TIMEOUT) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: NO_ANSWER\n");
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: DESTINATION_OUT_OF_ORDER\n");
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
 		}
 		status = SWITCH_STATUS_FALSE;
 	}
