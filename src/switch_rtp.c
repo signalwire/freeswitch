@@ -82,10 +82,10 @@ static const switch_payload_t INVALID_PT = 255;
 
 #define rtp_session_name(_rtp_session) _rtp_session->session ? switch_core_session_get_name(_rtp_session->session) : "-"
 
-#define STUN_USERNAME_MAX_SIZE 513 // From RFC5389:  "It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes"
-#define SDP_UFRAG_MAX_SIZE 256 	// From draft-ietf-mmusic-ice-sip-sdp-24: "the ice-ufrag attribute MUST NOT be longer than 32
-								// characters when sending, but an implementation MUST accept up to 256
-								// characters when receiving.""
+#define STUN_USERNAME_MAX_SIZE 513 /* From RFC5389:  "It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes" */
+#define SDP_UFRAG_MAX_SIZE 256 	/* From draft-ietf-mmusic-ice-sip-sdp-24: "the ice-ufrag attribute MUST NOT be longer than 32
+								 * characters when sending, but an implementation MUST accept up to 256
+								 * characters when receiving." */
 
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
