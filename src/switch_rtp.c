@@ -82,10 +82,10 @@ static const switch_payload_t INVALID_PT = 255;
 
 #define rtp_session_name(_rtp_session) _rtp_session->session ? switch_core_session_get_name(_rtp_session->session) : "-"
 
-#define STUN_USERNAME_MAX_SIZE 513 // RFC5389:  It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes
-#define SDP_UFRAG_MAX_SIZE 256 	// draft-ietf-mmusic-ice-sip-sdp-24: the ice-ufrag attribute MUST NOT be longer than 32
+#define STUN_USERNAME_MAX_SIZE 513 // From RFC5389:  "It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes"
+#define SDP_UFRAG_MAX_SIZE 256 	// From draft-ietf-mmusic-ice-sip-sdp-24: "the ice-ufrag attribute MUST NOT be longer than 32
 								// characters when sending, but an implementation MUST accept up to 256
-								// characters when receiving.
+								// characters when receiving.""
 
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
@@ -912,7 +912,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
 	void *end_buf;
-	char username[STUN_USERNAME_MAX_SIZE] = { 0 }; // RFC5389:  It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes
+	char username[STUN_USERNAME_MAX_SIZE] = { 0 };
 	unsigned char buf[1500] = { 0 };
 	switch_size_t cpylen = len;
 	int xlen = 0;
