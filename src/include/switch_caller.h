@@ -258,6 +258,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(_In_ switch_
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(_In_ switch_caller_profile_t *caller_profile,
 														  _In_opt_z_ const char *prefix, _In_ switch_event_t *event);
 
+
+SWITCH_DECLARE(switch_status_t) switch_caller_profile_set_var(_In_ switch_caller_profile_t *caller_profile, _In_z_ const char *name, _In_z_ const char *val);
+
 SWITCH_END_EXTERN_C
 /** @} */
 #endif

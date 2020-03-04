@@ -582,6 +582,88 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_caller_profile_set_var(switch_caller_profile_t *caller_profile, const char *name, const char *val)
+{
+	char *v;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!zstr(val)) {
+		v = switch_core_strdup(caller_profile->pool, val);
+	} else {
+		v = SWITCH_BLANK_STRING;
+	}
+
+	if (!strcasecmp(name, "dialplan")) {
+		caller_profile->dialplan = v;
+	} else if (!strcasecmp(name, "username")) {
+		caller_profile->username = v;
+	} else if (!strcasecmp(name, "caller_id_name")) {
+		caller_profile->caller_id_name = v;
+	} else if (!strcasecmp(name, "caller_id_number")) {
+		caller_profile->caller_id_number = v;
+	} else if (!strcasecmp(name, "callee_id_name")) {
+		caller_profile->callee_id_name = v;
+	} else if (!strcasecmp(name, "callee_id_number")) {
+		caller_profile->callee_id_number = v;
+	} else if (val && !strcasecmp(name, "caller_ton")) {
+		caller_profile->caller_ton = (uint8_t) atoi(v);
+	} else if (val && !strcasecmp(name, "caller_numplan")) {
+		caller_profile->caller_numplan = (uint8_t) atoi(v);
+	} else if (val && !strcasecmp(name, "destination_number_ton")) {
+		caller_profile->destination_number_ton = (uint8_t) atoi(v);
+	} else if (val && !strcasecmp(name, "destination_number_numplan")) {
+		caller_profile->destination_number_numplan = (uint8_t) atoi(v);
+	} else if (!strcasecmp(name, "ani")) {
+		caller_profile->ani = v;
+	} else if (!strcasecmp(name, "aniii")) {
+		caller_profile->aniii = v;
+	} else if (!strcasecmp(name, "network_addr")) {
+		caller_profile->network_addr = v;
+	} else if (!strcasecmp(name, "rdnis")) {
+		caller_profile->rdnis = v;
+	} else if (!strcasecmp(name, "destination_number")) {
+		caller_profile->destination_number = v;
+	} else if (!strcasecmp(name, "uuid")) {
+		caller_profile->uuid = v;
+	} else if (!strcasecmp(name, "source")) {
+		caller_profile->source = v;
+	} else if (!strcasecmp(name, "context")) {
+		caller_profile->context = v;
+	} else if (!strcasecmp(name, "chan_name")) {
+		caller_profile->chan_name = v;
+	} else {
+		profile_node_t *pn, *n = switch_core_alloc(caller_profile->pool, sizeof(*n));
+		int var_found;
+
+		n->var = switch_core_strdup(caller_profile->pool, name);
+		n->val = v;
+
+		if (!caller_profile->soft) {
+			caller_profile->soft = n;
+		} else {
+			var_found = 0;
+
+			for(pn = caller_profile->soft; pn ; pn = pn->next) {
+				if (!strcasecmp(pn->var,n->var)) {
+					pn->val = n->val;
+					var_found = 1;
+					break;
+				}
+
+				if(!pn->next) {
+					break;
+				}
+			}
+
+			if (pn && !pn->next && !var_found) {
+				pn->next = n;
+			}
+		}
+	}
+
+	return status;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

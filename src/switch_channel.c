@@ -1129,11 +1129,9 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t *channel, const char *name, const char *val)
 {
-	char *v;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_mutex_lock(channel->profile_mutex);
-
 
 	if (!strcasecmp(name, "device_id") && !zstr(val)) {
 		const char *device_id;
@@ -1142,83 +1140,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 			switch_mutex_unlock(channel->profile_mutex);
 			return status;
 		}
-
 		val = device_id;
 	}
 
-	if (!zstr(val)) {
-		v = switch_core_strdup(channel->caller_profile->pool, val);
-	} else {
-		v = SWITCH_BLANK_STRING;
-	}
+	status = switch_caller_profile_set_var(channel->caller_profile, name, val);
 
-	if (!strcasecmp(name, "dialplan")) {
-		channel->caller_profile->dialplan = v;
-	} else if (!strcasecmp(name, "username")) {
-		channel->caller_profile->username = v;
-	} else if (!strcasecmp(name, "caller_id_name")) {
-		channel->caller_profile->caller_id_name = v;
-	} else if (!strcasecmp(name, "caller_id_number")) {
-		channel->caller_profile->caller_id_number = v;
-	} else if (!strcasecmp(name, "callee_id_name")) {
-		channel->caller_profile->callee_id_name = v;
-	} else if (!strcasecmp(name, "callee_id_number")) {
-		channel->caller_profile->callee_id_number = v;
-	} else if (val && !strcasecmp(name, "caller_ton")) {
-		channel->caller_profile->caller_ton = (uint8_t) atoi(v);
-	} else if (val && !strcasecmp(name, "caller_numplan")) {
-		channel->caller_profile->caller_numplan = (uint8_t) atoi(v);
-	} else if (val && !strcasecmp(name, "destination_number_ton")) {
-		channel->caller_profile->destination_number_ton = (uint8_t) atoi(v);
-	} else if (val && !strcasecmp(name, "destination_number_numplan")) {
-		channel->caller_profile->destination_number_numplan = (uint8_t) atoi(v);
-	} else if (!strcasecmp(name, "ani")) {
-		channel->caller_profile->ani = v;
-	} else if (!strcasecmp(name, "aniii")) {
-		channel->caller_profile->aniii = v;
-	} else if (!strcasecmp(name, "network_addr")) {
-		channel->caller_profile->network_addr = v;
-	} else if (!strcasecmp(name, "rdnis")) {
-		channel->caller_profile->rdnis = v;
-	} else if (!strcasecmp(name, "destination_number")) {
-		channel->caller_profile->destination_number = v;
-	} else if (!strcasecmp(name, "uuid")) {
-		channel->caller_profile->uuid = v;
-	} else if (!strcasecmp(name, "source")) {
-		channel->caller_profile->source = v;
-	} else if (!strcasecmp(name, "context")) {
-		channel->caller_profile->context = v;
-	} else if (!strcasecmp(name, "chan_name")) {
-		channel->caller_profile->chan_name = v;
-	} else {
-		profile_node_t *pn, *n = switch_core_alloc(channel->caller_profile->pool, sizeof(*n));
-		int var_found;
-
-		n->var = switch_core_strdup(channel->caller_profile->pool, name);
-		n->val = v;
-
-		if (!channel->caller_profile->soft) {
-			channel->caller_profile->soft = n;
-		} else {
-			var_found = 0;
-
-			for(pn = channel->caller_profile->soft; pn ; pn = pn->next) {
-				if (!strcasecmp(pn->var,n->var)) {
-					pn->val = n->val;
-					var_found = 1;
-					break;
-				}
-
-				if(!pn->next) {
-					break;
-				}
-			}
-
-			if (pn && !pn->next && !var_found) {
-				pn->next = n;
-			}
-		}
-	}
 	switch_mutex_unlock(channel->profile_mutex);
 
 	return status;
