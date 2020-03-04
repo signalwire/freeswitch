@@ -3208,6 +3208,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (!fire_post_originate_event) {
 						const char* telnyx_session_uuid = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "telnyx_session_uuid");
 						const char* telnyx_uuid = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "telnyx_uuid");
+						const char* telnyx_fax = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "telnyx_fax");
+
+						if (!zstr(telnyx_fax)) {
+							switch_event_add_header_string(post_originate_event, SWITCH_STACK_BOTTOM, "telnyx_fax", telnyx_fax);
+						}
 
 						if (!zstr(telnyx_session_uuid) && !zstr(telnyx_uuid)) {
 							switch_event_add_header_string(post_originate_event, SWITCH_STACK_BOTTOM, "telnyx_session_uuid", telnyx_session_uuid);
