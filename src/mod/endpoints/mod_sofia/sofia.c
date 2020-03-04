@@ -7997,7 +7997,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot find a SDP\n");
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			} else {
-				if (sofia_use_soa(tech_pvt)) {
+				if (sofia_use_soa(tech_pvt) && !switch_channel_var_true(channel, "sip_unhold_nosdp")) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
