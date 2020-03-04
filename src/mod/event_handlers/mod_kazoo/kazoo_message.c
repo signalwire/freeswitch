@@ -219,12 +219,14 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 {
 	switch_event_header_t *header;
 	char *expanded;
-	uint i, n;
+	int i, n;
 	cJSON *item = NULL;
 
 	switch(field->in_type) {
 		case FIELD_COPY:
-			if((header = switch_event_get_header_ptr(src, field->name)) != NULL) {
+			if (!strcmp(field->name, "_body")) {
+				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, src->body);
+			} else if((header = switch_event_get_header_ptr(src, field->name)) != NULL) {
 				if (header->idx) {
 					item = cJSON_CreateArray();
 					for(i = 0; i < header->idx; i++) {
