@@ -238,8 +238,8 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	}
 
 	if ((child = switch_xml_child(cfg, "tweaks"))) {
-		char *default_tweaks = (char *) switch_xml_attr_soft(param, "default");
-		if (default_tweaks) {
+		char *default_tweaks = (char *) switch_xml_attr_soft(child, "default");
+		if (default_tweaks && !zstr(default_tweaks)) {
 			int i, v = switch_true(default_tweaks) ? 1 : 0;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak default : %s\n", default_tweaks);
 			for (i = 0; i < KZ_TWEAK_MAX; i++) kazoo_globals.tweaks[i] = v;
