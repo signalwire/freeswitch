@@ -394,7 +394,7 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	/* from the memory pool, allocate the event stream structure */
 	if (!(event_stream = switch_core_alloc(pool, sizeof (*event_stream)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory: I may have Alzheimers but at least I dont have Alzheimers.\n");
-		return NULL;
+		goto cleanup;
 	}
 
 	/* prepare the event stream */
@@ -411,28 +411,24 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	/* create a socket for accepting the event stream client */
     if (!(event_stream->acceptor = create_socket(pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Like car accidents, most hardware problems are due to driver error.\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
     }
 
 	if (switch_socket_opt_set(event_stream->acceptor, SWITCH_SO_NONBLOCK, TRUE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Hey, it compiles!\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	/* create a pollset so we can efficiently check for new client connections */
 	if (switch_pollset_create(&event_stream->pollset, 1000, pool, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "My software never has bugs. It just develops random features.\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	switch_socket_create_pollfd(&event_stream->pollfd, event_stream->acceptor, SWITCH_POLLIN | SWITCH_POLLERR, NULL, pool);
 	if (switch_pollset_add(event_stream->pollset, event_stream->pollfd) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "If you saw a heat wave, would you wave back?\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	switch_mutex_init(&event_stream->socket_mutex, SWITCH_MUTEX_DEFAULT, pool);
@@ -457,6 +453,26 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	switch_thread_create(&thread, thd_attr, event_stream_loop, event_stream, event_stream->pool);
 
 	return event_stream;
+
+cleanup:
+
+	if (event_stream) {
+		/* remove the acceptor pollset */
+		if (event_stream->pollset) {
+			switch_pollset_remove(event_stream->pollset, event_stream->pollfd);
+		}
+
+		/* close any open sockets */
+		if (event_stream->acceptor) {
+			close_socket(&event_stream->acceptor);
+		}
+	}
+
+	/* clean up the memory */
+	switch_core_destroy_memory_pool(&pool);
+
+    return NULL;
+
 }
 
 unsigned long get_stream_port(const ei_event_stream_t *event_stream) {
