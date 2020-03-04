@@ -259,6 +259,7 @@ switch_status_t kazoo_config_field(kazoo_config_ptr definitions, switch_memory_p
 	const char *type = switch_xml_attr(cfg, "type");
 	const char *exclude_prefix = switch_xml_attr(cfg, "exclude-prefix");
 	const char *serialize_as = switch_xml_attr(cfg, "serialize-as");
+	const char *as_array = switch_xml_attr(cfg, "as-array");
 	kazoo_field_ptr cur = (kazoo_field_ptr) switch_core_alloc(pool, sizeof(kazoo_field));
 	cur->in_type = FIELD_NONE;
 	cur->out_type = JSON_NONE;
@@ -302,6 +303,10 @@ switch_status_t kazoo_config_field(kazoo_config_ptr definitions, switch_memory_p
 		} else if (!strncmp(serialize_as, "raw", 6)) {
 			cur->out_type = JSON_RAW;
 		}
+	}
+
+	if(as_array) {
+		cur->out_type_as_array = switch_true(as_array);
 	}
 
 	if(exclude_prefix)

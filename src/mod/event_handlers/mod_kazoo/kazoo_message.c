@@ -225,6 +225,10 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 						cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->array[i]));
 					}
 					kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
+				} else if (field->out_type_as_array) {
+					item = cJSON_CreateArray();
+					cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->value));
+					kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
 				} else {
 					item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, header->value);
 				}

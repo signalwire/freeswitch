@@ -142,6 +142,7 @@ struct kazoo_field_t {
 	switch_bool_t exclude_prefix;
 	kazoo_field_type in_type;
 	kazoo_json_field_type out_type;
+	int out_type_as_array;
 	kazoo_filter_ptr filter;
 
 	kazoo_definition_ptr ref;
