@@ -135,31 +135,37 @@ static void kazoo_event_init_json_fields(switch_event_t *event, cJSON *json)
 {
 	switch_event_header_t *hp;
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (hp->idx) {
-			cJSON *a = cJSON_CreateArray();
-			int i;
+		if (strncmp(hp->name, "_json_", 6)) {
+			if (hp->idx) {
+				cJSON *a = cJSON_CreateArray();
+				int i;
 
-			for(i = 0; i < hp->idx; i++) {
-				cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
+				for(i = 0; i < hp->idx; i++) {
+					cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
+				}
+
+				cJSON_AddItemToObject(json, hp->name, a);
+
+			} else {
+				cJSON_AddItemToObject(json, hp->name, cJSON_CreateString(hp->value));
 			}
-
-			cJSON_AddItemToObject(json, hp->name, a);
-
-		} else {
-			cJSON_AddItemToObject(json, hp->name, cJSON_CreateString(hp->value));
 		}
 	}
 }
 
 static switch_status_t kazoo_event_init_json(kazoo_fields_ptr fields1, kazoo_fields_ptr fields2, switch_event_t* evt, cJSON** clone)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	if( (fields2 && fields2->verbose)
 			|| (fields1 && fields1->verbose)
 			|| ( (!fields2) &&  (!fields1)) ) {
-		status = switch_event_serialize_json_obj(evt, clone);
+		*clone = cJSON_CreateObject();
+		if((*clone) == NULL) {
+			status = SWITCH_STATUS_GENERR;
+		} else {
+			kazoo_event_init_json_fields(evt, *clone);
+		}
 	} else {
-		status = SWITCH_STATUS_SUCCESS;
 		*clone = cJSON_CreateObject();
 		if((*clone) == NULL) {
 			status = SWITCH_STATUS_GENERR;
