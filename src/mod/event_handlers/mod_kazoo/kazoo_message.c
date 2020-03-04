@@ -194,7 +194,11 @@ static cJSON * kazoo_event_json_value(kazoo_json_field_type type, const char *va
 		break;
 
 	case JSON_RAW:
-		item = cJSON_CreateRaw(value);
+		item = cJSON_Parse(value);
+		if (!item) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "parse from raw error!\n");
+			item = cJSON_CreateRaw(value);
+		}
 		break;
 
 	default:
