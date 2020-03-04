@@ -405,13 +405,36 @@ done:
 
 SWITCH_STANDARD_API(kz_expand_api)
 {
-	if (!zstr(cmd)) {
-		char * val = kz_expand(cmd);
-		stream->write_function(stream, "+OK %s", val);
-		switch_safe_free(val);
-	} else {
-		stream->write_function(stream, "ERR invalid input");
+	char *p = NULL, *input = NULL;
+	char *uuid = NULL, *mycmd;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR invalid input");
+		return SWITCH_STATUS_GENERR;
 	}
+
+	if (!(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-ERR no memory");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!strncasecmp(mycmd, "uuid:", 5)) {
+		uuid = mycmd + 5;
+		if ((input = strchr(uuid, ' ')) != NULL) {
+			*input++ = '\0';
+		} else {
+			stream->write_function(stream, "-ERR invalid argument");
+			switch_safe_free(mycmd);
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	p = kz_expand(input, uuid);
+	stream->write_function(stream, "+OK %s", p);
+	if (p != input) {
+		switch_safe_free(p);
+	}
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 

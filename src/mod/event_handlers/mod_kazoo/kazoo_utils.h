@@ -26,9 +26,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers(switch_event_t *event, const char
 
 SWITCH_DECLARE(char *) kz_event_expand_headers_pool(switch_memory_pool_t *pool, switch_event_t *event, char *val);
 
-SWITCH_DECLARE(char *) kz_event_expand(const char *in);
-
-SWITCH_DECLARE(char *) kz_expand(const char *in);
+SWITCH_DECLARE(char *) kz_expand(const char *in, const char *uuid);
 
 SWITCH_DECLARE(char *) kz_expand_pool(switch_memory_pool_t *pool, const char *in);
 
