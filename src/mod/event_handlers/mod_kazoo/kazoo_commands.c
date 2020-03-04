@@ -271,7 +271,6 @@ SWITCH_STANDARD_API(kz_http_put)
 	long httpRes = 0;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
-	int fd;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -315,31 +314,23 @@ SWITCH_STANDARD_API(kz_http_put)
 	}
 
 	buf = switch_mprintf("Content-Type: %s", mime_type);
-
 	headers = switch_curl_slist_append(headers, buf);
 
 	/* open file and get the file size */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
-	fd = open(filename, O_RDONLY);
-	if (fd == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
-		status = SWITCH_STATUS_FALSE;
-		stream->write_function(stream, "-ERR error opening file\n");
-		goto done;
-	}
-	if (fstat(fd, &file_info) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
-		stream->write_function(stream, "-ERR fstat error\n");
-		close(fd);
-		goto done;
-	}
-	close(fd);
 
 	/* libcurl requires FILE* */
  	file_to_put = fopen(filename, "rb");
 	if (!file_to_put) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fopen() error: %s\n", strerror(errno));
+		stream->write_function(stream, "-ERR error opening file\n");
 		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if (fstat(fileno(file_to_put), &file_info) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
+		stream->write_function(stream, "-ERR fstat error\n");
 		goto done;
 	}
 
