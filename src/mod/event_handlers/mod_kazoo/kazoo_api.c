@@ -175,7 +175,6 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 
 	if (++column > 2) {
 		stream->write_function(stream, "\n");
-		column = 0;
 	}
 
 	while(kazoo_globals.kazoo_var_prefixes[idx] != NULL) {

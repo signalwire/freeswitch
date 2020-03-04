@@ -208,14 +208,12 @@ SWITCH_DECLARE(switch_status_t) kazoo_api_execute(const char *cmd, const char *a
 	char *arg_used;
 	char *cmd_used;
 	int  fire_event = 0;
-	char *arg_expanded;
+	char *arg_expanded = NULL;
 	switch_event_t* evt;
 
 	switch_assert(stream != NULL);
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
-
-	arg_expanded = (char *) arg;
 
 	switch_event_create(&evt, SWITCH_EVENT_GENERAL);
 	arg_expanded = switch_event_expand_headers(evt, arg);
