@@ -271,7 +271,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 	} else if(var_event) {
 		const char* uuid_e_session = switch_event_get_header(var_event, "ent_originate_aleg_uuid");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHECKING ORIGINATE-UUID : %s\n", uuid_e_session);
-		if (uuid_e_session && (e_session = switch_core_session_force_locate(uuid_e_session)) != NULL) {
+		if (uuid_e_session && (e_session = switch_core_session_locate(uuid_e_session)) != NULL) {
 			a_session = e_session;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FOUND ORIGINATE-UUID : %s\n", uuid_e_session);
 		}

@@ -102,10 +102,10 @@ static void kz_tweaks_handle_bridge_variables(switch_event_t *event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tweak bridge event handler: variables : %s , %s\n", a_leg, b_leg);
 
-	if (a_leg && (a_session = switch_core_session_force_locate(a_leg)) != NULL) {
+	if (a_leg && (a_session = switch_core_session_locate(a_leg)) != NULL) {
 		switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 		if(switch_channel_get_variable_dup(a_channel, bridge_variables[0], SWITCH_FALSE, -1) == NULL) {
-			if(b_leg && (b_session = switch_core_session_force_locate(b_leg)) != NULL) {
+			if(b_leg && (b_session = switch_core_session_locate(b_leg)) != NULL) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				for(i = 0; bridge_variables[i] != NULL; i++) {
 					const char *val = switch_channel_get_variable_dup(b_channel, bridge_variables[i], SWITCH_FALSE, -1);
@@ -114,7 +114,7 @@ static void kz_tweaks_handle_bridge_variables(switch_event_t *event)
 				switch_core_session_rwunlock(b_session);
 			}
 		} else {
-			if(b_leg && (b_session = switch_core_session_force_locate(b_leg)) != NULL) {
+			if(b_leg && (b_session = switch_core_session_locate(b_leg)) != NULL) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				if(switch_channel_get_variable_dup(b_channel, bridge_variables[0], SWITCH_FALSE, -1) == NULL) {
 					for(i = 0; bridge_variables[i] != NULL; i++) {
@@ -193,7 +193,7 @@ static void kz_tweaks_handle_bridge_replaces_call_id(switch_event_t *event)
 	if(a_leg_call_id && replaced_call_id) {
 		switch_core_session_t *call_session = NULL;
 		const char *call_id = switch_event_get_header(event, "Bridge-B-Unique-ID");
-		if (call_id && (call_session = switch_core_session_force_locate(call_id)) != NULL) {
+		if (call_id && (call_session = switch_core_session_locate(call_id)) != NULL) {
 			switch_channel_t *call_channel = switch_core_session_get_channel(call_session);
 			if (switch_event_create(&my_event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(call_session));
@@ -259,13 +259,13 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 	if (!kz_test_tweak(KZ_TWEAK_TRANSFERS)) return;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR : %s , %s , %s, %s, %s , %s , %s \n", uuid, orig_call_id, dest_peer_uuid, dest_call_id, file, func, line);
-	if ((uuid_session = switch_core_session_force_locate(uuid)) != NULL) {
+	if ((uuid_session = switch_core_session_locate(uuid)) != NULL) {
 		switch_channel_t *uuid_channel = switch_core_session_get_channel(uuid_session);
 		const char* interaction_id = switch_channel_get_variable_dup(uuid_channel, INTERACTION_VARIABLE, SWITCH_TRUE, -1);
 		// set to uuid & peer_uuid
 		if(interaction_id != NULL) {
 			switch_core_session_t *session = NULL;
-			if(dest_call_id && (session = switch_core_session_force_locate(dest_call_id)) != NULL) {
+			if(dest_call_id && (session = switch_core_session_locate(dest_call_id)) != NULL) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 				const char* prv_interaction_id = switch_channel_get_variable_dup(channel, INTERACTION_VARIABLE, SWITCH_TRUE, -1);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LOCATING UUID PRV : %s : %s\n", prv_interaction_id, interaction_id);
@@ -279,7 +279,7 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR NO UUID SESSION: %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 			}
-			if(dest_peer_uuid && (session = switch_core_session_force_locate(dest_peer_uuid)) != NULL) {
+			if(dest_peer_uuid && (session = switch_core_session_locate(dest_peer_uuid)) != NULL) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 				const char* prv_interaction_id = switch_channel_get_variable_dup(channel, INTERACTION_VARIABLE, SWITCH_TRUE, -1);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LOCATING PEER UUID PRV : %s : %s\n", prv_interaction_id, interaction_id);
@@ -293,7 +293,7 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR NO PEER SESSION: %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 			}
-			if(orig_call_id && (session = switch_core_session_force_locate(orig_call_id)) != NULL) {
+			if(orig_call_id && (session = switch_core_session_locate(orig_call_id)) != NULL) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 				const char* prv_interaction_id = switch_channel_get_variable_dup(channel, INTERACTION_VARIABLE, SWITCH_TRUE, -1);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LOCATING PEER UUID PRV : %s : %s\n", prv_interaction_id, interaction_id);

@@ -165,7 +165,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		for(i = 0; fetch_uuid_sources[i] != NULL; i++) {
 			if((fetch_call_id = switch_event_get_header(event, fetch_uuid_sources[i])) != NULL) {
 				switch_core_session_t *session = NULL;
-				if((session = switch_core_session_force_locate(fetch_call_id)) != NULL) {
+				if((session = switch_core_session_locate(fetch_call_id)) != NULL) {
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 					uint32_t verbose = switch_channel_test_flag(channel, CF_VERBOSE_EVENTS);
 					switch_channel_set_flag(channel, CF_VERBOSE_EVENTS);

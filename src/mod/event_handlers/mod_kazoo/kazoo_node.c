@@ -505,7 +505,7 @@ static switch_status_t build_event(switch_event_t *event, ei_x_buff * buf) {
 			if(!strcasecmp(key, "Call-ID")) {
 				switch_core_session_t *session = NULL;
 				if(!zstr(value)) {
-					if ((session = switch_core_session_force_locate(value)) != NULL) {
+					if ((session = switch_core_session_locate(value)) != NULL) {
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 						switch_channel_event_set_data(channel, event);
 						switch_core_session_rwunlock(session);
