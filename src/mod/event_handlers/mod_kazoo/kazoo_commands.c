@@ -297,7 +297,11 @@ SWITCH_STANDARD_API(kz_http_put)
 	/* parse params and get profile */
 	url = switch_core_strdup(pool, argv[0]);
 	if (*url == '{') {
-		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
+		if (switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_FALSE;
+			stream->write_function(stream, "-ERR error parsing parameters\n");
+			goto done;
+		}
 	}
 
 	filename = switch_core_strdup(pool, argv[1]);
