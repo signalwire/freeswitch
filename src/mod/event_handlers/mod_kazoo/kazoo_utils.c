@@ -583,12 +583,14 @@ void kz_event_decode(switch_event_t *event)
 	switch_event_header_t *hp;
 	int i;
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (hp->idx) {
-			for(i = 0; i < hp->idx; i++) {
-				switch_url_decode(hp->array[i]);
+		if (strncmp(hp->name, "_json_", 6)) {
+			if (hp->idx) {
+				for(i = 0; i < hp->idx; i++) {
+					switch_url_decode(hp->array[i]);
+				}
+			} else {
+				switch_url_decode(hp->value);
 			}
-		} else {
-			switch_url_decode(hp->value);
 		}
 	}
 }
