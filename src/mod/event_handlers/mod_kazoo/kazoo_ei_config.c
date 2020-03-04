@@ -516,9 +516,10 @@ switch_status_t kazoo_config_events(kazoo_config_ptr definitions, switch_memory_
 			cur->name = switch_core_strdup(pool, var);
 			kazoo_config_filters(pool, event, &cur->filter);
 			kazoo_config_fields(definitions, pool, event, &cur->fields);
-
+			if (switch_xml_child(event, "logging") != NULL) {
+				kazoo_config_loglevels(pool, event, &cur->logging);
+			}
 		}
-
 	}
 
 	return SWITCH_STATUS_SUCCESS;

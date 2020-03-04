@@ -45,7 +45,7 @@ void kazoo_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
 	cJSON_AddItemToObject(object, string, item);
 }
 
-static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
+static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, kazoo_logging_ptr logging)
 {
 	switch_event_header_t *header;
 	int hasValue = 0, n;
@@ -55,6 +55,7 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 
 	case FILTER_COMPARE_EXISTS:
 		hasValue = switch_event_get_header(evt, filter->name) != NULL ? 1 : 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s checking if %s exists => %s\n", logging->profile_name, logging->event_name, filter->name, hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_VALUE:
@@ -64,6 +65,7 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 			value = switch_event_get_header(evt, filter->name);
 		}
 		hasValue = value ? !strcmp(value, filter->value) : 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s compare value %s to %s => %s == %s => %s\n", logging->profile_name, logging->event_name, filter->name, filter->value, value, filter->value, hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_FIELD:
@@ -73,6 +75,7 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 			value = switch_event_get_header(evt, filter->name);
 		}
 		hasValue = value ? !strcmp(value, switch_event_get_header_nil(evt, filter->value)) : 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s compare field %s to %s => %s == %s => %s\n", logging->profile_name, logging->event_name, filter->name, filter->value, value, switch_event_get_header_nil(evt, filter->value), hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_PREFIX:
@@ -112,10 +115,10 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 	return hasValue;
 }
 
-static kazoo_filter_ptr inline filter_event(switch_event_t* evt, kazoo_filter_ptr filter)
+static kazoo_filter_ptr inline filter_event(switch_event_t* evt, kazoo_filter_ptr filter, kazoo_logging_ptr logging)
 {
 	while(filter) {
-		int hasValue = filter_compare(evt, filter);
+		int hasValue = filter_compare(evt, filter, logging);
 		if(filter->type == FILTER_EXCLUDE) {
 			if(hasValue)
 				break;
@@ -299,7 +302,7 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
 	while(field) {
 		if(field->in_type == FIELD_REFERENCE) {
 			if(field->ref) {
-				if((filter = filter_event(src, field->ref->filter)) != NULL) {
+				if((filter = filter_event(src, field->ref->filter, logging)) != NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->filtered_field_log_level, "profile[%s] event %s, referenced field %s filtered by settings %s : %s\n", logging->profile_name, logging->event_name, field->ref->name, filter->name, filter->value);
 				} else {
 					kazoo_event_add_fields_to_json(logging, dst, src, field->ref->head);
@@ -308,7 +311,7 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "profile[%s] event %s, referenced field %s not found\n", logging->profile_name, logging->event_name, field->name);
 			}
 		} else {
-			if((filter = filter_event(src, field->filter)) != NULL) {
+			if((filter = filter_event(src, field->filter, logging)) != NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->filtered_field_log_level, "profile[%s] event %s, field %s filtered by settings %s : %s\n", logging->profile_name, logging->event_name, field->name, filter->name, filter->value);
 			} else {
 				item = kazoo_event_add_field_to_json(dst, src, field);
@@ -351,7 +354,7 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 	kazoo_logging_t logging;
 
 	logging.levels = profile->logging;
-	logging.event_name = switch_event_get_header_nil(evt, "Event-Name");
+	logging.event_name = evt->subclass_name ? evt->subclass_name : switch_event_get_header_nil(evt, "Event-Name");
 	logging.profile_name = profile->name;
 
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
@@ -366,15 +369,19 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 
 	if(profile->filter) {
 		// filtering
-		if((filtered = filter_event(evt, profile->filter)) != NULL) {
+		if((filtered = filter_event(evt, profile->filter, &logging)) != NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, logging.levels->filtered_event_log_level, "profile[%s] event %s filtered by profile settings %s : %s\n", logging.profile_name, logging.event_name, filtered->name, filtered->value);
 			kazoo_message_destroy(&message);
 			return NULL;
 		}
 	}
 
-	if(event && event->filter) {
-		if((filtered = filter_event(evt, event->filter)) != NULL) {
+	if (event->logging) {
+		logging.levels = event->logging;
+	}
+
+	if (event && event->filter) {
+		if((filtered = filter_event(evt, event->filter, &logging)) != NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, logging.levels->filtered_event_log_level, "profile[%s] event %s filtered by event settings %s : %s\n", logging.profile_name, logging.event_name, filtered->name, filtered->value);
 			kazoo_message_destroy(&message);
 			return NULL;

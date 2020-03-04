@@ -55,6 +55,10 @@ struct kazoo_log_levels
 	switch_log_level_t time_log_level;
 	switch_log_level_t filtered_event_log_level;
 	switch_log_level_t filtered_field_log_level;
+	switch_log_level_t trace_log_level;
+	switch_log_level_t debug_log_level;
+	switch_log_level_t error_log_level;
+	switch_log_level_t hashing_log_level;
 
 };
 
@@ -162,6 +166,7 @@ struct kazoo_event {
 	char *name;
 	kazoo_fields_ptr fields;
 	kazoo_filter_ptr filter;
+	kazoo_loglevels_ptr logging;
 
 	kazoo_event_t* next;
 };
