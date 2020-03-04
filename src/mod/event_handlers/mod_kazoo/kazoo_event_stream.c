@@ -202,13 +202,16 @@ static void event_handler(switch_event_t *event) {
 	ei_x_encode_version(ebuf);
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Node", event_binding->stream->node->peer_nodename);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	if(event_stream->node->legacy) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 		res = encode_event_old(event, ebuf);
 	} else {
 		res = encode_event_new(event, ebuf);
 	}
+
+	switch_event_del_header(event, "Switch-Nodename");
+	switch_event_del_header(event, "Target-Node");
 
 	if(!res) {
 		ei_x_free(ebuf);

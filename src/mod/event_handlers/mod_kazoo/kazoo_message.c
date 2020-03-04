@@ -373,9 +373,6 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 	logging.event_name = evt->subclass_name ? evt->subclass_name : switch_event_get_header_nil(evt, "Event-Name");
 	logging.profile_name = profile->name;
 
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
-
-
 	message = malloc(sizeof(kazoo_message_t));
 	if(message == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error allocating memory for serializing event to json\n");
@@ -431,8 +428,6 @@ kazoo_message_ptr kazoo_message_create_fetch(switch_event_t* evt, kazoo_fetch_pr
 	logging.levels = profile->logging;
 	logging.event_name = switch_event_get_header_nil(evt, "Event-Name");
 	logging.profile_name = profile->name;
-
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	message = malloc(sizeof(kazoo_message_t));
 	if(message == NULL) {

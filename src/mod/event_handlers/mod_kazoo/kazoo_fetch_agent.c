@@ -154,6 +154,8 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		}
 	}
 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+
 	/* prepare the reply collector */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(reply.uuid_str, &uuid);
