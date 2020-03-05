@@ -593,9 +593,12 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	int argc = 2;
 	vlc_video_context_t *vcontext;
 
+	if (!acontext) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	opts[0] = *vlc_args;
-	if (acontext) opts[1] = switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path);
+	opts[1] = switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path);
 
 	pool = acontext->pool;
 
@@ -2250,9 +2253,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
-	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
-
-	switch_assert(tech_pvt && tech_pvt->context);
+	vlc_private_t *tech_pvt;
 
 	if ((tech_pvt = switch_core_session_get_private(session))) {
 
@@ -2266,6 +2267,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 		switch_media_handle_destroy(session);
 	}
+
+	switch_assert(tech_pvt && tech_pvt->context);
 
 	switch_yield(50000);
 
