@@ -85,7 +85,7 @@ static __inline__ void normalise_history(plc_state_t *s)
     if (s->buf_ptr == 0)
         return;
     vec_copyi16(tmp, s->history, s->buf_ptr);
-    vec_copyi16(s->history, &s->history[s->buf_ptr], PLC_HISTORY_LEN - s->buf_ptr);
+    vec_movei16(s->history, &s->history[s->buf_ptr], PLC_HISTORY_LEN - s->buf_ptr);
     vec_copyi16(&s->history[PLC_HISTORY_LEN - s->buf_ptr], tmp, s->buf_ptr);
     s->buf_ptr = 0;
 }
