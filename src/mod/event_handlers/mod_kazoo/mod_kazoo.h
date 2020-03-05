@@ -58,6 +58,9 @@ switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res);
 /* kazoo_endpoints.c */
 void add_kz_endpoints(switch_loadable_module_interface_t **module_interface);
 
+/* kazoo_cdr.c */
+void kz_cdr_start();
+void kz_cdr_stop();
 
 /* kazoo_tweaks.c */
 void kz_tweaks_start();

@@ -267,7 +267,7 @@ void kz_uuid_multiset(switch_core_session_t *session, const char* data, int urld
 
 	if(delim != '\0') {
 		switch_core_session_t *uuid_session = NULL;
-		if ((uuid_session = switch_core_session_force_locate(arg0)) != NULL) {
+		if ((uuid_session = switch_core_session_locate(arg0)) != NULL) {
 			switch_channel_t *uuid_channel = switch_core_session_get_channel(uuid_session);
 			if (arg) {
 				char *array[256] = {0};
