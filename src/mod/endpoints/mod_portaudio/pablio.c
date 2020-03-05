@@ -169,7 +169,6 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int c
 
 	bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFOs[chan], p, numBytes);
 	numBytes -= bytesWritten;
-	p += bytesWritten;
 
 	if (numBytes > 0) {
 		PaUtil_FlushRingBuffer(&aStream->outFIFOs[chan]);
@@ -197,7 +196,6 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int ch
 		//printf("AVAILABLE BYTES %ld pass %d\n", avail, 5000 - max);
 		if (avail >= neededBytes * 6) {
 			PaUtil_FlushRingBuffer(&aStream->inFIFOs[chan]);
-			avail = 0;
 		} else {
 
 			bytesRead = 0;
