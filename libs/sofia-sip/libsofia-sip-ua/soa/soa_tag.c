@@ -647,3 +647,5 @@ tag_typedef_t soatag_hold = STRTAG_TYPEDEF(hold);
 tag_typedef_t soatag_ordered_user = BOOLTAG_TYPEDEF(ordered_user);
 
 tag_typedef_t soatag_reuse_rejected = BOOLTAG_TYPEDEF(reuse_rejected);
+
+tag_typedef_t soatag_sdp_print_flags = INTTAG_TYPEDEF(sdp_print_flags);
