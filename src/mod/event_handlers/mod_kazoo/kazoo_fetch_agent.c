@@ -147,6 +147,14 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		return xml;
 	}
 
+	/* no profile, no work required */
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "weird case where client is available but there's no profile for %s. try reloading mod_kazoo.\n"
+						  ,section);
+		switch_thread_rwlock_unlock(agent->lock);
+		return xml;
+	}
+
 	if(event == NULL) {
 		if (switch_event_create(&event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error creating event for fetch handler\n");
