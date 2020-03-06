@@ -326,13 +326,13 @@ int soa_base_init(char const *name,
 #define DUP(d, dup, s) if ((s) && !((d) = dup(ss->ss_home, (s)))) return -1
     su_home_t *home = ss->ss_home;
 
-    if (soa_description_dup(home, ss->ss_caps, parent->ss_caps) < 0)
+    if (soa_description_dup(home, ss->ss_caps, parent->ss_caps, parent->ss_sdp_print_flag) < 0)
       return -1;
-    if (soa_description_dup(home, ss->ss_user, parent->ss_user) < 0)
+    if (soa_description_dup(home, ss->ss_user, parent->ss_user, parent->ss_sdp_print_flag) < 0)
       return -1;
-    if (soa_description_dup(home, ss->ss_local, parent->ss_local) < 0)
+    if (soa_description_dup(home, ss->ss_local, parent->ss_local, parent->ss_sdp_print_flag) < 0)
       return -1;
-    if (soa_description_dup(home, ss->ss_remote, parent->ss_remote) < 0)
+    if (soa_description_dup(home, ss->ss_remote, parent->ss_remote, parent->ss_sdp_print_flag) < 0)
       return -1;
 
     DUP(ss->ss_address, su_strdup, parent->ss_address);
@@ -451,6 +451,7 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
   int rtp_select, rtp_sort;
   int rtp_mismatch;
   int srtp_enable, srtp_confidentiality, srtp_integrity;
+  int sdp_print_flag;
 
   af = ss->ss_af;
 
@@ -467,6 +468,8 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
 
   caps_sdp = user_sdp = NONE;
   caps_sdp_str = user_sdp_str = NONE;
+
+  sdp_print_flag = (int)ss->ss_sdp_print_flag;
 
   n = tl_gets(tags,
 
@@ -488,10 +491,14 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
 	      SOATAG_SRTP_CONFIDENTIALITY_REF(srtp_confidentiality),
 	      SOATAG_SRTP_INTEGRITY_REF(srtp_integrity),
 
+	      SOATAG_SDP_PRINT_FLAGS_REF(sdp_print_flag),
+
 	      TAG_END());
 
   if (n <= 0)
     return n;
+
+  ss->ss_sdp_print_flag = sdp_print_flag;
 
   if (caps_sdp != NONE || caps_sdp_str != NONE) {
     if (caps_sdp == NONE) caps_sdp = NULL;
@@ -682,6 +689,8 @@ int soa_base_get_params(soa_session_t const *ss, tagi_t *tags)
 	       SOATAG_SRTP_ENABLE(ss->ss_srtp_enable),
 	       SOATAG_SRTP_CONFIDENTIALITY(ss->ss_srtp_confidentiality),
 	       SOATAG_SRTP_INTEGRITY(ss->ss_srtp_integrity),
+
+	       SOATAG_SDP_PRINT_FLAGS(ss->ss_sdp_print_flag),
 
 	       TAG_END());
 
@@ -2097,7 +2106,7 @@ int soa_description_set(soa_session_t *ss,
   /* Store description in three forms: unparsed, parsed and reprinted */
 
   sdp_new = sdp_session_dup(ss->ss_home, sdp);
-  printer = sdp_print(ss->ss_home, sdp, NULL, 0, 0);
+  printer = sdp_print(ss->ss_home, sdp, NULL, 0, ss->ss_sdp_print_flag);
   sdp_str_new = (char *)sdp_message(printer);
   if (sdp_str)
     sdp_str0_new = su_strndup(ss->ss_home, sdp_str, str_len);
@@ -2131,11 +2140,12 @@ int soa_description_set(soa_session_t *ss,
 /** Duplicate a session descriptions. */
 int soa_description_dup(su_home_t *home,
 			struct soa_description *ssd,
-			struct soa_description const *ssd0)
+			struct soa_description const *ssd0,
+      int print_flags)
 {
   if (ssd0->ssd_sdp) {
     ssd->ssd_sdp = sdp_session_dup(home, ssd0->ssd_sdp);
-    ssd->ssd_printer = sdp_print(home, ssd->ssd_sdp, NULL, 0, 0);
+    ssd->ssd_printer = sdp_print(home, ssd->ssd_sdp, NULL, 0, print_flags);
     ssd->ssd_str = (char *)sdp_message(ssd->ssd_printer);
     if (ssd0->ssd_str != ssd0->ssd_unparsed)
       ssd->ssd_unparsed = su_strdup(home, ssd0->ssd_unparsed);

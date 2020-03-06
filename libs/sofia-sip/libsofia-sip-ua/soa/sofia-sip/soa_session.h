@@ -221,6 +221,9 @@ struct soa_session
   unsigned  ss_rtp_sort:2;
   unsigned  ss_rtp_mismatch:1;
 
+  /* SDP Print Flags */
+  int ss_sdp_print_flag;
+
   unsigned ss_srtp_enable:1,
     ss_srtp_confidentiality:1,
     ss_srtp_integrity:1;
@@ -259,7 +262,8 @@ SOFIAPUBFUN void soa_description_free(soa_session_t *,
 
 SOFIAPUBFUN int soa_description_dup(su_home_t *,
 				    struct soa_description *ssd,
-				    struct soa_description const *ssd0);
+				    struct soa_description const *ssd0,
+				    int print_flags);
 
 SOFIAPUBFUN int soa_init_sdp_origin(soa_session_t *ss,
 				    sdp_origin_t *o, char buf[64]);

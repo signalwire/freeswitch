@@ -258,6 +258,20 @@ SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected;
   soatag_reuse_rejected_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected_ref;
 
+#define SOATAG_SDP_PRINT_FLAGS(x) soatag_sdp_print_flags, tag_int_v(x)
+SOFIAPUBVAR tag_typedef_t soatag_sdp_print_flags;
+
+enum {
+  SOA_SDP_PRINT_FLAG_STRICT = 1,  /** Accept only conforming SDP */
+  SOA_SDP_PRINT_FLAG_ALL_RTPMAPS = 8,   /** Include well-known rtpmaps in message, too */
+  SOA_SDP_PRINT_FLAG_MANUAL = 512,   /** Do not generate or parse SDP mode */
+  SOA_SDP_PRINT_FLAG_ALWAYS = 1024,   /** Always generate media-level mode attributes */
+  SOA_SDP_PRINT_FLAG_ALL = SOA_SDP_PRINT_FLAG_STRICT | SOA_SDP_PRINT_FLAG_ALL_RTPMAPS | SOA_SDP_PRINT_FLAG_MANUAL | SOA_SDP_PRINT_FLAG_ALWAYS
+};
+
+#define SOATAG_SDP_PRINT_FLAGS_REF(x) soatag_sdp_print_flags_ref, tag_int_vr(&(x))
+SOFIAPUBVAR tag_typedef_t soatag_sdp_print_flags_ref;
+
 SOFIA_END_DECLS
 
 #endif /* SOA_TAG_H */
