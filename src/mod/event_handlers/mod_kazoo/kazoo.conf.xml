@@ -31,7 +31,7 @@
 
 		<definition name="timestamp">
 			<field name="Timestamp" type="expand"
-				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + $${UNIX_EPOCH_IN_GREGORIAN}))}"
+				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + ${UNIX_EPOCH_IN_GREGORIAN}))}"
 				serialize-as="number" />
 		</definition>
 
@@ -54,7 +54,7 @@
 		<definition name="debug-call">
 			<filters>
 				<filter
-					name="${first-of(variable_debug_call|Call-Debug|#$${Call-Debug})}"
+					name="${first-of(variable_debug_call|Call-Debug|#${Call-Debug})}"
 					type="include" value="true" />
 			</filters>
 			<field name="Call-Debug" type="static" serialize-as="object">
@@ -355,7 +355,7 @@
 				value="kazoo_event_name|Event-Subclass|Event-Name" />
 			<field name="Event-Date-Timestamp" as="Msg-ID" />
 			<field name="Timestamp" type="expand"
-				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + $${UNIX_EPOCH_IN_GREGORIAN}))}"
+				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + ${UNIX_EPOCH_IN_GREGORIAN}))}"
 				serialize-as="number" />
 			<field name="variable_sip_origination_call_uuid" as="Origination-Call-ID" />
 			<field name="Call-ID" type="first-of"
@@ -651,7 +651,7 @@
 		<definition name="voice_dialplan">
 			<field name="fetch-info" type="reference" />
 			<field name="Timestamp" type="expand"
-				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + $${UNIX_EPOCH_IN_GREGORIAN}))}"
+				value="${expr(ceil((${Event-Date-Timestamp} / 1000000) + ${UNIX_EPOCH_IN_GREGORIAN}))}"
 				serialize-as="number" />
 			<field name="Unique-ID" as="Call-ID" />
 			<field name="variable_sip_invite_domain" as="Domain-Name" />
