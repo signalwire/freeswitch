@@ -551,6 +551,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 			}
 		}
 	}
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
 #endif
 
 	/* connect my internal structure to the blank pointer passed to me */
