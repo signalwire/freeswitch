@@ -427,6 +427,8 @@ SWITCH_STANDARD_API(kz_expand_api)
 			switch_safe_free(mycmd);
 			return SWITCH_STATUS_GENERR;
 		}
+	} else {
+		input = mycmd;
 	}
 
 	p = kz_expand(input, uuid);

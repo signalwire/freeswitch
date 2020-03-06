@@ -131,6 +131,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
 
 	kazoo_globals.legacy_events = SWITCH_FALSE;
+	kazoo_globals.expand_headers_on_fetch = SWITCH_TRUE;
 
 	kz_set_tweak(KZ_TWEAK_INTERACTION_ID);
 	kz_set_tweak(KZ_TWEAK_EXPORT_VARS);
