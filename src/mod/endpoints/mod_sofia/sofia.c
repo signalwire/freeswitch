@@ -1425,6 +1425,7 @@ static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt, const ch
 		const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");
 
 		nua_ack(nh,
+				SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 				TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
@@ -1440,6 +1441,7 @@ static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt, const ch
 				TAG_END());
 	} else {
 		nua_ack(nh,
+				SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 				TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
@@ -7785,6 +7787,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SOATAG_REUSE_REJECTED(1),
 										SOATAG_RTP_SELECT(1),
 										SOATAG_AUDIO_AUX("cn telephone-event"),
+										SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 										TAG_IF(sofia_test_pflag(other_tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 										TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 										TAG_END());
@@ -7856,6 +7859,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_RTP_SELECT(1),
 								SOATAG_AUDIO_AUX("cn telephone-event"),
+								SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 								TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_END());
@@ -8053,6 +8057,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 										SOATAG_REUSE_REJECTED(1),
 										SOATAG_AUDIO_AUX("cn telephone-event"),
+										SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 										TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 										TAG_END());
@@ -8125,12 +8130,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot find a SDP\n");
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			} else {
-				if (sofia_use_soa(tech_pvt) && !switch_channel_var_true(channel, "sip_unhold_nosdp")) {
+				if (sofia_use_soa(tech_pvt)) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_AUDIO_AUX("cn telephone-event"),
+								SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_END());
@@ -8207,6 +8213,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_AUDIO_AUX("cn telephone-event"),
+								SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -8292,6 +8299,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 												SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 												SOATAG_REUSE_REJECTED(1),
 												SOATAG_AUDIO_AUX("cn telephone-event"),
+												SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 												TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 												TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 												TAG_END());
@@ -8450,6 +8458,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 												SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 												SOATAG_REUSE_REJECTED(1),
 												SOATAG_AUDIO_AUX("cn telephone-event"),
+												SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 												TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 												TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 												TAG_END());
@@ -8476,6 +8485,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 										SOATAG_REUSE_REJECTED(1),
 										SOATAG_AUDIO_AUX("cn telephone-event"),
+										SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 										TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 										TAG_END());
@@ -8546,6 +8556,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 										SOATAG_REUSE_REJECTED(1),
 										SOATAG_AUDIO_AUX("cn telephone-event"),
+										SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 										TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 										TAG_END());

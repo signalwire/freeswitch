@@ -1704,6 +1704,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 				   NUTAG_UPDATE_REFRESH(tech_pvt->update_refresher),
+				   SOATAG_SDP_PRINT_FLAGS(SOA_SDP_PRINT_FLAG_ALWAYS),
 				   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(!zstr(recover_direction), SIPTAG_HEADER_STR(recover_direction)),
