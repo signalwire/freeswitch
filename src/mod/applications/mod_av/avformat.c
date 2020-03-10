@@ -1523,7 +1523,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 			if ((error = avcodec_decode_audio4(context->audio_st[0].st->codec, &in_frame, &got_data, &pkt)) < 0) {
 GCC_DIAG_ON(deprecated-declarations)
 				char ebuf[255] = "";
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not decode frame (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not decode frame (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
 				av_packet_unref(&pkt);
 				break;
 			}
