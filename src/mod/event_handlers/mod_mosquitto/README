@@ -497,8 +497,8 @@ The event names used here are the same as those defined in "switch_event_types_t
 
 
 
-5. Trouleshooting
------------------
+5. Command Line Interface (CLI)
+-------------------------------
 
 The following mod_mosquitto commands can be entered in the FreeSWITCH console (fs_api):
 
