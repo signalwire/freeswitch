@@ -807,7 +807,6 @@ static void set_perm(const char *str, switch_event_t **event)
 	if (!zstr(str)) {
 		edup = strdup(str);
 		switch_assert(edup);
-		cur = edup;
 
 		if (strchr(edup, ' ')) {
 			delim = ' ';
