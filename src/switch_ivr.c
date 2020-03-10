@@ -989,9 +989,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			timeout_cause = switch_channel_str2cause(cause_str + 1);
 		}
 
-		if ((timeout = atoi(to)) < 0) {
-			timeout = 0;
-		} else {
+		if ((timeout = atoi(to)) >= 0) {
 			expires = switch_epoch_time_now(NULL) + timeout;
 		}
 		switch_channel_set_variable(channel, "park_timeout", NULL);
@@ -1299,7 +1297,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-			switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			switch_status_t ostatus = SWITCH_STATUS_FALSE;
+			if (args->input_callback) {
+				ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			}
 			if (ostatus != SWITCH_STATUS_SUCCESS) {
 				status = ostatus;
 			}
@@ -1414,7 +1415,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	if (digit_timeout && first_timeout) {
 		eff_timeout = first_timeout;
 	} else if (digit_timeout && !first_timeout) {
-		first_timeout = eff_timeout = digit_timeout;
+		eff_timeout = digit_timeout;
 	} else if (first_timeout) {
 		digit_timeout = eff_timeout = first_timeout;
 	}

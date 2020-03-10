@@ -84,7 +84,7 @@ static HANDLE shutdown_event;
 static void handle_SIGILL(int sig)
 {
 	int32_t arg = 0;
-	if (sig) {};
+	if (sig) {}
 	/* send shutdown signal to the freeswitch core */
 	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 	return;
@@ -93,7 +93,7 @@ static void handle_SIGILL(int sig)
 static void handle_SIGTERM(int sig)
 {
 	int32_t arg = 0;
-	if (sig) {};
+	if (sig) {}
 	/* send shutdown signal to the freeswitch core */
 	switch_core_session_ctl(SCSC_SHUTDOWN_ELEGANT, &arg);
 	return;

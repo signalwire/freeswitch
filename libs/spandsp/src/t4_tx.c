@@ -944,7 +944,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
             break;
     }
     if (result == T4_DECODE_MORE_DATA)
-        result = t85_decode_put(&t85, NULL, 0);
+        t85_decode_put(&t85, NULL, 0);
 
     len = t85_decode_get_compressed_image_size(&t85);
     span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->tiff.image_length);
@@ -1476,7 +1476,6 @@ static int make_header(t4_tx_state_t *s)
 
 static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
 {
-    int x_repeats;
     int y_repeats;
     int pattern;
     int pos;
@@ -1490,51 +1489,40 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     {
     default:
     case T4_RESOLUTION_100_100:
-        x_repeats = 1;
         y_repeats = 1;
         break;
     case T4_RESOLUTION_R8_STANDARD:
     case T4_RESOLUTION_200_100:
-        x_repeats = 2;
         y_repeats = 1;
         break;
     case T4_RESOLUTION_R8_FINE:
     case T4_RESOLUTION_200_200:
-        x_repeats = 2;
         y_repeats = 2;
         break;
     case T4_RESOLUTION_300_300:
-        x_repeats = 3;
         y_repeats = 3;
         break;
     case T4_RESOLUTION_R8_SUPERFINE:
     case T4_RESOLUTION_200_400:
-        x_repeats = 2;
         y_repeats = 4;
         break;
     case T4_RESOLUTION_R16_SUPERFINE:
     case T4_RESOLUTION_400_400:
-        x_repeats = 4;
         y_repeats = 4;
         break;
     case T4_RESOLUTION_400_800:
-        x_repeats = 4;
         y_repeats = 8;
         break;
     case T4_RESOLUTION_300_600:
-        x_repeats = 3;
         y_repeats = 6;
         break;
     case T4_RESOLUTION_600_600:
-        x_repeats = 6;
         y_repeats = 6;
         break;
     case T4_RESOLUTION_600_1200:
-        x_repeats = 6;
         y_repeats = 12;
         break;
     case T4_RESOLUTION_1200_1200:
-        x_repeats = 12;
         y_repeats = 12;
         break;
     }
@@ -1543,10 +1531,8 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     case T4_SUPPORT_WIDTH_215MM:
         break;
     case T4_SUPPORT_WIDTH_255MM:
-        x_repeats *= 2;
         break;
     case T4_SUPPORT_WIDTH_303MM:
-        x_repeats *= 3;
         break;
     }
     if (s->header_overlays_image)
@@ -1883,7 +1869,6 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             break;
         }
     }
-    res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
     s->row_squashing_ratio = 1;
     if (s->metadata.width_code >= 0  &&  (supported_image_sizes & s->metadata.width_code))
     {

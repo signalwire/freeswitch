@@ -257,8 +257,10 @@ sip_contact_string_from_via(su_home_t *home,
 
   /* Make transport parameter lowercase */
   if (transport && strlen(transport) < (sizeof _transport)) {
-    char *s = strcpy(_transport, transport);
+    char *s;
     short c;
+
+    strcpy(_transport, transport);
 
     for (s = _transport; (c = *s) && c != ';'; s++)
       if (isupper(c))

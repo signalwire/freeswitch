@@ -108,7 +108,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action ? action : "N/A", cid);
 
 	if (zstr(action)) {
 		goto end;
@@ -651,6 +651,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 		cJSON_AddItemToObject(msg, "eventType", cJSON_CreateString("channelPvtData"));
 
+		cJSON_AddStringToObject(data, "callID", switch_core_session_get_uuid(member->session));
 		cJSON_AddItemToObject(data, "action", cJSON_CreateString(join ? "conference-liveArray-join" : "conference-liveArray-part"));
 		cJSON_AddItemToObject(data, "laChannel", cJSON_CreateString(conference->la_event_channel));
 		cJSON_AddItemToObject(data, "laName", cJSON_CreateString(conference->la_name));

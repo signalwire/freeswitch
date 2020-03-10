@@ -397,7 +397,7 @@ int set_illuminant_from_code(logging_state_t *logging, lab_params_t *lab, const 
 {
     int i;
     int colour_temp;
-    float xyz[3];
+    float xyz[3] = { 0 };
 
     if (memcmp(code, "CT", 2) == 0)
     {

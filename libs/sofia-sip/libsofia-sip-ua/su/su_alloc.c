@@ -210,8 +210,11 @@ su_inline void safefree(void *b) { b ? free(b) : (void)0; }
 #endif
 
 static inline su_block_t* MEMLOCK(const su_home_t *h) {
-  if (h && h->suh_lock) _su_home_locker(h->suh_lock);
-  return h->suh_blocks;
+  if (h) {
+    if (h->suh_lock) _su_home_locker(h->suh_lock);
+    return h->suh_blocks;
+  }
+  return NULL;
 }
 static inline void* UNLOCK(const su_home_t *h) {
   if (h && h->suh_lock) _su_home_unlocker(h->suh_lock);
@@ -271,9 +274,9 @@ struct su_block_s {
 
 static void su_home_check_blocks(su_block_t const *b);
 
-static void su_home_stats_alloc(su_block_t *, void *p, void *preload,
+static void su_home_stats_alloc(su_block_t *, void *preload,
 				size_t size, int zero);
-static void su_home_stats_free(su_block_t *sub, void *p, void *preload,
+static void su_home_stats_free(su_block_t *sub, void *preload,
 			       unsigned size);
 
 static void _su_home_deinit(su_home_t *home);
@@ -529,7 +532,7 @@ void *sub_alloc(su_home_t *home,
     sua->sua_home = zero > 1;
 
     if (sub->sub_stats)
-      su_home_stats_alloc(sub, data, preload, size, zero);
+      su_home_stats_alloc(sub, preload, size, zero);
   }
 
   return data;
@@ -923,7 +926,7 @@ void su_free(su_home_t *home, void *data)
 	preloaded = data;
 
       if (sub->sub_stats)
-	su_home_stats_free(sub, data, preloaded, allocation->sua_size);
+	su_home_stats_free(sub, preloaded, allocation->sua_size);
 
       if (allocation->sua_home) {
 	su_home_t *subhome = data;
@@ -1425,8 +1428,8 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
     ndata = realloc(data, size + MEMCHECK_EXTRA);
     if (ndata) {
       if (sub->sub_stats) {
-	su_home_stats_free(sub, data, 0, sua->sua_size);
-	su_home_stats_alloc(sub, data, 0, size, 1);
+	su_home_stats_free(sub, 0, sua->sua_size);
+	su_home_stats_alloc(sub, 0, size, 1);
       }
 
 #if MEMCHECK_EXTRA
@@ -1453,8 +1456,8 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
     if (p2 <= sub->sub_prsize) {
       /* Extend/reduce existing preload */
       if (sub->sub_stats) {
-	su_home_stats_free(sub, data, data, sua->sua_size);
-	su_home_stats_alloc(sub, data, data, size, 0);
+	su_home_stats_free(sub, data, sua->sua_size);
+	su_home_stats_alloc(sub, data, size, 0);
       }
 
       sub->sub_prused = (unsigned)p2;
@@ -1470,8 +1473,8 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
   else if (size < (size_t)sua->sua_size) {
     /* Reduce existing preload */
     if (sub->sub_stats) {
-      su_home_stats_free(sub, data, data, sua->sua_size);
-      su_home_stats_alloc(sub, data, data, size, 0);
+      su_home_stats_free(sub, data, sua->sua_size);
+      su_home_stats_alloc(sub, data, size, 0);
     }
 #if MEMCHECK_EXTRA
     memcpy((char *)data + size, &term, sizeof (term));
@@ -1488,7 +1491,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
       /* Free preload */
       sub->sub_prused = (char *)data - home->suh_blocks->sub_preload;
       if (sub->sub_stats)
-	su_home_stats_free(sub, data, data, sua->sua_size);
+	su_home_stats_free(sub, data, sua->sua_size);
     }
 
     memcpy(ndata, data,
@@ -1500,7 +1503,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
 #endif
 
     if (sub->sub_stats)
-      su_home_stats_alloc(sub, data, 0, size, 1);
+      su_home_stats_alloc(sub, 0, size, 1);
 
     memset(sua, 0, sizeof *sua); sub->sub_used--;
 
@@ -1837,7 +1840,7 @@ void su_home_get_stats(su_home_t *home, int include_clones,
 }
 
 static
-void su_home_stats_alloc(su_block_t *sub, void *p, void *preload,
+void su_home_stats_alloc(su_block_t *sub, void *preload,
 			 size_t size, int zero)
 {
   su_home_stat_t *hs = sub->sub_stats;
@@ -1866,7 +1869,7 @@ void su_home_stats_alloc(su_block_t *sub, void *p, void *preload,
 }
 
 static
-void su_home_stats_free(su_block_t *sub, void *p, void *preload,
+void su_home_stats_free(su_block_t *sub, void *preload,
 			unsigned size)
 {
   su_home_stat_t *hs = sub->sub_stats;

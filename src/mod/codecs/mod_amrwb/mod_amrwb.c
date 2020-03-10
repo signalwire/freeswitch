@@ -561,8 +561,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 
 	switch_console_set_complete("add amrwb_debug on");
 	switch_console_set_complete("add amrwb_debug off");
-#else
-#define SWITCH_AMRWB_OUT_MAX_SIZE 0
 #endif
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Octet Aligned");
@@ -571,7 +569,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 100, "AMR-WB", default_fmtp_oa,
-										 16000, 16000, 23850, 20000, 320, 640, SWITCH_AMRWB_OUT_MAX_SIZE, 1, 1,
+										 16000, 16000, 23850, 20000, 320, 640, 0, 1, 1,
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
@@ -583,7 +581,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 110, "AMR-WB", default_fmtp_be,
-										 16000, 16000, 23850, 20000, 320, 640, SWITCH_AMRWB_OUT_MAX_SIZE, 1, 1,
+										 16000, 16000, 23850, 20000, 320, 640, 0, 1, 1,
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;

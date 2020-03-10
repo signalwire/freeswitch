@@ -2624,9 +2624,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 						sip_auth_password = dup_pass;
 					}
 				}
-
-				switch_xml_free(x_user);
 			}
+			switch_xml_free(x_user);
 		}
 
 		switch_event_destroy(&locate_params);

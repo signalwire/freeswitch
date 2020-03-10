@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_COMMON_VP9_ONYXC_INT_H_
-#define VP9_COMMON_VP9_ONYXC_INT_H_
+#ifndef VPX_VP9_COMMON_VP9_ONYXC_INT_H_
+#define VPX_VP9_COMMON_VP9_ONYXC_INT_H_
 
 #include "./vpx_config.h"
 #include "vpx/internal/vpx_codec_internal.h"
@@ -37,10 +37,9 @@ extern "C" {
 #define REF_FRAMES_LOG2 3
 #define REF_FRAMES (1 << REF_FRAMES_LOG2)
 
-// 1 scratch frame for the new frame, 3 for scaled references on the encoder.
-// TODO(jkoleszar): These 3 extra references could probably come from the
-// normal reference pool.
-#define FRAME_BUFFERS (REF_FRAMES + 4)
+// 1 scratch frame for the new frame, REFS_PER_FRAME for scaled references on
+// the encoder.
+#define FRAME_BUFFERS (REF_FRAMES + 1 + REFS_PER_FRAME)
 
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
@@ -70,6 +69,7 @@ typedef struct {
   int mi_rows;
   int mi_cols;
   uint8_t released;
+  int frame_index;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
@@ -127,6 +127,8 @@ typedef struct VP9Common {
   RefBuffer frame_refs[REFS_PER_FRAME];
 
   int new_fb_idx;
+
+  int cur_show_frame_fb_idx;
 
 #if CONFIG_VP9_POSTPROC
   YV12_BUFFER_CONFIG post_proc_buffer;
@@ -256,7 +258,15 @@ typedef struct VP9Common {
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
   int above_context_alloc_cols;
+
+  int lf_row;
 } VP9_COMMON;
+
+static INLINE YV12_BUFFER_CONFIG *get_buf_frame(VP9_COMMON *cm, int index) {
+  if (index < 0 || index >= FRAME_BUFFERS) return NULL;
+  if (cm->error.error_code != VPX_CODEC_OK) return NULL;
+  return &cm->buffer_pool->frame_bufs[index].buf;
+}
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
   if (index < 0 || index >= REF_FRAMES) return NULL;
@@ -405,4 +415,4 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd, int mi_row,
 }  // extern "C"
 #endif
 
-#endif  // VP9_COMMON_VP9_ONYXC_INT_H_
+#endif  // VPX_VP9_COMMON_VP9_ONYXC_INT_H_

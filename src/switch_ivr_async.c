@@ -737,7 +737,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			 */
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf) {
-					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
@@ -1007,6 +1006,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	displace_helper_t *dh;
 	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
+	switch_media_bug_flag_enum_t bug_flags = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1092,6 +1092,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		dh->loop++;
 	}
 
+	if (flags && strchr(flags, 'f')) {
+		bug_flags |= SMBF_FIRST;
+	}
+
 	if (flags && strchr(flags, 'r')) {
 		if (strchr(flags, 'w')) { // r&w mode, both sides can hear the same file
 			int len = dh->fh.samplerate / 10 * 2 * dh->fh.channels; // init with 100ms
@@ -1101,10 +1105,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		}
 
 		status = switch_core_media_bug_add(session, "displace", file,
-										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   read_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
+										   write_displace_callback, dh, to, bug_flags | SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -1996,10 +2000,9 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	}
 
 	if (nframe) {
-		switch_frame_t frame = {0};
+		switch_frame_t frame = *nframe;
 		uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = "";
 		
-		frame = *nframe;
 		frame.data = buf;
 		frame.codec = nframe->codec;
 		
@@ -2179,8 +2182,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			const char *group_name = switch_channel_get_variable(tchannel, "eavesdrop_group");
 			/* If we don't have a group, then return */
 			if (!group_name) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 			/* Separate the group */
 			data = strdup(group_name);
@@ -2195,8 +2197,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_safe_free(data);
 			/* If we didn't find any match, then end */
 			if (!ok) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 		}
 
@@ -2221,7 +2222,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
-			switch_core_session_rwunlock(tsession);
 			goto end;
 		}
 
@@ -2581,8 +2581,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 		switch_core_session_receive_message(session, &msg);
 
-
-
+		status = SWITCH_STATUS_SUCCESS;
 	  end:
 
 		if (codec_initialized)
@@ -2607,7 +2606,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		}
 
 		switch_core_session_rwunlock(tsession);
-		status = SWITCH_STATUS_SUCCESS;
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	}
@@ -4144,7 +4142,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	bflags |= SMBF_NO_PAUSE;
 
 	if (cont->bug_running) {
-		status = SWITCH_STATUS_SUCCESS;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
 	} else {
 		cont->bug_running = 1;
@@ -4621,7 +4618,9 @@ done:
 	if (state.done) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	*result = state.result;
+	if (result) {
+		*result = state.result;
+	}
 
 	arg_recursion_check_stop(args);
 
@@ -4673,9 +4672,9 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
 
-			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_MORE_DATA) {
 				goto done;
-			} else if (status == SWITCH_STATUS_SUCCESS) {
+			} else {
 				/* Try to fetch extra information for this result, the return value doesn't really matter here - it's just optional data. */
 				switch_core_asr_get_result_headers(sth->ah, &headers, &flags);
 			}
@@ -4727,6 +4726,14 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+
+					if (headers) {
+						switch_event_merge(event, headers);
+					}
+
+					switch_event_add_body(event, "%s", xmlstr);
+				} else if (status == SWITCH_STATUS_MORE_DATA) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-partial-speech");
 
 					if (headers) {
 						switch_event_merge(event, headers);
@@ -5300,7 +5307,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	switch_channel_t *channel;
-	switch_core_session_t *session, *master;
+	switch_core_session_t *session;
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
 	const char *other_uuid = NULL;
@@ -5312,7 +5319,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	switch_assert(path);
 
-	if (!(master = session = switch_core_session_locate(uuid))) {
+	if (!(session = switch_core_session_locate(uuid))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -5368,7 +5375,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		}
 
 		switch_core_session_rwunlock(other_session);
-		master = other_session;
 		other_session = NULL;
 	}
 
@@ -5378,7 +5384,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((flags & SMF_ECHO_ALEG)) {
 		if ((flags & SMF_EXEC_INLINE)) {
-			nomedia = 0;
 			switch_core_session_execute_application(session, app, path);
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
@@ -5401,7 +5406,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 					switch_channel_set_flag(channel, CF_BROADCAST_DROP_MEDIA);
 			}
 		}
-		master = session;
 	}
 
 	if (cause) {

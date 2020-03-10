@@ -1637,7 +1637,7 @@ new_req:
 		goto done;
 	}
 
-	if (!strncmp(request.method, "POST", 4) && request.content_length &&
+	if (!strncmp(request.method, "POST", 4) && request.content_length && request.content_type &&
 		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
 
 		char *buffer = NULL;
@@ -1722,7 +1722,7 @@ new_req:
 			*auth_pass++ = '\0';
 		}
 
-		if (vhost->auth_user && vhost->auth_pass &&
+		if (vhost->auth_user && vhost->auth_pass && auth_pass &&
 			!strcmp(vhost->auth_user, auth_user) &&
 			!strcmp(vhost->auth_pass, auth_pass)) {
 			goto authed;
@@ -5287,7 +5287,7 @@ static switch_status_t verto_read_text_frame(switch_core_session_t *session, swi
 
 	switch_mutex_lock(tech_pvt->text_cond_mutex);
 
-	status = switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
+	switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
 	switch_mutex_unlock(tech_pvt->text_cond_mutex);
 
 	*frame = &tech_pvt->text_read_frame;

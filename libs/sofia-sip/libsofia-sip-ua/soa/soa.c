@@ -2639,7 +2639,7 @@ best_listed_address_in_session(sdp_session_t const *sdp,
       for (m = sdp->sdp_media; m; m = m->m_next) {
 	if (m->m_connections && m->m_connections != sdp->sdp_connection) {
 	  c = sdp->sdp_connection;
-	  if (su_casenmatch(c->c_address, address, n) && c->c_address[n] == 0)
+	  if (c && su_casenmatch(c->c_address, address, n) && c->c_address[n] == 0)
 	    break;
 	  c = NULL;
 	}

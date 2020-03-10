@@ -197,6 +197,29 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_handle_destroy(&dh);
 		}
 		FST_TEST_END();
+
+		FST_TEST_BEGIN(originate_test_empty_dial_string)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_create(&dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+
+			/* Dial string is NULL */
+			switch_dial_leg_list_add_leg(ll, &leg, NULL);
+
+			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
+			fst_check(status == SWITCH_STATUS_FALSE);
+
+			switch_dial_handle_destroy(&dh);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }

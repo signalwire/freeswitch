@@ -82,7 +82,7 @@ static int find_prefix(apr_xml_parser *parser, const char *prefix)
     ** prefix.
     */
     for (; elem; elem = elem->parent) {
-	apr_xml_ns_scope *ns_scope = elem->ns_scope;
+	apr_xml_ns_scope *ns_scope;
 
 	for (ns_scope = elem->ns_scope; ns_scope; ns_scope = ns_scope->next) {
 	    if (strcmp(prefix, ns_scope->prefix) == 0) {

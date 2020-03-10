@@ -1056,15 +1056,19 @@ int tport_register_secondary(tport_t *self, su_wakeup_f wakeup, int events)
       &&
       (i = su_root_register(root, wait, wakeup, self, 0)) != -1) {
 
+    /* Can't be added to list of opened if already closed */
+    if (tport_is_closed(self)) goto fail;
+
     self->tp_index = i;
     self->tp_events = events;
 
-	/* Can't be added to list of opened if already closed */
-	if (!tport_is_closed(self))
-		tprb_append(&self->tp_pri->pri_open, self);
+    tprb_append(&self->tp_pri->pri_open, self);
+
     return 0;
   }
 
+fail:
+  SU_DEBUG_9(("%s(%p): tport is %s!\n", __func__, (void *)self, (tport_is_closed(self) ? "closed" : "opened")));
   su_wait_destroy(wait);
   return -1;
 }
@@ -1657,6 +1661,8 @@ int tport_bind_server(tport_master_t *mr,
   for (tbf = &mr->mr_primaries; *tbf; tbf = &(*tbf)->pri_next)
     ;
 
+  if (!res)
+    return -1;
   port = port0 = port1 = ntohs(((su_sockaddr_t *)res->ai_addr)->su_port);
   error = EPROTONOSUPPORT;
 
@@ -2763,6 +2769,7 @@ static int tport_wakeup_pri(su_root_magic_t *m, su_wait_t *w, tport_t *self)
 int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 {
   int events = su_wait_events(w, self->tp_socket);
+  int error;
 
 #if HAVE_POLL
   assert(w->fd == self->tp_socket);
@@ -2777,9 +2784,16 @@ int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 	      self->tp_closed ? " (closed)" : ""));
 
   if (self->tp_pri->pri_vtable->vtp_wakeup)
-    return self->tp_pri->pri_vtable->vtp_wakeup(self, events);
+    error = self->tp_pri->pri_vtable->vtp_wakeup(self, events);
   else
-    return tport_base_wakeup(self, events);
+    error = tport_base_wakeup(self, events);
+
+  if (tport_is_closed(self)) {
+    SU_DEBUG_9(("%s(%p): tport is closed! Setting secondary timer!\n", "tport_wakeup", (void *)self));
+    tport_set_secondary_timer(self);
+  }
+
+  return error;
 }
 
 static int tport_base_wakeup(tport_t *self, int events)

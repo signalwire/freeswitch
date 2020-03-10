@@ -752,7 +752,6 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (say_date) {
 		say_year = say_month = say_day = say_dow = 1;
-		say_today = say_yesterday = 0;
 	}
 
 	if (say_day) {

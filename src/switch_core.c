@@ -2383,6 +2383,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
 					}
+				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
+					switch_core_max_audio_channels(atoi(val));
 				}
 			}
 		}
@@ -2638,6 +2640,15 @@ SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void)
 	return runtime.sessions_peak_fivemin;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit)
+{
+	if (limit) {
+		runtime.max_audio_channels = limit;
+	}
+
+	return runtime.max_audio_channels;
+}
+
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val)
 {
 	int *intval = (int *) val;
@@ -2809,7 +2820,11 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		{
 			int x = 19;
 			uint32_t count;
-
+			switch_event_t *shutdown_requested_event = NULL;
+			if (switch_event_create(&shutdown_requested_event, SWITCH_EVENT_SHUTDOWN_REQUESTED) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(shutdown_requested_event, SWITCH_STACK_BOTTOM, "Event-Info", "%s", cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "elegant");
+				switch_event_fire(&shutdown_requested_event);
+			}
 			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 			if (cmd == SCSC_SHUTDOWN_ASAP) {
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);

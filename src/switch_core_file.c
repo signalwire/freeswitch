@@ -76,6 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *fp = NULL;
 	int to = 0;
 	int force_channels = 0;
+	uint32_t core_channel_limit;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -361,6 +362,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		goto fail;
 	}
 
+	if (fh->channels > 2) {
+		/* just show a warning for more than 2 channels, no matter if we allow them or not */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more than 2 channels: [%u]\n", file_path, fh->channels);
+	}
+
+	core_channel_limit = switch_core_max_audio_channels(0);
+	if (core_channel_limit && fh->channels > core_channel_limit) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more channels (%u) than limit (%u). Closing.\n", file_path, fh->channels, core_channel_limit);
+		fh->file_interface->file_close(fh);
+		UNPROTECT_INTERFACE(fh->file_interface);
+		switch_goto_status(SWITCH_STATUS_FALSE, fail);
+	}
+
 	if (!force_channels && !fh->real_channels) {
 		fh->real_channels = fh->channels;
 
@@ -482,7 +496,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
-					fh->samples_in += rlen;
 					if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 						switch_mux_channels((int16_t *) fh->pre_buffer_data, rlen, fh->real_channels, fh->channels);
 					}
@@ -492,6 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		}
 
 		rlen = switch_buffer_read(fh->pre_buffer, data, asis ? *len : *len * 2 * fh->channels);
+		fh->samples_in += rlen;
 		*len = asis ? rlen : rlen / 2 / fh->channels;
 
 		if (*len == 0) {
@@ -589,15 +603,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 
 	if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
-		int need = *len * 2 * fh->real_channels;
+		int need = *len * 2 * (fh->real_channels > fh->channels ? fh->real_channels : fh->channels);
 
 		if (need > fh->muxlen) {
 			fh->muxbuf = realloc(fh->muxbuf, need);
 			switch_assert(fh->muxbuf);
 			fh->muxlen = need;
-			memcpy(fh->muxbuf, data, fh->muxlen);
-			data = fh->muxbuf;
+		}
 
+		if (fh->muxbuf) {
+			memcpy(fh->muxbuf, data, *len * 2);
+			data = fh->muxbuf;
 		}
 
 		switch_mux_channels((int16_t *) data, *len, fh->real_channels, fh->channels);

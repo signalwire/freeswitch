@@ -243,7 +243,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		status = switch_ivr_read(collect->session,
 								 (uint32_t)len,
 								 (uint32_t)len,
-								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
+								 file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
 
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
@@ -1587,7 +1587,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	/* extract channel variables, allowing multiple sets of braces */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
-	while (*data == '<') {
+	while (data && *data == '<') {
 		char *parsed = NULL;
 
 		if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
@@ -1977,7 +1977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 switch_dial_handle_t *dh)
 {
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
-	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
+	switch_originate_flag_t dftflags = SOF_NONE, myflags;
 	char *pipe_names[MAX_PEERS] = { 0 };
 	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -2742,7 +2742,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				end = NULL;
 
-				chan_type = peer_names[i];
+				if (!(chan_type = peer_names[i])) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Empty dial string\n");
+					switch_goto_status(SWITCH_STATUS_FALSE, done);
+				}
 
 
 				/* strip leading spaces */

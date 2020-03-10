@@ -67,11 +67,11 @@ void vpx_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   }
 }
 
-void vpx_iwht4x4_1_add_c(const tran_low_t *in, uint8_t *dest, int stride) {
+void vpx_iwht4x4_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   int i;
   tran_high_t a1, e1;
   tran_low_t tmp[4];
-  const tran_low_t *ip = in;
+  const tran_low_t *ip = input;
   tran_low_t *op = tmp;
 
   a1 = ip[0] >> UNIT_QUANT_SHIFT;
@@ -1346,12 +1346,12 @@ void vpx_highbd_iwht4x4_16_add_c(const tran_low_t *input, uint16_t *dest,
   }
 }
 
-void vpx_highbd_iwht4x4_1_add_c(const tran_low_t *in, uint16_t *dest,
+void vpx_highbd_iwht4x4_1_add_c(const tran_low_t *input, uint16_t *dest,
                                 int stride, int bd) {
   int i;
   tran_high_t a1, e1;
   tran_low_t tmp[4];
-  const tran_low_t *ip = in;
+  const tran_low_t *ip = input;
   tran_low_t *op = tmp;
   (void)bd;
 

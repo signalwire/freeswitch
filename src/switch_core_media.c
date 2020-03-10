@@ -1802,6 +1802,9 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		return 0;
 	}
 
+	if (!crypto) {
+		return 0;
+	}
 	engine = &session->media_handle->engines[type];
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
@@ -1826,7 +1829,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
+		if (engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
 			got_crypto = 1;
 		} else {
@@ -4260,7 +4263,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 5 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
 					continue;
 				}
@@ -5216,7 +5219,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 											  switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
 							switch_core_session_rwunlock(other_session);
 
-							pass = 0;
 							match = 0;
 							fmatch = 0;
 							goto done;
@@ -5975,7 +5977,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			t_engine->cur_payload_map = red_pmap;
+			if (red_pmap) {
+				t_engine->cur_payload_map = red_pmap;
+			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
@@ -6065,7 +6069,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			vmatch = 0;
 			almost_vmatch = 0;
-			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
 			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
@@ -9110,7 +9113,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY TEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9122,12 +9124,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(t_engine->rtp_session)) {
 					switch_rtp_set_default_payload(t_engine->rtp_session, t_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
@@ -9425,7 +9421,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9437,12 +9432,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(v_engine->rtp_session)) {
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
@@ -10778,7 +10767,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
 		const char *mult;
 
-		i = 0;
 
 		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
 			cng_type = smh->mparams->cng_pt;
@@ -10997,7 +10985,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (v_engine->codec_negotiated) {
-					const char *of;
 					payload_map_t *pmap;
 
 					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
@@ -11018,12 +11005,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					} else {
 
 						pass_fmtp = NULL;
-
-						if (switch_channel_get_partner_uuid(session->channel)) {
-							if ((of = switch_channel_get_variable_partner(session->channel, "rtp_video_fmtp"))) {
-								pass_fmtp = of;
-							}
-						}
 
 						if (ov_fmtp) {
 							pass_fmtp = ov_fmtp;
@@ -13358,15 +13339,15 @@ static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation
 	map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 
 	if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-		ptime = codec_ms = 30;
+		codec_ms = 30;
 	}
 
 	if (zstr(map->rm_fmtp)) {
 		if (!strcasecmp(map->rm_encoding, "ilbc")) {
-			ptime = codec_ms = 30;
+			codec_ms = 30;
 			map_bit_rate = 13330;
 		} else if (!strcasecmp(map->rm_encoding, "isac")) {
-			ptime = codec_ms = 30;
+			codec_ms = 30;
 			map_bit_rate = 32000;
 		}
 	} else {
@@ -13529,7 +13510,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND || prefer_sdp) {
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					match = 0;
 
 					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 						continue;
@@ -13563,7 +13543,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						continue;
 					}
 					for (map = m->m_rtpmaps; map; map = map->rm_next) {
-						match = 0;
 
 						if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 							continue;
@@ -13601,7 +13580,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND || prefer_sdp) {
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					match = 0;
 
 					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 						continue;
@@ -13646,7 +13624,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 					}
 
 					for (map = m->m_rtpmaps; map; map = map->rm_next) {
-						match = 0;
 
 						if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 							continue;
@@ -13997,7 +13974,6 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		v_engine->cur_payload_map->rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_video_codec_fmtp");
 		v_engine->codec_negotiated = 1;
 
-		ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE);
 		port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE);
 		r_ip = switch_channel_get_variable(session->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE);
 		r_port = switch_channel_get_variable(session->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE);
@@ -15905,7 +15881,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				goto error;
 			}
 			if (ptime_mismatch && status != SWITCH_STATUS_GENERR) {
-				status = perform_write(session, frame, flags, stream_id);
+				perform_write(session, frame, flags, stream_id);
 				status = SWITCH_STATUS_SUCCESS;
 				goto error;
 			}
@@ -16082,7 +16058,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				enc_frame->ssrc = frame->ssrc;
 				enc_frame->payload = enc_frame->codec->implementation->ianacode;
 				write_frame = enc_frame;
-				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_NOT_INITALIZED:
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
@@ -16236,7 +16211,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					enc_frame->ssrc = frame->ssrc;
 					enc_frame->payload = enc_frame->codec->implementation->ianacode;
 					write_frame = enc_frame;
-					status = SWITCH_STATUS_SUCCESS;
 					break;
 				case SWITCH_STATUS_NOT_INITALIZED:
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");

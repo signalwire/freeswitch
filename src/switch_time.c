@@ -1043,7 +1043,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
 	int tfd = -1;
-	uint32_t time_sync = runtime.time_sync;
+	uint32_t time_sync;
 
 #ifdef HAVE_TIMERFD_CREATE
 	int last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
@@ -1079,7 +1079,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 
 	switch_time_sync();
-	time_sync = runtime.time_sync;
 
 	globals.STARTED = globals.RUNNING = 1;
 	switch_mutex_lock(runtime.throttle_mutex);
@@ -1104,7 +1103,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 	}
 
-	ts = 0;
 	last = 0;
 	fwd_errs = rev_errs = 0;
 
@@ -1158,11 +1156,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 				if (!MONO || time_sync == runtime.time_sync) {
 #if defined(HAVE_CLOCK_NANOSLEEP)
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on.\n");
 #else
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "If you see this message many times consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "If you see this message many times consider a nicer machine to run me on.\n");
 #endif
 				}
 			} else {
@@ -1318,7 +1316,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	if (tfd > -1) {
 		close(tfd);
-		tfd = -1;
 	}
 
 
@@ -1459,7 +1456,6 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_t
 		tzdef = switch_lookup_timezone(tz_name);
 	} else {
 		/* We set the default timezone to GMT. */
-		tz_name = "GMT";
 		tzdef = "GMT";
 	}
 
@@ -1495,7 +1491,6 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 		tzdef = switch_lookup_timezone(tz_name);
 	} else {
 		/* We set the default timezone to GMT. */
-		tz_name = "GMT";
 		tzdef = "GMT";
 	}
 
@@ -2257,7 +2252,6 @@ static int tzparse(const char *name, register struct state *const sp, const int 
 			 ** Initially we're assumed to be in standard time.
 			 */
 			isdst = FALSE;
-			theiroffset = theirstdoffset;
 			/*
 			 ** Now juggle transition times and types
 			 ** tracking offsets as you do.

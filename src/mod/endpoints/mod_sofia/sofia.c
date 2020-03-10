@@ -1456,6 +1456,9 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_core_session_t *other_session;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_channel_set_variable_printf(channel, "sip_refer_status_code", "%d", status);
 
 	if (status < 200) {
 		return;
@@ -4413,6 +4416,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "abort-on-empty-external-ip")) {
+				mod_sofia_globals.abort_on_empty_external_ip = switch_true(val);
 			} else if (!strcasecmp(var, "tracelevel")) {
 				mod_sofia_globals.tracelevel = switch_log_str2level(val);
 			} else if (!strcasecmp(var, "debug-presence")) {
@@ -5056,6 +5061,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
+							if (mod_sofia_globals.abort_on_empty_external_ip) {
+								switch_goto_status(SWITCH_STATUS_GENERR, done);
+							}
 						}
 					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
@@ -5150,6 +5158,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
+							switch_goto_status(SWITCH_STATUS_GENERR, done);
 						}
 					} else if (!strcasecmp(var, "local-network-acl")) {
 						if (val && !strcasecmp(val, "none")) {
@@ -10068,7 +10077,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (profile && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-		if (channel && sip->sip_call_info) {
+		if (channel && sip && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
 				if (switch_stristr("appearance", call_info)) {
@@ -10088,7 +10097,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
 
-		if (sip->sip_payload && sip->sip_payload->pl_data) {
+		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 			if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
 				switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
 				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
@@ -10537,6 +10546,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_channel_set_variable_printf(channel, "sip_invite_stamp", "%" SWITCH_TIME_T_FMT, sip_invite_time);
 
 	if (*acl_token) {
+		if (x_user) {
+			switch_xml_free(x_user);
+			x_user = NULL;
+		}
 		switch_channel_set_variable(channel, "acl_token", acl_token);
 		if (sofia_locate_user(acl_token, session, sip, &x_user) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
@@ -10544,6 +10557,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
 			if (sofia_test_pflag(profile, PFLAG_AUTH_REQUIRE_USER)) {
 				nua_respond(nh, SIP_480_TEMPORARILY_UNAVAILABLE, TAG_END());
+				if (v_event) {
+					switch_event_destroy(&v_event);
+				}
 				goto fail;
 			}
 		}

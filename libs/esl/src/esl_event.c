@@ -148,6 +148,7 @@ static const char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
+	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
 

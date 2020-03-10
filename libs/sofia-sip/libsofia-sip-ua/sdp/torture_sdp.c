@@ -225,6 +225,83 @@ static int test_session(void)
   END();
 }
 
+
+static char const s0_cmp_msg[] =
+"v=0\n"
+"s=/sdp_torture\n"
+"o=sdp_torture 0 0 IN IP4 0.0.0.0\n"
+"b=AS:64\n"
+"b=CRASH:32\n"
+"m=audio 0 RTP/AVP 96 97 98 10 99 8 0\n"
+"a=rtpmap:96 X-AMR-WB/16000\n"
+"a=rtpmap:97 X-AMR/8000\n"
+"a=rtpmap:98 GSM-EFR/8000\n"
+"a=rtpmap:10 L16/16000\n"
+"a=rtpmap:99 G723/8000\n"
+"a=rtpmap:8 PCMA/8000\n"
+"a=rtpmap:0 PCMU/8000\n"
+"m=video 0 *\n"
+"m=* 0 RTP/AVP *\n"
+;
+
+static char const s1_cmp_msg[] =
+"v=0\n"
+"s=/sdp_torture\n"
+"o=sdp_torture 0 0 IN IP4 0.0.0.0\n"
+"b=AS:64\n"
+"m=audio 0 RTP/AVP 96 97 98 10 99 8 0\n"
+"a=rtpmap:96 X-AMR-WB/16000\n"
+"a=rtpmap:97 X-AMR/8000\n"
+"a=rtpmap:98 GSM-EFR/8000\n"
+"a=rtpmap:10 L16/16000\n"
+"a=rtpmap:99 G723/8000\n"
+"a=rtpmap:8 PCMA/8000\n"
+"a=rtpmap:0 PCMU/8000\n"
+"m=video 0 *\n"
+"m=* 0 RTP/AVP *\n"
+;
+
+static int test_sdp_session_cmp(void)
+{
+	su_home_t *home = su_home_create(), *home2 = su_home_create();
+	sdp_session_t *sdp_src, *sdp_target;
+	sdp_session_t const *sdp = NULL;
+	sdp_parser_t *parser, *parser2;
+
+	BEGIN();
+
+	su_home_check(home);
+	TEST_1(home);
+
+	su_home_check(home2);
+	TEST_1(home2);
+
+	TEST_1((parser = sdp_parse(home, s0_cmp_msg, sizeof(s0_cmp_msg), sdp_f_config)));
+	TEST_1((sdp_src = sdp_session(parser)));
+
+	TEST_1((parser2 = sdp_parse(home2, s1_cmp_msg, sizeof(s1_cmp_msg), sdp_f_config)));
+	TEST_1((sdp_target = sdp_session(parser2)));
+
+	/* Check comparing */
+	TEST(sdp_session_cmp(sdp_src, sdp_target), 1);
+
+	/* frees all data created by the parser including 'sdp_src' */
+	sdp_parser_free(parser);
+	
+	/* destroy the first home instance */
+	su_home_check(home);
+	su_home_unref(home);
+
+	/* frees all data created by the parser including 'sdp_target' */
+	sdp_parser_free(parser2);
+
+	/* destroy the second home object */
+	su_home_check(home2);
+	su_home_unref(home2);
+
+	END();
+}
+
 static char const s1_msg[] =
   "v=0\r\n"
   "o=- 2435697 2435697 IN IP4 172.21.137.44\r\n"
@@ -925,6 +1002,7 @@ int main(int argc, char *argv[])
   null = fopen("/dev/null", "ab");
 
   retval |= test_error(); fflush(stdout);
+  retval |= test_sdp_session_cmp(); fflush(stdout);
   retval |= test_session(); fflush(stdout);
   retval |= test_session2(); fflush(stdout);
   retval |= test_pint(); fflush(stdout);
