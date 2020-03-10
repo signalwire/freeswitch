@@ -5825,6 +5825,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					maxptime = dmaxptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "group")) {
 					switch_channel_set_variable(session->channel, "rtp_group", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+					got_crypto = 1;
 				}
 			}
 
