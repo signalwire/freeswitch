@@ -78,8 +78,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int ch
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			const char * channelName,
 			const pa_sample_spec * inputParameters,
-			const pa_sample_spec * outputParameters,
-			double sampleRate, long samples_per_packet);
+			const pa_sample_spec * outputParameters);
 
 void FlushAudioStream(PABLIO_Stream * aStream);
 void CloseAudioStream(PABLIO_Stream * aStream);

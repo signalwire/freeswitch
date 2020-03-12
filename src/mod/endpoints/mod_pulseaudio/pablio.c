@@ -69,7 +69,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int ch
  */
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 						const pa_sample_spec * inputParameters,
-						const pa_sample_spec * outputParameters, double sampleRate, long samples_per_packet)
+						const pa_sample_spec * outputParameters)
 {
 	long bytesPerSample = 2;
 	pa_error err;
@@ -105,7 +105,6 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 
 	if (outputParameters) {
 		channels = outputParameters->channels;
-		//outputParameters->rate = sampleRate;
 		buffer_attr.tlength = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, outputParameters);
 		buffer_attr.maxlength = buffer_attr.tlength;
 		aStream->has_out = 1;

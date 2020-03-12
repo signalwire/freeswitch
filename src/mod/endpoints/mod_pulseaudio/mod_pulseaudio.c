@@ -251,9 +251,8 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 static switch_status_t create_codecs(int restart);
 static void create_hold_event(private_t *tech_pvt, int unhold);
-static audio_stream_t * get_audio_stream(STREAMS stream_number);
-static audio_stream_t * create_audio_stream(STREAMS stream_number);
-pa_error open_audio_stream(PABLIO_Stream **stream, const char * channelName, const pa_sample_spec * inputParameters, const pa_sample_spec * outputParameters);
+static audio_stream_t *get_audio_stream(STREAMS stream_number);
+static audio_stream_t *create_audio_stream(STREAMS stream_number);
 static switch_status_t destroy_actual_stream(audio_stream_t *stream);
 static void destroy_audio_streams();
 static switch_status_t validate_main_audio_stream();
@@ -556,7 +555,7 @@ static void destroy_codecs(void)
 static void create_hold_event(private_t *tech_pvt, int unhold)
 {
 	switch_event_t *event;
-	char * event_id;
+	char *event_id;
 
 	if (unhold) {
 		event_id = MY_EVENT_CALL_RESUMED;
@@ -990,7 +989,7 @@ switch_io_routines_t pulseaudio_io_routines = {
 	/*.receive_message */ channel_receive_message
 };
 
-static int create_shared_audio_stream(shared_audio_stream_t *stream, const char * channelName);
+static int create_shared_audio_stream(shared_audio_stream_t *stream, const char *channel_name);
 static int destroy_shared_audio_stream(shared_audio_stream_t *stream);
 static int take_stream_channel(shared_audio_stream_t *stream, int index, int input)
 {
@@ -1635,7 +1634,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pulseaudio_shutdown)
 }
 
 /*******************************************************************/
-static switch_status_t play_dev(switch_stream_handle_t *stream, char * file, const char * max_seconds, const char * no_close)
+static switch_status_t play_dev(switch_stream_handle_t *stream, char *file, const char *max_seconds, const char *no_close)
 {
 	switch_file_handle_t fh = { 0 };
 	int samples = 0;
@@ -1786,39 +1785,24 @@ static switch_status_t create_codecs(int restart)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-pa_error open_audio_stream(PABLIO_Stream **stream, const char * channelName, const pa_sample_spec * inputParameters, const pa_sample_spec * outputParameters)
+static int create_shared_audio_stream(shared_audio_stream_t *shstream, const char *channel_name)
 {
-	return OpenAudioStream(stream, channelName, inputParameters, outputParameters, globals.sample_rate, globals.read_codec.implementation->samples_per_packet);
-}
-
-pa_error open_shared_audio_stream(shared_audio_stream_t *shstream, const char * channelName, const pa_sample_spec * inputParameters, const pa_sample_spec * outputParameters)
-{
-	pa_error err;
-	err = OpenAudioStream(&shstream->stream, channelName, inputParameters, outputParameters,
-			shstream->sample_rate, STREAM_SAMPLES_PER_PACKET(shstream));
-	if (err) {
-		shstream->stream = NULL;
-	}
-	return err;
-}
-
-static int create_shared_audio_stream(shared_audio_stream_t *shstream, const char * channelName)
-{
-	pa_sample_spec inputParameters, outputParameters;
+	pa_sample_spec input_parameters, output_parameters;
 	pa_error err;
 	switch_event_t *event;
 
-	inputParameters.channels = 1;
-	inputParameters.format = SAMPLE_TYPE;
-	inputParameters.rate = globals.sample_rate;
+	input_parameters.channels = 1;
+	input_parameters.format = SAMPLE_TYPE;
+	input_parameters.rate = globals.sample_rate;
 
-	outputParameters.channels = 1;
-	outputParameters.format = SAMPLE_TYPE;
-	outputParameters.rate = globals.sample_rate;
+	output_parameters.channels = 1;
+	output_parameters.format = SAMPLE_TYPE;
+	output_parameters.rate = globals.sample_rate;
 
-	err = open_shared_audio_stream(shstream, channelName, &inputParameters, &outputParameters);
+	err = OpenAudioStream(&shstream->stream, channel_name, &input_parameters, &output_parameters);
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open PulseAudio server: %s\n", pa_strerror(err));
+		shstream->stream = NULL;
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", pa_strerror(err));
 			switch_event_fire(&event);
@@ -1840,8 +1824,8 @@ static int destroy_shared_audio_stream(shared_audio_stream_t *shstream)
 
 static audio_stream_t *create_audio_stream(STREAMS stream_number)
 {
-	pa_sample_spec inputParameters, outputParameters;
-	pa_sample_spec *inputParametersPointer = &inputParameters;
+	pa_sample_spec input_parameters, output_parameters;
+	pa_sample_spec *input_parametersPointer = &input_parameters;
 	pa_error err;
 	switch_event_t *event;
 	audio_stream_t *stream;
@@ -1880,18 +1864,18 @@ static audio_stream_t *create_audio_stream(STREAMS stream_number)
 	}
 
 	if (stream_number == STREAM_VOICE) {
-		inputParameters.channels = 1;
-		inputParameters.format = SAMPLE_TYPE;
-		inputParameters.rate = globals.sample_rate;
+		input_parameters.channels = 1;
+		input_parameters.format = SAMPLE_TYPE;
+		input_parameters.rate = globals.sample_rate;
 	} else {
-		inputParametersPointer = NULL;
+		input_parametersPointer = NULL;
 	}
 
-	outputParameters.channels = 1;
-	outputParameters.format = SAMPLE_TYPE;
-	outputParameters.rate = globals.sample_rate;
+	output_parameters.channels = 1;
+	output_parameters.format = SAMPLE_TYPE;
+	output_parameters.rate = globals.sample_rate;
 
-	err = open_audio_stream(&(stream->stream), channel_name, inputParametersPointer, &outputParameters);
+	err = OpenAudioStream(&(stream->stream), channel_name, input_parametersPointer, &output_parameters);
 	if (err) {
 		switch_safe_free(stream);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open PulseAudio server: %s\n", pa_strerror(err));
@@ -1901,7 +1885,7 @@ static audio_stream_t *create_audio_stream(STREAMS stream_number)
 		}
 		return NULL;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created %s audio stream: %d Hz, %d channels\n", channel_name, outputParameters.rate, outputParameters.channels);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created %s audio stream: %d Hz, %d channels\n", channel_name, output_parameters.rate, output_parameters.channels);
 	return stream;
 }
 
@@ -2006,7 +1990,7 @@ static switch_status_t close_streams(char **argv, int argc, switch_stream_handle
 
 static switch_status_t prepare_stream(char **argv, int argc, switch_stream_handle_t *stream)
 {
-	audio_stream_t * audio_stream;
+	audio_stream_t *audio_stream;
 
 	if (! strcasecmp(argv[0], "voice")) {
 		audio_stream = get_audio_stream(STREAM_VOICE);
