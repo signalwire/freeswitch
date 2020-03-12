@@ -970,7 +970,7 @@ SWITCH_STANDARD_APP(video_replace_start_function)
 		return;
 	}
 
-	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+	// switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 
 	context = (video_replace_context_t *) switch_core_session_alloc(session, sizeof(*context));
 	switch_assert(context != NULL);
