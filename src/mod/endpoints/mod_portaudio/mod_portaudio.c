@@ -644,7 +644,9 @@ static void remove_stream(audio_stream_t * stream, int already_locked)
 		for (previous = globals.stream_list; previous && previous->next && previous->next != stream; previous = previous->next) {
 			;
 		}
-		previous->next = stream->next;
+		if (previous) {
+			previous->next = stream->next;
+		}
 	}
 	if (! already_locked) {
 		switch_mutex_unlock(globals.streams_lock);
@@ -1180,7 +1182,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint")-1)) {
-		codec_ms = -1;
 		endpoint = NULL;
 		endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 		endpoint_name = strchr(endpoint_name, '/');
