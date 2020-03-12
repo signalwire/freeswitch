@@ -922,6 +922,10 @@ static void fetch_config_handlers(switch_memory_pool_t *pool)
 static void *SWITCH_THREAD_FUNC fetch_config_exec(switch_thread_t *thread, void *obj)
 {
 	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
+
+	// give some time for node initialization
+	switch_sleep(10000);
+
 	fetch_config_filters(pool);
 	fetch_config_handlers(pool);
 
