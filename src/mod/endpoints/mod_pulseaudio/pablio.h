@@ -68,8 +68,8 @@ typedef struct {
 /* PulseAudio error */
 typedef int pa_error;
 
-long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer);
-long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer);
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer);
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer);
 
 /************************************************************
  * Opens a PulseAudio stream with default characteristics.

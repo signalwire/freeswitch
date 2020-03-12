@@ -38,7 +38,7 @@
 #include <pulse/simple.h>
 #include "pablio.h"
 
-long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer)
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer)
 {
 	switch_core_timer_next(timer);
 
@@ -48,7 +48,7 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int c
 	return datalen;
 }
 
-long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer)
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer)
 {
 	pa_usec_t latency;
 	switch_core_timer_next(timer);
