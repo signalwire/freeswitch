@@ -4232,7 +4232,12 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 
 			/* prepare mod_unimrcp's profile for configuration */
 			profile_create(&mod_profile, name, mod_pool);
-			switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
+			if (mod_profile) {
+				switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
+			} else {
+				client = NULL;
+				goto done;
+			}
 
 			/* pull in any default SPEAK params */
 			default_params = switch_xml_child(profile, "synthparams");
