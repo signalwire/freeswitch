@@ -54,10 +54,16 @@ SWITCH_STANDARD_API(kz_first_of)
 	char *mycmd = NULL, *mycmd_dup = NULL, *argv[MAX_FIRST_OF] = { 0 };
 	int n, argc = 0;
 	switch_event_header_t *header = NULL;
+	switch_channel_t *channel = NULL;
 
 	if (zstr(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid arg\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if ( session ) {
+		channel = switch_core_session_get_channel(session);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT CHANNEL\n");
 	}
 
 	mycmd_dup = mycmd = strdup(cmd);
@@ -77,6 +83,24 @@ SWITCH_STANDARD_API(kz_first_of)
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING %s\n", item);
+			if (channel) {
+				const char *var = switch_channel_get_variable_dup(channel, item, SWITCH_FALSE, -1);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item);
+				if (var) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item, var);
+					stream->write_function(stream, var);
+					break;
+				}
+				if (!strncmp(item, "variable_", 9)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item+9);
+					var = switch_channel_get_variable_dup(channel, item+9, SWITCH_FALSE, -1);
+					if (var) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item+9, var);
+						stream->write_function(stream, var);
+						break;
+					}
+				}
+			}
 			header = switch_event_get_header_ptr(stream->param_event, item);
 			if(header) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING %s : %s\n", item, header->value);
