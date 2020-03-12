@@ -1,5 +1,5 @@
-#ifndef PORTAUDIO_PABLIO_H
-#define PORTAUDIO_PABLIO_H
+#ifndef PULSEAUDIO_PABLIO_H
+#define PULSEAUDIO_PABLIO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,14 +8,12 @@ extern "C" {
 /*
  * $Id: pablio.h 1083 2006-08-23 07:30:49Z rossb $
  * PABLIO.h
- * Portable Audio Blocking read/write utility.
+ * PulseAudio abstraction
  *
- * Author: Phil Burk, http://www.softsynth.com/portaudio/
+ * Contributor(s):
  *
- * Include file for PABLIO, the Portable Audio Blocking I/O Library.
- * PABLIO is built on top of PortAudio, the Portable Audio Library.
- * For more information see: http://www.portaudio.com
- * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ * Phil Burk, http://www.softsynth.com
+ * Jérôme Poulin <jeromepoulin@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -35,17 +33,6 @@ extern "C" {
  * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-/*
- * The text above constitutes the entire PortAudio license; however, 
- * the PortAudio community also makes the following non-binding requests:
- *
- * Any person wishing to distribute modifications to the Software is
- * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
- * license above.
  */
 
 #include <stdio.h>
@@ -81,32 +68,12 @@ typedef struct {
 /* PulseAudio error */
 typedef int pa_error;
 
-/* Values for flags for OpenAudioStream(). */
-#define PABLIO_READ     (1<<0)
-#define PABLIO_WRITE    (1<<1)
-#define PABLIO_READ_WRITE    (PABLIO_READ|PABLIO_WRITE)
-#define PABLIO_MONO     (1<<2)
-#define PABLIO_STEREO   (1<<3)
-
-/************************************************************
- * Write data to ring buffer.
- * Will not return until all the data has been written.
- */
 long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer);
-
-/************************************************************
- * Read data from ring buffer.
- * Will not return until all the data has been read.
- */
 long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer);
 
 /************************************************************
- * Opens a PortAudio stream with default characteristics.
+ * Opens a PulseAudio stream with default characteristics.
  * Allocates PABLIO_Stream structure.
- *
- * flags parameter can be an ORed combination of:
- *    PABLIO_READ, PABLIO_WRITE, or PABLIO_READ_WRITE,
- *    and either PABLIO_MONO or PABLIO_STEREO
  */
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			const char * channelName,

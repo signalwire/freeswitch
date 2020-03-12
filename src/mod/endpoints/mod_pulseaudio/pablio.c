@@ -1,13 +1,12 @@
 /*
  * $Id: pablio.c 1151 2006-11-29 02:11:16Z leland_lucius $
  * pablio.c
- * Portable Audio Blocking Input/Output utility.
+ * PulseAudio abstraction
  *
- * Author: Phil Burk, http://www.softsynth.com
+ * Contributor(s):
  *
- * This program uses the PortAudio Portable Audio Library.
- * For more information see: http://www.portaudio.com
- * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ * Phil Burk, http://www.softsynth.com
+ * Jérôme Poulin <jeromepoulin@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -29,17 +28,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * The text above constitutes the entire PortAudio license; however, 
- * the PortAudio community also makes the following non-binding requests:
- *
- * Any person wishing to distribute modifications to the Software is
- * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
- * license above.
- */
-
 #include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,10 +38,6 @@
 #include <pulse/simple.h>
 #include "pablio.h"
 
-/************************************************************
- * Write data to ring buffer.
- * Will not return until all the data has been written.
- */
 long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer)
 {
 	switch_core_timer_next(timer);
@@ -64,10 +48,6 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int c
 	return datalen;
 }
 
-/************************************************************
- * Read data from ring buffer.
- * Will not return until all the data has been read.
- */
 long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer)
 {
 	pa_usec_t latency;
@@ -84,9 +64,8 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int ch
 }
 
 /************************************************************
- * Opens a PortAudio stream with default characteristics.
+ * Opens a PulseAudio stream with default characteristics.
  * Allocates PABLIO_Stream structure.
- *
  */
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 						const pa_sample_spec * inputParameters,
@@ -108,7 +87,7 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 	switch_assert(aStream);
 	memset(aStream, 0, sizeof(PABLIO_Stream));
 
-	/* Open a PulseAudio stream that we will use to communicate with the underlying
+	/* Open a PulseAudio stream that will be used to communicate with the underlying
 	 * audio drivers. */
 	bzero(&buffer_attr, sizeof(buffer_attr));
 	buffer_attr.prebuf = (uint32_t) -1;
@@ -138,21 +117,16 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 
 	aStream->bytesPerFrame = bytesPerSample;
 	aStream->channelCount = channels;
-
 	*rwblPtr = aStream;
-
 	return 0;
 
   error:
 
 	CloseAudioStream(aStream);
-
 	*rwblPtr = NULL;
-
 	return err;
 }
 
-/************************************************************/
 void FlushAudioStream(PABLIO_Stream * aStream)
 {
 	if (aStream && aStream->has_in && aStream->istream) {
@@ -160,7 +134,6 @@ void FlushAudioStream(PABLIO_Stream * aStream)
 	}
 }
 
-/************************************************************/
 void CloseAudioStream(PABLIO_Stream * aStream)
 {
 	if (aStream->has_out) {
