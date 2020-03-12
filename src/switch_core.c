@@ -2348,6 +2348,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.timer_affinity = atoi(val);
 					}
+				} else if (!strcasecmp(var, "ice-resolve-candidate")) {
+					switch_core_media_set_resolveice(switch_true(val));
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
@@ -3007,6 +3009,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_RECLAIM:
 		switch_core_memory_reclaim_all();
 		newintval = 0;
+		break;
+	case SCSC_MDNS_RESOLVE:
+		switch_core_media_set_resolveice(!!oldintval);
 		break;
 	}
 

@@ -291,6 +291,19 @@ switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
 	{ "AES_CM_128_NULL_AUTH", "", AES_CM_128_NULL_AUTH, 30, 14}
 };
 
+static switch_bool_t ice_resolve_candidate = 0;
+
+SWITCH_DECLARE(void) switch_core_media_set_resolveice(switch_bool_t resolve_ice)
+{
+	ice_resolve_candidate = resolve_ice;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_media_has_resolveice(void)
+{
+	return ice_resolve_candidate;
+}
+
+
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
 {
 	int i;
@@ -4153,6 +4166,9 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0, relay_ok = 0;
+	char con_addr[256];
+	int ice_resolve = 0;
+	ip_t ip;
 
 	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
 		return SWITCH_STATUS_BREAK;
@@ -4176,6 +4192,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	} else {
 		attrs[0] = sdp->sdp_attributes;
 	}
+
+	ice_resolve = switch_core_media_has_resolveice();
 
 	for (attr_idx = 0; attr_idx < 2 && !(ice_seen && cand_seen); attr_idx++) {
 		for (attr = attrs[attr_idx]; attr; attr = attr->a_next) {
@@ -4291,17 +4309,38 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
 				}
 
-				if (!ip_possible(smh, fields[4])) {
+				if (fields[4] && (switch_inet_pton(AF_INET, fields[4], &ip) || switch_inet_pton(AF_INET6, fields[4], &ip))) {
+						switch_copy_string(con_addr, fields[4], sizeof(con_addr));
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "Is an IP address: %s\n", con_addr);
+				} else if (fields[4] && ice_resolve) {
+						if (switch_resolve_host(fields[4], con_addr, sizeof(con_addr)) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Resolved %s to %s\n", fields[4], con_addr);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO,
+											"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (cannot resolve)\n",
+											type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+											cid+1, fields[2], fields[7], fields[4], fields[5]);
+							continue;
+						}
+				} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO,
+										"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not an IP address)\n",
+										type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+										cid+1, fields[2], fields[7], fields[4] ? fields[4] : "(null)", fields[5]);
+						continue;
+				}
+
+				if (!ip_possible(smh, con_addr)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", con_addr, fields[5]);
 					continue;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", con_addr, fields[5]);
 				}
 
 
@@ -4309,7 +4348,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].component_id = atoi(fields[1]);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].priority = atol(fields[3]);
-				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, con_addr);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port = (switch_port_t)atoi(fields[5]);
 
 				j = 6;
