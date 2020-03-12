@@ -89,6 +89,7 @@ struct pvt_s {
 	t38_terminal_state_t *t38_state;
 	t38_gateway_state_t *t38_gateway_state;
 	t38_core_state_t *t38_core;
+	switch_mutex_t *mutex;
 
 	udptl_state_t *udptl_state;
 
@@ -224,7 +225,9 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
 		for (pvt = t38_state_list.head; pvt; pvt = pvt->next) {
 			if (pvt->udptl_state && pvt->session && switch_channel_ready(switch_core_session_get_channel(pvt->session))) {
+				switch_mutex_lock(pvt->mutex);
 				t38_terminal_send_timeout(pvt->t38_state, samples);
+				switch_mutex_unlock(pvt->mutex);
 			}
 		}
 
@@ -819,11 +822,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	case T38_MODE:
 		{
 			switch_core_session_message_t msg = { 0 };
-
+			switch_mutex_lock(pvt->mutex);
 			if (pvt->t38_state == NULL) {
 				pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
 			}
 			if (pvt->t38_state == NULL) {
+				switch_mutex_unlock(pvt->mutex);
 				return SWITCH_STATUS_FALSE;
 			}
 			if (pvt->udptl_state == NULL) {
@@ -832,6 +836,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			if (pvt->udptl_state == NULL) {
 				t38_terminal_free(pvt->t38_state);
 				pvt->t38_state = NULL;
+				switch_mutex_unlock(pvt->mutex);
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -842,6 +847,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			memset(t38, 0, sizeof(t38_terminal_state_t));
 
 			if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
 				return SWITCH_STATUS_FALSE;
 			}
@@ -850,6 +856,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 			if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries,
 					(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
 				return SWITCH_STATUS_FALSE;
 			}
@@ -858,17 +865,19 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
 			switch_core_session_receive_message(pvt->session, &msg);
 
-			/* add to timer thread processing */
-			if (!add_pvt(pvt)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			}
-
 			span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, pvt->session);
 			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 				span_log_set_level(t30_get_logging_state(t30), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			}
+
+			switch_mutex_unlock(pvt->mutex);
+
+			/* add to timer thread processing */
+			if (!add_pvt(pvt)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 		}
 		break;
@@ -1434,6 +1443,8 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		}
 	}
 
+	switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
 	return pvt;
 }
 
@@ -1642,7 +1653,9 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					pvt->t38_mode = T38_MODE_NEGOTIATED;
 					switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
 					spanfax_init(pvt, T38_MODE);
+					switch_mutex_lock(pvt->mutex);
 					configure_t38(pvt);
+					switch_mutex_unlock(pvt->mutex);
 
 					/* This will change the rtp stack to udptl mode */
 					msg.from = __FILE__;
@@ -1683,7 +1696,9 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					/* now we know we can cast frame->packet to a udptl structure */
 					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "READ %d udptl bytes\n", read_frame->packetlen);
 
+					switch_mutex_lock(pvt->mutex);
 					udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
+					switch_mutex_unlock(pvt->mutex);
 				}
 			}
 			continue;
@@ -1691,16 +1706,19 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			break;
 		}
 
+		switch_mutex_lock(pvt->mutex);
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			/* We have no real signal data for the FAX software, but we have a space in time if we have a CNG indication.
 			   Do a fill-in operation in the FAX machine, to keep things rolling along. */
 			if (fax_rx_fillin(pvt->fax_state, read_impl.samples_per_packet)) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx_fillin reported an error\n");
 				continue;
 			}
 		} else {
 			/* Pass the new incoming audio frame to the fax_rx function */
 			if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
 				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_rx reported an error");
 				goto done;
@@ -1708,10 +1726,12 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		}
 
 		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
+			switch_mutex_unlock(pvt->mutex);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_tx reported an error\n");
 			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_tx reported an error");
 			goto done;
 		}
+		switch_mutex_unlock(pvt->mutex);
 
 		if (!tx) {
 			/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No audio samples to send\n"); */
