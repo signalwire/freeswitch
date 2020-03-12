@@ -440,6 +440,61 @@ SWITCH_STANDARD_API(kz_expand_api)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(kz_eval_api)
+{
+	char *p = NULL, *input = NULL;
+	char *uuid = NULL, *mycmd;
+	switch_core_session_t *nsession = NULL;
+	switch_channel_t *channel = NULL;
+
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR invalid input");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-ERR no memory");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!strncasecmp(mycmd, "uuid:", 5)) {
+		uuid = mycmd + 5;
+		if ((input = strchr(uuid, ' ')) != NULL) {
+			*input++ = '\0';
+			if ((nsession = switch_core_session_locate(uuid)) != NULL) {
+				channel = switch_core_session_get_channel(nsession);
+			} else {
+				stream->write_function(stream, "-ERR invalid session");
+				switch_safe_free(mycmd);
+				return SWITCH_STATUS_GENERR;
+			}
+		} else {
+			stream->write_function(stream, "-ERR invalid argument");
+			switch_safe_free(mycmd);
+			return SWITCH_STATUS_GENERR;
+		}
+	} else if (session == NULL) {
+		stream->write_function(stream, "-ERR invalid argument");
+		switch_safe_free(mycmd);
+		return SWITCH_STATUS_GENERR;
+	} else {
+		channel = switch_core_session_get_channel(session);
+		input = mycmd;
+	}
+
+	p = switch_channel_expand_variables_check(channel, input, NULL, NULL, 0);
+	stream->write_function(stream, "+OK %s", p);
+	if (p != input) {
+		switch_safe_free(p);
+	}
+	switch_safe_free(mycmd);
+	if (nsession) {
+		switch_core_session_rwunlock(nsession);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	switch_api_interface_t *api_interface = NULL;
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi", UUID_SET_DESC, uuid_setvar_multi_function, UUID_MULTISET_SYNTAX);
@@ -453,5 +508,6 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	SWITCH_ADD_API(api_interface, "kz_http_put", KZ_HTTP_PUT_DESC, kz_http_put, KZ_HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api_interface, "first-of", KZ_FIRST_OF_DESC, kz_first_of, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_expand", KZ_FIRST_OF_DESC, kz_expand_api, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_eval", KZ_FIRST_OF_DESC, kz_eval_api, KZ_FIRST_OF_SYNTAX);
 }
 
