@@ -2417,7 +2417,7 @@ SWITCH_STANDARD_API(uptime_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -2672,6 +2672,25 @@ SWITCH_STANDARD_API(ctl_function)
 				stream->write_function(stream, "+OK clock synchronized\n");
 			} else {
 				stream->write_function(stream, "+OK clock will synchronize when there are no more calls\n");
+			}
+		} else if (!strcasecmp(argv[0], "mdns_resolve")) {
+			switch_bool_t set = 0;
+			if (argv[1]) {
+				if (!strcasecmp(argv[1], "enable")) {
+					arg = 1;
+					set = 1;
+				} else if (!strcasecmp(argv[1], "disable")) {
+					arg = 0;
+					set = 1;
+				}
+			}
+			if (set) {
+				switch_core_session_ctl(SCSC_MDNS_RESOLVE, &arg);
+				stream->write_function(stream, "+OK\n");
+				arg = 0;
+			} else {
+				stream->write_function(stream, "-ERR Invalid command\nUSAGE: fsctl %s\n", CTL_SYNTAX);
+				goto end;
 			}
 		} else {
 			stream->write_function(stream, "-ERR Invalid command\nUSAGE: fsctl %s\n", CTL_SYNTAX);
@@ -7733,6 +7752,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
+	switch_console_set_complete("add fsctl mdns_resolve disable");
+	switch_console_set_complete("add fsctl mdns_resolve enable");
 	switch_console_set_complete("add interface_ip auto ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv4 ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv6 ::console::list_interfaces");
