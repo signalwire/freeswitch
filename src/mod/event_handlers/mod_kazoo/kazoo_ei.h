@@ -200,6 +200,8 @@ struct kz_globals_s {
 	uint8_t tweaks[KZ_TWEAK_MAX];
 	switch_bool_t expand_headers_on_fetch;
 
+	switch_interval_time_t delay_before_initial_fetch;
+
 
 };
 typedef struct kz_globals_s kz_globals_t;
