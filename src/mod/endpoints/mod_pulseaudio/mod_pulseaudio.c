@@ -61,7 +61,7 @@ SWITCH_MODULE_DEFINITION(mod_pulseaudio, mod_pulseaudio_load, mod_pulseaudio_shu
 static switch_memory_pool_t *module_pool = NULL;
 switch_endpoint_interface_t *pulseaudio_endpoint_interface;
 
-typedef switch_status_t (*pa_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
+typedef switch_status_t (*pa_command_t) (char **argv, int argc, switch_stream_handle_t *endpoint);
 
 typedef enum {
 	GFLAG_NONE = 0,
@@ -97,47 +97,30 @@ struct audio_stream {
 };
 typedef struct audio_stream audio_stream_t;
 
-/* Audio stream that can be shared across endpoints */
-typedef struct _shared_audio_stream_t {
-	/*! Friendly name for this stream */
-	char name[255];
-	/*! Sampling rate */
-	int sample_rate;
-	/*! Buffer packetization (and therefore timing) */
-	int codec_ms;
-	/*! The io stream helper to buffer audio */
-	PABLIO_Stream *pa_stream;
-	/* It can be shared after all :-)  */
-	switch_mutex_t *mutex;
-} shared_audio_stream_t;
-
-typedef struct private_object private_t;
 /* Endpoint that can be called via pulseaudio/endpoint/<endpoint-name> */
-typedef struct _audio_endpoint {
-	/*! Friendly name for this endpoint */
+typedef struct _audio_endpoint_t {
+	/* Friendly name for this endpoint */
 	char name[255];
-
-	/*! Stream for this endpoint */
-	shared_audio_stream_t *ep_stream;
-
-	/*! Associated private information if involved in a call */
-	private_t *master;
-
-	/*! For timed read and writes */
+	/* Sampling rate */
+	int sample_rate;
+	/* Buffer packetization (and therefore timing) */
+	int codec_ms;
+	/* The io stream helper to buffer audio */
+	PABLIO_Stream *pa_stream;
+	/* For timed read and writes */
 	switch_timer_t read_timer;
 	switch_timer_t write_timer;
-
 	/* We need our own read frame */
 	switch_frame_t read_frame;
 	unsigned char read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-
 	/* Needed codecs for the core to read/write in the proper format */
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-
-	/*! Let's be safe */
+	/* Let's be safe */
 	switch_mutex_t *mutex;
 } audio_endpoint_t;
+
+typedef struct private_object private_t;
 
 struct private_object {
 	unsigned int flags;
@@ -155,7 +138,6 @@ struct private_object {
 	audio_endpoint_t *audio_endpoint;
 	struct private_object *next;
 };
-
 
 static struct {
 	int debug;
@@ -187,8 +169,6 @@ static struct {
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	unsigned char cngbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	private_t *call_list;
-	/*! Streams that can be used by multiple endpoints at the same time */
-	switch_hash_t *sh_streams;
 	/*! Endpoints configured */
 	switch_hash_t *endpoints;
 	int ring_interval;
@@ -239,8 +219,8 @@ static void create_hold_event(private_t *tech_pvt, int unhold);
 static audio_stream_t *get_audio_stream(STREAMS stream_number);
 static audio_stream_t *create_audio_stream(STREAMS stream_number);
 static switch_status_t destroy_actual_stream(audio_stream_t *stream);
-static int create_shared_audio_stream(shared_audio_stream_t *stream, const char *channel_name);
-static int destroy_shared_audio_stream(shared_audio_stream_t *shstream);
+static int create_shared_audio_stream(audio_endpoint_t *endpoint, const char *channel_name);
+static int destroy_shared_audio_stream(audio_endpoint_t *endpoint);
 static void destroy_audio_streams();
 static switch_status_t validate_main_audio_stream();
 static switch_status_t validate_ring_audio_stream();
@@ -668,12 +648,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 		switch_mutex_lock(endpoint->mutex);
 
-		destroy_shared_audio_stream(endpoint->ep_stream);
+		destroy_shared_audio_stream(endpoint);
 		switch_core_timer_destroy(&endpoint->read_timer);
 		switch_core_timer_destroy(&endpoint->write_timer);
 		switch_core_codec_destroy(&endpoint->read_codec);
 		switch_core_codec_destroy(&endpoint->write_codec);
-		endpoint->master = NULL;
 
 		switch_mutex_unlock(endpoint->mutex);
 	}
@@ -741,14 +720,8 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 {
 	int datalen = 0;
 
-	if (!endpoint->ep_stream) {
-		switch_core_timer_next(&endpoint->read_timer);
-		*frame = &globals.cng_frame;
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	datalen = ReadAudioStream(endpoint->ep_stream->pa_stream,
-			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->ep_stream)*sizeof(SAMPLE),
+	datalen = ReadAudioStream(endpoint->pa_stream,
+			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint)*sizeof(SAMPLE),
 			&endpoint->read_timer);
 
 	if (!datalen) {
@@ -870,20 +843,7 @@ normal_return:
 
 static switch_status_t channel_endpoint_write(audio_endpoint_t *endpoint, switch_frame_t *frame)
 {
-	if (!endpoint->ep_stream) {
-		switch_core_timer_next(&endpoint->write_timer);
-		return SWITCH_STATUS_SUCCESS;
-	}
-	if (!endpoint->master) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-	if (switch_test_flag(endpoint->master, TFLAG_HUP)) {
-		return SWITCH_STATUS_FALSE;
-	}
-	if (!switch_test_flag(endpoint->master, TFLAG_IO)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-	WriteAudioStream(endpoint->ep_stream->pa_stream, (short *)frame->data,
+	WriteAudioStream(endpoint->pa_stream, (short *)frame->data,
 			frame->datalen, &(endpoint->write_timer));
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -991,7 +951,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int samples_per_packet = -1;
 	int sample_rate = 0;
 	audio_endpoint_t *endpoint = NULL;
-	char *endpoint_name = NULL, *endpoint_name_copy = NULL;
+	char *endpoint_name = NULL;
 	const char *endpoint_answer = NULL;
 
 	if (!outbound_profile) {
@@ -1017,7 +977,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint")-1)) {
-		endpoint_name_copy = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
+		endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 		endpoint_name = strchr(endpoint_name, '/');
 		if (!endpoint_name) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "No pulseaudio endpoint specified\n");
@@ -1030,25 +990,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto error;
 		}
 
-		switch_mutex_lock(endpoint->mutex);
-
-		if (endpoint->master) {
-			/* someone already has this endpoint */
-			retcause = SWITCH_CAUSE_USER_BUSY;
-			goto error;
-		}
-
 		/* try to acquire the stream */
 		switch_mutex_lock(endpoint->mutex);
-		if (create_shared_audio_stream(endpoint->ep_stream, endpoint_name) != SWITCH_STATUS_SUCCESS) {
+		if (create_shared_audio_stream(endpoint, endpoint_name) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "Could not acquire audio stream for endpoint %s.\n", endpoint_name);
 			goto error;
 		}
 		switch_mutex_unlock(endpoint->mutex);
 
-		codec_ms = endpoint->ep_stream->codec_ms;
-		samples_per_packet = STREAM_SAMPLES_PER_PACKET(endpoint->ep_stream);
-		sample_rate = endpoint->ep_stream->sample_rate;
+		codec_ms = endpoint->codec_ms;
+		samples_per_packet = STREAM_SAMPLES_PER_PACKET(endpoint);
+		sample_rate = endpoint->sample_rate;
 
 		if (switch_core_timer_init(&endpoint->read_timer,
 				   globals.timer_name, codec_ms,
@@ -1089,7 +1041,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		} else {
 			switch_set_flag(tech_pvt, TFLAG_AUTO_ANSWER);
 		}
-		endpoint->master = tech_pvt;
+		/* TODO: Maybe session? endpoint->master = tech_pvt; */
 		tech_pvt->audio_endpoint = endpoint;
 		switch_mutex_unlock(endpoint->mutex);
 	} else {
@@ -1110,21 +1062,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	return SWITCH_CAUSE_SUCCESS;
 
 error:
-	switch_safe_free(endpoint_name_copy);
 	if (endpoint) {
-		if (!endpoint->master) {
-			if (endpoint->read_timer && endpoint->read_timer.interval) {
-				switch_core_timer_destroy(&endpoint->read_timer);
-			}
-			if (endpoint->write_timer && endpoint->write_timer.interval) {
-				switch_core_timer_destroy(&endpoint->write_timer);
-			}
-			if (endpoint->read_codec && endpoint->read_codec.codec_interface) {
-				switch_core_codec_destroy(&endpoint->read_codec);
-			}
-			if (endpoint->write_codec && endpoint->write_codec.codec_interface) {
-				switch_core_codec_destroy(&endpoint->write_codec);
-			}
+		if (endpoint->read_timer.interval) {
+			switch_core_timer_destroy(&endpoint->read_timer);
+		}
+		if (endpoint->write_timer.interval) {
+			switch_core_timer_destroy(&endpoint->write_timer);
+		}
+		if (endpoint->read_codec.codec_interface) {
+			switch_core_codec_destroy(&endpoint->read_codec);
+		}
+		if (endpoint->write_codec.codec_interface) {
+			switch_core_codec_destroy(&endpoint->write_codec);
 		}
 		switch_mutex_unlock(endpoint->mutex);
 	}
@@ -1145,7 +1094,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pulseaudio_load)
 	memset(&globals, 0, sizeof(globals));
 
 	switch_core_hash_init(&globals.call_hash);
-	switch_core_hash_init(&globals.sh_streams);
 	switch_core_hash_init(&globals.endpoints);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
@@ -1209,78 +1157,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pulseaudio_load)
 	switch_console_set_complete("add pulse ringfile");
 	switch_console_set_complete("add pulse play");
 	switch_console_set_complete("add pulse looptest");
-	switch_console_set_complete("add pulse shstreams");
 	switch_console_set_complete("add pulse endpoints");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_streams(switch_xml_t streams)
-{
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t param, mystream;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading streams ...\n");
-	for (mystream = switch_xml_child(streams, "stream"); mystream; mystream = mystream->next) {
-		shared_audio_stream_t *stream = NULL;
-		char *stream_name = (char *) switch_xml_attr_soft(mystream, "name");
-
-		if (!stream_name) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing stream name attribute, skipping ...\n");
-			continue;
-		}
-
-		/* check if that stream name is not already used */
-		stream = switch_core_hash_find(globals.sh_streams, stream_name);
-		if (stream) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "A stream with name '%s' already exists\n", stream_name);
-			continue;
-		}
-
-		stream = switch_core_alloc(module_pool, sizeof(*stream));
-		if (!stream) {
-			continue;
-		}
-		switch_mutex_init(&stream->mutex, SWITCH_MUTEX_NESTED, module_pool);
-		stream->sample_rate = globals.sample_rate;
-		stream->codec_ms = globals.codec_ms;
-		switch_snprintf(stream->name, sizeof(stream->name), "%s", stream_name);
-		for (param = switch_xml_child(mystream, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing stream '%s' parameter %s = %s\n", stream_name, var, val);
-			if (!strcmp(var, "sample-rate")) {
-				stream->sample_rate = atoi(val);
-				if (stream->sample_rate < MIN_STREAM_SAMPLE_RATE) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							"Invalid sample rate specified for stream '%s', forcing to 8000\n", stream_name);
-					stream->sample_rate = MIN_STREAM_SAMPLE_RATE;
-				}
-			} else if (!strcmp(var, "codec-ms")) {
-				int tmp = atoi(val);
-				if (switch_check_interval(stream->sample_rate, tmp)) {
-					stream->codec_ms = tmp;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "codec-ms must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
-				}
-			}
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-				"Created stream '%s', sample-rate = %d, codec-ms = %d\n", stream->name, stream->sample_rate, stream->codec_ms);
-		switch_core_hash_insert(globals.sh_streams, stream->name, stream);
-	}
-	return status;
-}
-
 static switch_status_t load_endpoints(switch_xml_t endpoints)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t myendpoint;
+	switch_xml_t param, myendpoint;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading endpoints ...\n");
 	for (myendpoint = switch_xml_child(endpoints, "endpoint"); myendpoint; myendpoint = myendpoint->next) {
 		audio_endpoint_t *endpoint = NULL;
-		shared_audio_stream_t *stream = NULL;
 		char *endpoint_name = (char *) switch_xml_attr_soft(myendpoint, "name");
 
 		if (!endpoint_name) {
@@ -1291,20 +1180,41 @@ static switch_status_t load_endpoints(switch_xml_t endpoints)
 		/* check if that endpoint name is not already used */
 		endpoint = switch_core_hash_find(globals.endpoints, endpoint_name);
 		if (endpoint) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "An endpoint with name '%s' already exists\n", endpoint_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "A endpoint with name '%s' already exists\n", endpoint_name);
 			continue;
 		}
 
 		endpoint = switch_core_alloc(module_pool, sizeof(*endpoint));
-		stream = switch_core_alloc(module_pool, sizeof(*stream));
-		if (!endpoint || !stream) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory for PulseAudio endpoint\n");
+		if (!endpoint) {
 			continue;
 		}
 		switch_mutex_init(&endpoint->mutex, SWITCH_MUTEX_NESTED, module_pool);
+		endpoint->sample_rate = globals.sample_rate;
+		endpoint->codec_ms = globals.codec_ms;
 		switch_snprintf(endpoint->name, sizeof(endpoint->name), "%s", endpoint_name);
+		for (param = switch_xml_child(myendpoint, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing endpoint '%s' parameter %s = %s\n", endpoint_name, var, val);
+			if (!strcmp(var, "sample-rate")) {
+				endpoint->sample_rate = atoi(val);
+				if (endpoint->sample_rate < MIN_STREAM_SAMPLE_RATE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							"Invalid sample rate specified for endpoint '%s', forcing to 8000\n", endpoint_name);
+					endpoint->sample_rate = MIN_STREAM_SAMPLE_RATE;
+				}
+			} else if (!strcmp(var, "codec-ms")) {
+				int tmp = atoi(val);
+				if (switch_check_interval(endpoint->sample_rate, tmp)) {
+					endpoint->codec_ms = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "codec-ms must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+				}
+			}
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-				"Created endpoint '%s'\n", endpoint->name);
+				"Created endpoint '%s', sample-rate = %d, codec-ms = %d\n", endpoint->name, endpoint->sample_rate, endpoint->codec_ms);
 		switch_core_hash_insert(globals.endpoints, endpoint->name, endpoint);
 	}
 	return status;
@@ -1313,7 +1223,7 @@ static switch_status_t load_endpoints(switch_xml_t endpoints)
 static switch_status_t load_config(void)
 {
 	char *cf = "pulseaudio.conf";
-	switch_xml_t cfg, xml, settings, streams, endpoints, param;
+	switch_xml_t cfg, xml, settings, endpoints, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -1411,15 +1321,10 @@ static switch_status_t load_config(void)
 		set_global_timer_name("soft");
 	}
 
-	/* streams and endpoints must be last, some initialization depend on globals defaults */
-	if ((streams = switch_xml_child(cfg, "streams"))) {
-		load_streams(streams);
-	}
-
+	/* endpoints must be last, some initialization depend on globals defaults */
 	if ((endpoints = switch_xml_child(cfg, "endpoints"))) {
 		load_endpoints(endpoints);
 	}
-
 
 	switch_xml_free(xml);
 
@@ -1433,7 +1338,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pulseaudio_shutdown)
 	destroy_codecs();
 
 	switch_core_hash_destroy(&globals.call_hash);
-	switch_core_hash_destroy(&globals.sh_streams);
 	switch_core_hash_destroy(&globals.endpoints);
 
 	switch_event_free_subclass(MY_EVENT_RINGING);
@@ -1606,7 +1510,7 @@ static switch_status_t create_codecs(int restart)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int create_shared_audio_stream(shared_audio_stream_t *shstream, const char *channel_name)
+static int create_shared_audio_stream(audio_endpoint_t *endpoint, const char *channel_name)
 {
 	pa_sample_spec input_parameters, output_parameters;
 	pa_error err;
@@ -1620,10 +1524,10 @@ static int create_shared_audio_stream(shared_audio_stream_t *shstream, const cha
 	output_parameters.format = SAMPLE_TYPE;
 	output_parameters.rate = globals.sample_rate;
 
-	err = OpenAudioStream(&shstream->pa_stream, channel_name, &input_parameters, &output_parameters);
+	err = OpenAudioStream(&endpoint->pa_stream, channel_name, &input_parameters, &output_parameters);
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open PulseAudio server: %s\n", pa_strerror(err));
-		shstream->pa_stream = NULL;
+		endpoint->pa_stream = NULL;
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", pa_strerror(err));
 			switch_event_fire(&event);
@@ -1631,18 +1535,18 @@ static int create_shared_audio_stream(shared_audio_stream_t *shstream, const cha
 		return SWITCH_STATUS_FALSE;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created shared audio stream %s at %d Hz\n",
-			shstream->name, shstream->sample_rate);
+			endpoint->name, endpoint->sample_rate);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int destroy_shared_audio_stream(shared_audio_stream_t *shstream)
+static int destroy_shared_audio_stream(audio_endpoint_t *endpoint)
 {
-	if (shstream && shstream->pa_stream) {
-		switch_mutex_lock(shstream->mutex);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying shared audio stream %s\n", shstream->name);
-		CloseAudioStream(shstream->pa_stream);
-		shstream->pa_stream = NULL;
-		switch_mutex_unlock(shstream->mutex);
+	if (endpoint && endpoint->pa_stream) {
+		switch_mutex_lock(endpoint->mutex);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying shared audio stream %s\n", endpoint->name);
+		CloseAudioStream(endpoint->pa_stream);
+		endpoint->pa_stream = NULL;
+		switch_mutex_unlock(endpoint->mutex);
 	}
 	return 0;
 }
@@ -1760,39 +1664,21 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t list_shared_streams(char **argv, int argc, switch_stream_handle_t *stream)
-{
-	switch_hash_index_t *hi;
-	int cnt = 0;
-	for (hi = switch_core_hash_first(globals.sh_streams); hi; hi = switch_core_hash_next(&hi)) {
-		const void *var;
-		void *val;
-		shared_audio_stream_t *s = NULL;
-		switch_core_hash_this(hi, &var, NULL, &val);
-		s = val;
-		stream->write_function(stream, "%s> sample-rate: %d, codec-ms: %d\n",
-				s->name, s->sample_rate, s->codec_ms);
-		cnt++;
-	}
-	stream->write_function(stream, "Total streams: %d\n", cnt);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t list_endpoints(char **argv, int argc, switch_stream_handle_t *stream)
+static switch_status_t list_endpoints(char **argv, int argc, switch_stream_handle_t *endpoint)
 {
 	switch_hash_index_t *hi;
 	int cnt = 0;
 	for (hi = switch_core_hash_first(globals.endpoints); hi; hi = switch_core_hash_next(&hi)) {
 		const void *var;
 		void *val;
-		audio_endpoint_t *e = NULL;
+		audio_endpoint_t *s = NULL;
 		switch_core_hash_this(hi, &var, NULL, &val);
-		e = val;
-		stream->write_function(stream, "%s\n",
-				e->name, e->ep_stream ? e->ep_stream->name : "(none)");
+		s = val;
+		endpoint->write_function(endpoint, "%s> sample-rate: %d, codec-ms: %d\n",
+				s->name, s->sample_rate, s->codec_ms);
 		cnt++;
 	}
-	stream->write_function(stream, "Total endpoints: %d\n", cnt);
+	endpoint->write_function(endpoint, "Total endpoints: %d\n", cnt);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2246,7 +2132,6 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pulse playdev #<num> [ringtest|<filename>] [seconds] [no_close]\n"
 		"pulse ringfile [filename]\n"
 		"pulse looptest\n"
-		"pulse shstreams\n"
 		"pulse endpoints\n"
 		"--------------------------------------------------------------------------------\n";
 
@@ -2341,8 +2226,6 @@ SWITCH_STANDARD_API(pa_cmd)
 		func = looptest;
 	} else if (!strcasecmp(argv[0], "ringfile")) {
 		func = set_ringfile;
-	} else if (!strcasecmp(argv[0], "shstreams")) {
-		func = list_shared_streams;
 	} else if (!strcasecmp(argv[0], "endpoints")) {
 		func = list_endpoints;
 	} else {
