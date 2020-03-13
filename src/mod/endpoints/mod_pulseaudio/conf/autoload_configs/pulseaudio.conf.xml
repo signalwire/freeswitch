@@ -1,12 +1,38 @@
 <configuration name="pulseaudio.conf" description="Soundcard Endpoint">
   <settings>
-    <!--Default dialplan and caller-id info -->
+	<!-- ring parameters -->
+	<param name="ring-interval" value="5"/>
+	<param name="ring-file" value=""/>
+
+    <!-- default dialplan and caller-id info -->
+    <param name="context" value="default"/>
     <param name="dialplan" value="XML"/>
     <param name="cid-name" value="PulseAudio"/>
     <param name="cid-num" value="5555551212"/>
 
-    <!--audio sample rate and interval -->
+    <!-- audio sample rate and interval -->
     <param name="sample-rate" value="16000"/>
     <param name="codec-ms" value="10"/>
+	<param name="timer-name" value="soft"/>
+
+	<!-- misc audio parameters -->
+	<param name="hold-file" value=""/>
+
+	<!-- toggles, false if not set -->
+	<!--
+	<param name="no-ring-during-call" value="true"/>
+	<param name="live-stream-switch" value="true"/>
+	<param name="no-auto-resume-call" value="true"/>
+	<param name="unload-on-device-fail" value="true"/>
+	-->
   </settings>
+
+  <!--
+  <endpoints>
+	<endpoint name="headset1">
+      <param name="sample-rate" value="16000"/>
+      <param name="codec-ms" value="10"/>
+	</endpoint>
+  </endpoints>
+  -->
 </configuration>
