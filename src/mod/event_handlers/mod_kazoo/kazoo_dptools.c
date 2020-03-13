@@ -450,6 +450,7 @@ SWITCH_STANDARD_APP(kz_moh_function)
 	switch_file_handle_t fh = { 0 };
 	const char *var_samples = switch_channel_get_variable_dup(channel, "moh_playback_samples", SWITCH_FALSE, -1);
 	unsigned int samples =  0;
+	char * my_data = NULL;
 
 	if (var_samples) {
 		fh.samples = samples = atoi(var_samples);
@@ -458,7 +459,20 @@ SWITCH_STANDARD_APP(kz_moh_function)
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
-	status = switch_ivr_play_file(session, &fh, data, NULL);
+	/*
+	 * hack for proper position
+	 */
+	if (!strncmp(data, "http_cache://", 13) && session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		char * resolve = switch_mprintf("${http_get({prefetch=true}%s)}", data+13);
+		my_data = switch_channel_expand_variables_check(channel, resolve, NULL, NULL, 0);
+	} else {
+		my_data = strdup(data);
+	}
+
+	status = switch_ivr_play_file(session, &fh, my_data, NULL);
+//	status = switch_ivr_play_file(session, &fh, data, NULL);
+
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
 	switch (status) {
@@ -495,6 +509,7 @@ SWITCH_STANDARD_APP(kz_moh_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH sample_count %ld\n", fh.sample_count);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH samples %d\n", fh.samples);
 
+	switch_safe_free(my_data);
 }
 
 SWITCH_STANDARD_APP(noop_function)
