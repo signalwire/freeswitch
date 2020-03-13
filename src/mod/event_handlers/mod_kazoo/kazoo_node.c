@@ -1521,6 +1521,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 		switch (status) {
 		case ERL_TICK:
 			/* erlang nodes send ticks to eachother to validate they are still reachable, we dont have to do anything here */
+			fault_count = 0;
 			break;
 		case ERL_MSG:
 			fault_count = 0;
@@ -1543,6 +1544,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 			case EAGAIN:
 				/* if ei_xreceive_msg_tmo just timed out, ignore it and let the while loop check if we are still running */
 				/* the erlang lib just wants us to try to receive again, so we will! */
+				fault_count = 0;
 				break;
 			case EMSGSIZE:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Erlang communication fault with node %p %s (%s:%d): my spoon is too big\n", (void *)ei_node, ei_node->peer_nodename, ei_node->remote_ip, ei_node->remote_port);
@@ -1553,6 +1555,8 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 
 				if (fault_count >= kazoo_globals.io_fault_tolerance) {
 					switch_clear_flag(ei_node, LFLAG_RUNNING);
+				} else {
+					switch_sleep(kazoo_globals.io_fault_tolerance_sleep);
 				}
 
 				break;

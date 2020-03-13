@@ -186,6 +186,7 @@ struct kz_globals_s {
 	switch_port_t port;
 	int config_fetched;
 	int io_fault_tolerance;
+	switch_interval_time_t io_fault_tolerance_sleep;
 	kazoo_event_profile_ptr events;
 	kazoo_config_ptr definitions;
 	kazoo_config_ptr event_handlers;
