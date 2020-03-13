@@ -976,6 +976,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] read_stream_thread(): switch_thread_self(): 0x%lx\n",  switch_thread_self());
 	}
 	switch_thread_rwlock_rdlock(context->rwlock);
+	switch_mutex_lock(context->ogg_mutex);
 
 	if ((buffered_ogg_bytes = switch_buffer_inuse(context->ogg_buffer))) {
 		if (buffered_ogg_bytes <= OGG_MAX_PAGE_SIZE) {
@@ -1021,6 +1022,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		}
 	}
 
+	switch_mutex_unlock(context->ogg_mutex);
 	switch_thread_rwlock_unlock(context->rwlock);
 	return NULL;
 }
@@ -1071,9 +1073,9 @@ static switch_status_t switch_opusstream_decode(switch_codec_t *codec,
 #endif
 
 	switch_thread_rwlock_rdlock(context->rwlock);
+	switch_mutex_lock(context->ogg_mutex);
 	memset(context->ogg_data, 0, sizeof(context->ogg_data)); 
 	if (encoded_data_len <= SWITCH_RECOMMENDED_BUFFER_SIZE) {
-		switch_mutex_lock(context->ogg_mutex);
 		switch_buffer_write(context->ogg_buffer, encode_buf, encoded_data_len);
  
 		if ((buffered_ogg_bytes = switch_buffer_inuse(context->ogg_buffer)) >= ogg_bytes) {
@@ -1089,12 +1091,10 @@ static switch_status_t switch_opusstream_decode(switch_codec_t *codec,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[OGG/OPUS Stream Decode] buffered ogg data bigger than max OGG page size, will flush\n");
 				*decoded_data_len = 0;
 				switch_buffer_zero(context->ogg_buffer);
-				switch_mutex_unlock(context->ogg_mutex);
 				switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 			}
 		}
 
-		switch_mutex_unlock(context->ogg_mutex);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[OGG/OPUS Stream Decode] too much data to buffer, flushing buffer!\n");
 		*decoded_data_len = 0;
@@ -1134,6 +1134,7 @@ static switch_status_t switch_opusstream_decode(switch_codec_t *codec,
 end:
 
 	switch_thread_rwlock_unlock(context->rwlock);
+	switch_mutex_unlock(context->ogg_mutex);
 	return status;
 }
 

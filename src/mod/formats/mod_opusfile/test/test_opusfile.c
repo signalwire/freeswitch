@@ -170,6 +170,7 @@ FST_CORE_BEGIN(".")
 			uint32_t decoded_len;
 			size_t write_len;
 			unsigned char decbuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			switch_stream_handle_t stream = { 0 };
 #ifdef  HAVE_OPUSFILE_ENCODE
 			switch_file_handle_t fh = { 0 };
 			unsigned char encbuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
@@ -215,6 +216,12 @@ FST_CORE_BEGIN(".")
 			1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 			&codec_settings, fst_pool);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			switch_api_execute("opusfile_debug", "on", NULL, &stream);
+
+			switch_safe_free(stream.data);
 
 #ifdef HAVE_OPUSFILE_ENCODE
 			status = switch_core_codec_init(&write_codec,
@@ -277,12 +284,12 @@ FST_CORE_BEGIN(".")
 
 			fhw.native_rate = filerate;
 
-			flen = OGG_MIN_PAGE_SIZE;
+			flen = 4096;
 			while (switch_file_read(fd, &buf, &flen) == SWITCH_STATUS_SUCCESS || flen != 0) {
 				status = SWITCH_STATUS_SUCCESS;
 				while (status == SWITCH_STATUS_SUCCESS) {
 					status = switch_core_codec_decode(&read_codec, NULL, &buf, flen, filerate, &decbuf, &decoded_len, &rate, &flags);
-					fst_requires(status == SWITCH_STATUS_SUCCESS);
+					fst_check(status == SWITCH_STATUS_SUCCESS);
 					write_len = decoded_len / sizeof(int16_t);
 					if (write_len) switch_core_file_write(&fhw, &decbuf, &write_len);
 					else break;
