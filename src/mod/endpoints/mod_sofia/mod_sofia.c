@@ -360,6 +360,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+        char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
@@ -375,7 +376,13 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		}
 
 		if (!zstr(tech_pvt->call_id)) {
-			switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->call_id, tech_pvt->profile->flag_mutex);
+                        switch_mutex_lock(tech_pvt->profile->flag_mutex);
+                        if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
+                                free(uuid);
+                                uuid = NULL;
+                                switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
+                        }
+                        switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 		}
 
 
@@ -454,7 +461,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key && !sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
-		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
+                switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
 	if (session && tech_pvt->profile->pres_type) {
@@ -4602,6 +4609,84 @@ SWITCH_STANDARD_API(sofia_function)
 	return status;
 }
 
+SWITCH_STANDARD_API(nightmare_xfer_on_orig_function) {
+        switch_channel_t *channel;
+        switch_core_session_t *a_session;
+        private_object_t *tech_pvt = NULL;
+        char *etmp = NULL;
+
+        if (!cmd) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferor uuid unavailable\n");
+                return SWITCH_STATUS_FALSE;
+        }
+
+        a_session = switch_core_session_locate(cmd);
+        if (!a_session) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferor session don't find\n");
+                return SWITCH_STATUS_FALSE;
+        }
+
+        channel = switch_core_session_get_channel(a_session);
+        if (!channel) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferor channel don't find\n");
+                switch_core_session_rwunlock(a_session);
+
+                return SWITCH_STATUS_FALSE;
+        }
+
+        if (switch_channel_up(channel)) {
+                tech_pvt = (private_object_t *) switch_core_session_get_private(a_session);
+                etmp = (char *)switch_channel_get_variable(channel, "siptag");
+
+                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+                                   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "notified to transferee \n");
+        }
+
+        switch_core_session_rwunlock(a_session);
+
+        return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(nightmare_xfer_on_ans_function) {
+        switch_channel_t *a_channel;
+        switch_core_session_t *a_session;
+        private_object_t *tech_pvt = NULL;
+
+        if (!cmd) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferee uuid unavailable\n");
+                return SWITCH_STATUS_FALSE;
+        }
+
+        a_session = switch_core_session_locate(cmd);
+        if (!a_session) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferee session don't find\n");
+                return SWITCH_STATUS_FALSE;
+        }
+
+        a_channel = switch_core_session_get_channel(a_session);
+        if (!a_channel) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "transferee channel don't find\n");
+                switch_core_session_rwunlock(a_session);
+
+                return SWITCH_STATUS_FALSE;
+        }
+
+        tech_pvt = (private_object_t *) switch_core_session_get_private(a_session);
+        if (tech_pvt) {
+                sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+        }
+
+        switch_ivr_unhold(a_session);
+ 
+        switch_core_session_rwunlock(a_session);
+
+        return SWITCH_STATUS_SUCCESS;
+}
+
+
 switch_io_routines_t sofia_io_routines = {
 	/*.outgoing_channel */ sofia_outgoing_channel,
 	/*.read_frame */ sofia_read_frame,
@@ -4774,8 +4859,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_INVALID_GATEWAY;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
@@ -5180,8 +5263,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
-	if (gateway_ptr && !profile) {
+	if (gateway_ptr) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
@@ -5385,9 +5467,6 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
-						sofia_glue_free_destination(dst);
-						switch_safe_free(route_uri);
-						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5414,9 +5493,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-				}
 
-				sofia_glue_release_profile(profile);
+					sofia_glue_release_profile(profile);
+				}
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5469,9 +5548,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-				}
 
-				sofia_glue_release_profile(profile);
+					sofia_glue_release_profile(profile);
+				}
 
 				return;
 			}
@@ -5651,7 +5730,6 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
-					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5781,13 +5859,11 @@ void general_event_handler(switch_event_t *event)
 				nua_handle_unref(nh);
 			}
 
-		  done:
+                        sofia_glue_release_profile(profile);
 
-			if (profile) {
-				sofia_glue_release_profile(profile);
-			}
+                  done:
 
-			switch_safe_free(local_dup);
+                        switch_safe_free(local_dup);
 
 		}
 		break;
@@ -6357,6 +6433,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
+        SWITCH_ADD_API(api_interface, "nightmare_xfer_on_originate", "nightmare xfer on call originate", nightmare_xfer_on_orig_function, NULL);
+        SWITCH_ADD_API(api_interface, "nightmare_xfer_on_answer", "nightmare xfer on call answer", nightmare_xfer_on_ans_function, NULL);
+
 	switch_console_set_complete("add sofia ::[help:status");
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
@@ -6472,12 +6551,6 @@ void mod_sofia_shutdown_cleanup() {
 	}
 
 	su_deinit();
-
-	/* 
-		Release the clone of the default SIP parser 
-		created by `sip_update_default_mclass(sip_extend_mclass(NULL))` call with NULL argument
-	*/
-	sip_cloned_parser_destroy();
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
