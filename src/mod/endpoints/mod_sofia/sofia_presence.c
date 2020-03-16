@@ -1436,6 +1436,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 					}
 
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+					usleep( 50000 ); 
 
 
 
