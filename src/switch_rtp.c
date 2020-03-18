@@ -3043,8 +3043,8 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	rtp_session->seq = (uint16_t) rand();
-	rtp_session->ts = 0;
+	//rtp_session->seq = (uint16_t) rand();
+	//rtp_session->ts = 0;
 	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
 
 	rtp_session->last_stun = rtp_session->first_stun = 0;
