@@ -22,8 +22,6 @@
 	<!--
 	<param name="no-ring-during-call" value="true"/>
 	<param name="live-stream-switch" value="true"/>
-	<param name="no-auto-resume-call" value="true"/>
-	<param name="unload-on-device-fail" value="true"/>
 	-->
   </settings>
 

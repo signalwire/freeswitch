@@ -69,13 +69,6 @@ switch_endpoint_interface_t *pulseaudio_endpoint_interface;
 typedef switch_status_t (*pa_command_t) (char **argv, int argc, switch_stream_handle_t *endpoint);
 
 typedef enum {
-	GFLAG_NONE = 0,
-	GFLAG_EAR = (1 << 0),
-	GFLAG_MOUTH = (1 << 1),
-	GFLAG_RING = (1 << 2)
-} GFLAGS;
-
-typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_INBOUND = (1 << 1),
 	TFLAG_OUTBOUND = (1 << 2),
@@ -84,7 +77,10 @@ typedef enum {
 	TFLAG_HANGUP = (1 << 5),
 	TFLAG_ANSWER = (1 << 6),
 	TFLAG_HUP = (1 << 7),
-	TFLAG_AUTO_ANSWER = (1 << 8)
+	TFLAG_AUTO_ANSWER = (1 << 8),
+	TFLAG_EAR = (1 << 9),
+	TFLAG_MOUTH = (1 << 10),
+	TFLAG_RING = (1 << 11),
 } TFLAGS;
 
 /* Endpoint that can be called via pulseaudio/endpoint/<endpoint-name> */
@@ -120,8 +116,6 @@ struct private_object {
 	int sample_rate;
 	int codec_ms;
 	switch_mutex_t *flag_mutex;
-	switch_file_handle_t fh;
-	switch_file_handle_t *hfh;
 	audio_endpoint_t *voice_endpoint;
 	audio_endpoint_t *ring_endpoint;
 	switch_timer_t readfile_timer;
@@ -137,11 +131,9 @@ static struct {
 	char *context;
 	char *ring_file;
 	char *timer_name;
-	int unload_device_fail;
 	audio_endpoint_t default_audio;
 	switch_hash_t *call_hash;
 	switch_mutex_t *call_hash_mutex;
-	switch_mutex_t *flag_mutex;
 	uint64_t current_call_id;
 	int sample_rate;
 	int codec_ms;
@@ -149,9 +141,7 @@ static struct {
 	unsigned char cngbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	/*! Endpoints configured */
 	int ring_interval;
-	GFLAGS flags;
 	time_t deactivate_timer;
-	int no_auto_resume_call;
 	int no_ring_during_call;
 } globals;
 
@@ -239,10 +229,10 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				ring_file = val;
 			}
 
-			if (switch_test_flag((&globals), GFLAG_RING)) {
+			if (switch_test_flag(tech_pvt, TFLAG_RING)) {
 				ring_file = NULL;
 			}
-			switch_set_flag_locked((&globals), GFLAG_RING);
+			switch_set_flag_locked(tech_pvt, TFLAG_RING);
 			if (ring_file) {
 				if (switch_core_file_open(&fh,
 										  ring_file,
@@ -296,7 +286,6 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 			if (ring_file) {
 				if (switch_core_timer_next(&(tech_pvt->readfile_timer)) != SWITCH_STATUS_SUCCESS) {
-					switch_core_file_close(&fh);
 					break;
 				}
 				switch_core_file_read(&fh, abuf, &olen);
@@ -306,18 +295,17 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				}
 
 				if (tech_pvt->ring_endpoint || (!globals.no_ring_during_call)) {
-						WriteAudioStream(tech_pvt->ring_endpoint->pa_stream, abuf, olen*2, &(tech_pvt->ring_endpoint->write_timer));
+						WriteAudioStream(tech_pvt->ring_endpoint->pa_stream,
+										 abuf, olen*2, &(tech_pvt->ring_endpoint->write_timer));
 				}
 			} else {
 				switch_yield(10000);
 			}
 		}
-		switch_clear_flag_locked((&globals), GFLAG_RING);
 	}
 
-	if (ring_file) {
-		switch_core_file_close(&fh);
-	}
+	switch_clear_flag_locked(tech_pvt, TFLAG_RING);
+	switch_core_file_close(&fh);
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (!switch_test_flag(tech_pvt, TFLAG_ANSWER) &&
@@ -329,7 +317,6 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
-
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -370,14 +357,6 @@ static switch_status_t destroy_audio_endpoint(audio_endpoint_t *endpoint)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void tech_close_file(private_t *tech_pvt)
-{
-	if (tech_pvt->hfh) {
-		tech_pvt->hfh = NULL;
-		switch_core_file_close(&tech_pvt->fh);
-	}
-}
-
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -398,8 +377,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_set_flag_locked(tech_pvt, TFLAG_HUP);
-
-	tech_close_file(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -449,64 +426,57 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_frame_t **frame)
-{
-	int datalen = 0;
-
-	datalen = ReadAudioStream(endpoint->pa_stream,
-			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint)*sizeof(SAMPLE),
-			&(endpoint->read_timer));
-
-	if (!datalen) {
-		switch_core_timer_next(&endpoint->read_timer);
-		*frame = &globals.cng_frame;
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	endpoint->read_frame.datalen = datalen;
-	endpoint->read_frame.samples = (datalen / sizeof(SAMPLE));
-	endpoint->read_frame.codec = &endpoint->read_codec;
-	*frame = &endpoint->read_frame;
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
+	audio_endpoint_t *endpoint;
+	int datalen = 0;
+
 	switch_assert(tech_pvt != NULL);
+	endpoint = tech_pvt->voice_endpoint;
 
-	if (tech_pvt->voice_endpoint) {
-		return channel_endpoint_read(tech_pvt->voice_endpoint, frame);
-	}
-
-	/*
 	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	*frame = &globals.cng_frame;
-	return SWITCH_STATUS_SUCCESS;
-	*/
-	return SWITCH_STATUS_FALSE;
-}
+	if (tech_pvt->voice_endpoint) {
+		if (switch_test_flag(tech_pvt, TFLAG_MOUTH))
+			datalen = ReadAudioStream(endpoint->pa_stream,
+									  endpoint->read_frame.data,
+									  STREAM_SAMPLES_PER_PACKET(endpoint)*sizeof(SAMPLE),
+									  &(endpoint->read_timer));
 
-static switch_status_t channel_endpoint_write(audio_endpoint_t *endpoint, switch_frame_t *frame)
-{
-	WriteAudioStream(endpoint->pa_stream, (short *)frame->data,
-			frame->datalen, &(endpoint->write_timer));
+		if (!datalen) {
+			switch_core_timer_next(&endpoint->read_timer);
+			globals.cng_frame.rate = endpoint->read_frame.rate;
+			globals.cng_frame.codec = endpoint->read_frame.codec;
+			*frame = &globals.cng_frame;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		endpoint->read_frame.datalen = datalen;
+		endpoint->read_frame.samples = (datalen / sizeof(SAMPLE));
+		endpoint->read_frame.codec = &endpoint->read_codec;
+		*frame = &endpoint->read_frame;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
+	audio_endpoint_t *endpoint;
 
-	if (tech_pvt->voice_endpoint) {
-		return channel_endpoint_write(tech_pvt->voice_endpoint, frame);
+	switch_assert(tech_pvt != NULL);
+	endpoint = tech_pvt->voice_endpoint;
+
+	if (tech_pvt->voice_endpoint && switch_test_flag(tech_pvt, TFLAG_EAR)) {
+		WriteAudioStream(endpoint->pa_stream, (short *)frame->data,
+						 frame->datalen, &(endpoint->write_timer));
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
@@ -576,6 +546,7 @@ static private_t *create_tech_pvt(switch_core_session_t *session)
 	switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", call_id);
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	tech_pvt->session = session;
+	tech_pvt->flags = TFLAG_EAR | TFLAG_MOUTH;
 	switch_channel_set_variable(switch_core_session_get_channel(session),
 								MOD_PA_CALL_ID_VARIABLE, tech_pvt->call_id);
 	switch_mutex_lock(globals.call_hash_mutex);
@@ -659,11 +630,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pulseaudio_load)
 
 	switch_core_hash_init(&globals.call_hash);
 	switch_mutex_init(&globals.call_hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
-	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
 	switch_set_flag((&globals.cng_frame), SFF_CNG);
-	globals.flags = GFLAG_EAR | GFLAG_MOUTH;
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
@@ -718,10 +687,8 @@ static switch_status_t load_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-	globals.no_auto_resume_call = 0;
 	globals.no_ring_during_call = 0;
 	globals.sample_rate = 8000;
-	globals.unload_device_fail = 0;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -732,12 +699,6 @@ static switch_status_t load_config(void)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "ring-interval")) {
 				globals.ring_interval = atoi(val);
-			} else if (!strcmp(var, "no-auto-resume-call")) {
-				if (switch_true(val)) {
-					globals.no_auto_resume_call = 1;
-				} else {
-					globals.no_auto_resume_call = 0;
-				}
 			} else if (!strcmp(var, "no-ring-during-call")) {
 				if (switch_true(val)) {
 					globals.no_ring_during_call = 1;
@@ -766,8 +727,6 @@ static switch_status_t load_config(void)
 				set_global_cid_name(val);
 			} else if (!strcmp(var, "cid-num")) {
 				set_global_cid_num(val);
-			} else if (!strcasecmp(var, "unload-on-device-fail")) {
-				globals.unload_device_fail = switch_true(val);
 			}
 		}
 	}
@@ -1272,69 +1231,46 @@ finally:
 
 static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *stream)
 {
-	char *action = argv[0];
+	char *call_id = argv[0];
 	char *flag_str = argv[1];
-	GFLAGS flags = GFLAG_NONE;
-	char *p;
-	int x = 0;
+	private_t *tech_pvt;
 
 	if (argc < 2) {
-		goto desc;
+		goto usage;
 	}
 
-	for (x = 1; x < argc; x++) {
-		flag_str = argv[x];
-		for (p = flag_str; *p; p++) {
-			*p = (char) tolower(*p);
-		}
-
-		if (strstr(flag_str, "ear")) {
-			flags |= GFLAG_EAR;
-		}
-		if (strstr(flag_str, "mouth")) {
-			flags |= GFLAG_MOUTH;
-		}
-	}
-
-	if (!strcasecmp(action, "on")) {
-		if (flags & GFLAG_EAR) {
-			switch_set_flag((&globals), GFLAG_EAR);
-		}
-		if (flags & GFLAG_MOUTH) {
-			switch_set_flag((&globals), GFLAG_MOUTH);
-		}
-	} else if (!strcasecmp(action, "off")) {
-		if (flags & GFLAG_EAR) {
-			switch_clear_flag((&globals), GFLAG_EAR);
-		}
-		if (flags & GFLAG_MOUTH) {
-			switch_clear_flag((&globals), GFLAG_MOUTH);
-		}
+	if (zstr(call_id)) {
+		stream->write_function(stream, "No call ID supplied.\n");
+		goto usage;
 	} else {
-		goto bad;
+		switch_mutex_lock(globals.call_hash_mutex);
+		tech_pvt = switch_core_hash_find(globals.call_hash, call_id);
+		switch_mutex_unlock(globals.call_hash_mutex);
 	}
 
-  desc:
-	x = 0;
-	stream->write_function(stream, "FLAGS: ");
-	if (switch_test_flag((&globals), GFLAG_EAR)) {
-		stream->write_function(stream, "ear");
-		x++;
-	}
-	if (switch_test_flag((&globals), GFLAG_MOUTH)) {
-		stream->write_function(stream, "%smouth", x ? "|" : "");
-		x++;
-	}
-	if (!x) {
-		stream->write_function(stream, "none");
+	if (!tech_pvt) {
+		stream->write_function(stream, "NO SUCH CALL\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
-	goto done;
+	if (!strcasecmp(flag_str, "-ear")) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_EAR);
+	} else if (!strcasecmp(flag_str, "+ear")) {
+		switch_set_flag_locked(tech_pvt, TFLAG_EAR);
+	} else if (!strcasecmp(flag_str, "-mouth")) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_MOUTH);
+	} else if (!strcasecmp(flag_str, "+mouth")) {
+		switch_set_flag_locked(tech_pvt, TFLAG_MOUTH);
+	} else {
+		goto usage;
+	}
 
-  bad:
-	stream->write_function(stream, "Usage: flags [on|off] <flags>\n");
-  done:
+	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
+
+usage:
+	stream->write_function(stream, "Usage: flags <call_id> <[+|-][mouth|ear]>\n");
+	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t list_calls(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1498,7 +1434,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pulse list\n"
 		"pulse switch <call_id>|none\n"
 		"pulse dtmf <call_id> <digit string>\n"
-		"pulse flags <call_id> [on|off] [ear] [mouth]\n"
+		"pulse flags <call_id> <[+|-][ear|mouth]>\n"
 		"pulse play [ringtest|<filename>] [seconds] [no_close]\n"
 		"pulse ringfile [filename]\n"
 		"pulse looptest\n"
