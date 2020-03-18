@@ -246,7 +246,6 @@ SWITCH_HASH_DELETE_FUNC(limit_hash_remote_cleanup_callback)
 	switch_time_t now = (switch_time_t)(intptr_t)pData;
 
 	if (item->last_update != now) {
-		free(item);
 		return SWITCH_TRUE;
 	}
 
@@ -763,8 +762,6 @@ limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t
 void limit_remote_destroy(limit_remote_t **r)
 {
 	if (r && *r) {
-		switch_hash_index_t *hi;
-
 		(*r)->state = REMOTE_OFF;
 
 		if ((*r)->thread) {
@@ -775,20 +772,12 @@ void limit_remote_destroy(limit_remote_t **r)
 		switch_thread_rwlock_wrlock((*r)->rwlock);
 
 		/* Free hashtable data */
-		for (hi = switch_core_hash_first((*r)->index); hi; hi = switch_core_hash_next(&hi)) {
-			void *val;
-			const void *key;
-			switch_ssize_t keylen;
-			switch_core_hash_this(hi, &key, &keylen, &val);
-
-			free(val);
-		}
+		switch_core_hash_destroy(&(*r)->index);
 
 		switch_thread_rwlock_unlock((*r)->rwlock);
 		switch_thread_rwlock_destroy((*r)->rwlock);
 
 		switch_core_destroy_memory_pool(&((*r)->pool));
-		switch_core_hash_destroy(&(*r)->index);
 		*r = NULL;
 	}
 }
@@ -880,8 +869,8 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								limit_hash_item_t *item;
 								switch_thread_rwlock_wrlock(remote->rwlock);
 								if (!(item = switch_core_hash_find(remote->index, argv[0]))) {
-									item = malloc(sizeof(*item));
-									switch_core_hash_insert(remote->index, argv[0], item);
+									switch_zmalloc(item, sizeof(*item));
+									switch_core_hash_insert_auto_free(remote->index, argv[0], item);
 								}
 								item->total_usage = atoi(argv[1]);
 								item->rate_usage = atoi(argv[2]);

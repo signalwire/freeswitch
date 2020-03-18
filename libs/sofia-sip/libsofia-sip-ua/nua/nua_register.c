@@ -771,7 +771,6 @@ int nua_register_client_request(nua_client_request_t *cr,
 	sip_header_remove(msg, sip, (sip_header_t *)sip->sip_contact);
       while (m->m_next)
 	sip_header_remove(msg, sip, (sip_header_t *)m->m_next);
-      contacts = m;
       break;
     }
 
@@ -2069,9 +2068,10 @@ sip_contact_t *nua_handle_contact_by_via(nua_handle_t *nh,
 
     /* Make transport parameter lowercase */
     if (strlen(transport) < (sizeof _transport)) {
-      char *s = strcpy(_transport, transport);
+      char *s;
       short c;
 
+      strcpy(_transport, transport);
       for (s = _transport; (c = *s) && c != ';'; s++)
 	if (isupper(c))
 	  *s = tolower(c);

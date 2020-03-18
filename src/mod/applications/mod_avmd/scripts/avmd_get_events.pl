@@ -2,7 +2,7 @@
 
 
 #brief  Subscribe to avmd events and print them to the console.
-#author Piotr Gregor <piotrgregor@rsyncme.org>
+#author Piotr Gregor <piotr@dataandsignal.com>
 #date   13 Sept 2016 09:44 PM
 
 

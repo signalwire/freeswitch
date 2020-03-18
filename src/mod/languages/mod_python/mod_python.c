@@ -90,6 +90,7 @@ static void print_python_error(const char * script)
 
 	if (buffer == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer");
+		return;
 	}
 
 	/* just for security that we will always have a string terminater */

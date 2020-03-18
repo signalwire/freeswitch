@@ -26,7 +26,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg_size);
+LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size);
 
 #ifdef __cplusplus
 }  // extern "C"

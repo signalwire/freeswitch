@@ -440,7 +440,6 @@ void MergeUVPlane(const uint8_t* src_u,
   int y;
   void (*MergeUVRow)(const uint8_t* src_u, const uint8_t* src_v,
                      uint8_t* dst_uv, int width) = MergeUVRow_C;
-  // Coalesce rows.
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -502,6 +501,87 @@ void MergeUVPlane(const uint8_t* src_u,
     src_v += src_stride_v;
     dst_uv += dst_stride_uv;
   }
+}
+
+// Swap U and V channels in interleaved UV plane.
+LIBYUV_API
+void SwapUVPlane(const uint8_t* src_uv,
+                 int src_stride_uv,
+                 uint8_t* dst_vu,
+                 int dst_stride_vu,
+                 int width,
+                 int height) {
+  int y;
+  void (*SwapUVRow)(const uint8_t* src_uv, uint8_t* dst_vu, int width) =
+      SwapUVRow_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_uv = src_uv + (height - 1) * src_stride_uv;
+    src_stride_uv = -src_stride_uv;
+  }
+  // Coalesce rows.
+  if (src_stride_uv == width * 2 && dst_stride_vu == width * 2) {
+    width *= height;
+    height = 1;
+    src_stride_uv = dst_stride_vu = 0;
+  }
+
+#if defined(HAS_SWAPUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    SwapUVRow = SwapUVRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      SwapUVRow = SwapUVRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_SWAPUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SwapUVRow = SwapUVRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      SwapUVRow = SwapUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SWAPUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SwapUVRow = SwapUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      SwapUVRow = SwapUVRow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    SwapUVRow(src_uv, dst_vu, width);
+    src_uv += src_stride_uv;
+    dst_vu += dst_stride_vu;
+  }
+}
+
+// Convert NV21 to NV12.
+LIBYUV_API
+int NV21ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_vu,
+               int src_stride_vu,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_vu || !dst_uv || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+  SwapUVPlane(src_vu, src_stride_vu, dst_uv, dst_stride_uv, halfwidth,
+              halfheight);
+  return 0;
 }
 
 // Support function for NV12 etc RGB channels.

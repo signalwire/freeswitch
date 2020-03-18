@@ -459,7 +459,7 @@ APR_DECLARE(apr_hash_t *) apr_hash_merge(apr_pool_t *p,
                     break;
                 }
             }
-            if (!ent) {
+            if (new_vals && !ent) {
                 new_vals[j].klen = iter->klen;
                 new_vals[j].key = iter->key;
                 new_vals[j].val = iter->val;

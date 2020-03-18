@@ -82,6 +82,11 @@ static const switch_payload_t INVALID_PT = 255;
 
 #define rtp_session_name(_rtp_session) _rtp_session->session ? switch_core_session_get_name(_rtp_session->session) : "-"
 
+#define STUN_USERNAME_MAX_SIZE 513 /* From RFC5389:  "It MUST contain a UTF-8 [RFC3629] encoded sequence of less than 513 bytes" */
+#define SDP_UFRAG_MAX_SIZE 256 	/* From draft-ietf-mmusic-ice-sip-sdp-24: "the ice-ufrag attribute MUST NOT be longer than 32
+								 * characters when sending, but an implementation MUST accept up to 256
+								 * characters when receiving." */
+
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
@@ -907,8 +912,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
 	void *end_buf;
-	char username[34] = { 0 };
-	unsigned char buf[512] = { 0 };
+	char username[STUN_USERNAME_MAX_SIZE] = { 0 };
+	unsigned char buf[1500] = { 0 };
 	switch_size_t cpylen = len;
 	int xlen = 0;
 	int ok = 1;
@@ -4838,9 +4843,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 														const char *password, const char *rpassword, ice_proto_t proto,
 														switch_core_media_ice_type_t type, ice_t *ice_params)
 {
-	char ice_user[80];
-	char user_ice[80];
-	char luser_ice[80];
+	char ice_user[STUN_USERNAME_MAX_SIZE];
+	char user_ice[STUN_USERNAME_MAX_SIZE];
+	char luser_ice[SDP_UFRAG_MAX_SIZE];
 	switch_rtp_ice_t *ice;
 	char *host = NULL;
 	switch_port_t port = 0;
@@ -6216,8 +6221,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 
 				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
-					stat = 0;
-					
 					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
 						stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
 					} else {
@@ -6463,7 +6466,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					}
 					if (!xcheck_jitter) {
 						check_jitter(rtp_session);
-						xcheck_jitter = *bytes;
 					}
 				}
 				break;
@@ -6503,7 +6505,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				if (!xcheck_jitter) {
 					check_jitter(rtp_session);
-					xcheck_jitter = *bytes;
 				}
 			}
 		}
@@ -7958,9 +7959,12 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
 	if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_inqueue, &pop) == SWITCH_STATUS_SUCCESS) {
 
-		_dtmf = (switch_dtmf_t *) pop;
+		_dtmf = (switch_dtmf_t *)pop;
 		*dtmf = *_dtmf;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTP RECV DTMF %c:%d\n", dtmf->digit, dtmf->duration);
+		/* Only log DTMF buffer if sensitive_dtmf channel variable not set to true */
+		if (!(switch_channel_var_true(switch_core_session_get_channel(rtp_session->session), SWITCH_SENSITIVE_DTMF_VARIABLE))) {			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,"RTP RECV DTMF %c:%d\n", dtmf->digit, dtmf->duration);
+		}
 		bytes++;
 		free(pop);
 	}

@@ -147,12 +147,22 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		return xml;
 	}
 
+	/* no profile, no work required */
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "weird case where client is available but there's no profile for %s. try reloading mod_kazoo.\n"
+						  ,section);
+		switch_thread_rwlock_unlock(agent->lock);
+		return xml;
+	}
+
 	if(event == NULL) {
 		if (switch_event_create(&event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error creating event for fetch handler\n");
 			return xml;
 		}
 	}
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	/* prepare the reply collector */
 	switch_uuid_get(&uuid);
@@ -165,7 +175,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		for(i = 0; fetch_uuid_sources[i] != NULL; i++) {
 			if((fetch_call_id = switch_event_get_header(event, fetch_uuid_sources[i])) != NULL) {
 				switch_core_session_t *session = NULL;
-				if((session = switch_core_session_force_locate(fetch_call_id)) != NULL) {
+				if((session = switch_core_session_locate(fetch_call_id)) != NULL) {
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 					uint32_t verbose = switch_channel_test_flag(channel, CF_VERBOSE_EVENTS);
 					switch_channel_set_flag(channel, CF_VERBOSE_EVENTS);

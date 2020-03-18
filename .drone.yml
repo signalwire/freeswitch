@@ -2,6 +2,9 @@
 kind: pipeline
 name: unit-tests
 
+node:
+  freeswitch: public
+
 steps:
     - name: run-tests
       image: signalwire/freeswitch-public-base
@@ -47,8 +50,77 @@ trigger:
   event:
   - pull_request
   - push
+
+---
+kind: pipeline
+name: scan-build
+
+node:
+  freeswitch: public
+
+steps:
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - ./bootstrap.sh -j
+      - cp build/modules.conf.most modules.conf
+      #Enable/Uncomment mods
+      - sed -i "/mod_mariadb/s/^#//g" modules.conf
+      - sed -i "/mod_v8/s/^#//g" modules.conf
+      #Disable/Comment out mods
+      - sed -i '/mod_ilbc/s/^/#/g' modules.conf
+      - sed -i '/mod_isac/s/^/#/g' modules.conf
+      - sed -i '/mod_mp4/s/^/#/g' modules.conf
+      - sed -i '/mod_mongo/s/^/#/g' modules.conf
+      - sed -i '/mod_pocketsphinx/s/^/#/g' modules.conf
+      - sed -i '/mod_sangoma_codec/s/^/#/g' modules.conf
+      - sed -i '/mod_siren/s/^/#/g' modules.conf
+      #Comment out mods for a while
+      - sed -i '/mod_avmd/s/^/#/g' modules.conf
+      - sed -i '/mod_basic/s/^/#/g' modules.conf
+      - sed -i '/mod_cdr_mongodb/s/^/#/g' modules.conf
+      - sed -i '/mod_cv/s/^/#/g' modules.conf
+      - sed -i '/mod_erlang_event/s/^/#/g' modules.conf
+      - sed -i '/mod_perl/s/^/#/g' modules.conf
+      - sed -i '/mod_portaudio/s/^/#/g' modules.conf
+      - sed -i '/mod_redis/s/^/#/g' modules.conf
+      - sed -i '/mod_rtmp/s/^/#/g' modules.conf
+      - sed -i '/mod_skinny/s/^/#/g' modules.conf
+      - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
+      - sed -i '/mod_verto/s/^/#/g' modules.conf
+      - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
+      - ./configure
+      - mkdir -p scan-build
+      - echo "#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./scan-build-status.txt\n" > scan.sh
+      - chmod +x scan.sh
+      - ./scan.sh
+      - exitstatus=`cat ./scan-build-status.txt`
+      - echo "*** Exit status is $exitstatus"
+
+    - name: notify
+      image: signalwire/scan-build-notify
+      pull: true
+      environment:
+        GITHUB_CI_APP_PEM:
+          from_secret: github_ci_app_pem
+        SSH_KEY:
+          from_secret: ssh_key
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+      commands:
+      - /root/notify.sh
+
+      
+trigger:
+  branch:
+  - master
+  event:
+  - pull_request
+  - push
+
 ---
 kind: signature
-hmac: d43f842f682df8328dc4cfbf16051bf8a8e481a051b63349b444447962709435
+hmac: affb0747b0f16d9673cbbb327451c99fefc9dee2fd30b34b220bf147ad96a7be
 
 ...

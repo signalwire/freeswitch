@@ -405,6 +405,7 @@ struct mod_sofia_globals {
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
+	int abort_on_empty_external_ip;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

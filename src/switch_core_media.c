@@ -4263,7 +4263,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 5 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
 					continue;
 				}
@@ -5977,7 +5977,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			t_engine->cur_payload_map = red_pmap;
+			if (red_pmap) {
+				t_engine->cur_payload_map = red_pmap;
+			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
@@ -9111,7 +9113,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY TEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9123,12 +9124,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(t_engine->rtp_session)) {
 					switch_rtp_set_default_payload(t_engine->rtp_session, t_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
@@ -9426,7 +9421,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
-				timer_name = NULL;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "PROXY VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
@@ -9438,12 +9432,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (switch_rtp_ready(v_engine->rtp_session)) {
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->pt);
-				}
-			} else {
-				timer_name = smh->mparams->timer_name;
-
-				if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
-					timer_name = (char *) var;
 				}
 			}
 
@@ -10997,7 +10985,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (v_engine->codec_negotiated) {
-					const char *of;
 					payload_map_t *pmap;
 
 					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
@@ -11018,12 +11005,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					} else {
 
 						pass_fmtp = NULL;
-
-						if (switch_channel_get_partner_uuid(session->channel)) {
-							if ((of = switch_channel_get_variable_partner(session->channel, "rtp_video_fmtp"))) {
-								pass_fmtp = of;
-							}
-						}
 
 						if (ov_fmtp) {
 							pass_fmtp = ov_fmtp;
@@ -13358,15 +13339,15 @@ static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation
 	map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 
 	if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-		ptime = codec_ms = 30;
+		codec_ms = 30;
 	}
 
 	if (zstr(map->rm_fmtp)) {
 		if (!strcasecmp(map->rm_encoding, "ilbc")) {
-			ptime = codec_ms = 30;
+			codec_ms = 30;
 			map_bit_rate = 13330;
 		} else if (!strcasecmp(map->rm_encoding, "isac")) {
-			ptime = codec_ms = 30;
+			codec_ms = 30;
 			map_bit_rate = 32000;
 		}
 	} else {
@@ -13993,7 +13974,6 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		v_engine->cur_payload_map->rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_video_codec_fmtp");
 		v_engine->codec_negotiated = 1;
 
-		ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE);
 		port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE);
 		r_ip = switch_channel_get_variable(session->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE);
 		r_port = switch_channel_get_variable(session->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE);
@@ -15901,7 +15881,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				goto error;
 			}
 			if (ptime_mismatch && status != SWITCH_STATUS_GENERR) {
-				status = perform_write(session, frame, flags, stream_id);
+				perform_write(session, frame, flags, stream_id);
 				status = SWITCH_STATUS_SUCCESS;
 				goto error;
 			}

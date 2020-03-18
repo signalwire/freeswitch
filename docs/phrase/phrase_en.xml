@@ -248,7 +248,6 @@
       <prompt phrase="for advanced options" filename="vm-advanced_alt.wav"/>
       <prompt phrase="to exit" filename="vm-to_exit.wav"/>
       <prompt phrase="to exit" filename="vm-to_exit_alt.wav"/>
-      <prompt phrase="to record a greeting" filename="vm-record_greeting.wav"/>
       <prompt phrase="to record a greeting" filename="vm-to_record_greeting.wav"/>
       <prompt phrase="to choose greeting" filename="vm-choose_greeting.wav"/>
       <prompt phrase="to record your name" filename="vm-record_name2.wav"/>
@@ -393,10 +392,10 @@
       <prompt phrase="To speak with an operator" filename="ivr-to_speak_with_an_operator.wav"/>
       <prompt phrase="Welcome to FreeSWITCH, the future of telephony" filename="ivr-welcome_to_freeswitch.wav"/>
       <prompt phrase="You may exit at any time by simply hanging up" filename="ivr-you_may_exit_by_hanging_up.wav"/>
-      <prompt phrase="or" filename ="ivr-or.wav"/>
-      <prompt phrase="not" filename ="ivr-not.wav"/>
-      <prompt phrase="call" filename ="ivr-call.wav"/>
-      <prompt phrase="You may" filename ="ivr-you_may.wav"/>
+      <prompt phrase="or" filename="ivr-or.wav"/>
+      <prompt phrase="not" filename="ivr-not.wav"/>
+      <prompt phrase="call" filename="ivr-call.wav"/>
+      <prompt phrase="You may" filename="ivr-you_may.wav"/>
       <prompt phrase="hello" filename="ivr-hello.wav"/>
       <prompt phrase="Using your telephone keypad..." filename="ivr-use_telephone_keypad.wav"/>
       <prompt phrase="Please spell the name of the person you are trying to reach." filename="ivr-spell_name.wav"/>
@@ -463,7 +462,6 @@
       <prompt phrase="Number." filename="ivr-number.wav"/>
       <prompt phrase="...followed by the pound or hash key." filename="ivr-followed_by_pound.wav"/>
       <prompt phrase="The account balance is..." filename="ivr-account_balance_is.wav"/>
-      <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now. For a directory, press..." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="...file..." filename="ivr-file.wav"/>
       <prompt phrase="...files..." filename="ivr-files.wav"/>
       <prompt phrase="For a wakeup call..." filename="ivr-for_a_wakeup_call.wav"/>
@@ -680,7 +678,6 @@
       <prompt phrase="If the smoke got you, press..." filename="ivr-smoke_got_you.wav"/>
       <prompt phrase="If you got bronchitis, press..." filename="ivr-got_bronchitis.wav"/>
       <prompt phrase="If ain't nobody got time for that, press..." filename="ivr-nobody_got_time_for_that.wav"/>
-      <prompt phrase="This is a call from..." filename="ivr-call_from.wav"/>
       <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
       <prompt phrase="You have an appointment scheduled for..." filename="ivr-appointment_schedule_for.wav"/>
       <prompt phrase="Your verification PIN is..." filename="ivr-Your_verification_PIN_is.wav"/>
@@ -690,9 +687,6 @@
       <prompt phrase="To hotseat this phone to your extension, press 1. To remove hotseat on this phone, press 2." filename="ivr-hotseat_options.wav"/>
       <!-- The following phrases still need to be recorded -->
       <prompt phrase="You have reached the maximum number of channels." filename="ivr-maximum_number_of_channels.wav"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
       <prompt phrase="To do an echo test" filename="ivr-to_do_a_echo_test.wav"/>
     </ivr>
     <misc>

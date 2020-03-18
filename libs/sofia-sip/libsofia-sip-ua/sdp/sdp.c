@@ -1189,8 +1189,8 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
 
   for (ab = a->sdp_bandwidths, bb = b->sdp_bandwidths;
        ab || bb;
-       ab = ab->b_next, bb = bb->b_next)
-    if ((rv = sdp_bandwidth_cmp(a->sdp_bandwidths, b->sdp_bandwidths)))
+       ab = (ab ? ab->b_next : NULL), bb = (bb ? bb->b_next : NULL))
+    if ((rv = sdp_bandwidth_cmp(ab, bb)))
       return rv;
 
   if ((rv = sdp_time_cmp(a->sdp_time, b->sdp_time)))
@@ -1199,14 +1199,14 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
     return rv;
 
   for (aa = a->sdp_attributes, ba = b->sdp_attributes;
-       aa || bb;
-       aa = aa->a_next, ba = ba->a_next)
+       aa || ba;
+       aa = (aa ? aa->a_next : NULL), ba = (ba ? ba->a_next : NULL))
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
 
   for (am = a->sdp_media, bm = b->sdp_media;
        am || bm;
-       am = am->m_next, bm = bm->m_next)
+       am = (am ? am->m_next : NULL), bm = (bm ? bm->m_next : NULL))
     if ((rv = sdp_media_cmp(am, bm)))
       return rv;
 
@@ -1244,6 +1244,8 @@ int sdp_connection_cmp(sdp_connection_t const *a, sdp_connection_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1; 
   if (a->c_nettype != b->c_nettype)
     return a->c_nettype < b->c_nettype ? -1 : 1;
   if (a->c_addrtype != b->c_addrtype)
@@ -1265,6 +1267,9 @@ int sdp_bandwidth_cmp(sdp_bandwidth_t const *a, sdp_bandwidth_t const *b)
     return 0;
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
+
+  if (!a || !b)
+    return -1;
 
   if (a->b_modifier != b->b_modifier)
     return a->b_modifier < b->b_modifier ? -1 : 1;
@@ -1308,6 +1313,9 @@ int sdp_repeat_cmp(sdp_repeat_t const *a, sdp_repeat_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1;
+
   if (a->r_interval != b->r_interval)
     return a->r_interval < b->r_interval ? -1 : 1;
   if (a->r_duration != b->r_duration)
@@ -1334,6 +1342,8 @@ int sdp_zone_cmp(sdp_zone_t const *a, sdp_zone_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
+  if (!a || !b)
+    return -1;
   n = a->z_number_of_adjustments < b->z_number_of_adjustments
     ? a->z_number_of_adjustments : b->z_number_of_adjustments;
   for (i = 0; i < n; i++) {
@@ -1359,6 +1369,9 @@ int sdp_key_cmp(sdp_key_t const *a, sdp_key_t const *b)
     return 0;
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
+
+  if (!a || !b)
+    return -1;
 
   if (a->k_method != b->k_method)
     return a->k_method < b->k_method ? -1 : 1;
@@ -1392,6 +1405,9 @@ int sdp_rtpmap_cmp(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
     return 0;
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
+
+  if (!a || !b)
+    return -1;
 
   if (a->rm_pt != b->rm_pt)
     return a->rm_pt < b->rm_pt ? -1 : 1;
@@ -1452,6 +1468,9 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if ((rv = (a != NULL) - (b != NULL)))
     return rv;
 
+  if (!a || !b)
+    return -1;
+
   if (a->m_type != b->m_type)
     return a->m_type < b->m_type ? -1 : 1;
   if (a->m_type == sdp_media_x)
@@ -1478,7 +1497,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
 
   for (arm = a->m_rtpmaps, brm = b->m_rtpmaps;
        arm || brm;
-       arm = arm->rm_next, brm = brm->rm_next)
+       arm = (arm ? arm->rm_next : NULL), brm = (brm ? brm->rm_next : NULL))
     if ((rv = sdp_rtpmap_cmp(arm, brm)))
       return rv;
 
@@ -1490,13 +1509,13 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
 
   for (ac = a->m_connections, bc = b->m_connections;
        ac || bc;
-       ac = ac->c_next, bc = bc->c_next)
+       ac = (ac ? ac->c_next : NULL), bc = (bc ? bc->c_next : NULL))
   if ((rv = sdp_connection_cmp(ac, bc)))
     return rv;
 
   for (ab = a->m_bandwidths, bb = b->m_bandwidths;
        ab || bb;
-       ab = ab->b_next, bb = bb->b_next)
+       ab = (ab ? ab->b_next : NULL), bb = (bb ? bb->b_next : NULL))
     if ((rv = sdp_bandwidth_cmp(ab, bb)))
       return rv;
 
@@ -1505,7 +1524,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
 
   for (aa = a->m_attributes, ba = b->m_attributes;
        aa || ba;
-       aa = aa->a_next, ba = ba->a_next)
+       aa = (aa ? aa->a_next : NULL), ba = (ba ? ba->a_next : NULL))
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
 

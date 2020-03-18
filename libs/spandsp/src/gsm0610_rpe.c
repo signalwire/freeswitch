@@ -242,7 +242,6 @@ static void rpe_grid_selection(int16_t x[40], int16_t xM[13], int16_t *Mc_out)
 
     /* The signal x[0..39] is used to select the RPE grid which is
        represented by Mc. */
-    EM = 0;
     Mc = 0;
 
 #undef STEP
@@ -560,7 +559,7 @@ void gsm0610_rpe_encoding(gsm0610_state_t *s,
                           int16_t *Mc,
                           int16_t xMc[13])
 {
-    int16_t x[40];
+    int16_t x[40] = {0};
     int16_t xM[13];
     int16_t xMp[13];
     int16_t mant;

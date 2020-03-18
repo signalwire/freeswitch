@@ -463,7 +463,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
+	char *tmp;
+	const char *tag;
 	switch_assert(pool != NULL);
+	
+	/* In tag we store who calls the pool creation.
+	   Now we append it with who calls the pool destroy.
+	*/
+	if (*pool) {
+		tag = apr_pool_tag(*pool, NULL);
+		tmp = switch_core_sprintf(*pool, "%s,%s:%d", (tag ? tag : ""), file, line);
+		apr_pool_tag(*pool, tmp);
+	}
 
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));

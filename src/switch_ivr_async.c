@@ -737,7 +737,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			 */
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf) {
-					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
@@ -2001,10 +2000,9 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	}
 
 	if (nframe) {
-		switch_frame_t frame = {0};
+		switch_frame_t frame = *nframe;
 		uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = "";
 		
-		frame = *nframe;
 		frame.data = buf;
 		frame.codec = nframe->codec;
 		
@@ -2184,8 +2182,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			const char *group_name = switch_channel_get_variable(tchannel, "eavesdrop_group");
 			/* If we don't have a group, then return */
 			if (!group_name) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 			/* Separate the group */
 			data = strdup(group_name);
@@ -2200,8 +2197,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_safe_free(data);
 			/* If we didn't find any match, then end */
 			if (!ok) {
-				status = SWITCH_STATUS_BREAK;
-				goto end;
+				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
 		}
 
@@ -2226,7 +2222,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
-			switch_core_session_rwunlock(tsession);
 			goto end;
 		}
 
@@ -2586,8 +2581,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 		switch_core_session_receive_message(session, &msg);
 
-
-
+		status = SWITCH_STATUS_SUCCESS;
 	  end:
 
 		if (codec_initialized)
@@ -2612,7 +2606,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		}
 
 		switch_core_session_rwunlock(tsession);
-		status = SWITCH_STATUS_SUCCESS;
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	}
@@ -4149,7 +4142,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	bflags |= SMBF_NO_PAUSE;
 
 	if (cont->bug_running) {
-		status = SWITCH_STATUS_SUCCESS;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
 	} else {
 		cont->bug_running = 1;
@@ -4626,7 +4618,9 @@ done:
 	if (state.done) {
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	*result = state.result;
+	if (result) {
+		*result = state.result;
+	}
 
 	arg_recursion_check_stop(args);
 
@@ -5313,7 +5307,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	switch_channel_t *channel;
-	switch_core_session_t *session, *master;
+	switch_core_session_t *session;
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
 	const char *other_uuid = NULL;
@@ -5325,7 +5319,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	switch_assert(path);
 
-	if (!(master = session = switch_core_session_locate(uuid))) {
+	if (!(session = switch_core_session_locate(uuid))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -5381,7 +5375,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		}
 
 		switch_core_session_rwunlock(other_session);
-		master = other_session;
 		other_session = NULL;
 	}
 
@@ -5391,7 +5384,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((flags & SMF_ECHO_ALEG)) {
 		if ((flags & SMF_EXEC_INLINE)) {
-			nomedia = 0;
 			switch_core_session_execute_application(session, app, path);
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
@@ -5414,7 +5406,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 					switch_channel_set_flag(channel, CF_BROADCAST_DROP_MEDIA);
 			}
 		}
-		master = session;
 	}
 
 	if (cause) {

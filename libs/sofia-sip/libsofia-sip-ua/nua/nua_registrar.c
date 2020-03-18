@@ -86,6 +86,9 @@ static void nua_registrar_usage_remove(nua_handle_t *nh,
 
   ru = nua_dialog_usage_private(du);
 
+  if (!ru)
+    return;
+
   if (ru->pending)
     tport_release(ru->tport, ru->pending, NULL, NULL, nh, 0), ru->pending = 0;
 

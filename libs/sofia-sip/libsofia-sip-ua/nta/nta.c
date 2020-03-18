@@ -2406,6 +2406,11 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
     }
   }
 
+  if (!via) {
+      SU_DEBUG_9(("nta: agent_init_via failed\n" VA_NONE));
+      goto error;
+  }
+
   /* Duplicate the list bind to the transports */
   new_via = sip_via_dup(self->sa_home, via);
   /* Duplicate the complete list shown to the application */
@@ -3346,7 +3351,7 @@ void agent_recv_response(nta_agent_t *agent,
     return;
   }
 
-  if (sip->sip_cseq->cs_method == sip_method_ack) {
+  if (sip->sip_cseq && sip->sip_cseq->cs_method == sip_method_ack) {
     /* Drop response messages to ACK */
     agent->sa_stats->as_bad_response++;
     agent->sa_stats->as_bad_message++;
@@ -6932,7 +6937,7 @@ void incoming_retransmit_reply(nta_incoming_t *irq, tport_t *tport)
       }
     }
 
-    tport = tport_tsend(tport, msg, irq->irq_tpn,
+    tport_tsend(tport, msg, irq->irq_tpn,
 			IF_SIGCOMP_TPTAG_COMPARTMENT(irq->irq_cc)
 			TPTAG_MTU(INT_MAX), TAG_END());
     irq->irq_agent->sa_stats->as_sent_msg++;
@@ -6967,7 +6972,7 @@ enum {
 static void
 _nta_incoming_timer(nta_agent_t *sa)
 {
-  uint32_t now = su_time_ms(su_now());
+  uint32_t now;
   nta_incoming_t *irq, *irq_next;
   size_t retransmitted = 0, timeout = 0, terminated = 0, destroyed = 0;
   size_t unconfirmed =
@@ -9160,7 +9165,7 @@ outgoing_remove_fork(nta_outgoing_t *orq)
   nta_outgoing_t **slot;
 
   for (slot = &orq->orq_forking->orq_forks;
-       *slot;
+       slot && *slot;
        slot = &(*slot)->orq_forks) {
     if (orq == *slot) {
       *slot = orq->orq_forks;
@@ -9958,10 +9963,16 @@ static int outgoing_query_a(nta_outgoing_t *orq, struct sipdns_query *);
 static void outgoing_answer_a(sres_context_t *orq, sres_query_t *q,
 			      sres_record_t *answers[]);
 
+#ifdef __clang_analyzer__
+#define FUNC_ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#else
+#define FUNC_ATTR_NONNULL(...)
+#endif
+
 static void outgoing_query_results(nta_outgoing_t *orq,
 				   struct sipdns_query *sq,
 				   char *results[],
-				   size_t rlen);
+				   size_t rlen) FUNC_ATTR_NONNULL(3);
 
 
 #define SIPDNS_503_ERROR 503, "DNS Error"
@@ -10546,11 +10557,12 @@ struct sipdns_tport const *
 outgoing_naptr_tport(nta_outgoing_t *orq, sres_record_t *answers[])
 {
   int i, j, order, pref;
-  int orders[SIPDNS_TRANSPORTS], prefs[SIPDNS_TRANSPORTS];
+  int orders[SIPDNS_TRANSPORTS] = {0}, prefs[SIPDNS_TRANSPORTS] = {0};
   struct sipdns_tport const *tport;
 
   struct sipdns_resolver *sr = orq->orq_resolver;
 
+  prefs[0] = 0;
   for (j = 0; sr->sr_tports[j]; j++) {
     tport = sr->sr_tports[j];
 
@@ -10682,22 +10694,24 @@ outgoing_answer_srv(sres_context_t *orq, sres_query_t *q,
     if (N > 1 && weight > 0) {
       unsigned rand = su_randint(0,  weight - 1);
 
-      while (rand >= (*tail)->sq_weight) {
+      while (*tail && rand >= (*tail)->sq_weight) {
 	rand -= (*tail)->sq_weight;
 	tail = &(*tail)->sq_next;
       }
     }
 
     /* Remove selected */
-    sq = *tail; *tail = sq->sq_next; assert(sq->sq_priority == priority);
+    if (*tail) {
+      sq = *tail; *tail = sq->sq_next; assert(sq->sq_priority == priority);
 
-    /* Append at *at */
-    sq->sq_next = *at; *at = sq; at = &sq->sq_next; if (!*at) sr->sr_tail = at;
+      /* Append at *at */
+      sq->sq_next = *at; *at = sq; at = &sq->sq_next; if (!*at) sr->sr_tail = at;
 
-    SU_DEBUG_5(("nta: %s IN SRV %u %u  %s %s (%s)\n",
-		sq0->sq_domain,
-		(unsigned)sq->sq_priority, (unsigned)sq->sq_weight,
-		sq->sq_port, sq->sq_domain, sq->sq_proto));
+      SU_DEBUG_5(("nta: %s IN SRV %u %u  %s %s (%s)\n",
+		  sq0->sq_domain,
+		  (unsigned)sq->sq_priority, (unsigned)sq->sq_weight,
+		  sq->sq_port, sq->sq_domain, sq->sq_proto));
+    }
   }
 
   /* This is not needed anymore (?) */
@@ -10787,7 +10801,8 @@ void outgoing_answer_aaaa(sres_context_t *orq, sres_query_t *q,
 
   sres_free_answers(orq->orq_agent->sa_resolver, answers);
 
-  outgoing_query_results(orq, sq, results, found);
+  if (results)
+    outgoing_query_results(orq, sq, results, found);
 }
 #endif /* SU_HAVE_IN6 */
 
@@ -10869,7 +10884,10 @@ void outgoing_answer_a(sres_context_t *orq, sres_query_t *q,
 
   sres_free_answers(orq->orq_agent->sa_resolver, answers);
 
-  outgoing_query_results(orq, sq, results, found);
+  if (results)
+    outgoing_query_results(orq, sq, results, found);
+  else if (!q)
+    outgoing_resolving_error(orq, SIPDNS_503_ERROR);
 }
 
 /** Store A/AAAA query results */

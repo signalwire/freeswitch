@@ -213,22 +213,16 @@ sax_core (iksparser *prs, char *buf, int len)
 			goto cont;
 		} else {
 			if (c & 0x80) {
-				unsigned char mask;
 				if ((c & 0x60) == 0x40) {
 					prs->uni_max = 2;
-					mask = 0x1F;
 				} else if ((c & 0x70) == 0x60) {
 					prs->uni_max = 3;
-					mask = 0x0F;
 				} else if ((c & 0x78) == 0x70) {
 					prs->uni_max = 4;
-					mask = 0x07;
 				} else if ((c & 0x7C) == 0x78) {
 					prs->uni_max = 5;
-					mask = 0x03;
 				} else if ((c & 0x7E) == 0x7C) {
 					prs->uni_max = 6;
-					mask = 0x01;
 				} else {
 					return IKS_BADXML;
 				}

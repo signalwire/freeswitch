@@ -1376,7 +1376,9 @@ static listener_t *new_outbound_listener_locked(char *node)
 		listener->peer_nodename = switch_core_strdup(listener->pool, node);
 	}
 
-	switch_thread_rwlock_rdlock(listener->rwlock);
+	if (listener) {
+		switch_thread_rwlock_rdlock(listener->rwlock);
+	}
 
 	return listener;
 }
@@ -1991,7 +1993,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
 	switch_status_t rv;
 	switch_sockaddr_t *sa;
-	switch_os_socket_t sockdes;
+	switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
 	listener_t *listener;
 	uint32_t x = 0;
 	struct ei_cnode_s ec;
