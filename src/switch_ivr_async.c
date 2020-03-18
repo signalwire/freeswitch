@@ -4758,6 +4758,8 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 					switch_event_fire(&event);
+				}else{
+					switch_event_destroy(&event);
 				}
 			}
 
@@ -4786,7 +4788,10 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 			switch_event_fire(&event);
+		}else{
+			switch_event_destroy(&event);
 		}
+		
 	}
 
 	switch_mutex_unlock(sth->mutex);
