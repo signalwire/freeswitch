@@ -127,8 +127,10 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.node_receiver_queue_timeout = 100000;
 	kazoo_globals.node_sender_queue_timeout = 0;
 	kazoo_globals.port = 0;
-	kazoo_globals.io_fault_tolerance = 10;
+	kazoo_globals.io_fault_tolerance = 3;
+	kazoo_globals.io_fault_tolerance_sleep = 100000; // 100 ms
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
+	kazoo_globals.delay_before_initial_fetch = 10000000;
 
 	kazoo_globals.legacy_events = SWITCH_FALSE;
 	kazoo_globals.expand_headers_on_fetch = SWITCH_TRUE;
@@ -206,9 +208,21 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "event-stream-framing")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-framing: %s\n", val);
 				kazoo_globals.event_stream_framing = atoi(val);
+
 			} else if (!strcmp(var, "io-fault-tolerance")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);
 				kazoo_globals.io_fault_tolerance = atoi(val);
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-micro")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val);
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-ms")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val) * 1000;
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-sec")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val) * 1000000;
+
+
 			} else if (!strcmp(var, "node-worker-threads")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set node-worker-threads: %s\n", val);
 				kazoo_globals.node_worker_threads = atoi(val);
@@ -232,6 +246,15 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "event-stream-queue-timeout")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
 				kazoo_globals.event_stream_queue_timeout = atoi(val);
+			} else if (!strcmp(var, "delay-before-initial-fetch-micro")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val);
+			} else if (!strcmp(var, "delay-before-initial-fetch-ms")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val) * 1000;
+			} else if (!strcmp(var, "delay-before-initial-fetch-sec")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val) * 1000000;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unknown config option %s : %s\n", var, val);
 			}

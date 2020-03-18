@@ -922,8 +922,29 @@ static void fetch_config_handlers(switch_memory_pool_t *pool)
 static void *SWITCH_THREAD_FUNC fetch_config_exec(switch_thread_t *thread, void *obj)
 {
 	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
-	fetch_config_filters(pool);
-	fetch_config_handlers(pool);
+	ei_node_t *node;
+	int fetch_filters = 0, fetch_handlers = 0;
+
+	// give some time for node initialization
+	switch_sleep(kazoo_globals.delay_before_initial_fetch);
+
+	for (node = kazoo_globals.ei_nodes; node != NULL; node = node->next) {
+		if (node->legacy ) {
+			fetch_filters++;
+		} else {
+			fetch_handlers++;
+		}
+	}
+
+	if (fetch_filters) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "fetching filters for kazoo\n");
+		fetch_config_filters(pool);
+	}
+
+	if (fetch_handlers) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "fetching kazoo handlers\n");
+		fetch_config_handlers(pool);
+	}
 
 	kazoo_globals.config_fetched = 1;
 
@@ -937,7 +958,7 @@ void fetch_config()
 	switch_threadattr_t *thd_attr = NULL;
 	switch_uuid_t uuid;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "fetching kazoo config\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "scheduling fetch for kazoo config\n");
 
 	switch_core_new_memory_pool(&pool);
 

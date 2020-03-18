@@ -807,7 +807,6 @@ static void set_perm(const char *str, switch_event_t **event)
 	if (!zstr(str)) {
 		edup = strdup(str);
 		switch_assert(edup);
-		cur = edup;
 
 		if (strchr(edup, ' ')) {
 			delim = ' ';
@@ -2995,6 +2994,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 	if (tech_pvt && b_tech_pvt) {
 		switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
+		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
 		switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
 
 		br_a = switch_channel_get_partner_uuid(tech_pvt->channel);
@@ -3206,6 +3206,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_ivr_session_transfer(other_session, destination, NULL, NULL);
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL TRANSFERRED"));
+				switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
 				switch_core_session_rwunlock(other_session);
 			} else {
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("call is not bridged"));

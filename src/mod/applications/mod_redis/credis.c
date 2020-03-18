@@ -367,7 +367,7 @@ static int cr_readln(REDIS rhnd, int start, char **line, int *idx)
 
 static int cr_receivemultibulk(REDIS rhnd, char *line)
 {
-  int bnum, blen, i, rc=0, idx;
+  int bnum, blen, i, rc=0, idx=0;
 
   bnum = atoi(line);
 

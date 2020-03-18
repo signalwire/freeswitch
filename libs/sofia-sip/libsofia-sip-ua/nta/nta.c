@@ -10886,6 +10886,8 @@ void outgoing_answer_a(sres_context_t *orq, sres_query_t *q,
 
   if (results)
     outgoing_query_results(orq, sq, results, found);
+  else if (!q)
+    outgoing_resolving_error(orq, SIPDNS_503_ERROR);
 }
 
 /** Store A/AAAA query results */
