@@ -76,7 +76,8 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch
  * Allocates PABLIO_Stream structure.
  */
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
-			const char * channelName,
+			const char *appName,
+			const char *channelName,
 			const pa_sample_spec * inputParameters,
 			const pa_sample_spec * outputParameters);
 

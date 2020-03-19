@@ -67,7 +67,9 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch
  * Opens a PulseAudio stream with default characteristics.
  * Allocates PABLIO_Stream structure.
  */
-pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
+pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
+						const char *appName,
+						const char *channelName,
 						const pa_sample_spec * inputParameters,
 						const pa_sample_spec * outputParameters)
 {
@@ -97,7 +99,7 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 		buffer_attr.maxlength = buffer_attr.fragsize;
 		channels = inputParameters->channels;
 		aStream->has_in = 1;
-		aStream->istream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, &buffer_attr, &err);
+		aStream->istream = pa_simple_new(NULL, appName, PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->istream) {
 			goto error;
 		}
@@ -108,7 +110,7 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 		buffer_attr.tlength = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, outputParameters);
 		buffer_attr.maxlength = buffer_attr.tlength;
 		aStream->has_out = 1;
-		aStream->ostream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, &buffer_attr, &err);
+		aStream->ostream = pa_simple_new(NULL, appName, PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->ostream) {
 			goto error;
 		}

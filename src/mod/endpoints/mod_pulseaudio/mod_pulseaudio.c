@@ -54,6 +54,7 @@
 #define MOD_PA_VAR_SAMPLE_RATE "pa_sample_rate"
 #define MOD_PA_VAR_CODEC_MS "pa_codec_ms"
 #define MOD_PA_VAR_RING_FILE "pa_ring_file"
+#define MOD_PA_VAR_APP_NAME "pa_app_name"
 
 #define MIN_STREAM_SAMPLE_RATE 8000
 #define MAX_IO_CHANNELS 2
@@ -86,6 +87,7 @@ typedef enum {
 /* Endpoint that can be called via pulseaudio/endpoint/<endpoint-name> */
 typedef struct _audio_endpoint_t {
 	/* Friendly name for this endpoint */
+	char app_name[255];
 	char name[255];
 	/* Sampling rate */
 	int sample_rate;
@@ -131,6 +133,7 @@ static struct {
 	char *context;
 	char *ring_file;
 	char *timer_name;
+	char *app_name;
 	audio_endpoint_t default_audio;
 	switch_hash_t *call_hash;
 	switch_mutex_t *call_hash_mutex;
@@ -151,6 +154,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_app_name, globals.app_name);
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -467,6 +471,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 									  endpoint->read_frame.data,
 									  STREAM_SAMPLES_PER_PACKET(endpoint)*sizeof(SAMPLE),
 									  &(endpoint->read_timer));
+		else
+			FlushAudioStream(endpoint->pa_stream);
 
 		if (!datalen) {
 			switch_core_timer_next(&endpoint->read_timer);
@@ -755,6 +761,8 @@ static switch_status_t load_config(void)
 				set_global_cid_name(val);
 			} else if (!strcmp(var, "cid-num")) {
 				set_global_cid_num(val);
+			} else if (!strcmp(var, "application-name")) {
+				set_global_app_name(val);
 			}
 		}
 	}
@@ -901,7 +909,7 @@ static PABLIO_Stream *create_audio_stream(switch_core_session_t *session, audio_
 	output_parameters.format = SAMPLE_TYPE;
 	output_parameters.rate = endpoint->sample_rate;
 
-	err = OpenAudioStream(&stream, endpoint->name, &input_parameters, &output_parameters);
+	err = OpenAudioStream(&stream, endpoint->app_name, endpoint->name, &input_parameters, &output_parameters);
 	if (err) {
 		switch_safe_free(stream);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open PulseAudio server: %s\n", pa_strerror(err));
@@ -929,7 +937,7 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 
 	if (session) {
 		endpoint = switch_core_session_alloc(session, sizeof(*endpoint));
-		channel= switch_core_session_get_channel(session);
+		channel = switch_core_session_get_channel(session);
 	} else {
 		endpoint = switch_core_alloc(module_pool, sizeof(*endpoint));
 	}
@@ -940,6 +948,7 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 	}
 
 	switch_snprintf(endpoint->name, sizeof(endpoint->name), "%s", endpoint_name);
+	switch_snprintf(endpoint->app_name, sizeof(endpoint->app_name), "%s", globals.app_name);
 	switch_mutex_init(&endpoint->ep_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	endpoint->read_frame.data = endpoint->read_buf;
 	endpoint->read_frame.buflen = sizeof(endpoint->read_buf);
@@ -952,6 +961,14 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 		channel_var = switch_channel_get_variable(channel, MOD_PA_VAR_CODEC_MS);
 		if (channel_var)
 			codec_ms = atoi(channel_var);
+
+		channel_var = switch_channel_get_variable(channel, MOD_PA_VAR_APP_NAME);
+		if (channel_var)
+			switch_snprintf(endpoint->app_name, sizeof(endpoint->app_name), "%s", channel_var);
+
+		channel_var = switch_channel_get_variable(channel, "uuid");
+		if (channel_var)
+			switch_snprintf(endpoint->name, sizeof(endpoint->name), "%s %s", endpoint_name, channel_var);
 	}
 
 	if (sample_rate >= MIN_STREAM_SAMPLE_RATE) {
