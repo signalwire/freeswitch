@@ -1374,16 +1374,19 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			dialplan = argv[1];
 
 		if (!zstr(argv[2]))
-			cid_num = argv[2];
+			context = argv[2];
 
 		if (!zstr(argv[3]))
-			cid_name = argv[3];
+			cid_num = argv[3];
 
 		if (!zstr(argv[4]))
-			tech_pvt->sample_rate = atoi(argv[4]);
+			cid_name = argv[4];
 
 		if (!zstr(argv[5]))
-			tech_pvt->codec_ms = atoi(argv[5]);
+			tech_pvt->sample_rate = atoi(argv[5]);
+
+		if (!zstr(argv[6]))
+			tech_pvt->codec_ms = atoi(argv[6]);
 
 		switch_find_local_ip(ip, sizeof(ip), NULL, AF_INET);
 
@@ -1458,7 +1461,7 @@ SWITCH_STANDARD_API(pa_cmd)
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"pulse help\n"
-		"pulse call <dest> [<dialplan> <cid_name> <cid_num> <sample_rate> <codec_ms>]\n"
+		"pulse call <dest> [<dialplan> <context> <cid_name> <cid_num> <sample_rate> <codec_ms>]\n"
 		"pulse answer <call_id>\n"
 		"pulse hangup <call_id>\n"
 		"pulse list\n"
