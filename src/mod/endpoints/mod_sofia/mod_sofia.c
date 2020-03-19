@@ -40,6 +40,7 @@
 /*************************************************************************************************************************************************************/
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
+#include "sofia-sip/nta.h"
 #include "prometheus_metrics.h"
 #include "switch_telnyx.h"
 
@@ -6308,6 +6309,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	prometheus_init(module_interface, api_interface, pool);
+	nta_set_outgoing_invite_retransmit_func(prometheus_increment_invite_retransmission);
 
 	if (switch_event_reserve_subclass(MY_EVENT_NOTIFY_REFER) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_NOTIFY_REFER);
