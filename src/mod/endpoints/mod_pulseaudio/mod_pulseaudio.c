@@ -192,15 +192,60 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_routing(switch_core_session_t *session)
+static switch_status_t prepare_ringer(switch_core_session_t *session, switch_file_handle_t *ring_file_handle)
 {
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_t *tech_pvt = switch_core_session_get_private(session);
+	switch_status_t ret;
+	const char *ring_file = globals.ring_file;
+	const char *val;
+
+	switch_set_flag_locked(tech_pvt, TFLAG_RING);
+
+	if (!tech_pvt->ring_endpoint)
+		tech_pvt->ring_endpoint = create_audio_endpoint(session, MOD_PA_STREAM_RING);
+
+	if (!tech_pvt->ring_endpoint) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not open ring endpoint, disabling ringer.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!tech_pvt->readfile_timer.interval) {
+		ret = switch_core_timer_init(&(tech_pvt->readfile_timer),
+							   globals.timer_name, tech_pvt->ring_endpoint->codec_ms,
+							   STREAM_SAMPLES_PER_PACKET(tech_pvt->ring_endpoint), module_pool);
+		if (ret != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to setup readfile timer.\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	if ((val = switch_channel_get_variable(channel, MOD_PA_VAR_RING_FILE)))
+		ring_file = val;
+
+	if (ring_file) {
+		ret = switch_core_file_open(ring_file_handle,
+								    ring_file,
+									tech_pvt->ring_endpoint->read_codec.implementation->number_of_channels,
+									tech_pvt->ring_endpoint->read_codec.implementation->actual_samples_per_second,
+									SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL);
+		if (ret != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot open %s, disabling ringer.\n", ring_file);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_on_routing(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
+	switch_file_handle_t ring_file_handle = { 0 };
 	switch_time_t last;
+	switch_status_t ringer_ready;
 	int waitsec = globals.ring_interval * 1000000;
-	switch_file_handle_t fh = { 0 };
-	const char *val, *ring_file = NULL;
 	int16_t abuf[2048];
 
 	switch_assert(tech_pvt != NULL);
@@ -214,42 +259,13 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_FALSE;
 			}
+			switch_core_session_set_read_codec(session, &tech_pvt->voice_endpoint->read_codec);
+			switch_core_session_set_write_codec(session, &tech_pvt->voice_endpoint->write_codec);
 		}
 
-		if (!tech_pvt->ring_endpoint) {
-			tech_pvt->ring_endpoint = create_audio_endpoint(session, MOD_PA_STREAM_RING);
-		}
-
-		if (!tech_pvt->voice_endpoint &&
-		    switch_test_flag(tech_pvt, TFLAG_OUTBOUND) &&
-		    !switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
-
-			ring_file = globals.ring_file;
-			if ((val = switch_channel_get_variable(channel, MOD_PA_VAR_RING_FILE))) {
-				ring_file = val;
-			}
-
-			if (switch_test_flag(tech_pvt, TFLAG_RING)) {
-				ring_file = NULL;
-			}
-			switch_set_flag_locked(tech_pvt, TFLAG_RING);
-			if (ring_file) {
-				if (switch_core_file_open(&fh,
-										  ring_file,
-										  tech_pvt->ring_endpoint->read_codec.implementation->number_of_channels,
-										  tech_pvt->ring_endpoint->read_codec.implementation->actual_samples_per_second,
-										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS) {
-
-					if (!tech_pvt->ring_endpoint) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Ring Error!\n");
-						switch_core_file_close(&fh);
-					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot open %s, disabling ring file!\n", ring_file);
-					ring_file = NULL;
-				}
-			}
-		}
+		if (!switch_test_flag(tech_pvt, TFLAG_RING) &&
+			!switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER))
+				ringer_ready = prepare_ringer(session, &ring_file_handle);
 
 		if (tech_pvt->voice_endpoint || switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
 			switch_mutex_lock(tech_pvt->flag_mutex);
@@ -271,7 +287,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				char buf[512];
 				switch_event_t *event;
 
-				switch_snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
+				switch_snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s", tech_pvt->call_id);
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_info", buf);
@@ -284,28 +300,33 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				last = switch_micro_time_now();
 			}
 
-			if (ring_file) {
+			if (ringer_ready == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_timer_next(&(tech_pvt->readfile_timer)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
-				switch_core_file_read(&fh, abuf, &olen);
+				switch_core_file_read(&ring_file_handle, abuf, &olen);
 				if (olen == 0) {
 					unsigned int pos = 0;
-					switch_core_file_seek(&fh, &pos, 0, SEEK_SET);
+					switch_core_file_seek(&ring_file_handle, &pos, 0, SEEK_SET);
 				}
 
-				if (tech_pvt->ring_endpoint || (!globals.no_ring_during_call)) {
+				switch_mutex_lock(tech_pvt->ring_endpoint->ep_mutex);
+				if ((!globals.no_ring_during_call)) {
 						WriteAudioStream(tech_pvt->ring_endpoint->pa_stream,
 										 abuf, olen*2, &(tech_pvt->ring_endpoint->write_timer));
 				}
-			} else {
-				switch_yield(10000);
+				switch_mutex_unlock(tech_pvt->ring_endpoint->ep_mutex);
 			}
+			switch_yield(10000);
 		}
 	}
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_RING);
-	switch_core_file_close(&fh);
+	if (ringer_ready == SWITCH_STATUS_SUCCESS) {
+		switch_core_file_close(&ring_file_handle);
+		destroy_audio_endpoint(tech_pvt->ring_endpoint);
+		tech_pvt->ring_endpoint = NULL;
+	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (!switch_test_flag(tech_pvt, TFLAG_ANSWER) &&
@@ -333,7 +354,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 static switch_status_t destroy_audio_endpoint(audio_endpoint_t *endpoint)
 {
 	if (!endpoint) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Audio endpoint was never opened.");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio endpoint already freed.");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -374,10 +395,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	destroy_audio_endpoint(tech_pvt->voice_endpoint);
 	destroy_audio_endpoint(tech_pvt->ring_endpoint);
-
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_set_flag_locked(tech_pvt, TFLAG_HUP);
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -398,7 +417,9 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	default:
 		break;
 	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+					  SWITCH_LOG_DEBUG, "%s CHANNEL KILL SIG %d\n",
+					  switch_channel_get_name(channel), sig);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -440,6 +461,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (tech_pvt->voice_endpoint) {
+		switch_mutex_lock(endpoint->ep_mutex);
 		if (switch_test_flag(tech_pvt, TFLAG_MOUTH))
 			datalen = ReadAudioStream(endpoint->pa_stream,
 									  endpoint->read_frame.data,
@@ -451,6 +473,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			globals.cng_frame.rate = endpoint->read_frame.rate;
 			globals.cng_frame.codec = endpoint->read_frame.codec;
 			*frame = &globals.cng_frame;
+			switch_mutex_unlock(endpoint->ep_mutex);
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -460,6 +483,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		*frame = &endpoint->read_frame;
 	}
 
+	switch_mutex_unlock(endpoint->ep_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -472,8 +496,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	endpoint = tech_pvt->voice_endpoint;
 
 	if (tech_pvt->voice_endpoint && switch_test_flag(tech_pvt, TFLAG_EAR)) {
+		switch_mutex_lock(endpoint->ep_mutex);
 		WriteAudioStream(endpoint->pa_stream, (short *)frame->data,
 						 frame->datalen, &(endpoint->write_timer));
+		switch_mutex_unlock(endpoint->ep_mutex);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -560,6 +586,8 @@ static private_t *create_tech_pvt(switch_core_session_t *session)
 
 static void destroy_tech_pvt(private_t *tech_pvt)
 {
+	if (tech_pvt->readfile_timer.interval)
+		switch_core_timer_destroy(&(tech_pvt->readfile_timer));
 	switch_mutex_lock(globals.call_hash_mutex);
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
 	switch_mutex_unlock(globals.call_hash_mutex);
@@ -978,11 +1006,6 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 			goto error;
 	}
 
-	if (session) {
-		switch_core_session_set_read_codec(session, &endpoint->read_codec);
-		switch_core_session_set_write_codec(session, &endpoint->write_codec);
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 					  "Created endpoint '%s', sample-rate = %d, codec-ms = %d\n",
 					  endpoint->name, endpoint->sample_rate, endpoint->codec_ms);
@@ -1031,16 +1054,18 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 	} else {
 		switch_mutex_lock(globals.call_hash_mutex);
 		tech_pvt = switch_core_hash_find(globals.call_hash, call_id);
+		switch_mutex_unlock(globals.call_hash_mutex);
 		if (tech_pvt) {
 			switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 			char *p = dtmf_str;
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			while (p && *p) {
 				dtmf.digit = *p;
 				switch_channel_queue_dtmf(channel, &dtmf);
 				p++;
 			}
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 		}
-		switch_mutex_unlock(globals.call_hash_mutex);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1065,6 +1090,7 @@ static switch_status_t looptest(char **argv, int argc, switch_stream_handle_t *c
 		return SWITCH_STATUS_MEMERR;
 
 	for (i = 0; i < 400; i++) {
+		switch_mutex_lock(voice_endpoint->ep_mutex);
 		datalen = ReadAudioStream(voice_endpoint->pa_stream, voice_endpoint->read_frame.data,
 								  voice_endpoint->read_codec.implementation->decoded_bytes_per_packet,
 								  &(voice_endpoint->read_timer));
@@ -1072,6 +1098,7 @@ static switch_status_t looptest(char **argv, int argc, switch_stream_handle_t *c
 			WriteAudioStream(voice_endpoint->pa_stream, voice_endpoint->read_frame.data, datalen, &(voice_endpoint->write_timer));
 			success = 1;
 		}
+		switch_mutex_unlock(voice_endpoint->ep_mutex);
 		switch_yield(10000);
 	}
 
@@ -1160,11 +1187,13 @@ static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t
 	private_t *tech_pvt;
 	char *call_id = argv[0];
 
-	switch_mutex_lock(globals.call_hash_mutex);
 	if (zstr(call_id)) {
 		stream->write_function(stream, "No call ID supplied.\n");
+		return SWITCH_STATUS_FALSE;
 	} else {
+		switch_mutex_lock(globals.call_hash_mutex);
 		tech_pvt = switch_core_hash_find(globals.call_hash, call_id);
+		switch_mutex_unlock(globals.call_hash_mutex);
 	}
 
 	if (tech_pvt) {
@@ -1173,7 +1202,6 @@ static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t
 	} else {
 		stream->write_function(stream, "NO SUCH CALL\n");
 	}
-	switch_mutex_unlock(globals.call_hash_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1369,6 +1397,8 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		}
 		tech_pvt->voice_endpoint = create_audio_endpoint(session, MOD_PA_STREAM_VOICE);
 		if (tech_pvt->voice_endpoint) {
+			switch_core_session_set_read_codec(session, &tech_pvt->voice_endpoint->read_codec);
+			switch_core_session_set_write_codec(session, &tech_pvt->voice_endpoint->write_codec);
 			switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);
