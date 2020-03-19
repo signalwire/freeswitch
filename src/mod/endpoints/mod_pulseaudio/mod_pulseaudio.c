@@ -104,8 +104,6 @@ typedef struct _audio_endpoint_t {
 	/* Needed codecs for the core to read/write in the proper format */
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-	/* Let's be safe */
-	switch_mutex_t *ep_mutex;
 } audio_endpoint_t;
 
 typedef struct private_object private_t;
@@ -314,12 +312,10 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 					switch_core_file_seek(&ring_file_handle, &pos, 0, SEEK_SET);
 				}
 
-				switch_mutex_lock(tech_pvt->ring_endpoint->ep_mutex);
 				if ((!globals.no_ring_during_call)) {
 						WriteAudioStream(tech_pvt->ring_endpoint->pa_stream,
 										 abuf, olen*2, &(tech_pvt->ring_endpoint->write_timer));
 				}
-				switch_mutex_unlock(tech_pvt->ring_endpoint->ep_mutex);
 			}
 			switch_yield(10000);
 		}
@@ -376,8 +372,6 @@ static switch_status_t destroy_audio_endpoint(audio_endpoint_t *endpoint)
 
 	if (endpoint->write_codec.codec_interface)
 			switch_core_codec_destroy(&endpoint->write_codec);
-
-	switch_mutex_destroy(endpoint->ep_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -465,7 +459,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (tech_pvt->voice_endpoint) {
-		switch_mutex_lock(endpoint->ep_mutex);
 		if (switch_test_flag(tech_pvt, TFLAG_MOUTH))
 			datalen = ReadAudioStream(endpoint->pa_stream,
 									  endpoint->read_frame.data,
@@ -479,7 +472,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			globals.cng_frame.rate = endpoint->read_frame.rate;
 			globals.cng_frame.codec = endpoint->read_frame.codec;
 			*frame = &globals.cng_frame;
-			switch_mutex_unlock(endpoint->ep_mutex);
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -489,7 +481,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		*frame = &endpoint->read_frame;
 	}
 
-	switch_mutex_unlock(endpoint->ep_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -502,10 +493,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	endpoint = tech_pvt->voice_endpoint;
 
 	if (tech_pvt->voice_endpoint && switch_test_flag(tech_pvt, TFLAG_EAR)) {
-		switch_mutex_lock(endpoint->ep_mutex);
 		WriteAudioStream(endpoint->pa_stream, (short *)frame->data,
 						 frame->datalen, &(endpoint->write_timer));
-		switch_mutex_unlock(endpoint->ep_mutex);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -949,7 +938,6 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 
 	switch_snprintf(endpoint->name, sizeof(endpoint->name), "%s", endpoint_name);
 	switch_snprintf(endpoint->app_name, sizeof(endpoint->app_name), "%s", globals.app_name);
-	switch_mutex_init(&endpoint->ep_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	endpoint->read_frame.data = endpoint->read_buf;
 	endpoint->read_frame.buflen = sizeof(endpoint->read_buf);
 
@@ -1027,9 +1015,7 @@ static audio_endpoint_t *create_audio_endpoint(switch_core_session_t *session, c
 					  "Created endpoint '%s', sample-rate = %d, codec-ms = %d\n",
 					  endpoint->name, endpoint->sample_rate, endpoint->codec_ms);
 
-	switch_mutex_lock(endpoint->ep_mutex);
 	endpoint->pa_stream = create_audio_stream(session, endpoint);
-	switch_mutex_unlock(endpoint->ep_mutex);
 
 	if (endpoint->pa_stream == NULL) {
 		goto error;
@@ -1051,7 +1037,6 @@ error:
 			if (endpoint->write_codec.codec_interface) {
 					switch_core_codec_destroy(&endpoint->write_codec);
 			}
-			switch_mutex_unlock(endpoint->ep_mutex);
 	}
 	return NULL;
 }
@@ -1107,7 +1092,6 @@ static switch_status_t looptest(char **argv, int argc, switch_stream_handle_t *c
 		return SWITCH_STATUS_MEMERR;
 
 	for (i = 0; i < 400; i++) {
-		switch_mutex_lock(voice_endpoint->ep_mutex);
 		datalen = ReadAudioStream(voice_endpoint->pa_stream, voice_endpoint->read_frame.data,
 								  voice_endpoint->read_codec.implementation->decoded_bytes_per_packet,
 								  &(voice_endpoint->read_timer));
@@ -1115,7 +1099,6 @@ static switch_status_t looptest(char **argv, int argc, switch_stream_handle_t *c
 			WriteAudioStream(voice_endpoint->pa_stream, voice_endpoint->read_frame.data, datalen, &(voice_endpoint->write_timer));
 			success = 1;
 		}
-		switch_mutex_unlock(voice_endpoint->ep_mutex);
 		switch_yield(10000);
 	}
 
