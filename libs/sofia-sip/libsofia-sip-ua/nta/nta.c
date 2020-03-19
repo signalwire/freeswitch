@@ -129,6 +129,8 @@ HTABLE_DECLARE_WITH(incoming_htable, iht, nta_incoming_t, size_t, hash_value_t);
 /* Callback whether to drop incoming messages on purpose*/
 nta_peek_datagram_request_func nta_peek_datagram_request = 0;
 
+nta_outgoing_invite_retransmit_func nta_outgoing_invite_retransmit = 0;
+
 typedef struct outgoing_queue_t {
   nta_outgoing_t **q_tail;
   nta_outgoing_t  *q_head;
@@ -8949,6 +8951,10 @@ void outgoing_retransmit(nta_outgoing_t *orq)
 {
   if (orq->orq_prepared && !orq->orq_delayed) {
     orq->orq_retries++;
+    
+    if (orq->orq_method == sip_method_invite && nta_outgoing_invite_retransmit) {
+        nta_outgoing_invite_retransmit();
+    }
 
     if (orq->orq_retries >= 4 && orq->orq_cc) {
       orq->orq_tpn->tpn_comp = NULL;
@@ -11966,6 +11972,11 @@ int nta_tport_keepalive(nta_outgoing_t *orq)
 void nta_set_peek_datagram_request_func(nta_peek_datagram_request_func func)
 {
   nta_peek_datagram_request = func;
+}
+
+void nta_set_outgoing_invite_retransmit_func(nta_outgoing_invite_retransmit_func func)
+{
+    nta_outgoing_invite_retransmit = func;
 }
 
 /** Close all transports. @since Experimental in @VERSION_1_12_2. */

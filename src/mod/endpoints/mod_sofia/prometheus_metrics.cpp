@@ -26,7 +26,8 @@ public:
 		_pool(pool),
 		_module_interface(module_interface),
 		_call_counter(0),
-		_outgoing_invite_couter(0)
+		_outgoing_invite_counter(0),
+		_outgoing_invite_retransmission_counter(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
 	}
@@ -68,7 +69,13 @@ public:
 	void increment_outgoing_invite()
 	{
 		auto_lock lock(_mutex);
-		++_outgoing_invite_couter;
+		++_outgoing_invite_counter;
+	}
+
+	void increment_invite_retransmission()
+	{
+		auto_lock lock(_mutex);
+		++_outgoing_invite_retransmission_counter;
 	}
 	
 	void generate_metrics(switch_stream_handle_t *stream)
@@ -80,7 +87,11 @@ public:
 		
 		stream->write_function(stream, "# HELP sofia_outgoing_invite Sofia outgoing INVITE count\n");
 		stream->write_function(stream, "# TYPE sofia_outgoing_invite counter\n");
-		stream->write_function(stream, "sofia_outgoing_invite %u\n", _outgoing_invite_couter);
+		stream->write_function(stream, "sofia_outgoing_invite %u\n", _outgoing_invite_counter);
+
+		stream->write_function(stream, "# HELP sofia_outgoing_invite_retransmission Sofia outgoing INVITE retransmission count\n");
+		stream->write_function(stream, "# TYPE sofia_outgoing_invite_retransmission counter\n");
+		stream->write_function(stream, "sofia_outgoing_invite_retransmission %u\n", _outgoing_invite_retransmission_counter);
 		
 		bool write_header = true;
 		for (terminated_counter::iterator iter = _terminated_counter.begin(); iter != _terminated_counter.end(); iter++) {
@@ -110,8 +121,9 @@ private:
 	switch_mutex_t* _mutex;
 	terminated_counter _terminated_counter;
 	ssize_t _call_counter;
-	ssize_t _outgoing_invite_couter;
+	ssize_t _outgoing_invite_counter;
 	request_counter _request_counter;
+  ssize_t _outgoing_invite_retransmission_counter;
 };
 
 static prometheus_metrics* instance = 0;
@@ -159,6 +171,10 @@ void prometheus_increment_outgoing_invite()
 	instance->increment_outgoing_invite();
 }
 
+void prometheus_increment_invite_retransmission()
+{
+	instance->increment_invite_retransmission();
+}
 
 SWITCH_END_EXTERN_C
 
