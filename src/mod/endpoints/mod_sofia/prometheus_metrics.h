@@ -12,6 +12,7 @@ void prometheus_increment_call_counter();
 void prometheus_increment_terminated_counter(int status);
 void prometheus_increment_request_method(const char* method);
 void prometheus_increment_outgoing_invite();
+void prometheus_increment_invite_retransmission();
 
 SWITCH_END_EXTERN_C
 #endif /* PROMETHEUS_METRICS_H */
