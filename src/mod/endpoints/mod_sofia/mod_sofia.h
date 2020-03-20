@@ -533,6 +533,7 @@ struct sofia_gateway {
 	int pinging;
 	sofia_gateway_status_t status;
 	switch_time_t uptime;
+	uint32_t contact_in_ping;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;
