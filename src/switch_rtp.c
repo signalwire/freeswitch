@@ -1116,6 +1116,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				//char bufa[50];
 				char bufb[50];
 				char adj_port[6];
+				const char *rtp_auto_adjust_always = NULL;
 				switch_channel_t *channel = NULL;
 
 
@@ -1125,6 +1126,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 				if (rtp_session->session) {
 					channel = switch_core_session_get_channel(rtp_session->session);
+				}
+				
+				if (channel) {
+					rtp_auto_adjust_always = switch_channel_get_variable(channel, "rtp_auto_adjust_always");
 				}
 
 				//ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority;
@@ -1185,7 +1190,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 								return;
 							}
 
-							if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+							if ((!zstr(rtp_auto_adjust_always) && switch_true(rtp_auto_adjust_always)) || (rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 								switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 							} else {
 								switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
@@ -7806,6 +7811,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 #endif
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
+			const char *rtp_auto_adjust_always = NULL;
+			if (channel) {
+				rtp_auto_adjust_always = switch_channel_get_variable(channel, "rtp_auto_adjust_always");
+			}
 			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
 				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
 					const char *err;
@@ -7843,7 +7852,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					}
 					rtp_session->auto_adj_used = 1;
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr), 0, SWITCH_FALSE, &err);
-					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+					if ((!zstr(rtp_auto_adjust_always) && switch_true(rtp_auto_adjust_always)) || (rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
 					} else {
@@ -7854,7 +7863,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					}
 				}
 			} else {
-				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+				if ((!zstr(rtp_auto_adjust_always) && switch_true(rtp_auto_adjust_always)) || (rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
 				} else {
