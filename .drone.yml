@@ -88,7 +88,6 @@ steps:
       - sed -i '/mod_rtmp/s/^/#/g' modules.conf
       - sed -i '/mod_skinny/s/^/#/g' modules.conf
       - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
-      - sed -i '/mod_verto/s/^/#/g' modules.conf
       - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
       - ./configure
       - mkdir -p scan-build
@@ -121,6 +120,6 @@ trigger:
 
 ---
 kind: signature
-hmac: affb0747b0f16d9673cbbb327451c99fefc9dee2fd30b34b220bf147ad96a7be
+hmac: cddd8905a309e3deb7e5859b11aa1ec3593410d9f32ce2f5de3a3557af88f80f
 
 ...
