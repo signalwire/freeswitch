@@ -83,10 +83,7 @@ steps:
       - sed -i '/mod_cv/s/^/#/g' modules.conf
       - sed -i '/mod_erlang_event/s/^/#/g' modules.conf
       - sed -i '/mod_perl/s/^/#/g' modules.conf
-      - sed -i '/mod_portaudio/s/^/#/g' modules.conf
-      - sed -i '/mod_redis/s/^/#/g' modules.conf
       - sed -i '/mod_rtmp/s/^/#/g' modules.conf
-      - sed -i '/mod_skinny/s/^/#/g' modules.conf
       - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
       - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
       - ./configure
@@ -120,6 +117,6 @@ trigger:
 
 ---
 kind: signature
-hmac: cddd8905a309e3deb7e5859b11aa1ec3593410d9f32ce2f5de3a3557af88f80f
+hmac: d354f6d232ae6417b539fb9b40fc15765c3247ab58c87a5135a0ac6c448e1cd0
 
 ...
