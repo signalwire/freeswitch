@@ -3716,7 +3716,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0, extension_in_contact = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0, contact_in_ping = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
 			int ping_max = 1, ping_min = 1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
@@ -3831,6 +3831,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					caller_id_in_from = val;
 				} else if (!strcmp(var, "extension")) {
 					extension = val;
+				} else if (!strcmp(var, "contact-in-ping")) {
+					contact_in_ping = switch_true(val);
 				} else if (!strcmp(var, "ping")) {
 					ping_freq = atoi(val);
 				} else if (!strcmp(var, "ping-max")) {
@@ -4029,6 +4031,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					gateway->options_to_uri = switch_core_sprintf(gateway->pool, "<sip:%s>",
 						!zstr(from_domain) ? from_domain : proxy);
 					gateway->options_from_uri = gateway->options_to_uri;
+					if (contact_in_ping) {
+						gateway->contact_in_ping = contact_in_ping;
+					}	
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
 				}
