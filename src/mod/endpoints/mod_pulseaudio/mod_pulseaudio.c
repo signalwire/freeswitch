@@ -246,7 +246,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_file_handle_t ring_file_handle = { 0 };
 	switch_time_t last;
-	switch_status_t ringer_ready;
+	switch_status_t ringer_ready = SWITCH_STATUS_FALSE;
 	int waitsec = globals.ring_interval * 1000000;
 	int16_t abuf[2048];
 
