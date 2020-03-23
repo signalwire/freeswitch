@@ -389,6 +389,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 						TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 						TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 						SIPTAG_TO_STR(gateway_ptr->options_to_uri), SIPTAG_FROM_STR(gateway_ptr->options_from_uri),
+						TAG_IF(gateway_ptr->contact_in_ping, SIPTAG_CONTACT_STR(gateway_ptr->register_contact)),
 						TAG_IF(gateway_ptr->options_user_agent, SIPTAG_USER_AGENT_STR(gateway_ptr->options_user_agent)),
 						TAG_END());
 
