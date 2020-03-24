@@ -67,7 +67,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(libksDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(libksDir)\src\include;$(libksDir)\src\include\libks;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__PRETTY_FUNCTION__=__FUNCSIG__;WIN32;_WINDOWS;SWCLT_VERSION_MAJOR=1;SWCLT_VERSION_MINOR=0;SWCLT_VERSION_REVISION=0;_WIN32_WINNT=0x0600;_WINSOCK_DEPRECATED_NO_WARNINGS=1;WIN32_LEAN_AND_MEAN=1;KS_PLAT_WIN=1;NOMAXMIN=1;_CRT_SECURE_NO_WARNINGS=1;SWCLT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

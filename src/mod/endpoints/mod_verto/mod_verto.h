@@ -62,6 +62,8 @@
 #include <openssl/ssl.h>
 #include "mcast.h"
 
+#include "ks.h"
+
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
 
@@ -99,10 +101,11 @@ typedef enum {
 struct verto_profile_s;
 
 struct jsock_s {
-	ws_socket_t client_socket;
+	ks_socket_t client_socket;
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
-	wsh_t ws;
+	ks_pool_t *kpool;
+	kws_t *ws;
 	unsigned char buf[65535];
 	char *name;
 	jsock_type_t ptype;
@@ -114,7 +117,7 @@ struct jsock_s {
 
 	uint8_t drop;
 	uint8_t nodelete;
-	ws_socket_t local_sock;
+	ks_socket_t local_sock;
 	SSL *ssl;
 
 	jpflag_t flags;
@@ -230,7 +233,7 @@ struct verto_profile_s {
 
 	jsock_t *jsock_head;
 	int jsock_count;
-	ws_socket_t server_socket[MAX_BIND];
+	ks_socket_t server_socket[MAX_BIND];
 	int running;
 
 	int ssl_ready;
@@ -307,6 +310,7 @@ struct globals_s {
 	int profile_threads;
 	int enable_presence;
 	int enable_fs_events;
+	switch_bool_t kslog_on;
 
 	switch_hash_t *jsock_hash;
 	switch_mutex_t *jsock_mutex;

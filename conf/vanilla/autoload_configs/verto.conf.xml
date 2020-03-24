@@ -2,6 +2,7 @@
 
   <settings>
     <param name="debug" value="0"/>
+    <!-- <param name="kslog" value="true"/> -->
     <!-- seconds to wait before hanging up a disconnected channel -->
     <!-- <param name="detach-timeout-sec" value="120"/> -->
     <!-- enable broadcasting all FreeSWITCH events in Verto -->
