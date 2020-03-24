@@ -123,6 +123,7 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.event_stream_preallocate = KZ_DEFAULT_STREAM_PRE_ALLOCATE;
 	kazoo_globals.send_msg_batch = 10;
 	kazoo_globals.event_stream_framing = 2;
+	kazoo_globals.event_stream_keepalive = 1;
 	kazoo_globals.event_stream_queue_timeout = 200000;
 	kazoo_globals.node_receiver_queue_timeout = 100000;
 	kazoo_globals.node_sender_queue_timeout = 0;
@@ -208,6 +209,10 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "event-stream-framing")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-framing: %s\n", val);
 				kazoo_globals.event_stream_framing = atoi(val);
+
+			} else if (!strcmp(var, "event-stream-keep-alive")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-keep-alive: %s\n", val);
+				kazoo_globals.event_stream_keepalive = switch_true(val);
 
 			} else if (!strcmp(var, "io-fault-tolerance")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);

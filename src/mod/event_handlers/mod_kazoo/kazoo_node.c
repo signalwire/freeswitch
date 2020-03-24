@@ -1631,6 +1631,7 @@ switch_status_t new_kazoo_node(int nodefd, ErlConnect *conn) {
 	ei_node->created_time = switch_micro_time_now();
 	ei_node->legacy = kazoo_globals.legacy_events;
 	ei_node->event_stream_framing = kazoo_globals.event_stream_framing;
+	ei_node->event_stream_keepalive = kazoo_globals.event_stream_keepalive;
 	ei_node->event_stream_queue_timeout = kazoo_globals.event_stream_queue_timeout;
 	ei_node->receiver_queue_timeout = kazoo_globals.node_receiver_queue_timeout;
 	ei_node->sender_queue_timeout = kazoo_globals.node_sender_queue_timeout;
