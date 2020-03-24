@@ -242,6 +242,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
     const char *ip_addr;
 	void *pop;
 	short event_stream_framing;
+	short event_stream_keepalive;
 	short ok = 1;
 
 	switch_atomic_inc(&kazoo_globals.threads);
@@ -249,6 +250,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 	switch_assert(event_stream != NULL);
 
 	event_stream_framing = event_stream->event_stream_framing;
+	event_stream_keepalive = event_stream->event_stream_keepalive;
 
 	/* figure out what socket we just opened */
 	switch_socket_addr_get(&sa, SWITCH_FALSE, event_stream->acceptor);
@@ -277,6 +279,12 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket as non-blocking\n");
                     }
 
+                    if (event_stream_keepalive) {
+                    	if (switch_socket_opt_set(newsocket, SWITCH_SO_KEEPALIVE, TRUE)) {
+                    		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket keep-alive\n");
+                    	}
+                    }
+
                     if (switch_socket_opt_set(newsocket, SWITCH_SO_TCP_NODELAY, 1)) {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't disable Nagle.\n");
                     }
@@ -297,6 +305,8 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 					switch_get_addr(event_stream->local_ip, sizeof (event_stream->local_ip), sa);
 
 					event_stream->connected = SWITCH_TRUE;
+					event_stream->connected_time = switch_micro_time_now();
+
 					switch_mutex_unlock(event_stream->socket_mutex);
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang event stream %p client %s:%u\n", (void *)event_stream, event_stream->remote_ip, event_stream->remote_port);
@@ -404,6 +414,7 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	event_stream->connected = SWITCH_FALSE;
 	event_stream->node = ei_node;
 	event_stream->event_stream_framing = ei_node->event_stream_framing;
+	event_stream->event_stream_keepalive = ei_node->event_stream_keepalive;
 	event_stream->queue_timeout = ei_node->event_stream_queue_timeout;
 	memcpy(&event_stream->pid, from, sizeof(erlang_pid));
 	switch_queue_create(&event_stream->queue, MAX_QUEUE_LEN, pool);
