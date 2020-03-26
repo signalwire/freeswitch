@@ -36,7 +36,7 @@
 
 #define DATE_STAMP_LENGTH 9			// 20190729
 #define TIME_STAMP_LENGTH 17		// 20190729T083832Z
-#define DEFAULT_BASE_DOMAIN "s3-%s.amazonaws.com"
+#define DEFAULT_BASE_DOMAIN "s3.%s.amazonaws.com"
 #define DEFAULT_EXPIRATION_TIME 604800
 
 SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
