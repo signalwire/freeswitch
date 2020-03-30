@@ -249,6 +249,8 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force);
 SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *session, switch_t38_options_t *t38_options);
 SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session, switch_bool_t on);
+SWITCH_DECLARE(cJSON *) switch_core_media_gen_json_constraint(float min, float ideal, float max);
+SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_session_t *session, const char *json);
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
 
 

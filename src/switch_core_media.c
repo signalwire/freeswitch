@@ -12429,6 +12429,149 @@ SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session,
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_DECLARE(cJSON *) switch_core_media_gen_json_constraint(float min, float ideal, float max)
+{
+	cJSON *ret = NULL, *n = NULL;
+
+	if ((!ideal && !max)) {
+		ret = cJSON_CreateNumber(min);
+	} else {
+		ret = cJSON_CreateObject();
+		n = cJSON_CreateNumber(min);
+		cJSON_AddItemToObject(ret, "min", n);
+		
+		if (ideal) {
+			n = cJSON_CreateNumber(ideal);
+			cJSON_AddItemToObject(ret, "ideal", n);
+		}
+
+		if (max) {
+			n = cJSON_CreateNumber(max);
+			cJSON_AddItemToObject(ret, "max", n);
+		}
+	}
+
+	return ret;
+}
+
+static cJSON *parse_val(char *str) {
+	char *argv[3];
+	int argc = 0;
+	float min = 0, ideal = 0, max = 0;
+	
+	argc = switch_separate_string(str, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc > 0) {
+		min = atof(argv[0]);
+	}
+
+	if (argc > 1) {
+		ideal = atof(argv[1]);
+	}
+
+	if (argc > 2) {
+		max = atof(argv[2]);
+	}
+	
+	return switch_core_media_gen_json_constraint(min, ideal, max);
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_session_t *session, const char *json)
+{
+	switch_core_session_message_t msg = { 0 };
+	char *parse = NULL;
+	char *argv[25];
+    int argc = 0, i;
+	switch_status_t r = SWITCH_STATUS_SUCCESS;
+	cJSON *obj = NULL;
+	char *aspect = NULL, *fps = NULL, *width = NULL, *height = NULL, *jtmp = NULL;
+
+	
+	if (switch_channel_test_flag(session->channel, CF_MANUAL_MEDIA_PARAMS)) {
+		return SWITCH_STATUS_INUSE;
+	}
+	
+	if (switch_stristr("=", json)) {
+		char *name, *val;
+		cJSON *video, *p;
+		int vid = 0;
+		
+		parse = strdup(json);
+		argc = switch_separate_string(parse, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		for(i = 0; i < argc; i++) {
+			name = argv[i];
+			if ((val = strchr(name, '='))) {
+				*val++ = '\0';
+			}
+
+			if (name && val) {
+				if (!strcmp(name, "aspect")) {
+					aspect = val;
+					vid++;
+				} else if (!strcmp(name, "fps")) {
+					fps = val;		
+					vid++;
+				} else if (!strcmp(name, "width")) {
+					width = val;
+					vid++;
+				} else if (!strcmp(name, "height")) {
+					height = val;
+					vid++;
+				}
+			}
+		}
+
+		obj = cJSON_CreateObject();
+
+		if (vid) {
+			video = cJSON_CreateObject();
+
+			if (fps) {
+				p = parse_val(fps);
+				cJSON_AddItemToObject(video, "frameRate", p);
+			}
+
+			if (width) {
+				p = parse_val(width);
+				cJSON_AddItemToObject(video, "width", p);
+			}
+
+			if (height) {
+				p = parse_val(height);
+				cJSON_AddItemToObject(video, "height", p);
+			}
+
+			if (aspect) {
+				p = cJSON_CreateNumber(atof(aspect));
+				cJSON_AddItemToObject(video, "aspectRatio", p);
+			}
+			
+			cJSON_AddItemToObject(obj, "video", video);
+		}
+
+		jtmp = cJSON_PrintUnformatted(obj);
+		json = jtmp;
+	}
+
+
+	
+	msg.from = __FILE__;
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_PARAMS;
+	msg.string_arg = json;
+	r = switch_core_session_receive_message(session, &msg);
+
+	switch_safe_free(parse);
+	switch_safe_free(jtmp);
+	if (obj) {
+		cJSON_Delete(obj);
+	}
+	
+	return r;
+}
+
 static int check_engine(switch_rtp_engine_t *engine)
 {
 	dtls_state_t dtls_state = switch_rtp_dtls_state(engine->rtp_session, DTLS_TYPE_RTP);
