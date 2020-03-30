@@ -2636,6 +2636,33 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_MEDIA_PARAMS:
+		{
+			const char *json_text;
+			cJSON *jmsg = NULL, *params = NULL, *vparams = NULL;
+			jsock_t *jsock = NULL;
+			
+			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
+				
+				json_text = msg->string_arg;
+
+				if (json_text) {
+					jmsg = jrpc_new_req("verto.mediaParams", tech_pvt->call_id, &params);
+					if ((vparams = cJSON_Parse((char *)json_text))) {
+						cJSON_AddItemToObject(params, "mediaParams", vparams);
+						jsock_queue_event(jsock, &jmsg, SWITCH_TRUE);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Parsing Media Params\n");
+						r = SWITCH_STATUS_FALSE;
+						cJSON_Delete(jmsg);
+					}
+				}
+
+				switch_thread_rwlock_unlock(jsock->rwlock);
+			}
+
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
 		{
 			jsock_t *jsock = NULL;

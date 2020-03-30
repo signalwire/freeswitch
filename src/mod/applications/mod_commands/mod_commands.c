@@ -4041,6 +4041,46 @@ SWITCH_STANDARD_API(uuid_display_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define MEDIA_PARAMS_SYNTAX "<uuid> <json>"
+SWITCH_STANDARD_API(uuid_media_params_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_core_session_t *tsession = NULL;
+	
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+		stream->write_function(stream, "-USAGE: %s\n", MEDIA_PARAMS_SYNTAX);
+		goto end;
+	} else {
+		if ((tsession = switch_core_session_locate(argv[0]))) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+
+			if (switch_false(argv[1])) {
+				switch_channel_clear_flag(channel, CF_MANUAL_MEDIA_PARAMS);
+			} else if ((status = switch_core_media_media_params(tsession, argv[1])) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_set_flag(channel, CF_MANUAL_MEDIA_PARAMS);
+			}
+			switch_core_session_rwunlock(tsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation failed\n");
+	}
+
+  end:
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define BUGLIST_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_buglist_function)
 {
@@ -7636,6 +7676,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_displace", "Displace audio", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "Update phone display", uuid_display_function, DISPLAY_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_media_params", "Update remote vid params", uuid_media_params_function, MEDIA_PARAMS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_drop_dtmf", "Drop all DTMF or replace it with a mask", uuid_drop_dtmf, UUID_DROP_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "Dump session vars", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_exists", "Check if a uuid exists", uuid_exists_function, EXISTS_SYNTAX);
@@ -7827,6 +7868,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
+	switch_console_set_complete("add uuid_media_params ::console::list_uuid");
 	switch_console_set_complete("add uuid_drop_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
 	switch_console_set_complete("add uuid_answer ::console::list_uuid");
