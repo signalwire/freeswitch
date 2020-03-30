@@ -847,8 +847,6 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	}
 
 	handle->samples = 0;
-	// handle->samplerate = 8000;
-	// handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 0;
@@ -892,6 +890,7 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		}
 
 		handle->samplerate = h.audio_rate;
+		handle->channels = h.channels;
 		video_codec = switch_core_strdup(handle->memory_pool, h.video_codec_name);
 	}
 
@@ -909,6 +908,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Video Codec [%s] ready\n", video_codec);
 		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File opened [%s] %dhz [%d] channels\n", path, handle->samplerate, handle->channels);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -963,7 +964,7 @@ static switch_status_t fsv_file_seek(switch_file_handle_t *handle, unsigned int 
 static switch_status_t fsv_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	switch_status_t status;
-	size_t need = *len;
+	size_t need = *len * 2;
 	uint32_t size;
 	size_t bytes = sizeof(size);
 	fsv_file_context *context = handle->private_info;
