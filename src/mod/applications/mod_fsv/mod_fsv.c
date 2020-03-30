@@ -789,6 +789,8 @@ struct fsv_file_context {
 	switch_queue_t *video_queue;
 	switch_codec_t video_codec;
 	switch_image_t *last_img;
+	switch_bool_t no_video_decode;
+	uint8_t video_packet_buffer[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 typedef struct fsv_file_context fsv_file_context;
@@ -855,6 +857,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	handle->private_info = context;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
 
+	context->no_video_decode = switch_true(switch_event_get_header(handle->params, "no_video_decode"));
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		struct file_header h;
 		size_t len = sizeof(h);
@@ -894,7 +898,7 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		video_codec = switch_core_strdup(handle->memory_pool, h.video_codec_name);
 	}
 
-	if (video_codec) {
+	if (video_codec && !context->no_video_decode) {
 		if (switch_core_codec_init(&context->video_codec,
 								video_codec,
 								NULL,
@@ -909,7 +913,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File opened [%s] %dhz [%d] channels\n", path, handle->samplerate, handle->channels);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File opened [%s] %dhz [%d] channels, no_video_decode=%s\n",
+		path, handle->samplerate, handle->channels, context->no_video_decode ? "true" : "false");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1034,6 +1039,51 @@ static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_
 
 	if ((flags & SVR_CHECK)) {
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
+	}
+
+	if (context->no_video_decode) { // read video without decode
+		uint32_t size;
+		switch_rtp_hdr_t *rtp;
+
+		while (1) {
+			switch_mutex_lock(context->mutex);
+			status = switch_queue_trypop(context->video_queue, &video_packet);
+			switch_mutex_unlock(context->mutex);
+
+			if (status != SWITCH_STATUS_SUCCESS || !video_packet) {
+				switch_safe_free(video_packet);
+				if (flags & SVR_BLOCK) {
+					if (switch_time_now() - start < 33000) {
+						switch_yield(10000);
+						continue;
+					}
+				}
+				return SWITCH_STATUS_BREAK;
+			}
+
+			break;
+		}
+
+		size = *(uint32_t *)video_packet;
+		if (size > sizeof(context->video_packet_buffer)) {
+			free(video_packet);
+			return SWITCH_STATUS_BREAK;
+		}
+
+		memcpy(context->video_packet_buffer, (uint8_t *)video_packet + sizeof(uint32_t), size);
+		free(video_packet);
+		video_packet = NULL;
+
+		rtp = (switch_rtp_hdr_t *)context->video_packet_buffer;
+		frame->packet = context->video_packet_buffer;
+		frame->packetlen = size;
+		frame->data = context->video_packet_buffer + 12;
+		frame->datalen = size - 12;
+		frame->m = rtp->m;
+		frame->timestamp = ntohl(rtp->ts);
+		frame->flags = SFF_RAW_RTP | SFF_RTP_HEADER | SFF_ENCODED;
+
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	while (!new_img) {
