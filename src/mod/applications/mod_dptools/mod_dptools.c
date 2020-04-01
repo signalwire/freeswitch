@@ -6328,6 +6328,52 @@ SWITCH_STANDARD_APP(vad_test_function)
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 }
 
+#define DEBUG_MEDIA_SYNTAX "<read|write|both|vread|vwrite|vboth|all> <on|off>"
+SWITCH_STANDARD_APP(debug_media_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!zstr(data) && (mycmd = strdup(data))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(data) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE: %s\n", DEBUG_MEDIA_SYNTAX);
+		goto done;
+	} else {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA;
+		msg.string_array_arg[0] = argv[0];
+		msg.string_array_arg[1] = argv[1];
+		msg.from = __FILE__;
+
+		if (!strcasecmp(argv[0], "all")) {
+			msg.string_array_arg[0] = "both";
+		}
+
+        again:
+		status = switch_core_session_receive_message(session, &msg);
+
+		if (status == SWITCH_STATUS_SUCCESS && !strcasecmp(argv[0], "all") && !strcmp(msg.string_array_arg[0], "both")) {
+			msg.string_array_arg[0] = "vboth";
+			goto again;
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "media debug on\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "error to turn on media debug status=%d\n", status);
+	}
+
+  done:
+
+	switch_safe_free(mycmd);
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -6669,6 +6715,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "deduplicate_dtmf", "Prevent duplicate inband + 2833 dtmf", "", deduplicate_dtmf_app_function, "[only_rtp]", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "vad_test", "VAD test", "VAD test, mode = -1(default), 0, 1, 2, 3", vad_test_function, "[mode]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "debug_media", "Debug Media", "Debug Media", debug_media_function, DEBUG_MEDIA_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 
