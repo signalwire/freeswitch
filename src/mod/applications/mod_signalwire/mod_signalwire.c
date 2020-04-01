@@ -76,6 +76,7 @@ static struct {
 	char blade_bootstrap[1024];
 	char adoption_service[1024];
 	char stun_server[1024];
+	switch_port_t stun_port;
 	char adoption_token[64];
 	char override_context[64];
 	ks_size_t adoption_backoff;
@@ -319,7 +320,7 @@ static ks_status_t mod_signalwire_adoption_post(void)
 
 		external_ip = globals.adoption_data_local_ip;
 		external_port = local_port;
-		if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, SWITCH_STUN_DEFAULT_PORT, &error, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, globals.stun_port, &error, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SignalWire adoption failed: stun [%s] lookup error: %s\n", globals.stun_server, error);
 			status = KS_STATUS_FAIL;
 			goto done;
@@ -714,7 +715,8 @@ static switch_status_t load_config()
 	switch_set_string(globals.blade_bootstrap, "edge.<space>.signalwire.com/api/relay/wss");
 	switch_set_string(globals.adoption_service, "https://adopt.signalwire.com/adoption");
 	switch_set_string(globals.stun_server, "stun.freeswitch.org");
-
+	globals.stun_port = SWITCH_STUN_DEFAULT_PORT;
+	
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "open of %s failed\n", cf);
 		// don't need the config
@@ -736,7 +738,20 @@ static switch_status_t load_config()
 				} else if (!strcasecmp(var, "adoption-service") && !ks_zstr(val)) {
 					switch_set_string(globals.adoption_service, val);
 				} else if (!strcasecmp(var, "stun-server") && !ks_zstr(val)) {
-					switch_set_string(globals.stun_server, val);
+					char *p, *ss = strdup(val);
+					
+					if ((p = strchr(ss, ':'))) {
+						int port;
+						*p++ = '\0';
+
+						port = atoi(p);
+						if (port > 0 && port < 65536) {
+							globals.stun_port = port;
+						}
+					}
+					
+					switch_set_string(globals.stun_server, ss);
+					switch_safe_free(ss);
 				} else if (!strcasecmp(var, "ssl-verify")) {
 					globals.ssl_verify = switch_true(val) ? 1 : 0;
 				} else if (!strcasecmp(var, "override-context") && !ks_zstr(val)) {
@@ -1181,7 +1196,7 @@ static void mod_signalwire_state_configure(void)
 	external_ip = local_ip;
 	external_port = local_port;
 
-	if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, SWITCH_STUN_DEFAULT_PORT, &error, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, globals.stun_port, &error, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SignalWire configure failed: stun [%s] lookup error: %s\n", globals.stun_server, error);
 		ks_sleep_ms(4000);
 		goto done;
