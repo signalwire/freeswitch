@@ -326,6 +326,9 @@ struct globals_s {
 	uint32_t detach_timeout;
 
 	switch_event_channel_id_t event_channel_id;
+
+	switch_log_level_t debug_level;
+
 };
 
 
