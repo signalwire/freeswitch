@@ -2204,6 +2204,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		font_size = atoi(fontsz);
 	}
 
+	switch_url_decode(txt);
+
 	while (*txt == ' ') txt++;
 	while (end_of(txt) == ' ') end_of(txt) = '\0';
 
