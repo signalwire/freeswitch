@@ -54,6 +54,9 @@ GCC_DIAG_OFF(deprecated-declarations)
 #include <libswresample/swresample.h>
 #endif
 
+#include <switch_packetizer.h>
+#define SLICE_SIZE (SWITCH_DEFAULT_VIDEO_SIZE + 100)
+
 GCC_DIAG_ON(deprecated-declarations)
 #define SCALE_FLAGS SWS_BICUBIC
 #define DFT_RECORD_OFFSET 0
@@ -116,8 +119,6 @@ typedef struct record_helper_s {
 	uint64_t last_ts;
 } record_helper_t;
 
-
-
 /* file interface */
 
 struct av_file_context {
@@ -161,6 +162,11 @@ struct av_file_context {
 
 	switch_time_t last_vid_write;
 	int audio_timer;
+
+	switch_bool_t no_video_decode;
+	switch_queue_t *video_pkt_queue;
+	switch_packetizer_t *packetizer;
+	AVPacket *last_read_pkt;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -770,6 +776,15 @@ static int flush_video_queue(switch_queue_t *q, int min)
 	}
 
 	return switch_queue_size(q);
+}
+
+static void flush_video_pkt_queue(switch_queue_t *q)
+{
+	AVPacket *pkt;
+
+	while (switch_queue_trypop(q, (void **)&pkt) == SWITCH_STATUS_SUCCESS) {
+		av_packet_unref(pkt);
+	}
 }
 
 static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *obj)
@@ -1387,6 +1402,34 @@ GCC_DIAG_ON(deprecated-declarations)
 		if (context->has_video && pkt.stream_index == context->video_st.st->index) {
 			AVFrame *vframe;
 			switch_image_t *img;
+
+			if (context->no_video_decode) {
+				if (eof) {
+					break;
+				} else {
+					switch_status_t status;
+					AVPacket *new_pkt = malloc(sizeof(AVPacket));
+
+					if (0) { // debug
+						uint8_t *p = pkt.data;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %u %x %x %x %x %x %x\n", pkt.size, *p, *(p+1), *(p+2), *(p+3), *(p+4), *(p+5));
+					}
+
+					av_init_packet(new_pkt);
+					av_packet_ref(new_pkt, &pkt);
+					status = switch_queue_push(context->video_pkt_queue, new_pkt);
+					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %4u flag=%x pts=%" SWITCH_INT64_T_FMT " dts=%" SWITCH_INT64_T_FMT "\n", pkt.size, pkt.flags, pkt.pts, pkt.dts);
+
+					context->vid_ready = 1;
+					if (status != SWITCH_STATUS_SUCCESS) {
+						av_packet_unref(new_pkt);
+						free(new_pkt);
+					}
+					av_packet_unref(&pkt);
+					continue;
+				}
+			}
+
 			if (!sync) {
 				switch_buffer_zero(context->audio_buffer);
 				sync = 1;
@@ -1680,6 +1723,11 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 		if (context->has_video) {
 			switch_queue_create(&context->eh.video_queue, context->read_fps, handle->memory_pool);
+			context->no_video_decode = handle->params && switch_true(switch_event_get_header(handle->params, "no_video_decode"));
+			if (context->no_video_decode) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening video in no decode mode\n");
+				switch_queue_create(&context->video_pkt_queue, 120 * 5, handle->memory_pool);
+			}
 			switch_mutex_init(&context->eh.mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 			switch_core_timer_init(&context->video_timer, "soft", (int)(1000.0f / context->read_fps), 1, context->pool);
 		}
@@ -2177,6 +2225,15 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 		context->file_read_thread_running = 0;
 	}
 
+	if (context->video_pkt_queue) {
+		flush_video_pkt_queue(context->video_pkt_queue);
+		switch_queue_term(context->video_pkt_queue);
+	}
+
+	if (context->packetizer) {
+		switch_packetizer_close(&context->packetizer);
+	}
+
 	if (context->file_read_thread) {
 		switch_thread_join(&status, context->file_read_thread);
 		context->file_read_thread = NULL;
@@ -2249,6 +2306,7 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	}
 
 	switch_mutex_lock(context->mutex);
+
 	while (!context->file_read_thread_started) {
 		switch_thread_cond_wait(context->cond, context->mutex);
 	}
@@ -2334,6 +2392,82 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 }
 #else
 
+static switch_status_t no_video_decode_packets(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+	MediaStream *mst = &context->video_st;
+	AVStream *st = mst->st;
+	// AVCodecContext *ctx = st->codec;
+	// int ticks = 0;
+	// int64_t max_delta = 1 * AV_TIME_BASE; // 1 second
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	AVPacket *pkt;
+	int64_t pts;
+
+
+	if (!context->packetizer) {
+		// uint8_t *p = st->codecpar->extradata;
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %u %x %x %x %x %x %x\n", st->codecpar->extradata_size, *p, *(p+1), *(p+2), *(p+3), *(p+4), *(p+5));
+
+		context->packetizer = switch_packetizer_create(SPT_H264_SIZED_BITSTREAM, SLICE_SIZE);
+		if (!context->packetizer) return SWITCH_STATUS_FALSE;
+
+		switch_packetizer_feed_extradata(context->packetizer, st->codecpar->extradata, st->codecpar->extradata_size);
+	}
+
+	if (context->last_read_pkt) {
+		status = switch_packetizer_read(context->packetizer, frame);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			av_packet_unref(context->last_read_pkt);
+			free(context->last_read_pkt);
+			context->last_read_pkt = NULL;
+		}
+		return status;
+	}
+
+	status = switch_queue_trypop(context->video_pkt_queue, (void **)&pkt);
+
+	if (status != SWITCH_STATUS_SUCCESS || !pkt) {
+		switch_cond_next();
+		return SWITCH_STATUS_BREAK;
+	}
+
+	context->last_read_pkt = pkt;
+	status = switch_packetizer_feed(context->packetizer, pkt->data, pkt->size);
+	status = switch_packetizer_read(context->packetizer, frame);
+	pts = av_rescale_q(pkt->pts, st->time_base, AV_TIME_BASE_Q);
+	frame->timestamp = pts * 9 / 100; // scale to sample 900000
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts=%" SWITCH_INT64_T_FMT " status = %d\n", pts, status);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		av_packet_unref(context->last_read_pkt);
+		free(context->last_read_pkt);
+		context->last_read_pkt = NULL;
+	}
+
+
+	if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_MORE_DATA) {
+		if (!context->video_start_time) {
+			context->video_start_time = switch_time_now() - pts;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set start time: %" SWITCH_INT64_T_FMT " now: %" SWITCH_INT64_T_FMT " pts: %" SWITCH_INT64_T_FMT "\n", context->video_start_time, switch_time_now(), pts);
+		} else if (flags & SVR_BLOCK) {
+			int64_t sleep = pts - (switch_time_now() - context->video_start_time);
+			if (sleep > 0) {
+				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "zzZ... %" SWITCH_INT64_T_FMT "\n", sleep);
+				if (sleep > 1000000) {
+					sleep = 1000000;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "but zzZ... %" SWITCH_INT64_T_FMT " at most\n", sleep);
+				}
+				switch_yield(sleep);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "video is late %" SWITCH_INT64_T_FMT "\n", sleep);
+			}
+		}
+	}
+
+	return status;
+}
+
 static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
@@ -2351,6 +2485,13 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
+	}
+
+	if (context->no_video_decode) {
+		switch_set_flag(frame, SFF_ENCODED);
+		status = no_video_decode_packets(handle, frame, flags);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "return len=%4u nalu=%02x m=%d ts=%u\n", frame->datalen, *(uint8_t *)frame->data, frame->m, frame->timestamp);
+		return status;
 	}
 
 	if (handle->mm.fps > 0 && handle->mm.fps < smaller_ts) {
