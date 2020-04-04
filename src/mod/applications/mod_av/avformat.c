@@ -1601,11 +1601,11 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		disable_write_buffer = 1;
 	}
 
-	if ((ext = strrchr((char *)path, '.')) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
-		return SWITCH_STATUS_GENERR;
-	} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
+	if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 		format = "flv";
+		if ((ext = strrchr((char *)path, '.')) == 0) {
+			ext = ".flv";
+		}
 
 		// meh really silly format for the user / pass libav.....
 		if (handle->mm.auth_username && handle->mm.auth_password) { 
@@ -1616,8 +1616,14 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtsp")) {
 		format = "rtsp";
+		if ((ext = strrchr((char *)path, '.')) == 0) {
+			ext = ".rtsp";
+		}
 		switch_snprintf(file, sizeof(file), "rtsp://%s", path);
 		disable_write_buffer = 1;
+	} else if ((ext = strrchr((char *)path, '.')) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
 
