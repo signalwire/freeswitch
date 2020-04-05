@@ -246,6 +246,8 @@ struct verto_profile_s {
 	char *userauth;
 	char *root_passwd;
 
+	int send_passwd;
+	
 	char *context;
 	char *dialplan;
 
@@ -307,6 +309,7 @@ struct globals_s {
 
 	int debug;
 	int ready;
+	int send_passwd;
 	int profile_threads;
 	int enable_presence;
 	int enable_fs_events;
