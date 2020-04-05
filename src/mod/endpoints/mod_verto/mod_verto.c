@@ -984,6 +984,10 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			}
 		}
 
+		if (jsock->profile->send_passwd || verto_globals.send_passwd) {
+			switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "user_supplied_pass", passwd);
+		}
+		
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
 
 		if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, req_params) != SWITCH_STATUS_SUCCESS && !jsock->profile->blind_reg) {
@@ -4953,6 +4957,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->userauth = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "root-password") && !zstr(val)) {
 					profile->root_passwd = switch_core_strdup(profile->pool, val);
+				} else if (!strcasecmp(var, "send-auth-password") && !zstr(val)) {
+					profile->send_passwd = switch_true(val);
 				} else if (!strcasecmp(var, "context") && !zstr(val)) {
 					profile->context = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "dialplan") && !zstr(val)) {
@@ -5148,6 +5154,8 @@ static switch_status_t parse_config(const char *cf)
 				}
 			} else if (!strcasecmp(var, "enable-presence") && val) {
 				verto_globals.enable_presence = switch_true(val);
+			} else if (!strcasecmp(var, "send-auth-password") && !zstr(val)) {
+				verto_globals.send_passwd = switch_true(val);
 			} else if (!strcasecmp(var, "enable-fs-events") && val) {
 				verto_globals.enable_fs_events = switch_true(val);
 			} else if (!strcasecmp(var, "detach-timeout-sec") && val) {
