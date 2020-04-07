@@ -4969,6 +4969,34 @@ SWITCH_STANDARD_API(break_function)
 	return status;
 }
 
+#define PARTNER_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(partner_function)
+{
+	switch_core_session_t *asession = NULL;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR Missing UUID");
+	}
+
+	if ((asession = switch_core_session_locate(cmd))) {
+		switch_core_session_t *bsession = NULL;
+
+		if (switch_core_session_get_partner(asession, &bsession) == SWITCH_STATUS_SUCCESS) {
+			char *uuid = switch_core_session_get_uuid(bsession);
+			stream->write_function(stream, "+OK %s", uuid);
+			switch_core_session_rwunlock(bsession);
+		} else {
+			stream->write_function(stream, "-ERR Channel Not in bridge %s\n", cmd);
+		}
+
+		switch_core_session_rwunlock(asession);
+	} else {
+		stream->write_function(stream, "-ERR No such channel %s\n", cmd);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define PAUSE_SYNTAX "<uuid> <on|off>"
 SWITCH_STANDARD_API(pause_function)
 {
@@ -7577,6 +7605,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_media_3p", "Reinvite FS in or out of media path using 3pcc", uuid_media_3p_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media_reneg", "Media negotiation", uuid_media_neg_function, MEDIA_RENEG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park channel", park_function, PARK_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_partner", "Find bridged uuid", partner_function, PARTNER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_pause", "Pause media on a channel", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send an event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_ring_ready", "Sending ringing to a channel", uuid_ring_ready_function, RING_READY_SYNTAX);
@@ -7725,6 +7754,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_audio ::console::list_uuid stop");
 	switch_console_set_complete("add uuid_break ::console::list_uuid all");
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
+	switch_console_set_complete("add uuid_partner ::console::list_uuid");
 	switch_console_set_complete("add uuid_pause ::console::list_uuid on");
 	switch_console_set_complete("add uuid_pause ::console::list_uuid off");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
