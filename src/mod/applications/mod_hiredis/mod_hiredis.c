@@ -179,6 +179,67 @@ SWITCH_STANDARD_API(raw_api)
 	return status;
 }
 
+SWITCH_STANDARD_JSON_API(js_raw_api)
+{
+	hiredis_profile_t *profile = NULL;
+	char *response = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	cJSON *data = cJSON_GetObjectItem(json, "data");
+	cJSON *complex;
+	const char *profile_str;
+	const char *cmd;
+	const char *arg;
+	char *cmdline = NULL;
+
+	if (!data) return SWITCH_STATUS_FALSE;
+
+	*json_reply = cJSON_CreateObject();
+
+	complex = cJSON_GetObjectItem(data, "complex");
+	profile_str = cJSON_GetObjectCstr(data, "profile");
+	cmd = cJSON_GetObjectCstr(data, "cmd");
+	arg = cJSON_GetObjectCstr(data, "arg");
+
+	if (zstr(profile_str)) profile_str = "default";
+
+	profile = switch_core_hash_find(mod_hiredis_globals.profiles, profile_str);
+
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", profile_str);
+		cJSON_AddStringToObject(*json_reply, "error", "unable to locate profile");
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
+	if (zstr(cmd) || zstr(arg)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "missing cmd or arg\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (cJSON_isTrue(complex)) {
+		cmdline = switch_mprintf("0x%" PRIXPTR " %s %%s", (void *)arg, cmd);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", cmdline);
+	} else {
+		cmdline = switch_mprintf("%s %s", cmd, arg);
+	}
+
+	status = hiredis_profile_execute_sync(profile, NULL, &response, cmdline);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] reason:[%s]\n", profile_str, cmd, response ? response : "");
+		if (response) cJSON_AddStringToObject(*json_reply, "error", response);
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
+	if (response) {
+		if (response) cJSON_AddStringToObject(*json_reply, "response", response);
+	}
+
+done:
+	switch_safe_free(cmdline);
+
+	return status;
+}
+
 /*
 SWITCH_LIMIT_INCR(name) static switch_status_t name (switch_core_session_t *session, const char *realm, const char *resource,
                                                      const int max, const int interval)
@@ -423,6 +484,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hiredis_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+	switch_json_api_interface_t *json_api_interface;
 	switch_limit_interface_t *limit_interface;
 
 	memset(&mod_hiredis_globals, 0, sizeof(mod_hiredis_globals));
@@ -440,6 +502,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hiredis_load)
 					 hiredis_limit_reset, hiredis_limit_status, hiredis_limit_interval_reset);
 	SWITCH_ADD_APP(app_interface, "hiredis_raw", "hiredis_raw", "hiredis_raw", raw_app, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_API(api_interface, "hiredis_raw", "hiredis_raw", raw_api, "");
+	SWITCH_ADD_JSON_API(json_api_interface, "hiredis", "hiredis", js_raw_api, "");
 
 	return SWITCH_STATUS_SUCCESS;
 }
