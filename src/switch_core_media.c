@@ -2304,6 +2304,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_co
 }
 
 
+SWITCH_DECLARE(uint8_t) switch_core_session_get_rtp_pt(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_rtp_engine_t *engine = &session->media_handle->engines[type];
+
+	if (!engine) return 0;
+
+	return 	engine->cur_payload_map->pt;
+}
+
+SWITCH_DECLARE(switch_rtp_t *) switch_core_session_get_rtp_session(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_rtp_engine_t *engine = &session->media_handle->engines[type];
+
+	if (!engine) return NULL;
+
+	return engine->rtp_session;
+}
+
 
 SWITCH_DECLARE(switch_media_handle_t *) switch_core_session_get_media_handle(switch_core_session_t *session)
 {
