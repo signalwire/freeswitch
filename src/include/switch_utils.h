@@ -1280,6 +1280,31 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 	return r ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
+static inline int switch_filecmp(const char *a, const char *b)
+{
+	const char *e;
+
+	if (zstr(a) || zstr(b)) {
+		return -1;
+	}
+
+	while(*a == '{') {
+		if ((e = switch_find_end_paren(a, '{', '}'))) {
+			a = e + 1;
+			while(*a == ' ') a++;
+		}
+	}
+
+	while(*b == '{') {
+		if ((e = switch_find_end_paren(b, '{', '}'))) {
+			b = e + 1;
+			while(*b == ' ') b++;
+		}
+	}
+
+	return strcmp(a, b);
+}
+
 
 static inline const char *switch_parse_audio_col(switch_audio_col_t col)
 {
