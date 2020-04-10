@@ -2623,6 +2623,40 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_PROMPT:
+		{
+			const char *type = NULL, *text = NULL, *regex = NULL;
+			cJSON *jmsg = NULL, *params = NULL;
+			jsock_t *jsock = NULL;
+			
+			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
+				
+				type = msg->string_array_arg[0];
+				text = msg->string_array_arg[1];
+				regex = msg->string_array_arg[2];
+
+				if (type && (!strcasecmp(type, "dtmf") || !strcasecmp(type, "message")) && text) {
+					jmsg = jrpc_new_req("verto.prompt", tech_pvt->call_id, &params);
+
+					cJSON_AddItemToObject(params, "type", cJSON_CreateString(type));
+					cJSON_AddItemToObject(params, "text", cJSON_CreateString(text));
+
+					if (regex) {
+						cJSON_AddItemToObject(params, "regex", cJSON_CreateString(regex));
+					}
+
+					jsock_queue_event(jsock, &jmsg, SWITCH_TRUE);
+						
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Parsing Media Params\n");
+					r = SWITCH_STATUS_FALSE;
+				}
+				
+
+				switch_thread_rwlock_unlock(jsock->rwlock);
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
 		{
 			jsock_t *jsock = NULL;

@@ -1506,6 +1506,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	return status;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_send_prompt(switch_core_session_t *session, const char *type, const char *text, const char *regex)
+{
+	switch_core_session_message_t msg = { 0 };
+	
+	msg.message_id = SWITCH_MESSAGE_INDICATE_PROMPT;
+	msg.string_array_arg[0] = type;
+	msg.string_array_arg[1] = text;
+	msg.string_array_arg[2] = regex;
+	msg.from = __FILE__;
+
+	switch_core_session_receive_message(session, &msg);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, const char *message, switch_bool_t moh)
 {
 	switch_core_session_message_t msg = { 0 };

@@ -1069,7 +1069,8 @@ SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var(switch_dial_handle_l
 SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var_printf(switch_dial_handle_list_t *hl, const char *var, const char *fmt, ...);
 SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_list_t *hl, switch_call_cause_t *cause);
 SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh, switch_call_cause_t *cause);
-
+SWITCH_DECLARE(switch_status_t) switch_ivr_send_prompt(switch_core_session_t *session, const char *type, const char *text, const char *regex);
+								
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_session_t *session,
 															const char *prompt,
 															const char *recognizer_mod_name,
