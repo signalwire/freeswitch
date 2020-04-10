@@ -1239,6 +1239,8 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 					  switch_channel_get_name(tech_pvt->channel),
 					  tech_pvt->mparams->local_sdp_str);
 	set_call_params(params, tech_pvt);
+	switch_core_media_gen_key_frame(tech_pvt->session);
+	switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
  	jsock_queue_event(jsock, &msg, SWITCH_TRUE);
 }
 
@@ -3484,6 +3486,17 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 		}
 	}
 
+	if (tech_pvt) {	
+		if (err) {
+			if (tech_pvt->channel) {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+			}
+		} else {
+			switch_core_media_gen_key_frame(tech_pvt->session);
+			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
+		}
+	}
+	
 	if (session) {
 		switch_core_session_rwunlock(session);
 	}
@@ -3491,11 +3504,6 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	if (!err) {
 		return SWITCH_TRUE;
 	}
-
-	if (tech_pvt && tech_pvt->channel) {
-		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
-	}
-
 
 	cJSON_AddItemToObject(obj, "code", cJSON_CreateNumber(CODE_SESSION_ERROR));
 
