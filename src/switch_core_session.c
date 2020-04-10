@@ -827,6 +827,8 @@ static const char *message_names[] = {
 	"RING_EVENT",
 	"RESAMPLE_EVENT",
 	"HEARTBEAT_EVENT",
+	"SESSION_ID",
+	"PROMPT",
 	"INVALID"
 };
 
