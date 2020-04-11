@@ -85,6 +85,7 @@ struct http_data_obj {
 	int err;
 	long http_response_code;
 	char *http_response;
+	char *cacert;
 	switch_curl_slist_t *headers;
 };
 typedef struct http_data_obj http_data_t;
@@ -102,6 +103,7 @@ struct http_sendfile_data_obj {
 	char *filename_element_name;
 	char *extrapost_elements;
 	switch_CURL *curl_handle;
+	char *cacert;
 	struct curl_httppost *formpost;
 	struct curl_httppost *lastptr;
 	uint8_t flags; /* This is for where to send output of the curl_sendfile commands */
@@ -211,13 +213,20 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	}
 
 	if (!strncasecmp(url, "https", 5)) {
-		if (options->insecure) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		http_data->cacert = switch_core_sprintf(http_data->pool, "%s%scacert.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
+
+		if (switch_file_exists(http_data->cacert, http_data->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, http_data->cacert);
 		} else {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
+			http_data->cacert = NULL;
+			if (options->insecure) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+			} else {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
+			}
 		}
 	}
 
@@ -413,9 +422,16 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 
 	if (!strncasecmp(http_data->url, "https", 5))
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", http_data->url);
-		curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		http_data->cacert = switch_core_sprintf(http_data->pool, "%s%scacert.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
+
+		if (switch_file_exists(http_data->cacert, http_data->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_curl_easy_setopt(http_data->curl_handle, CURLOPT_CAINFO, http_data->cacert);
+		} else {
+			http_data->cacert = NULL;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", http_data->url);
+			curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
 	}
 
 	/* From the docs:
