@@ -114,7 +114,8 @@ struct jsock_s {
 #ifndef WIN32
 	struct passwd pw;
 #endif
-
+	uint32_t attach_timer;
+	
 	uint8_t drop;
 	uint8_t nodelete;
 	ks_socket_t local_sock;
@@ -145,6 +146,7 @@ struct jsock_s {
 
 	switch_mutex_t *write_mutex;
 	switch_mutex_t *filter_mutex;
+	switch_mutex_t *flag_mutex;
 
 	switch_event_t *params;
 	switch_event_t *vars;

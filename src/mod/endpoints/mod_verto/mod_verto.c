@@ -1040,7 +1040,9 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
+					switch_mutex_lock(jsock->flag_mutex);
 					switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
+					switch_mutex_unlock(jsock->flag_mutex);
 				}
 			}
 
@@ -1127,6 +1129,8 @@ static jsock_t *get_jsock(const char *uuid)
 	return jsock;
 }
 
+static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock);
+
 static void attach_jsock(jsock_t *jsock)
 {
 	jsock_t *jp;
@@ -1146,9 +1150,11 @@ static void attach_jsock(jsock_t *jsock)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "New connection for session %s dropping previous connection.\n", jsock->uuid_str);
 			switch_core_hash_delete(verto_globals.jsock_hash, jsock->uuid_str);
 			ws_write_json(jp, &msg, SWITCH_TRUE);
+			detach_calls(jp);
 			cJSON_Delete(msg);
 			jp->nodelete = 1;
 			jp->drop = 1;
+			jsock->attach_timer = 5;
 		}
 	}
 
@@ -1890,6 +1896,13 @@ static void client_run(jsock_t *jsock)
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
 		if (pflags == 0) {/* socket poll timeout */ jsock_check_event_queue(jsock); }
+
+		if ((!switch_test_flag(jsock, JPFLAG_CHECK_ATTACH) || (jsock->attach_timer > 0 && jsock->attach_timer-- == 0)) &&
+			switch_test_flag(jsock, JPFLAG_AUTHED)) {
+			attach_calls(jsock);
+			switch_set_flag(jsock, JPFLAG_CHECK_ATTACH);
+		}
+
 		if (pflags > 0 && (pflags & KS_POLL_HUP)) { log_and_exit(SWITCH_LOG_INFO, "%s POLL HANGUP DETECTED (peer closed its end of socket)\n", jsock->name); }
 		if (pflags > 0 && (pflags & KS_POLL_ERROR)) { die("%s POLL ERROR\n", jsock->name); }
 		if (pflags > 0 && (pflags & KS_POLL_INVALID)) { die("%s POLL INVALID SOCKET (not opened or already closed)\n", jsock->name); }
@@ -1975,11 +1988,6 @@ static void client_run(jsock_t *jsock)
 
 				if (process_input(jsock, data, bytes) != SWITCH_STATUS_SUCCESS) {
 					die("%s Input Error\n", jsock->name);
-				}
-
-				if (!switch_test_flag(jsock, JPFLAG_CHECK_ATTACH) && switch_test_flag(jsock, JPFLAG_AUTHED)) {
-					attach_calls(jsock);
-					switch_set_flag(jsock, JPFLAG_CHECK_ATTACH);
 				}
 			}
 		}
@@ -3929,10 +3937,12 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		}
 	}
 
+	switch_mutex_lock(jsock->flag_mutex);
 	if (!(context = switch_event_get_header(jsock->vars, "user_context"))) {
 		context = switch_either(jsock->context, jsock->profile->context);
 	}
-
+	switch_mutex_unlock(jsock->flag_mutex);
+					
 	if ((caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 													jsock->uid,
 													switch_either(jsock->dialplan, jsock->profile->dialplan),
@@ -4247,9 +4257,22 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 
 static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
+	const char *var;
 	*response = cJSON_CreateObject();
 	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("logged in"));
 
+	switch_mutex_lock(jsock->flag_mutex);
+	if ((var = switch_event_get_header(jsock->vars, "moderator")) && switch_true(var)) {
+		cJSON_AddItemToObject(*response, "moderator", cJSON_CreateTrue());
+		switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, "conf_mvar_moderator", "true");
+	}
+
+	if ((var = switch_event_get_header(jsock->vars, "superuser")) && switch_true(var)) {
+		switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, "conf_mvar_superuser", "true");
+		cJSON_AddItemToObject(*response, "superuser", cJSON_CreateTrue());
+	}
+	switch_mutex_unlock(jsock->flag_mutex);
+						
 	login_fire_custom_event(jsock, params, 1, "Logged in");
 
 	return SWITCH_TRUE;
@@ -4474,6 +4497,7 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
 	switch_mutex_init(&jsock->write_mutex, SWITCH_MUTEX_NESTED, jsock->pool);
 	switch_mutex_init(&jsock->filter_mutex, SWITCH_MUTEX_NESTED, jsock->pool);
+	switch_mutex_init(&jsock->flag_mutex, SWITCH_MUTEX_NESTED, jsock->pool);
 	switch_queue_create(&jsock->event_queue, MAX_QUEUE_LEN, jsock->pool);
 	switch_thread_rwlock_create(&jsock->rwlock, jsock->pool);
 	switch_thread_pool_launch_thread(&td);
