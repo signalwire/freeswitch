@@ -342,12 +342,27 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
 	}
 }
 
+static int interrupt_cb(void *cp)
+{
+	av_file_context_t *context = (av_file_context_t *) cp;
+
+	if (context->closed) {
+		return 1;
+	}
+
+	return 0;
+}
+ 
+
 static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat,
-								   const char *format, const char *filename)
+											  const char *format, const char *filename, av_file_context_t *context)
 {
 	AVFormatContext *s = avformat_alloc_context();
 	int ret = 0;
 
+	s->interrupt_callback.callback = interrupt_cb;
+	s->interrupt_callback.opaque = context;
+	
 	*avctx = NULL;
 	if (!s)
 		goto nomem;
@@ -1122,16 +1137,31 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	int error;
 	int i, idx = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	
 	// av_dict_set(&opts, "c:v", "libvpx", 0);
 
 	/** Open the input file to read from it. */
-	if ((error = avformat_open_input(&context->fc, filename, NULL, NULL)) < 0) {
-		char ebuf[255] = "";
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open input file '%s' (error '%s')\n", filename, get_error_text(error, ebuf, sizeof(ebuf)));
+
+    if (!context->fc) {
+		context->fc = avformat_alloc_context();
+	}
+
+	if (!context->fc) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open input file '%s' (error '%s')\n", filename, "NO MEM");
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 
+	context->fc->interrupt_callback.callback = interrupt_cb;
+	context->fc->interrupt_callback.opaque = context;
+
+	if ((error = avformat_open_input(&context->fc, filename, NULL, NULL)) < 0) {
+		char ebuf[255] = "";
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open input file '%s' (error '%s')\n", filename, get_error_text(error, ebuf, sizeof(ebuf)));
+		avformat_free_context(context->fc);
+		context->fc = NULL;
+		switch_goto_status(SWITCH_STATUS_FALSE, err);
+	}
+	
 	handle->seekable = context->fc->iformat->read_seek2 ? 1 : (context->fc->iformat->read_seek ? 1 : 0);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "file %s is %sseekable\n", filename, handle->seekable ? "" : "not ");
 
@@ -1324,7 +1354,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 	int error;
 	int sync  = 0;
 	int eof = 0;
-
+	
 	switch_mutex_lock(context->mutex);
 	context->file_read_thread_started = 1;
 	context->file_read_thread_running = 1;
@@ -1542,9 +1572,6 @@ GCC_DIAG_ON(deprecated-declarations)
 						context->vid_ready = 1;
 						switch_queue_push(context->eh.video_queue, img);
 						context->last_vid_push = switch_time_now();
-						
-						
-
 					}
 				}
 			}
@@ -1743,7 +1770,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	mod_avformat_alloc_output_context2(&context->fc, NULL, format, (char *)file);
+	mod_avformat_alloc_output_context2(&context->fc, NULL, format, (char *)file, context);
 
 	if (!context->fc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not deduce output format from file extension\n");
@@ -2581,6 +2608,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 				context->vid_ready = 1;
 				return SWITCH_STATUS_SUCCESS;
 			}
+
 			return SWITCH_STATUS_BREAK;
 		}
 	}
