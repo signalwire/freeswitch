@@ -186,7 +186,7 @@ void conference_member_update_status_field(conference_member_t *member)
 				cJSON_AddItemToObject(video, "visible", cJSON_CreateFalse());
 			}
 
-			cJSON_AddItemToObject(video, "videoOnly", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)));
+			cJSON_AddItemToObject(video, "noRecover", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_NO_RECOVER)));
 			if (switch_true(switch_channel_get_variable_dup(member->channel, "video_screen_share", SWITCH_FALSE, -1))) {
 				cJSON_AddItemToObject(video, "screenShare", cJSON_CreateTrue());
 			}

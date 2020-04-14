@@ -3459,8 +3459,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 		}
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_ONLY) && type == SWITCH_MEDIA_TYPE_AUDIO) {
-		return SWITCH_STATUS_SUCCESS;
+	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
+		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
+
+		if (audio_flow != SWITCH_MEDIA_FLOW_SENDRECV && audio_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	if (type != SWITCH_MEDIA_TYPE_TEXT) {

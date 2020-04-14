@@ -2474,21 +2474,21 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_set_video_read_callback(session, conference_video_thread_callback, (void *)&member);
 	switch_core_session_set_text_read_callback(session, conference_text_thread_callback, (void *)&member);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY) || !switch_channel_test_flag(channel, CF_AUDIO)) {
-		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
-			switch_frame_t *read_frame;
-			if (switch_channel_test_flag(channel, CF_AUDIO)) {
-				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			}
-			switch_yield(100000);
-		}
-	} else {
-
-		/* Run the conference loop */
-		do {
+	/* Run the conference loop */
+	do {
+		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
+		
+		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_RECVONLY)) {
 			conference_loop_output(&member);
-		} while (member.loop_loop);
-	}
+		} else {
+			if (conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
+				switch_yield(100000);
+				member.loop_loop = 1;
+			} else {
+				break;
+			}
+		}
+	} while (member.loop_loop);
 
 	switch_core_session_video_reset(session);
 	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
