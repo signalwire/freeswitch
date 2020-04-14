@@ -1347,7 +1347,7 @@ static void detach_calls(jsock_t *jsock)
 				continue;
 			}
 
-			if (switch_channel_test_flag(tech_pvt->channel, CF_VIDEO_ONLY)) {
+			if (switch_channel_test_flag(tech_pvt->channel, CF_NO_RECOVER)) {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				continue;
 			}
@@ -2762,7 +2762,7 @@ static int verto_recover_callback(switch_core_session_t *session)
 	const char *profile_name = NULL, *jsock_uuid_str = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
+	if (switch_channel_test_flag(channel, CF_NO_RECOVER)) {
 		return 0;
 	}
 
@@ -3817,7 +3817,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
+	cJSON *obj = cJSON_CreateObject(), *vobj = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3899,9 +3899,16 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		err = 1; goto cleanup;
 	}
 
-	if ((screenShare = cJSON_GetObjectItem(dialog, "screenShare")) && screenShare->type == cJSON_True) {
+	if ((vobj = cJSON_GetObjectItem(dialog, "screenShare")) && vobj->type == cJSON_True) {
 		switch_channel_set_variable(channel, "video_screen_share", "true");
-		switch_channel_set_flag(channel, CF_VIDEO_ONLY);
+	}
+
+	if ((vobj = cJSON_GetObjectItem(dialog, "secondSource")) && vobj->type == cJSON_True) {
+		switch_channel_set_variable(channel, "video_second_source", "true");
+	}
+
+	if ((vobj = cJSON_GetObjectItem(dialog, "recoverCall")) && vobj->type == cJSON_False) {
+		switch_channel_set_flag(channel, CF_NO_RECOVER);
 	}
 
 	if ((dedEnc = cJSON_GetObjectItem(dialog, "dedEnc")) && dedEnc->type == cJSON_True) {
