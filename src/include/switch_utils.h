@@ -1144,10 +1144,7 @@ static inline uint32_t switch_parse_cpu_string(const char *cpu)
 	if (!cpu) return 1;
 
 	if (!strcasecmp(cpu, "auto")) {
-		if (cpu_count > 4) return 4;
-		if (cpu_count <= 2) return 1;
-
-		return (uint32_t)(cpu_count / 2);
+		return (uint32_t)((cpu_count * 3) / 2);
 	}
 
 	if (!strncasecmp(cpu, "cpu/", 4)) { /* cpu/2 or cpu/2/<max>  */
