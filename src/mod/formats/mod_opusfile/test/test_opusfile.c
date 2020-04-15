@@ -171,6 +171,7 @@ FST_CORE_BEGIN(".")
 			size_t write_len;
 			unsigned char decbuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 			switch_stream_handle_t stream = { 0 };
+			switch_timer_t timer;
 #ifdef  HAVE_OPUSFILE_ENCODE
 			switch_file_handle_t fh = { 0 };
 			unsigned char encbuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
@@ -223,6 +224,8 @@ FST_CORE_BEGIN(".")
 
 			switch_safe_free(stream.data);
 
+			switch_core_timer_init(&timer, "soft", 20, 960, fst_pool);
+
 #ifdef HAVE_OPUSFILE_ENCODE
 			status = switch_core_codec_init(&write_codec,
 			"OPUSSTREAM",
@@ -252,6 +255,7 @@ FST_CORE_BEGIN(".")
 				if (encoded_len) {
 					pages++;
 					status = switch_core_codec_decode(&read_codec, NULL, &encbuf, encoded_len, filerate, &decbuf, &decoded_len, &rate, &flags);
+					switch_core_timer_next(&timer);
 					fst_check(status == SWITCH_STATUS_SUCCESS);
 					write_len = decoded_len / sizeof(int16_t);
 					if (write_len) switch_core_file_write(&fhw, &decbuf, &write_len);
@@ -260,6 +264,7 @@ FST_CORE_BEGIN(".")
 
 			// continue reading, encoded pages are buffered
 			while (switch_core_codec_decode(&read_codec, NULL, &encbuf, 0, filerate, &decbuf, &decoded_len, &rate, &flags) == SWITCH_STATUS_SUCCESS && decoded_len) {
+				switch_core_timer_next(&timer);
 				write_len = decoded_len / sizeof(int16_t);
 				status = switch_core_file_write(&fhw, &decbuf, &write_len);
 				fst_check(status == SWITCH_STATUS_SUCCESS);
@@ -288,6 +293,7 @@ FST_CORE_BEGIN(".")
 			while (switch_file_read(fd, &buf, &flen) == SWITCH_STATUS_SUCCESS || flen != 0) {
 				status = SWITCH_STATUS_SUCCESS;
 				while (status == SWITCH_STATUS_SUCCESS) {
+					switch_core_timer_next(&timer);
 					status = switch_core_codec_decode(&read_codec, NULL, &buf, flen, filerate, &decbuf, &decoded_len, &rate, &flags);
 					fst_check(status == SWITCH_STATUS_SUCCESS);
 					write_len = decoded_len / sizeof(int16_t);
@@ -296,14 +302,14 @@ FST_CORE_BEGIN(".")
 				}
 			}
 #endif 
-
 			// continue reading, encoded pages are buffered
 			while (switch_core_codec_decode(&read_codec, NULL, &buf, 0, filerate, &decbuf, &decoded_len, &rate, &flags) == SWITCH_STATUS_SUCCESS && decoded_len) {
+				switch_core_timer_next(&timer);
 				write_len = decoded_len / sizeof(int16_t);
 				status = switch_core_file_write(&fhw, &decbuf, &write_len);
 				fst_check(status == SWITCH_STATUS_SUCCESS);
 			}
-
+			
 			status = switch_core_file_close(&fhw);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
@@ -312,6 +318,8 @@ FST_CORE_BEGIN(".")
 			// final test
 			status = test_detect_tone_in_file(tmp_filename, torate, 1000 /*Hz*/);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
+
+			switch_core_timer_destroy(&timer);
 
 			unlink(tmp_filename);
 		}
