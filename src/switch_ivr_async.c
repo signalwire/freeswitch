@@ -4904,6 +4904,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	if (args) {
 		state.original_args = args;
 		myargs.dmachine = args->dmachine;
+		myargs.read_frame_callback = args->read_frame_callback;
+		myargs.user_data = args->user_data;
 	}
 
 	myargs.input_callback = play_and_detect_input_callback;

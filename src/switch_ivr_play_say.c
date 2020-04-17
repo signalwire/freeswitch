@@ -3467,12 +3467,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 	if (args) {
 		state.original_args = args;
 		myargs.dmachine = args->dmachine;
+		myargs.read_frame_callback = args->read_frame_callback;
+		myargs.user_data = args->user_data;
 	}
 
 	myargs.input_callback = switch_collect_input_callback;
 	myargs.buf = &state;
 	myargs.buflen = sizeof(state);
-
 
 	switch_set_flag(&state, SWITCH_COLLECT_INPUT_PROMPT);
 	status = switch_ivr_play_file(session, NULL, prompt, &myargs);
