@@ -220,6 +220,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	uint32_t x = 0;
 	int32_t z = 0;
 	conference_cdr_node_t *np;
+	switch_time_t last_heartbeat_time = switch_epoch_time_now(NULL);
 
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -239,6 +240,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference->record_count = 0;
 
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT)) {
+		switch_time_t now = switch_epoch_time_now(NULL);
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0, members_seeing_video = 0;
@@ -256,6 +258,15 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		has_file_data = ready = total = 0;
 
 		floor_holder = conference->floor_holder;
+
+		if (conference->heartbeat_period_sec > 0 && (now - last_heartbeat_time) >= conference->heartbeat_period_sec) {
+			switch_event_t *heartbeat_event = NULL;
+			last_heartbeat_time = now;
+			switch_event_create_subclass(&heartbeat_event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_event_add_data(conference, heartbeat_event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
+			switch_event_fire(&heartbeat_event);
+		}
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (!zstr(imember->text_framedata)) {
@@ -2767,6 +2778,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *scale_h264_canvas_bandwidth = NULL;
 	char *video_codec_config_profile_name = NULL;
 	int tmp;
+	int heartbeat_period_sec = 0;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -3130,6 +3142,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				scale_h264_canvas_bandwidth = val;
 			} else if (!strcasecmp(var, "video-codec-config-profile-name") && !zstr(val)) {
 				video_codec_config_profile_name = val;
+			} else if (!strcasecmp(var, "heartbeat-period-sec") && !zstr(val)) {
+				heartbeat_period_sec = atoi(val);
 			}
 		}
 
@@ -3647,6 +3661,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
+	}
+
+	if (heartbeat_period_sec >= 20 || heartbeat_period_sec == 0) {
+		conference->heartbeat_period_sec = heartbeat_period_sec;
 	}
 
 	/* Create the conference unique identifier */
