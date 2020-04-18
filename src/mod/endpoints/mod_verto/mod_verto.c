@@ -3460,22 +3460,22 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	switch_core_media_clear_ice(tech_pvt->session);
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
-	//switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
+	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
 
 	//switch_channel_audio_sync(tech_pvt->channel);
 	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 	//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST))) {
-		switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE))) {
+		//switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 		
 		if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "MEDIA ERROR");
 			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("MEDIA ERROR"));
 			err = 1; goto cleanup;
 		}
-
-		cJSON_AddItemToObject(obj, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
+		
+		//cJSON_AddItemToObject(obj, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 		
 	} else {
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
