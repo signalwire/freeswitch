@@ -264,7 +264,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			last_heartbeat_time = now;
 			switch_event_create_subclass(&heartbeat_event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 			conference_event_add_data(conference, heartbeat_event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
+			switch_event_add_header_string(heartbeat_event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
 			switch_event_fire(&heartbeat_event);
 		}
 
