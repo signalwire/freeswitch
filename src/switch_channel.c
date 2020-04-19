@@ -3699,6 +3699,7 @@ static void do_api_on(switch_channel_t *channel, const char *variable)
 {
 	char *app;
 	char *arg = NULL;
+	char *expanded = NULL;
 	switch_stream_handle_t stream = { 0 };
 
 	app = switch_core_session_strdup(channel->session, variable);
@@ -3707,10 +3708,21 @@ static void do_api_on(switch_channel_t *channel, const char *variable)
 		*arg++ = '\0';
 	}
 
+	if (zstr(arg)) {
+		expanded = arg;
+	} else {
+		expanded = switch_channel_expand_variables(channel, arg);
+	}
+	
 	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute(app, expanded, NULL, &stream);
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s process %s: %s(%s)\n%s\n",
-					  channel->name, variable, app, switch_str_nil(arg), (char *) stream.data);
-	switch_api_execute(app, arg, NULL, &stream);
+					  channel->name, variable, app, switch_str_nil(expanded), (char *) stream.data);
+
+	if (expanded && expanded != arg) {
+		free(expanded);
+	}
+
 	free(stream.data);
 }
 
@@ -3753,7 +3765,8 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	char *p;
 	int bg = 0;
 	char *app;
-
+	char *expanded = NULL;
+	
 	app = switch_core_session_strdup(channel->session, variable);
 
 	for(p = app; p && *p; p++) {
@@ -3772,10 +3785,20 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 		bg++;
 	}
 
+	if (zstr(arg)) {
+		expanded = arg;
+	} else {
+		expanded = switch_channel_expand_variables(channel, arg);
+	}
+	
 	if (bg) {
 		switch_core_session_execute_application_async(channel->session, app, arg);
 	} else {
 		switch_core_session_execute_application(channel->session, app, arg);
+	}
+
+	if (expanded && expanded != arg) {
+		free(expanded);
 	}
 }
 
