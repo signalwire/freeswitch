@@ -2190,7 +2190,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		switch_core_session_wake_video_thread(channel->session);
 	}
 
-	if (flag == CF_RECOVERING && !channel->hangup_cause) {
+	if (flag == CF_RECOVERING && !channel->hangup_cause && !switch_channel_test_flag(channel, CF_NO_RECOVER)) {
 		switch_core_recovery_track(channel->session);
 	}
 
@@ -3931,9 +3931,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
 	//switch_channel_audio_sync(channel);
-
-	switch_core_recovery_track(channel->session);
-
+			
+	if (!switch_channel_test_flag(channel, CF_NO_RECOVER)) { 
+		switch_core_recovery_track(channel->session);
+	}
+	
 	switch_channel_set_callstate(channel, CCS_ACTIVE);
 
 	send_ind(channel, SWITCH_MESSAGE_ANSWER_EVENT, file, func, line);
