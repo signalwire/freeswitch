@@ -1914,6 +1914,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
 		src/mod/asr_tts/mod_unimrcp/Makefile
+		src/mod/asr_tts/mod_vosk/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile

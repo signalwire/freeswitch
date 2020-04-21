@@ -1,0 +1,5 @@
+<configuration name="vosk.conf" description="Vosk ASR Configuration">
+  <settings>
+    <param name="remote-url" value="ws://localhost:2700"/>
+  </settings>
+</configuration>
