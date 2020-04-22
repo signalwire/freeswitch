@@ -994,6 +994,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Login Incorrect");
 			login_fire_custom_event(jsock, params, 0, "Login Incorrect");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login incorrect for user: %s domain: %s\n", id, domain ? domain : "N/A");
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
