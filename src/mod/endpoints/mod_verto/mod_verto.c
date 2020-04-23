@@ -3392,9 +3392,9 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 		switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
 		//switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		switch_clear_flag(tech_pvt, TFLAG_ATTACH_REQ);
-		if (switch_channel_test_flag(tech_pvt->channel, CF_CONFERENCE)) {
-			switch_channel_set_flag(tech_pvt->channel, CF_CONFERENCE_ADV);
-		}
+		//if (switch_channel_test_flag(tech_pvt->channel, CF_CONFERENCE)) {
+		//	switch_channel_set_flag(tech_pvt->channel, CF_CONFERENCE_ADV);
+		//}
 	}
 	
 
@@ -5330,6 +5330,81 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static cJSON *json_status()
+{
+	cJSON *obj, *profiles, *jprofile, *users, *user;
+	verto_profile_t *profile = NULL;
+	jsock_t *jsock;
+	int i;
+
+	obj = cJSON_CreateObject();
+	profiles = cJSON_CreateArray();
+
+	cJSON_AddItemToObject(obj, "profiles", profiles);
+
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {		
+		for (i = 0; i < profile->i; i++) { 
+			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
+										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
+			jprofile = cJSON_CreateObject();
+			
+			cJSON_AddItemToObject(jprofile, "name", cJSON_CreateString(profile->name));
+			cJSON_AddItemToObject(jprofile, "id", cJSON_CreateString(tmpurl));
+			cJSON_AddItemToObject(jprofile, "type", cJSON_CreateString(profile->ip[i].secure == 1 ? "SECURE" : "BASIC"));
+			cJSON_AddItemToObject(jprofile, "state", cJSON_CreateString((profile->running) ? "RUNNING" : "DOWN"));
+			cJSON_AddItemToArray(profiles, jprofile);
+			switch_safe_free(tmpurl);
+
+			users = cJSON_CreateArray();
+			cJSON_AddItemToObject(jprofile, "users", users);
+
+			switch_mutex_lock(profile->mutex);
+			for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+				char *tmpname = switch_mprintf("%s@%s", jsock->id, jsock->domain);
+
+				if (!!profile->ip[i].secure != !!(jsock->ptype & PTYPE_CLIENT_SSL)) {
+					continue;
+				}
+				
+				user = cJSON_CreateObject();
+				cJSON_AddItemToObject(user, "user", cJSON_CreateString(jsock->id));
+				cJSON_AddItemToObject(user, "domain", cJSON_CreateString(jsock->domain));
+				cJSON_AddItemToObject(user, "entity", cJSON_CreateString(tmpname));
+				cJSON_AddItemToObject(user, "type", cJSON_CreateString((jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS"));
+																		
+				cJSON_AddItemToObject(user, "remoteHost", cJSON_CreateString(jsock->name));
+				cJSON_AddItemToObject(user, "state", cJSON_CreateString((!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG"));
+				cJSON_AddItemToArray(users, user);
+				switch_safe_free(tmpname);
+			}
+			switch_mutex_unlock(profile->mutex);
+		}
+
+		
+	}
+	switch_mutex_unlock(verto_globals.mutex);
+
+	return obj;
+}
+
+static switch_status_t cmd_json_status(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	cJSON *record;
+	char *json;
+	
+	record = json_status();
+	json = cJSON_Print(record);
+	//json = cJSON_PrintUnformatted(record);
+		
+	stream->write_function(stream, "%s\n", json);
+
+	switch_safe_free(json);
+
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(verto_function)
 {
 	char *argv[1024] = { 0 };
@@ -5340,7 +5415,7 @@ SWITCH_STANDARD_API(verto_function)
 	int lead = 1;
 	static const char usage_string[] = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
-		"verto [status|xmlstatus]\n"
+		"verto [status|xmlstatus|jsonstatus]\n"
 		"verto help\n"
 		"verto debug [0-10]\n"
 		"--------------------------------------------------------------------------------\n";
@@ -5367,6 +5442,8 @@ SWITCH_STANDARD_API(verto_function)
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
+	} else if (!strcasecmp(argv[0], "jsonstatus")) {
+		func = cmd_json_status;
 	} else if (!strcasecmp(argv[0], "debug")) {
 		if (argv[1]) {
 			int tmp = atoi(argv[1]);
