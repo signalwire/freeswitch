@@ -55,6 +55,7 @@ static struct {
 
 typedef struct {
 	kws_t *ws;
+	char *last_result;
 } vosk_t;
 
 /*! function to open the asr interface */
@@ -154,8 +155,15 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 	int rlen;
 	
 	rlen = kws_read_frame(vosk->ws, &oc, &rdata);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d %s.\n", rlen, rdata);
+	if (rlen < 0 || oc != WSOC_TEXT) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
 
+	if (strstr((const char *)rdata, "partial") != NULL) {
+		return SWITCH_STATUS_FALSE;
+	}
+	vosk->last_result = switch_core_strdup(ah->memory_pool, (const char *)rdata);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -163,16 +171,14 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 /*! function to read results from the ASR */
 static switch_status_t vosk_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
-	//vosk_t *vosk = (vosk_t *) ah->private_info;
-
+	vosk_t *vosk = (vosk_t *) ah->private_info;
+	*xmlstr = vosk->last_result;
 	return SWITCH_STATUS_SUCCESS;;
 }
 
 /*! function to start input timeouts */
 static switch_status_t vosk_asr_start_input_timers(switch_asr_handle_t *ah)
 {
-	//vosk_t *vosk = (vosk_t *) ah->private_info;
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
