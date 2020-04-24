@@ -37,6 +37,9 @@
 #include <netinet/tcp.h>
 #include <libks/ks.h>
 
+
+#define AUDIO_BLOCK_SIZE 3200
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_vosk_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vosk_shutdown);
 SWITCH_MODULE_DEFINITION(mod_vosk, mod_vosk_load, mod_vosk_shutdown, NULL);
@@ -57,6 +60,7 @@ typedef struct {
 	kws_t *ws;
 	char *last_result;
 	switch_mutex_t *mutex;
+	switch_buffer_t *audio_buffer;
 } vosk_t;
 
 /*! function to open the asr interface */
@@ -72,16 +76,21 @@ static switch_status_t vosk_asr_open(switch_asr_handle_t *ah, const char *codec,
 	ah->private_info = vosk;
 	switch_mutex_init(&vosk->mutex, SWITCH_MUTEX_NESTED, ah->memory_pool);
 
+	if (switch_buffer_create_dynamic(&vosk->audio_buffer, AUDIO_BLOCK_SIZE, AUDIO_BLOCK_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Buffer create failed\n");
+		return SWITCH_STATUS_MEMERR;
+	}
+
 	codec = "L16";
 	ah->codec = switch_core_strdup(ah->memory_pool, codec);
 	
 	if (kws_connect_ex(&vosk->ws, req, KWS_BLOCK | KWS_CLOSE_SOCK, globals.ks_pool, NULL, 30000) != KS_STATUS_SUCCESS) {
 		ks_json_delete(&req);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Websocket connect to %s failed.\n", globals.server_url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Websocket connect to %s failed\n", globals.server_url);
 		return SWITCH_STATUS_GENERR;
 	}
 	ks_json_delete(&req);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR open.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR open\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -92,11 +101,12 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 	vosk_t *vosk = (vosk_t *) ah->private_info;
 
 	switch_mutex_lock(vosk->mutex);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR closed!!!!!!!!!!.\n");
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR closed\n");
+	kws_close(vosk->ws, KWS_CLOSE_SOCK);
 	kws_destroy(&vosk->ws);
-	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 
+	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
+	switch_buffer_destroy(&vosk->audio_buffer);
 	switch_mutex_unlock(vosk->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -112,8 +122,19 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		return rv;
 
 	switch_mutex_lock(vosk->mutex);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing data size %d\n", len);
-	if (kws_write_frame(vosk->ws, WSOC_BINARY, data, len) >= 0) {
+	switch_buffer_write(vosk->audio_buffer, data, len);
+	if (switch_buffer_inuse(vosk->audio_buffer) > AUDIO_BLOCK_SIZE) {
+		char buf[AUDIO_BLOCK_SIZE];
+		int rlen;
+
+		rlen = switch_buffer_read(vosk->audio_buffer, buf, AUDIO_BLOCK_SIZE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending data %d\n", rlen);
+		if (kws_write_frame(vosk->ws, WSOC_BINARY, buf, rlen) >= 0) {
+			rv = SWITCH_STATUS_SUCCESS;
+		} else {
+			rv = SWITCH_STATUS_BREAK;
+		}
+	} else {
 		rv = SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_unlock(vosk->mutex);
@@ -156,7 +177,7 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 	int poll_flags;
 
 	switch_mutex_lock(vosk->mutex);
-	poll_flags = kws_wait_sock(vosk->ws, 50, KS_POLL_READ | KS_POLL_ERROR);
+	poll_flags = kws_wait_sock(vosk->ws, 0, KS_POLL_READ | KS_POLL_ERROR);
 	if (poll_flags != KS_POLL_READ) {
 		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_FALSE;
@@ -168,19 +189,20 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 		return SWITCH_STATUS_FALSE;
 	}
 	if (oc == WSOC_PING) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received ping\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Received ping\n");
 		kws_write_frame(vosk->ws, WSOC_PONG, rdata, rlen);
 		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_FALSE;
 	}
-	switch_mutex_unlock(vosk->mutex);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
 
 	if (strstr((const char *)rdata, "partial") != NULL) {
+		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_FALSE;
 	}
 	vosk->last_result = switch_core_strdup(ah->memory_pool, (const char *)rdata);
+	switch_mutex_unlock(vosk->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
