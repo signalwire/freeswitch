@@ -49,6 +49,7 @@ static switch_event_node_t *NODE = NULL;
 
 static struct {
 	char *server_url;
+	int return_json;
 
 	int auto_reload;
 	switch_memory_pool_t *pool;
@@ -58,7 +59,7 @@ static struct {
 
 typedef struct {
 	kws_t *ws;
-	char *last_result;
+	char *result;
 	switch_mutex_t *mutex;
 	switch_buffer_t *audio_buffer;
 } vosk_t;
@@ -102,6 +103,9 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 
 	switch_mutex_lock(vosk->mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR closed\n");
+
+	/** FIXME: websockets server still expects us to read the close confirmation and only then close
+	    libks library doens't implement it yet. */
 	kws_close(vosk->ws, KWS_CLOSE_SOCK);
 	kws_destroy(&vosk->ws);
 
@@ -115,13 +119,17 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 /*! function to feed audio to the ASR */
 static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
+	int poll_result;
+	kws_opcode_t oc;
+	uint8_t *rdata;
+	int rlen;
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	switch_status_t rv = SWITCH_STATUS_BREAK;
 
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED))
-		return rv;
+		return SWITCH_STATUS_BREAK;
 
 	switch_mutex_lock(vosk->mutex);
+
 	switch_buffer_write(vosk->audio_buffer, data, len);
 	if (switch_buffer_inuse(vosk->audio_buffer) > AUDIO_BLOCK_SIZE) {
 		char buf[AUDIO_BLOCK_SIZE];
@@ -129,17 +137,43 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 
 		rlen = switch_buffer_read(vosk->audio_buffer, buf, AUDIO_BLOCK_SIZE);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending data %d\n", rlen);
-		if (kws_write_frame(vosk->ws, WSOC_BINARY, buf, rlen) >= 0) {
-			rv = SWITCH_STATUS_SUCCESS;
-		} else {
-			rv = SWITCH_STATUS_BREAK;
+		if (kws_write_frame(vosk->ws, WSOC_BINARY, buf, rlen) < 0) {
+			switch_mutex_lock(vosk->mutex);
+			return SWITCH_STATUS_BREAK;
 		}
+	}
+
+	poll_result = kws_wait_sock(vosk->ws, 0, KS_POLL_READ | KS_POLL_ERROR);
+	if (poll_result != KS_POLL_READ) {
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	rlen = kws_read_frame(vosk->ws, &oc, &rdata);
+	if (rlen < 0) {
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_BREAK;
+	}
+	if (oc == WSOC_PING) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Received ping\n");
+		kws_write_frame(vosk->ws, WSOC_PONG, rdata, rlen);
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
+	if (strstr((const char *)rdata, "\"partial\"") != NULL) {
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	if (globals.return_json) {
+		vosk->result = switch_core_strdup(ah->memory_pool, (const char *)rdata);
 	} else {
-		rv = SWITCH_STATUS_SUCCESS;
+		cJSON *result = cJSON_Parse((const char *)rdata);
+		vosk->result = switch_core_strdup(ah->memory_pool, cJSON_GetObjectCstr(result, "text"));
+		cJSON_Delete(result);
 	}
 	switch_mutex_unlock(vosk->mutex);
 	
-	return rv;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /*! function to pause recognizer */
@@ -171,48 +205,16 @@ static switch_status_t vosk_asr_unload_grammar(switch_asr_handle_t *ah, const ch
 static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	kws_opcode_t oc;
-	uint8_t *rdata;
-	int rlen;
-	int poll_flags;
-
-	switch_mutex_lock(vosk->mutex);
-	poll_flags = kws_wait_sock(vosk->ws, 0, KS_POLL_READ | KS_POLL_ERROR);
-	if (poll_flags != KS_POLL_READ) {
-		switch_mutex_unlock(vosk->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-	
-	rlen = kws_read_frame(vosk->ws, &oc, &rdata);
-	if (rlen < 0) {
-		switch_mutex_unlock(vosk->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-	if (oc == WSOC_PING) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Received ping\n");
-		kws_write_frame(vosk->ws, WSOC_PONG, rdata, rlen);
-		switch_mutex_unlock(vosk->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
-
-	if (strstr((const char *)rdata, "partial") != NULL) {
-		switch_mutex_unlock(vosk->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-	vosk->last_result = switch_core_strdup(ah->memory_pool, (const char *)rdata);
-	switch_mutex_unlock(vosk->mutex);
-
-	return SWITCH_STATUS_SUCCESS;
+	return vosk->result ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 /*! function to read results from the ASR */
 static switch_status_t vosk_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	*xmlstr = switch_mprintf("%s", vosk->last_result);
-	return SWITCH_STATUS_SUCCESS;;
+	*xmlstr = switch_mprintf("%s", vosk->result);
+	vosk->result = NULL;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /*! function to start input timeouts */
@@ -232,14 +234,17 @@ static switch_status_t load_config(void)
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
-	
+
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "server-url")) {
 				globals.server_url = switch_core_strdup(globals.pool, val);
+			}
+			if (!strcasecmp(var, "return-json")) {
+				globals.return_json = atoi(val);
 			}
 		}
 	}
