@@ -84,7 +84,7 @@ static switch_status_t vosk_asr_open(switch_asr_handle_t *ah, const char *codec,
 
 	codec = "L16";
 	ah->codec = switch_core_strdup(ah->memory_pool, codec);
-	
+
 	if (kws_connect_ex(&vosk->ws, req, KWS_BLOCK | KWS_CLOSE_SOCK, globals.ks_pool, NULL, 30000) != KS_STATUS_SUCCESS) {
 		ks_json_delete(&req);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Websocket connect to %s failed\n", globals.server_url);
@@ -172,7 +172,7 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		cJSON_Delete(result);
 	}
 	switch_mutex_unlock(vosk->mutex);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
