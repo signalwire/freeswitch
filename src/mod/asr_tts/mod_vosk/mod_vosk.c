@@ -56,6 +56,7 @@ static struct {
 typedef struct {
 	kws_t *ws;
 	char *last_result;
+	switch_mutex_t *mutex;
 } vosk_t;
 
 /*! function to open the asr interface */
@@ -69,11 +70,12 @@ static switch_status_t vosk_asr_open(switch_asr_handle_t *ah, const char *codec,
 		return SWITCH_STATUS_MEMERR;
 	}
 	ah->private_info = vosk;
+	switch_mutex_init(&vosk->mutex, SWITCH_MUTEX_NESTED, ah->memory_pool);
 
 	codec = "L16";
 	ah->codec = switch_core_strdup(ah->memory_pool, codec);
 	
-	if (kws_connect_ex(&vosk->ws, req, KWS_BLOCK | KWS_CLOSE_SOCK, globals.ks_pool, NULL, 3000) != KS_STATUS_SUCCESS) {
+	if (kws_connect_ex(&vosk->ws, req, KWS_BLOCK | KWS_CLOSE_SOCK, globals.ks_pool, NULL, 30000) != KS_STATUS_SUCCESS) {
 		ks_json_delete(&req);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Websocket connect to %s failed.\n", globals.server_url);
 		return SWITCH_STATUS_GENERR;
@@ -89,10 +91,13 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
 
-	kws_destroy(&vosk->ws);
+	switch_mutex_lock(vosk->mutex);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR closed!!!!!!!!!!.\n");
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ASR closed.\n");
+	kws_destroy(&vosk->ws);
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
+
+	switch_mutex_unlock(vosk->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -101,11 +106,19 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing data size %d.\n", len);
+	switch_status_t rv = SWITCH_STATUS_BREAK;
+
+	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED))
+		return rv;
+
+	switch_mutex_lock(vosk->mutex);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing data size %d\n", len);
+	if (kws_write_frame(vosk->ws, WSOC_BINARY, data, len) >= 0) {
+		rv = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(vosk->mutex);
 	
-	kws_write_frame(vosk->ws, WSOC_BINARY, data, len);
-	
-	return SWITCH_STATUS_SUCCESS;
+	return rv;
 }
 
 /*! function to pause recognizer */
@@ -120,26 +133,13 @@ static switch_status_t vosk_asr_resume(switch_asr_handle_t *ah)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/**
- * Process asr_load_grammar request from FreeSWITCH.
- *
- * FreeSWITCH sends this request to load a grammar
- * @param ah the FreeSWITCH speech recognition handle
- * @param grammar the grammar data.  This can be an absolute file path, a URI, or the grammar text.
- * @param name used to reference grammar for unloading or for recognition requests
- */
+/*! Process asr_load_grammar request from FreeSWITCH. */
 static switch_status_t vosk_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/**
- * Process asr_unload_grammar request from FreeSWITCH.
- *
- * FreeSWITCH sends this request to stop recognition on this grammar.
- * @param ah the FreeSWITCH speech recognition handle
- * @param name the grammar name.
- */
+/*! Process asr_unload_grammar request from FreeSWITCH. */
 static switch_status_t vosk_asr_unload_grammar(switch_asr_handle_t *ah, const char *name)
 {
 	return SWITCH_STATUS_SUCCESS;
@@ -153,11 +153,28 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 	kws_opcode_t oc;
 	uint8_t *rdata;
 	int rlen;
-	
-	rlen = kws_read_frame(vosk->ws, &oc, &rdata);
-	if (rlen < 0 || oc != WSOC_TEXT) {
+	int poll_flags;
+
+	switch_mutex_lock(vosk->mutex);
+	poll_flags = kws_wait_sock(vosk->ws, 50, KS_POLL_READ | KS_POLL_ERROR);
+	if (poll_flags != KS_POLL_READ) {
+		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_FALSE;
 	}
+	
+	rlen = kws_read_frame(vosk->ws, &oc, &rdata);
+	if (rlen < 0) {
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+	if (oc == WSOC_PING) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received ping\n");
+		kws_write_frame(vosk->ws, WSOC_PONG, rdata, rlen);
+		switch_mutex_unlock(vosk->mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(vosk->mutex);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
 
 	if (strstr((const char *)rdata, "partial") != NULL) {
@@ -172,7 +189,7 @@ static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_as
 static switch_status_t vosk_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	*xmlstr = vosk->last_result;
+	*xmlstr = switch_mprintf("%s", vosk->last_result);
 	return SWITCH_STATUS_SUCCESS;;
 }
 
@@ -242,6 +259,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vosk_load)
 	ks_init();
 
 	ks_pool_open(&globals.ks_pool);
+	ks_global_set_default_logger(7);
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
