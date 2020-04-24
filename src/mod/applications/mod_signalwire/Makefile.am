@@ -11,5 +11,17 @@ mod_signalwire_la_CFLAGS  += $(CURL_CFLAGS) $(KS_CFLAGS) $(SIGNALWIRE_CLIENT_CFL
 mod_signalwire_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_signalwire_la_LDFLAGS  = $(CURL_LIBS) -avoid-version -module -no-undefined -shared $(KS_LIBS) $(SIGNALWIRE_CLIENT_LIBS)
 
+else
+install: error
+all: error
+error:
+	$(error You must install signalwire-client-c to build mod_signalwire)
 endif
+
+else
+install: error
+all: error
+error:
+	$(error You must install libks to build mod_signalwire)
 endif
+
