@@ -14562,7 +14562,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	if (v_engine->thread_write_lock && v_engine->thread_write_lock != switch_thread_self()) {
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	}
 
 	if (!smh->video_init && smh->mparams->video_key_first && (now - smh->video_last_key_time) > smh->mparams->video_key_first) {
@@ -14598,7 +14598,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		if (vid_params.width && vid_params.height && ((vid_params.width != img->d_w) || (vid_params.height != img->d_h))) {
 			switch_img_letterbox(img, &dup_img, vid_params.width, vid_params.height, "#000000f");
 			if (!(img = dup_img)) {
-				return SWITCH_STATUS_INUSE;
+				switch_goto_status(SWITCH_STATUS_INUSE, done);
 			}
 		}
 	}
@@ -15509,7 +15509,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 		if (!switch_buffer_inuse(t_engine->tf->write_buffer)) {
 			t_engine->tf->write_empty++;
-			return SWITCH_STATUS_BREAK;
+			switch_goto_status(SWITCH_STATUS_BREAK, done);
 		}
 
 		frame = &t_engine->tf->text_write_frame;
