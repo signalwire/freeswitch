@@ -390,6 +390,7 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 
 SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, switch_image_t *img, int x, int y);
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char *file_name, switch_img_fmt_t img_fmt);
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png_from_memory(void *mem, size_t size, switch_img_fmt_t img_fmt);
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char *file_name);
 SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name);
 SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
