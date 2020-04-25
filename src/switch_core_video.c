@@ -2412,64 +2412,86 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 
 #ifdef PNG_SIMPLIFIED_READ_SUPPORTED /* available from libpng 1.6.0 */
 
-SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, switch_img_fmt_t img_fmt)
+static switch_image_t *png2img(png_image *png, switch_img_fmt_t img_fmt)
 {
-	png_image png = { 0 };
 	png_bytep buffer = NULL;
 	switch_image_t *img = NULL;
 
-	png.version = PNG_IMAGE_VERSION;
-
-	if (!png_image_begin_read_from_file(&png, file_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error open png: %s\n", file_name);
-		goto err;
-	}
+	png->version = PNG_IMAGE_VERSION;
 
 	if (img_fmt == SWITCH_IMG_FMT_I420) {
-		png.format = PNG_FORMAT_RGB;
+		png->format = PNG_FORMAT_RGB;
 	} else if (img_fmt == SWITCH_IMG_FMT_ARGB) {
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-		png.format = PNG_FORMAT_ARGB;
+		png->format = PNG_FORMAT_ARGB;
 #else
-		png.format = PNG_FORMAT_BGRA;
+		png->format = PNG_FORMAT_BGRA;
 #endif
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unsupported image format: %x\n", img_fmt);
 		goto err;
 	}
 
-	buffer = malloc(PNG_IMAGE_SIZE(png));
+	buffer = malloc(PNG_IMAGE_SIZE(*png));
 	switch_assert(buffer);
 
-	if (!png_image_finish_read(&png, NULL/*background*/, buffer, 0, NULL)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read png: %s\n", file_name);
+	if (!png_image_finish_read(png, NULL/*background*/, buffer, 0, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read png\n");
 		goto err;
 	}
 
-	if (png.width > SWITCH_IMG_MAX_WIDTH || png.height > SWITCH_IMG_MAX_HEIGHT) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PNG is too large! %dx%d\n", png.width, png.height);
+	if (png->width > SWITCH_IMG_MAX_WIDTH || png->height > SWITCH_IMG_MAX_HEIGHT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PNG is too large! %dx%d\n", png->width, png->height);
 		goto err;
 	}
 
-	img = switch_img_alloc(NULL, img_fmt, png.width, png.height, 1);
+	img = switch_img_alloc(NULL, img_fmt, png->width, png->height, 1);
 	switch_assert(img);
 
 	if (img_fmt == SWITCH_IMG_FMT_I420) {
-		RAWToI420(buffer, png.width * 3,
+		RAWToI420(buffer, png->width * 3,
 			img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
 			img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
 			img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
-			png.width, png.height);
+			png->width, png->height);
 	} else if (img_fmt == SWITCH_IMG_FMT_ARGB){
-		ARGBCopy(buffer, png.width * 4,
-			img->planes[SWITCH_PLANE_PACKED], png.width * 4,
-			png.width, png.height);
+		ARGBCopy(buffer, png->width * 4,
+			img->planes[SWITCH_PLANE_PACKED], png->width * 4,
+			png->width, png->height);
 	}
 
 err:
-	png_image_free(&png);
+	png_image_free(png);
 	switch_safe_free(buffer);
 	return img;
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, switch_img_fmt_t img_fmt)
+{
+	png_image png = { 0 };
+
+	png.version = PNG_IMAGE_VERSION;
+
+	if (!png_image_begin_read_from_file(&png, file_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error open png: %s\n", file_name);
+		return NULL;
+	}
+
+	return png2img(&png, img_fmt);
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png_from_memory(void *mem, size_t size, switch_img_fmt_t img_fmt)
+{
+	png_image png = { 0 };
+
+	png.version = PNG_IMAGE_VERSION;
+
+	if (!png_image_begin_read_from_memory(&png, mem, size)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error open png from memory\n");
+		return NULL;
+	}
+
+	return png2img(&png, img_fmt);
 }
 
 #else /* libpng < 1.6.0 */
@@ -2732,6 +2754,11 @@ end:
 	if (info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
 	return img;
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png_from_memory(void *mem, size_t size, switch_img_fmt_t img_fmt)
+{
+	return NULL;
 }
 
 #endif
