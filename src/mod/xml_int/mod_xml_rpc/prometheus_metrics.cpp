@@ -23,7 +23,8 @@ public:
 	
 	prometheus_metrics(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t* pool) :
 		_pool(pool),
-		_module_interface(module_interface)
+		_module_interface(module_interface),
+		_api_calls(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
 	}
