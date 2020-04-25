@@ -1194,6 +1194,22 @@ static int attach_wake(void)
 	return 0;
 }
 
+static void add_variables(verto_pvt_t *tech_pvt, cJSON *params)
+{
+	cJSON *jvariables = NULL;
+	switch_event_header_t *hi;
+	switch_event_t *variables;
+	
+	jvariables = cJSON_CreateObject();
+	switch_channel_get_variables_prefix(tech_pvt->channel, "verto_svar_", &variables);
+	for (hi = variables->headers; hi; hi = hi->next) {
+		cJSON_AddItemToObject(jvariables, hi->name, cJSON_CreateString(hi->value));
+	}
+	cJSON_AddItemToObject(params, "variables", jvariables);
+	switch_event_destroy(&variables);
+}
+
+
 static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 {
 	cJSON *params = NULL;
@@ -1205,6 +1221,8 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	switch_set_flag(tech_pvt, TFLAG_ATTACH_REQ);
 	msg = jrpc_new_req("verto.attach", tech_pvt->call_id, &params);
 
+	add_variables(tech_pvt, params);
+	
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
 	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
@@ -2206,7 +2224,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     jsock_t *jsock = NULL;
     verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-
+			
     if (!(jsock = get_jsock(tech_pvt->jsock_uuid))) {
         status = SWITCH_STATUS_BREAK;
     } else {
@@ -2214,7 +2232,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
         cJSON *msg = NULL;
 		const char *var = NULL;
 		switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(tech_pvt->channel);
-		switch_event_header_t *hp;
+		switch_event_header_t *hi;
 
 		//DUMP_EVENT(jsock->params);
 
@@ -2224,8 +2242,8 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 		switch_channel_set_variable(tech_pvt->channel, "chat_proto", VERTO_CHAT_PROTO);
 		switch_channel_set_variable(tech_pvt->channel, "verto_host", jsock->domain);
 
-		for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
-			switch_channel_set_variable(tech_pvt->channel, hp->name, hp->value);
+		for (hi = jsock->user_vars->headers; hi; hi = hi->next) {
+			switch_channel_set_variable(tech_pvt->channel, hi->name, hi->value);
 		}
 
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
@@ -2267,6 +2285,8 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
         msg = jrpc_new_req(method, tech_pvt->call_id, &params);
 
+		add_variables(tech_pvt, params);
+		
         if (tech_pvt->mparams->local_sdp_str) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local %s SDP %s:\n%s\n",
 							  method,
@@ -2551,10 +2571,13 @@ static switch_status_t verto_send_media_indication(switch_core_session_t *sessio
 		} else {
 			cJSON *params = NULL;
 			cJSON *msg = jrpc_new_req(method, tech_pvt->call_id, &params);
+			
 			if (!switch_test_flag(tech_pvt, TFLAG_SENT_MEDIA)) {
 				cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			}
 
+			add_variables(tech_pvt, params);
+			
 			switch_set_flag(tech_pvt, TFLAG_SENT_MEDIA);
 
 			if (jsock_queue_event(jsock, &msg, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {

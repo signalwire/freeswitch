@@ -4457,6 +4457,29 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *c
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variables_prefix(switch_channel_t *channel, const char *prefix, switch_event_t **event)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_event_t *vars;
+	
+	switch_event_create(&vars, SWITCH_EVENT_CHANNEL_DATA);
+	
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->variables) {
+		switch_event_header_t *hi;
+
+		for (hi = channel->variables->headers; hi; hi = hi->next) {
+			if (!strncmp(hi->name, prefix, strlen(prefix))) {
+				switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, hi->name, hi->value);
+			}
+		}
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	*event = vars;
+	return status;
+}
+
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel)
 {
 	switch_assert(channel);

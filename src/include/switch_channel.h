@@ -326,7 +326,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 #define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
-
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variables_prefix(switch_channel_t *channel, const char *prefix, switch_event_t **event);
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);
 
 static inline int switch_channel_var_false(switch_channel_t *channel, const char *variable) {
