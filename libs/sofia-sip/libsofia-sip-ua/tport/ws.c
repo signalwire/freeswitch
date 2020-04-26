@@ -649,6 +649,8 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int 
 
 	wsh->buffer = malloc(wsh->buflen);
 	wsh->bbuffer = malloc(wsh->bbuflen);
+	/* reserve 1 Byte for write '\0' */
+	wsh->bbuflen -= 1;
 	//printf("init %p %ld\n", (void *) wsh->bbuffer, wsh->bbuflen);
 	//memset(wsh->buffer, 0, wsh->buflen);
 	//memset(wsh->bbuffer, 0, wsh->bbuflen);
@@ -909,7 +911,8 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 				wsh->bbuflen = need + blen + wsh->rplen;
 
-				if ((tmp = realloc(wsh->bbuffer, wsh->bbuflen))) {
+				/* reserve 1 Byte for write '\0' */
+				if ((tmp = realloc(wsh->bbuffer, wsh->bbuflen + 1))) {
 					wsh->bbuffer = tmp;
 				} else {
 					abort();
@@ -941,7 +944,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if (mask && maskp) {
 				ssize_t i;
 
-				for (i = 0; i < wsh->datalen; i++) {
+				for (i = 0; i < wsh->rplen; i++) {
 					wsh->body[i] ^= maskp[i % 4];
 				}
 			}

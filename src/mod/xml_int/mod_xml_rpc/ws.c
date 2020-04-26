@@ -339,7 +339,8 @@ wsh_t * ws_init(ws_tsession_t *tsession)
 
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->tsession = tsession;
-	wsh->buflen = sizeof(wsh->buffer);
+	/* reserve 1 Byte for write '\0' */
+	wsh->buflen = sizeof(wsh->buffer) - 1;
 
 	return wsh;
 }
@@ -510,7 +511,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if (mask && maskp) {
 				issize_t i;
 
-				for (i = 0; i < wsh->datalen; i++) {
+				for (i = 0; i < wsh->rplen; i++) {
 					wsh->payload[i] ^= maskp[i % 4];
 				}
 			}
