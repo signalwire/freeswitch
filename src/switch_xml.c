@@ -2984,8 +2984,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 			return xml;			/* nothing to do */
 		if (xml->attr == SWITCH_XML_NIL) {	/* first attribute */
 			xml->attr = (char **) switch_must_malloc(4 * sizeof(char *));
-			xml->attr[1] = switch_must_strdup("");	/* empty list of malloced names/vals */
-			xml->attr[l + 1] = switch_must_strdup("");
+			xml->attr[l + 1] = switch_must_strdup("");	/* empty list of malloced names/vals */
 		} else {
 			xml->attr = (char **) switch_must_realloc(xml->attr, (l + 4) * sizeof(char *));
 		}
