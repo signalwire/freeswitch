@@ -2209,9 +2209,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		char cid_buf[1024] = "";
 		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
-		switch_media_bug_flag_t read_flags = 0, write_flags = 0;
+		switch_media_bug_flag_t read_flags = 0, write_flags = 0, stereo_flag = 0;
 		const char *vval;
 		int buf_size = 0;
+		int channels;
 
 		if (!switch_channel_media_up(channel)) {
 			goto end;
@@ -2279,8 +2280,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 
 		ep = switch_core_session_alloc(session, sizeof(*ep));
-
-		tlen = tread_impl.decoded_bytes_per_packet;
 
 
 		if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
@@ -2355,7 +2354,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			write_flags = SMBF_TAP_NATIVE_WRITE;
 			read_flags = 0;
 		}
-		
+
+		if (flags & ED_STEREO) {
+			stereo_flag = SMBF_STEREO;
+		}
 
 		if (switch_channel_test_flag(session->channel, CF_VIDEO) && switch_channel_test_flag(tsession->channel, CF_VIDEO)) {
 			if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_show_listener_video"))) {
@@ -2384,7 +2386,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		if (switch_core_media_bug_add(tsession, "eavesdrop", uuid,
 									  eavesdrop_callback, ep, 0,
-									  read_flags | write_flags | SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
+									  read_flags | write_flags | SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE | stereo_flag,
 									  &bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot attach bug\n");
 			goto end;
@@ -2561,18 +2563,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				switch_buffer_unlock(ep->w_buffer);
 			}
 
+			channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : tread_impl.number_of_channels;
+
+			if (channels == 0) {
+				channels = 1;
+			}
+
+			tlen = tread_impl.decoded_bytes_per_packet * channels;
+
 			if (len > tlen) {
 				len = tlen;
 			}
 
-			if (ep->buffer && switch_buffer_inuse(ep->buffer) >= len) {
-				switch_buffer_lock(ep->buffer);
+			if (ep->buffer) {
 				while (switch_buffer_inuse(ep->buffer) >= len) {
 					int tchanged = 0, changed = 0;
 
+					switch_buffer_lock(ep->buffer);
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
-					write_frame.samples = write_frame.datalen / 2;
-
+					switch_buffer_unlock(ep->buffer);
+					write_frame.samples = write_frame.datalen / 2 / channels;
+					write_frame.channels = channels;
 
 					switch_core_session_get_read_impl(tsession, &tread_impl);
 					switch_core_session_get_read_impl(session, &read_impl);
@@ -2606,7 +2617,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 											  tread_impl.actual_samples_per_second,
 											  tread_impl.number_of_channels);
 
-							tlen = tread_impl.decoded_bytes_per_packet;
+							tlen = tread_impl.decoded_bytes_per_packet * channels;
 
 							if (len > tlen) {
 								len = tlen;
@@ -2624,7 +2635,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 													   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 													   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
-								switch_core_session_rwunlock(tsession);
 								goto end;
 							}
 						}
@@ -2646,7 +2656,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 						break;
 					}
 				}
-				switch_buffer_unlock(ep->buffer);
 			}
 
 		}
