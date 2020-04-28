@@ -382,7 +382,7 @@ static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputF
 #if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,7,100))
 		av_strlcpy(s->filename, filename, sizeof(s->filename));
 #else
-		s->url = strdup(filename);
+		s->url = av_strdup(filename);
 		switch_assert(s->url);
 #endif
 	}
@@ -500,10 +500,10 @@ GCC_DIAG_ON(deprecated-declarations)
 		c->width    = mst->width;
 		c->height   = mst->height;
 		c->bit_rate = mm->vb * 1024;
-		mst->st->time_base.den = 90000;
+		mst->st->time_base.den = (codec_id == AV_CODEC_ID_MPEG4 ? 48000 : 90000);
 		mst->st->time_base.num = 1;
-		c->time_base.den = 90000;
-		c->time_base.num = 1;
+		c->time_base.den = mst->st->time_base.den;
+		c->time_base.num = mst->st->time_base.num;
 		c->gop_size      = fps * 10; /* emit one intra frame every 10 frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
 		//c->thread_count  = threads;
