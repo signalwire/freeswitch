@@ -8871,7 +8871,7 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 
 }
 
-static switch_status_t sofia_process_proxy_refer(switch_core_session_t *session, const char *refer_to)
+static switch_status_t sofia_process_proxy_refer(switch_core_session_t *session, const char *refer_to, sip_t const *sip)
 {
 	switch_core_session_t *other_session;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
@@ -8880,6 +8880,7 @@ static switch_status_t sofia_process_proxy_refer(switch_core_session_t *session,
 		switch_core_session_message_t *msg;
 
 		tech_pvt->proxy_refer_uuid = switch_core_session_strdup(session, switch_core_session_get_uuid(other_session));
+		sofia_glue_set_extra_headers(other_session, sip, SOFIA_SIP_HEADER_PREFIX);
 		msg = switch_core_session_alloc(other_session, sizeof(*msg));
 		MESSAGE_STAMP_FFL(msg);
 		msg->message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
@@ -8931,7 +8932,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	if (full_ref_to && sofia_test_pflag(profile, PFLAG_PROXY_REFER)) {
-		if (sofia_process_proxy_refer(session, full_ref_to) == SWITCH_STATUS_SUCCESS) {
+		if (sofia_process_proxy_refer(session, full_ref_to, sip) == SWITCH_STATUS_SUCCESS) {
 			if (tech_pvt->proxy_refer_msg) {
 				msg_ref_destroy(tech_pvt->proxy_refer_msg);
 				tech_pvt->proxy_refer_msg = NULL;
