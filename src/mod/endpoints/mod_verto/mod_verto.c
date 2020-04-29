@@ -1924,6 +1924,7 @@ done:
 
 	keepalive = request->keepalive;
 	kws_request_free(&request);
+	if (stream.param_event) switch_event_destroy(&stream.param_event);
 
 	if (keepalive) {
 		kws_t *wsh = jsock->ws;
