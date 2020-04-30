@@ -398,7 +398,8 @@ char *readfile(FILE *f)
     len += fread(buffer + len, 1, 8192, f);
   }
 
-  buffer[len] = '\0';
+  if (buffer)
+    buffer[len] = '\0';
 
   return buffer;
 }
