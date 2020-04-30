@@ -59,8 +59,6 @@ typedef struct {
 	pa_simple *istream;
 	pa_simple *ostream;
 	int bytesPerFrame;
-	int has_in;
-	int has_out;
 	int channelCount;
 	char iobuff[MAX_IO_BUFFER];
 } PABLIO_Stream;

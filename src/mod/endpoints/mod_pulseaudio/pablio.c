@@ -40,25 +40,16 @@
 
 long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer)
 {
-	switch_core_timer_next(timer);
-
 	pa_simple_write(aStream->ostream, data, datalen, NULL);
-	//pa_simple_drain(aStream->ostream, NULL);
+	switch_core_timer_next(timer);
 
 	return datalen;
 }
 
 long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer)
 {
-	pa_usec_t latency;
-	switch_core_timer_next(timer);
-
-	latency = pa_simple_get_latency(aStream->istream, NULL);
-	//printf("latency-a: %lu\n", latency);
-	if (latency > 100000) {
-		pa_simple_flush(aStream->istream, NULL);
-	}
 	pa_simple_read(aStream->istream, data, datalen, NULL);
+	switch_core_timer_next(timer);
 
 	return datalen;
 }
@@ -77,7 +68,7 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	pa_error err;
 	PABLIO_Stream *aStream;
 	int channels = 1;
-	int latency_msec = 50;
+	int latency_msec = 40;
 	pa_buffer_attr buffer_attr;
 
 	if (!(inputParameters || outputParameters)) {
@@ -98,7 +89,6 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		buffer_attr.fragsize = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, inputParameters);
 		buffer_attr.maxlength = buffer_attr.fragsize;
 		channels = inputParameters->channels;
-		aStream->has_in = 1;
 		aStream->istream = pa_simple_new(NULL, appName, PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->istream) {
 			goto error;
@@ -109,7 +99,6 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		channels = outputParameters->channels;
 		buffer_attr.tlength = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, outputParameters);
 		buffer_attr.maxlength = buffer_attr.tlength;
-		aStream->has_out = 1;
 		aStream->ostream = pa_simple_new(NULL, appName, PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->ostream) {
 			goto error;
@@ -130,24 +119,24 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 void FlushAudioStream(PABLIO_Stream * aStream)
 {
-	if (aStream && aStream->has_in && aStream->istream) {
+	if (aStream && aStream->istream) {
 		pa_simple_flush(aStream->istream, NULL);
 	}
 }
 
 void CloseAudioStream(PABLIO_Stream * aStream)
 {
-	if (aStream->has_out) {
+	if (aStream->ostream) {
 		/* If we are writing data, make sure we play everything written. */
 		pa_simple_drain(aStream->ostream, NULL);
 	}
 
-	if (aStream->has_in && aStream->istream) {
+	if (aStream->istream) {
 		pa_simple_free(aStream->istream);
 		aStream->istream = NULL;
 	}
 
-	if (aStream->has_out && aStream->ostream) {
+	if (aStream->ostream) {
 		pa_simple_free(aStream->ostream);
 		aStream->ostream = NULL;
 	}
