@@ -73,6 +73,10 @@
 #define pclose _pclose
 #endif
 
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 SWITCH_DECLARE_DATA switch_filenames SWITCH_GLOBAL_filenames = { 0 };
 
@@ -2558,6 +2562,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		free(cmd);
 	}
 
+#ifdef HAVE_SYSTEMD
+	sd_notifyf(0, "READY=1\n"
+		"MAINPID=%lu\n", (unsigned long) getpid());
+#endif
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -2880,6 +2889,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
+#ifdef HAVE_SYSTEMD
+					sd_notifyf(0, "STOPPING=1\n");
+#endif
 #ifdef _MSC_VER
 					fclose(stdin);
 #endif
