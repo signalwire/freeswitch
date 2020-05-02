@@ -1,0 +1,39 @@
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - autoconf
+        - automake
+        - bison
+        - doxygen
+        - libavformat-dev
+        - libcurl4-openssl-dev
+        - libdb-dev
+        - libedit-dev
+        - libexpat1-dev
+        - libgdbm-dev
+        - libjpeg-dev
+        - libldns-dev
+        - liblua5.2-dev
+        - libncurses5-dev
+        - libogg-dev
+        - libpcre3-dev
+        - libpq-dev
+        - libspeex-dev
+        - libspeexdsp-dev
+        - libsqlite3-dev
+        - libssl-dev
+        - libtiff5-dev
+        - libtool-bin
+        - pkg-config
+        - unixodbc-dev
+        - uuid-dev
+        - wget
+        - yasm
+    configure:
+      command:
+        - ./bootstrap.sh
+        - ./configure
+    index:
+      build_command:
+        - make
