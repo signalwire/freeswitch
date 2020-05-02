@@ -5,27 +5,74 @@ extraction:
         - autoconf
         - automake
         - bison
+        - default-jdk
         - doxygen
+        - erlang-dev
+        - flite1-dev
+        - ladspa-sdk
+        - libasound2-dev
         - libavformat-dev
+        - libavresample-dev
+        - libbroadvoice-dev
+        - libcodec2-dev
         - libcurl4-openssl-dev
         - libdb-dev
         - libedit-dev
         - libexpat1-dev
+        - libflac-dev
+        - libg7221-dev
         - libgdbm-dev
+        - libglib2.0-dev
+        - libhiredis-dev
+        - libilbc-dev
         - libjpeg-dev
+        - libks
+        - libldap2-dev
         - libldns-dev
         - liblua5.2-dev
+        - libmagickcore-dev
+        - libmariadb-dev
+        - libmemcached-dev
+        - libmongoc-dev
+        - libmono-2.0-dev
+        - libmp3lame-dev
+        - libmp4v2-dev
         - libncurses5-dev
         - libogg-dev
+        - libopal-dev
+        - libopencore-amrnb-dev
+        - libopencv-dev
+        - libopus-dev
+        - libopusfile-dev
+        - libosptk3-dev
         - libpcre3-dev
+        - libperl-dev
         - libpq-dev
+        - libpt-dev
+        - librabbitmq-dev
+        - libsasl2-dev
+        - libsilk-dev
+        - libsndfile1-dev
+        - libsngtc-dev
+        - libsnmp-dev
+        - libsoundtouch-dev
         - libspeex-dev
         - libspeexdsp-dev
         - libsqlite3-dev
         - libssl-dev
+        - libswscale-dev
         - libtiff5-dev
         - libtool-bin
+        - libv8-6.1-dev
+        - libvlc-dev
+        - libvorbis-dev
+        - libx11-dev
+        - libyaml-dev
+        - mono-mcs
         - pkg-config
+        - portaudio19-dev
+        - python-dev
+        - signalwire-client-c
         - unixodbc-dev
         - uuid-dev
         - wget
