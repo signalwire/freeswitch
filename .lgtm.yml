@@ -65,9 +65,23 @@ extraction:
       - "uuid-dev"
       - "wget"
       - "yasm"
+    after_prepare:
+    - "export PKG_CONFIG_PATH=$LGTM_WORKSPACE/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+    - "cd $LGTM_WORKSPACE"
+    - "git clone https://github.com/signalwire/libks.git"
+    - "cd libks"
+    - "cmake . -DCMAKE_INSTALL_PREFIX:PATH=$LGTM_WORKSPACE/usr"
+    - "make"
+    - "make install"
+    - "cd $LGTM_WORKSPACE"
+    - "git clone https://github.com/signalwire/signalwire-c.git"
+    - "cd signalwire-c"
+    - "cmake . -DCMAKE_INSTALL_PREFIX:PATH=$LGTM_WORKSPACE/usr"
+    - "make"
+    - "make install"
     configure:
       command:
       - "./bootstrap.sh"
       - "./configure"
     index:
-      build_command: "make -k || true"
+      build_command: "make"
