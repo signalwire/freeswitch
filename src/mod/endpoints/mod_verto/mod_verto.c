@@ -1238,6 +1238,20 @@ static void drop_detached(void)
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
+static void drop_calls(void)
+{
+	verto_pvt_t *tech_pvt;
+
+	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
+	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
+		if (!switch_channel_up_nosig(tech_pvt->channel)) {
+			continue;
+		}
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	}
+	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
+}
+
 static void attach_calls(jsock_t *jsock)
 {
 	verto_pvt_t *tech_pvt;
@@ -5125,6 +5139,54 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	verto_profile_t *profile = NULL;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(verto_globals.mutex);
+	for (profile = verto_globals.profile_head; profile; profile = profile->next) {
+		if (profile->running) {
+			switch_console_push_match(&my_matches, profile->name);
+		}
+	}
+	switch_mutex_unlock(verto_globals.mutex);
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	return status;
+}
+
+static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	const char *err;
+
+	if (argc < 2) {
+		stream->write_function(stream, "Invalid Args!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argv[1] && !strcasecmp(argv[0], "restart") && !strcasecmp(argv[1], "all")) {
+		switch_xml_reload(&err);
+		stream->write_function(stream, "Restart all profiles\n");
+		/* hangup all calls */
+		drop_calls();
+		/* stop all profiles */
+		kill_profiles();
+		/* reload config: init ssl, load profiles, start profiles */
+		init();
+		run_profiles();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	stream->write_function(stream, "-ERR Unknown command!\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(verto_function)
 {
 	char *argv[1024] = { 0 };
@@ -5137,6 +5199,7 @@ SWITCH_STANDARD_API(verto_function)
 		"--------------------------------------------------------------------------------\n"
 		"verto [status|xmlstatus]\n"
 		"verto help\n"
+		"verto profile restart all \n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (zstr(cmd)) {
@@ -5161,6 +5224,9 @@ SWITCH_STANDARD_API(verto_function)
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
+	}
+	else if (!strcasecmp(argv[0], "profile")) {
+		func = cmd_profile;
 	}
 
 	if (func) {
@@ -6203,6 +6269,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	switch_console_set_complete("add verto help");
 	switch_console_set_complete("add verto status");
 	switch_console_set_complete("add verto xmlstatus");
+
+	switch_console_set_complete("add verto profile restart all");
 
 	SWITCH_ADD_JSON_API(json_api_interface, "store", "JSON store", json_store_function, "");
 
