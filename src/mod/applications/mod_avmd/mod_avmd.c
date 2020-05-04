@@ -1974,6 +1974,8 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
     const sma_buffer_t    *sma_amp_b = &b->sma_amp_b;
     const sma_buffer_t    *sqa_amp_b = &b->sqa_amp_b;
 
+    switch_time_t now = switch_micro_time_now();
+
     session = switch_core_session_locate(s->session_uuid);
     if(session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is NULL.\n");
@@ -1987,6 +1989,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
     switch_channel_execute_on(channel, "execute_on_avmd_beep");
     switch_channel_api_on(channel, "api_on_avmd_beep");
     switch_channel_set_variable(channel, "avmd_detect", "TRUE");
+    switch_channel_set_variable_printf(channel, "avmd_detect_timestamp", "%"SWITCH_TIME_T_FMT, now);
     switch (mode) {
 
         case AVMD_DETECT_AMP:

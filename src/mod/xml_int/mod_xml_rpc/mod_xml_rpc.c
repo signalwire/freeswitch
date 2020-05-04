@@ -1112,9 +1112,11 @@ abyss_bool handler_hook(TSession * r)
 	/* execute actual fs api command                                                            */
 	/* fs api command will write to stream,  calling http_stream_write / http_stream_raw_write	*/
 	/* switch_api_execute will stream INVALID COMMAND before it fails					        */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute HTTP request command: [%s] args: [%s].\n", command, api_str);
 	prometheus_increment_api_counter(command);
 	switch_api_execute(command, api_str, NULL, &stream);
 	prometheus_decrement_current_api_call();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Completed HTTP request command: [%s] args: [%s].\n", command, api_str);
 
         if (globals.commands_to_log != NULL) {
                 full_command = switch_mprintf("%s%s%s", command, (api_str==NULL ? "" : " "), api_str);
