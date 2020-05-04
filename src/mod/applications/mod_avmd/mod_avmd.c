@@ -222,7 +222,7 @@ struct avmd_detector {
 
 /*! Type that holds avmd detection session information. */
 struct avmd_session {
-    switch_core_session_t   *session;
+    char                    *session_uuid;
     switch_mutex_t          *mutex;
     struct avmd_settings    settings;
     uint32_t        rate;
@@ -285,7 +285,7 @@ avmd_detector_func(switch_thread_t *thread, void *arg);
 static uint8_t
 avmd_detection_in_progress(avmd_session_t *s);
 
-static switch_status_t avmd_launch_threads(avmd_session_t *s) {
+static switch_status_t avmd_launch_threads(avmd_session_t *s, switch_core_session_t *session) {
 	uint8_t                 idx;
 	struct avmd_detector    *d;
 	switch_threadattr_t     *thd_attr = NULL;
@@ -300,7 +300,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
 		d->lag = 0;
 		switch_threadattr_create(&thd_attr, avmd_globals.pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -321,7 +321,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
 		d->lag = idx + 1;
 		switch_threadattr_create(&thd_attr, avmd_globals.pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -448,7 +448,7 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
         status =  SWITCH_STATUS_MEMERR;
         goto end;
     }
-    avmd_session->session = fs_session;
+    avmd_session->session_uuid = switch_core_session_strdup(fs_session, switch_core_session_get_uuid(fs_session));
     avmd_session->pos = 0;
     avmd_session->f = 0.0;
     avmd_session->state.last_beep = 0;
@@ -571,28 +571,31 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
     switch_frame_t          *frame;
     switch_core_session_t   *fs_session;
     switch_channel_t        *channel = NULL;
-
+    int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
 
     avmd_session = (avmd_session_t *) user_data;
     if (avmd_session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No avmd session assigned!\n");
         return SWITCH_FALSE;
     }
-    if ((type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE)) {
+    if (lock_flag) {
         switch_mutex_lock(avmd_session->mutex);
     }
-    fs_session = avmd_session->session;
+    fs_session = switch_core_session_locate(avmd_session->session_uuid);
     if (fs_session == NULL) {
-        if (type != SWITCH_ABC_TYPE_INIT) {
+        if (lock_flag) {
             switch_mutex_unlock(avmd_session->mutex);
         }
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
+        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(avmd_session->session_uuid), SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
         return SWITCH_FALSE;
     }
 
     channel = switch_core_session_get_channel(fs_session);
     if (channel == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
+        if (lock_flag) {
+            switch_mutex_unlock(avmd_session->mutex);
+        }
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
         return SWITCH_FALSE;
     }
 
@@ -655,7 +658,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
             break;
     }
 
-    if ((type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE)) {
+    if (lock_flag) {
         switch_mutex_unlock(avmd_session->mutex);
     }
     return SWITCH_TRUE;
@@ -1229,7 +1232,7 @@ void avmd_config_dump(avmd_session_t *s) {
         return;
     }
     settings = &s->settings;
-    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "Avmd dynamic configuration: debug [%u], report_status [%u], fast_math [%u],"
+    switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->session_uuid), SWITCH_LOG_INFO, "Avmd dynamic configuration: debug [%u], report_status [%u], fast_math [%u],"
             " require_continuous_streak [%u], sample_n_continuous_streak [%u], sample_n_to_skip [%u], require_continuous_streak_amp [%u], sample_n_continuous_streak_amp [%u],"
            " simplified_estimation [%u], inbound_channel [%u], outbound_channel [%u], detection_mode [%u], detectors_n [%u], detectors_lagged_n [%u]\n",
             settings->debug, settings->report_status, settings->fast_math, settings->require_continuous_streak, settings->sample_n_continuous_streak,
@@ -1317,7 +1320,7 @@ static switch_status_t avmd_parse_cmd_data_one_entry(char *candidate, struct avm
  * if it returns SWITCH_STATUS_SUCCESS parsing went OK and avmd settings
  * are updated accordingly to @cmd_data, if SWITCH_STATUS_FALSE then
  * parsing error occurred and avmd session is left untouched */
-static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_data, enum avmd_app app) {
+static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, switch_core_session_t *session, const char *cmd_data, enum avmd_app app) {
     char *mydata;
     struct avmd_settings    settings;
     int argc = 0, idx;
@@ -1337,10 +1340,10 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
 
         case AVMD_APP_START_APP:
             /* try to parse settings */
-            mydata = switch_core_session_strdup(s->session, cmd_data);
+            mydata = switch_core_session_strdup(session, cmd_data);
             argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
             if (argc < AVMD_PARAMS_APP_START_MIN || argc > AVMD_PARAMS_APP_START_MAX) {
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                         "Syntax Error, avmd_start APP takes [%u] to [%u] parameters\n",
                         AVMD_PARAMS_APP_START_MIN, AVMD_PARAMS_APP_START_MAX);
                 switch_goto_status(SWITCH_STATUS_MORE_DATA, fail);
@@ -1358,31 +1361,31 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
                     switch (status)
                     {
                         case SWITCH_STATUS_TERM:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "NULL settings struct passed to parser\n");
                             break;
                         case SWITCH_STATUS_NOOP:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "NULL settings string passed to parser\n");
                             break;
                         case SWITCH_STATUS_IGNORE:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "Syntax error. Currently we accept only option=value syntax\n");
                             break;
                         case SWITCH_STATUS_NOT_INITALIZED:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "Syntax error. No key specified\n");
                             break;
                         case SWITCH_STATUS_MORE_DATA:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "Syntax error. No value for the key? Currently we accept only option=value syntax\n");
                             break;
                         case SWITCH_STATUS_FALSE:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "Bad value for this option\n");
                             break;
                         case SWITCH_STATUS_NOTFOUND:
-                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                                     "Option not found. Please check option name is correct\n");
                             break;
                         default:
@@ -1396,7 +1399,7 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
             /* OK */
             goto end_copy;
         default:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR, "There is no app with index [%u] for avmd\n", app);
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "There is no app with index [%u] for avmd\n", app);
             switch_goto_status(SWITCH_STATUS_NOTFOUND, fail);
     }
 
@@ -1417,7 +1420,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
 	uint8_t report = 0;
 
     if (session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "BUGGG. FreeSWITCH session is NULL! Please report to developers\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BUGGG. FreeSWITCH session is NULL! Please report to developers\n");
         return;
     }
 
@@ -1442,9 +1445,8 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         status = SWITCH_STATUS_FALSE;
         goto end;
     }
-    avmd_session->session = session;
 
-    status = avmd_parse_cmd_data(avmd_session, data, AVMD_APP_START_APP);   /* dynamic configuation */
+    status = avmd_parse_cmd_data(avmd_session, session, data, AVMD_APP_START_APP);   /* dynamic configuation */
     switch (status) {
         case SWITCH_STATUS_SUCCESS:
             break;
@@ -1511,10 +1513,17 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         }
     }
 
-    status = avmd_launch_threads(avmd_session);
+    status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the audio stream */
+    if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
+        goto end_unlock;
+    }
+
+    status = avmd_launch_threads(avmd_session, session);
     if (status != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start detection threads\n");
         avmd_join_threads(avmd_session);
+        switch_core_media_bug_remove(session, &bug);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Joined detection threads\n");
         goto end_unlock;
     }
@@ -1559,7 +1568,7 @@ SWITCH_STANDARD_APP(avmd_stop_app) {
     avmd_beep_state_t   beep_status = BEEP_NOTDETECTED;
 
     if (session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "FreeSWITCH is NULL! Please report to developers\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FreeSWITCH is NULL! Please report to developers\n");
         return;
     }
 
@@ -1967,6 +1976,7 @@ avmd_decision_freq(const avmd_session_t *s, const struct avmd_buffer *b, double 
 }
 
 static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mode, const struct avmd_detector *d) {
+    switch_core_session_t *session;
     switch_channel_t    *channel;
     switch_time_t       detection_time;
     double      f_sma = 0.0;
@@ -1979,7 +1989,12 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
     const sma_buffer_t    *sma_amp_b = &b->sma_amp_b;
     const sma_buffer_t    *sqa_amp_b = &b->sqa_amp_b;
 
-    channel = switch_core_session_get_channel(s->session);
+    session = switch_core_session_locate(s->session_uuid);
+    if(session == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is NULL.\n");
+        return;
+    }
+    channel = switch_core_session_get_channel(session);
 
     s->detection_stop_time = switch_micro_time_now();                                                           /* stop detection timer     */
     detection_time = s->detection_stop_time - s->detection_start_time;                                          /* detection time length    */
@@ -1991,9 +2006,9 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 
         case AVMD_DETECT_AMP:
             v_amp = sqa_amp_b->sma - (sma_amp_b->sma * sma_amp_b->sma);                                               /* calculate variance of amplitude (biased estimator) */
-            avmd_fire_event(AVMD_EVENT_BEEP, s->session, 0, 0, sma_amp_b->sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
+            avmd_fire_event(AVMD_EVENT_BEEP, session, 0, 0, sma_amp_b->sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
             if (s->settings.report_status == 1) {
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
                         mode, b->resolution, b->offset, d->idx, sma_amp_b->sma, b->amplitude_max, v_amp, detection_time);
             }
             break;
@@ -2001,9 +2016,9 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
         case AVMD_DETECT_FREQ:
             f_sma = sma_b_fir->sma;
             v_fir = sqa_b_fir->sma - (sma_b_fir->sma * sma_b_fir->sma);                                               /* calculate variance of filtered samples */
-            avmd_fire_event(AVMD_EVENT_BEEP, s->session, AVMD_TO_HZ(s->rate, f_sma), v_fir, 0, 0, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
+            avmd_fire_event(AVMD_EVENT_BEEP, session, AVMD_TO_HZ(s->rate, f_sma), v_fir, 0, 0, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
             if (s->settings.report_status == 1) {
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
                         mode, b->resolution, b->offset, d->idx, AVMD_TO_HZ(s->rate, f_sma), v_fir, detection_time);
             }
             break;
@@ -2012,9 +2027,9 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
             v_amp = sqa_amp_b->sma - (sma_amp_b->sma * sma_amp_b->sma);                                               /* calculate variance of amplitude (biased estimator) */
             f_sma = sma_b_fir->sma;
             v_fir = sqa_b_fir->sma - (sma_b_fir->sma * sma_b_fir->sma);                                               /* calculate variance of filtered samples */
-            avmd_fire_event(AVMD_EVENT_BEEP, s->session, AVMD_TO_HZ(s->rate, f_sma), v_fir, sma_amp_b->sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
+            avmd_fire_event(AVMD_EVENT_BEEP, session, AVMD_TO_HZ(s->rate, f_sma), v_fir, sma_amp_b->sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0, b->resolution, b->offset, d->idx);
             if (s->settings.report_status == 1) {
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
                         mode, b->resolution, b->offset, d->idx, AVMD_TO_HZ(s->rate, f_sma), v_fir, sma_amp_b->sma, b->amplitude_max, v_amp, detection_time);
             }
             break;
@@ -2083,7 +2098,7 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame, uint8_t direc
     }
 
 	if (s->settings.debug) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "AVMD: processing frame [%zu], direction=%s\n", s->frame_n, direction == AVMD_READ_REPLACE ? "READ" : "WRITE");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->session_uuid), SWITCH_LOG_INFO, "AVMD: processing frame [%zu], direction=%s\n", s->frame_n, direction == AVMD_READ_REPLACE ? "READ" : "WRITE");
 	}
 
     if (s->detection_start_time == 0) {
