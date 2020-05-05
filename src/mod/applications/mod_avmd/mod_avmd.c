@@ -558,6 +558,60 @@ static void avmd_session_close(avmd_session_t *s) {
     switch_mutex_destroy(s->mutex);
 }
 
+static switch_bool_t avmd_media_bug_init(avmd_session_t *avmd_session) {
+	switch_codec_t          *read_codec;
+	switch_codec_t          *write_codec;
+	switch_core_session_t   *session;
+	switch_channel_t        *channel = NULL;
+
+	session = switch_core_session_locate(avmd_session->session_uuid);
+	if (session == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(avmd_session->session_uuid), SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
+		return SWITCH_FALSE;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	if (channel == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
+		switch_core_session_rwunlock(session);
+		return SWITCH_FALSE;
+	}
+
+	if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
+		read_codec = switch_core_session_get_read_codec(session);
+		if (read_codec == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec assigned, default session rate to 8000 samples/s\n");
+			avmd_session->rate = 8000;
+		} else {
+			if (read_codec->implementation == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec implementation assigned, default session rate to 8000 samples/s\n");
+				avmd_session->rate = 8000;
+			} else {
+				avmd_session->rate = read_codec->implementation->samples_per_second;
+			}
+		}
+	}
+	if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
+		write_codec = switch_core_session_get_write_codec(session);
+		if (write_codec == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec assigned, default session rate to 8000 samples/s\n");
+			avmd_session->rate = 8000;
+		} else {
+			if (write_codec->implementation == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec implementation assigned, default session rate to 8000 samples/s\n");
+				avmd_session->rate = 8000;
+			} else {
+				avmd_session->rate = write_codec->implementation->samples_per_second;
+			}
+		}
+	}
+	avmd_session->start_time = switch_micro_time_now();
+	/* avmd_session->vmd_codec.channels =  read_codec->implementation->number_of_channels; */
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Avmd session initialized, [%u] samples/s\n", avmd_session->rate);
+	switch_core_session_rwunlock(session);
+	return SWITCH_TRUE;
+}
+
 /*! \brief The callback function that is called when new audio data becomes available.
  * @param bug A reference to the media bug.
  * @param user_data The session information for this call.
@@ -565,12 +619,9 @@ static void avmd_session_close(avmd_session_t *s) {
  * @return The success or failure of the function.
  */
 static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, switch_abc_type_t type) {
-    avmd_session_t          *avmd_session;
-    switch_codec_t          *read_codec;
-    switch_codec_t          *write_codec;
-    switch_frame_t          *frame;
-    switch_core_session_t   *fs_session;
-    switch_channel_t        *channel = NULL;
+    avmd_session_t *avmd_session;
+    switch_frame_t *frame;
+    switch_bool_t ret = SWITCH_TRUE;
     int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
 
     avmd_session = (avmd_session_t *) user_data;
@@ -581,58 +632,11 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
     if (lock_flag) {
         switch_mutex_lock(avmd_session->mutex);
     }
-    fs_session = switch_core_session_locate(avmd_session->session_uuid);
-    if (fs_session == NULL) {
-        if (lock_flag) {
-            switch_mutex_unlock(avmd_session->mutex);
-        }
-        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(avmd_session->session_uuid), SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
-        return SWITCH_FALSE;
-    }
-
-    channel = switch_core_session_get_channel(fs_session);
-    if (channel == NULL) {
-        if (lock_flag) {
-            switch_mutex_unlock(avmd_session->mutex);
-        }
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
-        return SWITCH_FALSE;
-    }
 
     switch (type) {
 
         case SWITCH_ABC_TYPE_INIT:
-            if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
-                read_codec = switch_core_session_get_read_codec(fs_session);
-                if (read_codec == NULL) {
-                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No read codec assigned, default session rate to 8000 samples/s\n");
-                    avmd_session->rate = 8000;
-                } else {
-                    if (read_codec->implementation == NULL) {
-                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No read codec implementation assigned, default session rate to 8000 samples/s\n");
-                        avmd_session->rate = 8000;
-                    } else {
-                        avmd_session->rate = read_codec->implementation->samples_per_second;
-                    }
-                }
-            }
-            if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
-                write_codec = switch_core_session_get_write_codec(fs_session);
-                if (write_codec == NULL) {
-                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No write codec assigned, default session rate to 8000 samples/s\n");
-                    avmd_session->rate = 8000;
-                } else {
-                    if (write_codec->implementation == NULL) {
-                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING, "No write codec implementation assigned, default session rate to 8000 samples/s\n");
-                        avmd_session->rate = 8000;
-                    } else {
-                        avmd_session->rate = write_codec->implementation->samples_per_second;
-                    }
-                }
-            }
-            avmd_session->start_time = switch_micro_time_now();
-            /* avmd_session->vmd_codec.channels =  read_codec->implementation->number_of_channels; */
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),SWITCH_LOG_INFO, "Avmd session initialized, [%u] samples/s\n", avmd_session->rate);
+            ret = avmd_media_bug_init(avmd_session);
             break;
 
         case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -661,7 +665,8 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
     if (lock_flag) {
         switch_mutex_unlock(avmd_session->mutex);
     }
-    return SWITCH_TRUE;
+
+    return ret;
 }
 
 static switch_status_t avmd_register_all_events(void) {
@@ -2026,6 +2031,8 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
             break;
     }
     s->state.beep_state = BEEP_DETECTED;
+
+    switch_core_session_rwunlock(session);
 }
 
 static uint8_t
