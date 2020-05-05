@@ -134,6 +134,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	int mstatus = 0, sanity = 0;
 	const char *blocking;
 	int is_blocking = 0;
+	switch_bool_t chat_result = SWITCH_FALSE;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from_proto = switch_event_get_header(message_event, "from_proto");
@@ -342,10 +343,12 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		switch_snprintf(header, sizeof(header), "X-FS-Sending-Message: %s", switch_core_get_uuid());
 
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
+		mstatus = 0;
 
 		if (is_blocking) {
 			switch_mutex_lock(profile->flag_mutex);
 			switch_core_hash_insert(profile->chat_hash, uuid_str, &mstatus);
+	//		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mstatus inside: %u\n",mstatus);
 			switch_mutex_unlock(profile->flag_mutex);
 		}
 
@@ -376,8 +379,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 				status = SWITCH_STATUS_FALSE;
 			}
 
+			if ( mstatus == 200 )      // If we get any chat response as sucess
+				chat_result = SWITCH_TRUE;
 			switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "Delivery-Result-Code", "%d", mstatus);
-
+	//		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mstatus : %u\n",mstatus);
 			switch_mutex_lock(profile->flag_mutex);
 			switch_core_hash_delete(profile->chat_hash, uuid_str);
 			switch_mutex_unlock(profile->flag_mutex);
@@ -387,6 +392,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		switch_safe_free(dup_dest);
 		switch_safe_free(user_via);
 		switch_safe_free(remote_host);
+		sleep(1);
 	}
 
   end:
@@ -403,6 +409,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
 	}
+	if( chat_result == SWITCH_TRUE ) {     // If respose is sucess than result must be successfull
+                status = SWITCH_STATUS_SUCCESS;
+                switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "Delivery-Result-Code", "200");
+        }
 
 	return status;
 }
