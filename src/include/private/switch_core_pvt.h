@@ -305,6 +305,7 @@ struct switch_runtime {
 	uint32_t port_alloc_flags;
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
+	switch_call_cause_t shutdown_cause;
 };
 
 extern struct switch_runtime runtime;
