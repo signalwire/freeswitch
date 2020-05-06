@@ -1857,6 +1857,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	memset(&runtime, 0, sizeof(runtime));
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
+	runtime.shutdown_cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
 	runtime.event_heartbeat_interval = 20;
@@ -3013,6 +3014,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_MDNS_RESOLVE:
 		switch_core_media_set_resolveice(!!oldintval);
 		break;
+	case SCSC_SHUTDOWN_CAUSE:
+		runtime.shutdown_cause = oldintval;
+		break;
 	}
 
 	if (intval) {
@@ -3068,7 +3072,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
-	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+	switch_core_session_hupall(runtime.shutdown_cause);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
