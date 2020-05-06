@@ -27,3 +27,9 @@ Run the following sample dialplan:
   </context>
 </include>
 ```
+
+!!!! ATTENTION, for reliable work this module requires several fixes in libks which are not yet merged, so rebuild libks from this:
+
+```
+git clone --branch vosk-fix --single-branch https://github.com/alphacep/libks
+```
