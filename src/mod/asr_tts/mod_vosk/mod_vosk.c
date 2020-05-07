@@ -111,6 +111,7 @@ static switch_status_t vosk_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t
 
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 	switch_buffer_destroy(&vosk->audio_buffer);
+	switch_safe_free(vosk->result);
 	switch_mutex_unlock(vosk->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -159,18 +160,10 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
-	if (strstr((const char *)rdata, "\"partial\"") != NULL) {
-		switch_mutex_unlock(vosk->mutex);
-		return SWITCH_STATUS_SUCCESS;
-	}
-	if (globals.return_json) {
-		vosk->result = switch_core_strdup(ah->memory_pool, (const char *)rdata);
-	} else {
-		cJSON *result = cJSON_Parse((const char *)rdata);
-		vosk->result = switch_core_strdup(ah->memory_pool, cJSON_GetObjectCstr(result, "text"));
-		cJSON_Delete(result);
-	}
+	switch_safe_free(vosk->result);
+	vosk->result = switch_safe_strdup((const char *)rdata);
 	switch_mutex_unlock(vosk->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -205,16 +198,45 @@ static switch_status_t vosk_asr_unload_grammar(switch_asr_handle_t *ah, const ch
 static switch_status_t vosk_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	return vosk->result ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return (vosk->result && (strstr(vosk->result, "\"\"") == NULL)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 /*! function to read results from the ASR */
 static switch_status_t vosk_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
 	vosk_t *vosk = (vosk_t *) ah->private_info;
-	*xmlstr = switch_mprintf("%s", vosk->result);
+	switch_status_t ret;
+
+
+	switch_mutex_lock(vosk->mutex);
+	if (globals.return_json) {
+		if  (strstr(vosk->result, "\"partial\"") == NULL) {
+			*xmlstr = switch_safe_strdup(vosk->result);
+			ret = SWITCH_STATUS_SUCCESS;
+		} else {
+			*xmlstr = switch_safe_strdup(vosk->result);
+			ret = SWITCH_STATUS_MORE_DATA;
+		}
+	} else {
+		cJSON *result = cJSON_Parse(vosk->result);
+
+		if (cJSON_HasObjectItem(result, "text")) {
+			*xmlstr = switch_safe_strdup(cJSON_GetObjectCstr(result, "text"));
+			ret = SWITCH_STATUS_SUCCESS;
+		} else if (cJSON_HasObjectItem(result, "partial")) {
+			*xmlstr = switch_safe_strdup(cJSON_GetObjectCstr(result, "partial"));
+			ret = SWITCH_STATUS_MORE_DATA;
+		} else {
+			ret = SWITCH_STATUS_GENERR;
+		}
+		cJSON_Delete(result);
+	}
+
+	switch_safe_free(vosk->result);
 	vosk->result = NULL;
-	return SWITCH_STATUS_SUCCESS;
+	switch_mutex_unlock(vosk->mutex);
+
+	return ret;
 }
 
 /*! function to start input timeouts */
