@@ -46,7 +46,7 @@ steps:
       
 trigger:
   branch:
-  - master
+  - orig-oglobals
   event:
   - pull_request
   - push
@@ -110,13 +110,13 @@ steps:
       
 trigger:
   branch:
-  - master
+  - orig-oglobals
   event:
   - pull_request
   - push
 
 ---
 kind: signature
-hmac: d354f6d232ae6417b539fb9b40fc15765c3247ab58c87a5135a0ac6c448e1cd0
+hmac: 0365a8c757aae934f489e0e5970df3aeff39bedad229cc052538c1993a1404f2
 
 ...
