@@ -50,6 +50,7 @@ applications/mod_spandsp
 #applications/mod_spy
 #applications/mod_stress
 #applications/mod_translate
+applications/mod_test
 applications/mod_valet_parking
 #applications/mod_video_filter
 #applications/mod_vmd
