@@ -3336,6 +3336,7 @@ SWITCH_STANDARD_APP(callcenter_track)
 	char agent_status[255];
 	char *agent_name = NULL;
 	char *sql = NULL;
+	const char *tracked_agent = NULL;
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing agent name\n");
@@ -3344,6 +3345,11 @@ SWITCH_STANDARD_APP(callcenter_track)
 
 	if (cc_agent_get("status", data, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", data);
+		return;
+	}
+
+	if ((tracked_agent = switch_channel_get_variable(channel, "cc_tracked_agent"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Already tracking agent %s in this channel.", tracked_agent);
 		return;
 	}
 
