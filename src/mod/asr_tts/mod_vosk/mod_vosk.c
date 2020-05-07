@@ -137,7 +137,7 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		int rlen;
 
 		rlen = switch_buffer_read(vosk->audio_buffer, buf, AUDIO_BLOCK_SIZE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending data %d\n", rlen);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending data %d\n", rlen);
 		if (kws_write_frame(vosk->ws, WSOC_BINARY, buf, rlen) < 0) {
 			switch_mutex_lock(vosk->mutex);
 			return SWITCH_STATUS_BREAK;
@@ -155,13 +155,13 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		return SWITCH_STATUS_BREAK;
 	}
 	if (oc == WSOC_PING) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Received ping\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received ping\n");
 		kws_write_frame(vosk->ws, WSOC_PONG, rdata, rlen);
 		switch_mutex_unlock(vosk->mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recieved %d bytes:\n%s\n", rlen, rdata);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recieved %d bytes:\n%s\n", rlen, rdata);
 	switch_safe_free(vosk->result);
 	vosk->result = switch_safe_strdup((const char *)rdata);
 	switch_mutex_unlock(vosk->mutex);
