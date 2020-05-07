@@ -271,8 +271,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
 		if (loopback_globals.early_set_loopback_id) {
-			switch_channel_set_variable(channel, "loopback_leg", "B");
-			switch_channel_set_variable(channel, "is_loopback", "1");
+			switch_channel_set_variable(b_channel, "loopback_leg", "B");
+			switch_channel_set_variable(b_channel, "is_loopback", "1");
 		}
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1462,8 +1462,15 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 	}
 
 	if (tech_pvt->auto_answer > 0) {
+		int sanity = tech_pvt->auto_answer;
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer);
-		switch_yield(tech_pvt->auto_answer * 1000);
+
+		while(switch_channel_ready(channel) && sanity > 0) {
+			switch_yield(1000 * 1000);
+			sanity -= 1000;
+		}
+
 		switch_channel_mark_answered(channel);
 	}
 
@@ -1602,6 +1609,7 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 	switch_channel_t *ochannel = NULL;
 	const char *auto_answer = switch_event_get_header(var_event, "null_auto_answer");
 	const char *pre_answer = switch_event_get_header(var_event, "null_pre_answer");
+	const char *hangup_cause = switch_event_get_header(var_event, "null_hangup_cause");
 
 	if (session) {
 		ochannel = switch_core_session_get_channel(session);
@@ -1615,7 +1623,7 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		null_private_t *tech_pvt;
 		switch_channel_t *channel;
-		switch_caller_profile_t *caller_profile;
+		switch_caller_profile_t *caller_profile = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
@@ -1669,6 +1677,13 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		switch_assert(caller_profile);
+
+		if (hangup_cause || !strncmp(caller_profile->destination_number, "cause-", 6)) {
+			if (!hangup_cause) hangup_cause = caller_profile->destination_number + 6;
+			return switch_channel_str2cause(hangup_cause);
 		}
 
 		switch_channel_set_state(channel, CS_INIT);

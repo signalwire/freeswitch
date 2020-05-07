@@ -57,7 +57,7 @@ s2_timed_logger(void *stream, char const *fmt, va_list ap)
 {
   char buffer[4096];
   su_time_t now = su_now();
-  size_t prefix, wrote;
+  size_t prefix;
   int n;
 
   snprintf(buffer, sizeof buffer,
@@ -70,5 +70,5 @@ s2_timed_logger(void *stream, char const *fmt, va_list ap)
   prefix = strlen(buffer);
   n = vsnprintf(buffer + prefix, (sizeof buffer) - prefix, fmt, ap);
   if (n > 0)
-    wrote = fwrite(buffer, prefix + n, 1, stream);
+    fwrite(buffer, prefix + n, 1, stream);
 }

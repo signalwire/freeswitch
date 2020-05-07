@@ -46,9 +46,9 @@ static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, 
 	}
 }
 
-static inline unsigned long switch_ssl_ssl_thread_id(void)
+static inline void switch_ssl_ssl_thread_id(CRYPTO_THREADID *id)
 {
-	return (unsigned long) switch_thread_self();
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)switch_thread_self());
 }
 
 SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
@@ -69,7 +69,7 @@ SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 			switch_assert(ssl_mutexes[i] != NULL);
 		}
 
-		CRYPTO_set_id_callback(switch_ssl_ssl_thread_id);
+		CRYPTO_THREADID_set_callback(switch_ssl_ssl_thread_id);
 		CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_ssl_ssl_lock_callback);
 	}
 

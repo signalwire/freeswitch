@@ -14,6 +14,7 @@ AUTOMAKE_OPTIONS = 	foreign
 # Header paths
 
 AM_CPPFLAGS = 		$(INTERNAL_INCLUDES)
+LD_FLAGS = -lz
 
 # ----------------------------------------------------------------------
 # Build targets

@@ -5110,13 +5110,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 
 						if (strchr(ip, ':')) {
-							if (profile->rtpip_index < MAX_RTPIP) {
+							if (profile->rtpip_index6 < MAX_RTPIP) {
 								profile->rtpip6[profile->rtpip_index6++] = switch_core_strdup(profile->pool, ip);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
 							}
 						} else {
-							if (profile->rtpip_index6 < MAX_RTPIP) {
+							if (profile->rtpip_index < MAX_RTPIP) {
 								profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);

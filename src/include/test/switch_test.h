@@ -863,7 +863,7 @@ cJSON *varname = NULL; \
 	int fd = open(file, O_RDONLY); \
 	fst_requires(fd >= 0); \
 	fstat(fd, &s); \
-	buf = malloc(s.st_size + 1); \
+	switch_zmalloc(buf, s.st_size + 1); \
 	fst_requires(buf); \
 	size = read(fd, buf, s.st_size); \
 	fst_requires(size == s.st_size); \

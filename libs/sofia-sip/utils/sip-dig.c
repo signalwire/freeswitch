@@ -206,7 +206,9 @@ int main(int argc, char *argv[])
   int exitcode = 0;
   int o_sctp = 1, o_tls_sctp = 1, o_verbatim = 1;
   int family = 0, multiple = 0;
+  /*
   char const *dnsserver = NULL;
+  */
   char const *string;
   url_t *uri = NULL;
 
@@ -272,8 +274,10 @@ int main(int argc, char *argv[])
   if (!family)
     dig->ip4 = 1, dig->ip6 = 2;
 
+  /*
   if (argv[1] && argv[1][0] == '@')
     dnsserver = argv++[1] + 1;
+  */
 
   if (!argv[1])
     usage(2);

@@ -52,7 +52,7 @@ check_nua_SOURCES = 	check_nua.c check_nua.h \
 			check_etsi.c check_simple.c
 
 check_nua_LDADD = 	$(nua_libs) ${top_builddir}/s2check/libs2.a \
-			@CHECK_LIBS@
+			@CHECK_LIBS@ -lz
 
 nua_libs = 		libnua.la  \
 			../iptsec/libiptsec.la \

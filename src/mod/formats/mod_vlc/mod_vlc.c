@@ -62,7 +62,7 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-const char *vlc_args[] = {"-v"};
+const char *vlc_args[] = {"-vvv"};
 //const char *vlc_args[] = {"--network-caching=0"};
 //--sout-mux-caching
 
@@ -768,6 +768,10 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+    if (!context->vlc_handle) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error: cannot initialise VLC handle\n");
+        return SWITCH_STATUS_GENERR;
+    }
 	libvlc_log_set(context->vlc_handle, log_cb, NULL);
 
 	realpath = path;

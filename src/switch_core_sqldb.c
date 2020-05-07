@@ -1616,6 +1616,7 @@ struct switch_sql_queue_manager {
 	uint32_t numq;
 	char *dsn;
 	switch_thread_t *thread;
+	int thread_initiated;
 	int thread_running;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *cond_mutex;
@@ -1899,8 +1900,15 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_
 		switch_threadattr_create(&thd_attr, qm->pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_NORMAL);
-		switch_thread_create(&qm->thread, thd_attr, switch_user_sql_thread, qm, qm->pool);
-		return SWITCH_STATUS_SUCCESS;
+		if (switch_thread_create(&qm->thread, thd_attr, switch_user_sql_thread, qm, qm->pool) == SWITCH_STATUS_SUCCESS) {
+			while (!qm->thread_initiated) {
+				switch_cond_next();
+			}
+
+			if (qm->event_db) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
 	}
 
 	return SWITCH_STATUS_FALSE;
@@ -2274,10 +2282,9 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	if (!qm->event_db) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s Error getting db handle\n", qm->name);
+		qm->thread_initiated = 1;
 		return NULL;
 	}
-
-	qm->thread_running = 1;
 
 	switch_mutex_lock(qm->cond_mutex);
 
@@ -2296,6 +2303,8 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		break;
 	}
 
+	qm->thread_initiated = 1;
+	qm->thread_running = 1;
 
 	while (qm->thread_running == 1) {
 		uint32_t i, lc;

@@ -9,6 +9,7 @@
 # Header paths
 
 AM_CPPFLAGS = 		$(INTERNAL_INCLUDES)
+AM_LDFLAGS = -ldl
 
 # ----------------------------------------------------------------------
 # Build targets
