@@ -3316,10 +3316,10 @@ static switch_status_t cc_hook_state_run(switch_core_session_t *session)
 	char *sql = NULL;
 
 	agent_name = switch_channel_get_variable(channel, "cc_tracked_agent");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel '%s' with state '%s' \n", switch_channel_get_name(channel), switch_channel_state_name(state));
 
 	if (state == CS_HANGUP) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent '%s' ended, decreasing external_calls_count \n", agent_name);
 		sql = switch_mprintf("UPDATE agents SET external_calls_count = external_calls_count - 1 WHERE name = '%q'", agent_name);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -3344,12 +3344,12 @@ SWITCH_STANDARD_APP(callcenter_track)
 	}
 
 	if (cc_agent_get("status", data, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", data);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent '%s' \n", data);
 		return;
 	}
 
 	if ((tracked_agent = switch_channel_get_variable(channel, "cc_tracked_agent"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Already tracking agent %s in this channel.", tracked_agent);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Already tracking agent '%s' in this channel. \n", tracked_agent);
 		return;
 	}
 
@@ -3363,7 +3363,7 @@ SWITCH_STANDARD_APP(callcenter_track)
 
 	switch_core_event_hook_add_state_run(session, cc_hook_state_run);
 	PROTECT_INTERFACE(app_interface);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracking this call for agent %s", data);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracking this call for agent '%s' \n", data);
 	switch_safe_free(agent_name);
 
 	return;
