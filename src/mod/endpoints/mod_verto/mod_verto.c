@@ -788,7 +788,7 @@ static void jrpc_add_func(const char *method, jrpc_func_t func)
 
 static char *MARKER = "X";
 
-static void set_perm(const char *str, switch_event_t **event)
+static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 {
 	char delim = ',';
 	char *cur, *next;
@@ -801,8 +801,10 @@ static void set_perm(const char *str, switch_event_t **event)
 		}
 	}
 
-	switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
-
+	if (event && !*event) {
+		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
+	}
+	
 	if (!zstr(str)) {
 		edup = strdup(str);
 		switch_assert(edup);
@@ -816,8 +818,12 @@ static void set_perm(const char *str, switch_event_t **event)
 				*next++ = '\0';
 			}
 
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, cur, MARKER);
-
+			if (add) {
+				switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, cur, MARKER);
+			} else {
+				switch_event_del_header(*event, cur);
+			}
+			
 			cur = next;
 		}
 
@@ -859,13 +865,39 @@ static void check_permissions(jsock_t *jsock, switch_xml_t x_user, cJSON *params
 	}
 
 
-	set_perm(allowed_methods, &jsock->allowed_methods);
-	set_perm(allowed_jsapi, &jsock->allowed_jsapi);
-	set_perm(allowed_fsapi, &jsock->allowed_fsapi);
-	set_perm(allowed_event_channels, &jsock->allowed_event_channels);
+	set_perm(allowed_methods, &jsock->allowed_methods, SWITCH_TRUE);
+	set_perm(allowed_jsapi, &jsock->allowed_jsapi, SWITCH_TRUE);
+	set_perm(allowed_fsapi, &jsock->allowed_fsapi, SWITCH_TRUE);
+	set_perm(allowed_event_channels, &jsock->allowed_event_channels, SWITCH_TRUE);
 
 	switch_event_add_header_string(jsock->allowed_methods, SWITCH_STACK_BOTTOM, "login", MARKER);
 
+}
+
+static switch_status_t add_perm(const char *sessid, const char *type, const char *value, switch_bool_t add)
+{
+	jsock_t *jsock = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (type && value && (jsock = get_jsock(sessid))) {
+		status =  SWITCH_STATUS_SUCCESS;
+		
+		if (!strcmp(type, "methods")) {
+			set_perm(value, &jsock->allowed_methods, add);
+		} else if (!strcmp(type, "jsapi")) {
+			set_perm(value, &jsock->allowed_jsapi, add);
+		} else if (!strcmp(type, "fsapi")) {
+			set_perm(value, &jsock->allowed_fsapi, add);
+		} else if (!strcmp(type, "event_channels")) {
+			set_perm(value, &jsock->allowed_event_channels, add);
+		} else {
+			status = SWITCH_STATUS_FALSE;
+		}
+		
+		switch_thread_rwlock_unlock(jsock->rwlock);
+	}
+
+	return status;
 }
 
 static void login_fire_custom_event(jsock_t *jsock, cJSON *params, int success, const char *result_txt)
@@ -5418,6 +5450,7 @@ SWITCH_STANDARD_API(verto_function)
 		"verto [status|xmlstatus|jsonstatus]\n"
 		"verto help\n"
 		"verto debug [0-10]\n"
+		"verto perm <sessid> <type> <value>\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (zstr(cmd)) {
@@ -5437,6 +5470,24 @@ SWITCH_STANDARD_API(verto_function)
 
 	if (!strcasecmp(argv[0], "help")) {
 		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	} else if (!strcasecmp(argv[0], "perm")) {
+		status = add_perm(argv[1], argv[2], argv[3], SWITCH_TRUE);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK");
+		} else {
+			stream->write_function(stream, "-ERR");
+		}
+		status = SWITCH_STATUS_SUCCESS; 
+		goto done;
+	} else if (!strcasecmp(argv[0], "noperm")) {
+		status = add_perm(argv[1], argv[2], argv[3], SWITCH_FALSE);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK");
+		} else {
+			stream->write_function(stream, "-ERR");
+		}
+		status = SWITCH_STATUS_SUCCESS; 
 		goto done;
 	} else if (!strcasecmp(argv[0], "status")) {
 		func = cmd_status;
