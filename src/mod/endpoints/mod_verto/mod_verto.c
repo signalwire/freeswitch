@@ -5451,6 +5451,7 @@ SWITCH_STANDARD_API(verto_function)
 		"verto help\n"
 		"verto debug [0-10]\n"
 		"verto perm <sessid> <type> <value>\n"
+		"verto noperm <sessid> <type> <value>\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (zstr(cmd)) {
@@ -6579,6 +6580,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	SWITCH_ADD_API(api_interface, "verto_contact", "Generate a verto endpoint dialstring", verto_contact_function, "user@domain");
 	switch_console_set_complete("add verto help");
 	switch_console_set_complete("add verto debug");
+	switch_console_set_complete("add verto perm");
+	switch_console_set_complete("add verto noperm");
 	switch_console_set_complete("add verto debug-level");
 	switch_console_set_complete("add verto status");
 	switch_console_set_complete("add verto xmlstatus");
