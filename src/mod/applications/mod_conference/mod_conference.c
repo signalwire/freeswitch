@@ -422,7 +422,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 
 		/* Start auto recording if there's the minimum number of required participants. */
-		if (conference->auto_record && !conference->auto_recording && (conference->count >= conference->min_recording_participants)) {
+		if (conference->auto_record && !conference->auto_recording && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && (conference->count >= conference->min_recording_participants)) {
 			conference->auto_recording++;
 			conference->record_count++;
 			imember = conference->members;
