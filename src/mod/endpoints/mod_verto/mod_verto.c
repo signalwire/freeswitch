@@ -1902,7 +1902,8 @@ error:
 static void client_run(jsock_t *jsock)
 {
 	int flags = KWS_BLOCK;
-
+	int idle = 0;
+	
 	if (jsock->profile->vhosts) {
 		flags |= KWS_STAY_OPEN;
 		flags |= KWS_HTTP;
@@ -1920,16 +1921,25 @@ static void client_run(jsock_t *jsock)
 	}
 
 	while(jsock->profile->running) {
-		int pflags;
+		int pflags, poll_time = 50;
 
 		if (!jsock->ws) { die("%s Setup Error\n", jsock->name); }
 		
-		pflags = kws_wait_sock(jsock->ws, 50, KS_POLL_READ | KS_POLL_ERROR | KS_POLL_HUP);
+		pflags = kws_wait_sock(jsock->ws, poll_time, KS_POLL_READ | KS_POLL_ERROR | KS_POLL_HUP);
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
-		if (pflags == 0) {/* socket poll timeout */ jsock_check_event_queue(jsock); }
+		if (pflags == 0) {/* socket poll timeout */ jsock_check_event_queue(jsock); idle += poll_time;} else {idle = 0;}
 
+		if (idle >= 30000) {
+			cJSON *params = NULL;
+			cJSON *msg = jrpc_new_req("verto.ping", 0, &params);
+
+			cJSON_AddItemToObject(params, "serno", cJSON_CreateNumber(switch_epoch_time_now(NULL)));
+			jsock_queue_event(jsock, &msg, SWITCH_TRUE);
+			idle = 0;
+		}
+		
 		if ((!switch_test_flag(jsock, JPFLAG_CHECK_ATTACH) || (jsock->attach_timer > 0 && jsock->attach_timer-- == 0)) &&
 			switch_test_flag(jsock, JPFLAG_AUTHED)) {
 			attach_calls(jsock);
@@ -3576,6 +3586,13 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 	}
 }
 
+static switch_bool_t verto__ping_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
+{
+	*response = cJSON_CreateObject();
+	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("PONG"));
+	return SWITCH_TRUE;
+}
+
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	cJSON *msg = NULL, *dialog = NULL, *txt = NULL, *jevent = NULL;
@@ -4413,6 +4430,7 @@ static void jrpc_init(void)
 	jrpc_add_func("login", login_func);
 
 	jrpc_add_func("verto.invite", verto__invite_func);
+	jrpc_add_func("verto.ping", verto__ping_func);
 	jrpc_add_func("verto.info", verto__info_func);
 	jrpc_add_func("verto.attach", verto__attach_func);
 	jrpc_add_func("verto.bye", verto__bye_func);
