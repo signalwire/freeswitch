@@ -606,6 +606,7 @@ typedef struct conference_obj {
 	char *enter_sound;
 	char *exit_sound;
 	char *alone_sound;
+	char *waiting_sound;
 	char *perpetual_sound;
 	char *moh_sound;
 	char *tmp_moh_sound;

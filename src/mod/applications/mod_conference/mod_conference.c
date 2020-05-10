@@ -2689,6 +2689,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *sound_prefix = NULL;
 	char *exit_sound = NULL;
 	char *alone_sound = NULL;
+	char *waiting_sound = NULL;
 	char *muted_sound = NULL;
 	char *mute_detect_sound = NULL;
 	char *unmuted_sound = NULL;
@@ -2940,6 +2941,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				exit_sound = val;
 			} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
 				alone_sound = val;
+			} else if (!strcasecmp(var, "waiting-sound") && !zstr(val)) {
+				waiting_sound = val;
 			} else if (!strcasecmp(var, "perpetual-sound") && !zstr(val)) {
 				perpetual_sound = val;
 			} else if (!strcasecmp(var, "moh-sound") && !zstr(val)) {
@@ -3481,6 +3484,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(alone_sound)) {
 		conference->alone_sound = switch_core_strdup(conference->pool, alone_sound);
+	}
+	if (!zstr(waiting_sound)) {
+		conference->waiting_sound = switch_core_strdup(conference->pool, waiting_sound);
 	}
 
 	if (!zstr(locked_sound)) {
