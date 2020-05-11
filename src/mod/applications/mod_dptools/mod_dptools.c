@@ -3138,6 +3138,12 @@ SWITCH_STANDARD_APP(playback_function)
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
+	case SWITCH_STATUS_GENERR:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
+		break;
+	case SWITCH_STATUS_FALSE:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
+		break;
 	default:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
 		break;
@@ -3168,6 +3174,12 @@ SWITCH_STANDARD_APP(endless_playback_function)
 		break;
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	case SWITCH_STATUS_GENERR:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
+		break;
+	case SWITCH_STATUS_FALSE:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
 		break;
 	default:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
@@ -3217,6 +3229,12 @@ SWITCH_STANDARD_APP(loop_playback_function)
 		break;
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	case SWITCH_STATUS_GENERR:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
+		break;
+	case SWITCH_STATUS_FALSE:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
 		break;
 	default:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");

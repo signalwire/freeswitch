@@ -1952,6 +1952,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
 			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Playback-Status-Code", "%d", status);
 			if (fh->params) {
 				switch_event_merge(event, fh->params);
 			}
