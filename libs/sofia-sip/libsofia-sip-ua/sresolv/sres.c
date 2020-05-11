@@ -1640,7 +1640,8 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
       D = A->a6_prelen - B->a6_prelen; if (D) return D;
       D = !A->a6_prename - !B->a6_prename;
       if (D == 0 && A->a6_prename && B->a6_prename)
-	D = su_strcasecmp(A->a6_prename, B->a6_prename); if (D) return D;
+        D = su_strcasecmp(A->a6_prename, B->a6_prename);
+      if (D) return D;
       return memcmp(&A->a6_suffix, &B->a6_suffix, sizeof A->a6_suffix);
     }
   case sres_type_aaaa:
@@ -3460,7 +3461,7 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
   sres_record_t **reply;
   sres_server_t *dns;
 
-  struct sockaddr_storage from[1];
+  struct sockaddr_storage from[1] = {{0}};
   socklen_t fromlen = sizeof from;
 
   SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_receive",

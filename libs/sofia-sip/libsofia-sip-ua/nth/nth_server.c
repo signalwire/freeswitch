@@ -342,6 +342,13 @@ nth_site_t *nth_site_create(nth_site_t *parent,
       size_t i, j;
 
       path = (char *)url->url_path;
+
+      if (!path) {
+          SU_DEBUG_3(("nth_site_create(): invalid url\n" VA_NONE));
+          errno = EINVAL;
+          goto error;
+      }
+
       while (path[0] == '/')
 	path++;
 
@@ -842,10 +849,10 @@ void server_request(server_t *srv,
 
   if (subsite)
     subsite->site_access = now;
-  else
+  else if (site)
     site->site_access = now;
 
-  if (subsite && subsite->site_isdir && subpath == site_nodir_match) {
+  if (site && subsite && subsite->site_isdir && subpath == site_nodir_match) {
     /* Answer with 301 */
     http_location_t loc[1];
     http_location_init(loc);

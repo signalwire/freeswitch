@@ -4834,7 +4834,7 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 {
 	conference_member_t *imember;
 	int want_refresh = 0;
-	unsigned char buf[SWITCH_RTP_MAX_BUF_LEN] = "";
+	unsigned char buf[sizeof(switch_rtp_packet_t)] = "";
 	switch_frame_t tmp_frame = { 0 };
 
 	if (switch_test_flag(vid_frame, SFF_CNG) || !vid_frame->packet) {

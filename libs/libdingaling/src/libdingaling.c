@@ -499,7 +499,10 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						unsigned int *candidate_len = NULL;
 						ldl_candidate_t (*candidates)[LDL_MAX_CANDIDATES] = NULL;
 						
-						if ((key = iks_find_attrib(tag, "preference"))) {
+						if (!(key = iks_find_attrib(tag, "preference"))) {
+							globals.logger(DL_LOG_WARNING, "Field preference was not set\n");
+							continue;
+						} else {
 							unsigned int x;
 							
 							pref = strtod(key, NULL);
@@ -927,7 +930,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	char *node = NULL;
 	char *ns = NULL;
 	ldl_handle_t *handle = user_data;
-	iks *iq, *query, *tag;
+	iks *iq = NULL, *query, *tag;
 	uint8_t send = 0;
 	int x;
 
@@ -936,10 +939,10 @@ static int on_disco_default(void *user_data, ikspak *pak)
 		node = iks_find_attrib(pak->query, "node");
 	}
 
-	if (pak->subtype == IKS_TYPE_RESULT) {
+	if (pak && pak->subtype == IKS_TYPE_RESULT) {
 		globals.logger(DL_LOG_CRIT, "FixME!!! node=[%s]\n", node?node:"");		
-	} else if (pak->subtype == IKS_TYPE_GET) {
-		if ((iq = iks_new("iq"))) {
+	} else if (pak && pak->subtype == IKS_TYPE_GET) {
+		if (ns && (iq = iks_new("iq"))) {
 			int all = 0;
 			
 			iks_insert_attrib(iq, "from", handle->login);
@@ -1081,7 +1084,6 @@ static int on_presence(void *user_data, ikspak *pak)
 			if (ext && strstr(ext, "voice-v1") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 				apr_cpystrn(buffer->buf, from, buffer->len);
 				buffer->hit = 1;
-				done = 1;
 			}
 		}
 	}
@@ -1149,7 +1151,6 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	
 	bytes = read(fd, image, sizeof(image));
 	close(fd);
-	fd = -1;
 
 	ap = malloc(sizeof(*ap));
 	assert(ap != NULL);
@@ -2565,7 +2566,6 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 		iq = NULL;
 		sess = NULL;
 		tag = NULL;
-		x = 0;
 		id = 0;
 	}
 

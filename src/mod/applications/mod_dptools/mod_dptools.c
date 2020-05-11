@@ -3868,7 +3868,7 @@ static void pickup_add_session(switch_core_session_t *session, const char *key)
 		key = dup_key;
 	}
 
-	node = malloc(sizeof(*node));
+	switch_zmalloc(node, sizeof(*node));
 	switch_assert(node);
 	node->key = strdup(key);
 	node->uuid = strdup(switch_core_session_get_uuid(session));

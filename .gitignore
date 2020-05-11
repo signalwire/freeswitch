@@ -271,4 +271,11 @@ src/mod/applications/mod_http_cache/test/test-suite.log
 src/mod/applications/mod_http_cache/test/test_aws
 src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
-
+src/mod/formats/mod_sndfile/test/test_sndfile
+src/mod/formats/mod_sndfile/test/test_sndfile_conf
+src/mod/*/*/test/*.log
+src/mod/*/*/test/*.trs
+src/mod/*/*/test/[0-9]*/*
+test-suite.log
+src/mod/applications/mod_av/test/test_BT7.mp4
+src/mod/applications/mod_av/test/test_RGB.mp4

@@ -394,13 +394,13 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t x;
     int32_t v;
-    int16_t notched_signal[3];
+    int16_t notched_signal[3] = {0};
     int16_t bandpass_signal;
     int16_t signal;
 #else
     float x;
     float v;
-    float notched_signal[3];
+    float notched_signal[3] = {0};
     float bandpass_signal;
     float signal;
 #endif
@@ -409,7 +409,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
     int k;
     int l;
     int m;
-    int32_t notch_power[3];
+    int32_t notch_power[3] = {0};
     int32_t flat_power;
     int immediate;
 

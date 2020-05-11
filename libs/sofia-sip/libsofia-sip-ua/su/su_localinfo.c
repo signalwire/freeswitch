@@ -228,11 +228,15 @@ int su_getlocalinfo(su_localinfo_t const *hints,
 #endif
 
   case AF_INET:
+#ifndef USE_LOCALINFO0
     ip4 = 1;
+#endif
     break;
 
   case 0:
+#ifndef USE_LOCALINFO0
     ip4 = 1;
+#endif
 #if SU_HAVE_IN6  
     ip6 = 1;
 #endif

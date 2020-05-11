@@ -195,13 +195,14 @@ s2_sip_next_request(sip_method_t method, char const *name)
   struct message *m;
 
   for (m = s2sip->received; m; m = m->next) {
-    if (m->sip->sip_request)
+    if (m->sip->sip_request) {
       if (method == sip_method_unknown && name == NULL)
 	return s2_sip_remove_message(m);
 
-    if (m->sip->sip_request->rq_method == method &&
-	strcmp(m->sip->sip_request->rq_method_name, name) == 0)
-      return s2_sip_remove_message(m);
+      if (m->sip->sip_request->rq_method == method &&
+  	strcmp(m->sip->sip_request->rq_method_name, name) == 0)
+        return s2_sip_remove_message(m);
+    }
   }
 
   return NULL;

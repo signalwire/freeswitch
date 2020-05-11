@@ -96,7 +96,7 @@ APR_DECLARE(void) apr_proc_other_child_unregister(void *data)
     }
 
     /* segfault if this function called with invalid parm */
-    apr_pool_cleanup_kill(cur->p, cur->data, other_child_cleanup);
+    if (cur) apr_pool_cleanup_kill(cur->p, cur->data, other_child_cleanup);
     other_child_cleanup(data);
 }
 

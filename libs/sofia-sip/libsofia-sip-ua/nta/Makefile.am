@@ -61,7 +61,7 @@ LDADD = 		libnta.la \
 			../msg/libmsg.la \
 			../bnf/libbnf.la \
 			../su/libsu.la \
-			${top_builddir}/s2check/libs2.a
+			${top_builddir}/s2check/libs2.a -lz
 
 test_nta_LDFLAGS = 	-static
 

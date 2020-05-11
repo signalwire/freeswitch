@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_PORTS_X86_H_
-#define VPX_PORTS_X86_H_
+#ifndef VPX_VPX_PORTS_X86_H_
+#define VPX_VPX_PORTS_X86_H_
 #include <stdlib.h>
 
 #if defined(_MSC_VER)
@@ -161,7 +161,7 @@ static INLINE uint64_t xgetbv(void) {
 #define HAS_AVX2 0x080
 #define HAS_AVX512 0x100
 #ifndef BIT
-#define BIT(n) (1u << n)
+#define BIT(n) (1u << (n))
 #endif
 
 static INLINE int x86_simd_caps(void) {
@@ -223,11 +223,26 @@ static INLINE int x86_simd_caps(void) {
   return flags & mask;
 }
 
-// Note:
-//  32-bit CPU cycle counter is light-weighted for most function performance
-//  measurement. For large function (CPU time > a couple of seconds), 64-bit
-//  counter should be used.
-// 32-bit CPU cycle counter
+// Fine-Grain Measurement Functions
+//
+// If you are timing a small region of code, access the timestamp counter
+// (TSC) via:
+//
+// unsigned int start = x86_tsc_start();
+//   ...
+// unsigned int end = x86_tsc_end();
+// unsigned int diff = end - start;
+//
+// The start/end functions introduce a few more instructions than using
+// x86_readtsc directly, but prevent the CPU's out-of-order execution from
+// affecting the measurement (by having earlier/later instructions be evaluated
+// in the time interval). See the white paper, "How to Benchmark Code
+// Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures" by
+// Gabriele Paoloni for more information.
+//
+// If you are timing a large function (CPU time > a couple of seconds), use
+// x86_readtsc64 to read the timestamp counter in a 64-bit integer. The
+// out-of-order leakage that can occur is minimal compared to total runtime.
 static INLINE unsigned int x86_readtsc(void) {
 #if defined(__GNUC__) && __GNUC__
   unsigned int tsc;
@@ -262,6 +277,41 @@ static INLINE uint64_t x86_readtsc64(void) {
   __asm rdtsc;
 #endif
 #endif
+}
+
+// 32-bit CPU cycle counter with a partial fence against out-of-order execution.
+static INLINE unsigned int x86_readtscp(void) {
+#if defined(__GNUC__) && __GNUC__
+  unsigned int tscp;
+  __asm__ __volatile__("rdtscp\n\t" : "=a"(tscp) :);
+  return tscp;
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+  unsigned int tscp;
+  asm volatile("rdtscp\n\t" : "=a"(tscp) :);
+  return tscp;
+#elif defined(_MSC_VER)
+  unsigned int ui;
+  return (unsigned int)__rdtscp(&ui);
+#else
+#if ARCH_X86_64
+  return (unsigned int)__rdtscp();
+#else
+  __asm rdtscp;
+#endif
+#endif
+}
+
+static INLINE unsigned int x86_tsc_start(void) {
+  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  return x86_readtsc();
+}
+
+static INLINE unsigned int x86_tsc_end(void) {
+  uint32_t v = x86_readtscp();
+  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  return v;
 }
 
 #if defined(__GNUC__) && __GNUC__
@@ -313,14 +363,23 @@ static unsigned short x87_get_control_word(void) {
 
 static INLINE unsigned int x87_set_double_precision(void) {
   unsigned int mode = x87_get_control_word();
+  // Intel 64 and IA-32 Architectures Developer's Manual: Vol. 1
+  // https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-1-manual.pdf
+  // 8.1.5.2 Precision Control Field
+  // Bits 8 and 9 (0x300) of the x87 FPU Control Word ("Precision Control")
+  // determine the number of bits used in floating point calculations. To match
+  // later SSE instructions restrict x87 operations to Double Precision (0x200).
+  // Precision                     PC Field
+  // Single Precision (24-Bits)    00B
+  // Reserved                      01B
+  // Double Precision (53-Bits)    10B
+  // Extended Precision (64-Bits)  11B
   x87_set_control_word((mode & ~0x300) | 0x200);
   return mode;
 }
-
-extern void vpx_reset_mmx_state(void);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VPX_PORTS_X86_H_
+#endif  // VPX_VPX_PORTS_X86_H_

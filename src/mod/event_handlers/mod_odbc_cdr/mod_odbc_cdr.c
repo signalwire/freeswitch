@@ -224,7 +224,6 @@ static void write_cdr(const char *path, const char *log_line)
 		wrote += write(fd, "\n", 1);
 		wrote++;
 		close(fd);
-		fd = -1;
 	}
 }
 
@@ -283,7 +282,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 
 			if (!table) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Table [%s] not found, ignoring leg\n", table_name);
-				skip_leg = SWITCH_TRUE;
+				continue;
 			}
 
 			if (table->log_leg == ODBC_CDR_LOG_A && is_b) {

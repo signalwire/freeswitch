@@ -66,7 +66,7 @@ s2_getlocalinfo(su_localinfo_t const *hints,
 		su_localinfo_t **return_localinfo)
 {
   int error = 0, ip4 = 0, ip6 = 0, i;
-  su_localinfo_t *result = NULL, **rr = &result;
+  su_localinfo_t *result = NULL, **rr;
   su_localinfo_t hh[1] = {{ 0 }};
 
   assert(return_localinfo);

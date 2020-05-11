@@ -1614,7 +1614,7 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
-		switch_yuv_color_t yuv;
+		switch_yuv_color_t yuv = {0};
 
 		switch_img_get_yuv_pixel(img, &yuv, x, y);
 		switch_color_yuv2rgb(&yuv, rgb);
@@ -2134,11 +2134,14 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	char *argv[6] = { 0 };
 	switch_rgb_color_t bgcolor = { 0 };
 	int pre_width = 0, width = 0, font_size = 0, height = 0;
-	int len = 0;
 	char *duptxt = strdup(text);
 	switch_img_txt_handle_t *txthandle = NULL;
 	switch_image_t *txtimg = NULL;
 	int x = 0, y = 0;
+
+	if (!duptxt) {
+		return NULL;
+	}
 
 	if (strchr(text, ':')) {
 		argc = switch_split(duptxt, ':', argv);
@@ -2177,11 +2180,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 	while (*txt == ' ') txt++;
 	while (end_of(txt) == ' ') end_of(txt) = '\0';
-
-	len = strlen(txt);
-
-	if (len < 5) len = 5;
-
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 

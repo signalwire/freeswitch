@@ -1293,7 +1293,7 @@ int test_mime(void)
   TEST_1(mp = mp->mp_next);
 
   TEST_1(mp->mp_data);
-  TEST(memcmp(mp->mp_data, CRLF "--" "LaGqGt4BI6Ho" CR LF, mp->mp_len), 0);
+  TEST(memcmp(mp->mp_data, CRLF "--" "LaGqGt4BI6Ho" CRLF, mp->mp_len), 0);
 
   TEST_1(c = mp->mp_content_type);
   TEST_S(c->c_type, "text/plain"); TEST_S(c->c_subtype, "plain");

@@ -56,20 +56,9 @@ static void kz_tweaks_variables_to_event(switch_core_session_t *session, switch_
 	}
 }
 
-/* kazoo endpoint */
-switch_endpoint_interface_t *kz_endpoint_interface;
 static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *session,
 							switch_event_t *var_event,
-							switch_caller_profile_t *outbound_profile,
-							switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
-							switch_call_cause_t *cancel_cause);
-switch_io_routines_t kz_endpoint_io_routines = {
-	/*.outgoing_channel */ kz_endpoint_outgoing_channel
-};
-
-static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *session,
-							switch_event_t *var_event,
-							switch_caller_profile_t *outbound_profile,
+							switch_caller_profile_t *outbound_profile_in,
 							switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
 							switch_call_cause_t *cancel_cause)
 {
@@ -97,14 +86,15 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 	char *cid_num_override = NULL;
 	switch_event_t *event = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_caller_profile_t *outbound_profile = NULL;
 
 
-	if (zstr(outbound_profile->destination_number)) {
+	if (zstr(outbound_profile_in->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "NO DESTINATION NUMBER\n");
 		goto done;
 	}
 
-	user = strdup(outbound_profile->destination_number);
+	user = strdup(outbound_profile_in->destination_number);
 
 	if (!user)
 		goto done;
@@ -271,7 +261,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 	} else if(var_event) {
 		const char* uuid_e_session = switch_event_get_header(var_event, "ent_originate_aleg_uuid");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHECKING ORIGINATE-UUID : %s\n", uuid_e_session);
-		if (uuid_e_session && (e_session = switch_core_session_force_locate(uuid_e_session)) != NULL) {
+		if (uuid_e_session && (e_session = switch_core_session_locate(uuid_e_session)) != NULL) {
 			a_session = e_session;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FOUND ORIGINATE-UUID : %s\n", uuid_e_session);
 		}
@@ -382,6 +372,32 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 		goto done;
 	}
 
+	//
+	outbound_profile = outbound_profile_in;
+	/*
+	outbound_profile = switch_caller_profile_dup(outbound_profile_in->pool, outbound_profile_in);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG1, "CHECKING CALLER-ID\n");
+	if ((x_params = switch_xml_child(x_user, "profile-variables"))) {
+		const char* val = NULL;
+		outbound_profile->soft = NULL;
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *pvar = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG1, "setting profile var %s = %s\n", pvar, val);
+			switch_caller_profile_set_var(outbound_profile, pvar, val);
+		}
+		// * TODO * verify onnet/offnet
+		if((val=switch_caller_get_field_by_name(outbound_profile, "Endpoint-Caller-ID-Name"))) {
+			outbound_profile->callee_id_name = val;
+			outbound_profile->orig_caller_id_name = val;
+		}
+		if((val=switch_caller_get_field_by_name(outbound_profile, "Endpoint-Caller-ID-Number"))) {
+			outbound_profile->callee_id_number = val;
+			outbound_profile->orig_caller_id_number = val;
+		}
+	}
+	*/
+
 	status = switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL,
 	 	                         cid_name_override, cid_num_override, outbound_profile, var_event, myflags,
 	 	                         cancel_cause, NULL);
@@ -409,17 +425,20 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			}
 		}
 
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG1, "CHECKING CALLER-ID\n");
 		if ((x_params = switch_xml_child(x_user, "profile-variables"))) {
-			switch_caller_profile_t *cp = NULL;
+			switch_caller_profile_t *cp = switch_channel_get_caller_profile(new_channel);
 			const char* val = NULL;
+			cp->soft = NULL;
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 				const char *pvar = switch_xml_attr(x_param, "name");
 				const char *val = switch_xml_attr(x_param, "value");
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG1, "setting profile var %s = %s\n", pvar, val);
 				switch_channel_set_profile_var(new_channel, pvar, val);
+				//switch_caller_profile_set_var(cp, pvar, val);
 			}
-			cp = switch_channel_get_caller_profile(new_channel);
+			// * TODO * verify onnet/offnet
 			if((val=switch_caller_get_field_by_name(cp, "Endpoint-Caller-ID-Name"))) {
 					cp->callee_id_name = val;
 					cp->orig_caller_id_name = val;
@@ -466,7 +485,15 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 }
 
 
+/* kazoo endpoint */
+
+
+switch_io_routines_t kz_endpoint_io_routines = {
+	/*.outgoing_channel */ kz_endpoint_outgoing_channel
+};
+
 void add_kz_endpoints(switch_loadable_module_interface_t **module_interface) {
+	switch_endpoint_interface_t *kz_endpoint_interface;
 	kz_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	kz_endpoint_interface->interface_name = "kz";
 	kz_endpoint_interface->io_routines = &kz_endpoint_io_routines;

@@ -519,7 +519,6 @@ int tport_tcp_ping(tport_t *self, su_time_t now)
     else
       why = " blocking";
 
-    return -1;
   }
 
   SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",

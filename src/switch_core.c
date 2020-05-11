@@ -2383,6 +2383,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
 					}
+				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
+					switch_core_max_audio_channels(atoi(val));
 				}
 			}
 		}
@@ -2636,6 +2638,15 @@ SWITCH_DECLARE(int32_t) switch_core_sessions_peak(void)
 SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void)
 {
 	return runtime.sessions_peak_fivemin;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit)
+{
+	if (limit) {
+		runtime.max_audio_channels = limit;
+	}
+
+	return runtime.max_audio_channels;
 }
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val)

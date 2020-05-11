@@ -147,7 +147,7 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
                         int rotation)
 {
     int i;
-    int j;
+    int j = 0;
 
     if (rotation >= 0)
     {
@@ -170,7 +170,8 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
                 return 0;
             }
         }
-        j = (rotation + steps - 1)%steps;
+        if (steps) 
+            j = (rotation + steps - 1)%steps;
         if (pattern[j].f1 != test[9].f1  ||  pattern[j].f2 != test[9].f2)
             return 0;
         if (pattern[j].max_duration < test[9].min_duration*SUPER_TONE_BINS)
@@ -314,9 +315,9 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     int k1;
     int k2;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    int32_t res[SUPER_TONE_BINS/2];
+    int32_t res[SUPER_TONE_BINS/2] = {0};
 #else
-    float res[SUPER_TONE_BINS/2];
+    float res[SUPER_TONE_BINS/2] = {0};
 #endif
 
     for (i = 0;  i < s->desc->monitored_frequencies;  i++)

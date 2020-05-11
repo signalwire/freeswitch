@@ -2807,8 +2807,23 @@ void event_handler(switch_event_t *event)
 		if (mod_sofia_globals.rewrite_multicasted_fs_path && contact_str) {
 			const char *needle = ";fs_path=";
 			char *sptr, *eptr = NULL;
-			/* allocate enough room for worst-case scenario */
-			size_t len = strlen(contact_str) + strlen(to_host) + 14;
+			/* allocate enough room for worst-case scenario, depends on rewrite_multicased_fs_path setting */
+			size_t len;
+			switch (mod_sofia_globals.rewrite_multicasted_fs_path) {
+				case 1:
+					len = strlen(contact_str) + strlen(to_host) + 14;
+				break;
+				case 2:
+					len = strlen(contact_str) + strlen(orig_server_host) + 14;
+				break;
+				case 3:
+					len = strlen(contact_str) + strlen(orig_hostname) + 14;
+				break;
+				default:
+					len = strlen(contact_str) + strlen(to_host) + 14;
+				break;
+			}
+
 			fixed_contact_str = malloc(len);
 			switch_assert(fixed_contact_str);
 			switch_copy_string(fixed_contact_str, contact_str, len);
@@ -3716,7 +3731,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0, extension_in_contact = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0, contact_in_ping = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
 			int ping_max = 1, ping_min = 1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
@@ -3831,6 +3846,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					caller_id_in_from = val;
 				} else if (!strcmp(var, "extension")) {
 					extension = val;
+				} else if (!strcmp(var, "contact-in-ping")) {
+					contact_in_ping = switch_true(val);
 				} else if (!strcmp(var, "ping")) {
 					ping_freq = atoi(val);
 				} else if (!strcmp(var, "ping-max")) {
@@ -4029,6 +4046,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					gateway->options_to_uri = switch_core_sprintf(gateway->pool, "<sip:%s>",
 						!zstr(from_domain) ? from_domain : proxy);
 					gateway->options_from_uri = gateway->options_to_uri;
+					if (contact_in_ping) {
+						gateway->contact_in_ping = contact_in_ping;
+					}	
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
 				}
@@ -4416,6 +4436,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "abort-on-empty-external-ip")) {
+				mod_sofia_globals.abort_on_empty_external_ip = switch_true(val);
 			} else if (!strcasecmp(var, "tracelevel")) {
 				mod_sofia_globals.tracelevel = switch_log_str2level(val);
 			} else if (!strcasecmp(var, "debug-presence")) {
@@ -5059,7 +5081,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
-							switch_goto_status(SWITCH_STATUS_GENERR, done);
+							if (mod_sofia_globals.abort_on_empty_external_ip) {
+								switch_goto_status(SWITCH_STATUS_GENERR, done);
+							}
 						}
 					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
@@ -5086,13 +5110,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 
 						if (strchr(ip, ':')) {
-							if (profile->rtpip_index < MAX_RTPIP) {
+							if (profile->rtpip_index6 < MAX_RTPIP) {
 								profile->rtpip6[profile->rtpip_index6++] = switch_core_strdup(profile->pool, ip);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
 							}
 						} else {
-							if (profile->rtpip_index6 < MAX_RTPIP) {
+							if (profile->rtpip_index < MAX_RTPIP) {
 								profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
@@ -10073,7 +10097,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (profile && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-		if (channel && sip->sip_call_info) {
+		if (channel && sip && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
 				if (switch_stristr("appearance", call_info)) {
@@ -10093,7 +10117,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
 
-		if (sip->sip_payload && sip->sip_payload->pl_data) {
+		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 			if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
 				switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
 				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);

@@ -38,7 +38,9 @@ kz_globals_t kazoo_globals = {0};
 
 SWITCH_MODULE_DEFINITION(mod_kazoo, mod_kazoo_load, mod_kazoo_shutdown, mod_kazoo_runtime);
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
+SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load)
+{
+	kz_erl_init();
 
 	memset(&kazoo_globals, 0, sizeof(kazoo_globals));
 	kazoo_globals.pool = pool;
@@ -77,6 +79,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	/* add tweaks */
 	kz_tweaks_start();
 
+	/* add our cdr */
+	kz_cdr_start();
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -84,8 +89,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	int sanity = 0;
 
-
 	remove_cli_api();
+
+	kz_cdr_stop();
 
 	kz_tweaks_stop();
 
@@ -127,6 +133,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	switch_safe_free(kazoo_globals.ip);
 	switch_safe_free(kazoo_globals.ei_cookie);
 	switch_safe_free(kazoo_globals.ei_nodename);
+
+	kz_erl_shutdown();
 
 	return SWITCH_STATUS_SUCCESS;
 }

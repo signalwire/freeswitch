@@ -312,7 +312,7 @@ int sip_prefs_matching(char const *pvalue,
 int sip_is_callerpref(char const *param)
 {
 #define MATCH(s) \
-  (su_casenmatch(param + 1, s + 1, strlen(s) - 1) && \
+  (su_casenmatch(&param[1], &s[1], strlen(s) - 1) && \
    (param[strlen(s)] == '=' || param[strlen(s)] == '\0'))
 
   int xor = 0, base = 0;
