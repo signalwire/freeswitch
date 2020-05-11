@@ -60,7 +60,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
 			switch_img_add_text(img->planes[0], img->d_w, 10, 10, "-1234567890");
-			switch_img_write_png(img, "test-rgb.png");
+			switch_img_write_png(img, "images/test-rgb.png");
 
 			switch_img_data_url_png(img, &data_url);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "I420: %s\n", data_url);
@@ -74,7 +74,7 @@ FST_CORE_BEGIN("./conf")
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d %d %d %d\n", *p, *(p+1), *(p+2), *(p+3));
 			}
 
-			switch_img_write_png(argb_img, "test-argb.png");
+			switch_img_write_png(argb_img, "images/test-argb.png");
 			switch_img_data_url_png(argb_img, &data_url);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ARGB: %s\n", data_url);
 			free(data_url);
@@ -82,6 +82,121 @@ FST_CORE_BEGIN("./conf")
 
 			switch_img_free(&img);
 			switch_img_free(&argb_img);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(img_patch)
+		{
+			int width = 320;
+			int height = 240;
+
+			switch_image_t *timg = switch_img_write_text_img(width, height, SWITCH_FALSE, "#ffffff:transparent:FreeMono.ttf:24:This is a test!");
+			fst_requires(timg != NULL);
+			switch_status_t status = switch_img_write_png(timg, "images/test_text.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			width *=2;
+			height *=2;
+
+			switch_rgb_color_t bgcolor = {0, 0, 0}; // red
+			bgcolor.b = 255;
+
+			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+			fst_requires(img);
+			switch_img_fill(img, 0, 0, width, height, &bgcolor);
+			status = switch_img_write_png(img, "images/test.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_patch(img, timg, 0, 0);
+
+			status = switch_img_write_png(img, "images/test_patched.png");
+
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			switch_img_free(&timg);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(img_patch_alpha)
+		{
+			switch_image_t *timg = switch_img_read_png("images/test_text.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(timg != NULL);
+
+			switch_image_t *img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(img);
+			switch_img_patch(img, timg, 0, 0);
+			switch_status_t status = switch_img_write_png(img, "images/test_patched_alpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			switch_img_patch_rgb(img, timg, 0, 0, SWITCH_TRUE);
+			status = switch_img_write_png(img, "images/test_patched_noalpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			switch_img_free(&timg);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(img_patch_banner_alpha)
+		{
+			switch_status_t status;
+			switch_image_t *img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			switch_image_t *img2 = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(img);
+			fst_requires(img2);
+			switch_img_patch(img, img2, 80, 20);
+			status = switch_img_write_png(img, "images/test_patched_banner_alpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			switch_img_patch_rgb(img, img2, 80, 20, SWITCH_TRUE);
+			status = switch_img_write_png(img, "images/test_patched_banner_noalpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			switch_img_free(&img2);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(img_patch_signalwire_alpha)
+		{
+			switch_image_t *timg_small = NULL;
+			switch_image_t *timg = switch_img_read_png("images/signalwire.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(timg != NULL);
+
+			switch_image_t *img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(img);
+			switch_img_scale(timg, &timg_small, timg->d_w / 5, timg->d_h / 5);
+			switch_img_patch(img, timg_small, 80, 20);
+			switch_status_t status = switch_img_write_png(img, "images/test_patched_signalwire_alpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			switch_img_free(&timg);
+			switch_img_free(&timg_small);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(img_patch_signalwire_no_alpha)
+		{
+			switch_image_t *timg_small = NULL;
+			switch_image_t *timg = switch_img_read_png("images/signalwire.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(timg != NULL);
+
+			switch_image_t *img = switch_img_read_png("images/banner.png", SWITCH_IMG_FMT_ARGB);
+			fst_requires(img);
+			switch_img_scale(timg, &timg_small, timg->d_w / 5, timg->d_h / 5);
+			switch_img_patch_rgb(img, timg_small, 80, 20, SWITCH_TRUE);
+			switch_status_t status = switch_img_write_png(img, "images/test_patched_signalwire_no_alpha.png");
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			switch_img_free(&img);
+			switch_img_free(&timg);
+			switch_img_free(&timg_small);
 		}
 		FST_TEST_END()
 	}
