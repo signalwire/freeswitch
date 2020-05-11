@@ -5070,7 +5070,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (gateway_ptr && gateway_ptr->ob_vars) {
 		switch_event_header_t *hp;
 		for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 							  switch_channel_get_name(nchannel), hp->name, hp->value);
 			if (!strncmp(hp->name, "p:", 2)) {
 				switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
