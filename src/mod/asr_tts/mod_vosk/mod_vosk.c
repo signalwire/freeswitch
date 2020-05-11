@@ -339,6 +339,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vosk_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vosk_shutdown)
 {
 	ks_pool_close(&globals.ks_pool);
+	ks_shutdown();
 
 	switch_event_unbind(&NODE);
 	return SWITCH_STATUS_UNLOAD;
