@@ -325,7 +325,7 @@ static void switch_img_patch_rgb_noalpha(switch_image_t *IMG, switch_image_t *im
 		int max_w = MIN(img->d_w, IMG->d_w - abs(x));
 		int max_h = MIN(img->d_h, IMG->d_h - abs(y));
 		int j;
-		uint8_t alpha, alphadiff;
+		uint8_t alpha;
 		switch_rgb_color_t *rgb, *RGB; 
 
 		for (i = 0; i < max_h; i++) {		
@@ -334,19 +334,27 @@ static void switch_img_patch_rgb_noalpha(switch_image_t *IMG, switch_image_t *im
 				RGB = (switch_rgb_color_t *)(IMG->planes[SWITCH_PLANE_PACKED] + (y + i) * IMG->stride[SWITCH_PLANE_PACKED] + (x + j) * 4);
 				
 				alpha = rgb->a;
-				
-				if (RGB->a != 0) {
+
+				if (RGB->a == 0) {
+					*RGB = *rgb;
 					continue;
 				}
 
 				if (alpha == 255) {
 					*RGB = *rgb;
-				} else if (alpha != 0) {
-					alphadiff = 255 - alpha;
-					RGB->a = 255;
-					RGB->r = ((RGB->r * alphadiff) + (rgb->r * alpha)) >> 8;
-					RGB->g = ((RGB->g * alphadiff) + (rgb->g * alpha)) >> 8;
-					RGB->b = ((RGB->b * alphadiff) + (rgb->b * alpha)) >> 8;
+					continue;
+				}
+
+				if (alpha > 0) {
+					uint8_t delta1, delta2, delta;
+
+					delta1 = 255 - RGB->a;
+					delta2 = 255 - rgb->a;
+					delta = (delta1 * delta2) >> 8;
+					RGB->r = ((RGB->r * RGB->a) + (rgb->r * rgb->a)) / (RGB->a + rgb->a);
+					RGB->g = ((RGB->g * RGB->a) + (rgb->g * rgb->a)) / (RGB->a + rgb->a);
+					RGB->b = ((RGB->b * RGB->a) + (rgb->b * rgb->a)) / (RGB->a + rgb->a);
+					RGB->a = 255 - delta;
 				}
 			}
 		}
@@ -394,7 +402,7 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		int height = MIN(img->d_h, IMG->d_h - abs(y));
 		void (*ARGBBlendRow)(const uint8_t* src_argb, const uint8_t* src_argb1, uint8_t* dst_argb, int width) = GetARGBBlend();
 
-		switch_img_attenuate(img);
+		// switch_img_attenuate(img);
 
 		// Coalesce rows. we have same size images, treat as a single row
 		if (src_stride_argb0 == width * 4 &&
