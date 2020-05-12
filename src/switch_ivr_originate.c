@@ -3889,8 +3889,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					}
 				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
-								  switch_channel_get_name(peer_channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s] Peer UUID: %s\n",
+								  switch_channel_get_name(peer_channel), switch_channel_get_uuid(peer_channel));
 				*cause = SWITCH_CAUSE_SUCCESS;
 
 			} else {
