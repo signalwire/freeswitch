@@ -461,6 +461,7 @@ typedef enum {
 	SOFIA_TLS_VERSION_TLSv1 = (1 << 2),
 	SOFIA_TLS_VERSION_TLSv1_1 = (1 << 3),
 	SOFIA_TLS_VERSION_TLSv1_2 = (1 << 4),
+	SOFIA_TLS_VERSION_TLSv1_3 = (1 << 5),
 } sofia_tls_version_t;
 
 typedef enum {
