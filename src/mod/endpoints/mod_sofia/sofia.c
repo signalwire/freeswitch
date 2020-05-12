@@ -4633,6 +4633,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->tls_version = SOFIA_TLS_VERSION_TLSv1;
 					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_1;
 					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_2;
+					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_3;
 					profile->tls_timeout = 300;
 					profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 					profile->server_rport_level = 1;
@@ -5878,6 +5879,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_1;
 							if (n==7 && !strncasecmp(ps, "tlsv1.2", n))
 								profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_2;
+							if (n==7 && !strncasecmp(ps, "tlsv1.3", n))
+								profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_3;
 							ps=pe+1;
 						}
 					} else if (!strcasecmp(var, "tls-timeout") && !zstr(val)) {
