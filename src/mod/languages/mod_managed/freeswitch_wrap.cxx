@@ -18030,6 +18030,18 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_default_rat
 }
 
 
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_max_audio_channels___(unsigned long jarg1) {
+  unsigned long jresult ;
+  uint32_t arg1 ;
+  uint32_t result;
+  
+  arg1 = (uint32_t)jarg1; 
+  result = (uint32_t)switch_core_max_audio_channels(arg1);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_add_registration___(char * jarg1, char * jarg2, char * jarg3, char * jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -22226,6 +22238,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_split_user_domain___(
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_calloc___(unsigned long jarg1, unsigned long jarg2) {
+  void * jresult ;
+  size_t arg1 ;
+  size_t arg2 ;
+  void *result = 0 ;
+  
+  arg1 = (size_t)jarg1; 
+  arg2 = (size_t)jarg2; 
+  result = (void *)switch_calloc(arg1,arg2);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_uuid_str___(char * jarg1, void * jarg2) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
@@ -23117,6 +23143,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_html_strip___(char
   arg1 = (char *)jarg1; 
   result = (char *)switch_html_strip((char const *)arg1);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_getpid___() {
+  unsigned long jresult ;
+  unsigned long result;
+  
+  result = (unsigned long)switch_getpid();
+  jresult = (unsigned long)result; 
   return jresult;
 }
 
@@ -41950,6 +41986,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_ivr_signal_bridge___(
   result = (switch_status_t)switch_ivr_signal_bridge(arg1,arg2);
   jresult = (int)result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_ivr_check_hold___(void * jarg1) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  switch_ivr_check_hold(arg1);
 }
 
 

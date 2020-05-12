@@ -2266,6 +2266,8 @@ int tport_set_secondary_timer(tport_t *self)
     return 0;
 
   if (tport_is_closed(self)) {
+
+again:
     if (self->tp_refs == 0) {
       SU_DEBUG_7(("tport(%p): set timer at %u ms because %s\n",
 				  (void *)self, 0, "zap"));
@@ -2291,9 +2293,14 @@ int tport_set_secondary_timer(tport_t *self)
     }
   }
 
-  if (self->tp_pri->pri_vtable->vtp_next_secondary_timer)
-    self->tp_pri->pri_vtable->
-      vtp_next_secondary_timer(self, &target, &why);
+  if (self->tp_pri->pri_vtable->vtp_next_secondary_timer) {
+    if (self->tp_pri->pri_vtable->
+      vtp_next_secondary_timer(self, &target, &why) == -1) {
+      if (tport_is_closed(self)) {
+        goto again;
+      }
+    }
+  }
 
   if (su_time_cmp(target, infinity)) {
     SU_DEBUG_7(("tport(%p): set timer at %ld ms because %s\n",

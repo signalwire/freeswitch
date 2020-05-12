@@ -8966,8 +8966,17 @@ void outgoing_trying(nta_outgoing_t *orq)
 {
   if (orq->orq_forked)
     ;
-  else if (orq->orq_method == sip_method_invite)
-    outgoing_queue(orq->orq_agent->sa_out.inv_calling, orq);
+  else if (orq->orq_method == sip_method_invite) {
+    if (!orq->orq_completed) {
+      outgoing_queue(orq->orq_agent->sa_out.inv_calling, orq);
+    } else {
+      SU_DEBUG_5(("nta(%p): completed request can not be put into inv_calling queue (%u)\n", (void *)orq, orq->orq_cseq->cs_seq));
+      if (orq->orq_queue != orq->orq_agent->sa_out.inv_completed) {
+        /* Put back into inv_completed if it's not there by any reason */
+        outgoing_queue(orq->orq_agent->sa_out.inv_completed, orq); /* Timer D */
+      }
+    }
+  }
   else
     outgoing_queue(orq->orq_agent->sa_out.trying, orq);
 }

@@ -175,6 +175,11 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	}
 
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+	codec_fmtp.actual_samples_per_second = codec->implementation->actual_samples_per_second;
+	codec_fmtp.bits_per_second = codec->implementation->bits_per_second;
+	codec_fmtp.microseconds_per_packet = codec->implementation->microseconds_per_packet;
+	codec_fmtp.stereo = codec->implementation->number_of_channels > 1;
+
 	codec_fmtp.private_info = &silk_codec_settings;
 	switch_silk_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 
