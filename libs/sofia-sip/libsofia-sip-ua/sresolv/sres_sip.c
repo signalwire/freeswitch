@@ -278,7 +278,7 @@ sres_sip_new(sres_resolver_t *sres,
   srs->srs_url = u = url_hdup(srs->srs_home, (url_t *)uri);
   if (u == NULL)
     return sres_sip_fatal(srs, SRES_SIP_ERR_BAD_URI);
-  if (u->url_type != url_sip && u->url_type != url_sips)
+  if (u->url_type != url_sip && u->url_type != url_urn && u->url_type != url_sips)
     return sres_sip_fatal(srs, SRES_SIP_ERR_BAD_URI);
 
   /* RFC 3263:

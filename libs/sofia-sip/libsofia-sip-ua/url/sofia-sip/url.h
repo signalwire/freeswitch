@@ -44,6 +44,7 @@ enum url_type_e {
   url_any = 0,		/**< "*" */
   url_sip,		/**< "sip:". @sa @RFC3261 */
   url_sips,		/**< "sips:". @sa @RFC3261 */
+  url_urn,		/**< "urn:". @sa @RFC6061 */
   url_tel,		/**< "tel:" @sa RFC3966 */
   url_fax,		/**< "fax:". @note Obsolete. @sa @RFC2806 */
   url_modem,		/**< "modem:". @note Obsolete. @sa @RFC2806  */

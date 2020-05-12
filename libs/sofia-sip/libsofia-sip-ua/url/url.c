@@ -477,6 +477,7 @@ char const* url_scheme(enum url_type_e url_type)
   case url_cid:    return "cid";
   case url_msrp:   return "msrp";
   case url_msrps:  return "msrps";
+  case url_urn:    return "urn";
   case url_wv:     return "wv";
   default:
     assert(url_type == url_unknown);
@@ -535,6 +536,8 @@ enum url_type_e url_get_type(char const *scheme, size_t len)
     test_scheme(sip); test_scheme(sips); break;
   case 't': case 'T':
     test_scheme(tel); break;
+  case 'u': case 'U':
+    test_scheme(urn); break;
   case 'w': case 'W':
     test_scheme(wv); break;
 
@@ -1796,6 +1799,7 @@ char const *url_port_default(enum url_type_e url_type)
     return "9999";		/* XXXX */
 
   case url_tel:
+  case url_urn:
   case url_fax:
   case url_modem:
   case url_im:
@@ -1841,6 +1845,7 @@ char const *url_tport_default(enum url_type_e url_type)
   case url_im:
   case url_pres:
   case url_cid:
+  case url_urn:
   case url_wv:
 
   default:			/* Unknown scheme */

@@ -1280,6 +1280,7 @@ int can_redirect(sip_contact_t const *m, sip_method_t method)
     enum url_type_e type = (enum url_type_e)m->m_url->url_type;
     return
       type == url_sip ||
+      type == url_urn ||
       type == url_sips ||
       (type == url_tel &&
        (method == sip_method_invite || method == sip_method_message)) ||
