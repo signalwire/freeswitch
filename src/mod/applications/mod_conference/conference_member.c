@@ -442,6 +442,32 @@ conference_member_t *conference_member_get_by_var(conference_obj_t *conference, 
 	return member;
 }
 
+/* traverse the conference member list for the specified member id or variable and return its pointer */
+conference_member_t *conference_member_get_by_str(conference_obj_t *conference, const char *id_str)
+{
+	conference_member_t *member = NULL;
+
+	switch_assert(conference != NULL);
+	if (!id_str) {
+		return NULL;
+	}
+	if (strchr(id_str, '=')) {
+		char *var, *val;
+
+		var = strdup(id_str);
+		switch_assert(var);
+
+		if ((val = strchr(var, '='))) {
+			*val++ = '\0';
+		}
+		member = conference_member_get_by_var(conference, var, val);
+		free(var);
+	} else {
+		member = conference_member_get(conference, atoi(id_str));
+	}
+	return member;
+}
+
 
 /* traverse the conference member list for the specified member with role  and return it's pointer */
 conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id)
