@@ -364,6 +364,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_version.c \
 	src/switch_core_media.c \
 	src/switch_core_video.c \
+	src/switch_packetizer.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \

@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  *
  *
- * test_avformat -- avformat tests
+ * switch_packetizer.c unit test
  *
  */
 
@@ -35,11 +35,10 @@
 
 FST_CORE_BEGIN("conf")
 {
-	FST_MODULE_BEGIN(mod_av, mod_av_test)
+	FST_SUITE_BEGIN(switch_packetizer)
 	{
 		FST_SETUP_BEGIN()
 		{
-			fst_requires_module("mod_av");
 		}
 		FST_SETUP_END()
 
@@ -52,33 +51,33 @@ FST_CORE_BEGIN("conf")
 			uint8_t h264data[] = {0, 0, 0, 1, 0x67, 1, 2, 0, 0, 0, 1, 0x68, 1, 2, 0, 0, 0, 1, 0x65, 1, 2, 3, 4, 5, 6};
 
 			frame.data = data;
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(frame.datalen == 4);
 			switch_packetizer_close(&packetizer);
@@ -94,33 +93,33 @@ FST_CORE_BEGIN("conf")
 			uint8_t h264data[] = {0, 0, 0, 3, 0x67, 1, 2, 0, 0, 0, 3, 0x68, 1, 2, 0, 0, 0, 7, 0x65, 1, 2, 3, 4, 5, 6};
 
 			frame.data = data;
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(frame.datalen == 4);
 			fst_check(frame.m == 1);
@@ -138,7 +137,7 @@ FST_CORE_BEGIN("conf")
 			uint8_t extradata[] = {0x01, 0x64, 0x00, 0x1e, 0xff, 0xe1, 0x00, 0x03, 0x67, 0x64, 0x00, 0xe1, 0x00, 0x03, 0x68, 0x01, 0x02};
 //																	1 fps       3 bytes                 1pps        3 bytes
 			frame.data = data;
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed_extradata(packetizer, extradata, sizeof(extradata));
@@ -148,35 +147,35 @@ FST_CORE_BEGIN("conf")
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u\n", frame.datalen);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x06);
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x09);
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x07);
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 3);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x08);
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x1c);
@@ -184,7 +183,7 @@ FST_CORE_BEGIN("conf")
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_MORE_DATA);
 			fst_requires(frame.datalen == 4);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x1c);
@@ -192,7 +191,7 @@ FST_CORE_BEGIN("conf")
 
 			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u %x\n", frame.datalen, *(uint8_t *)frame.data);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(frame.datalen == 4);
 			fst_check((*(uint8_t *)frame.data & 0x1f) == 0x1c);
@@ -210,47 +209,23 @@ FST_CORE_BEGIN("conf")
 			uint8_t h264data[] = {0, 0, 2, 9, 0x67, 1, 2, 0, 0, 0, 0, 0x68, 1, 2, 0, 0, 0, 0, 0x65, 1, 2, 3, 4, 5, 6};
 
 			frame.data = data;
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
-			fst_requires(status == SWITCH_STATUS_MORE_DATA);
-			fst_requires(frame.datalen == 3);
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
-			fst_requires(status == SWITCH_STATUS_MORE_DATA);
-			fst_requires(frame.datalen == 3);
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
-			fst_requires(status == SWITCH_STATUS_MORE_DATA);
-			fst_requires(frame.datalen == 4);
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
-			fst_requires(status == SWITCH_STATUS_MORE_DATA);
-			fst_requires(frame.datalen == 4);
-			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-			status = switch_packetizer_read(packetizer, &frame);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", frame.datalen);
-			fst_requires(status == SWITCH_STATUS_SUCCESS);
-			fst_requires(frame.datalen == 4);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status = %d datalen = %u\n", status, frame.datalen);
+			fst_requires(status == SWITCH_STATUS_FALSE);
 			switch_packetizer_close(&packetizer);
 		}
 		FST_TEST_END()
 
 		FST_TEARDOWN_BEGIN()
 		{
-		  //const char *err = NULL;
-		  switch_sleep(1000000);
-		  //fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_av", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
 		}
 		FST_TEARDOWN_END()
 	}
-	FST_MODULE_END()
+	FST_SUITE_END()
 }
 FST_CORE_END()
