@@ -1162,6 +1162,8 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	if ((error = avformat_open_input(&context->fc, filename, NULL, NULL)) < 0) {
 		char ebuf[255] = "";
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open input file '%s' (error '%s')\n", filename, get_error_text(error, ebuf, sizeof(ebuf)));
+		avformat_free_context(context->fc);
+		context->fc = NULL;
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 	
