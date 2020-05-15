@@ -243,8 +243,8 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 		if (start) {
 			//uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
 			nalu_type |= (nalu_idc << 5);
-			size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
-			size = switch_buffer_write(buffer, &nalu_type, 1);
+			switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+			switch_buffer_write(buffer, &nalu_type, 1);
 			context->nalu_28_start = 1;
 		}
 
@@ -273,14 +273,14 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 
 			if (context->got_sps <= 0 && nalu_type == 7) context->got_sps = 1;
 
-			size += switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
-			size += switch_buffer_write(buffer, (void *)data, nalu_size);
+			switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+			size = switch_buffer_write(buffer, (void *)data, nalu_size);
 			data += nalu_size;
 			left -= nalu_size;
 			goto again;
 		}
 	} else {
-		size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+		switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
 		size = switch_buffer_write(buffer, frame->data, frame->datalen);
 		context->nalu_28_start = 0;
 	}
