@@ -3096,6 +3096,7 @@ SWITCH_STANDARD_APP(playback_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t fh = { 0 };
 	char *p;
+	const char *error = NULL;
 	const char *file = NULL;
 
 	if (data) {
@@ -3115,7 +3116,7 @@ SWITCH_STANDARD_APP(playback_function)
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
-	status = switch_ivr_play_file(session, &fh, file, &args);
+	status = switch_ivr_play_file_detailed(session, &fh, file, &args, &error);
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
 	switch (status) {
@@ -3126,14 +3127,8 @@ SWITCH_STANDARD_APP(playback_function)
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
-	case SWITCH_STATUS_GENERR:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
-		break;
-	case SWITCH_STATUS_FALSE:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
-		break;
 	default:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
 		break;
 	}
 
@@ -3145,6 +3140,7 @@ SWITCH_STANDARD_APP(endless_playback_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *error = NULL;
 	const char *file = data;
 
 	while (switch_channel_ready(channel)) {
@@ -3163,14 +3159,8 @@ SWITCH_STANDARD_APP(endless_playback_function)
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
-	case SWITCH_STATUS_GENERR:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
-		break;
-	case SWITCH_STATUS_FALSE:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
-		break;
 	default:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
 		break;
 	}
 
@@ -3180,6 +3170,7 @@ SWITCH_STANDARD_APP(loop_playback_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *error = NULL;
 	const char *file = data;
 	int loop = 1;
 
@@ -3218,14 +3209,8 @@ SWITCH_STANDARD_APP(loop_playback_function)
 	case SWITCH_STATUS_NOTFOUND:
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
-	case SWITCH_STATUS_GENERR:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNABLE TO PLAY FILE");
-		break;
-	case SWITCH_STATUS_FALSE:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MEDIA NOT READY");
-		break;
 	default:
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
 		break;
 	}
 

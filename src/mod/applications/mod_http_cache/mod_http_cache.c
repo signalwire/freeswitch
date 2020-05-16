@@ -727,19 +727,19 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 
 	if (u && u->status == CACHED_URL_AVAILABLE) {
 		if (switch_time_now() >= (u->download_time + u->max_age)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL has expired.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cached URL has expired.\n", url);
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
 		} else if (switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL file is missing.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cached URL file is missing.\n", url);
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
 		} else if (refresh) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL manually expired.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cached URL manually expired.\n", url);
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
 		} else if (u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() >= (u->download_time + download_timeout_ns)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Download of URL has timed out.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Download of URL has timed out.\n", url);
 			u = NULL;
 		}
 	}
@@ -748,12 +748,12 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 		/* URL is not cached, let's add it.*/
 		/* Set up URL entry and add to map to prevent simultaneous downloads */
 		cache->misses++;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d, error count = %d\n", url, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses, cache->errors);
 		u = cached_url_create(cache, url, NULL);
 		if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
 			/* This error should never happen */
 			url_cache_unlock(cache, session);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to add URL to cache!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s: Failed to add URL to cache!\n", url);
 			cached_url_destroy(u, cache->pool);
 			return NULL;
 		}
@@ -774,6 +774,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			cache->errors++;
 		}
 	} else if (!u || (u->status == CACHED_URL_RX_IN_PROGRESS && download != DOWNLOAD)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Download URL %s is needed\n", url);
 		filename = DOWNLOAD_NEEDED;
 	} else {
 		/* Wait until file is downloaded */
@@ -793,7 +794,11 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			filename = switch_core_strdup(pool, u->filename);
 			cache->hits++;
 			u->used = 1;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Cache HIT: size = %zu (%zu MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s: Cache HIT: size = %zu (%zu MB), hit ratio = %d/%d\n", url, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
+		} else {
+			cache->misses++;
+			cache->errors++;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d, error count = %d\n", url, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses, cache->errors);
 		}
 	}
 	url_cache_unlock(cache, session);
@@ -1154,7 +1159,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "URL %s open() error: %s\n", url->url, strerror(errno));
 		status = SWITCH_STATUS_GENERR;
 		goto done;
 	}
