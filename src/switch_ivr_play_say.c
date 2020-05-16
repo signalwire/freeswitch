@@ -1161,7 +1161,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_sessi
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args, const char **error)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int16_t *abuf = NULL;
@@ -1209,7 +1209,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int cumulative = 0;
 	int last_speed = -1;
 
+	*error = NULL;
+
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		*error = "Failed to start media";
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1248,7 +1251,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
-	if (zstr(file) || !switch_channel_media_ready(channel)) {
+	if (zstr(file)) {
+		*error = "Audio file URL is empty";
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!switch_channel_media_ready(channel)) {
+		*error = "Cannot establish media";
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1287,13 +1296,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			fh->samples = sample_start = 0;
 			if (sleep_val_i) {
 				status = switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
-								if(status != SWITCH_STATUS_SUCCESS) {
-										break;
-								}
+				if(status != SWITCH_STATUS_SUCCESS) {
+					*error = "IVR sleep fails";
+					break;
+				}
 			}
 		}
 
 		status = SWITCH_STATUS_SUCCESS;
+		*error = NULL;
 
 		if ((alt = strchr(file, ':'))) {
 			char *dup;
@@ -1309,7 +1320,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						*arg++ = '\0';
 					}
 					if ((status = switch_ivr_phrase_macro(session, dup, arg, lang, args)) != SWITCH_STATUS_SUCCESS) {
-						break;
+						arg_recursion_check_stop(args);
+						*error = "Phrase macro failed";
+						return status;
 					}
 					continue;
 				} else {
@@ -1326,7 +1339,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				if (engine && text) {
 					if ((status = switch_ivr_speak_text(session, engine, voice, (char *)text, args)) != SWITCH_STATUS_SUCCESS) {
-						break;
+						arg_recursion_check_stop(args);
+						*error = "TTS failed";
+						return status;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
@@ -1415,6 +1430,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+			*error = "File not found";			
 			status = SWITCH_STATUS_NOTFOUND;
 			continue;
 		}
@@ -1501,6 +1517,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				*error = "Codec activation failed";
 				status = SWITCH_STATUS_GENERR;
 				continue;
 			}
@@ -1524,6 +1541,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				*error = "Cannot play or record native files";
 				status = SWITCH_STATUS_GENERR;
 				continue;
 
@@ -1552,6 +1570,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				*error = "Setup timer failed";
 				status = SWITCH_STATUS_GENERR;
 				continue;
 			}
@@ -1593,6 +1612,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			int f;
 
 			if (!switch_channel_ready(channel)) {
+				*error = "Channel not ready";
 				status = SWITCH_STATUS_FALSE;
 				break;
 			}
@@ -1602,6 +1622,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (f == 2) {
 					done = 1;
 				}
+				*error = "Channel Break";
 				status = SWITCH_STATUS_BREAK;
 				break;
 			}
@@ -1617,6 +1638,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					switch_channel_dequeue_dtmf(channel, &dtmf);
 
 					if (!args->input_callback && !args->buf && !args->dmachine) {
+						*error = "DTMF Break";
 						status = SWITCH_STATUS_BREAK;
 						done = 1;
 						break;
@@ -1626,14 +1648,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					if (args->dmachine) {
 						char ds[2] = {dtmf.digit, '\0'};
 						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+							*error = "dmachine feed failed";
 							break;
 						}
 					}
 
 					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+						if (status != SWITCH_STATUS_SUCCESS) {
+							*error = "DTMF input failed";
+						}
 					} else if (args->buf) {
 						*((char *) args->buf) = dtmf.digit;
+						*error = "DTMF Break";
 						status = SWITCH_STATUS_BREAK;
 					}
 				}
@@ -1644,6 +1671,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 						switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 						if (ostatus != SWITCH_STATUS_SUCCESS) {
+							*error = "DTMF input failed";
 							status = ostatus;
 						}
 
@@ -1720,6 +1748,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 
 				if (rstatus != SWITCH_STATUS_SUCCESS) {
+					*error = "Read file failed";
 					eof++;
 					continue;
 				}
@@ -1732,6 +1761,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						framelen = read_impl.encoded_bytes_per_packet;
 						if (framelen == 0) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
+							*error = "Cannot play or record native files";
 							eof++;
 							continue;
 						}
@@ -1848,6 +1878,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 					if (args && args->dmachine) {
 						if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+							*error = "dmachine feed failed";
 							break;
 						}
 					}
@@ -1856,6 +1887,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						int ok = 1;
 						switch_set_flag_locked(fh, SWITCH_FILE_CALLBACK);
 						if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
+							*error = "Read frame failed";
 							ok = 0;
 						}
 						switch_clear_flag_locked(fh, SWITCH_FILE_CALLBACK);
@@ -1906,6 +1938,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					if (timeout_as_success) {
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
+						*error = "timeout reached playing file";
 						status = SWITCH_STATUS_TIMEOUT;
 					}
 					done = 1;
@@ -1916,9 +1949,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			if (status == SWITCH_STATUS_MORE_DATA) {
 				status = SWITCH_STATUS_SUCCESS;
+				*error = NULL;
 				more_data = 1;
 				continue;
 			} else if (status != SWITCH_STATUS_SUCCESS) {
+				*error = "Write frame failed";
 				done = 1;
 				break;
 			}
@@ -1953,6 +1988,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
 			}
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Playback-Status-Code", "%d", status);
+			if (!zstr(*error)) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Playback-Status-Message", "%s", *error);
+			}
 			if (fh->params) {
 				switch_event_merge(event, fh->params);
 			}
@@ -1995,8 +2033,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_variable_printf(channel, "playback_timeout_sec_cumulative", "%d", timeout_samples / read_impl.actual_samples_per_second);
 	}
 
+	// Just sanity check in case play file failed
+	// but no error message indicated.
+	if (zstr(*error) && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
+		*error = "Unknown";
+	}
 
 	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
+{
+	const char *err = NULL;
+	return switch_ivr_play_file_detailed(session, fh, file, args, &err);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_t *session, uint32_t thresh,
