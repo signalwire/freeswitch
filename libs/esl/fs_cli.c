@@ -8,7 +8,9 @@
 #include <signal.h>
 #include <getopt.h>
 
-#define CMD_BUFLEN 1024
+#define CMD_BUFLEN 4096
+#define ESL_COMMAND_TEMPLATE "api %s\nconsole_execute: true\n\n"
+#define ESL_BUFLEN CMD_BUFLEN + sizeof(ESL_COMMAND_TEMPLATE)
 
 #ifndef WIN32
 #include <esl_config_auto.h>
@@ -78,7 +80,7 @@ static int connected = 0;
 static int allow_ctl_c = 0;
 static char bare_prompt_str[514] = "";
 static int bare_prompt_str_len = 0;
-static char prompt_str[1024] = "";
+static char prompt_str[CMD_BUFLEN] = "";
 static char prompt_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char input_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char output_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
@@ -943,7 +945,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			output_printf("Unknown command [%s]\n", cmd);
 		}
 	} else {
-		char cmd_str[1024] = "";
+		char cmd_str[ESL_BUFLEN] = "";
 		const char *err = NULL;
 
 		if (!strncasecmp(cmd, "console loglevel ", 17)) { 
@@ -952,7 +954,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			printf("%s\n", handle->last_sr_reply);
 		}
 
-		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
+		snprintf(cmd_str, sizeof(cmd_str), ESL_COMMAND_TEMPLATE, cmd);
 		if (esl_send_recv(handle, cmd_str)) {
 			output_printf("Socket interrupted, bye!\n");
 			r = -1; goto end;
@@ -1430,7 +1432,7 @@ int main(int argc, char *argv[])
 	esl_handle_t handle = {{0}};
 	int count = 0;
 	const char *line = NULL;
-	char cmd_str[2048] = "";
+	char cmd_str[ESL_BUFLEN] = "";
 	cli_profile_t *profile = NULL;
 #ifdef HAVE_LIBEDIT
 	int argv_use_history_file = 1;
@@ -1481,7 +1483,7 @@ int main(int argc, char *argv[])
 	int temp_log = -1;
 	int argv_error = 0;
 	int argv_exec = 0;
-	char argv_command[1024] = "";
+	char argv_command[CMD_BUFLEN] = "";
 	char argv_loglevel[127] = "";
 	int argv_log_uuid = 0;
 	int argv_log_uuid_short = 0;
@@ -1708,7 +1710,7 @@ int main(int argc, char *argv[])
 	}
 	if (argv_exec) {
 		const char *err = NULL;
-		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", argv_command);
+		snprintf(cmd_str, sizeof(cmd_str), ESL_COMMAND_TEMPLATE, argv_command);
 		if (timeout) {
 			esl_status_t status = esl_send_recv_timed(&handle, cmd_str, timeout);
 			if (status != ESL_SUCCESS) {
