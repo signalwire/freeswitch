@@ -6791,6 +6791,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	}
 
 	if (!(smh = session->media_handle)) {
+		switch_core_session_rwunlock(session);
 		return NULL;
 	}
 
@@ -7301,11 +7302,13 @@ static void *SWITCH_THREAD_FUNC text_helper_thread(switch_thread_t *thread, void
 		return NULL;
 	}
 
-	mh->ready = 1;
-
 	if (!(smh = session->media_handle)) {
+		switch_core_session_rwunlock(session);
+		mh->ready = -1;
 		return NULL;
 	}
+
+	mh->ready = 1;
 
 	channel = switch_core_session_get_channel(session);
 
@@ -7460,11 +7463,13 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		return NULL;
 	}
 
-	mh->ready = 1;
-
 	if (!(smh = session->media_handle)) {
+		switch_core_session_rwunlock(session);
+		mh->ready = -1;
 		return NULL;
 	}
+
+	mh->ready = 1;
 
 	channel = switch_core_session_get_channel(session);
 
