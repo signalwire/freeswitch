@@ -422,7 +422,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 		{
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
-			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = { 0 };
+			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -465,7 +465,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 		{
 			int i, exlen;
 			switch_stream_handle_t stream = { 0 };
-			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = { 0 };
+			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -506,7 +506,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 		{
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
-			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = { 0 };
+			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 			
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -549,7 +549,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 		{
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
-			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = { 0 };
+			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 
 			SWITCH_STANDARD_STREAM(stream);
 
