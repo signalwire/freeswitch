@@ -162,6 +162,7 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 #define MY_EVENT_PROFILE_CREATE "unimrcp::profile_create"
 #define MY_EVENT_PROFILE_OPEN "unimrcp::profile_open"
 #define MY_EVENT_PROFILE_CLOSE "unimrcp::profile_close"
+#define MY_EVENT_RESULT "unimrcp::result"
 
 /**
  * Defines XML parsing instructions
@@ -2605,6 +2606,7 @@ static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schann
  */
 static switch_status_t recog_channel_set_results(speech_channel_t *schannel, const char *result)
 {
+	switch_event_t *event = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
@@ -2620,6 +2622,10 @@ static switch_status_t recog_channel_set_results(speech_channel_t *schannel, con
 		goto done;
 	}
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, result);
+	if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Result", result);
+		switch_event_fire(&event);
+	}
 	r->result = switch_core_strdup(schannel->memory_pool, result);
 
   done:
@@ -4418,6 +4424,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	if (switch_event_reserve_subclass(MY_EVENT_RESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_RESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -4478,6 +4489,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_unimrcp_shutdown)
 	switch_event_free_subclass(MY_EVENT_PROFILE_CREATE);
 	switch_event_free_subclass(MY_EVENT_PROFILE_CLOSE);
 	switch_event_free_subclass(MY_EVENT_PROFILE_OPEN);
+	switch_event_free_subclass(MY_EVENT_RESULT);
 
 	synth_shutdown();
 	recog_shutdown();
