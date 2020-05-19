@@ -16018,7 +16018,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			session->write_codec->cur_frame = frame;
 			frame->codec->cur_frame = frame;
 			switch_assert(enc_frame->datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
-			switch_assert(session->enc_read_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
+			switch_assert(session->enc_write_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 			status = switch_core_codec_encode(session->write_codec,
 											  frame->codec,
 											  enc_frame->data,
@@ -16026,7 +16026,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 											  session->write_impl.actual_samples_per_second,
 											  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 
-			switch_assert(session->enc_read_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
+			switch_assert(session->enc_write_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 			session->write_codec->cur_frame = NULL;
 			frame->codec->cur_frame = NULL;
@@ -16128,7 +16128,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->write_codec->cur_frame = frame;
 				frame->codec->cur_frame = frame;
 				switch_assert(enc_frame->datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
-				switch_assert(session->enc_read_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
+				switch_assert(session->enc_write_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 				status = switch_core_codec_encode(session->write_codec,
 												  frame->codec,
 												  enc_frame->data,
@@ -16136,7 +16136,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 												  rate,
 												  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 
-				switch_assert(session->enc_read_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
+				switch_assert(session->enc_write_frame.datalen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 				session->write_codec->cur_frame = NULL;
 				frame->codec->cur_frame = NULL;
