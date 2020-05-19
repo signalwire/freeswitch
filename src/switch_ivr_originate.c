@@ -904,6 +904,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_time_t start = 0;
 	const char *cancel_key = NULL;
 	switch_channel_state_t wait_state = 0;
+	switch_channel_state_t peer_wait_state = 0;
 
 	switch_assert(peer_channel);
 
@@ -930,19 +931,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	timelimit = timelimit_seconds * 1000000;
 	start = switch_micro_time_now();
 	
-	/* Handle CF_EARLY_MEDIA here */
+	/* Handle CF_EARLY_MEDIA here for non-bridged calls only (where session == NULL or session == peer_session) */
+	/* Thanks to Anthony Minessale for providing further insight into these additions */
 	if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-		if (session == peer_session) {
-			/* Not called from a switch_ivr_bridge.c function since both session and peer_session are the same */
+		if ((session == NULL) || (session == peer_session)) {
+			/* Not called from a switch_ivr_bridge.c function since session == NULL or both session and peer_session are the same */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: CF_EARLY_MEDIA detected and not called from a bridge function (call_timeout = %d seconds) - wait for answer...\n", timelimit_seconds);
 			if (caller_channel) {
-				wait_state = switch_channel_get_state(caller_channel);
+				peer_wait_state = switch_channel_get_state(peer_channel);
 			}
 			while (!switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 				/* Wait for answer here and timeout if no answer */
 				int diff = (int)(switch_micro_time_now() - start);
-				switch_ivr_parse_all_messages(session);
-				if (caller_channel && switch_channel_get_state(caller_channel) != wait_state) {
+				switch_ivr_parse_all_messages(peer_session);
+				if (switch_channel_get_state(peer_channel) != peer_wait_state) {
 					/* State change - this route will be taken when the outbound fails eg. USER_BUSY */
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: state change detected - return immediately\n");
 					goto end;
@@ -951,10 +953,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 					/* No answer */
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: NO_ANSWER\n");
 					switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
-					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+					switch_core_session_reset(peer_session, SWITCH_TRUE, SWITCH_TRUE);
 					status = SWITCH_STATUS_FALSE;
 					return status;
 				}
+				/* Assist with thread switching as used below inside this function */
+				switch_cond_next();
+				/* Pause of 10ms added to avoid tight loop */
+				switch_yield(10000);
 			}
 			/* Answered */
 			goto end;
@@ -1190,6 +1196,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			}
 		} else {
 			switch_cond_next();
+			/* Pause of 10ms added to avoid tight loop */
+			switch_yield(10000);
 		}
 	}
 
