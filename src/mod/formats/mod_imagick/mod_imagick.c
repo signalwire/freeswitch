@@ -176,7 +176,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 		context->autoplay = 1;
 	}
 
-	context->max = 10000;
+	context->max = 86400000;
 
 	context->exception = AcquireExceptionInfo();
 	context->image_info = AcquireImageInfo();
