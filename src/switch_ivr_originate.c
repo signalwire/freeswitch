@@ -937,9 +937,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		if ((session == NULL) || (session == peer_session)) {
 			/* Not called from a switch_ivr_bridge.c function since session == NULL or both session and peer_session are the same */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_wait_for_answer: CF_EARLY_MEDIA detected and not called from a bridge function (call_timeout = %d seconds) - wait for answer...\n", timelimit_seconds);
-			if (caller_channel) {
-				peer_wait_state = switch_channel_get_state(peer_channel);
-			}
+			peer_wait_state = switch_channel_get_state(peer_channel);
 			while (!switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 				/* Wait for answer here and timeout if no answer */
 				int diff = (int)(switch_micro_time_now() - start);
