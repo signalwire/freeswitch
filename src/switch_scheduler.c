@@ -322,7 +322,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)
 	return delcnt;
 }
 
-SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group_desc(const char *group, const char *desc)
 {
 	switch_scheduler_task_container_t *tp;
 	uint32_t delcnt = 0;
@@ -340,15 +340,15 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 		if (tp->destroyed) {
 			continue;
 		}
-		if (hash == tp->task.hash && !strcmp(tp->task.group, group)) {
+		if (hash == tp->task.hash && !strcmp(tp->task.group, group) && (zstr(desc) || !strcmp(tp->desc, desc))) {
 			if (switch_test_flag(tp, SSHF_NO_DEL)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeletable task #%u (group %s)\n",
-								  tp->task.task_id, group);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeletable task #%u (group %s)(desc %s)\n",
+								  tp->task.task_id, group, tp->desc);
 				continue;
 			}
 			if (tp->running) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Attempt made to delete running task #%u (group %s)\n",
-								  tp->task.task_id, tp->task.group);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Attempt made to delete running task #%u (group %s)(desc %s)\n",
+								  tp->task.task_id, tp->task.group, tp->desc);
 				tp->destroy_requested++;
 			} else {
 				tp->destroyed++;
@@ -359,6 +359,11 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 	switch_mutex_unlock(globals.task_mutex);
 
 	return delcnt;
+}
+
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
+{
+	return switch_scheduler_del_task_group_desc(group, NULL);
 }
 
 switch_thread_t *task_thread_p = NULL;
