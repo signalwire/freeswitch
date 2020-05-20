@@ -76,6 +76,14 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task();
 SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id);
 
 /*!
+  \brief Delete a scheduled task based on the desc
+  \param group the group name
+  \param desc the task desc
+  \return the number of jobs deleted
+*/
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group_desc(const char *group, const char *desc);
+
+/*!
   \brief Delete a scheduled task based on the group name
   \param group the group name
   \return the number of jobs deleted
