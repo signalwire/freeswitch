@@ -2033,6 +2033,7 @@ AC_CONFIG_FILES([Makefile
 		build/getlib.sh
 		build/getg729.sh
 		build/freeswitch.pc
+		build/standalone_module/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
                 libs/esl/perl/Makefile
