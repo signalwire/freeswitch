@@ -3761,6 +3761,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
 	dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method());
+	if (want_DTLSv1_2) {
+		SSL_CTX_set_min_proto_version(dtls->ssl_ctx, DTLS1_2_VERSION);
+	}
 #else
     #ifdef HAVE_OPENSSL_DTLSv1_2_method
 	        dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method()));
