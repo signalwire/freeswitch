@@ -14,13 +14,13 @@ steps:
       - ./bootstrap.sh -j
       - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
-      - sed -i '/applications\/mod_http_cache/s/^#//g' modules.conf
-      - sed -i '/event_handlers\/mod_rayo/s/^#//g' modules.conf
-      - sed -i '/formats\/mod_opusfile/s/^#//g' modules.conf
-      - sed -i '/languages\/mod_lua/s/^#//g' modules.conf
+      - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
+      - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
+      - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
+      - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
       - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
       - ./configure --enable-address-sanitizer
-      - echo "#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./build-status.txt\nmake install\n" > build.sh
+      - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\nmake install\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
       - cd tests/unit
@@ -90,7 +90,7 @@ steps:
       - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
       - ./configure
       - mkdir -p scan-build
-      - echo "#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./scan-build-status.txt\n" > scan.sh
+      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -119,6 +119,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 4972b54c20a23506bbcbd29b9386784c7feb08993f26661c6fb495ed01681ea9
+hmac: dcc23ab357643343e144d6371bc2accbc25dcf18c6554bce1d7dc5ba532e9b41
 
 ...
