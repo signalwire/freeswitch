@@ -423,6 +423,8 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
+			int sps_total = 10000;
+			switch_core_session_ctl(SCSC_SPS, &sps_total);
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -438,9 +440,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 				params[i].ext = extensions[i];
 				switch_threadattr_create(&thd_attr, fst_pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				// slow down to avoid this:  "[CRIT] switch_time.c:1243 Over Session Rate of 30!"
 				switch_thread_create(&thread_list[i], thd_attr, sndfile_write_read_mono_thread_run, (void *)&params[i], fst_pool);
-				switch_sleep(100000);
 			}
 
 			for (i = 0; i < exlen; i++) {
@@ -466,6 +466,8 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			int i, exlen;
 			switch_stream_handle_t stream = { 0 };
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
+			int sps_total = 10000;
+			switch_core_session_ctl(SCSC_SPS, &sps_total);
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -481,9 +483,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 				params[i].ext = extensions[i];
 				switch_threadattr_create(&thd_attr, fst_pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				// slow down to avoid this:  "[CRIT] switch_time.c:1243 Over Session Rate of 30!"
 				switch_thread_create(&thread_list[i], thd_attr, sndfile_write_read_m2s_thread_run, (void *)&params[i], fst_pool);
-				switch_sleep(100000);
 			}
 
 			for (i = 0; i < exlen; i++) {
@@ -507,6 +507,8 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
+			int sps_total = 10000;
+			switch_core_session_ctl(SCSC_SPS, &sps_total);
 			
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -522,9 +524,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 				params[i].ext = extensions[i];
 				switch_threadattr_create(&thd_attr, fst_pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				// slow down to avoid this:  "[CRIT] switch_time.c:1243 Over Session Rate of 30!"
 				switch_thread_create(&thread_list[i], thd_attr, sndfile_write_read_s2m_thread_run, (void *)&params[i], fst_pool);
-				switch_sleep(10000);
 
 			}
 
@@ -550,6 +550,8 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			int i, exlen; 
 			switch_stream_handle_t stream = { 0 };
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
+			int sps_total = 10000;
+			switch_core_session_ctl(SCSC_SPS, &sps_total);
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -565,9 +567,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 				params[i].ext = extensions[i];
 				switch_threadattr_create(&thd_attr, fst_pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				// slow down to avoid this:  "[CRIT] switch_time.c:1243 Over Session Rate of 30!"
 				switch_thread_create(&thread_list[i], thd_attr, sndfile_write_read_stereo_thread_run, (void *)&params[i], fst_pool);
-				switch_sleep(100000);
 			}
 
 			for (i = 0; i < exlen; i++) {
