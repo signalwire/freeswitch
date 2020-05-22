@@ -1936,13 +1936,22 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 
 static switch_status_t http_cache_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-    struct http_context *context = (struct http_context *)handle->private_info;
+	struct http_context *context = (struct http_context *)handle->private_info;
+	switch_status_t status;
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
 
-    if (!handle->seekable) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
-        return SWITCH_STATUS_NOTIMPL;
-    }
-    return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+	if ((status = switch_core_file_seek(&context->fh, cur_sample, samples, whence)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = context->fh.pos;
+		handle->offset_pos = context->fh.offset_pos;
+		handle->samples_in = context->fh.samples_in;
+		handle->samples_out = context->fh.samples_out;
+	}
+
+	return status;
 }
 
 static char *http_supported_formats[] = { "http", NULL };

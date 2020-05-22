@@ -2885,13 +2885,21 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 static switch_status_t http_file_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	http_file_context_t *context = handle->private_info;
-
+	switch_status_t status;
+	
 	if (!handle->seekable) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
-	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+	if ((status = switch_core_file_seek(&context->fh, cur_sample, samples, whence)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = context->fh.pos;
+		handle->offset_pos = context->fh.offset_pos;
+		handle->samples_in = context->fh.samples_in;
+		handle->samples_out = context->fh.samples_out;
+	}
+
+	return status;
 }
 
 static switch_status_t file_open(switch_file_handle_t *handle, const char *path, int is_https)
