@@ -3553,6 +3553,19 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	}
 
 	if (!err) {
+		const char *cid_name, *cid_num;
+		switch_core_session_message_t msg = { 0 };
+
+		cid_name = switch_channel_get_variable(tech_pvt->channel, "last_sent_display_name");
+		cid_num = switch_channel_get_variable(tech_pvt->channel, "last_sent_display_number");
+		
+		msg.from = __FILE__;
+		msg.string_array_arg[0] = cid_name;
+		msg.string_array_arg[1] = cid_num;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		switch_core_session_receive_message(session, &msg);
+
 		return SWITCH_TRUE;
 	}
 
