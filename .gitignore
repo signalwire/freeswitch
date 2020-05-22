@@ -102,6 +102,7 @@ Release/
 /build/config/ltmain.sh
 /build/config/missing
 /build/freeswitch.pc
+/build/standalone_module/freeswitch.pc
 /build/getlib.sh
 /build/getg729.sh
 /build/getsounds.sh
