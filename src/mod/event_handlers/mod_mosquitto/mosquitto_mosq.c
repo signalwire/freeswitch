@@ -334,10 +334,10 @@ void mosq_disconnect_callback(struct mosquitto *mosq, void *user_data, int rc)
 		profile = userdata->profile;
 	}
 
-	log(SWITCH_LOG_DEBUG, "profile:%s connection:%s rc:%d disconnected", profile->name, connection->name, rc);
+	log(SWITCH_LOG_DEBUG, "Profile %s connection %s rc %d disconnected", profile->name, connection->name, rc);
 	//connection->connected = SWITCH_FALSE;
 	//mosq_loop_stop(connection, SWITCH_TRUE);
-	log(SWITCH_LOG_ALERT, "Reconnect rc: %d\n", mosquitto_reconnect(connection->mosq));
+	log(SWITCH_LOG_ALERT, "Reconnect rc %d\n", mosquitto_reconnect(connection->mosq));
 }
 
 
@@ -361,13 +361,13 @@ void mosq_publish_callback(struct mosquitto *mosq, void *user_data, int message_
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(SWITCH_LOG_DEBUG, "profile %s connection %s message id %d published\n",
+	log(SWITCH_LOG_DEBUG, "Profile %s connection %s message id %d published\n",
 		profile->name, connection->name, message_id);
 
-	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s message id %d published\n",
+	mosquitto_log(SWITCH_LOG_INFO, "Profile %s connection %s message id %d published\n",
 		profile->name, connection->name, message_id);
 
-	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s message id %d published\n",
+	profile_log(SWITCH_LOG_INFO, profile, "Profile %s connection %s message id %d published\n",
 		profile->name, connection->name, message_id);
 }
 
@@ -388,12 +388,12 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 	mosquitto_mosq_userdata_t *userdata = NULL;
 
 	if (!message->payloadlen) {
-		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s NULL message exiting.\n", (char *)message->topic);
+		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic %s NULL message exiting.\n", (char *)message->topic);
 		return;
 	}
 
 	if (!user_data) {
-		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic: %s user_data NULL exiting.\n", (char *)message->topic);
+		log(SWITCH_LOG_DEBUG, "mosq_message_callback(): Received topic %s user_data NULL exiting.\n", (char *)message->topic);
 		return;
 	}
 
@@ -404,19 +404,19 @@ void mosq_message_callback(struct mosquitto *mosq, void *user_data, const struct
 		return;
 	}
 
-	log(SWITCH_LOG_DEBUG, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+	log(SWITCH_LOG_DEBUG, "Profile %s received topic %s payloadlen %d message %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
 
 	if (mosquitto_globals.log.details) {
-		mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+		mosquitto_log(SWITCH_LOG_INFO, "Profile %s received topic %s payloadlen %d message %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
 	} else {
-		mosquitto_log(SWITCH_LOG_INFO, "profile %s received topic: %s\n", userdata->profile->name, (char *)message->topic);
+		mosquitto_log(SWITCH_LOG_INFO, "Profile %s received topic %s\n", userdata->profile->name, (char *)message->topic);
 
 	}
 
 	if (userdata->profile->log->details) {
-		profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s payloadlen: %d message: %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
+		profile_log(SWITCH_LOG_INFO, userdata->profile, "Profile %s received topic %s payloadlen %d message %s\n", userdata->profile->name, (char *)message->topic, message->payloadlen, payload_string);
 	} else {
-		profile_log(SWITCH_LOG_INFO, userdata->profile, "profile %s received topic: %s\n", userdata->profile->name, (char *)message->topic);
+		profile_log(SWITCH_LOG_INFO, userdata->profile, "Profile %s received topic %s\n", userdata->profile->name, (char *)message->topic);
 	}
 
 	if (!strncasecmp(payload_string, "bgapi", 5)) {
@@ -452,11 +452,11 @@ void mosq_subscribe_callback(struct mosquitto *mosq, void *user_data, int mid, i
 	profile = userdata->profile;
 	connection = userdata->connection;
 
-	log(SWITCH_LOG_DEBUG, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
+	log(SWITCH_LOG_DEBUG, "Profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
 
-	mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
+	mosquitto_log(SWITCH_LOG_INFO, "Profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
 
-	profile_log(SWITCH_LOG_INFO, profile, "profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
+	profile_log(SWITCH_LOG_INFO, profile, "Profile %s connection %s message id %d qos %d subscribed\n", profile->name, connection->name, mid, granted_qos[0]);
 
 }
 
@@ -495,7 +495,7 @@ void mosq_log_callback(struct mosquitto *mosq, void *userdata, int level, const 
 	}
 
 	/* Print log messages after having converted the mosquitto levels into FreeSWITCH levels */
-	log(log_level, "mosq_log_callback(): %s\n", str);
+	log(log_level, "mosq_log_callback() %s\n", str);
 }
 
 
@@ -514,7 +514,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 	mosquitto_mosq_userdata_t *userdata = NULL;
 	mosquitto_connection_t *connection = NULL;
 
-	log(SWITCH_LOG_DEBUG, "mosq_connect_callback(): result: %d\n", result);
+	log(SWITCH_LOG_DEBUG, "mosq_connect_callback() result %d\n", result);
 
 	if (!user_data) {
 		return;
@@ -531,7 +531,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 	if (!result) {
 		mosquitto_profile_t *profile = NULL;
 
-		log(SWITCH_LOG_CONSOLE, "mosq_connect_callback(): profile %s connection %s successful\n", connection->profile_name, connection->name);
+		log(SWITCH_LOG_CONSOLE, "mosq_connect_callback() Profile %s connection %s successful\n", connection->profile_name, connection->name);
 		connection->retry_count = 0;
 		connection->connected = SWITCH_TRUE;
 		profile = locate_profile(connection->profile_name);
@@ -540,7 +540,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 		//mosquitto_subscribe(mosq, NULL, "$SYS/#", 2);
 	} else {
 		if (connection->retries && (connection->retry_count == connection->retries)) {
-			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback(): profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
+			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback() Profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
 			mosquitto_disconnect(connection->mosq);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
@@ -600,7 +600,7 @@ switch_status_t mosq_int_option(mosquitto_connection_t *connection)
 	* value	The option specific value.
 	*/
 	rc = mosquitto_int_option(connection->mosq, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V311);
-	log(SWITCH_LOG_DEBUG, "mosquitto_init_option() for profile [%s] connection [%s] Protocol Version [%s] rc %d\n", connection->profile_name, connection->name, connection->protocol_version, rc);
+	log(SWITCH_LOG_DEBUG, "mosquitto_init_option() for Profile %s connection %s protocol version %s rc %d\n", connection->profile_name, connection->name, connection->protocol_version, rc);
 
 	/*
 	rc = mosquitto_init_option(connection->mosq, MOSQ_OPT_RECEIVE_MAXIMUM, connection->receive_maximum);
@@ -631,13 +631,13 @@ switch_status_t mosq_reconnect_delay_set(mosquitto_connection_t *connection)
 	rc = mosquitto_reconnect_delay_set(connection->mosq, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff);
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_DEBUG, "Succeeded setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s]\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Succeeded setting reconnect delay for profile %s connection %s delay %d delay_max %d backoff %s\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] invalid parameters\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile %s connection %s delay %d delay_max %d backoff %s invalid parameters\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled");
 			return SWITCH_STATUS_GENERR;
 		default:
-			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile [%s] connection [%s] delay [%d] delay_max [%d] backoff [%s] unknown return code (%d)\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled", rc);
+			log(SWITCH_LOG_DEBUG, "Failed setting reconnect delay for profile %s connection %s delay %d delay_max %d backoff %s unknown return code %d\n", connection->profile_name, connection->name, connection->reconnect_delay, connection->reconnect_delay_max, connection->reconnect_exponential_backoff ? "enabled" : "disabled", rc);
 			return SWITCH_STATUS_GENERR;
 	}
 
@@ -661,7 +661,7 @@ switch_status_t mosq_message_retry_set(mosquitto_connection_t *connection)
 
 	if (connection->message_retry > 0) {
 		mosquitto_message_retry_set(connection->mosq, connection->message_retry);
-		log(SWITCH_LOG_DEBUG, "Message retry set to %d for profile [%s] connection [%s]\n", connection->message_retry, connection->profile_name, connection->name);
+		log(SWITCH_LOG_DEBUG, "Message retry set to %d for profile %s connection %s\n", connection->message_retry, connection->profile_name, connection->name);
 	}
 
 	return status;
@@ -686,10 +686,10 @@ switch_status_t mosq_max_inflight_messages_set(mosquitto_connection_t *connectio
 		int rc = mosquitto_max_inflight_messages_set(connection->mosq, connection->max_inflight_messages);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
-				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s]\n", connection->max_inflight_messages, connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile %s connection %s\n", connection->max_inflight_messages, connection->profile_name, connection->name);
 				break;
 			case MOSQ_ERR_INVAL:
-				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile [%s] connection [%s] resulted in invalid parameter input\n", connection->max_inflight_messages, connection->profile_name, connection->name);
+				log(SWITCH_LOG_DEBUG, "Max inflight messages set to %d for profile %s connection %s resulted in invalid parameter input\n", connection->max_inflight_messages, connection->profile_name, connection->name);
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -723,16 +723,16 @@ switch_status_t mosq_username_pw_set(mosquitto_connection_t *connection)
 		int rc = mosquitto_username_pw_set(connection->mosq, connection->username, connection->password);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
-				log(SWITCH_LOG_DEBUG, "Client username set to [%s]\n", connection->username);
+				log(SWITCH_LOG_DEBUG, "Client username set to %s\n", connection->username);
 				break;
 			case MOSQ_ERR_INVAL:
-				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] failed invalid parameters\n", connection->username);
+				log(SWITCH_LOG_ERROR, "Setting username/pw %s failed invalid parameters\n", connection->username);
 				return SWITCH_STATUS_GENERR;
 			case MOSQ_ERR_NOMEM:
-				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] failed out of memory\n", connection->username);
+				log(SWITCH_LOG_ERROR, "Setting username/pw %s failed out of memory\n", connection->username);
 				return SWITCH_STATUS_GENERR;
 			default:
-				log(SWITCH_LOG_ERROR, "Setting username/pw [%s] unknown return code (%d)\n", connection->username, rc);
+				log(SWITCH_LOG_ERROR, "Setting username/pw %s unknown return code %d\n", connection->username, rc);
 				return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -758,7 +758,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "Cannot execute mosquitto_tls_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -785,11 +785,11 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection)
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_set profile: %s connection: %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(SWITCH_LOG_ERROR, "mosquitto_tls_set: profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_tls_set profile: %s connection: %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -820,7 +820,7 @@ switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_psk_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "Cannot execute mosquitto_tls_psk_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -874,7 +874,7 @@ switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection)
 	int rc;
 
 	if (!connection) {
-		log(SWITCH_LOG_ERROR, "cannot execute mosquitto_tls_opts_set because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "Cannot execute mosquitto_tls_opts_set because connection name is NULL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -947,23 +947,23 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_INFO, "mosquitto_will_set profile: %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_INFO, "mosquitto_will_set profile %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set profile %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_NOMEM:
-			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set profile %s connection %s %s:%d out of memory condition occurred\n", connection->profile_name, connection->name, connection->host, connection->port);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_PAYLOAD_SIZE:
-			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d payload size %d is too large\n", connection->profile_name, connection->name, connection->host, connection->port, payloadlen);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set profile %s connection %s %s:%d payload size %d is too large\n", connection->profile_name, connection->name, connection->host, connection->port, payloadlen);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 		case MOSQ_ERR_MALFORMED_UTF8:
-			log(SWITCH_LOG_ERROR, "mosquitto_will_set: profile: %s connection %s %s:%d the topic %s is not valid UTF-8\n", connection->profile_name, connection->name, connection->host, connection->port, connection->will.topic);
+			log(SWITCH_LOG_ERROR, "mosquitto_will_set profile %s connection %s %s:%d the topic %s is not valid UTF-8\n", connection->profile_name, connection->name, connection->host, connection->port, connection->will.topic);
 			status = SWITCH_STATUS_GENERR;
 			return status;
 	}
@@ -1044,10 +1044,10 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	}
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_DEBUG, "Attempting to connect to: profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			log(SWITCH_LOG_DEBUG, "Attempting to connect to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
@@ -1056,7 +1056,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
 		default:
-			log(SWITCH_LOG_ERROR, "Failed connection to: profile: %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code (%d)\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
+			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code %d\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
 			mosquitto_destroy(connection->mosq);
 			connection->mosq = NULL;
 
@@ -1064,7 +1064,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 
 	loop = mosquitto_loop_start(connection->mosq);
 	if (loop != MOSQ_ERR_SUCCESS) {
-		log(SWITCH_LOG_ERROR, "Unable to start loop: %i\n", loop);
+		log(SWITCH_LOG_ERROR, "Unable to start loop %i\n", loop);
 	}
 
 	return status;
@@ -1095,15 +1095,15 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d successful\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile %s connection: %s mosquitto_loop_stop() %d successful\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %s mosquitto_loop_stop() %d input parameters were invalid\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile %s connection: %s mosquitto_loop_stop() %d input parameters were invalid\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NOT_SUPPORTED:
-			log(SWITCH_LOG_INFO, "Shutting down profile: %s connection: %si mosquitto_loop_stop() %d thread support is not available\n", connection->profile_name, connection->name, rc);
+			log(SWITCH_LOG_INFO, "Shutting down profile %s connection: %si mosquitto_loop_stop() %d thread support is not available\n", connection->profile_name, connection->name, rc);
 			status = SWITCH_STATUS_GENERR;
 			break;
 	}
@@ -1150,7 +1150,7 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 			default:
-				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code (%d)\n", connection->profile_name, connection->name, rc);
+				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code %d\n", connection->profile_name, connection->name, rc);
 				connection->connected = SWITCH_FALSE;
 				return SWITCH_STATUS_GENERR;
 		}
@@ -1193,12 +1193,12 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	}
 
 	if (!profile->enable || !connection->enable) {
-		log(SWITCH_LOG_DEBUG, "mosq_new_clint() profile: %s %s connection: %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
+		log(SWITCH_LOG_DEBUG, "mosq_new_clint() Profile %s %s connection %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(userdata = (mosquitto_mosq_userdata_t *)switch_core_alloc(profile->pool, sizeof(mosquitto_mosq_userdata_t)))) {
-		log(SWITCH_LOG_CRIT, "mosq_new() failed to allocate memory for mosquitto_new() userdata structure profile: %s connection: %s\n", profile->name, connection->name);
+		log(SWITCH_LOG_CRIT, "mosq_new() Failed to allocate memory for mosquitto_new() userdata structure profile %s connection %s\n", profile->name, connection->name);
 		return SWITCH_STATUS_GENERR;
 	} else {
 		connection->userdata = userdata;
@@ -1208,14 +1208,14 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 
 	if (connection->client_id == NULL) {
 		if (connection->clean_session == SWITCH_FALSE) {
-			log(SWITCH_LOG_INFO, "mosquitto_new() profile: %s connection: %s called with NULL client_id, forcing clean_session to TRUE\n", profile->name, connection->name);
+			log(SWITCH_LOG_INFO, "mosquitto_new() profile %s connection %s called with NULL client_id, forcing clean_session to TRUE\n", profile->name, connection->name);
 			clean_session = SWITCH_TRUE;
 		}
 	}
 
 	clean_session = connection->clean_session;
 
-	log(SWITCH_LOG_DEBUG, "mosquitto_new() being called with profile: %s connection: %s clean_session: %s client_id: %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
+	log(SWITCH_LOG_DEBUG, "mosquitto_new() being called with profile %s connection %s clean_session %s client_id %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
 
 	/*
 	* id				String to use as the client id.  If NULL, a random client id will be generated.  If id is NULL, clean_session must be true.
@@ -1305,35 +1305,35 @@ switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscribe
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
 			topic->subscribed = SWITCH_TRUE;
-			log(SWITCH_LOG_DEBUG, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+			log(SWITCH_LOG_DEBUG, "Profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
 				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
-			mosquitto_log(SWITCH_LOG_DEBUG, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+			mosquitto_log(SWITCH_LOG_DEBUG, "Profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
 				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
-			profile_log(SWITCH_LOG_DEBUG, profile, "profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
+			profile_log(SWITCH_LOG_DEBUG, profile, "Profile %s connection %s subscriber %s topic %s pattern %s message id %d queued\n",
 				profile->name, connection->name, subscriber->name, topic->name, topic->pattern, topic->mid);
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the input parameters were invalid\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "Profile %s subscriber %s connection %s topic %s pattern %s the input parameters were invalid\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NOMEM:
-			log(SWITCH_LOG_CRIT, "profile %s subscriber %s connection %s topic %s pattern: %s an out of memory condition occurred\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_CRIT, "Profile %s subscriber %s connection %s topic %s pattern %s an out of memory condition occurred\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_NO_CONN:
-			log(SWITCH_LOG_WARNING, "profile %s subscriber %s connection %s topic %s pattern: %s not connected to an MQTT broker\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_WARNING, "Profile %s subscriber %s connection %s topic %s pattern %s not connected to an MQTT broker\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_MALFORMED_UTF8:
-			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern is not valid UTF-8\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "Profile %s subscriber %s connection %s topic %s pattern %s the pattern is not valid UTF-8\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
 		case MOSQ_ERR_OVERSIZE_PACKET:
-			log(SWITCH_LOG_ERROR, "profile %s subscriber %s connection %s topic %s pattern: %s the pattern larger than the MQTT broker can support\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
+			log(SWITCH_LOG_ERROR, "Profile %s subscriber %s connection %s topic %s pattern %s the pattern larger than the MQTT broker can support\n", profile->name, subscriber->name, connection->name, topic->name, topic->pattern);
 			topic->subscribed = SWITCH_FALSE;
 			return SWITCH_STATUS_GENERR;
 			break;
@@ -1375,26 +1375,26 @@ void mosq_publish_results(mosquitto_profile_t *profile, mosquitto_connection_t *
 
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
-			log(SWITCH_LOG_DEBUG, "Event handler: published to [%s][%s] %s\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: published to %s %s %s\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_INVAL:
-			log(SWITCH_LOG_WARNING, "Event handler: failed to publish to [%s][%s] %s invalid input parameters\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_WARNING, "Event handler: failed to publish to %s %s %s invalid input parameters\n", profile->name, connection->name, topic->pattern);
 			if (connection->enable) {
-				log(SWITCH_LOG_WARNING, "Event handler: failed to publish to [%s][%s] %s trying to initialize the connection\n", profile->name, connection->name, topic->pattern);
+				log(SWITCH_LOG_WARNING, "Event handler: failed to publish to %s %s %s trying to initialize the connection\n", profile->name, connection->name, topic->pattern);
 				connection_initialize(profile, connection);
 			}
 			break;
 		case MOSQ_ERR_NOMEM:
-			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s out of memory\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to %s %s %s out of memory\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_NO_CONN:
-			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s not connected to broker\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to %s %s %s not connected to broker\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_PROTOCOL:
-			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to %s %s %s protocol error communicating with the broker\n", profile->name, connection->name, topic->pattern);
 			break;
 		case MOSQ_ERR_PAYLOAD_SIZE:
-			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to [%s][%s] %s payload is too large\n", profile->name, connection->name, topic->pattern);
+			log(SWITCH_LOG_DEBUG, "Event handler: failed to publish to %s %s %s payload is too large\n", profile->name, connection->name, topic->pattern);
 			break;
 		default:
 			log(SWITCH_LOG_DEBUG, "Event handler: unknown return code %d from publish\n", rc);
