@@ -746,6 +746,10 @@ int profile_log(int severity, mosquitto_profile_t *profile, const char *format, 
 		return -1;
 	}
 
+	if (profile->log->logfile == NULL) {
+		return -1;
+	}
+
 	switch_mutex_lock(profile->log->mutex);
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());

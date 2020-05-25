@@ -1470,7 +1470,9 @@ switch_status_t mosq_shutdown(void)
 	mosquitto_lib_cleanup();
 
 	switch_mutex_lock(mosquitto_globals.log.mutex);
-	if ((status = switch_file_close(mosquitto_globals.log.logfile)) != SWITCH_STATUS_SUCCESS) {
+	if (mosquitto_globals.log.logfile == NULL) {
+		log(SWITCH_LOG_ERROR, "Unable to close %s file handle is NULL\n", mosquitto_globals.log.name);
+	} else if ((status = switch_file_close(mosquitto_globals.log.logfile)) != SWITCH_STATUS_SUCCESS) {
 		log(SWITCH_LOG_ERROR, "Failed to close %s\n", mosquitto_globals.log.name);
 	}
 	switch_mutex_unlock(mosquitto_globals.log.mutex);
