@@ -1,0 +1,126 @@
+/*
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Norm Brandinger <n.brandinger@gmail.com>
+ *
+ * mod_mosquitto -- Interface to an MQTT broker using Mosquitto
+ *                Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto API library
+ *                Publishes FreeSWITCH events to one more more MQTT brokers
+ *                Subscribes to topics located on one more more MQTT brokers
+ *
+ * MQTT http://mqtt.org/
+ * Mosquitto https://mosquitto.org/
+ *
+ */
+
+   CUSTOM                   - A custom event
+   CLONE                    - A cloned event
+   CHANNEL_CREATE           - A channel has been created
+   CHANNEL_DESTROY          - A channel has been destroyed
+   CHANNEL_STATE            - A channel has changed state
+   CHANNEL_CALLSTATE        - A channel has changed call state
+   CHANNEL_ANSWER           - A channel has been answered
+   CHANNEL_HANGUP           - A channel has been hungup
+   CHANNEL_HANGUP_COMPLETE  - A channel has completed the hangup
+   CHANNEL_EXECUTE          - A channel has executed a module's application
+   CHANNEL_EXECUTE_COMPLETE - A channel has finshed executing a module's application
+   CHANNEL_HOLD             - A channel has been put on hold
+   CHANNEL_UNHOLD           - A channel has been unheld
+   CHANNEL_BRIDGE           - A channel has bridged to another channel
+   CHANNEL_UNBRIDGE         - A channel has unbridged from another channel
+   CHANNEL_PROGRESS         - A channel has started ringing
+   CHANNEL_PROGRESS_MEDIA   - A channel has started early media
+   CHANNEL_OUTGOING         - A channel has been unparked
+   CHANNEL_PARK             - A channel has been parked
+   CHANNEL_UNPARK           - A channel has been unparked
+   CHANNEL_APPLICATION      - A channel has called and event from an application
+   CHANNEL_ORIGINATE        - A channel has been originated
+   CHANNEL_UUID             - A channel has changed uuid
+   API                      - An API call has been executed
+   LOG                      - A LOG event has been triggered
+   INBOUND_CHAN             - A new inbound channel has been created
+   OUTBOUND_CHAN            - A new outbound channel has been created
+   STARTUP                  - The system has been started
+   SHUTDOWN                 - The system has been shutdown
+   PUBLISH                  - Publish
+   UNPUBLISH                - UnPublish
+   TALK                     - Talking Detected
+   NOTALK                   - Not Talking Detected
+   SESSION_CRASH            - Session Crashed
+   MODULE_LOAD              - Module was loaded
+   MODULE_UNLOAD            - Module was unloaded
+   DTMF                     - DTMF was sent
+   MESSAGE                  - A Basic Message
+   PRESENCE_IN              - Presence in
+   NOTIFY_IN                - Received incoming NOTIFY from gateway subscription
+   PRESENCE_OUT             - Presence out
+   PRESENCE_PROBE           - Presence probe
+   MESSAGE_WAITING          - A message is waiting
+   MESSAGE_QUERY            - A query for MESSAGE_WAITING events
+   ROSTER                   - ?
+   CODEC                    - Codec Change
+   BACKGROUND_JOB           - Background Job
+   DETECTED_SPEECH          - Detected Speech
+   DETECTED_TONE            - Detected Tone
+   PRIVATE_COMMAND          - A private command event
+   HEARTBEAT                - Machine is alive
+   TRAP                     - Error Trap
+   ADD_SCHEDULE             - Something has been scheduled
+   DEL_SCHEDULE             - Something has been unscheduled
+   EXE_SCHEDULE             - Something scheduled has been executed
+   RE_SCHEDULE              - Something scheduled has been rescheduled
+   RELOADXML                - XML registry has been reloaded
+   NOTIFY                   - Notification
+   PHONE_FEATURE            - Notification (DND/CFWD/etc)
+   PHONE_FEATURE_SUBSCRIBE  - Phone feature subscription
+   SEND_MESSAGE             - Message
+   RECV_MESSAGE             - Message
+   REQUEST_PARAMS
+   CHANNEL_DATA
+   GENERAL
+   COMMAND
+   SESSION_HEARTBEAT
+   CLIENT_DISCONNECTED
+   SERVER_DISCONNECTED
+   SEND_INFO
+   RECV_INFO
+   RECV_RTCP_MESSAGE
+   CALL_SECURE
+   NAT                      - NAT Management (new/del/status)
+   RECORD_START
+   RECORD_STOP
+   PLAYBACK_START
+   PLAYBACK_STOP
+   CALL_UPDATE
+   FAILURE                  - A failure occurred which might impact the normal functioning of the switch
+   SOCKET_DATA
+   MEDIA_BUG_START
+   MEDIA_BUG_STOP
+   CONFERENCE_DATA_QUERY
+   CONFERENCE_DATA
+   CALL_SETUP_REQ
+   CALL_SETUP_RESULT
+   CALL_DETAIL
+   DEVICE_STATE
+   ALL                      - All events at once
