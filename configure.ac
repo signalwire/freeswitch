@@ -1519,6 +1519,10 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([MOSQUITTO], [libmosquitto >= 1.4.10],[
+  AM_CONDITIONAL([HAVE_MOSQUITTO],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MOSQUITTO],[false])])
+  
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])
@@ -1957,6 +1961,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile
+    src/mod/event_handlers/mod_mosquitto/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
 		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile

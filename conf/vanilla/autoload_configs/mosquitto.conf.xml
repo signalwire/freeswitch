@@ -1,0 +1,103 @@
+<configuration name="mosquitto.conf" description="mod_mosquitto">
+	<settings>
+		<!-- Default Log Level - value is one of: debug,info,notice,warning,error,critical,alert,console -->
+		<param name="loglevel" value="debug"/>
+
+		<param name="enable-profiles" value="true"/>
+		<param name="enable-publishers" value="true"/>
+		<param name="enable-subscribers" value="true"/>
+		<param name="enable-connections" value="true"/>
+		<param name="enable-topics" value="true"/>
+		<param name="event-queue-size" value="5000"/>
+		<param name="unique-string-length" value="10"/>
+	</settings>
+	<profiles>
+		<profile name="default">
+			<param name="enable" value="true"/>
+			<connections>
+				<param name="send_maximum" value="10"/>
+				<param name="bind_address" value=""/>
+				<connection name="broker1">
+					<param name="enable" value="true"/>
+					<param name="receive_maximum" value="20"/>
+					<param name="send_maximum" value="20"/>
+					<param name="host" value="broker1.example.com"/>
+					<param name="port" value="1883"/>
+					<param name="keepalive" value="10"/>
+					<param name="username" value="[REDACTED]"/>
+					<param name="password" value="[REDACTED]"/>
+					<!-- mod_mosquitto will generate a random client_id of none is specified -->
+					<!-- FreeSWITCH-Hostname can be used to set the client_id to the FreeSWITCH hostname -->
+					<!-- FreeSWITCH-Switchname can be used to set the client_id to the FreeSWITCH switchname -->
+					<!-- FreeSWITCH-Switchname-Unique or FreeSWITCH-Hostname-Unique can be used to create a more unique client_id -->
+					<!-- This is done by appending unique characters after switchname or hostname -->
+					<!-- The number of characters appended is defined by the Setting 'unique-string-length' with a max of 49 characters -->
+					<!-- WARNING: Do not use the same client_id more than once per MQTT broker, this includes across profiles -->
+					<param name="client_id" value="FreeSWITCH-Switchname-Unique"/>
+					<param name="clean_session" value="false"/>
+					<param name="retries" value="3"/>
+					<param name="reconnect_delay" value="1"/>
+					<param name="reconnect_delay_max" value="10"/>
+					<param name="reconnect_exponential_backoff" value="false"/>
+				</connection>
+				<connection name="broker2">
+					<param name="host" value="broker2.example.com"/>
+					<param name="port" value="1883"/>
+					<param name="username" value="[REDACTED]"/>
+					<param name="password" value="[REDACTED]"/>
+				</connection>
+			</connections>
+			<publishers>
+				<publisher name="primary_publisher">
+					<param name="enable" value="true"/>
+					<topics>
+						<topic name="Background Job">
+							<param name="enable" value="true"/>
+							<param name="connection_name" value="broker1"/>
+							<!-- https://docs.freeswitch.org/switch__types_8h.html#ac9614049b0344bb672df9d23a7ec4a09 -->
+							<param name="event" value="BACKGROUND_JOB"/>
+							<param name="pattern" value="FreeSWITCH/BACKGROUND_JOB"/>
+							<param name="qos" value="0"/>
+							<param name="retain" value="false"/>
+						</topic>
+						<topic name="Multiple">
+							<param name="enable" value="false"/>
+							<param name="connection_name" value="broker2"/>
+							<!-- https://docs.freeswitch.org/switch__types_8h.html#ac9614049b0344bb672df9d23a7ec4a09 -->
+							<param name="event" value="HEARTBEAT"/>
+							<param name="event" value="RE_SCHEDULE"/>
+							<param name="pattern" value="FreeSWITCH/MULTIPLE"/>
+							<param name="qos" value="0"/>
+							<param name="retain" value="false"/>
+						</topic>
+				</publisher>
+			</publishers>
+			<subscribers>
+				<subscriber name="primary_subscriber">
+					<param name="enable" value="true"/>
+					<topics>
+						<topic name="primary_subscribed_topic_01">
+							<param name="enable" value="true"/>
+							<param name="connection_name" value="broker1"/>
+							<param name="pattern" value="FreeSWITCH/command"/>
+							<param name="qos" value="0"/>
+							<!-- WARNING: THE FOLLOWING TWO SETTINGS WILL ALLOW THE MQTT BROKER TO INITIATE PHONE CALLS -->
+							<!-- WARNING: Allowing either of these permissons WILL allow phone calls to be initiated by the MQTT broker to FreeSWITCH. -->
+							<!-- WARNING: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
+							<!-- WARNING: REPEATED: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
+							<!-- WARNING: REPEATED A THIRD TIME: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors. -->
+							<param name="originate_authorized" value="false"/>
+							<param name="bgapi_authorized" value="false"/>
+						</topic>
+						<topic name="test_subscriber">
+							<param name="enable" value="true"/>
+							<param name="connection_name" value="broker2"/>
+							<param name="pattern" value="FreeSWITCH/test"/>
+							<param name="qos" value="0"/>
+						</topic>
+					</topics>
+				</subscriber>
+			</subscribers>
+		</profile>
+	</profiles>
+</configuration>
