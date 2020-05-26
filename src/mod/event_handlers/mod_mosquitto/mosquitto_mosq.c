@@ -1426,7 +1426,7 @@ switch_status_t mosq_startup(void)
 	mosquitto_lib_init();
 
 	rc = mosquitto_lib_version(&major, &minor, &revision);
-	log(SWITCH_LOG_DEBUG, "Library rc=%d, version %d.%d.%d initialized\n", rc, major, minor, revision);
+	log(SWITCH_LOG_DEBUG, "Mosquitto library rc=%d, version %d.%d.%d initialized\n", rc, major, minor, revision);
 
 	mosquitto_globals.mosquitto_lib.major = major;
 	mosquitto_globals.mosquitto_lib.minor = minor;
@@ -1436,7 +1436,7 @@ switch_status_t mosq_startup(void)
 	switch_mutex_init(&mosquitto_globals.log.mutex, SWITCH_MUTEX_DEFAULT, mosquitto_globals.pool);
 	status = switch_file_open(&mosquitto_globals.log.logfile, mosquitto_globals.log.name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, mosquitto_globals.pool);
 	if (status != SWITCH_STATUS_SUCCESS) {
-		log(SWITCH_LOG_ERROR, "Failed to open log %s\n", mosquitto_globals.log.name);
+		log(SWITCH_LOG_ERROR, "Failed to open mosquitto log %s\n", mosquitto_globals.log.name);
 		return SWITCH_STATUS_FALSE;
 	}
 

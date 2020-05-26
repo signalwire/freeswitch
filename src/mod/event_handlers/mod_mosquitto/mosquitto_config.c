@@ -248,7 +248,7 @@ switch_status_t remove_profile(const char *name)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	log(SWITCH_LOG_NOTICE, "profile:%s shutting down publishers\n", profile->name);
+	log(SWITCH_LOG_NOTICE, "Profile %s shutting down publishers\n", profile->name);
 	switch_mutex_lock(profile->publishers_mutex);
 	for (switch_hash_index_t *publishers_hi = switch_core_hash_first(profile->publishers); publishers_hi; publishers_hi = switch_core_hash_next(&publishers_hi)) {
 		mosquitto_publisher_t *publisher = NULL;
@@ -292,14 +292,14 @@ switch_status_t remove_profile(const char *name)
 	}
 	switch_mutex_unlock(profile->subscribers_mutex);
 
-	log(SWITCH_LOG_NOTICE, "profile:%s shutting down connections\n", profile->name);
+	log(SWITCH_LOG_NOTICE, "Profile %s shutting down connections\n", profile->name);
 	switch_mutex_lock(profile->connections_mutex);
 	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
 		mosquitto_connection_t *connection = NULL;
 		void *val;
 		switch_core_hash_this(connections_hi, NULL, NULL, &val);
 		connection = (mosquitto_connection_t *)val;
-		log(SWITCH_LOG_NOTICE, "profile:%s connection:%s being disconnected\n", profile->name, connection->name);
+		log(SWITCH_LOG_NOTICE, "Profile %s connection %s being disconnected\n", profile->name, connection->name);
 		mosq_disconnect(connection);
 		switch_core_hash_delete(profile->connections, connection->name);
 	}
