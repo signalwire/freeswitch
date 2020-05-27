@@ -157,8 +157,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 		} else {
 			log(SWITCH_LOG_INFO, "Profile %s connection %s deactivation in progress\n", profile->name, connection->name);
 			status = mosq_disconnect(connection);
-			connection->userdata = NULL;
-			connection->mosq = NULL;
+			mosq_destroy(connection);
 		}
 	}
 	switch_mutex_unlock(profile->connections_mutex);
@@ -671,8 +670,7 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 	} else {
 		log(SWITCH_LOG_INFO, "Profile %s connection %s deactivation in progress\n", profile->name, connection->name);
 		status = mosq_disconnect(connection);
-		connection->userdata = NULL;
-		connection->mosq = NULL;
+		mosq_destroy(connection);
 	}
 
 	return status;

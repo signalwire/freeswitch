@@ -64,7 +64,7 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection);
 switch_status_t mosq_connect(mosquitto_connection_t *connection);
 switch_status_t mosq_disconnect(mosquitto_connection_t *connection);
 switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *connection);
-switch_status_t mosq_destroy(struct mosquitto *mosq);
+switch_status_t mosq_destroy(mosquitto_connection_t *connection);
 switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t force);
 switch_status_t mosq_int_option(mosquitto_connection_t *connection);
 switch_status_t mosq_subscribe(mosquitto_profile_t *profile, mosquitto_subscriber_t *subscriber, mosquitto_topic_t *topic);

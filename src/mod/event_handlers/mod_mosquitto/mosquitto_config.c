@@ -301,6 +301,7 @@ switch_status_t remove_profile(const char *name)
 		connection = (mosquitto_connection_t *)val;
 		log(SWITCH_LOG_NOTICE, "Profile %s connection %s being disconnected\n", profile->name, connection->name);
 		mosq_disconnect(connection);
+		mosq_destroy(connection);
 		switch_core_hash_delete(profile->connections, connection->name);
 	}
 	switch_mutex_unlock(profile->connections_mutex);
@@ -356,6 +357,7 @@ switch_status_t remove_connection(mosquitto_profile_t *profile, const char *name
 	}
 
 	status = mosq_disconnect(connection);
+	mosq_destroy(connection);
 
 	switch_core_hash_delete_locked(profile->connections, connection->name, profile->connections_mutex);
 

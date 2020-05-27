@@ -542,9 +542,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 		if (connection->retries && (connection->retry_count == connection->retries)) {
 			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback() Profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
 			mosquitto_disconnect(connection->mosq);
-			mosq_destroy(connection->mosq);
-			connection->mosq = NULL;
-			connection->connected = SWITCH_FALSE;
+			mosq_destroy(connection);
 		}
 		connection->retry_count++;
 	}
@@ -1048,18 +1046,14 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			break;
 		case MOSQ_ERR_INVAL:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
-			mosq_destroy(connection->mosq);
-			connection->mosq = NULL;
+			mosq_destroy(connection);
 			return SWITCH_STATUS_GENERR;
 		case MOSQ_ERR_ERRNO:
-			mosq_destroy(connection->mosq);
-			connection->mosq = NULL;
+			mosq_destroy(connection);
 			return SWITCH_STATUS_GENERR;
 		default:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code %d\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
-			mosq_destroy(connection->mosq);
-			connection->mosq = NULL;
-
+			mosq_destroy(connection);
 	}
 
 	loop = mosquitto_loop_start(connection->mosq);
@@ -1130,32 +1124,33 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	mosquitto_disconnect(connection->mosq);
-	mosq_loop_stop(connection, SWITCH_TRUE);
-	mosq_destroy(connection->mosq);
-	connection->mosq = NULL;
-
-	if (connection->connected) {
+	if (!connection->connected) {
+		log(SWITCH_LOG_ERROR, "Tried to disconnect a connection that is NOT connected\n");
+	} else {
 		int rc = mosquitto_disconnect(connection->mosq);
 		switch (rc) {
 			case MOSQ_ERR_SUCCESS:
 				log(SWITCH_LOG_DEBUG, "Disconnected profile %s connection %s from the broker\n", connection->profile_name, connection->name);
 				connection->connected = SWITCH_FALSE;
+				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case MOSQ_ERR_INVAL:
 				log(SWITCH_LOG_DEBUG, "Disconnection for profile %s connection %s returned: input parameters were invalid \n", connection->profile_name, connection->name);
-				return SWITCH_STATUS_GENERR;
+				status = SWITCH_STATUS_GENERR;
+				break;
 			case MOSQ_ERR_NO_CONN:
 				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s but there was no connection to the broker\n", connection->profile_name, connection->name);
 				connection->connected = SWITCH_FALSE;
-				return SWITCH_STATUS_GENERR;
+				status = SWITCH_STATUS_GENERR;
+				break;
 			default:
 				log(SWITCH_LOG_DEBUG, "Tried to disconnect profile %s connection %s, received an unknown return code %d\n", connection->profile_name, connection->name, rc);
 				connection->connected = SWITCH_FALSE;
-				return SWITCH_STATUS_GENERR;
+				status = SWITCH_STATUS_GENERR;
 		}
 	}
-
+	mosq_loop_stop(connection, SWITCH_TRUE);
+	connection->connected = SWITCH_FALSE;
 	return status;
 }
 
@@ -1262,31 +1257,38 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
  * @retval	SWITCH_STATUS_SUCCESS
  */
 
-switch_status_t mosq_destroy(struct mosquitto *mosq)
+switch_status_t mosq_destroy(mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mosquitto_mosq_userdata_t *userdata = NULL;
 	mosquitto_profile_t *profile = NULL;
-	mosquitto_connection_t *connection = NULL;
 
-	if (!mosq) {
+	if (!connection) {
+		log(SWITCH_LOG_ERROR, "mosq_destroy() called with NULL connection\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!connection->mosq) {
 		log(SWITCH_LOG_ERROR, "mosq_destroy() called with NULL mosquitto client instance\n");
 		return SWITCH_STATUS_GENERR;
 	}
 	
-	userdata = mosquitto_userdata(mosq);
+	userdata = mosquitto_userdata(connection->mosq);
 	if (!userdata) {
 		log(SWITCH_LOG_ERROR, "mosq_destroy() called with NULL userdata pointer\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	profile = (mosquitto_profile_t *)userdata->profile;
-	connection = (mosquitto_connection_t *)userdata->connection;
 
 	log(SWITCH_LOG_DEBUG, "mosq_destroy(): profile %s connection %s\n", profile->name, connection->name);
 
 	switch_safe_free(userdata);
-	mosquitto_destroy(mosq);
+	mosquitto_destroy(connection->mosq);
+	connection->userdata = NULL;
+	connection->mosq = NULL;
+	connection->connected = SWITCH_FALSE;
+
 
 	return status;
 }
