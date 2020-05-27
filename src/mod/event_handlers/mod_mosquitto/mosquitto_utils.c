@@ -148,6 +148,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 	switch_mutex_lock(profile->connections_mutex);
 	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
 		mosquitto_connection_t *connection = NULL;
+		switch_bool_t force_loop_stop = SWITCH_TRUE;
 		void *val;
 		switch_core_hash_this(connections_hi, NULL, NULL, &val);
 		connection = (mosquitto_connection_t *)val;
@@ -156,7 +157,7 @@ switch_status_t profile_activate(mosquitto_profile_t *profile)
 			status = client_connect(profile, connection);
 		} else {
 			log(SWITCH_LOG_INFO, "Profile %s connection %s deactivation in progress\n", profile->name, connection->name);
-			status = mosq_disconnect(connection);
+			status = mosq_disconnect(connection, force_loop_stop);
 			mosq_destroy(connection);
 		}
 	}
@@ -653,6 +654,7 @@ mosquitto_topic_t *locate_connection_topic(mosquitto_profile_t *profile, mosquit
 switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_connection_t *connection)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_bool_t force_loop_stop = SWITCH_TRUE;
 
 	if (!profile) {
 		log(SWITCH_LOG_ERROR, "Profile not passed to connection_initialize()\n");
@@ -669,7 +671,7 @@ switch_status_t connection_initialize(mosquitto_profile_t *profile, mosquitto_co
 		status = client_connect(profile, connection);
 	} else {
 		log(SWITCH_LOG_INFO, "Profile %s connection %s deactivation in progress\n", profile->name, connection->name);
-		status = mosq_disconnect(connection);
+		status = mosq_disconnect(connection, force_loop_stop);
 		mosq_destroy(connection);
 	}
 

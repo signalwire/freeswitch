@@ -1115,7 +1115,7 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
  * @retval	SWITCH_STATUS_SUCCESS
  */
 
-switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
+switch_status_t mosq_disconnect(mosquitto_connection_t *connection, switch_bool_t force_loop_stop)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -1149,7 +1149,7 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 				status = SWITCH_STATUS_GENERR;
 		}
 	}
-	mosq_loop_stop(connection, SWITCH_TRUE);
+	mosq_loop_stop(connection, force_loop_stop);
 	connection->connected = SWITCH_FALSE;
 	return status;
 }

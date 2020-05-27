@@ -408,6 +408,7 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_bool_t force_loop_stop = SWITCH_TRUE;
 
 	stream->write_function(stream, "argc %d\n", argc);
 	for (int i=0; i<argc; i++) {
@@ -437,7 +438,7 @@ static switch_status_t cmd_disconnect(char **argv, int argc, switch_stream_handl
 					} else if ((argc == 6) && (!strncasecmp(argv[5], "disable", 7))) {
 						connection->enable = SWITCH_FALSE;
 					}
-					if (mosq_disconnect(connection) == SWITCH_STATUS_SUCCESS) {
+					if (mosq_disconnect(connection, force_loop_stop) == SWITCH_STATUS_SUCCESS) {
 						log(SWITCH_LOG_DEBUG, "Succesfully disconnected from  broker using profile: %s connection: %s", profile->name, connection->name);	
 						mosq_destroy(connection);
 					} else {
@@ -511,6 +512,8 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 	if (argc == 5) {
 		if (!strncasecmp(argv[1], "profile", 7) && !strncasecmp(argv[3], "connection", 10)) {
 			mosquitto_connection_t *connection = NULL;
+			switch_bool_t force_loop_stop = SWITCH_TRUE;
+
 			if (!(profile = locate_profile(argv[2]))) {
 				stream->write_function(stream, "mosquitto remove profile %s connection: %s failed: profile not found\n", argv[2], argv[4]);
 				return status;
@@ -520,7 +523,7 @@ static switch_status_t cmd_remove(char **argv, int argc, switch_stream_handle_t 
 				return status;
 			}
 			switch_mutex_lock(profile->connections_mutex);
-			mosq_disconnect(connection);
+			mosq_disconnect(connection, force_loop_stop);
 			mosq_destroy(connection);
 			switch_core_hash_delete(profile->connections, connection->name);
 			switch_mutex_unlock(profile->connections_mutex);
