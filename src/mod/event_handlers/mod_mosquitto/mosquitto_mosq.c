@@ -1080,6 +1080,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	switch (rc) {
 		case MOSQ_ERR_SUCCESS:
 			log(SWITCH_LOG_DEBUG, "Attempting to connect to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
+			status = SWITCH_STATUS_SUCCESS;
 			break;
 		case MOSQ_ERR_INVAL:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
@@ -1091,6 +1092,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 		default:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code %d\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
 			mosq_destroy(connection);
+			return SWITCH_STATUS_GENERR;
 	}
 
 	loop = mosquitto_loop_start(connection->mosq);
