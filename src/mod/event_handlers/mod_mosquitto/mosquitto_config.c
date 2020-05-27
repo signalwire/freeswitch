@@ -296,11 +296,12 @@ switch_status_t remove_profile(const char *name)
 	switch_mutex_lock(profile->connections_mutex);
 	for (switch_hash_index_t *connections_hi = switch_core_hash_first(profile->connections); connections_hi; connections_hi = switch_core_hash_next(&connections_hi)) {
 		mosquitto_connection_t *connection = NULL;
+		switch_bool_t force_loop_stop = SWITCH_TRUE;
 		void *val;
 		switch_core_hash_this(connections_hi, NULL, NULL, &val);
 		connection = (mosquitto_connection_t *)val;
 		log(SWITCH_LOG_NOTICE, "Profile %s connection %s being disconnected\n", profile->name, connection->name);
-		mosq_disconnect(connection, SWITCH_TRUE);
+		mosq_disconnect(connection, force_loop_stop);
 		mosq_destroy(connection);
 		switch_core_hash_delete(profile->connections, connection->name);
 	}
@@ -340,6 +341,7 @@ switch_status_t remove_connection(mosquitto_profile_t *profile, const char *name
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	mosquitto_connection_t *connection = NULL;
+	switch_bool_t force_loop_stop = SWITCH_TRUE;
 
 	if (!profile) {
 		log(SWITCH_LOG_ERROR, "Profile not passed to remove_connection()\n");
@@ -356,7 +358,7 @@ switch_status_t remove_connection(mosquitto_profile_t *profile, const char *name
 		return status;
 	}
 
-	status = mosq_disconnect(connection, SWITCH_TRUE);
+	status = mosq_disconnect(connection, force_loop_stop);
 	mosq_destroy(connection);
 
 	switch_core_hash_delete_locked(profile->connections, connection->name, profile->connections_mutex);

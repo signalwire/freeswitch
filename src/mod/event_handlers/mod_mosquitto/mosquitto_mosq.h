@@ -61,6 +61,7 @@ switch_status_t mosq_tls_set(mosquitto_connection_t *connection);
 switch_status_t mosq_tls_opts_set(mosquitto_connection_t *connection);
 switch_status_t mosq_tls_psk_set(mosquitto_connection_t *connection);
 switch_status_t mosq_will_set(mosquitto_connection_t *connection);
+switch_status_t mosq_will_clear(mosquitto_connection_t *connection);
 switch_status_t mosq_connect(mosquitto_connection_t *connection);
 switch_status_t mosq_disconnect(mosquitto_connection_t *connection, switch_bool_t force_loop_stop);
 switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *connection);

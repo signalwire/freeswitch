@@ -378,6 +378,7 @@ static switch_status_t cmd_connect(char **argv, int argc, switch_stream_handle_t
 							log(SWITCH_LOG_INFO, "Succesfully connected to broker using profile: %s connection: %s", profile->name, connection->name);
 						} else {
 							log(SWITCH_LOG_WARNING, "Failed to connect to broker using profile: %s connection: %s", profile->name, connection->name);
+							mosq_destroy(connection);
 						}
 					}
 				}

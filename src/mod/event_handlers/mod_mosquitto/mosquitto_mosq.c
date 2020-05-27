@@ -513,6 +513,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 {
 	mosquitto_mosq_userdata_t *userdata = NULL;
 	mosquitto_connection_t *connection = NULL;
+	switch_bool_t force_loop_stop = SWITCH_TRUE;
 
 	log(SWITCH_LOG_DEBUG, "mosq_connect_callback() result %d\n", result);
 
@@ -541,7 +542,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 	} else {
 		if (connection->retries && (connection->retry_count == connection->retries)) {
 			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback() Profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
-			mosquitto_disconnect(connection->mosq);
+			mosq_disconnect(connection, force_loop_stop);
 			mosq_destroy(connection);
 		}
 		connection->retry_count++;
@@ -970,6 +971,42 @@ switch_status_t mosq_will_set(mosquitto_connection_t *connection)
 }
 
 
+/*
+ * @brief This routine Remove a previously configured will.
+ *
+ * @details	Configure will information for a mosquitto instance.
+ *		  By default, clients do not have a will.
+ *		  This must be called before calling mosquitto_connect.
+ *
+ * @param[in] *connection Pointer to a connection structure
+ *
+ * @retval	status returned by the mosquitto library of the attempt to clear a will.
+ */
+
+switch_status_t mosq_will_clear(mosquitto_connection_t *connection)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int rc;
+
+	if (!connection) {
+		log(SWITCH_LOG_ERROR, "Cannot execute mosquitto_will_clear() because connection name is NULL\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	rc = mosquitto_will_clear(connection->mosq);
+	switch (rc) {
+		case MOSQ_ERR_SUCCESS:
+			log(SWITCH_LOG_INFO, "mosquitto_will_clear profile %s connection: %s %s:%d\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		case MOSQ_ERR_INVAL:
+			log(SWITCH_LOG_ERROR, "mosquitto_will_clear profile %s connection %s %s:%d input parameters were invalid\n", connection->profile_name, connection->name, connection->host, connection->port);
+			status = SWITCH_STATUS_GENERR;
+			return status;
+	}
+	return status;
+}
+
 /**
  * @brief   This routine performs the actual connect attempt to an MQTT broker
  *
@@ -989,7 +1026,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	unsigned port;
 
 	if (!connection) {
-		log(SWITCH_LOG_ERROR, "mosq_connect() failed because connection name is NULL\n");
+		log(SWITCH_LOG_ERROR, "mosq_connect() profile %s failed because connection name is NULL\n", connection->profile_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1013,7 +1050,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 	if (connection->will.enable) {
 		mosq_will_set(connection);
 	} else {
-		mosquitto_will_clear(connection->mosq);
+		mosq_will_clear(connection);
 	}
 
 	if (!connection->bind_address) {
@@ -1071,7 +1108,7 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
  * @details This routine is called after a connection disconnect request to stop the the send/receive loop
  *
  * @param[in]   *connection	Pointer to a connection structure
- * @param[in]   *force		A flag to stop the loop even if a disconnect has not been performed
+ * @param[in]   force		A boolean to stop the loop even if a disconnect has not been performed
  *
  * @retval	SWITCH_STATUS_SUCCESS
  */
@@ -1081,9 +1118,15 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	/*
+	* This is part of the threaded client interface.
+	* Call this once to stop the network thread previously created with mosquitto_loop_start.
+	* This call will block until the network thread finishes.
+	* For the network thread to end, you must have previously called mosquitto_disconnect or have set the 
+	* force parameter to true.
+    *
 	* mosq	A valid mosquitto instance.
 	* force	Set to true to force thread cancellation.
-	*			If false, mosquitto_disconnect must have already been called.
+	*		If false, mosquitto_disconnect must have already been called.
 	*/
 	int rc = mosquitto_loop_stop(connection->mosq, force);
 
@@ -1105,12 +1148,14 @@ switch_status_t mosq_loop_stop(mosquitto_connection_t *connection, switch_bool_t
 	return status;
 }
 
+
 /**
  * @brief   This routine disconnects a connection
  *
  * @details This routine dssconnects a connection, stops the mosquitto send/receive loop and clears the pointer to the mosquitto client structure
  *
  * @param[in]   *connection	Pointer to a connection structure
+ * @param[in]   force_loop_stop boolean to make mosq_loop_stop not block
  *
  * @retval	SWITCH_STATUS_SUCCESS
  */
