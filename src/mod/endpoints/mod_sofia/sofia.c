@@ -1060,7 +1060,8 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 		}
 	}
 
-	if (sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
+	if (!(switch_channel_var_true(channel, "ignore_reason_hdr_in_bye") || sofia_test_pflag(profile, PFLAG_IGNORE_REASON_HDR_BYE))
+															&& sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
 															|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
 															|| !strcasecmp(sip->sip_reason->re_protocol, profile->sdp_username)) && sip->sip_reason->re_cause) {
 		tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
@@ -6168,6 +6169,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_PROXY_MESSAGE);
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_PROXY_MESSAGE);
+						}
+					} else if (!strcasecmp(var, "ignore-reason-hdr-in-bye")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IGNORE_REASON_HDR_BYE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IGNORE_REASON_HDR_BYE);
 						}
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
