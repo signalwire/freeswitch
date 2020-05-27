@@ -50,12 +50,12 @@ static switch_status_t process_bgapi_message(mosquitto_mosq_userdata_t *userdata
 
 
 /**
- * @brief   This is a threaded bgapi execution routine.
+ * @brief      This is a threaded bgapi execution routine.
  *
- * @details This routine is called 'in a new thread' to process a bgapi command.
+ * @details    This routine is called 'in a new thread' to process a bgapi command.
  *
- * @param[in]   *thread  Pointer to a FreeSWITCH thread structure that this routine is called in
- * @param[in]   *obj	Pointer to the bgapi command and arguments
+ * @param[in]  *thread  Pointer to a FreeSWITCH thread structure that this routine is called in
+ * @param[in]  *obj	Pointer to the bgapi command and arguments
  */
 
 void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
@@ -542,7 +542,7 @@ void mosq_connect_callback(struct mosquitto *mosq, void *user_data, int result)
 		if (connection->retries && (connection->retry_count == connection->retries)) {
 			log(SWITCH_LOG_CONSOLE, "mosq_connect_callback() Profile %s connection to %s retried %d times, stopping\n", connection->profile_name, connection->name, connection->retry_count);
 			mosquitto_disconnect(connection->mosq);
-			mosquitto_destroy(connection->mosq);
+			mosq_destroy(connection->mosq);
 			connection->mosq = NULL;
 			connection->connected = SWITCH_FALSE;
 		}
@@ -1048,16 +1048,16 @@ switch_status_t mosq_connect(mosquitto_connection_t *connection)
 			break;
 		case MOSQ_ERR_INVAL:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address:%s SRV: %s with invalid parameters\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled");
-			mosquitto_destroy(connection->mosq);
+			mosq_destroy(connection->mosq);
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
 		case MOSQ_ERR_ERRNO:
-			mosquitto_destroy(connection->mosq);
+			mosq_destroy(connection->mosq);
 			connection->mosq = NULL;
 			return SWITCH_STATUS_GENERR;
 		default:
 			log(SWITCH_LOG_ERROR, "Failed connection to profile %s %s:%d keepalive:%d bind_address: %s SRV: %s unknown return code %d\n", connection->profile_name, connection->host, port, connection->keepalive, connection->bind_address, connection->srv ? "enabled" : "disabled", rc);
-			mosquitto_destroy(connection->mosq);
+			mosq_destroy(connection->mosq);
 			connection->mosq = NULL;
 
 	}
@@ -1132,7 +1132,7 @@ switch_status_t mosq_disconnect(mosquitto_connection_t *connection)
 
 	mosquitto_disconnect(connection->mosq);
 	mosq_loop_stop(connection, SWITCH_TRUE);
-	mosquitto_destroy(connection->mosq);
+	mosq_destroy(connection->mosq);
 	connection->mosq = NULL;
 
 	if (connection->connected) {
@@ -1193,10 +1193,11 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 	}
 
 	if (!profile->enable || !connection->enable) {
-		log(SWITCH_LOG_DEBUG, "mosq_new_clint() Profile %s %s connection %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
+		log(SWITCH_LOG_DEBUG, "mosq_new() Profile %s %s connection %s %s\n", profile->name, profile->enable ? "enabled" : "disabled", connection->name, connection->enable ? "enabled" : "disabled");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	/*
 	if (!(userdata = (mosquitto_mosq_userdata_t *)switch_core_alloc(profile->pool, sizeof(mosquitto_mosq_userdata_t)))) {
 		log(SWITCH_LOG_CRIT, "mosq_new() Failed to allocate memory for mosquitto_new() userdata structure profile %s connection %s\n", profile->name, connection->name);
 		return SWITCH_STATUS_GENERR;
@@ -1205,6 +1206,12 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 		userdata->profile = profile;
 		userdata->connection = connection;
 	}
+	*/
+
+	switch_malloc(userdata, sizeof(mosquitto_mosq_userdata_t));
+	connection->userdata = userdata;
+	userdata->profile = profile;
+	userdata->connection = connection;
 
 	if (connection->client_id == NULL) {
 		if (connection->clean_session == SWITCH_FALSE) {
@@ -1212,7 +1219,6 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 			clean_session = SWITCH_TRUE;
 		}
 	}
-
 	clean_session = connection->clean_session;
 
 	log(SWITCH_LOG_DEBUG, "mosquitto_new() being called with profile %s connection %s clean_session %s client_id %s\n", profile->name, connection->name, clean_session ? "True" : "False", connection->client_id);
@@ -1240,6 +1246,47 @@ switch_status_t mosq_new(mosquitto_profile_t *profile, mosquitto_connection_t *c
 				return SWITCH_STATUS_GENERR;
 		}
 	}
+
+	return status;
+}
+
+
+/**
+ * @brief   This routine frees memory associated with a mosquitto client instance
+ *
+ * @details This routine frees memowy associated with a mosquitto client instance and also frees memory allocated 
+ *          for the userdata structure associated with this client instance
+ *
+ * @param[in]   *mosq	Pointer to the mosquitto client instance
+ *
+ * @retval	SWITCH_STATUS_SUCCESS
+ */
+
+switch_status_t mosq_destroy(struct mosquitto *mosq)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	mosquitto_mosq_userdata_t *userdata = NULL;
+	mosquitto_profile_t *profile = NULL;
+	mosquitto_connection_t *connection = NULL;
+
+	if (!mosq) {
+		log(SWITCH_LOG_ERROR, "mosq_destroy() called with NULL mosquitto client instance\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	userdata = mosquitto_userdata(mosq);
+	if (!userdata) {
+		log(SWITCH_LOG_ERROR, "mosq_destroy() called with NULL userdata pointer\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	profile = (mosquitto_profile_t *)userdata->profile;
+	connection = (mosquitto_connection_t *)userdata->connection;
+
+	log(SWITCH_LOG_DEBUG, "mosq_destroy(): profile %s connection %s\n", profile->name, connection->name);
+
+	switch_safe_free(userdata);
+	mosquitto_destroy(mosq);
 
 	return status;
 }
