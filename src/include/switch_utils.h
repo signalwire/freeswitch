@@ -888,13 +888,10 @@ static inline char *switch_safe_strdup(const char *it)
 static inline char *switch_lc_strdup(const char *it)
 {
 	char *dup;
-	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for (p = dup; p && *p; p++) {
-			*p = (char) switch_tolower(*p);
-		}
+		switch_tolower_max(dup);
 		return dup;
 	}
 
@@ -905,13 +902,10 @@ static inline char *switch_lc_strdup(const char *it)
 static inline char *switch_uc_strdup(const char *it)
 {
 	char *dup;
-	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for (p = dup; p && *p; p++) {
-			*p = (char) switch_toupper(*p);
-		}
+		switch_toupper_max(dup);
 		return dup;
 	}
 
