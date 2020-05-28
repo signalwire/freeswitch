@@ -107,7 +107,7 @@ typedef struct  {
 	switch_status_t jstatus;
 } test_params_t;
 
-#define thread_bail_out(x, msg) if (!x) {params->status = SWITCH_STATUS_FALSE; params->err_detail = strdup(msg); return NULL;}
+#define thread_bail_out(x, msg) if (!(x)) {params->status = SWITCH_STATUS_FALSE; params->err_detail = strdup(msg); return NULL;}
 
 static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -125,7 +125,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread
 	switch_size_t rd;
 	char *recording;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [%lu] Testing media file extension: [%s]\n", switch_thread_self(), params->ext);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
 	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
@@ -178,7 +178,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread
 
 	switch_core_session_rwunlock(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [%lu]\n", switch_thread_self());
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
 
 	return NULL;
 }
@@ -200,7 +200,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 	char *recording;
 	int channels = 2;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [%lu] Testing media file extension: [%s]\n", switch_thread_self(), params->ext);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
 	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
@@ -250,7 +250,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 
 	switch_sleep(1000000);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [%lu]\n", switch_thread_self());
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
 
 	return NULL;
 }
@@ -271,7 +271,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_s2m_thread_run(switch_thread_
 	char *recording, *rec_path;
 	int channels = 2; 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [%lu] Testing media file extension: [%s]\n", switch_thread_self(), params->ext);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
 	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
@@ -344,7 +344,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_stereo_thread_run(switch_thre
 	char *recording, *rec_path;
 	int channels = 2; 
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [%lu] Testing media file extension: [%s]\n", switch_thread_self(), params->ext);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
 	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
