@@ -400,7 +400,7 @@ switch_status_t remove_publisher(mosquitto_profile_t *profile, const char *name)
 	}
 
 	switch_core_hash_delete_locked(profile->publishers, publisher->name, profile->publishers_mutex);
-
+	log(SWITCH_LOG_INFO, "Removed publisher: %s from profile %s\n", name, profile->name);
 	return status;
 }
 
@@ -438,6 +438,7 @@ switch_status_t remove_subscriber(mosquitto_profile_t *profile, const char *name
 	}
 
 	switch_core_hash_delete_locked(profile->subscribers, subscriber->name, profile->subscribers_mutex);
+	log(SWITCH_LOG_INFO, "Removed subscriber: %s from profile %s\n", name, profile->name);
 	status = SWITCH_STATUS_SUCCESS;
 
 	return status;
@@ -639,12 +640,7 @@ static switch_status_t parse_subscribers(switch_xml_t xprofile, mosquitto_profil
 				log(SWITCH_LOG_ERROR, "Required field name missing\n");
 				continue;
 			}
-
-			if (locate_subscriber(profile, name)) {
-				log(SWITCH_LOG_ERROR, "Profile %s subscriber %s already exists\n", profile->name, name);
-				continue;
-			}
-
+			
 			subscriber = add_subscriber(profile, name);
 			subscriber->enable = SWITCH_FALSE;
 
@@ -694,11 +690,7 @@ static switch_status_t parse_publishers(switch_xml_t xprofile, mosquitto_profile
 				continue;
 			}
 
-			if (locate_publisher(profile, name)) {
-				log(SWITCH_LOG_ERROR, "Profile %s publisher %s already exists\n", profile->name, name);
-				continue;
-			}
-
+			log(SWITCH_LOG_INFO, "Adding publisher %s to profile %s\n", name, profile->name);
 			publisher = add_publisher(profile, name);
 			publisher->enable = SWITCH_FALSE;
 

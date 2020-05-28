@@ -48,9 +48,10 @@ switch_loadable_module_interface_t *module_interface;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mosquitto_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown);
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_mosquitto_runtime);
+//SWITCH_MODULE_RUNTIME_FUNCTION(mod_mosquitto_runtime);
 
-SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdown, mod_mosquitto_runtime);
+//SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdown, mod_mosquitto_runtime);
+SWITCH_MODULE_DEFINITION(mod_mosquitto, mod_mosquitto_load, mod_mosquitto_shutdown, NULL);
 
 /**
  * @brief	This function is called when FreeSWITCH loads the mod_mosquitto module
@@ -134,10 +135,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mosquitto_shutdown) {
  *
  */
 
+/*
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_mosquitto_runtime) {
+	log(SWITCH_LOG_DEBUG, "rutime called\n");
 	return SWITCH_STATUS_SUCCESS;
 }
-
+*/
 
 /* For Emacs:
  * Local Variables:
