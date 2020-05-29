@@ -282,3 +282,4 @@ src/mod/applications/mod_av/test/test_RGB.mp4
 libs/sofia-sip/utils/sip-date
 libs/sofia-sip/utils/sip-options
 libs/sofia-sip/utils/sip-dig
+.vscode/c_cpp_properties.json
