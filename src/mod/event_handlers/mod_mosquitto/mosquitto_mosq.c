@@ -1510,16 +1510,15 @@ switch_status_t mosq_startup(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	int rc;
-	int major;
-	int minor;
-	int revision;
-
-	switch_mutex_lock(mosquitto_globals.mutex);
-	switch_queue_create(&mosquitto_globals.event_queue, mosquitto_globals.event_queue_size, mosquitto_globals.pool);
+	int rc = 0;
+	int major = 0;
+	int minor = 0;
+	int revision = 0;
 
 	/* mosquitto_lib_init() is NOT thread safe */
+	switch_mutex_lock(mosquitto_globals.mutex);
 	mosquitto_lib_init();
+	switch_mutex_unlock(mosquitto_globals.mutex);
 
 	rc = mosquitto_lib_version(&major, &minor, &revision);
 	log(SWITCH_LOG_DEBUG, "Mosquitto library rc=%d, version %d.%d.%d initialized\n", rc, major, minor, revision);
@@ -1527,17 +1526,15 @@ switch_status_t mosq_startup(void)
 	mosquitto_globals.mosquitto_lib.major = major;
 	mosquitto_globals.mosquitto_lib.minor = minor;
 	mosquitto_globals.mosquitto_lib.revision = revision;
-	switch_mutex_unlock(mosquitto_globals.mutex);
 
-	switch_mutex_init(&mosquitto_globals.log.mutex, SWITCH_MUTEX_DEFAULT, mosquitto_globals.pool);
 	status = switch_file_open(&mosquitto_globals.log.logfile, mosquitto_globals.log.name, SWITCH_FOPEN_WRITE|SWITCH_FOPEN_APPEND|SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, mosquitto_globals.pool);
 	if (status != SWITCH_STATUS_SUCCESS) {
 		log(SWITCH_LOG_ERROR, "Failed to open mosquitto log %s\n", mosquitto_globals.log.name);
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		status = initialize_profiles();
 	}
-
-	status = initialize_profiles();
-
+	
 	return status;
 }
 
