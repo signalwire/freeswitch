@@ -822,7 +822,9 @@ static mosquitto_event_t *add_publisher_topic_event(mosquitto_profile_t *profile
 		return event;
 	}
 
-	event->userdata = (mosquitto_event_userdata_t *)switch_core_alloc(profile->pool, sizeof(*userdata));
+	// userdata = (mosquitto_event_userdata_t *)switch_core_alloc(profile->pool, sizeof(*userdata));
+	switch_malloc(userdata, sizeof(mosquitto_event_userdata_t));
+	event->userdata = userdata;
 
 	event->name = switch_core_strdup(profile->pool, name);
 	event->event_type = event_type;

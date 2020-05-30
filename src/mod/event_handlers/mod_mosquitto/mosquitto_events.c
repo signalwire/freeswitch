@@ -62,11 +62,11 @@ void event_handler(switch_event_t *event)
 	mosquitto_connection_t *connection = NULL;
 	char *buf = NULL;
 	char *payload_string = NULL;
-	int rc;
+	int rc = 0;
 	const char *event_name = switch_event_get_header(event, "Event-Name");
 
 	if (!mosquitto_globals.running) {
-		log(SWITCH_LOG_ALERT, "Event handler: not processing because mod_mosquitto is being shutdown\n");
+		log(SWITCH_LOG_ALERT, "Event handler: not processing because mod_mosquitto is not running\n");
 		return;
 	}
 
@@ -118,6 +118,10 @@ void event_handler(switch_event_t *event)
 			log(SWITCH_LOG_ERROR, "Cannot publish to topic %s because connection %s (profile %s) is disabled\n", topic->name, connection->name, profile->name);
 			return;
 		} else if (!connection->connected) {
+			if (connection->userdata) {
+				log(SWITCH_LOG_INFO, "Profile %s connection %s in progress, waiting for MQTT server to respond\n", profile->name, connection->name);
+				return;
+			}
 			log(SWITCH_LOG_ALERT, "Cannot publish to topic %s because connection %s (profile %s) is not connected\n", topic->name, connection->name, profile->name);
 			log(SWITCH_LOG_ALERT, "Confirm MQTT broker is reachable, then try command: mosquitto enable profile %s connection %s\n", profile->name, connection->name);
 			log(SWITCH_LOG_ALERT, "Attempting to automatically initialize the connection to profile %s connection %s\n", profile->name, connection->name);
@@ -296,14 +300,14 @@ switch_status_t unbind_event(mosquitto_profile_t *profile, mosquitto_publisher_t
 		return SWITCH_STATUS_GENERR;
 	}
 
-
 	if (switch_event_unbind(&event->node) != SWITCH_STATUS_SUCCESS) {
 		log(SWITCH_LOG_ERROR, "failed to unbind event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
-		return SWITCH_STATUS_GENERR;
+		status =  SWITCH_STATUS_GENERR;
 	} else {
 		log(SWITCH_LOG_INFO, "Unbound event: profile %s publisher %s topic %s event %s (%d)\n", profile->name, publisher->name, topic->name, event->name, (int)event->event_type);
 		memset(event->event_id, '\0', sizeof(event->event_id));
 		event->bound = SWITCH_FALSE;
+		switch_safe_free(event->userdata);
 	}
 
 	return status;
