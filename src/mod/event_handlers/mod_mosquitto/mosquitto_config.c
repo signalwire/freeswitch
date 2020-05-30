@@ -135,7 +135,9 @@ mosquitto_profile_t *locate_profile(const char *name)
 	}
 
 	if (!(profile = (mosquitto_profile_t *)switch_core_hash_find_locked(mosquitto_globals.profiles, name, mosquitto_globals.profiles_mutex))) {
-		log(SWITCH_LOG_WARNING, "Unable to locate profile %s\n", name);
+		// Not finding a profile is expected when starting up or when a new profile is being added
+		// The caller needs to handle the case when not finding a profile is a problem
+		// log(SWITCH_LOG_WARNING, "Unable to locate profile %s\n", name);
 	}
 
 	return profile;
@@ -213,7 +215,9 @@ mosquitto_connection_t *locate_connection(mosquitto_profile_t *profile, const ch
 	}
 
 	if (!(connection = (mosquitto_connection_t *)switch_core_hash_find_locked(profile->connections, name, profile->connections_mutex))) {
-		log(SWITCH_LOG_WARNING, "Unable to locate connection: %s for profile %s\n", name, profile->name);
+		// Not finding a connection is expected when starting up or when a new connection is being added
+		// The caller needs to handle the case when not finding a connection is a problem
+		// log(SWITCH_LOG_WARNING, "Unable to locate connection: %s for profile %s\n", name, profile->name);
 	}
 
 	return connection;
@@ -523,7 +527,9 @@ mosquitto_publisher_t *locate_publisher(mosquitto_profile_t *profile, const char
 	}
 
 	if (!(publisher = (mosquitto_publisher_t *)switch_core_hash_find_locked(profile->publishers, name, profile->publishers_mutex))) {
-		log(SWITCH_LOG_WARNING, "Unable to locate publisher: %s for provider: %s\n", name, profile->name);
+		// Not finding a publisher is expected when starting up or when a new publisher is being added
+		// The caller needs to handle the case when not finding a publisher is a problem
+		// log(SWITCH_LOG_WARNING, "Unable to locate publisher: %s for provider: %s\n", name, profile->name);
 	}
 
 	return publisher;
@@ -608,7 +614,9 @@ mosquitto_subscriber_t *locate_subscriber(mosquitto_profile_t *profile, const ch
 	}
 
 	if (!(subscriber = (mosquitto_subscriber_t *)switch_core_hash_find_locked(profile->subscribers, name, profile->subscribers_mutex))) {
-		log(SWITCH_LOG_WARNING, "Profile %s unable to locate subscriber: %s\n", profile->name, name);
+		// Not finding a subscriber is expected when starting up or when a new subscriber is being added
+		// The caller needs to handle the case when not finding a subscriber is a problem
+		// log(SWITCH_LOG_WARNING, "Profile %s unable to locate subscriber: %s\n", profile->name, name);
 	}
 
 	return subscriber;
@@ -689,8 +697,7 @@ static switch_status_t parse_publishers(switch_xml_t xprofile, mosquitto_profile
 				log(SWITCH_LOG_ERROR, "Required field name missing\n");
 				continue;
 			}
-
-			log(SWITCH_LOG_INFO, "Adding publisher %s to profile %s\n", name, profile->name);
+			
 			publisher = add_publisher(profile, name);
 			publisher->enable = SWITCH_FALSE;
 
@@ -861,7 +868,9 @@ mosquitto_topic_t *locate_publisher_topic(mosquitto_profile_t *profile, mosquitt
 	}
 
 	if (!(topic = (mosquitto_topic_t *)switch_core_hash_find_locked(publisher->topics, name, publisher->topics_mutex))) {
-		log(SWITCH_LOG_WARNING, "Profile %s publisher %s topic %s not found\n", publisher->profile_name, publisher->name, name);
+		// Not finding a publisher topic is expected when starting up or when a new publisher topic is being added
+		// The caller needs to handle the case when not finding a publisher topic is a problem
+		// log(SWITCH_LOG_WARNING, "Profile %s publisher %s topic %s not found\n", publisher->profile_name, publisher->name, name);
 	}
 
 	return topic;
@@ -907,7 +916,9 @@ mosquitto_event_t *locate_publisher_topic_event(mosquitto_profile_t *profile, mo
 	}
 
 	if (!(event = (mosquitto_event_t *)switch_core_hash_find_locked(topic->events, name, topic->events_mutex))) {
-		log(SWITCH_LOG_INFO, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
+		// Not finding an event is expected when starting up or when a new event is being added
+		// The caller needs to handle the case when not finding an event is a problem
+		// log(SWITCH_LOG_INFO, "Profile %s publisher %s topic %s event %s not found\n", profile->name, publisher->name, topic->name, name);
 	}
 
 	return event;
@@ -1243,7 +1254,9 @@ mosquitto_topic_t *locate_subscriber_topic(mosquitto_profile_t *profile, mosquit
 	}
 
 	if (!(topic = (mosquitto_topic_t *)switch_core_hash_find_locked(subscriber->topics, name, subscriber->topics_mutex))) {
-		log(SWITCH_LOG_INFO, "Unable to locate profile %s subscriber %s topic %s\n", subscriber->profile_name, subscriber->name, name);
+		// Not finding an event is expected when starting up or when a new event is being added
+		// The caller needs to handle the case when not finding a event is a problem
+		// log(SWITCH_LOG_INFO, "Unable to locate profile %s subscriber %s topic %s\n", subscriber->profile_name, subscriber->name, name);
 	}
 
 	return topic;
