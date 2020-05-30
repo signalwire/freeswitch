@@ -131,8 +131,9 @@ void event_handler(switch_event_t *event)
 	}
 
 	switch_event_serialize_json(event, &buf);
-	log(SWITCH_LOG_DEBUG, "event_handler(): %s\n", buf);
-
+	if (mosquitto_globals.log.details && profile->log->details) {
+		log(SWITCH_LOG_DEBUG, "event_handler(): %s\n", buf);
+	}
 	/*
 	 * mosq		A valid mosquitto instance.
 	 * mid			Pointer to an int.  If not NULL, the function will set this to the message id of this particular message.
@@ -154,9 +155,14 @@ void event_handler(switch_event_t *event)
 		return;
 	}
 	
-	log(SWITCH_LOG_DEBUG, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload: %s\n",
+	if (mosquitto_globals.log.details && profile->log->details) {
+		log(SWITCH_LOG_DEBUG, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload: %s\n",
 		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
-	
+	} else {
+		log(SWITCH_LOG_DEBUG, "profile %s connection %s publisher %s topic %s event %s message id %d queued\n",
+		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid);
+	}
+
 	if (mosquitto_globals.log.details) {
 		mosquitto_log(SWITCH_LOG_INFO, "profile %s connection %s publisher %s topic %s event %s message id %d queued payload %s\n",
 		profile->name, connection->name, publisher->name, topic->pattern, event_name, topic->mid, payload_string);
