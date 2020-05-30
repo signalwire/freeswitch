@@ -230,8 +230,12 @@ switch_status_t bind_event(mosquitto_profile_t *profile, mosquitto_publisher_t *
 		return SWITCH_STATUS_GENERR;
 	}
 
-	userdata = event->userdata;
+	if (!event->userdata) {
+		log(SWITCH_LOG_ERROR, "Profile %s publisher %s topic %s connection %s event %s (%d) userdata is NULL\n", profile->name, publisher->name, topic->name, topic->connection_name, event->name, (int)event->event_type);
+		return SWITCH_STATUS_GENERR;
+	}
 
+	userdata = event->userdata;
 	userdata->profile = profile;
 	userdata->publisher = publisher;
 	userdata->topic = topic;

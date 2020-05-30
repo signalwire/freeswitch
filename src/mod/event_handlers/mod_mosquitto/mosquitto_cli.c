@@ -786,8 +786,8 @@ SWITCH_STANDARD_API(exec_api_cmd)
 		func = cmd_disconnect;
 	} else if (!strncasecmp(argv[0], "bgapi", 5)) {
 		status = cmd_bgapi(cmd, stream);
-		switch_safe_free(mycmd)
-			return status;
+		switch_safe_free(mycmd);
+		return status;
 	}
 
 	if (func) {
@@ -797,7 +797,7 @@ SWITCH_STANDARD_API(exec_api_cmd)
 	}
 
 done:
-	switch_safe_free(mycmd)
+	switch_safe_free(mycmd);
 	return status;
 
 }

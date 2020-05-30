@@ -1330,9 +1330,8 @@ switch_status_t mosq_destroy(mosquitto_connection_t *connection)
 
 	log(SWITCH_LOG_DEBUG, "mosq_destroy(): profile %s connection %s\n", profile->name, connection->name);
 
-	switch_safe_free(userdata);
+	switch_safe_free(connection->userdata);
 	mosquitto_destroy(connection->mosq);
-	connection->userdata = NULL;
 	connection->mosq = NULL;
 	connection->connected = SWITCH_FALSE;
 
