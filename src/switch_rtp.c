@@ -1953,7 +1953,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 			rtp_session->detectors[EST_RTT] = switch_core_alloc(rtp_session->pool, sizeof(*detectors[0]));
 			switch_kalman_cusum_init(rtp_session->detectors[EST_RTT],0.005,0.5);
 			rtp_session->detectors[EST_LOSS] = switch_core_alloc(rtp_session->pool, sizeof(*detectors[0]));
-			switch_kalman_cusum_init(rtp_session->detectors[EST_LOSS],0.005,0.5);
+			switch_kalman_cusum_init(rtp_session->detectors[EST_LOSS], 0.5, 1);
 	}
 }
 
