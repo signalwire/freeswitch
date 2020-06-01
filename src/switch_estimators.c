@@ -139,7 +139,7 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *
 	return TRUE;
 }
 
-SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float rtt_avg)
+SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float avg)
 {
 	float K=0;
 	float P=0;
@@ -153,8 +153,8 @@ SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_de
 
 	detector->N++;
 	current_average = detector->last_average + (measurement - detector->last_average)/detector->N ;
-	if (rtt_avg > current_average) {
-		current_average = rtt_avg;
+	if (avg > current_average) {
+		current_average = avg;
 	}
 	current_q =  detector-> last_q +  (measurement - detector->last_average) * (measurement - current_average);
 	if (detector->N != 0)
