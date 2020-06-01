@@ -1513,11 +1513,11 @@ SWITCH_STANDARD_APP(switch_dialpeer_app)
 
         /*! Call From SIP Redirection application */    
           if(!strcasecmp(redirection_to_dialpeer, "yes")) {
-                sql = switch_mprintf("SELECT distinct(c.dp_id), IF(isnull(c.dp_max_calls_sec),0,c.dp_max_calls_sec) as dp_max_calls_sec , IF(isnull(c.dp_max_calls),0,c.dp_max_calls) as dp_max_calls, c.dp_balancing_method, IF(isnull(c.cpg_id),0,c.cpg_id) as cpg_id, c.dp_equip_type,  c.dp_route_hunt FROM vca_dial_peer c WHERE  c.dp_status = 'Y' AND dp_id = '%s' And  UNIX_TIMESTAMP(NOW()) BETWEEN c.dp_start_date AND c.dp_end_date ORDER BY c.dp_priority, c.dp_id", dp_id);
+                sql = switch_mprintf("SELECT distinct(c.dp_id), IF(isnull(c.dp_max_calls_sec),0,c.dp_max_calls_sec) as dp_max_calls_sec , IF(isnull(c.dp_max_calls),0,c.dp_max_calls) as dp_max_calls, c.dp_balancing_method, IF(isnull(c.cpg_id),0,c.cpg_id) as cpg_id, c.dp_equip_type,  c.dp_route_hunt,c.dp_priority FROM vca_dial_peer c WHERE  c.dp_status = 'Y' AND dp_id = '%s' And  UNIX_TIMESTAMP(NOW()) BETWEEN c.dp_start_date AND c.dp_end_date ORDER BY c.dp_priority, c.dp_id", dp_id);
               
               
           } else {    /*! Call From SIP Origination application */    
-		sql = switch_mprintf("SELECT distinct(c.dp_id), IF(isnull(c.dp_max_calls_sec),0,c.dp_max_calls_sec) as dp_max_calls_sec , IF(isnull(c.dp_max_calls),0,c.dp_max_calls) as dp_max_calls, c.dp_balancing_method, IF(isnull(c.cpg_id),0,c.cpg_id) as cpg_id, c.dp_equip_type,  c.dp_route_hunt FROM vca_orig_route_mapping a, vca_dial_routing_group_mapping b, vca_dial_peer c WHERE a.rg_id=b.rg_id AND b.dp_id=c.dp_id AND  a.orig_id = '%s' AND c.dp_status = 'Y' And  UNIX_TIMESTAMP(NOW()) BETWEEN c.dp_start_date AND c.dp_end_date ORDER BY c.dp_priority, c.dp_id", originate_equip_id);
+		sql = switch_mprintf("SELECT distinct(c.dp_id), IF(isnull(c.dp_max_calls_sec),0,c.dp_max_calls_sec) as dp_max_calls_sec , IF(isnull(c.dp_max_calls),0,c.dp_max_calls) as dp_max_calls, c.dp_balancing_method, IF(isnull(c.cpg_id),0,c.cpg_id) as cpg_id, c.dp_equip_type,  c.dp_route_hunt,c.dp_priority FROM vca_orig_route_mapping a, vca_dial_routing_group_mapping b, vca_dial_peer c WHERE a.rg_id=b.rg_id AND b.dp_id=c.dp_id AND  a.orig_id = '%s' AND c.dp_status = 'Y' And  UNIX_TIMESTAMP(NOW()) BETWEEN c.dp_start_date AND c.dp_end_date ORDER BY c.dp_priority, c.dp_id", originate_equip_id);
           }
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "[AMAZE-DP] : Origination Equipments [ %s ] DIALPEER information SQL : \n%s\n",originate_equip_id, sql);
