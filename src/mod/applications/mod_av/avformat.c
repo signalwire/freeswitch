@@ -2433,7 +2433,7 @@ static switch_status_t no_video_decode_packets(switch_file_handle_t *handle, swi
 	}
 
 	context->last_read_pkt = pkt;
-	status = switch_packetizer_feed(context->packetizer, pkt->data, pkt->size);
+	switch_packetizer_feed(context->packetizer, pkt->data, pkt->size);
 	status = switch_packetizer_read(context->packetizer, frame);
 	pts = av_rescale_q(pkt->pts, st->time_base, AV_TIME_BASE_Q);
 	frame->timestamp = pts * 9 / 100; // scale to sample 900000
