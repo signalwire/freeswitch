@@ -1103,6 +1103,10 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	int n = nalu->len / SLICE_SIZE;
 	int slice_size = nalu->len / (n + 1) + 1 + 2;
 
+	if (nalu_type == 0x07) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "key frame generated\n");
+	}
+
 	if (nalu->len <= SLICE_SIZE) {
 		memcpy(frame->data, nalu->start, nalu->len);
 		frame->datalen = nalu->len;
@@ -1205,8 +1209,13 @@ static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile
 	if (profile->ctx.me_range >= 0) context->encoder_ctx->me_range = profile->ctx.me_range;
 	if (profile->ctx.max_b_frames >= 0) context->encoder_ctx->max_b_frames = profile->ctx.max_b_frames;
 	if (profile->ctx.refs >= 0) context->encoder_ctx->refs = profile->ctx.refs;
-	if (profile->ctx.gop_size >= 0) context->encoder_ctx->gop_size = profile->ctx.gop_size;
+	if (profile->ctx.gop_size >= 0) {
+		context->encoder_ctx->gop_size = profile->ctx.gop_size;
+	}
 	if (profile->ctx.keyint_min >= 0) context->encoder_ctx->keyint_min = profile->ctx.keyint_min;
+	if (context->encoder_ctx->keyint_min > context->encoder_ctx->gop_size) {
+		context->encoder_ctx->keyint_min = profile->ctx.gop_size;
+	}
 	if (profile->ctx.i_quant_factor >= 0) context->encoder_ctx->i_quant_factor = profile->ctx.i_quant_factor;
 	if (profile->ctx.b_quant_factor >= 0) context->encoder_ctx->b_quant_factor = profile->ctx.b_quant_factor;
 	if (profile->ctx.qcompress >= 0) context->encoder_ctx->qcompress = profile->ctx.qcompress;
@@ -1219,6 +1228,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 {
 	avcodec_profile_t *aprofile = NULL;
 	char codec_string[1024];
+	double fps = 0.0;
 
 	if (!context->encoder) {
 		if (context->av_codec_id == AV_CODEC_ID_H264) {
@@ -1289,11 +1299,13 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->codec_settings.video.height = 720;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "fps %d\n", context->codec_settings.video.fps);
+
+	fps = context->codec_settings.video.fps > 0 ? context->codec_settings.video.fps : 15.0;
+
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		double fps = context->codec_settings.video.fps > 0 ? context->codec_settings.video.fps : 15.0;
-
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, fps);
 	}
 
@@ -1302,22 +1314,33 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = avcodec_globals.max_bitrate;
 	}
 
-	context->bandwidth *= 3;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "br: %d fps: %f\n", context->bandwidth, fps);
 
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_min_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_max_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_buffer_size = context->encoder_ctx->bit_rate;
+	context->encoder_ctx->rc_initial_buffer_occupancy = context->encoder_ctx->rc_buffer_size * 3 / 4;
+
 	context->encoder_ctx->qcompress = 0.6;
 	context->encoder_ctx->gop_size = 1000;
 	context->encoder_ctx->keyint_min = 1000;
 	
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
-	context->encoder_ctx->time_base = (AVRational){1, 90};
+	if (context->pts) {
+		context->encoder_ctx->time_base = (AVRational){1, fps};
+		context->encoder_ctx->ticks_per_frame = 1;
+	} else {
+		context->encoder_ctx->ticks_per_frame = 1000000 / fps;
+		context->encoder_ctx->time_base = (AVRational){1, 1000000};
+	}
+	context->encoder_ctx->pkt_timebase = context->encoder_ctx->time_base;
+	context->encoder_ctx->framerate = context->encoder_ctx->time_base;
 	context->encoder_ctx->max_b_frames = aprofile->ctx.max_b_frames;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = aprofile->ctx.thread_count;
+	context->encoder_ctx->sample_aspect_ratio = (AVRational){context->encoder_ctx->width, context->encoder_ctx->height};
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 || context->av_codec_id == AV_CODEC_ID_H263P) {
 #ifndef H263_MODE_B
@@ -1400,6 +1423,9 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 	if (codec_settings) {
 		context->codec_settings = *codec_settings;
 	}
+
+	// todo: use local pts counter or use timestamp based (default)
+	context->pts = 0;
 
 	if (!strcmp(codec->implementation->iananame, "H263")) {
 		context->av_codec_id = AV_CODEC_ID_H263;
@@ -1537,7 +1563,6 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		avframe->format = avctx->pix_fmt;
 		avframe->width  = avctx->width;
 		avframe->height = avctx->height;
-		avframe->pts = frame->timestamp / 1000;
 
 		ret = av_frame_get_buffer(avframe, 32);
 
@@ -1564,8 +1589,13 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 #endif
 
 	fill_avframe(avframe, img);
+	if (context->pts) {
+		avframe->pts = context->pts++;
+	} else {
+		avframe->pts = switch_micro_time_now();
+	}
 
-	avframe->pts = context->pts++;
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "fps %" SWITCH_INT64_T_FMT "\n", avframe->pts);
 
 	if (context->need_key_frame) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Send AV KEYFRAME\n");
@@ -1577,6 +1607,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	memset(context->nalus, 0, sizeof(context->nalus));
 	context->nalu_current_index = 0;
 GCC_DIAG_OFF(deprecated-declarations)
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Encode pts=%ld\n", avframe->pts);
 	ret = avcodec_encode_video2(avctx, pkt, avframe, got_output);
 GCC_DIAG_ON(deprecated-declarations)
 
@@ -1596,6 +1627,8 @@ GCC_DIAG_ON(deprecated-declarations)
 	if (*got_output) {
 		const uint8_t *p = pkt->data;
 		int i = 0;
+
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d\n", pkt->size);
 
 		*got_output = 0;
 
@@ -1963,6 +1996,8 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 	if (zstr(profile_name)) return;
 
 	ctx = &aprofile->ctx;
+	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->level = 31;
 
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		const char *name = switch_xml_attr(param, "name");
@@ -1974,9 +2009,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
 
 		val = atoi(value);
-
-		ctx->profile = FF_PROFILE_H264_BASELINE;
-		ctx->level = 31;
 
 		if (!strcmp(name, "dec-threads")) {
 			aprofile->decoder_thread_count = switch_parse_cpu_string(value);
@@ -2158,8 +2190,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 			const char *value = switch_xml_attr(option, "value");
 
 			if (zstr(name) || zstr(value)) continue;
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", name, value);
 
 			switch_event_add_header_string(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
 		}
