@@ -1897,6 +1897,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 
 	if (switch_file_exists(new_handle->font_family, new_handle->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Font %s does not exist\n", new_handle->font_family);
+#if SWITCH_HAVE_FREETYPE
+		if (new_handle->library) {
+			FT_Done_FreeType(new_handle->library);
+			new_handle->library = NULL;
+		}
+#endif
 		if (free_pool) {
 			switch_core_destroy_memory_pool(&pool);
 		}
