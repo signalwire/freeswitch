@@ -676,7 +676,9 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 			if (!use_jsock || use_jsock == np->jsock) {
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
+				cJSON_AddItemToObject(params, "subscribedChannel", cJSON_CreateString(head->event_channel));
 				msg = jrpc_new_req("verto.event", NULL, &params);
+
 				jsock_queue_event(np->jsock, &msg, SWITCH_TRUE);
 			}
 		}
@@ -4328,6 +4330,10 @@ static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsoc
 	if ((var = switch_event_get_header(jsock->vars, "moderator")) && switch_true(var)) {
 		cJSON_AddItemToObject(*response, "moderator", cJSON_CreateTrue());
 		switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, "conf_mvar_moderator", "true");
+	}
+
+	if ((var = switch_event_get_header(jsock->vars, "stereo_audio")) && switch_true(var)) {
+		cJSON_AddItemToObject(*response, "stereoAudio", cJSON_CreateTrue());
 	}
 
 	if ((var = switch_event_get_header(jsock->vars, "superuser")) && switch_true(var)) {
