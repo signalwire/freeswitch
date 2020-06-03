@@ -1691,14 +1691,14 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 }
 
 
-SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *channel, switch_channel_state_t want_state, uint32_t timeout)
+SWITCH_DECLARE(switch_bool_t) switch_channel_wait_for_state_timeout(switch_channel_t *channel, switch_channel_state_t want_state, uint32_t timeout)
 {
-
 	uint32_t count = 0;
-
+	switch_bool_t ret = SWITCH_FALSE;
 	for (;;) {
 
 		if ((channel->state == channel->running_state && channel->running_state == want_state) || channel->state >= CS_HANGUP) {
+			ret = SWITCH_TRUE;
 			break;
 		}
 
@@ -1710,6 +1710,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *cha
 			break;
 		}
 	}
+	return ret;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel,
@@ -2714,6 +2715,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_UNBRIDGE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
+		event->event_id == SWITCH_EVENT_CHANNEL_MEDIA_WRITABLE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||

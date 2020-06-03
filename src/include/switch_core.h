@@ -2511,7 +2511,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 SWITCH_DECLARE(void) switch_core_sqldb_pause(void);
 SWITCH_DECLARE(void) switch_core_sqldb_resume(void);
 
-
+SWITCH_DECLARE(void) switch_core_session_media_writable(_In_ switch_core_session_t *session);
 ///\}
 
 /*!

@@ -3124,6 +3124,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_override_io_routines(switch_
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_core_session_media_writable(switch_core_session_t *session)
+{
+	switch_channel_execute_on(session->channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_WRITABLE_VARIABLE);
+}
+
 
 /* For Emacs:
  * Local Variables:
