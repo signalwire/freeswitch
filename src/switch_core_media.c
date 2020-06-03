@@ -3539,6 +3539,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 	int bytes = 0, samples = 0, frames = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
+	int fire_writable = 0;
 
 	switch_assert(session);
 
@@ -3589,10 +3590,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 
 	engine->timestamp_send += samples;
 
+	fire_writable = !switch_channel_test_flag(session->channel, CF_MEDIA_WRITABLE_FIRED);
 	if (switch_rtp_write_frame(engine->rtp_session, frame) < 0) {
 		status = SWITCH_STATUS_FALSE;
 	}
-
+	else if (fire_writable)
+	{
+		switch_event_t *event = NULL;
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_MEDIA_WRITABLE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_fire(&event);
+			switch_channel_set_flag(session->channel, CF_MEDIA_WRITABLE_FIRED);
+			switch_core_session_media_writable(session);
+		}
+	}
 
 	return status;
 }

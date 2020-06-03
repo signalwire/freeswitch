@@ -3116,6 +3116,21 @@ SWITCH_STANDARD_APP(playback_function)
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
+	if (channel) {
+			const char* playback_wait_for_state_execute = switch_channel_get_variable(channel, "playback_wait_for_state_execute");
+			if (switch_true(playback_wait_for_state_execute))
+			{
+				if (switch_channel_get_state(channel) != CS_EXECUTE)
+				{
+					switch_channel_set_variable(channel, "next_application_on_execute", "playback");
+					switch_channel_set_variable(channel, "next_application_data_on_execute", data);
+					switch_channel_set_variable(channel, "playback_wait_for_state_execute", "false");
+					return;
+				}
+			}
+	}
+
+	
 	status = switch_ivr_play_file_detailed(session, &fh, file, &args, &error);
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
