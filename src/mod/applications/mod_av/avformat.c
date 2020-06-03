@@ -784,6 +784,7 @@ static void flush_video_pkt_queue(switch_queue_t *q)
 
 	while (switch_queue_trypop(q, (void **)&pkt) == SWITCH_STATUS_SUCCESS) {
 		av_packet_unref(pkt);
+		free(pkt);
 	}
 }
 

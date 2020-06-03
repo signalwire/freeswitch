@@ -178,15 +178,18 @@ FST_CORE_BEGIN("conf")
 			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
-			frame.data = data;
+			frame.packet = data;
+			frame.data = data + 12;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 			do {
-				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 				status = switch_core_file_read(&fh, data, &len);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, (int)len);
 				fst_check(frame.img == NULL);
-				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 				status = switch_core_file_read_video(&fh, &frame, 0);
+				fst_check(frame.img == NULL);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "status: %d len: %d %02x\n", status, frame.datalen, *(uint8_t *)frame.data);
 			} while (status == SWITCH_STATUS_MORE_DATA);
 
