@@ -5,10 +5,10 @@ mod_mosquitto is an interface to an MQTT broker using the Eclipse Mosquitto proj
 mod_mosquitto it able to publish and/or subscribe to one or more MQTT message brokers.
 Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto API library
 
-More information about Mosquitto and MQTT can be found here:
+More information can be found here:
 
-(MQTT)[http://mqtt.org/]
-(Mosquitto)[https://mosquitto.org/]
+* (MQTT)[http://mqtt.org/]
+* (Mosquitto)[https://mosquitto.org/]
 
 # License
 
@@ -28,4 +28,23 @@ Portions created by the Initial Developer are Copyright (C) the Initial Develope
 
 # Contributor(s):
 * Norm Brandinger <n.brandinger@gmail.com>
+
+# Table of Contents
+- [mod_mosquitto](#mod_mosquitto)
+- [License](#license)
+- [Contributor(s):](#contributors)
+- [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [How to build and install](#how-to-build-and-install)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+  - [Troubleshooting](#troubleshooting)
+  - [Notes](#notes)
+
+## Features
+## How to build and install
+## Configuration
+## Usage
+## Troubleshooting
+## Notes
  
