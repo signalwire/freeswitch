@@ -42,6 +42,19 @@ Portions created by the Initial Developer are Copyright (C) the Initial Develope
 * Norm Brandinger <n.brandinger@gmail.com>
 
 ## Features
+
+* Global Settings
+* Multiple Profiles
+* Multiple MQTT broker connections
+* Multiple Subscribers
+* Multiple Publishers
+* Multiple Topics
+* TLS Support
+* Last Will and Testament (Will) support
+
+* Publish one or more FreeSWITCH events to one or more Topics
+* Subscribe to FreeSWITCH bgapi or originate requests
+
 ## How to build and install
 ## Configuration
 ## Usage
