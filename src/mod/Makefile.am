@@ -53,13 +53,13 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 			fi ; \
 		fi ; \
 		if test -f  "$$buildmoddir/bootstrap.sh" -a ! -f  "$$buildmoddir/configure" -a ! -f  "$$buildmoddir/configure.sh" ; then \
-			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$PKG_CONFIG_PATH eval $$buildmoddir/bootstrap.sh ; \
+			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$(PKG_CONFIG_PATH) eval $$buildmoddir/bootstrap.sh ; \
 		fi ; \
 		if test -f  "$$buildmoddir/configure.sh" -a ! -f "$$buildmoddir/Makefile" ; then \
-			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$PKG_CONFIG_PATH eval $$buildmoddir/configure.sh ; \
+			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$(PKG_CONFIG_PATH) eval $$buildmoddir/configure.sh ; \
 		else \
 			if test -f  "$$buildmoddir/configure" -a ! -f "$$buildmoddir/Makefile" ; then \
-				cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$PKG_CONFIG_PATH eval $$buildmoddir/configure ; \
+				cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) PKG_CONFIG_PATH=$(switch_builddir)/build/standalone_module:$(PKG_CONFIG_PATH) eval $$buildmoddir/configure ; \
 			fi ; \
 		fi ; \
 		if test -z "$$target" ; then target="all" ; fi ; \
