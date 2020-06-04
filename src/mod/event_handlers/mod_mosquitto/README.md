@@ -88,7 +88,7 @@ At a high level, the configuration file is organized as follows:
 Configuration parameter definitions
 
 (GLOBAL) SETTINGS
-
+```
   log-enable           - Is logging enabled (true) / disabled (false)
   log-details          - Is logging of message details enabled (true) / disabled (false)
   log-level            - Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
@@ -102,9 +102,10 @@ Configuration parameter definitions
   enable-topics        - Default setting if unspecified in the configuration file
   event-queue-size     - Number of pending events that the event queue can hold
   unique-string-length - Length of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
+```
 
 PROFILE
-
+```
   name        - Name of the profile. Each profile must have a unique name.
   enable      - Is this profile enabled (true) / disabled (false).
 
@@ -113,11 +114,11 @@ PROFILE
   log-level   - Log severity level is one of: debug,info,notice,warning,error,critical,alert,console
   log-dir     - Directory where the log file(s) will be written. Defaults to 'freeswitch/log'
   log-file    - Name of the log file where mod_mosquitto messages will written. Defaults to the profile name + '.log'.
-
+```
 CONNECTIONS
 
 CONNECTION
-
+```
   name        - Name of this connection.  Each connection within a profile must have unique name.
   enable        - Is this connection enabled (true) / disabled (false).
   receive_maximum    - The maximum number of incoming QoS1 and QoS2 messages to be processed at once.
@@ -176,7 +177,6 @@ CONNECTION
 
   WILL
 
-
     enable      - Enable (true) or disable (false) the will associated with this connection.
             - The topic/payload of the will are published when the connection is closed.
     topic      - The topic name associated with this connecton.
@@ -186,14 +186,17 @@ CONNECTION
             - At least once (1)  - Guarantees that the mesage will be delivered at least one time to the receiver (duplicates possible).
             - Exactly once (2)  - Guarentees that the message is received only once by the receiver.
     retain      - (true/false) The MQTT broker stores the last retained messae and the corresponding QoS for that topic.
-
+```
 
 
 PUBLISHER
+```
   name        - Name of this publisher.  Each publisher within a profile must have unique name.
   enable        - Is this publisher enabled (true) / disabled (false).
+```
 
 TOPIC
+```
   name        - Name of this topic.  Each topic within a profile/publisher must have unique name.
   enable        - Is this topic enabled (true) / disabled (false).
   connection_name    - The connection name associated with this topic.  The connection name must be defined within the same profile.
@@ -204,14 +207,14 @@ TOPIC
             - At least once (1)  - Guarantees that the mesage will be delivered at least one time to the receiver (duplicates possible).
             - Exactly once (2)  - Guarentees that the message is received only once by the receiver.
   retain        - (true/false) The MQTT broker stores the last retained messae and the corresponding QoS for that topic.
-
+```
 SUBSCRIBER
-
+```
   name        - Name of this subscriber.  Each subscriber within a profile must have unique name.
   enable        - Is this subscriber enabled (true) / disabled (false).
-
+```
 TOPIC
-
+```
   name        - Name of this topic.  Each topic within a profile/subscriber must have unique name.
   enable        - Is this topic enabled (true) / disabled (false).
   connection_name    - The connection name associated with this topic.  The connection name must be defined within the same profile.
@@ -222,7 +225,7 @@ TOPIC
             - Exactly once (2)  - Guarentees that the message is received only once by the receiver.
   originate_authorized- Are originate commands authorized (true) / not authorized (false)
   bgapi_authorized  - Are bgapi commands authorized (true) / not authorized (false)
-
+```
 
 An empty configuration file showing the structure:
 Note: Multiple profiles, connections, publishers, subscribers and topics are allowed.
