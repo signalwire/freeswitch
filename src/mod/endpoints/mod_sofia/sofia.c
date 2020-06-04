@@ -1230,30 +1230,33 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	number = (char *) switch_channel_get_variable(channel, num_var);
 	name = (char *) switch_channel_get_variable(channel, name_var);
 
-
 	if (zstr(number) && sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
 	}
 
-	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Number"))) {
-		number = val;
+	if (switch_channel_var_true(channel, "sip_ignore_remote_cid")) {
 		fs++;
-	}
+	} else {
+		if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Number"))) {
+			number = val;
+			fs++;
+		}
 
-	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Name"))) {
-		name = (char *) val;
-		check_decode(name, session);
-		fs++;
-	}
+		if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Name"))) {
+			name = (char *) val;
+			check_decode(name, session);
+			fs++;
+		}
 
-	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Lazy-Attended-Transfer"))) {
-		lazy = switch_true(val);
-		fs++;
-	}
+		if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Lazy-Attended-Transfer"))) {
+			lazy = switch_true(val);
+			fs++;
+		}
 
-	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Attended-Transfer"))) {
-		att = switch_true(val);
-		fs++;
+		if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Attended-Transfer"))) {
+			att = switch_true(val);
+			fs++;
+		}
 	}
 
 	if (!fs) {
