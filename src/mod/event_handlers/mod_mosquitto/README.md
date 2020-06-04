@@ -1,15 +1,15 @@
 
 # Table of Contents
 - [Table of Contents](#table-of-contents)
-  - [mod_mosquitto](#mod_mosquitto)
-  - [License](#license)
-  - [Contributor(s):](#contributors)
-  - [Features](#features)
-  - [How to build and install](#how-to-build-and-install)
-  - [Configuration](#configuration)
-  - [Usage](#usage)
-  - [Command Line Interface (CLI)](#command-line-interface-cli)
-  - [Notes](#notes)
+	- [mod_mosquitto](#mod_mosquitto)
+	- [License](#license)
+	- [Contributor(s):](#contributors)
+	- [Features](#features)
+	- [How to build and install](#how-to-build-and-install)
+	- [Configuration](#configuration)
+	- [Usage](#usage)
+	- [Command Line Interface (CLI)](#command-line-interface-cli)
+	- [Notes](#notes)
 ## mod_mosquitto
 
 mod_mosquitto is an interface to an MQTT broker using the Eclipse Mosquitto project C client library.  MQTT is a lightweight protocol to send or receive messages using a publish / subscribe pattern.  Echipse Mosquitto is an open source message broker that implements the MQTT protocol.
@@ -87,7 +87,7 @@ At a high level, the configuration file is organized as follows:
 
 Configuration parameter definitions
 
-SETTINGS
+(GLOBAL) SETTINGS
 
 	log-enable			- Is logging enabled (true) / disabled (false)
 	log-details			- Is logging of message details enabled (true) / disabled (false)
@@ -102,9 +102,10 @@ SETTINGS
 	enable-connections	- Default setting if unspecified in the configuration file
 	enable-topics		- Default setting if unspecified in the configuration file
 	event-queue-size	- Number of pending events that the event queue can hold
-	unique-string-length- Length of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
+	unique-string-length	- Length of random characters added to FreeSWITCH-Switchname-Unique / FreeSWITCH-Hostname-Unique
 
 PROFILE
+	
 	name				- Name of the profile. Each profile must have a unique name.
 	enable				- Is this profile enabled (true) / disabled (false).
 	
@@ -118,6 +119,7 @@ PROFILE
 CONNECTIONS
 
 CONNECTION
+
 	name				- Name of this connection.  Each connection within a profile must have unique name.
 	enable				- Is this connection enabled (true) / disabled (false).
 	receive_maximum		- The maximum number of incoming QoS1 and QoS2 messages to be processed at once.
@@ -141,6 +143,7 @@ CONNECTION
 	reconnect_exponsntial_backoff - Use exponential backoff between reconnect attempts (true/false).
 
 	TLS
+
 		enable			- Enabled (true) / disabled (false): Should SSL/TLS be enabled for this connection
 		support			- 'certificate': The connection will be configured for certificated based SSL/TLS support.
 						- 'pks': The connection will be configured for pre-shared-key based TLS support.
@@ -172,7 +175,10 @@ CONNECTION
 		identity		- The identity of this client.  May be used as the username depending on the server settings.
 		psk_ciphers		- A string describing the PSK ciphers available for use.  See the “openssl ciphers” tool for more information.
 						- If NULL, the default ciphers will be used.
+	
 	WILL
+
+
 		enable			- Enable (true) or disable (false) the will associated with this connection.
 						- The topic/payload of the will are published when the connection is closed.
 		topic			- The topic name associated with this connecton.
@@ -202,10 +208,12 @@ TOPIC
 	retain				- (true/false) The MQTT broker stores the last retained messae and the corresponding QoS for that topic.
 
 SUBSCRIBER
+
 	name				- Name of this subscriber.  Each subscriber within a profile must have unique name.
 	enable				- Is this subscriber enabled (true) / disabled (false).
 
 TOPIC
+
 	name				- Name of this topic.  Each topic within a profile/subscriber must have unique name.
 	enable				- Is this topic enabled (true) / disabled (false).
 	connection_name		- The connection name associated with this topic.  The connection name must be defined within the same profile.
@@ -221,6 +229,7 @@ TOPIC
 An empty configuration file showing the structure:
 Note: Multiple profiles, connections, publishers, subscribers and topics are allowed.
 
+```
 <configuration>
 	<settings>
 	</settings>
@@ -253,10 +262,10 @@ Note: Multiple profiles, connections, publishers, subscribers and topics are all
 		</profile>
 	</profiles>
 </configuration>
-
+```
 
 An example configuration file:
-
+```
 <configuration name="mosquitto.conf" description="mod_mosquitto">
 	<settings>
 		<param name="log-enable" value="true"/>
@@ -392,6 +401,7 @@ An example configuration file:
 		</profile>
 	</profiles>
 </configuration>
+```
 
 ## Usage
 
@@ -432,6 +442,7 @@ Notes:
 		WARNING: REPEATED: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors.
 		WARNING: REPEATED A THIRD TIME: If the connected MQTT broker is not locked down, toll fraud WILL HAPPEN by bad actors.
 
+```
 <subscriber>
 	<topics>
 		<topic name="command">
@@ -445,7 +456,7 @@ Notes:
 		</topic>
 	</topics>
 </subscriber>
-
+```
 
 PUBLISH an event to a topic:
 
@@ -466,6 +477,7 @@ The list of valid FreeSWITCH event types can be found here:  https://docs.freesw
 If the above link doesn't work, search the FreeSWITCH documentaton for "switch_event_types_t".
 The event names used here are the same as those defined in "switch_event_types_t" with the removal of the "SWITCH_EVENT" prefix.
 
+```
 <publisher>
 	<topics>
 		<topic name="Heartbeat">
@@ -487,11 +499,13 @@ The event names used here are the same as those defined in "switch_event_types_t
 		</topic>
 	</topics>
 </publisher>
+```
 
 ## Command Line Interface (CLI)
 
 The following mod_mosquitto commands can be entered in the FreeSWITCH console (fs_api):
 
+```
 mosquitto [help]
 mosquitto status
 mosquitto loglevel [debug|info|notice|warning|error|critical|alert|console]
@@ -501,6 +515,7 @@ mosquitto remove profile <profile-name> [connection|publisher|subscriber] <name>
 mosquitto connect profile <profile-name> connection <name>
 mosquitto disconnect profile <profile-name> connection <name>
 mosquitto bgapi <command> [<arg>]
+```
 
 ## Notes
 
@@ -510,9 +525,9 @@ The list of available bgapi commands are available by entering "show api" in the
 
 Possible TODO items:
 
-	MQTT V5 support
-	Throttle (circuit-breaker) support
-	Enhanced security around command execution
-	Enhanced CLI functionality
-	Enhanced logging / statistics
+* MQTT V5 support
+* Throttle (circuit-breaker) support
+* Enhanced security around command execution
+* Enhanced CLI functionality
+* Enhanced logging / statistics
  
