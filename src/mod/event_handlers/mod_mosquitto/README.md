@@ -1,4 +1,16 @@
-# mod_mosquitto
+
+# Table of Contents
+- [Table of Contents](#table-of-contents)
+  - [mod_mosquitto](#mod_mosquitto)
+  - [License](#license)
+  - [Contributor(s):](#contributors)
+  - [Features](#features)
+  - [How to build and install](#how-to-build-and-install)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+  - [Troubleshooting](#troubleshooting)
+  - [Notes](#notes)
+## mod_mosquitto
 
 mod_mosquitto is an interface to an MQTT broker using the Eclipse Mosquitto project C client library.  MQTT is a lightweight protocol to send or receive messages using a publish / subscribe pattern.  Echipse Mosquitto is an open source message broker that implements the MQTT protocol.
 
@@ -10,7 +22,7 @@ More information can be found here:
 * (MQTT)[http://mqtt.org/]
 * (Mosquitto)[https://mosquitto.org/]
 
-# License
+## License
 
 FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
 Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
@@ -26,20 +38,8 @@ The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-
 The Initial Developer of the Original Code is Anthony Minessale II <anthm@freeswitch.org>
 Portions created by the Initial Developer are Copyright (C) the Initial Developer. All Rights Reserved.
 
-# Contributor(s):
+## Contributor(s):
 * Norm Brandinger <n.brandinger@gmail.com>
-
-# Table of Contents
-- [mod_mosquitto](#mod_mosquitto)
-- [License](#license)
-- [Contributor(s):](#contributors)
-- [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [How to build and install](#how-to-build-and-install)
-  - [Configuration](#configuration)
-  - [Usage](#usage)
-  - [Troubleshooting](#troubleshooting)
-  - [Notes](#notes)
 
 ## Features
 ## How to build and install
