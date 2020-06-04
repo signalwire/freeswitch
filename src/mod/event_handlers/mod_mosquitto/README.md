@@ -7,5 +7,5 @@ Implements a Publish/Subscribe (pub/sub) messaging pattern using the Mosquitto A
 
 More information about Mosquitto and MQTT can be found here:
 
-MQTT http://mqtt.org/
-Mosquitto https://mosquitto.org/
+* MQTT http://mqtt.org/
+* Mosquitto https://mosquitto.org/
