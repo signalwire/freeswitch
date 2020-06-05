@@ -602,7 +602,7 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #ifdef _MSC_VER
 #define STBI_NOTUSED(v)  (void)(v)
 #else
-#define STBI_NOTUSED(v)  (void)sizeof(v)
+#define STBI_NOTUSED(v)  (void)(v)
 #endif
 
 #ifdef _MSC_VER
