@@ -29,7 +29,7 @@
  *
  */
 
-#include <switch_packetizer.h>
+#include <switch.h>
 #define MAX_NALUS 256
 
 typedef struct our_h264_nalu_s {

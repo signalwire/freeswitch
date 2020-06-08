@@ -300,6 +300,7 @@ library_include_HEADERS = \
 	src/include/switch_dso.h \
 	src/include/switch_loadable_module.h \
 	src/include/switch_module_interfaces.h \
+	src/include/switch_packetizer.h \
 	src/include/switch_platform.h \
 	src/include/switch_resample.h \
 	src/include/switch_regex.h \

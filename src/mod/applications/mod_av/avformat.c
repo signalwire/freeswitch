@@ -54,7 +54,6 @@ GCC_DIAG_OFF(deprecated-declarations)
 #include <libswresample/swresample.h>
 #endif
 
-#include <switch_packetizer.h>
 #define SLICE_SIZE (SWITCH_DEFAULT_VIDEO_SIZE + 100)
 
 GCC_DIAG_ON(deprecated-declarations)

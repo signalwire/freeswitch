@@ -29,8 +29,6 @@
  *
  */
 
-#include <switch.h>
-
 #ifndef SWITCH_PACKETIZER_H
 #define SWITCH_PACKETIZER_H
 

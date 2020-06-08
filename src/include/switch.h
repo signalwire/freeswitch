@@ -136,6 +136,7 @@
 #include "switch_core_event_hook.h"
 #include "switch_scheduler.h"
 #include "switch_config.h"
+#include "switch_packetizer.h"
 #include "switch_nat.h"
 #include "switch_odbc.h"
 #include "switch_json.h"
