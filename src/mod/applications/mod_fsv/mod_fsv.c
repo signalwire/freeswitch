@@ -997,6 +997,7 @@ again:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				"read error status=%d size=%u read_size=%" SWITCH_SIZE_T_FMT "\n",
 				status, size, read_size);
+			free(video_data);
 			goto end;
 		}
 
