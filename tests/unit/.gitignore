@@ -38,6 +38,8 @@ switch_utils
 switch_vad
 switch_vpx
 switch_xml
+switch_estimators
+switch_jitter_buffer
 .deps/
 Makefile
 cluecon-argb-write.png
@@ -46,7 +48,5 @@ cluecon-jpg-write.jpg
 cluecon-jpg.png
 cluecon-rgb-write.png
 cluecon-rgb.png
-conf/20553/
-conf/20636/
-conf/20683/
-conf/5374/
+conf/*/
+conf_playsay/*/
