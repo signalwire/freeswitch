@@ -272,3 +272,8 @@ src/mod/*/*/test/[0-9]*/*
 test-suite.log
 src/mod/applications/mod_av/test/test_BT7.mp4
 src/mod/applications/mod_av/test/test_RGB.mp4
+images/test-argb.png
+images/test-rgb.png
+images/test.png
+images/test_patched.png
+images/test_text.png
