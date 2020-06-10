@@ -13,6 +13,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>FreeSWITCH</OutputName>
     <OutputType>Package</OutputType>
+    <CertificateThumbprint>bf386393c880967b00adbc438aee534de6211774</CertificateThumbprint>
+    <TimestampUrl>http://timestamp.comodoca.com</TimestampUrl>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x86\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='x86' ">$(WindowsSDK80Path)bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x64\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='AMD64' ">$(WindowsSDK80Path)bin\x64\signtool.exe</SignToolPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
   </PropertyGroup>
@@ -1005,8 +1009,30 @@
     <Message Importance="High" Text="Deleting previously created MSI files." />
     <Delete Files="$(OutputPath)$(OutputName).msi" />
     <Delete Files="$(DestinationFileName)" />
-
-   <HeatDirectory
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\f*.exe">
+        <Output ItemName="ExeFiles" TaskParameter="Include" />
+    </CreateItem>
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\mod\*.dll">
+        <Output ItemName="Modules" TaskParameter="Include" />
+    </CreateItem>
+    <Message Importance="High" Text="Signing FreeSWITCH Core Library" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\FreeSwitch.dll"
+            TargetFrameworkVersion="v4.5" />
+    <Message Importance="High" Text="Signing FreeSWITCH Executables" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(ExeFiles.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
         Directory="$(ProjectDir)..\..\conf\vanilla"
@@ -1101,6 +1127,10 @@
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />
+    <Message Importance="High" Text="Signing FreeSWITCH MSI Package" />
+    <Exec ContinueOnError="WarnAndContinue"
+        Command="&quot;$(SignToolPath)&quot; sign /fd sha256 /sha1 $(CertificateThumbprint) /t &quot;$(TimestampUrl)&quot; &quot;$(DestinationFileName)&quot;"
+        StandardOutputImportance="high" />
     <Message Importance="High" Condition="Exists('$(DestinationFileName)')" Text="Success. An output MSI has been copied to $(DestinationFileName)" />
   </Target>
 </Project>
