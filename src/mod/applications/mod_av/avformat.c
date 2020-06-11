@@ -1173,7 +1173,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	/** Get information on the input file (number of streams etc.). */
 	if ((error = avformat_find_stream_info(context->fc, opts ? &opts : NULL)) < 0) {
 		char ebuf[255] = "";
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open find stream info (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not find stream info in file: %s, error = %s)\n", filename, get_error_text(error, ebuf, sizeof(ebuf)));
 		if (opts) av_dict_free(&opts);
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
@@ -1345,16 +1345,20 @@ GCC_DIAG_ON(deprecated-declarations)
 
 err:
 	if (context->fc) {
+		int nb_streams = context->fc->nb_streams;
+
+		if (nb_streams > 2) nb_streams = 2;
+
+		if (context->has_video) close_stream(context->fc, &context->video_st);
+
+		for (i = 0; i < nb_streams; i++) {
+			close_stream(context->fc, &context->audio_st[i]);
+		}
+
 		avformat_free_context(context->fc);
 		context->fc = NULL;
 	}
 
-	/*
-	if (context->has_video) close_stream(context->fc, &context->video_st);
-	if (context->has_audio) close_stream(context->fc, &context->audio_st);
-
-	if (context->fc) avformat_close_input(&context->fc);
-	*/
 	return status;
 }
 
