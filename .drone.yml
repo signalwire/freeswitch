@@ -6,12 +6,17 @@ node:
   freeswitch: public
 
 steps:
-    - name: run-tests
+    - name: bootstrap
       image: signalwire/freeswitch-public-base
       pull: true
       commands:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
       - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
@@ -20,9 +25,20 @@ steps:
       - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
       - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
       - ./configure --enable-address-sanitizer
-      - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\nmake install\n' > build.sh
+
+    - name: build
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
+
+    - name: run-tests
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - make install
       - cd tests/unit
       - ./run-tests.sh
       - ls -la /cores
@@ -60,11 +76,16 @@ node:
   freeswitch: public
 
 steps:
-    - name: scan-build
+    - name: bootstrap
       image: signalwire/freeswitch-public-base:stretch
       pull: true
       commands:
       - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -89,6 +110,11 @@ steps:
       - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
       - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
       - ./configure
+
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
       - mkdir -p scan-build
       - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
@@ -119,6 +145,6 @@ trigger:
 
 ---
 kind: signature
-hmac: dcc23ab357643343e144d6371bc2accbc25dcf18c6554bce1d7dc5ba532e9b41
+hmac: a2562bd74b1f2557934a1eb38062157f43aa7be7cd83de4a3290ce2001e8fa1e
 
 ...
