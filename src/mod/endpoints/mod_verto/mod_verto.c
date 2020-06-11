@@ -5363,6 +5363,38 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t cmd_announce(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	verto_profile_t *profile = NULL;
+	jsock_t *jsock;
+
+	switch_mutex_lock(verto_globals.mutex);
+	for(profile = verto_globals.profile_head; profile; profile = profile->next) {
+
+		switch_mutex_lock(profile->mutex);
+		for (jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+			cJSON *params = NULL;
+			cJSON *array, *msg = jrpc_new_req("verto.announce", 0, &params);
+			int i;
+			
+			array = cJSON_CreateArray();
+
+			for (i = 0; i < argc; i++) {
+				cJSON_AddItemToArray(array, cJSON_CreateString(argv[i]));
+			}
+			
+			cJSON_AddItemToObject(params, "msg", array);
+			jsock_queue_event(jsock, &msg, SWITCH_TRUE);
+		}
+		switch_mutex_unlock(profile->mutex);
+	}
+	switch_mutex_unlock(verto_globals.mutex);
+
+	stream->write_function(stream, "+OK\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	verto_profile_t *profile = NULL;
@@ -5527,6 +5559,8 @@ SWITCH_STANDARD_API(verto_function)
 		}
 		status = SWITCH_STATUS_SUCCESS; 
 		goto done;
+	} else if (!strcasecmp(argv[0], "announce")) {
+		func = cmd_announce;
 	} else if (!strcasecmp(argv[0], "status")) {
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
