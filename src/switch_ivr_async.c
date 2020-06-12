@@ -5046,6 +5046,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	}
 
 	switch_core_session_get_read_impl(session, &read_impl);
+	ah->channels = read_impl.number_of_channels;
+	ah->session = session;
 
 	if ((status = switch_core_asr_open(ah,
 									   mod_name,

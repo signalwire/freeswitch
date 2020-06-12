@@ -456,6 +456,10 @@ struct switch_asr_handle {
 	uint32_t native_rate;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
+	/* session */
+	switch_core_session_t *session;
+	/* channels */
+	uint32_t channels;
 };
 
 /*! \brief Abstract interface to a speech module */
