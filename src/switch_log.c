@@ -611,7 +611,7 @@ SWITCH_DECLARE(void) switch_log_meta_vprintf(switch_text_channel_t channel, cons
 		switch_time_exp_t tm;
 
 		switch_time_exp_lt(&tm, now);
-		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d %0.2f%%",
+		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d %0.2f%%%%",
 						tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, switch_core_idle_cpu());
 
 		//switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
