@@ -1028,8 +1028,13 @@
             SigningTarget="%(ExeFiles.Identity)"
             TargetFrameworkVersion="v4.5" />
     <Message Importance="High" Text="Signing FreeSWITCH Modules" />
-    <SignFile ContinueOnError="WarnAndContinue"
+    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
             CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
             SigningTarget="%(Modules.Identity)"
             TargetFrameworkVersion="v4.5" />
     <HeatDirectory
@@ -1045,7 +1050,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHConfFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
         Directory="$(SoundsDir)"
@@ -1058,7 +1063,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHhtdocsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\htdocs"
@@ -1071,7 +1076,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHimagesFilesDir.wxs"
         Directory="$(ProjectDir)..\..\images"
@@ -1084,7 +1089,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHfontsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\fonts"
@@ -1097,7 +1102,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHgrammarFilesDir.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\grammar"
@@ -1110,7 +1115,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)"
