@@ -3508,7 +3508,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	char *o;
 	unsigned int tmp;
 
-	if (zstr(s)) {
+	if (zstr(s) || !strchr(s, '%')) {
 		return s;
 	}
 
