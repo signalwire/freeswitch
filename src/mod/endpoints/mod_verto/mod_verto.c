@@ -1649,7 +1649,7 @@ new_req:
 		goto done;
 	}
 
-	if (request->content_length && request->content_length > 5l * 1024 * 1024 * 1024 - 1) {
+	if (request->content_length && request->content_length > INT32_MAX) {
 		char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
 			"Content-Length: 0\r\n\r\n";
 		kws_raw_write(jsock->ws, data, strlen(data));
