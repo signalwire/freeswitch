@@ -113,6 +113,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 	int max_tries = DEFAULT_PGSQL_RETRIES;
 	int code = 0;
 	int recon = 0;
+	switch_byte_t sanity = 255;
 
 	if (handle) {
 		max_tries = handle->num_retries;
@@ -132,10 +133,24 @@ top:
 	}
 
 	/* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
-	PQconsumeInput(handle->con);
+	while (--sanity > 0)
+	{
+		if (PQisBusy(handle->con)) {
+			PQconsumeInput(handle->con);
+			switch_yield(1);
+			continue;
+		}
+		break;
+	}
+
+	if (!sanity) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Can not check DB Connection status: sanity = 0. Reconnecting...\n");
+		goto reset;
+	}
 
 	if (PQstatus(handle->con) == CONNECTION_BAD) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PQstatus returned bad connection; reconnecting...\n");
+reset:
 		handle->state = SWITCH_PGSQL_STATE_ERROR;
 		PQreset(handle->con);
 		if (PQstatus(handle->con) == CONNECTION_BAD) {
@@ -486,15 +501,13 @@ error:
 	err_str = pgsql_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		if (zstr(er)) {
+		if (!er) {
 			err_str = strdup((char *)"SQL ERROR!");
 		} else {
 			err_str = er;
 		}
 	} else {
-		if (!zstr(er)) {
-			free(er);
-		}
+		switch_safe_free(er);
 	}
 
 	if (err_str) {
