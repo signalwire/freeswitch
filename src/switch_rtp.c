@@ -1,4 +1,4 @@
-/*
+ /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -1809,10 +1809,10 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t));
 
 	switch_time_exp_gmt(&now_hr,now);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u] packet_count[%u] OC[%u]\n",
 			1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
 			(ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
-			ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
+			ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc, ntohl(sr->pc), ntohl(sr->oc)
 			);
 }
 
@@ -2050,6 +2050,81 @@ static int using_ice(switch_rtp_t *rtp_session)
 	return 0;
 }
 
+static void sendRTCPEvent(switch_rtp_t *rtp_session ,struct switch_rtcp_sender_report *sr,struct switch_rtcp_report_block *rtcp_report_block) {
+	if (sr && rtcp_report_block) {
+		switch_event_t *event;
+
+		if (switch_event_create(&event, SWITCH_EVENT_SEND_RTCP_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				char value[30];
+				char header[50];
+				uint32_t tmpLost;
+				char *uuid = switch_core_session_get_uuid(rtp_session->session);
+				if (uuid) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(rtp_session->session));
+				}
+
+				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.ssrc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ntp_msw));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ntp_lsw));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ts));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.pc));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.oc));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ts));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
+
+				snprintf(value, sizeof(value), "%" SWITCH_TIME_T_FMT, switch_time_now());
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
+
+				// Add sources info
+				snprintf(header, sizeof(header), "Source-SSRC");
+				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.ssrc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Fraction");
+				snprintf(value, sizeof(value), "%u", (uint8_t)rtcp_report_block->fraction);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Lost");
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+				tmpLost = report->lost; // signed 24bit will extended signess to int32_t automatically
+#else
+				tmpLost = ntohl(rtcp_report_block->lost)>>8;
+				tmpLost = tmpLost | ((tmpLost & 0x00800000) ? 0xff000000 : 0x00000000); // ...and signess compensation
+#endif
+				snprintf(value, sizeof(value), "%u", tmpLost);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				// snprintf(header, sizeof(header), "Source%u-Loss-Avg", i);
+				// snprintf(value, sizeof(value), "%u", rtp_session->rtcp_frame.reports[i].loss_avg);
+				// switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Highest-Sequence-Number-Received");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->highest_sequence_number_received));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Jitter");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->jitter));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-LSR");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->lsr));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-DLSR");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->dlsr));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+
+				switch_event_fire(&event);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10, "Dispatched RTCP SEND event\n");
+		}
+	}
+}
+
 #define MAX_NACK 10
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
@@ -2199,6 +2274,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 				stats->sent_pkt_count = 0;
+				sendRTCPEvent(rtp_session, sr, rtcp_report_block);
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
 		}
