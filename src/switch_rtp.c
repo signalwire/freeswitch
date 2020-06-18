@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Seven Du <dujinfang@gmail.com>
+ * Noah Mehl - Open Telecom Foundation <https://opentelecom.foundation>
  *
  * switch_rtp.c -- RTP
  *
