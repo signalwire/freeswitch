@@ -4258,6 +4258,16 @@ static switch_bool_t ip_possible(switch_media_handle_t *smh, const char *ip)
 	return r;
 }
 
+static switch_bool_t is_mdns(const char *ip)
+{
+	const char * found = strrchr(ip, '.');
+	if(found != NULL && strcmp(found, ".local") == 0) {
+		return SWITCH_TRUE;
+	}
+
+	return SWITCH_FALSE;
+}
+
 //?
 static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
 {
@@ -4266,9 +4276,14 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0, relay_ok = 0;
+	int ignore_ice_mdns = 0;
 
 	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
 		return SWITCH_STATUS_BREAK;
+	}
+
+	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_ice_mdns", SWITCH_FALSE, -1))) {
+		ignore_ice_mdns = 1;
 	}
 
 	//if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1]) {
@@ -4407,6 +4422,12 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				if (!ip_possible(smh, fields[4])) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n",
+									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+					continue;
+				} else if (ignore_ice_mdns && is_mdns(fields[4])) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
+									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (ignore mdns)\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
 									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
 					continue;
