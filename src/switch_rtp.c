@@ -4075,12 +4075,30 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		}
 		break;
 
+	case AEAD_AES_256_GCM:
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy->rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy->rtcp);
+
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_256_GCM");
+		}
+		break;
+
 	case AEAD_AES_128_GCM_8:
 		srtp_crypto_policy_set_aes_gcm_128_8_auth(&policy->rtp);
 		srtp_crypto_policy_set_aes_gcm_128_8_auth(&policy->rtcp);
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_128_GCM_8");
+		}
+		break;
+
+	case AEAD_AES_128_GCM:
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy->rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy->rtcp);
+
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_128_GCM");
 		}
 		break;
 
