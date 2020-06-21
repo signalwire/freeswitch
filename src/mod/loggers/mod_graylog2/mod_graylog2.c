@@ -59,6 +59,8 @@ static struct {
 	switch_event_t *session_fields;
 	/** If true, byte header for uncompressed GELF is sent.  Might be required if using logstash */
 	int send_uncompressed_header;
+	/** Static fields to automatically add to session logs*/
+	switch_hash_t *static_fields;
 	/** GELF JSON Format */
 	switch_log_json_format_t gelf_format;
 } globals;
@@ -86,8 +88,20 @@ static int to_graylog2_level(switch_log_level_t level)
 static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level)
 {
 	char *gelf_text = NULL;
+	switch_hash_index_t *hi = NULL;
+	const void *key = NULL;
+	void *value = NULL;
+	char buf[64] = "";
+
 	cJSON *gelf = switch_log_node_to_json(node, to_graylog2_level(log_level), &globals.gelf_format, globals.session_fields);
 	cJSON_AddItemToObject(gelf, "_microtimestamp", cJSON_CreateNumber(node->timestamp));
+
+	for (hi = switch_core_hash_first(globals.static_fields); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &key, NULL, &value);
+		switch_snprintf(buf, sizeof(buf), "_%s", key);
+		cJSON_AddStringToObject(gelf, buf, (char *)value);
+	}
+	
 	gelf_text = cJSON_PrintUnformatted(gelf);
 	cJSON_Delete(gelf);
 	return gelf_text;
@@ -291,16 +305,22 @@ static switch_status_t do_config(void)
 			for (field = switch_xml_child(fields, "field"); field; field = field->next) {
 				char *name = (char *) switch_xml_attr_soft(field, "name");
 				char *variable = (char *) switch_xml_attr_soft(field, "variable");
+				char *value = (char *) switch_xml_attr_soft(field, "value");
 				if (zstr(name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unnamed session field\n");
 					continue;
 				}
-				if (zstr(variable)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty channel variable for session field \"%s\"\n", name);
+				if (zstr(variable) && zstr(value)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty static/channel variable for session field \"%s\"\n", name);
 					continue;
 				}
-				switch_event_add_header_string(globals.session_fields, SWITCH_STACK_BOTTOM,
-					switch_core_strdup(globals.pool, name), switch_core_strdup(globals.pool, variable));
+
+				if(!zstr(variable)) {
+					switch_event_add_header_string(globals.session_fields, SWITCH_STACK_BOTTOM,
+						switch_core_strdup(globals.pool, name), switch_core_strdup(globals.pool, variable));
+				} else if (!zstr(value)) {
+					switch_core_hash_insert(globals.static_fields, name, value);
+				}
 			}
 		}
 	}
@@ -335,6 +355,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load)
 	globals.gelf_format.custom_field_prefix = "_";
 
 	switch_event_create_plain(&globals.session_fields, SWITCH_EVENT_CHANNEL_DATA);
+	switch_core_hash_init(&globals.static_fields);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
@@ -355,6 +376,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_graylog2_shutdown)
 	stop_deliver_graylog2_thread();
 	if (globals.session_fields) {
 		switch_event_destroy(&globals.session_fields);
+	}
+	if (globals.static_fields) {
+		switch_core_hash_destroy(&globals.static_fields);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
