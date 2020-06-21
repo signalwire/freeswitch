@@ -59,6 +59,9 @@ static struct {
 	cst_voice *rms;
 	cst_voice *slt;
 	cst_voice *kal16;
+	switch_mutex_t *mutex;
+	int request_counter;
+	int max_threshold;
 } globals;
 
 struct flite_data {
@@ -75,6 +78,15 @@ typedef struct flite_data flite_t;
 static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
 {
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
+
+	switch_mutex_lock(globals.mutex);
+	if(globals.request_counter >= globals.max_threshold) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reach max threshold: %d.\n", globals.max_threshold);
+		switch_mutex_unlock(globals.mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+	globals.request_counter++;
+	switch_mutex_unlock(globals.mutex);
 
 	sh->native_rate = 16000;
 
@@ -111,6 +123,10 @@ static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char 
 static switch_status_t flite_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	flite_t *flite = (flite_t *) sh->private_info;
+
+	switch_mutex_lock(globals.mutex);
+	globals.request_counter--;
+	switch_mutex_unlock(globals.mutex);	
 
 	if (flite->audio_buffer) {
 		switch_buffer_destroy(&flite->audio_buffer);
@@ -186,6 +202,39 @@ static void flite_float_param_tts(switch_speech_handle_t *sh, char *param, doubl
 
 }
 
+static switch_status_t do_config()
+{
+	char *cf = "flite.conf";
+	switch_xml_t cfg, xml, param, settings;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	globals.max_threshold = 100;
+	globals.request_counter = 0;
+
+	/* get params */
+	settings = switch_xml_child(cfg, "settings");
+	if (settings) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcasecmp(var, "max-threshold")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting max-threshold to %s\n", val);
+				globals.max_threshold = atoi(val);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
+			}
+		}
+	}
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 {
 	switch_speech_interface_t *speech_interface;
@@ -196,6 +245,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 	globals.rms = register_cmu_us_rms();
 	globals.slt = register_cmu_us_slt();
 	globals.kal16 = register_cmu_us_kal16();
+	
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
+
+	do_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
