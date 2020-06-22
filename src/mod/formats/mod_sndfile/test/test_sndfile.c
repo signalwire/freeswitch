@@ -425,6 +425,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 			int sps_total = 10000;
 			switch_core_session_ctl(SCSC_SPS, &sps_total);
+			switch_sleep(1000000);  // softtimer_runtime sets sps every second
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -468,6 +469,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 			int sps_total = 10000;
 			switch_core_session_ctl(SCSC_SPS, &sps_total);
+			switch_sleep(1000000); // softtimer_runtime sets sps every second
 
 			SWITCH_STANDARD_STREAM(stream);
 
@@ -509,7 +511,8 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 			int sps_total = 10000;
 			switch_core_session_ctl(SCSC_SPS, &sps_total);
-			
+			switch_sleep(1000000);  // softtimer_runtime sets sps every second
+
 			SWITCH_STANDARD_STREAM(stream);
 
 			switch_api_execute("sndfile_debug", "on", NULL, &stream);
@@ -552,6 +555,7 @@ FST_CORE_BEGIN("test_formats_and_muxing")
 			test_params_t params[(sizeof(extensions) / sizeof(extensions[0]))] = {{ 0 }};
 			int sps_total = 10000;
 			switch_core_session_ctl(SCSC_SPS, &sps_total);
+			switch_sleep(1000000);  // softtimer_runtime sets sps every second
 
 			SWITCH_STANDARD_STREAM(stream);
 
