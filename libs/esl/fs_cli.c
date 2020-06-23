@@ -630,8 +630,8 @@ static const char *usage_str =
 	"  -R, --reconnect                 Reconnect if disconnected\n"
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
 	"  -b, --batchmode                 Batch mode\n"
-	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n"
-	"  -T, --connect-timeout           Timeout for socket connection (in miliseconds)\n"
+	"  -t, --timeout                   Timeout for API commands (in milliseconds)\n"
+	"  -T, --connect-timeout           Timeout for socket connection (in milliseconds)\n"
 	"  -n, --no-color                  Disable color\n\n";
 
 static int usage(char *name){
