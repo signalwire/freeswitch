@@ -189,6 +189,7 @@ struct switch_core_session {
 	switch_buffer_t *text_buffer;
 	switch_buffer_t *text_line_buffer;
 	switch_mutex_t *text_mutex;
+	const char *external_id;
 };
 
 struct switch_media_bug {

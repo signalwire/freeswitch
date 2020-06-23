@@ -625,6 +625,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 		const char *use_uuid;
+		const char *use_external_id;
 		switch_core_session_t *other_session = NULL;
 
 		switch_assert(peer_channel);
@@ -643,6 +644,17 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
 								  switch_channel_get_name(peer_channel), use_uuid);
+			}
+		}
+
+		if ((use_external_id = switch_event_get_header(var_event, "origination_external_id"))) {
+			if (switch_core_session_set_external_id(*new_session, use_external_id) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "%s set external_id=%s\n", switch_channel_get_name(peer_channel),
+								  use_external_id);
+				switch_event_del_header(var_event, "origination_external_id");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set external_id=%s FAILED\n",
+								  switch_channel_get_name(peer_channel), use_external_id);
 			}
 		}
 
@@ -1558,6 +1570,9 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
+	if ((*session)->external_id) {
+		switch_core_hash_delete(session_manager.session_table, (*session)->external_id);
+	}
 	if (session_manager.session_count) {
 		session_manager.session_count--;
 		if (session_manager.session_count == 0) {
@@ -2055,6 +2070,34 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(switch_core_session_t *session, const char *use_external_id)
+{
+	switch_assert(use_external_id);
+
+	if (session->external_id && !strcmp(use_external_id, session->external_id)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (switch_core_hash_find(session_manager.session_table, use_external_id)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Duplicate External ID!\n");
+		switch_mutex_unlock(runtime.session_hash_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_channel_set_variable(session->channel, "session_external_id", use_external_id);
+
+	if (session->external_id) {
+		switch_core_hash_delete(session_manager.session_table, session->external_id);
+	}
+	session->external_id = switch_core_session_strdup(session, use_external_id);
+	switch_core_hash_insert(session_manager.session_table, session->external_id, session);
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static char *xml_find_var(switch_xml_t vars, const char *name)
 {
 	switch_xml_t var;
@@ -2540,6 +2583,11 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 	return session->uuid_str;
 }
 
+SWITCH_DECLARE(const char *) switch_core_session_get_external_id(switch_core_session_t *session)
+{
+	if (!session) return NULL;
+	return session->external_id;
+}
 
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 {
