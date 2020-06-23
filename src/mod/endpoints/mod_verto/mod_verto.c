@@ -3611,7 +3611,7 @@ static switch_bool_t verto__ping_func(const char *method, cJSON *params, jsock_t
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	cJSON *msg = NULL, *dialog = NULL, *txt = NULL, *jevent = NULL;
-	const char *call_id = NULL, *dtmf = NULL;
+	const char *call_id = NULL, *dtmf = NULL, *type = NULL;
 	switch_bool_t r = SWITCH_TRUE;
 	char *proto = VERTO_CHAT_PROTO;
 	char *pproto = NULL;
@@ -3624,9 +3624,12 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		err = 1; goto cleanup;
 	}
 
+	type = cJSON_GetObjectCstr(params, "type");
+
 	if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
 		switch_core_session_t *session = NULL;
-
+		switch_channel_t *channel = NULL;
+		
 		if ((session = switch_core_session_locate(call_id))) {
 			verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 
@@ -3636,8 +3639,13 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 				err = 1; goto cleanup;
 			}
 
+			channel = switch_core_session_get_channel(session);
 			parse_user_vars(dialog, session);
 
+			if (type && !strcasecmp(type, "mediaSettings")) {
+				switch_channel_set_flag(channel, CF_DEVICES_CHANGED);
+			}
+			
 			if ((jevent = cJSON_GetObjectItem(params, "command"))) {
 				switch_event_t *event = NULL;
 
