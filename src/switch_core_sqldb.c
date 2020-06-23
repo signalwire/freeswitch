@@ -790,12 +790,8 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 			p--;
 		}
 
-		if (p <= s)
-			break;
-
-
 		status = switch_cache_db_execute_sql_real(dbh, s, err);
-		if (status != SWITCH_STATUS_SUCCESS || (err && *err)) {
+		if (p <= s || status != SWITCH_STATUS_SUCCESS || (err && *err)) {
 			break;
 		}
 
