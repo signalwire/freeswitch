@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -804,6 +804,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ sw
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(_In_ switch_core_session_t *session, _In_z_ const char *use_uuid);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(_In_ switch_core_session_t *session, _In_z_ const char *use_external_id);
+
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_session_t **session,
 														 _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
@@ -874,6 +876,13 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_se
   \return a string representing the uuid
 */
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(_In_ switch_core_session_t *session);
+
+/*!
+  \brief Retrieve the unique external identifier from a session
+  \param session the session to retrieve the uuid from
+  \return a string representing the uuid
+*/
+SWITCH_DECLARE(const char *) switch_core_session_get_external_id(_In_ switch_core_session_t *session);
 
 
 /*!
