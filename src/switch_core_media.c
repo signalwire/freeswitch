@@ -278,10 +278,10 @@ struct switch_media_handle_s {
 };
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
-	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
 	{ "AEAD_AES_256_GCM", "", AEAD_AES_256_GCM, 44, 12},
-	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
+	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
 	{ "AEAD_AES_128_GCM", "", AEAD_AES_128_GCM, 28, 12},
+	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
 	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
 	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
 	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14},
@@ -1791,6 +1791,9 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int use_alias = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
+	char *crypto_cpy;
+	char *fields[4];
+	unsigned int crypto_argc;
 
 	if (!(smh = session->media_handle)) {
 		return 0;
@@ -1809,25 +1812,33 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	}
 	engine = &session->media_handle->engines[type];
 
-	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
-		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+	crypto_cpy = (char*)malloc(strlen(crypto)+1);
+	strcpy(crypto_cpy, crypto);
+	crypto_argc = switch_split(crypto_cpy, ' ', fields);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s]alias=[%s] in [%s]\n", SUITES[j].name, SUITES[j].alias, crypto);
+	if (crypto_argc > 2) {
+		for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+			switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
 
-		if (switch_stristr(SUITES[j].alias, crypto)) {
-			use_alias = 1;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s]alias=[%s] in [%s]\n", SUITES[j].name, SUITES[j].alias, crypto);
+
+			if (!strcmp(SUITES[j].alias, fields[1])) {
+				use_alias = 1;
+			}
+
+			if (use_alias || !strcmp(SUITES[j].name, fields[1])) {
+				ctype = SUITES[j].type;
+				vval = use_alias ? SUITES[j].alias : SUITES[j].name;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
+				switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
+				break;
+			}
+
+			use_alias = 0;
 		}
-		
-		if (use_alias || switch_stristr(SUITES[j].name, crypto)) {
-			ctype = SUITES[j].type;
-			vval = use_alias ? SUITES[j].alias : SUITES[j].name;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
-			switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
-			break;
-		}
-
-		use_alias = 0;
 	}
+
+	free(crypto_cpy);
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
