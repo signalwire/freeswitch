@@ -4017,6 +4017,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else if (ringback.audio_buffer) {
 				teletone_destroy_session(&ringback.ts);
 				switch_safe_free(ringback.mux_buf);
+				ringback.mux_buflen = 0;
 				switch_buffer_destroy(&ringback.audio_buffer);
 			}
 
