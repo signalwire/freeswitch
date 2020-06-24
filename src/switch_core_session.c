@@ -2080,7 +2080,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(switch_core_
 
 
 	switch_mutex_lock(runtime.session_hash_mutex);
-	if (switch_core_hash_find(session_manager.session_table, use_external_id)) {
+	if (strcmp(use_external_id, session->uuid_str) && switch_core_hash_find(session_manager.session_table, use_external_id)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Duplicate External ID!\n");
 		switch_mutex_unlock(runtime.session_hash_mutex);
 		return SWITCH_STATUS_FALSE;
@@ -2088,11 +2088,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(switch_core_
 
 	switch_channel_set_variable(session->channel, "session_external_id", use_external_id);
 
-	if (session->external_id) {
+	if (session->external_id && strcmp(session->external_id, session->uuid_str)) {
 		switch_core_hash_delete(session_manager.session_table, session->external_id);
 	}
+
 	session->external_id = switch_core_session_strdup(session, use_external_id);
-	switch_core_hash_insert(session_manager.session_table, session->external_id, session);
+
+	if (strcmp(session->external_id, session->uuid_str)) {
+		switch_core_hash_insert(session_manager.session_table, session->external_id, session);
+	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	return SWITCH_STATUS_SUCCESS;

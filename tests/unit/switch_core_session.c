@@ -48,7 +48,8 @@ FST_CORE_BEGIN("./conf")
 
 		FST_SESSION_BEGIN(session_external_id)
 		{
-			fst_check(switch_core_session_set_external_id(fst_session, switch_core_session_get_uuid(fst_session)) != SWITCH_STATUS_SUCCESS);
+			fst_check(switch_core_session_set_external_id(fst_session, switch_core_session_get_uuid(fst_session)) == SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(switch_core_session_get_external_id(fst_session), switch_core_session_get_uuid(fst_session));
 			fst_check(switch_core_session_set_external_id(fst_session, "foo") == SWITCH_STATUS_SUCCESS);
 			switch_core_session_t *session = switch_core_session_locate("foo");
 			fst_requires(session);
