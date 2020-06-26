@@ -5142,7 +5142,7 @@ static switch_status_t parse_config(const char *cf)
 			}
 
 			if (zstr(profile->jb_msec)) {
-				profile->jb_msec = "1p:50p";
+				profile->jb_msec = "1p:20p";
 			}
 
 			if (zstr(profile->timer_name)) {
