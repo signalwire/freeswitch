@@ -294,6 +294,12 @@ static switch_status_t do_config(void)
 			} else if (!strcasecmp(name, "send-uncompressed-header")) {
 				globals.send_uncompressed_header = switch_true(value);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
+			} else if (!strcasecmp(name, "hostname")) {
+				globals.gelf_format.host.value = switch_core_strdup(globals.pool, value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
+			} else if (!strcasecmp(name, "identity")) {
+				globals.gelf_format.ident.value = switch_core_strdup(globals.pool, value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param: \"%s\"\n", name);
 			}
