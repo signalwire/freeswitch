@@ -38,6 +38,7 @@
 %define build_mod_rayo 1
 %define build_mod_ssml 1
 %define build_mod_v8 0
+%define build_mod_av 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -46,6 +47,7 @@
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
+%{?with_mod_av:%define build_mod_av 1 }
 
 %define nonparsedversion 1.7.0
 %define version %(echo '%{nonparsedversion}' | sed 's/-//g')
@@ -242,6 +244,19 @@ Requires:       %{name} = %{version}-%{release}
 
 %description application-abstraction
 Provide an abstraction to FreeSWITCH API calls
+
+%if %{build_mod_av}
+%package application-av
+Summary:        FS Video Codec / File Format using libav.org for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       ffmpeg
+BuildRequires:  ffmpeg-devel
+
+%description application-av
+FS Video Codec / File Format using libav.org for FreeSWITCH open source telephony platform
+%endif
+
 
 %package application-avmd
 Summary:	FreeSWITCH voicemail detector
@@ -1434,6 +1449,9 @@ APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applicati
 			applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf \
 			applications/mod_expr "
 
+%if %{build_mod_av}
+APPLICATION_MODULES_AC+=" applications/mod_av"
+%endif
 %if %{build_mod_esl}
 APPLICATION_MODULES_DE+="applications/mod_esl"
 %endif
@@ -2046,6 +2064,11 @@ fi
 ######################################################################################################################
 %files application-abstraction
 %{MODINSTDIR}/mod_abstraction.so*
+
+%if %{build_mod_av}
+%files application-av
+%{MODINSTDIR}/mod_av.so*
+%endif
 
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
