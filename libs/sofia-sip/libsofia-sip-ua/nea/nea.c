@@ -389,6 +389,7 @@ int response_to_subscribe(nea_t *nea,
 
       for (m = sip->sip_contact; m; m = m->m_next) {
 	if (m->m_url->url_type == url_sip ||
+	    m->m_url->url_type == url_urn ||
 	    m->m_url->url_type == url_sips)
 	  break;
       }

@@ -1581,7 +1581,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 
     url_sanitize(dp);
 
-    if (dp == NULL || dp->url_type == url_sip || dp->url_type == url_sips) {
+    if (dp == NULL || dp->url_type == url_sip || dp->url_type == url_sips || dp->url_type == url_urn) {
       if (agent->sa_default_proxy)
 	su_free(home, agent->sa_default_proxy);
       agent->sa_default_proxy = dp;
@@ -2160,7 +2160,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   }
 
   if (!(url = url_hdup(self->sa_home, uri->us_url)) ||
-      (url->url_type != url_sip && url->url_type != url_sips)) {
+      (url->url_type != url_sip && url->url_type != url_sips && url->url_type != url_urn)) {
     if (url_string_p(uri))
       SU_DEBUG_1(("nta: %s: invalid bind URL\n", uri->us_str));
     else
@@ -2173,7 +2173,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   tpn->tpn_host = url->url_host;
   tpn->tpn_port = url_port(url);
 
-  if (url->url_type == url_sip) {
+  if (url->url_type == url_sip || url->url_type == url_urn) {
     tpn->tpn_proto = "*";
     tports = tports_sip;
     if (!tpn->tpn_port || !tpn->tpn_port[0])
@@ -2660,6 +2660,7 @@ nta_tpn_by_url(su_home_t *home,
   }
 
   if (url->url_type != url_sip &&
+      url->url_type != url_urn &&
       url->url_type != url_sips &&
       url->url_type != url_im &&
       url->url_type != url_pres) {
@@ -8965,8 +8966,17 @@ void outgoing_trying(nta_outgoing_t *orq)
 {
   if (orq->orq_forked)
     ;
-  else if (orq->orq_method == sip_method_invite)
-    outgoing_queue(orq->orq_agent->sa_out.inv_calling, orq);
+  else if (orq->orq_method == sip_method_invite) {
+    if (!orq->orq_completed) {
+      outgoing_queue(orq->orq_agent->sa_out.inv_calling, orq);
+    } else {
+      SU_DEBUG_5(("nta(%p): completed request can not be put into inv_calling queue (%u)\n", (void *)orq, orq->orq_cseq->cs_seq));
+      if (orq->orq_queue != orq->orq_agent->sa_out.inv_completed) {
+        /* Put back into inv_completed if it's not there by any reason */
+        outgoing_queue(orq->orq_agent->sa_out.inv_completed, orq); /* Timer D */
+      }
+    }
+  }
   else
     outgoing_queue(orq->orq_agent->sa_out.trying, orq);
 }

@@ -2,26 +2,40 @@
 kind: pipeline
 name: unit-tests
 
-node:
-  freeswitch: public
-
 steps:
-    - name: run-tests
+    - name: bootstrap
       image: signalwire/freeswitch-public-base
       pull: true
       commands:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
       - echo "applications/mod_test" >> modules.conf
-      - sed -i '/applications\/mod_http_cache/s/^#//g' modules.conf
-      - sed -i '/event_handlers\/mod_rayo/s/^#//g' modules.conf
-      - sed -i '/formats\/mod_opusfile/s/^#//g' modules.conf
-      - sed -i '/languages\/mod_lua/s/^#//g' modules.conf
+      - echo 'codecs/mod_openh264' >> modules.conf
+      - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
+      - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
+      - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
+      - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
       - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
       - ./configure --enable-address-sanitizer
-      - echo "#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./build-status.txt\nmake install\n" > build.sh
+
+    - name: build
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
+
+    - name: run-tests
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - make install || true
       - cd tests/unit
       - ./run-tests.sh
       - ls -la /cores
@@ -32,13 +46,13 @@ steps:
       - cd logs && ls -la
 
     - name: notify
-      image: signalwire/unit-tests-notify
+      image: signalwire/public-unit-tests-notify
       pull: true
       environment:
         GITHUB_CI_APP_PEM:
           from_secret: github_ci_app_pem
         SSH_KEY:
-          from_secret: ssh_key
+          from_secret: public_artifacts_ssh_key
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
       commands:
@@ -55,17 +69,20 @@ trigger:
 kind: pipeline
 name: scan-build
 
-node:
-  freeswitch: public
-
 steps:
-    - name: scan-build
+    - name: bootstrap
       image: signalwire/freeswitch-public-base:stretch
       pull: true
       commands:
       - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
+      - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i "/mod_mariadb/s/^#//g" modules.conf
       - sed -i "/mod_v8/s/^#//g" modules.conf
       #Disable/Comment out mods
@@ -87,21 +104,26 @@ steps:
       - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
       - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
       - ./configure
+
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
       - mkdir -p scan-build
-      - echo "#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=\${PIPESTATUS[0]}\necho \$exitstatus > ./scan-build-status.txt\n" > scan.sh
+      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
       - echo "*** Exit status is $exitstatus"
 
     - name: notify
-      image: signalwire/scan-build-notify
+      image: signalwire/public-scan-build-notify
       pull: true
       environment:
         GITHUB_CI_APP_PEM:
           from_secret: github_ci_app_pem
         SSH_KEY:
-          from_secret: ssh_key
+          from_secret: public_artifacts_ssh_key
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
       commands:
@@ -117,6 +139,6 @@ trigger:
 
 ---
 kind: signature
-hmac: d354f6d232ae6417b539fb9b40fc15765c3247ab58c87a5135a0ac6c448e1cd0
+hmac: 430f5a243e6029b985fa0219e9fb44c71a59931af44a3230751e238f8b64dd32
 
 ...

@@ -3268,7 +3268,7 @@ static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		case SSL_ERROR_NONE:
 			break;
 		default:
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Handshake failure %d. This may happen when you use legacy DTLS v1.0 (legacyDTLS channel var is set) but endpoint requires DTLS v1.2.\n", rtp_type(rtp_session), ret);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s Handshake failure %d. This may happen when you use legacy DTLS v1.0 (legacyDTLS channel var is set) but endpoint requires DTLS v1.2.\n", rtp_type(rtp_session), ret);
 			dtls_set_state(dtls, DS_FAIL);
 			return -1;
 		}
@@ -4075,12 +4075,30 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		}
 		break;
 
+	case AEAD_AES_256_GCM:
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy->rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy->rtcp);
+
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_256_GCM");
+		}
+		break;
+
 	case AEAD_AES_128_GCM_8:
 		srtp_crypto_policy_set_aes_gcm_128_8_auth(&policy->rtp);
 		srtp_crypto_policy_set_aes_gcm_128_8_auth(&policy->rtcp);
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_128_GCM_8");
+		}
+		break;
+
+	case AEAD_AES_128_GCM:
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy->rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy->rtcp);
+
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AEAD_AES_128_GCM");
 		}
 		break;
 
@@ -5382,7 +5400,8 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_
 
 	upsamp = ms * (rtp_session->samples_per_second / 1000);
 	max_upsamp = max_ms * (rtp_session->samples_per_second / 1000);
-
+	
+	rtp_session->sending_dtmf = 0;
 	rtp_session->queue_delay = upsamp;
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
@@ -6250,10 +6269,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						else msg="";
 						if (errs >= MAX_SRTP_ERRS) {
 							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
 											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "Ending call due to SRTP error\n");
 							switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
 						} else if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {

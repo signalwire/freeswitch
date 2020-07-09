@@ -887,6 +887,7 @@ static int nua_register_client_response(nua_client_request_t *cr,
 
     for (m = sip->sip_contact; m; m = m->m_next) {
       if (m->m_url->url_type != url_sip &&
+	  m->m_url->url_type != url_urn &&
 	  m->m_url->url_type != url_sips)
 	continue;
 

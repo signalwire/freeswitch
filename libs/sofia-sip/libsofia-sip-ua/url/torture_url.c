@@ -257,6 +257,7 @@ int test_sip(void)
   BEGIN();
 
   TEST_S(url_scheme(url_sip), "sip");
+  TEST_S(url_scheme(url_urn), "urn");
   TEST_S(url_scheme(url_sips), "sips");
 
   memset(url, 255, sizeof url);

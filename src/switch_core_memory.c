@@ -356,7 +356,7 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 #if APR_POOL_DEBUG
 static int switch_core_pool_stats_callback(apr_pool_t *pool, void *data) {
 	switch_stream_handle_t *stream = (switch_stream_handle_t *)data;
-	unsigned int size = (unsigned int)apr_pool_num_bytes(pool, 1);
+	size_t size = (size_t)apr_pool_num_bytes(pool, 1);
 	unsigned int alloc = 0, total_alloc = 0, clear = 0;
 	char *line = NULL;
 
@@ -364,9 +364,9 @@ static int switch_core_pool_stats_callback(apr_pool_t *pool, void *data) {
 	apr_pool_get_stats(pool, &alloc, &total_alloc, &clear);
 
 	if (stream) {
-		stream->write_function(stream, "Pool '%s' size: %d, alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), (int)size, alloc, total_alloc, clear);
+		stream->write_function(stream, "Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
 	} else {
-		printf("Pool '%s' size: %d, alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), (int)size, alloc, total_alloc, clear);
+		printf("Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
 	}
 	return 0;
 }

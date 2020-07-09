@@ -278,7 +278,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	if (!context->handle) {
 		if (sndfile_perform_open(context, path, mode, handle) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
 			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}

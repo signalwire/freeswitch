@@ -25,7 +25,7 @@ log="$TESTSUNITPATH/log_run-tests_${relativedir//\//!}!$file.html";
 
 # Execute the test
 echo "Start executing $currenttestpath"
-$currenttestpath | tee >(ansi2html > $log) ;
+$currenttestpath 2>&1 | tee >(ansi2html > $log) ;
 exitstatus=${PIPESTATUS[0]} ;
 echo "End executing $currenttestpath"
 echo "Exit status is $exitstatus"

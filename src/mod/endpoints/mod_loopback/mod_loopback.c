@@ -271,8 +271,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
 		if (loopback_globals.early_set_loopback_id) {
-			switch_channel_set_variable(channel, "loopback_leg", "B");
-			switch_channel_set_variable(channel, "is_loopback", "1");
+			switch_channel_set_variable(b_channel, "loopback_leg", "B");
+			switch_channel_set_variable(b_channel, "is_loopback", "1");
 		}
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -315,6 +315,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			for (h = vars->headers; h; h = h->next) {
 				switch_channel_set_variable(tech_pvt->other_channel, h->name, h->value);
 			}
+
+			switch_channel_del_variable_prefix(channel, "group_confirm_");
 
 			switch_event_destroy(&vars);
 		}
@@ -1304,8 +1306,12 @@ struct null_private_object {
 	switch_frame_t read_frame;
 	int16_t *null_buf;
 	int rate;
-	int pre_answer; // pre answer the channel
-	int auto_answer; // answer after in ms
+	/* pre answer the channel */
+	int pre_answer;
+	/* enable_auto_answer (enabled by default) */
+	int enable_auto_answer;
+	/* auto_answer_delay (0 ms by default) */
+	int auto_answer_delay;
 };
 
 typedef struct null_private_object null_private_t;
@@ -1461,9 +1467,17 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 		switch_channel_mark_pre_answered(channel);
 	}
 
-	if (tech_pvt->auto_answer > 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer);
-		switch_yield(tech_pvt->auto_answer * 1000);
+	if (tech_pvt->enable_auto_answer) {
+		switch_time_t start_time = switch_time_now();
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer_delay);
+
+		if (tech_pvt->auto_answer_delay > 0) {
+			while (switch_channel_ready(channel) && ((int)((switch_time_now() - start_time) / 1000)) < tech_pvt->auto_answer_delay) {
+				switch_yield(1000 * 20);
+			}
+		}
+
 		switch_channel_mark_answered(channel);
 	}
 
@@ -1512,6 +1526,7 @@ static switch_status_t null_channel_read_frame(switch_core_session_t *session, s
 		samples = tech_pvt->read_codec.implementation->samples_per_packet;
 		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->read_frame.datalen = samples * sizeof(int16_t);
+		tech_pvt->read_frame.buflen = samples * sizeof(int16_t);
 		tech_pvt->read_frame.samples = samples;
 		tech_pvt->read_frame.data = tech_pvt->null_buf;
 		switch_generate_sln_silence((int16_t *)tech_pvt->read_frame.data, tech_pvt->read_frame.samples, tech_pvt->read_codec.implementation->number_of_channels, 10000);
@@ -1600,8 +1615,10 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 {
 	char name[128];
 	switch_channel_t *ochannel = NULL;
-	const char *auto_answer = switch_event_get_header(var_event, "null_auto_answer");
+	const char *enable_auto_answer = switch_event_get_header(var_event, "null_enable_auto_answer");
+	const char *auto_answer_delay = switch_event_get_header(var_event, "null_auto_answer_delay");
 	const char *pre_answer = switch_event_get_header(var_event, "null_pre_answer");
+	const char *hangup_cause = switch_event_get_header(var_event, "null_hangup_cause");
 
 	if (session) {
 		ochannel = switch_core_session_get_channel(session);
@@ -1615,7 +1632,7 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		null_private_t *tech_pvt;
 		switch_channel_t *channel;
-		switch_caller_profile_t *caller_profile;
+		switch_caller_profile_t *caller_profile = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
@@ -1635,13 +1652,21 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 
 			tech_pvt->pre_answer = switch_true(pre_answer);
 
-			if (auto_answer) {
-				tech_pvt->auto_answer = atoi(auto_answer);
-
-				if (tech_pvt->auto_answer < 0) tech_pvt->auto_answer = 0;
-				if (tech_pvt->auto_answer > 60000) tech_pvt->auto_answer = 60000;
+			if (!enable_auto_answer) {
+				/* if not set - enabled by default */
+				tech_pvt->enable_auto_answer = SWITCH_TRUE;
 			} else {
-				tech_pvt->auto_answer = 1;
+				tech_pvt->enable_auto_answer = switch_true(enable_auto_answer);
+			}
+
+			if (!auto_answer_delay) {
+				/* if not set - 0 ms by default */
+				tech_pvt->auto_answer_delay = 0;
+			} else {
+				tech_pvt->auto_answer_delay = atoi(auto_answer_delay);
+
+				if (tech_pvt->auto_answer_delay < 0) tech_pvt->auto_answer_delay = 0;
+				if (tech_pvt->auto_answer_delay > 60000) tech_pvt->auto_answer_delay = 60000;
 			}
 
 			channel = switch_core_session_get_channel(*new_session);
@@ -1669,6 +1694,13 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		switch_assert(caller_profile);
+
+		if (hangup_cause || !strncmp(caller_profile->destination_number, "cause-", 6)) {
+			if (!hangup_cause) hangup_cause = caller_profile->destination_number + 6;
+			return switch_channel_str2cause(hangup_cause);
 		}
 
 		switch_channel_set_state(channel, CS_INIT);

@@ -2898,7 +2898,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 	http_file_context_t *context;
 	char *parsed = NULL, *pdup = NULL;
 	const char *pa = NULL;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!strncmp(path, "http://", 7)) {
 		pa = path + 7;
@@ -2960,7 +2960,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 
 		if (!context->write.file_name) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file name specified.\n");
-			return SWITCH_STATUS_GENERR;
+			switch_goto_status(SWITCH_STATUS_GENERR, done);
 		}
 
 		if ((ext = strrchr(context->write.file_name, '.'))) {
@@ -2980,7 +2980,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 
 
 		if (switch_core_file_open(&context->fh, context->write.file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_GENERR;
+			switch_goto_status(SWITCH_STATUS_GENERR, done);
 		}
 
 	} else {
@@ -2994,7 +2994,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		lock_file(context, SWITCH_FALSE);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
-			return status;
+			switch_goto_status(status, done);
 		}
 
 		if ((status = switch_core_file_open(&context->fh,
@@ -3005,7 +3005,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
 			unlink(context->cache_file);
 			unlink(context->meta_file);
-			return status;
+			switch_goto_status(status, done);
 		}
 
 		if (switch_test_flag(&context->fh, SWITCH_FILE_FLAG_VIDEO)) {
@@ -3032,7 +3032,14 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+done:
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if (context->url_params) {
+			switch_event_destroy(&context->url_params);
+		}
+	}
+
+	return status;
 }
 
 static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path) {
@@ -3046,6 +3053,7 @@ static switch_status_t https_file_file_open(switch_file_handle_t *handle, const 
 static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 {
 	http_file_context_t *context = handle->private_info;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
@@ -3076,10 +3084,11 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find suitable profile\n");
 			switch_event_destroy(&params);
+			status = SWITCH_STATUS_FALSE;
 		}
 
 		unlink(context->write.file);
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(status, done);
 	}
 
 
@@ -3090,11 +3099,13 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 		}
 	}
 
+done:
+
 	if (context->url_params) {
 		switch_event_destroy(&context->url_params);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 

@@ -122,6 +122,7 @@ int nua_stack_process_request(nua_handle_t *nh,
 
   switch (sip->sip_request->rq_url->url_type) {
   case url_sip:
+  case url_urn:
   case url_sips:
   case url_im:
   case url_pres:

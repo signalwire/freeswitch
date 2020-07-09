@@ -1309,7 +1309,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			use_from_str = switch_core_session_sprintf(session, "sip:%s", use_from_str);
 		}
 
-		if (!from_display && !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+		if (!from_display && (!strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_") || zstr(tech_pvt->caller_profile->caller_id_name))) {
 			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
 		} else {
 			char *name = switch_core_session_strdup(session, from_display ? from_display : tech_pvt->caller_profile->caller_id_name);

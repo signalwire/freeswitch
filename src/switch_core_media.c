@@ -279,7 +279,9 @@ struct switch_media_handle_s {
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
 	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
+	{ "AEAD_AES_256_GCM", "", AEAD_AES_256_GCM, 44, 12},
 	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
+	{ "AEAD_AES_128_GCM", "", AEAD_AES_128_GCM, 28, 12},
 	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
 	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
 	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14},
@@ -10341,6 +10343,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_core_session_get_partner(session, &orig_session);
 
+			if (orig_session && !switch_channel_test_flag(session->channel, CF_ANSWERED)) {
+				switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_AUDIO,
+											switch_core_session_remote_media_flow(orig_session, SWITCH_MEDIA_TYPE_AUDIO), sdp_type);
+				switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_VIDEO,
+											switch_core_session_remote_media_flow(orig_session, SWITCH_MEDIA_TYPE_VIDEO), sdp_type);
+			}
+
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				switch_payload_t orig_pt = 0;
@@ -14562,7 +14571,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	if (v_engine->thread_write_lock && v_engine->thread_write_lock != switch_thread_self()) {
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	}
 
 	if (!smh->video_init && smh->mparams->video_key_first && (now - smh->video_last_key_time) > smh->mparams->video_key_first) {
@@ -14598,7 +14607,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		if (vid_params.width && vid_params.height && ((vid_params.width != img->d_w) || (vid_params.height != img->d_h))) {
 			switch_img_letterbox(img, &dup_img, vid_params.width, vid_params.height, "#000000f");
 			if (!(img = dup_img)) {
-				return SWITCH_STATUS_INUSE;
+				switch_goto_status(SWITCH_STATUS_INUSE, done);
 			}
 		}
 	}
@@ -15509,7 +15518,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 		if (!switch_buffer_inuse(t_engine->tf->write_buffer)) {
 			t_engine->tf->write_empty++;
-			return SWITCH_STATUS_BREAK;
+			switch_goto_status(SWITCH_STATUS_BREAK, done);
 		}
 
 		frame = &t_engine->tf->text_write_frame;
