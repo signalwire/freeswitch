@@ -3831,11 +3831,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	dtls->filter_bio = BIO_new(BIO_dtls_filter());
 #else
-	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
-	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
-	BIO_meth_set_ctrl(dtls_bio_filter_methods, dtls_bio_filter_ctrl);
-	BIO_meth_set_create(dtls_bio_filter_methods, dtls_bio_filter_new);
-	BIO_meth_set_destroy(dtls_bio_filter_methods, dtls_bio_filter_free);
+	if (dtls_bio_filter_methods == NULL) {
+		dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
+		BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
+		BIO_meth_set_ctrl(dtls_bio_filter_methods, dtls_bio_filter_ctrl);
+		BIO_meth_set_create(dtls_bio_filter_methods, dtls_bio_filter_new);
+		BIO_meth_set_destroy(dtls_bio_filter_methods, dtls_bio_filter_free);
+	}
 	dtls->filter_bio = BIO_new(dtls_bio_filter_methods);
 #endif
 
