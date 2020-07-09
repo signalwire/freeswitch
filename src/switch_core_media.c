@@ -15502,6 +15502,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
+	if (!t_engine || !t_engine->tf) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text engine not available for processing\n");
+		switch_goto_status(SWITCH_STATUS_BREAK, done);
+	}
+
 	if (!is_msrp && switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
 
 		if (frame) {
