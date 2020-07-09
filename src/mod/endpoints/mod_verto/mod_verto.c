@@ -1865,7 +1865,7 @@ done:
 		kws_t *wsh = jsock->ws;
 
 		while(jsock->profile->running) {
-			int pflags = kws_wait_sock(wsh, 3000, KS_POLL_READ | KS_POLL_ERROR | KS_POLL_HUP);
+			int pflags = kws_wait_sock(wsh, 3000, KS_POLL_READ);
 
 			if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 			if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
@@ -1927,7 +1927,7 @@ static void client_run(jsock_t *jsock)
 
 		if (!jsock->ws) { die("%s Setup Error\n", jsock->name); }
 		
-		pflags = kws_wait_sock(jsock->ws, poll_time, KS_POLL_READ | KS_POLL_ERROR | KS_POLL_HUP);
+		pflags = kws_wait_sock(jsock->ws, poll_time, KS_POLL_READ);
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
