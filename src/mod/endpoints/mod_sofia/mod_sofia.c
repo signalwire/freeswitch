@@ -573,6 +573,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				const char *phrase;
 				const char *peer_sip_reason_phrase = 0;
+				const char *override_sip_reason_phrase = 0;
 				char *added_headers = NULL;
 				char suffixed_reason_phrase[512];
 
@@ -594,6 +595,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					}
 				}
 
+				override_sip_reason_phrase = switch_channel_get_variable(channel, "override_sip_reason_phrase");
+				if (!zstr(override_sip_reason_phrase)) {
+					phrase = su_strdup(nua_handle_home(tech_pvt->nh), override_sip_reason_phrase);
+				}
+				
 				if (tech_pvt->respond_code) {
 					sip_cause = tech_pvt->respond_code;
 					switch (sip_cause) {
