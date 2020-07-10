@@ -3385,20 +3385,6 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 
 ////////////
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static BIO_METHOD dtls_bio_filter_methods;
-#else
-static BIO_METHOD *dtls_bio_filter_methods;
-#endif
-
-BIO_METHOD *BIO_dtls_filter(void) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L	
-	return(&dtls_bio_filter_methods);
-#else
-	return(dtls_bio_filter_methods);
-#endif
-}
-
 typedef struct packet_list_s {
 	//void *packet;
 	int size;
@@ -3429,15 +3415,9 @@ static int dtls_bio_filter_new(BIO *bio) {
 	switch_mutex_init(&filter->mutex, SWITCH_MUTEX_NESTED, filter->pool);
  
 	/* Set the BIO as initialized */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	bio->init = 1;
-	bio->ptr = filter;
-	bio->flags = 0;
-#else
 	BIO_set_init(bio, 1);
 	BIO_set_data(bio, filter);
 	BIO_clear_flags(bio, ~0);
-#endif
 	
 	return 1;
 }
@@ -3450,11 +3430,7 @@ static int dtls_bio_filter_free(BIO *bio) {
 	}
  
 	/* Get rid of the filter state */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	filter = (dtls_bio_filter *)bio->ptr;
-#else
 	filter = (dtls_bio_filter *)BIO_get_data(bio);
-#endif
 
 	if (filter != NULL) {
 		switch_memory_pool_t *pool = filter->pool;
@@ -3463,15 +3439,10 @@ static int dtls_bio_filter_free(BIO *bio) {
 		filter = NULL;
 	}
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	bio->ptr = NULL;
-	bio->init = 0;
-	bio->flags = 0;
-#else
 	BIO_set_init(bio, 0);
 	BIO_set_data(bio, NULL);
 	BIO_clear_flags(bio, ~0);
-#endif
+
 	return 1;
 }
  
@@ -3481,20 +3452,12 @@ static int dtls_bio_filter_write(BIO *bio, const char *in, int inl) {
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "dtls_bio_filter_write: %p, %d\n", (void *)in, inl);
 	/* Forward data to the write BIO */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	ret = BIO_write(bio->next_bio, in, inl);
-#else
 	ret = BIO_write(BIO_next(bio), in, inl);
-#endif
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "  -- %ld\n", ret);
  
 	/* Keep track of the packet, as we'll advertize them one by one after a pending check */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	filter = (dtls_bio_filter *)bio->ptr;
-#else
 	filter = (dtls_bio_filter *)BIO_get_data(bio);
-#endif
 
 	if (filter != NULL) {
 		packet_list_t *node;
@@ -3525,22 +3488,31 @@ static int dtls_bio_filter_write(BIO *bio, const char *in, int inl) {
 }
  
 static long dtls_bio_filter_ctrl(BIO *bio, int cmd, long num, void *ptr) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	dtls_bio_filter *filter = (dtls_bio_filter *)bio->ptr;
-#else
-	dtls_bio_filter *filter = (dtls_bio_filter *)BIO_get_data(bio);
-#endif
+	dtls_bio_filter *filter = NULL;
+	if (bio == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid param: bio is NULL\n");
+		return 0;
+	}
+	filter = (dtls_bio_filter *)BIO_get_data(bio);
 
 	switch(cmd) {
 	case BIO_CTRL_DGRAM_GET_FALLBACK_MTU:
 		return 1200;
 	case BIO_CTRL_DGRAM_SET_MTU:
+		if (filter == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "filter is NULL while cmd=%d\n", cmd);
+			return 0;
+		}
 		filter->mtu = num;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Setting MTU: %ld\n", filter->mtu);
 		return num;
 	case BIO_CTRL_FLUSH:
 		return 1;
 	case BIO_CTRL_DGRAM_QUERY_MTU:
+		if (filter == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "filter is NULL while cmd=%d\n", cmd);
+			return 0;
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Advertizing MTU: %ld\n", filter->mtu);
 		return filter->mtu;
 	case BIO_CTRL_WPENDING:
@@ -3576,40 +3548,21 @@ static long dtls_bio_filter_ctrl(BIO *bio, int cmd, long num, void *ptr) {
 	return 0;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static BIO_METHOD dtls_bio_filter_methods = {
-	BIO_TYPE_FILTER,
-	"DTLS filter",
-	dtls_bio_filter_write,
-	NULL,
-	NULL,
-	NULL,
-	dtls_bio_filter_ctrl,
-	dtls_bio_filter_new,
-	dtls_bio_filter_free,
-	NULL
-};
-#else
 static BIO_METHOD *dtls_bio_filter_methods = NULL;
-#endif
 
 static void switch_rtp_dtls_init() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
 	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
 	BIO_meth_set_ctrl(dtls_bio_filter_methods, dtls_bio_filter_ctrl);
 	BIO_meth_set_create(dtls_bio_filter_methods, dtls_bio_filter_new);
 	BIO_meth_set_destroy(dtls_bio_filter_methods, dtls_bio_filter_free);
-#endif
 }
 
 static void switch_rtp_dtls_destroy() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (dtls_bio_filter_methods) {
 		BIO_meth_free(dtls_bio_filter_methods);
 		dtls_bio_filter_methods = NULL;
 	}
-#endif
 }
 
 ///////////
@@ -3851,12 +3804,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	dtls->ssl = SSL_new(dtls->ssl_ctx);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	dtls->filter_bio = BIO_new(BIO_dtls_filter());
-#else
 	switch_assert(dtls_bio_filter_methods);
 	dtls->filter_bio = BIO_new(dtls_bio_filter_methods);
-#endif
 
 	switch_assert(dtls->filter_bio);
 
