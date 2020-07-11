@@ -139,7 +139,7 @@ static switch_status_t vosk_asr_feed(switch_asr_handle_t *ah, void *data, unsign
 		rlen = switch_buffer_read(vosk->audio_buffer, buf, AUDIO_BLOCK_SIZE);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending data %d\n", rlen);
 		if (kws_write_frame(vosk->ws, WSOC_BINARY, buf, rlen) < 0) {
-			switch_mutex_lock(vosk->mutex);
+			switch_mutex_unlock(vosk->mutex);
 			return SWITCH_STATUS_BREAK;
 		}
 	}
