@@ -178,10 +178,10 @@ static void event_handler(switch_event_t *event)
 	}
 
 	if (event->subclass_name && (!strcmp(event->subclass_name, MULTICAST_EVENT) ||
-								 !strcmp(event->subclass_name, MULTICAST_PEERUP) || !strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
+				!strcmp(event->subclass_name, MULTICAST_PEERUP) || !strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
 		char *event_name, *sender;
 		if ((event_name = switch_event_get_header(event, "orig-event-name")) &&
-			!strcasecmp(event_name, "HEARTBEAT") && (sender = switch_event_get_header(event, "orig-multicast-sender"))) {
+				!strcasecmp(event_name, "HEARTBEAT") && (sender = switch_event_get_header(event, "orig-multicast-sender"))) {
 			struct peer_status *p;
 			time_t now = switch_epoch_time_now(NULL);
 
@@ -282,78 +282,78 @@ static void event_handler(switch_event_t *event)
 		char *packet;
 
 		switch (event->event_id) {
-		case SWITCH_EVENT_LOG:
-			return;
-		default:
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", switch_core_get_switchname());
-			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				size_t len;
-				char *buf;
+			case SWITCH_EVENT_LOG:
+				return;
+			default:
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", switch_core_get_switchname());
+				if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+					size_t len;
+					char *buf;
 #ifdef HAVE_OPENSSL
-				int outlen, tmplen;
+					int outlen, tmplen;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-				EVP_CIPHER_CTX *ctx;
+					EVP_CIPHER_CTX *ctx;
 #else
-				EVP_CIPHER_CTX ctx;
+					EVP_CIPHER_CTX ctx;
 #endif
-				char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-				switch_uuid_t uuid;
+					char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+					switch_uuid_t uuid;
 
-				switch_uuid_get(&uuid);
-				switch_uuid_format(uuid_str, &uuid);
-				len = strlen(packet) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char *) MAGIC);
+					switch_uuid_get(&uuid);
+					switch_uuid_format(uuid_str, &uuid);
+					len = strlen(packet) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char *) MAGIC);
 #else
-				len = strlen(packet) + strlen((char *) MAGIC);
+					len = strlen(packet) + strlen((char *) MAGIC);
 #endif
-				buf = malloc(len + 1);
-				memset(buf, 0, len + 1);
-				switch_assert(buf);
+					buf = malloc(len + 1);
+					memset(buf, 0, len + 1);
+					switch_assert(buf);
 
 #ifdef HAVE_OPENSSL
-				if (globals.psk) {
-					switch_copy_string(buf, uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
+					if (globals.psk) {
+						switch_copy_string(buf, uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-					ctx = EVP_CIPHER_CTX_new();
-					EVP_EncryptInit(ctx, EVP_bf_cbc(), NULL, NULL);
-					EVP_CIPHER_CTX_set_key_length(ctx, strlen(globals.psk));
-					EVP_EncryptInit(ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
-					EVP_EncryptUpdate(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH,
-									  &outlen, (unsigned char *) packet, (int) strlen(packet));
-					EVP_EncryptUpdate(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen,
-									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
-					outlen += tmplen;
-					EVP_EncryptFinal(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
-					EVP_CIPHER_CTX_free(ctx);
+						ctx = EVP_CIPHER_CTX_new();
+						EVP_EncryptInit(ctx, EVP_bf_cbc(), NULL, NULL);
+						EVP_CIPHER_CTX_set_key_length(ctx, strlen(globals.psk));
+						EVP_EncryptInit(ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
+						EVP_EncryptUpdate(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH,
+								&outlen, (unsigned char *) packet, (int) strlen(packet));
+						EVP_EncryptUpdate(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen,
+								&tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
+						outlen += tmplen;
+						EVP_EncryptFinal(ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
+						EVP_CIPHER_CTX_free(ctx);
 #else
-					EVP_CIPHER_CTX_init(&ctx);
-					EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
-					EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
-					EVP_EncryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
-					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH,
-									  &outlen, (unsigned char *) packet, (int) strlen(packet));
-					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen,
-									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
-					outlen += tmplen;
-					EVP_EncryptFinal(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
-					EVP_CIPHER_CTX_cleanup(&ctx);
+						EVP_CIPHER_CTX_init(&ctx);
+						EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
+						EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
+						EVP_EncryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
+						EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH,
+								&outlen, (unsigned char *) packet, (int) strlen(packet));
+						EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen,
+								&tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
+						outlen += tmplen;
+						EVP_EncryptFinal(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
+						EVP_CIPHER_CTX_cleanup(&ctx);
 #endif
-					outlen += tmplen;
-					len = (size_t) outlen + SWITCH_UUID_FORMATTED_LENGTH;
-					*(buf + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
-				} else {
+						outlen += tmplen;
+						len = (size_t) outlen + SWITCH_UUID_FORMATTED_LENGTH;
+						*(buf + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
+					} else {
 #endif
-					switch_copy_string(buf, packet, len);
-					switch_copy_string(buf + strlen(packet), (char *) MAGIC, strlen((char *) MAGIC) + 1);
+						switch_copy_string(buf, packet, len);
+						switch_copy_string(buf + strlen(packet), (char *) MAGIC, strlen((char *) MAGIC) + 1);
 #ifdef HAVE_OPENSSL
+					}
+#endif
+
+					switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
+					switch_safe_free(packet);
+					switch_safe_free(buf);
 				}
-#endif
-
-				switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
-				switch_safe_free(packet);
-				switch_safe_free(buf);
-			}
-			break;
+				break;
 		}
 	}
 	return;
@@ -473,7 +473,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	return SWITCH_STATUS_SUCCESS;
 
 
-  fail:
+fail:
 
 	if (globals.udp_socket) {
 		switch_socket_close(globals.udp_socket);
