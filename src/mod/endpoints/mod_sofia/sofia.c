@@ -9615,7 +9615,7 @@ switch_status_t sofia_proxy_sip_i_message(nua_t *nua, sofia_profile_t *profile, 
 
 			other_tech_pvt = (private_object_t *) switch_core_session_get_private(other_session);
 
-			if (sip && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
+			if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
 				ct = sip->sip_content_type->c_type;
 			}
 
@@ -9658,11 +9658,11 @@ switch_status_t sofia_proxy_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua
 
 			other_tech_pvt = (private_object_t *) switch_core_session_get_private(other_session);
 
-			if (sip && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
+			if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
 				ct = sip->sip_content_type->c_type;
 			}
 
-			if (sip && sip->sip_content_type->c_type && !strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
+			if (sip && sip->sip_content_type && sip->sip_content_type->c_type && !strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
 				if (switch_channel_test_flag(channel, CF_VIDEO)) {
 					switch_core_media_gen_key_frame(session);
 					switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
