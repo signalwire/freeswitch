@@ -3368,12 +3368,14 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 				cJSON_AddItemToObject(obj, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "updateMedia: Local SDP %s:\n%s\n",
 								  switch_channel_get_name(tech_pvt->channel), tech_pvt->mparams->local_sdp_str);
+				switch_core_media_gen_key_frame(tech_pvt->session);
+				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
 			} else {
 				switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CODEC NEGOTIATION ERROR"));
 				err = 1; goto rwunlock;
 			}
-	
+			
 		} else if (!strcasecmp(action, "transfer")) {
 			switch_core_session_t *other_session = NULL;
 
