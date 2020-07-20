@@ -22,7 +22,8 @@
  *
  * Contributor(s):
  * Chris Rienzo <chris.rienzo@grasshopper.com>
- *
+ * Quoc-Bao Nguyen <baonq5@vng.com.vn>
+ * 
  * aws.h - Some Amazon Web Services helper functions
  *
  */
@@ -33,13 +34,27 @@
 #include <switch_curl.h>
 #include "common.h"
 
-/* (SHA1_LENGTH * 1.37 base64 bytes per byte * 3 url-encoded bytes per byte) */
-#define S3_SIGNATURE_LENGTH_MAX 83
+#define DATE_STAMP_LENGTH 9			// 20190729
+#define TIME_STAMP_LENGTH 17		// 20190729T083832Z
+#define DEFAULT_BASE_DOMAIN "s3.%s.amazonaws.com"
+#define DEFAULT_EXPIRATION_TIME 604800
 
-SWITCH_MOD_DECLARE(switch_curl_slist_t*) aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
-	const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);
 SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
-SWITCH_MOD_DECLARE(char *) aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires);
+
+struct aws_s3_profile {
+	const char* base_domain;
+	char* bucket;
+	char* object;
+	char time_stamp[TIME_STAMP_LENGTH];
+	char date_stamp[DATE_STAMP_LENGTH];
+	const char* verb;
+	const char* access_key_id;
+	const char* access_key_secret;
+	const char* region;
+	switch_time_t expires;
+};
+
+typedef struct aws_s3_profile switch_aws_s3_profile;
 
 #endif
 
