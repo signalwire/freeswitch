@@ -51,10 +51,6 @@
                 <region><![CDATA[HCM]]></region>
                 <!-- Optional: Expiration time in seconds for URL signature. Default is 604800s (a week) -->
                 <expires>604800</expires>
-                <!-- Optional: Backup folder to save uploaded file in case of failure (for example recording a .wav file to a webserver). Must ended without a slash !-->
-                <!-- Leave the config to be empty to use default storage folder in $${storage_dir} -->
-                <!-- Comment the config to disable this option -->
-                <backup-folder><![CDATA[/usr/local/freeswitch/storage/my-backup-folder]]></backup-folder>
             </aws-s3>
 
             <!-- Optional: List of domains that this profile will automatically be applied to -->

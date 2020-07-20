@@ -45,7 +45,6 @@ struct http_profile {
 	char *region;					// AWS region. Used by AWS S3
 	switch_time_t expires;			// Expiration time in seconds for URL signature. Default is 604800 seconds. Used by AWS S3
 	switch_size_t bytes_per_block;
-	char* backup_folder;			// backup folder used when failed to upload file by http_put
 
 	// function to be called to add the profile specific headers to the GET/PUT requests
 	switch_curl_slist_t *(*append_headers_ptr)(struct http_profile *profile, switch_curl_slist_t *headers,
@@ -98,23 +97,6 @@ SWITCH_MOD_DECLARE(char*) hmac256_hex(char* buffer, const char* key, unsigned in
  * @return hex string that store the SHA256 version of the message
  */
 SWITCH_MOD_DECLARE(char*) sha256_hex(char* buffer, const char* string);
-
-
-
-/**
- * Backup file to local storage. Used with http_put in case of failed
- * @param source
- * @param dest
- * @return
- */
-SWITCH_MOD_DECLARE(int) backup_file(const char* source, const char* dest);
-
-
-/**
- * Create a folder if it is not exists. Equivalent to 'mkdir -p'
- * @param path
- */
-SWITCH_MOD_DECLARE(void) recursive_mkdir(char *path);
 
 #endif
 

@@ -30,10 +30,14 @@
 #include "aws.h"
 #include <switch.h>
 #include <switch_utils.h>
+
+#if defined(HAVE_OPENSSL)
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
+#endif
 
 
+#if defined(HAVE_OPENSSL)
 /**
  * Get signature key
  * @param key_signing buffer to store signature key
@@ -160,6 +164,7 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
 
 	return query_param;
 }
+#endif
 
 /**
  * Append Amazon S3 query params to request if necessary
@@ -182,6 +187,7 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
 		const unsigned int block_num,
 		char **query_string
 ) {
+#if defined(HAVE_OPENSSL)
 	switch_aws_s3_profile aws_s3_profile;
 	char* url_dup;
 
@@ -208,7 +214,7 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
 	*query_string = aws_s3_authentication_create(&aws_s3_profile);
 
 	switch_safe_free(url_dup);
-
+#endif
 	return headers;
 }
 
@@ -220,11 +226,10 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
  */
 SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
 {
+#if defined(HAVE_OPENSSL)
 	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
 	switch_xml_t region_xml = switch_xml_child(xml, "region");
 	switch_xml_t expires_xml = switch_xml_child(xml, "expires");
-	switch_xml_t backup_folder_xml = switch_xml_child(xml, "backup-folder");
-	switch_stream_handle_t stream = { 0 };
 
 	// Function pointer to be called to append query params to original url
 	profile->append_headers_ptr = aws_s3_append_headers;
@@ -297,26 +302,7 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 		profile->expires = DEFAULT_EXPIRATION_TIME;
 	}
 
-	// Get backup folder
-	if (!backup_folder_xml) {
-		profile->backup_folder = NULL;
-	} else
-	{
-		profile->backup_folder = switch_strip_whitespace(switch_xml_txt(backup_folder_xml));
-		if (zstr(profile->backup_folder))
-		{
-			SWITCH_STANDARD_STREAM(stream);
-			switch_api_execute("eval", "$${storage_dir}", NULL, &stream);
-			if (zstr(stream.data)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not read variable $${storage_dir}");
-				return SWITCH_STATUS_FALSE;
-			}
-
-			switch_strdup(profile->backup_folder, stream.data);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Backup folder set to default: %s\n", profile->backup_folder);
-			switch_safe_free(stream.data)
-		}
-	}
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }

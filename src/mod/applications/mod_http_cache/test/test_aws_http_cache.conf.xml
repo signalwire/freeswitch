@@ -44,26 +44,22 @@
             <!-- Credentials for account on s3-like service -->
             <aws-s3>
                 <!-- Required: Key identifier -->
-                <access-key-id><![CDATA[e06665ebbbaffc1701aaf5161ad88421]]></access-key-id>
+                <access-key-id><![CDATA[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]]></access-key-id>
                 <!-- Required: Key secret -->
-                <secret-access-key><![CDATA[2dd67d700744e2c1c277be7dc81b7b1b]]></secret-access-key>
+                <secret-access-key><![CDATA[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]]></secret-access-key>
                 <!-- Optional: Base domain for the service -->
                 <!-- If you want to use your own s3-compatible service, base domain MUST be set -->
-                <base-domain><![CDATA[stg.vinadata.vn]]></base-domain>
+                <base-domain><![CDATA[stg.example.com]]></base-domain>
                 <!-- Required: Storage region -->
                 <region><![CDATA[ap-southeast-1]]></region>
                 <!-- Optional: Expiration time in seconds for URL signature. Default is 604800s (a week) -->
                 <expires>604800</expires>
-                <!-- Optional: Backup folder to save uploaded file in case of failure (for example recording a .wav file to a webserver). Must ended without a slash !-->
-                <!-- Leave the config to be empty to use default storage folder in $${storage_dir} -->
-                <!-- Comment the config to disable this option -->
-                <backup-folder><![CDATA[/usr/local/freeswitch/storage]]></backup-folder>
             </aws-s3>
             <!-- Optional: List of domains that this profile will automatically be applied to -->
             <!-- Domains in this list must have the same base domain with base-domain (if base-domain is set)  -->
             <!-- If you wish to apply the s3 credentials to a domain not listed here, then use {profile=s3}http://foo.s3... -->
             <domains>
-                <domain name="bucket2.stg.vinadata.vn"/>
+                <domain name="bucket2.stg.example.com"/>
             </domains>
         </profile>
     </profiles>

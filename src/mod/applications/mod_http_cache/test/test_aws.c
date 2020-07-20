@@ -37,6 +37,12 @@
 
 FST_BEGIN()
 {
+
+FST_SUITE_BEGIN(aws)
+{
+
+#if defined(HAVE_OPENSSL)
+	char url[100] = {'\0'};
 	switch_aws_s3_profile aws_s3_profile;
 
 	// Get bucket and object name from url
@@ -52,11 +58,8 @@ FST_BEGIN()
 	aws_s3_profile.verb = "GET";
 	aws_s3_profile.expires = DEFAULT_EXPIRATION_TIME;
 
-	char url[100] = {'\0'};
 	switch_snprintf(url, sizeof(url), "http://%s.%s/%s", aws_s3_profile.bucket, aws_s3_profile.base_domain, aws_s3_profile.object);
-
-FST_SUITE_BEGIN(aws)
-{
+#endif
 
 FST_SETUP_BEGIN()
 {
@@ -68,63 +71,7 @@ FST_TEARDOWN_BEGIN()
 }
 FST_TEARDOWN_END()
 
-
-FST_TEST_BEGIN(recursive_mkdir)
-{
-	char folder[] =  "baonq5.s3-hcm-24.vinadata.vn/abc/def/20190816";
-	char* folder_dup;
-	struct stat sb;
-
-	switch_strdup(folder_dup, folder);
-
-	recursive_mkdir(folder_dup);
-
-	fst_check(stat(folder, &sb) == 0 && S_ISDIR(sb.st_mode));
-
-	rmdir("baonq5.s3-hcm-24.vinadata.vn/abc/def/20190816");
-	rmdir("baonq5.s3-hcm-24.vinadata.vn/abc/def");
-	rmdir("baonq5.s3-hcm-24.vinadata.vn/abc");
-	rmdir("baonq5.s3-hcm-24.vinadata.vn");
-
-	switch_safe_free(folder_dup);
-}
-FST_TEST_END()
-
-
-FST_TEST_BEGIN(backup_file)
-{
-
-	char source[] = "241-435-463.wav";
-	char dest[] = "baonq5.s3-hcm-1.vinadata.vn/abc/test.img";
-	FILE* f;
-	char buffer[11] = "0123456789";
-
-	// Write file to prepare test
-	f = fopen(source, "w");
-	fst_check(f != NULL);
-	fwrite(buffer, 10, 1, f);
-	fclose(f);
-
-	fst_check_int_equals(backup_file(source, dest), 0);
-
-	f = fopen(dest, "rb");
-	fst_check(f != NULL);
-	if (f != NULL)
-	{
-		fread(buffer, 10, 1, f);
-		fst_check_string_equals("0123456789", buffer);
-		fclose(f);
-	}
-
-	// Cleanup test
-	unlink(source);
-	unlink(dest);
-	rmdir("baonq5.s3-hcm-1.vinadata.vn/abc");
-	rmdir("baonq5.s3-hcm-1.vinadata.vn");
-}
-FST_TEST_END()
-
-
+#if defined(HAVE_OPENSSL)
 FST_TEST_BEGIN(parse_url)
 {
 	char *bucket;
@@ -242,15 +189,15 @@ FST_TEST_BEGIN(get_time)
 	char time_stamp_test[TIME_STAMP_LENGTH];
 	char date_stamp_test[DATE_STAMP_LENGTH];
 
-	// Get date and time to test
-	get_time("%Y%m%d", date_stamp, DATE_STAMP_LENGTH);
-	get_time("%Y%m%dT%H%M%SZ", time_stamp, TIME_STAMP_LENGTH);
-
 	// Get date and time for test case
 	time_t rawtime;
 	struct tm * timeinfo;
 	time(&rawtime);
 	timeinfo = gmtime(&rawtime);
+
+	// Get date and time to test
+	get_time("%Y%m%d", date_stamp, DATE_STAMP_LENGTH);
+	get_time("%Y%m%dT%H%M%SZ", time_stamp, TIME_STAMP_LENGTH);
 
 	// https://fresh2refresh.com/c-programming/c-time-related-functions/
 	// https://stackoverflow.com/questions/5141960/get-the-current-time-in-c/5142028
@@ -338,7 +285,10 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 
 	printf("\n");
 
-	fd = open("test/test_aws_http_cache.conf.xml", O_RDONLY);
+	fd = open("test_aws_http_cache.conf.xml", O_RDONLY);
+	if (fd < 0) {
+		fd = open("test/test_aws_http_cache.conf.xml", O_RDONLY);
+	}
 	fst_check(fd > 0);
 
 	cfg = switch_xml_parse_fd(fd);
@@ -348,12 +298,12 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 	fst_check(profiles);
 
 	for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
-
+		const char *name = NULL;
 		i++;
 
 		fst_check(profile);
 
-		const char *name = switch_xml_attr_soft(profile, "name");
+		name = switch_xml_attr_soft(profile, "name");
 		printf("testing profile name: %s\n", name);
 		fst_check(name);
 
@@ -363,7 +313,6 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 		http_profile.base_domain = NULL;
 		http_profile.region = NULL;
 		http_profile.append_headers_ptr = NULL;
-		http_profile.backup_folder = NULL;
 
 		aws_s3_profile = switch_xml_child(profile, "aws-s3");
 		fst_check(aws_s3_profile);
@@ -375,19 +324,10 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 		fst_check(!zstr(http_profile.secret_access_key));
 		printf("base domain: %s\n", http_profile.base_domain);
 		fst_check(!zstr(http_profile.base_domain));
-		if (i == 2)
-		{
-			fst_check(!zstr(http_profile.backup_folder));
-		} else
-		{
-			fst_check(zstr(http_profile.backup_folder));
-		}
-
 		switch_safe_free(http_profile.region);
 		switch_safe_free(http_profile.aws_s3_access_key_id);
 		switch_safe_free(http_profile.secret_access_key);
 		switch_safe_free(http_profile.base_domain);
-		switch_safe_free(http_profile.backup_folder);
 	}
 
 	fst_check(i == 2);      // test data contain two config
@@ -395,62 +335,7 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 	switch_xml_free(cfg);
 }
 FST_TEST_END()
-
-// TODO: Make this test compilable on Ubuntu machine :D
-/*FST_TEST_BEGIN(aws_s3_append_headers)
-{
-	char* query_string;
-	char final_test_url[] = "<input your url here>";
-	char* full_url;
-	CURL *curl_handle;
-	http_profile_t profile;
-	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
-	long httpRes = 0;
-
-	// Import test data
-	switch_strdup(profile.aws_s3_access_key_id, aws_s3_profile.access_key_id);
-	switch_strdup(profile.secret_access_key, aws_s3_profile.access_key_secret);
-	switch_strdup(profile.base_domain, "<s3 domain>");
-
-	// Generate signature
-	aws_s3_append_headers(&profile, NULL, "GET", 0, "", final_test_url, 0, &query_string);
-
-	// Append signature to URL
-	full_url = switch_mprintf("%s?%s", final_test_url, query_string);
-
-	// Run curl
-
-	curl_handle = switch_curl_easy_init();
-	fst_check(!curl_handle);
-
-	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
-	//switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-	//switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
-	//switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-	// switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-	switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 10);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 10);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-
-	curl_status = switch_curl_easy_perform(curl_handle);
-	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	switch_curl_easy_cleanup(curl_handle);
-
-	fst_check(curl_status == CURLE_OK);
-
-	switch_safe_free(profile.aws_s3_access_key_id);
-	switch_safe_free(profile.secret_access_key);
-	switch_safe_free(profile.base_domain);
-	switch_safe_free(query_string);
-	switch_safe_free(full_url);
-}
-FST_TEST_END()*/
+#endif
 
 }
 FST_SUITE_END()

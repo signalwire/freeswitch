@@ -30,101 +30,11 @@
 
 #include <switch.h>
 #include <switch_utils.h>
+
+#if defined(HAVE_OPENSSL)
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
-
-
-/**
- * Create a folder if it is not exists. Equivalent to 'mkdir -p'
- * @param path
- */
-SWITCH_MOD_DECLARE(void) recursive_mkdir(char *path)
-{
-    mode_t mode = S_IRWXU | S_IRWXG | S_IRWXO; //S_IRUSR | S_IWUSR;        // 600
-    struct stat sb;
-
-    char *sep = strrchr(path, '/' );
-    if (sep != NULL) {
-        *sep = '\0';
-        recursive_mkdir(path);
-        *sep = '/';
-    }
-
-    if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode))
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Making folder: %s\n", path);
-        mkdir(path, mode);
-    }
-}
-
-
-static int recursive_open(const char *path, int oflag, mode_t mode)
-{
-    char* path_dup;
-
-    char *sep = strrchr(path, '/' );
-    if (sep) {
-        switch_strdup(path_dup, path);
-        path_dup[sep - path] = 0;
-        recursive_mkdir(path_dup);
-        switch_safe_free(path_dup);
-    }
-
-    return open(path, oflag, mode);
-}
-
-
-/**
- * Backup file to local storage. Used with http_put in case of failed
- * @param source
- * @param dest
- * @return
- */
-SWITCH_MOD_DECLARE(int) backup_file(const char* source, const char* dest)
-{
-    int source_fd, dest_fd;
-    int num_read;
-    mode_t dest_fd_mode;
-    char cwd[128];
-    const unsigned int BUFF_SIZE = 65536;
-    char* buffer;
-    int return_code = 0;
-
-    getcwd(cwd, sizeof(cwd));
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Current working dir: %s\n", cwd);
-
-    source_fd = open(source, O_RDONLY);
-    if (source_fd < 0)
-    {
-        return errno;
-    }
-
-    dest_fd_mode = S_IRWXU | S_IRWXG | S_IRWXO; //S_IRUSR | S_IWUSR;        // 600
-    dest_fd = recursive_open(dest, O_CREAT | O_WRONLY | O_TRUNC, dest_fd_mode);        // will overwrite existing file
-    if (dest_fd < 0)
-    {
-        close(source_fd);
-        return errno;
-    }
-
-    switch_malloc(buffer, BUFF_SIZE);
-    while ((num_read = read(source_fd, buffer, BUFF_SIZE)) > 0)
-    {
-        write(dest_fd, buffer, num_read);
-    }
-
-    if (num_read < 0)
-    {
-        return_code = errno;
-    }
-
-    close(source_fd);
-    close(dest_fd);
-    switch_safe_free(buffer);
-
-    return return_code;
-}
-
+#endif
 
 /**
  * Calculate HMAC-SHA256 hash of a message
@@ -137,19 +47,23 @@ SWITCH_MOD_DECLARE(int) backup_file(const char* source, const char* dest)
  */
 SWITCH_MOD_DECLARE(char*) hmac256(char* buffer, unsigned int buffer_length, const char* key, unsigned int key_length, const char* message)
 {
-    if (zstr(key) || zstr(message) || buffer_length < SHA256_DIGEST_LENGTH) {
-        return NULL;
-    }
+#if defined(HAVE_OPENSSL)
+	if (zstr(key) || zstr(message) || buffer_length < SHA256_DIGEST_LENGTH) {
+		return NULL;
+	}
 
-    HMAC(EVP_sha256(),
+	HMAC(EVP_sha256(),
 		 key,
 		 (int)key_length,
-         (unsigned char *)message,
-         strlen(message),
+		 (unsigned char *)message,
+		 strlen(message),
 		 (unsigned char*)buffer,
-         &buffer_length);
+		 &buffer_length);
 
-    return (char*)buffer;
+	return (char*)buffer;
+#else
+	return NULL;
+#endif
 }
 
 
@@ -163,9 +77,12 @@ SWITCH_MOD_DECLARE(char*) hmac256(char* buffer, unsigned int buffer_length, cons
  */
 SWITCH_MOD_DECLARE(char*) hmac256_hex(char* buffer, const char* key, unsigned int key_length, const char* message)
 {
-    char hmac256_raw[SHA256_DIGEST_LENGTH];
+#if defined(HAVE_OPENSSL)
+	char hmac256_raw[SHA256_DIGEST_LENGTH] = { 0 };
 
-    hmac256(hmac256_raw, SHA256_DIGEST_LENGTH, key, key_length, message);
+	if (hmac256(hmac256_raw, SHA256_DIGEST_LENGTH, key, key_length, message) == NULL) {
+		return NULL;
+	}
 
 	for (unsigned int i = 0; i < SHA256_DIGEST_LENGTH; i++)
 	{
@@ -173,7 +90,10 @@ SWITCH_MOD_DECLARE(char*) hmac256_hex(char* buffer, const char* key, unsigned in
 	}
 	buffer[SHA256_DIGEST_LENGTH * 2] = '\0';
 
-    return buffer;
+	return buffer;
+#else
+	return NULL;
+#endif
 }
 
 
@@ -185,7 +105,8 @@ SWITCH_MOD_DECLARE(char*) hmac256_hex(char* buffer, const char* key, unsigned in
  */
 SWITCH_MOD_DECLARE(char*) sha256_hex(char* buffer, const char* string)
 {
-    unsigned char sha256_raw[SHA256_DIGEST_LENGTH];
+#if defined(HAVE_OPENSSL)
+	unsigned char sha256_raw[SHA256_DIGEST_LENGTH] = { 0 };
 
 	SHA256((unsigned char*)string, strlen(string), sha256_raw);
 
@@ -195,7 +116,10 @@ SWITCH_MOD_DECLARE(char*) sha256_hex(char* buffer, const char* string)
 	}
 	buffer[SHA256_DIGEST_LENGTH * 2] = '\0';
 
-    return buffer;
+	return buffer;
+#else
+	return NULL;
+#endif
 }
 
 
@@ -263,8 +187,8 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	*object = NULL;
 
 	if (zstr(url)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "url is empty\n");
-        return;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "url is empty\n");
+		return;
 	}
 
 	/* expect: http(s)://bucket.foo-bar.s3.amazonaws.com/object */
@@ -275,8 +199,8 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	}
 
 	if (zstr(bucket_start)) { /* invalid URL */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
-        return;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
+		return;
 	}
 
 	if (zstr(base_domain)) {
@@ -286,8 +210,8 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	bucket_end = my_strrstr(bucket_start, base_domain_match);
 
 	if (!bucket_end) { /* invalid URL */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
-        return;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
+		return;
 	}
 
 	*bucket_end = '\0';
@@ -295,15 +219,15 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	object_start = strchr(bucket_end + 1, '/');
 
 	if (!object_start) { /* invalid URL */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
-        return;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
+		return;
 	}
 
 	object_start++;
 
 	if (zstr(bucket_start) || zstr(object_start)) { /* invalid URL */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
-        return;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
+		return;
 	}
 
 	/* ignore the query string from the end of the URL */
