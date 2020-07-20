@@ -277,7 +277,7 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
  * @param query_string pointer to query param string that will be calculated
  * @return updated headers
  */
-SWITCH_MOD_DECLARE(switch_curl_slist_t) *aws_s3_append_headers(
+SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 		http_profile_t *profile,
 		switch_curl_slist_t *headers,
 		const char *verb,
