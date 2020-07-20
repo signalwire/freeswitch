@@ -73,14 +73,14 @@ def query_string(access_key, date_stamp, time_stamp, region):
 
 
 def main():
-    access_key = '5d4279647760e41f575fbc6ee7a39142'
-    secret_key = '0196e0d360e1e89d3e86443c16f317de'
+    access_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    secret_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 
     # request elements
     http_method = 'GET'
     region = 'HCM'
     bucket = 'bucket1'
-    host = 'stg.vinadata.vn'
+    host = 'stg.example.com'
     endpoint = 'https://' + bucket + "." + host
     object_name = 'document.docx'
 
