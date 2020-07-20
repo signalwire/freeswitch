@@ -29,7 +29,6 @@
  */
 #include "aws.h"
 #include <switch.h>
-#include <switch_utils.h>
 
 #if defined(HAVE_OPENSSL)
 #include <openssl/hmac.h>
