@@ -23,7 +23,7 @@
  * Contributor(s):
  * Chris Rienzo <chris.rienzo@grasshopper.com>
  * Quoc-Bao Nguyen <baonq5@vng.com.vn>
- * 
+ *
  * common.h - Functions common to the store provider
  *
  */
@@ -42,8 +42,8 @@ struct http_profile {
 	char *aws_s3_access_key_id;
 	char *secret_access_key;
 	char *base_domain;
-	char *region;					// AWS region. Used by AWS S3
-	switch_time_t expires;			// Expiration time in seconds for URL signature. Default is 604800 seconds. Used by AWS S3
+	char *region;            // AWS region. Used by AWS S3
+	switch_time_t expires;   // Expiration time in seconds for URL signature. Default is 604800 seconds. Used by AWS S3
 	switch_size_t bytes_per_block;
 
 	// function to be called to add the profile specific headers to the GET/PUT requests
@@ -56,47 +56,6 @@ typedef struct http_profile http_profile_t;
 
 
 SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const char *default_base_domain, char **bucket, char **object);
-
-
-/**
- * Get current time_stamp. Example: 20190724T110316Z
- * @param format format of the time in strftime format
- * @param buffer buffer to store the result
- * @param buffer_length length of buffer
- * @return current time stamp
- */
-SWITCH_MOD_DECLARE(char*) get_time(char* format, char* buffer, unsigned int buffer_length);
-
-
-/**
- * Calculate HMAC-SHA256 hash of a message
- * @param buffer buffer to store the HMAC-SHA256 version of message as byte array
- * @param buffer_length length of buffer
- * @param key buffer that store the key to run HMAC-SHA256
- * @param key_length length of the key
- * @param message message that will be hashed
- * @return byte array, equals to buffer
- */
-SWITCH_MOD_DECLARE(char*) hmac256(char* buffer, unsigned int buffer_length, const char* key, unsigned int key_length, const char* message);
-
-/**
- * Calculate HMAC-SHA256 hash of a message
- * @param buffer buffer to store the HMAC-SHA256 version of the message as hex string
- * @param key buffer that store the key to run HMAC-SHA256
- * @param key_length length of the key
- * @param message message that will be hashed
- * @return hex string that store the HMAC-SHA256 version of the message
- */
-SWITCH_MOD_DECLARE(char*) hmac256_hex(char* buffer, const char* key, unsigned int key_length, const char* message);
-
-
-/**
- * Calculate SHA256 hash of a message
- * @param buffer buffer to store the SHA256 version of the message as hex string
- * @param string string to be hashed
- * @return hex string that store the SHA256 version of the message
- */
-SWITCH_MOD_DECLARE(char*) sha256_hex(char* buffer, const char* string);
 
 #endif
 

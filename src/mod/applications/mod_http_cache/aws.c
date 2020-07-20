@@ -37,7 +37,108 @@
 #endif
 
 
+
 #if defined(HAVE_OPENSSL)
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+#endif
+
+#if defined(HAVE_OPENSSL)
+/**
+ * Calculate HMAC-SHA256 hash of a message
+ * @param buffer buffer to store the HMAC-SHA256 version of message as byte array
+ * @param buffer_length length of buffer
+ * @param key buffer that store the key to run HMAC-SHA256
+ * @param key_length length of the key
+ * @param message message that will be hashed
+ * @return byte array, equals to buffer
+ */
+static char *hmac256(char* buffer, unsigned int buffer_length, const char* key, unsigned int key_length, const char* message)
+{
+	if (zstr(key) || zstr(message) || buffer_length < SHA256_DIGEST_LENGTH) {
+		return NULL;
+	}
+
+	HMAC(EVP_sha256(),
+		 key,
+		 (int)key_length,
+		 (unsigned char *)message,
+		 strlen(message),
+		 (unsigned char*)buffer,
+		 &buffer_length);
+
+	return (char*)buffer;
+}
+
+
+/**
+ * Calculate HMAC-SHA256 hash of a message
+ * @param buffer buffer to store the HMAC-SHA256 version of the message as hex string
+ * @param key buffer that store the key to run HMAC-SHA256
+ * @param key_length length of the key
+ * @param message message that will be hashed
+ * @return hex string that store the HMAC-SHA256 version of the message
+ */
+static char *hmac256_hex(char* buffer, const char* key, unsigned int key_length, const char* message)
+{
+	char hmac256_raw[SHA256_DIGEST_LENGTH] = { 0 };
+
+	if (hmac256(hmac256_raw, SHA256_DIGEST_LENGTH, key, key_length, message) == NULL) {
+		return NULL;
+	}
+
+	for (unsigned int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+	{
+		snprintf(buffer + i*2, 3, "%02x", (unsigned char)hmac256_raw[i]);
+	}
+	buffer[SHA256_DIGEST_LENGTH * 2] = '\0';
+
+	return buffer;
+}
+
+
+/**
+ * Calculate SHA256 hash of a message
+ * @param buffer buffer to store the SHA256 version of the message as hex string
+ * @param string string to be hashed
+ * @return hex string that store the SHA256 version of the message
+ */
+static char *sha256_hex(char* buffer, const char* string)
+{
+	unsigned char sha256_raw[SHA256_DIGEST_LENGTH] = { 0 };
+
+	SHA256((unsigned char*)string, strlen(string), sha256_raw);
+
+	for (unsigned int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+	{
+		snprintf(buffer + i*2, 3, "%02x", sha256_raw[i]);
+	}
+	buffer[SHA256_DIGEST_LENGTH * 2] = '\0';
+
+	return buffer;
+}
+
+
+/**
+ * Get current time_stamp. Example: 20190724T110316Z
+ * @param format format of the time in strftime format
+ * @param buffer buffer to store the result
+ * @param buffer_length length of buffer
+ * @return current time stamp
+ */
+static char *get_time(char* format, char* buffer, unsigned int buffer_length)
+{
+	switch_time_exp_t time;
+	switch_size_t size;
+
+	switch_time_exp_gmt(&time, switch_time_now());
+
+	switch_strftime(buffer, &size, buffer_length, format, &time);
+
+	return buffer;
+}
+
+
 /**
  * Get signature key
  * @param key_signing buffer to store signature key
