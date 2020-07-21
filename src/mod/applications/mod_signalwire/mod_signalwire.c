@@ -86,8 +86,7 @@ static struct {
 
 	char relay_connector_id[256];
 	
-	swclt_sess_t signalwire_session;
-	swclt_hmon_t signalwire_session_monitor;
+	swclt_sess_t *signalwire_session;
 	sw_state_t state;
 	ks_bool_t profile_update;
 	ks_bool_t profile_reload;
@@ -221,13 +220,13 @@ static ks_status_t load_credentials_from_json(ks_json_t *json)
 	const char *bootstrap = NULL;
 	const char *relay_connector_id = NULL;
 
-	if ((bootstrap = ks_json_get_object_cstr(json, "bootstrap")) == NULL) {
+	if ((bootstrap = ks_json_get_string(json, "bootstrap")) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Unable to connect to SignalWire: missing bootstrap URL\n");
 		status = KS_STATUS_FAIL;
 		goto done;
 	}
 
-	if ((relay_connector_id = ks_json_get_object_cstr(json, "relay_connector_id")) == NULL) {
+	if ((relay_connector_id = ks_json_get_string(json, "relay_connector_id")) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Unable to connect to SignalWire: missing relay_connector_id\n");
 		status = KS_STATUS_FAIL;
 		goto done;
@@ -251,10 +250,11 @@ static ks_status_t load_credentials_from_json(ks_json_t *json)
 	strncpy(globals.blade_bootstrap, bootstrap, sizeof(globals.blade_bootstrap) - 1);
 
 	// got adopted, update the client config authentication
-	authentication_str = ks_json_pprint_unformatted(NULL, authentication);
+	authentication_str = ks_json_print_unformatted(authentication);
 	swclt_config_set_authentication(globals.config, authentication_str);
 
-	ks_pool_free(&authentication_str);
+	switch_safe_free(authentication_str);
+
 done:
 
 	return status;
@@ -425,7 +425,7 @@ static ks_status_t mod_signalwire_adoption_post(void)
 
 done:
 	if (rd.data) ks_pool_free(&rd.data);
-	if (jsonstr) ks_json_free_ex((void **)&jsonstr);
+	switch_safe_free(jsonstr);
 	if (json) ks_json_delete(&json);
 	if (curl) {
 		curl_easy_cleanup(curl);
@@ -517,21 +517,19 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void mod_signalwire_session_state_handler(swclt_sess_t sess, swclt_hstate_change_t *state_change_info, const char *cb_data)
+static void mod_signalwire_session_state_handler(swclt_sess_t *sess, void *cb_data)
 {
-	SWCLT_HSTATE new_state = state_change_info->new_state;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SignalWire Session State Change: %s\n", swclt_sess_state_str(sess->state));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SignalWire Session State Change: %s\n", swclt_hstate_describe_change(state_change_info));
-
-	if (new_state == SWCLT_HSTATE_ONLINE) {
+	if (sess->state != SWCLT_STATE_OFFLINE) {
 		// Connected with NEW or RESTORED session
 		globals.signalwire_reconnected = KS_TRUE;
-	} else if (new_state == SWCLT_HSTATE_OFFLINE) {
+	} else if (sess->state == SWCLT_STATE_OFFLINE) {
 		// Disconnected
 	}
 }
 
-static void __on_provisioning_events(swclt_sess_t sess, blade_broadcast_rqu_t *rqu, void *cb_data)
+static void __on_provisioning_events(swclt_sess_t *sess, blade_broadcast_rqu_t *rqu, void *cb_data)
 {
 	if (!strcmp(rqu->event, "update")) {
 		globals.profile_update = KS_TRUE;
@@ -717,7 +715,7 @@ done:
 	return status;
 }
 
-static void mod_signalwire_session_auth_failed_handler(swclt_sess_t sess)
+static void mod_signalwire_session_auth_failed_handler(swclt_sess_t *sess)
 {
 	char path[1024];
 
@@ -908,7 +906,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 		switch_goto_status(SWITCH_STATUS_TERM, err);
 	}
 
-	swclt_hmon_register(&globals.signalwire_session_monitor, globals.signalwire_session, mod_signalwire_session_state_handler, NULL);
+	swclt_sess_set_state_change_cb(globals.signalwire_session, mod_signalwire_session_state_handler, NULL);
 
 	// @todo register nodestore callbacks here if needed
 
@@ -945,7 +943,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 	goto done;
 
 err:
-	if (globals.signalwire_session) ks_handle_destroy(&globals.signalwire_session);
+	if (globals.signalwire_session) swclt_sess_destroy(&globals.signalwire_session);
 	swclt_config_destroy(&globals.config);
 	ks_global_set_logger(NULL);
 
@@ -970,7 +968,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_signalwire_shutdown)
 	globals.shutdown = KS_TRUE;
 
 	swclt_sess_disconnect(globals.signalwire_session);
-	while (swclt_hstate_current_get(globals.signalwire_session) == SWCLT_HSTATE_ONLINE) {
+	while (globals.signalwire_session->state == SWCLT_STATE_ONLINE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sleeping for pending disconnect\n");
 		ks_sleep_ms(1000);
 	}
@@ -980,7 +978,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_signalwire_shutdown)
 	switch_xml_unbind_search_function_ptr(xml_config_handler);
 	
 	// kill signalwire, so nothing more can come into the system
-	ks_handle_destroy(&globals.signalwire_session);
+	swclt_sess_destroy(&globals.signalwire_session);
 
 	// cleanup config
 	swclt_config_destroy(&globals.config);
@@ -1047,7 +1045,7 @@ static void mod_signalwire_state_configure(void)
 	switch_port_t external_port;
 	char external_endpoint[256];
 	char *error = NULL;
-	swclt_cmd_t cmd;
+	swclt_cmd_reply_t *reply;
 
 	if (globals.signalwire_reconnected) {
 		globals.signalwire_reconnected = KS_FALSE;
@@ -1084,18 +1082,13 @@ static void mod_signalwire_state_configure(void)
 
 	snprintf(external_endpoint, sizeof(external_endpoint), "%s:%u", external_ip, external_port);
 
-	if (!swclt_sess_provisioning_configure(globals.signalwire_session, "freeswitch", local_endpoint, external_endpoint, globals.relay_connector_id, &cmd)) {
-		SWCLT_CMD_TYPE cmd_type;
-		swclt_cmd_type(cmd, &cmd_type);
-		if (cmd_type == SWCLT_CMD_TYPE_RESULT) {
-			const ks_json_t *result;
+	if (!swclt_sess_provisioning_configure(globals.signalwire_session, "freeswitch", local_endpoint, external_endpoint, globals.relay_connector_id, &reply)) {
+		if (reply->type == SWCLT_CMD_TYPE_RESULT) {
 			signalwire_provisioning_configure_response_t *configure_res;
 
-			swclt_cmd_result(cmd, &result);
-			result = ks_json_get_object_item(result, "result");
-			if (!SIGNALWIRE_PROVISIONING_CONFIGURE_RESPONSE_PARSE(ks_handle_pool(cmd), result, &configure_res)) {
+			if (!SIGNALWIRE_PROVISIONING_CONFIGURE_RESPONSE_PARSE(reply->pool, reply->json, &configure_res)) {
 				const ks_json_t *configuration = configure_res->configuration;
-				const char *configuration_profile = ks_json_get_object_cstr(configuration, "profile");
+				const char *configuration_profile = ks_json_get_string(configuration, "profile");
 				if (globals.signalwire_profile) {
 					switch_xml_free(globals.signalwire_profile);
 					globals.signalwire_profile = NULL;
@@ -1121,7 +1114,7 @@ static void mod_signalwire_state_configure(void)
 			}
 		}
 	}
-	ks_handle_destroy(&cmd);
+	swclt_cmd_reply_destroy(&reply);
 	if (globals.state == SW_STATE_CONFIGURE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to receive valid configuration from SignalWire\n");
 		ks_sleep_ms(4000);
@@ -1272,13 +1265,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_signalwire_runtime)
 	while (!globals.shutdown) {
 		if (globals.restarting) {
 			swclt_sess_disconnect(globals.signalwire_session);
-			while (swclt_hstate_current_get(globals.signalwire_session) == SWCLT_HSTATE_ONLINE) {
+			while (globals.signalwire_session->state == SWCLT_STATE_ONLINE) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sleeping for pending disconnect\n");
 				ks_sleep_ms(1000);
 			}
 
 			// kill signalwire, so nothing more can come into the system
-			ks_handle_destroy(&globals.signalwire_session);
+			swclt_sess_destroy(&globals.signalwire_session);
 
 			// Create a new session and start over
 			swclt_sess_create(&globals.signalwire_session,
@@ -1286,8 +1279,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_signalwire_runtime)
 					  globals.config);
 			swclt_sess_set_auth_failed_cb(globals.signalwire_session, mod_signalwire_session_auth_failed_handler);
 
-			swclt_hmon_register(&globals.signalwire_session_monitor, globals.signalwire_session, mod_signalwire_session_state_handler, NULL);
-
+			swclt_sess_set_state_change_cb(globals.signalwire_session, mod_signalwire_session_state_handler, NULL);
+			
 			globals.restarting = KS_FALSE;
 			continue;
 		}
