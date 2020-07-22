@@ -4815,11 +4815,7 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 
 	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 
-		if (!switch_channel_media_up(session->channel) && sdp_type == SDP_TYPE_REQUEST) {
-			engine->rmode = switch_core_session_remote_media_flow(other_session, type);
-			
-			media_flow_get_mode(engine->rmode, &rmode_str, &opp_rmode);
-		} else if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
+		if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 			switch_core_media_set_smode(other_session, type, rmode, sdp_type);
 		}
 
