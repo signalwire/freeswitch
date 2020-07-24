@@ -2576,12 +2576,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			}
 
 			if (ep->buffer) {
+				switch_buffer_lock(ep->buffer);
 				while (switch_buffer_inuse(ep->buffer) >= len) {
 					int tchanged = 0, changed = 0;
 
-					switch_buffer_lock(ep->buffer);
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
-					switch_buffer_unlock(ep->buffer);
 					write_frame.samples = write_frame.datalen / 2 / channels;
 					write_frame.channels = channels;
 
@@ -2635,6 +2634,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 													   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 													   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
+								switch_buffer_unlock(ep->buffer);
 								goto end;
 							}
 						}
@@ -2655,7 +2655,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
+
+					switch_buffer_unlock(ep->buffer);
+					switch_buffer_lock(ep->buffer);
 				}
+
+				switch_buffer_unlock(ep->buffer);
 			}
 
 		}
