@@ -3587,24 +3587,27 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *v_engine;
 
 	switch_assert(session);
 
+	switch_mutex_lock(session->codec_init_mutex);
+
 	if (!(smh = session->media_handle)) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 
 	if (!v_engine->codec_negotiated) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (v_engine->read_codec.implementation && switch_core_codec_ready(&v_engine->read_codec)) {
 		if (!force) {
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 		if (strcasecmp(v_engine->read_codec.implementation->iananame, v_engine->cur_payload_map->rm_encoding) ||
 			v_engine->read_codec.implementation->samples_per_second != v_engine->cur_payload_map->rm_rate) {
@@ -3616,7 +3619,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already using %s\n",
 							  v_engine->read_codec.implementation->iananame);
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 	}
 
@@ -3632,7 +3635,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   &v_engine->codec_settings, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't load codec?\n");
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	} else {
 		if (switch_core_codec_init(&v_engine->write_codec,
 								   v_engine->cur_payload_map->rm_encoding,
@@ -3644,7 +3647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   &v_engine->codec_settings, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't load codec?\n");
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		} else {
 			v_engine->read_frame.rate = v_engine->cur_payload_map->rm_rate;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set VIDEO Codec %s %s/%ld %d ms\n",
@@ -3685,7 +3688,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 			switch_channel_set_variable_printf(session->channel, "rtp_use_video_codec_ptime", "%d", 0);
 		}
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+end:
+	switch_mutex_unlock(session->codec_init_mutex);
+
+	return status;
 }
 
 
@@ -3698,9 +3705,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	switch_rtp_engine_t *a_engine;
 
 	switch_assert(session);
+	
+	switch_mutex_lock(session->codec_init_mutex);
 
 	if (!(smh = session->media_handle)) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
@@ -3864,6 +3873,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	    switch_core_session_unlock_codec_write(session);
 	    switch_core_session_unlock_codec_read(session);
 	}
+
+	switch_mutex_unlock(session->codec_init_mutex);
 
 	return status;
 }
