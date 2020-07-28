@@ -3238,7 +3238,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 
 	if ((status = switch_core_media_bug_add(session, "session_record", file,
 											record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
+		if (switch_channel_ready(channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error adding media bug for file %s\n", file);
+		}
 		switch_goto_status(status, err);
 	}
 
