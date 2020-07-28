@@ -837,7 +837,6 @@ iksemel/configure
 libdingaling/configure
 libyuv/Makefile
 libyuv/convert
-sofia-sip/configure
 spandsp/configure
 srtp/configure
 tiff-4.0.2/configure

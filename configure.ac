@@ -714,6 +714,11 @@ PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   ])
 ])
 
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.12.12],[
+  AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
+    AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
+])
+
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
 
@@ -2104,7 +2109,6 @@ if test "$use_system_aprutil" != "yes"; then
 fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/sofia-sip])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
 AC_CONFIG_SUBDIRS([libs/spandsp])

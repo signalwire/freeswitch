@@ -781,6 +781,9 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ProjectReference Include="..\..\libs\win32\libyuv\libyuv.2017.vcxproj">
       <Project>{b6e22500-3db6-4e6e-8cd5-591b781d7d99}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\sofia\libsofia_sip_ua_static.2017.vcxproj">
+      <Project>{70a49bc2-7500-41d0-b75d-edcc5be987a0}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2017.vcxproj">
       <Project>{03207781-0d1c-4db3-a71d-45c608f28dbd}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
