@@ -3370,6 +3370,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 								  switch_channel_get_name(tech_pvt->channel), tech_pvt->mparams->local_sdp_str);
 				switch_core_media_gen_key_frame(tech_pvt->session);
 				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
+				switch_channel_set_flag(tech_pvt->channel, CF_REATTACHED);
 			} else {
 				switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CODEC NEGOTIATION ERROR"));
@@ -3549,6 +3550,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 		} else {
 			switch_core_media_gen_key_frame(tech_pvt->session);
 			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
+			switch_channel_set_flag(tech_pvt->channel, CF_REATTACHED);
 		}
 	}
 	
