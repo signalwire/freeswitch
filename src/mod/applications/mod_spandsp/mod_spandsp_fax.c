@@ -106,6 +106,7 @@ struct pvt_s {
 	int enable_colour_to_bilevel;
 	int enable_grayscale_to_bilevel;
 	int verbose;
+	switch_log_level_t verbose_log_level;
 	int caller;
 
 	int tx_page_start;
@@ -273,7 +274,9 @@ static void counter_increment(void)
 void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
-	switch_core_session_t *session = (switch_core_session_t *)user_data;
+	mod_spandsp_log_data_t *log_data = (mod_spandsp_log_data_t *)user_data;
+	switch_core_session_t *session = log_data ? log_data->session : NULL;
+	switch_log_level_t verbose_log_level = log_data ? log_data->verbose_log_level : spandsp_globals.verbose_log_level;
 
 	switch (level) {
 	case SPAN_LOG_NONE:
@@ -290,12 +293,12 @@ void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 	case SPAN_LOG_FLOW_2:
 	case SPAN_LOG_FLOW_3:
 	default:					/* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
-		fs_log_level = SWITCH_LOG_DEBUG;
+		fs_log_level = verbose_log_level;
 		break;
 	}
 
 	if (!zstr(msg)) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
 	}
 }
 
@@ -811,8 +814,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, pvt->session);
-		span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = pvt->verbose_log_level;
+			span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, log_data);
+			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
+		}
 
 		if (pvt->verbose) {
 			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -865,8 +873,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
 			switch_core_session_receive_message(pvt->session, &msg);
 
-			span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, pvt->session);
-			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
+			{
+				mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+				log_data->session = pvt->session;
+				log_data->verbose_log_level = pvt->verbose_log_level;
+				span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, log_data);
+				span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
+			}
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -922,8 +935,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, pvt->use_ecm);
 		switch_channel_set_variable(channel, "fax_ecm_requested", pvt->use_ecm ? "true" : "false");
 
-		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, pvt->session);
-		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = pvt->verbose_log_level;
+			span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, log_data);
+			span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, log_data);
+		}
 
 		if (pvt->verbose) {
 			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -1375,6 +1393,14 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		pvt->verbose = switch_true(tmp);
 	} else {
 		pvt->verbose = spandsp_globals.verbose;
+	}
+
+	pvt->verbose_log_level = spandsp_globals.verbose_log_level;
+	if ((tmp = switch_channel_get_variable(channel, "fax_verbose_log_level"))) {
+		switch_log_level_t verbose_log_level = switch_log_str2level(tmp);
+		if (verbose_log_level != SWITCH_LOG_INVALID) {
+			pvt->verbose_log_level = verbose_log_level;
+		}
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_force_caller"))) {
