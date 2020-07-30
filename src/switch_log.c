@@ -68,6 +68,8 @@ static int mods_loaded = 0;
 static int console_mods_loaded = 0;
 static switch_bool_t COLORIZE = SWITCH_FALSE;
 
+static int64_t log_sequence = 0;
+
 #ifdef WIN32
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
@@ -143,6 +145,9 @@ SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, i
 	}
 	if (json_format->function.name && !zstr_buf(node->func)) {
 		cJSON_AddItemToObject(json, json_format->function.name, cJSON_CreateString(node->func));
+	}
+	if (json_format->sequence.name) {
+		cJSON_AddItemToObject(json, json_format->sequence.name, cJSON_CreateNumber(node->sequence));
 	}
 
 	/* skip initial space and new line */
@@ -478,6 +483,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 
 		node = (switch_log_node_t *) pop;
 		switch_mutex_lock(BINDLOCK);
+		node->sequence = ++log_sequence;
 		for (binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
 				binding->function(node, node->level);

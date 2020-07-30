@@ -66,6 +66,8 @@ SWITCH_BEGIN_EXTERN_C
 	switch_text_channel_t channel;
 	switch_log_level_t slevel;
 	switch_event_t *tags;
+	/* Log sequence */
+	int64_t sequence;
 } switch_log_node_t;
 
 ///\{
@@ -94,6 +96,7 @@ typedef struct {
 	switch_log_json_format_item_t short_message;
 	const char *custom_field_prefix;
 	double timestamp_divisor;
+	switch_log_json_format_item_t sequence;
 } switch_log_json_format_t;
 
 typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node, switch_log_level_t level);
