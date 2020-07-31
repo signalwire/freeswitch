@@ -107,6 +107,7 @@ struct pvt_s {
 	int enable_grayscale_to_bilevel;
 	int verbose;
 	switch_log_level_t verbose_log_level;
+	FILE *trace_file;
 	int caller;
 
 	int tx_page_start;
@@ -299,6 +300,9 @@ void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 
 	if (!zstr(msg)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
+		if (log_data && log_data->trace_file) {
+			fwrite(msg, strlen(msg) * sizeof(const char), 1, log_data->trace_file);
+		}
 	}
 }
 
@@ -818,6 +822,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
 			log_data->session = pvt->session;
 			log_data->verbose_log_level = pvt->verbose_log_level;
+			log_data->trace_file = pvt->trace_file;
 			span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, log_data);
 			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
 		}
@@ -877,6 +882,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 				mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
 				log_data->session = pvt->session;
 				log_data->verbose_log_level = pvt->verbose_log_level;
+				log_data->trace_file = pvt->trace_file;
 				span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, log_data);
 				span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
 			}
@@ -939,6 +945,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
 			log_data->session = pvt->session;
 			log_data->verbose_log_level = pvt->verbose_log_level;
+			log_data->trace_file = pvt->trace_file;
 			span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, log_data);
 			span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, log_data);
 		}
@@ -1083,6 +1090,12 @@ static switch_status_t spanfax_destroy(pvt_t *pvt)
 	if (pvt->udptl_state) {
 		udptl_release(pvt->udptl_state);
 	}
+
+	if (pvt->trace_file) {
+		fclose(pvt->trace_file);
+		pvt->trace_file = NULL;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1401,6 +1414,12 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		if (verbose_log_level != SWITCH_LOG_INVALID) {
 			pvt->verbose_log_level = verbose_log_level;
 		}
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_trace_dir"))) {
+		const char *trace_filename = switch_core_session_sprintf(session, "%s"SWITCH_PATH_SEPARATOR"fax-%s.log", tmp, switch_core_session_get_uuid(session));
+		switch_dir_make_recursive(tmp, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session));
+		pvt->trace_file = fopen(trace_filename, "w");
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_force_caller"))) {
