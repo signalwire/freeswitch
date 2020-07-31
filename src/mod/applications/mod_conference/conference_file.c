@@ -111,6 +111,38 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 	return switch_core_file_close(&node->fh);
 }
 
+switch_status_t conference_speak_flush(conference_obj_t *conference, conference_file_node_t *node)
+{
+	switch_event_t *event;
+	conference_member_t *member = NULL;
+
+	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+
+		conference_event_add_data(conference, event);
+
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->sh->samples / node->sh->native_rate);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->sh->samples / (node->sh->native_rate / 1000));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->sh->samples);
+
+		if (node->member_id) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member-done");
+
+			if ((member = conference_member_get(conference, node->member_id))) {
+				conference_member_add_event_data(member, event);
+				switch_thread_rwlock_unlock(member->rwlock);
+			}
+
+		} else {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-done");
+		}
+
+		switch_event_fire(&event);
+	}
+
+	switch_core_speech_flush_tts(node->sh);
+	return SWITCH_STATUS_SUCCESS;
+}
 
 /* Make files stop playing in a conference either the current one or all of them */
 uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop)
