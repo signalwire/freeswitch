@@ -237,9 +237,9 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 				SWITCH_STANDARD_STREAM(stream);
 
 				for (rp = sip->sip_route; rp; rp = rp->r_next) {
-					char *route = sip_header_as_string(nh->nh_home, (void *) rp);
+					char *route = sip_header_as_string(nua_handle_get_home(nh), (void *) rp);
 					stream.write_function(&stream, x == 0 ? "%s" : ",%s", route);
-					su_free(nh->nh_home, route);
+					su_free(nua_handle_get_home(nh), route);
 					x++;
 				}
 				switch_channel_set_variable(channel, "sip_full_route", stream.data);
@@ -249,9 +249,9 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			if (sip->sip_contact) {
-				char *c = sip_header_as_string(nh->nh_home, (void *) sip->sip_contact);
+				char *c = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_contact);
 				switch_channel_set_variable(channel, "sip_recover_contact", c);
-				su_free(nh->nh_home, c);
+				su_free(nua_handle_get_home(nh), c);
 			}
 		}
 
@@ -267,7 +267,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			SWITCH_STANDARD_STREAM(reverse_stream);
 
 			for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
-				char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+				char *rr = sip_header_as_string(nua_handle_get_home(nh), (void *) rrp);
 				forward_stream.write_function(&forward_stream, x == 0 ? "%s" : ",%s", rr);
 				tmp[y++] = rr;
 				if (y == 127) break;
@@ -280,7 +280,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 			while(y >= 0) {
 				reverse_stream.write_function(&reverse_stream, x == 0 ? "%s" : ",%s", tmp[y]);
-				su_free(nh->nh_home, tmp[y]);
+				su_free(nua_handle_get_home(nh), tmp[y]);
 				y--;
 				x++;
 			}
@@ -305,10 +305,10 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			SWITCH_STANDARD_STREAM(stream);
 
 			for(vp = sip->sip_via; vp; vp = vp->v_next) {
-				char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+				char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 
 				stream.write_function(&stream, x == 0 ? "%s" : ",%s", v);
-				su_free(nh->nh_home, v);
+				su_free(nua_handle_get_home(nh), v);
 
 				x++;
 			}
@@ -330,9 +330,9 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 				switch_channel_set_variable(channel, "sip_from_display", p);
 			}
 			if (p != sip->sip_from->a_display) free(p);
-			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_from))) {
+			if ((full = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from))) {
 				switch_channel_set_variable(channel, "sip_full_from", full);
-				su_free(nh->nh_home, full);
+				su_free(nua_handle_get_home(nh), full);
 			}
 		}
 
@@ -345,9 +345,9 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 			if (p != sip->sip_to->a_display) free(p);
 
-			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_to))) {
+			if ((full = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_to))) {
 				switch_channel_set_variable(channel, "sip_full_to", full);
-				su_free(nh->nh_home, full);
+				su_free(nua_handle_get_home(nh), full);
 			}
 		}
 
@@ -398,9 +398,9 @@ static void sofia_add_invite_header_to_chanvars(switch_channel_t *channel, nua_h
 
 	if (sip_header) {
 		char *full;
-		if ((full = sip_header_as_string(nh->nh_home, sip_header))) {
+		if ((full = sip_header_as_string(nua_handle_get_home(nh), sip_header))) {
 			switch_channel_set_variable(channel, var, full);
-			su_free(nh->nh_home, full);
+			su_free(nua_handle_get_home(nh), full);
 		}
 	}
 }
@@ -464,99 +464,99 @@ static void sofia_parse_all_invite_headers(sip_t const *sip, switch_core_session
 	if (sip->sip_via) {
 		sip_via_t *vp;
 		for (vp = sip->sip_via; vp; vp = vp->v_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_via", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if (sip->sip_record_route) {
 		sip_record_route_t *rrp;
 		for (rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
-			char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+			char *rr = sip_header_as_string(nua_handle_get_home(nh), (void *) rrp);
 			switch_channel_add_variable_var_check(channel, "sip_i_record_route", rr, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, rr);
+			su_free(nua_handle_get_home(nh), rr);
 		}
 	}
 
 	if (sip->sip_proxy_authorization) {
 		sip_proxy_authorization_t *vp;
 		for (vp = sip->sip_proxy_authorization; vp; vp = vp->au_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_proxy_authorization", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if (sip->sip_call_info) {
 		sip_call_info_t *vp;
 		for (vp = sip->sip_call_info; vp; vp = vp->ci_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_call_info", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if (sip->sip_accept) {
 		sip_accept_t *vp;
 		for (vp = sip->sip_accept; vp; vp = vp->ac_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_accept", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if (sip->sip_authorization) {
 		sip_authorization_t *vp;
 		for (vp = sip->sip_authorization; vp; vp = vp->au_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_authorization", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if ((alert_info = sip_alert_info(sip))) {
 		sip_alert_info_t *vp;
 		for (vp = alert_info; vp; vp = vp->ai_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_alert_info", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
 		sip_p_asserted_identity_t *vp;
 		for (vp = passerted; vp; vp = vp->paid_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_p_asserted_identity", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
 		sip_p_preferred_identity_t *vp;
 		for (vp = ppreferred; vp; vp = vp->ppid_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_p_preferred_identity", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if ((rpid = sip_remote_party_id(sip))) {
 		sip_remote_party_id_t *vp;
 		for (vp = rpid; vp; vp = vp->rpid_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_remote_party_id", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
 	if ((reply_to = sip_reply_to(sip))) {
 		sip_reply_to_t *vp;
 		for (vp = reply_to; vp; vp = vp->rplyto_next) {
-			char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+			char *v = sip_header_as_string(nua_handle_get_home(nh), (void *) vp);
 			switch_channel_add_variable_var_check(channel, "sip_i_reply_to", v, SWITCH_FALSE, SWITCH_STACK_PUSH);
-			su_free(nh->nh_home, v);
+			su_free(nua_handle_get_home(nh), v);
 		}
 	}
 
@@ -1031,7 +1031,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 	if (sip->sip_reason) {
-		char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+		char *reason_header = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_reason);
 
 		if (!zstr(reason_header)) {
 			switch_channel_set_variable(channel, "sip_reason", reason_header);
@@ -1641,7 +1641,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 		if (sip->sip_payload->pl_len != strlen(sip->sip_payload->pl_data)) {
-			sip->sip_payload->pl_data = su_strndup(nh->nh_home, sip->sip_payload->pl_data, sip->sip_payload->pl_len);
+			sip->sip_payload->pl_data = su_strndup(nua_handle_get_home(nh), sip->sip_payload->pl_data, sip->sip_payload->pl_len);
 		}
 	}
 
@@ -1669,7 +1669,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 
 			if (sip->sip_reason) {
-				char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+				char *reason_header = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_reason);
 
 				if (!zstr(reason_header)) {
 					switch_channel_set_variable(channel, "sip_reason", reason_header);
@@ -1997,11 +1997,11 @@ static void our_sofia_event_callback(nua_event_t event,
 				contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
 
 				call_id = sip->sip_call_id ? sip->sip_call_id->i_id : "";
-				full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
-				full_to = sip_header_as_string(nh->nh_home, (void *) sip->sip_to);
-				full_via = sip_header_as_string(nh->nh_home, (void *) sip->sip_via);
+				full_from = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from);
+				full_to = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_to);
+				full_via = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_via);
 
-				full_agent = sip_header_as_string(nh->nh_home, (void *) sip->sip_user_agent);
+				full_agent = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_user_agent);
 
 				switch_stun_random_string(to_tag, 12, NULL);
 
@@ -2048,7 +2048,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-				sip_to_tag(nh->nh_home, sip->sip_to, to_tag);
+				sip_to_tag(nua_handle_get_home(nh), sip->sip_to, to_tag);
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_TO(sip->sip_to), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
@@ -2271,14 +2271,14 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 							 de->nh, sofia_private, de->sip, de, (tagi_t *) de->data->e_tags);
 
 	nua_destroy_event(de->event);
-	su_free(nh->nh_home, de);
+	su_free(nua_handle_get_home(nh), de);
 
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
 	nua_handle_unref(nh);
-	nua_stack_unref(nua);
+	nua_unref(nua);
 }
 
 
@@ -2503,20 +2503,20 @@ void sofia_event_callback(nua_event_t event,
 	profile->queued_events++;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	de = su_alloc(nh->nh_home, sizeof(*de));
+	de = su_alloc(nua_handle_get_home(nh), sizeof(*de));
 	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
 	de->nh = nua_handle_ref(nh);
 	de->data = nua_event_data(de->event);
 	de->sip = sip_object(de->data->e_msg);
 	de->profile = profile;
-	de->nua = nua_stack_ref(nua);
+	de->nua = (nua_t *)su_home_ref(nua_get_home(nua));
 
 	if (event == nua_i_invite && !sofia_private) {
 		switch_core_session_t *session;
 		private_object_t *tech_pvt = NULL;
 
-		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
+		if (!(sofia_private = su_alloc(nua_handle_get_home(nh), sizeof(*sofia_private)))) {
 			abort();
 		}
 
@@ -2563,14 +2563,14 @@ void sofia_event_callback(nua_event_t event,
 		if (!sip || !sip->sip_call_id || zstr(sip->sip_call_id->i_id)) {
 			nua_respond(nh, 503, "INVALID INVITE", TAG_END());
 			nua_destroy_event(de->event);
-			su_free(nh->nh_home, de);
+			su_free(nua_handle_get_home(nh), de);
 
 			switch_mutex_lock(profile->flag_mutex);
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
 			nua_handle_unref(nh);
-			nua_stack_unref(nua);
+			nua_unref(nua);
 
 			goto end;
 		}
@@ -2601,14 +2601,14 @@ void sofia_event_callback(nua_event_t event,
 		} else {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 			nua_destroy_event(de->event);
-			su_free(nh->nh_home, de);
+			su_free(nua_handle_get_home(nh), de);
 
 			switch_mutex_lock(profile->flag_mutex);
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
 			nua_handle_unref(nh);
-			nua_stack_unref(nua);
+			nua_unref(nua);
 
 			goto end;
 		}
@@ -3326,7 +3326,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) || sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT)) {
-		sip_via_t *vias = nta_agent_via(profile->nua->nua_nta);
+		sip_via_t *vias = nta_agent_via(nua_get_agent(profile->nua));
 		sip_via_t *via = NULL;
 
 		for (via = vias; via; via = via->v_next) {
@@ -9620,9 +9620,9 @@ switch_status_t sofia_proxy_sip_i_message(nua_t *nua, sofia_profile_t *profile, 
 			}
 
 			nua_message(other_tech_pvt->nh,
-						TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(other_tech_pvt->nh->nh_home, ct))),
+						TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(nua_handle_get_home(other_tech_pvt->nh), ct))),
 						TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
-						TAG_IF(pl, SIPTAG_PAYLOAD_STR(su_strdup(other_tech_pvt->nh->nh_home, pl))),
+						TAG_IF(pl, SIPTAG_PAYLOAD_STR(su_strdup(nua_handle_get_home(other_tech_pvt->nh), pl))),
 						TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 						TAG_END());
 		}
@@ -9670,9 +9670,9 @@ switch_status_t sofia_proxy_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua
 			}
 
 			nua_info(other_tech_pvt->nh,
-					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(other_tech_pvt->nh->nh_home, ct))),
+					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(nua_handle_get_home(other_tech_pvt->nh), ct))),
 					 TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
-					 TAG_IF(pl, SIPTAG_PAYLOAD_STR(su_strdup(other_tech_pvt->nh->nh_home, pl))),
+					 TAG_IF(pl, SIPTAG_PAYLOAD_STR(su_strdup(nua_handle_get_home(other_tech_pvt->nh), pl))),
 					 TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 					 TAG_END());
 		}
@@ -10696,7 +10696,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if ((rpid = sip_remote_party_id(sip))) {
 		if (rpid->rpid_url->url_user) {
-			char *full_rpid_header = sip_header_as_string(nh->nh_home, (void *) rpid);
+			char *full_rpid_header = sip_header_as_string(nua_handle_get_home(nh), (void *) rpid);
 			from_user = rpid->rpid_url->url_user;
 			if (!zstr(full_rpid_header)) {
 				switch_channel_set_variable(channel, "sip_Remote-Party-ID", full_rpid_header);
@@ -10712,7 +10712,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
 		if (passerted->paid_url->url_user) {
-			char *full_paid_header = sip_header_as_string(nh->nh_home, (void *) passerted);
+			char *full_paid_header = sip_header_as_string(nua_handle_get_home(nh), (void *) passerted);
 			//char *full_paid_header = (char *)(passerted->paid_common->h_data);
 			from_user = passerted->paid_url->url_user;
 			if (!zstr(full_paid_header)) {
@@ -10735,7 +10735,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
 		if (ppreferred->ppid_url->url_user) {
-			char *full_ppid_header = sip_header_as_string(nh->nh_home, (void *) ppreferred);
+			char *full_ppid_header = sip_header_as_string(nua_handle_get_home(nh), (void *) ppreferred);
 			from_user = ppreferred->ppid_url->url_user;
 			if (!zstr(full_ppid_header)) {
 				switch_channel_set_variable(channel, "sip_P-Preferred-Identity", full_ppid_header);
@@ -11024,13 +11024,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if ((alert_info = sip_alert_info(sip))) {
-		char *tmp = sip_header_as_string(nh->nh_home, (void *) alert_info);
+		char *tmp = sip_header_as_string(nua_handle_get_home(nh), (void *) alert_info);
 		switch_channel_set_variable(channel, "alert_info", tmp);
-		su_free(nh->nh_home, tmp);
+		su_free(nua_handle_get_home(nh), tmp);
 	}
 
 	if ((call_info = sip_call_info(sip))) {
-		call_info_str = sip_header_as_string(nh->nh_home, (void *) call_info);
+		call_info_str = sip_header_as_string(nua_handle_get_home(nh), (void *) call_info);
 
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && switch_stristr("appearance", call_info_str)) {
 			char *p;
@@ -11051,7 +11051,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		call_info = call_info->ci_next;
 
 		while (call_info) {
-			call_info_str = sip_header_as_string(nh->nh_home, (void *) call_info);
+			call_info_str = sip_header_as_string(nua_handle_get_home(nh), (void *) call_info);
 			switch_channel_add_variable_var_check(channel, "sip_call_info", call_info_str, SWITCH_FALSE, SWITCH_STACK_PUSH);
 			call_info = call_info->ci_next;
 		}
@@ -11304,7 +11304,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 
 		if ((privacy = sip_privacy(sip))) {
-			char *full_priv_header = sip_header_as_string(nh->nh_home, (void *) privacy);
+			char *full_priv_header = sip_header_as_string(nua_handle_get_home(nh), (void *) privacy);
 			if (!zstr(full_priv_header)) {
 				switch_channel_set_variable(channel, "sip_Privacy", full_priv_header);
 			}
