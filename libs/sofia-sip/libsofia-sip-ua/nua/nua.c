@@ -234,8 +234,12 @@ void nua_destroy(nua_t *nua)
 #if HAVE_SMIME		/* Start NRC Boston */
     sm_destroy(nua->sm);
 #endif			/* End NRC Boston */
-    su_home_unref(nua->nua_home);
+	nua_unref(nua);
   }
+}
+
+void nua_unref(nua_t *nua) {
+	if (nua) su_home_unref(nua->nua_home);
 }
 
 /** Fetch callback context from nua.
@@ -1088,4 +1092,61 @@ nua_handle_t *nua_handle_by_call_id(nua_t *nua, const char *call_id)
     }
   }
   return NULL;
+}
+
+/** Get leg from dialog. */
+const nta_leg_t *nua_get_dialog_state_leg(nua_handle_t *nh)
+{
+	if (nh && nh->nh_ds)
+		return nh->nh_ds->ds_leg;
+	else
+		return NULL;
+}
+
+/** Get su_home_t from nua handle. */
+su_home_t *nua_handle_get_home(nua_handle_t *nh)
+{
+	if (nh && nh->nh_home)
+		return nh->nh_home;
+	else
+		return NULL;
+}
+
+/** Get su_home_t from nua. */
+su_home_t *nua_get_home(nua_t *nua)
+{
+	if (nua && nua->nua_home)
+		return nua->nua_home;
+	else
+		return NULL;
+}
+
+/** Get nta_agent_t from nua. */
+nta_agent_t *nua_get_agent(nua_t *nua)
+{
+	if (nua && nua->nua_nta)
+		return nua->nua_nta;
+	else
+		return NULL;
+}
+
+/** Set has invite of a nua handle */
+void nua_handle_set_has_invite(nua_handle_t *nh, unsigned val)
+{
+	if (nh)
+		nh->nh_has_invite = val;
+}
+
+/** Check if nua handle is destroyed */
+unsigned nua_handle_is_destroyed(nua_handle_t *nh)
+{
+	assert(nh);
+	return nh->nh_destroyed;
+}
+
+void nua_handle_dialog_usage_set_refresh_range(nua_handle_t *nh,
+	unsigned min, unsigned max) {
+	if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
+		nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, min, max);
+	}
 }
