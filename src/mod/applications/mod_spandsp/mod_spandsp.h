@@ -110,6 +110,7 @@ typedef enum {
 struct mod_spandsp_log_data {
 	switch_log_level_t verbose_log_level;
 	switch_core_session_t *session;
+	FILE *trace_file;
 };
 typedef struct mod_spandsp_log_data mod_spandsp_log_data_t;
 
