@@ -5011,6 +5011,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_validate_common_audio_sdp(switch_core_
 	uint32_t remote_codec_rate = 0, fmtp_remote_codec_rate = 0;
 	int m_idx = 0;
 	int nm_idx = 0;
+	const char *val;
 
 	switch_assert(session);
 
@@ -5123,6 +5124,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_validate_common_audio_sdp(switch_core_
 			if (!connection) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
 				return 0;
+			}
+
+			if (connection->c_addrtype == sdp_addr_ip6) {
+				if(switch_media_handle_test_media_flag(smh, SCMF_REJECT_IPV6)
+					|| ((val = switch_channel_get_variable(session->channel, "sdp_reject_ipv6")) && switch_true(val))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reject IPv6 media address: %s!\n"
+						, connection->c_address ? connection->c_address : "<MISSING>");
+					return 0;
+				}
 			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
@@ -5973,6 +5983,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
 				match = 0;
 				break;
+			}
+
+			if (connection->c_addrtype == sdp_addr_ip6) {
+				if(switch_media_handle_test_media_flag(smh, SCMF_REJECT_IPV6)
+					|| ((val = switch_channel_get_variable(session->channel, "sdp_reject_ipv6")) && switch_true(val))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reject IPv6 media address: %s!\n"
+						, connection->c_address ? connection->c_address : "<MISSING>");
+					match = 0;
+					break;
+				}
 			}
 
 			x = 0;

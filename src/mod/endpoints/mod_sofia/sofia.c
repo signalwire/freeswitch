@@ -5677,6 +5677,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_media_flag(profile, SCMF_REWRITE_TIMESTAMPS);
 						}
+					} else if (!strcasecmp(var, "sdp-reject-ipv6")) {
+						if (switch_true(val)) {
+							sofia_set_media_flag(profile, SCMF_REJECT_IPV6);
+						} else {
+							sofia_clear_media_flag(profile, SCMF_REJECT_IPV6);
+						}
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_CALLS);
