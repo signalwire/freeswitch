@@ -542,6 +542,8 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 
 		if (member->fnode->type != NODE_TYPE_SPEECH) {
 			conference_file_close(member->conference, member->fnode);
+		} else {
+			conference_speak_flush(member->conference, member->fnode);
 		}
 
 		fnode = member->fnode;
@@ -1586,6 +1588,7 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
 	fnode->pool = pool;
+	fnode->member_id = member->id;
 
 	
 	if (params) {

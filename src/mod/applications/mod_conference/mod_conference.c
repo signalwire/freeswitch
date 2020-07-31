@@ -727,6 +727,8 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			switch_mutex_lock(conference->file_mutex);
 			if (conference->fnode->type != NODE_TYPE_SPEECH) {
 				conference_file_close(conference, conference->fnode);
+			} else {
+				conference_speak_flush(conference, conference->fnode);
 			}
 
 			if (conference->canvases[0] && conference->fnode->layer_id > -1 ) {
