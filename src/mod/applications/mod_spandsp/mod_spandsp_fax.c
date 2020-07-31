@@ -1420,6 +1420,9 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		const char *trace_filename = switch_core_session_sprintf(session, "%s"SWITCH_PATH_SEPARATOR"fax-%s.log", tmp, switch_core_session_get_uuid(session));
 		switch_dir_make_recursive(tmp, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session));
 		pvt->trace_file = fopen(trace_filename, "w");
+		if (pvt->trace_file) {
+			switch_channel_set_variable(channel, "fax_trace_file", trace_filename);
+		}
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_force_caller"))) {
