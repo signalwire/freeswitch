@@ -39,6 +39,7 @@
 %define build_mod_ssml 1
 %define build_mod_v8 0
 %define build_mod_av 0
+%define build_mod_vlc 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -48,6 +49,7 @@
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
 %{?with_mod_av:%define build_mod_av 1 }
+%{?with_mod_vlc:%define build_mod_vlc 1 }
 
 %define nonparsedversion 1.7.0
 %define version %(echo '%{nonparsedversion}' | sed 's/-//g')
@@ -1159,6 +1161,17 @@ Requires:	%{name} = %{version}-%{release}
 %description format-tone-stream
 Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
 
+%if %{build_mod_vlc}
+%package format-vlc
+Summary:        Add H264 codec support playback and streaming to/from network
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+BuildRequires:  vlc-devel
+
+%description format-vlc
+Add H264 codec support playback and streaming to/from network.
+%endif
+
 ######################################################################################################################
 #				FreeSWITCH Programming Language Modules
 ######################################################################################################################
@@ -1543,6 +1556,9 @@ FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_op
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
+%endif
+%if %{build_mod_vlc}
+FORMATS_MODULES+=" formats/mod_vlc"
 %endif
 
 ######################################################################################################################
@@ -2398,6 +2414,11 @@ fi
 
 %files format-tone-stream
 %{MODINSTDIR}/mod_tone_stream.so*
+
+%if %{build_mod_vlc}
+%files format-vlc
+%{MODINSTDIR}/mod_vlc.so*
+%endif
 
 ######################################################################################################################
 #
