@@ -4383,6 +4383,10 @@ static switch_bool_t echo_func(const char *method, cJSON *params, jsock_t *jsock
 
 static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
+	switch_event_header_t *hi = NULL;
+	cJSON *obj;
+	const char *var;
+	
 	if (jsock->allowed_jsapi) {
 		const char *function;
 
@@ -4408,6 +4412,30 @@ static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 		}
 	}
 
+	obj = cJSON_CreateObject();
+	cJSON_AddItemToObject(obj, "verto_id", cJSON_CreateString((char *)jsock->id));
+	cJSON_AddItemToObject(obj, "verto_domain", cJSON_CreateString((char *)jsock->domain));
+	cJSON_AddItemToObject(obj, "verto_user", cJSON_CreateString((char *)jsock->uid));
+	cJSON_AddItemToObject(obj, "presence_id", cJSON_CreateString((char *)jsock->uid));
+	cJSON_AddItemToObject(obj, "verto_client_address", cJSON_CreateString((char *)jsock->name));
+	cJSON_AddItemToObject(obj, "chat_proto", cJSON_CreateString((char *)VERTO_CHAT_PROTO));
+	cJSON_AddItemToObject(obj, "verto_host", cJSON_CreateString((char *)jsock->domain));
+
+	for (hi = jsock->user_vars->headers; hi; hi = hi->next) {
+		cJSON_AddItemToObject(obj, hi->name, cJSON_CreateString((char *)hi->value));
+	}
+
+	if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
+		cJSON_AddItemToObject(obj, "caller-id-name", cJSON_CreateString((char *)var));
+	}
+
+	if ((var = switch_event_get_header(jsock->params, "caller-id-number"))) {
+		cJSON_AddItemToObject(obj, "caller-id-number", cJSON_CreateString((char *)var));
+	}
+
+	cJSON_AddItemToObject(params, "sockData", obj);
+
+		
 	switch_json_api_execute(params, NULL, response);
 
 	return *response ? SWITCH_TRUE : SWITCH_FALSE;
