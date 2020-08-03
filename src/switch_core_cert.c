@@ -36,6 +36,8 @@ static switch_mutex_t **ssl_mutexes;
 static switch_memory_pool_t *ssl_pool = NULL;
 static int ssl_count = 0;
 
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
+
 static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, int line)
 {
 	if (mode & CRYPTO_LOCK) {
@@ -50,6 +52,8 @@ static inline void switch_ssl_ssl_thread_id(CRYPTO_THREADID *id)
 {
 	CRYPTO_THREADID_set_numeric(id, (unsigned long)switch_thread_self());
 }
+
+#endif
 
 SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 {
@@ -69,8 +73,10 @@ SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 			switch_assert(ssl_mutexes[i] != NULL);
 		}
 
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
 		CRYPTO_THREADID_set_callback(switch_ssl_ssl_thread_id);
 		CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_ssl_ssl_lock_callback);
+#endif
 	}
 
 	ssl_count++;
