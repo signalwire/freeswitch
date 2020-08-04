@@ -333,6 +333,7 @@ Build-Depends:
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
  bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.12.12),
+ libspandsp-dev (>= 1.99),
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
 Standards-Version: 3.9.3
