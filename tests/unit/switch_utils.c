@@ -60,6 +60,12 @@ FST_TEST_BEGIN(benchmark)
     switch_url_encode(s, encoded, sizeof(encoded));
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "encoded: [%s]\n", encoded);
     fst_check_string_equals(encoded, "%26bry%C3%A4n%23!%E6%9D%9C%E9%87%91%E6%88%BF");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "check the switch_cut_path\n");
+	fst_check_string_equals(switch_cut_path("switch-cut-path"), "switch-cut-path");
+	fst_check_string_equals(switch_cut_path("switch/cut-path"), "cut-path");
+	fst_check_string_equals(switch_cut_path("switch/cut\\path"), "path");
+	fst_check_string_equals(switch_cut_path("switch\\cut/path"), "path");
 }
 FST_TEST_END()
 

@@ -2841,21 +2841,19 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
 {
-	const char *p, *ret = in;
-	const char delims[] = "/\\";
-	const char *i;
+	const char *p = in, *ret = in;
 
-	if (in) {
-		for (i = delims; *i; i++) {
-			p = in;
-			while ((p = strchr(p, *i)) != 0) {
-				ret = ++p;
-			}
-		}
-		return ret;
-	} else {
+	if (NULL == in) {
 		return NULL;
 	}
+	while ((p = strchr(ret, '/')) != NULL) {
+		ret = ++p;
+	}
+	while ((p = strchr(ret, '\\')) != NULL) {
+		ret = ++p;
+	}
+
+	return ret;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
