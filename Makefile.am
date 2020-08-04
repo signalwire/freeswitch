@@ -130,7 +130,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
 CORE_CFLAGS += -DSWITCH_HAVE_YUV
 endif
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
+CORE_CFLAGS += $(SPANDSP_CFLAGS)
 if ENABLE_LIBVPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX
 endif
@@ -184,13 +184,10 @@ endif
 ##
 ## libfreeswitch
 ##
-noinst_LTLIBRARIES        = libfreeswitch_spandsp.la
+noinst_LTLIBRARIES        =
 if ENABLE_LIBYUV
 noinst_LTLIBRARIES += libfreeswitch_libyuv.la
 endif
-libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc.c libs/spandsp/src/bit_operations.c
-libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
-CORE_LIBS+=libfreeswitch_spandsp.la
 
 if ENABLE_LIBYUV
 libfreeswitch_libyuv_la_SOURCES = \
@@ -251,7 +248,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -713,9 +710,7 @@ core-install: core_install
 
 clean_core: clean-libLTLIBRARIES
 	rm -f $(libfreeswitch_la_OBJECTS)
-	rm -f $(libfreeswitch_spandsp_la_OBJECTS)
 	rm -f `echo $(libfreeswitch_la_OBJECTS) | sed -e's|.lo|.o|g'`
-	rm -f `echo $(libfreeswitch_spandsp_la_OBJECTS) | sed -e's|.lo|.o|g'`
 
 install_core: install-libLTLIBRARIES
 
@@ -779,12 +774,6 @@ iks-reconf:
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	$(MAKE) mod_dingaling-clean
-
-spandsp-reconf:
-	cd libs/spandsp && $(MAKE) clean || echo
-	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	cd libs/spandsp && $(MAKE)
 
 cluecon:
 	@clear
