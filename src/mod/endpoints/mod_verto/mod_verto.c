@@ -3323,8 +3323,11 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 
 	if ((session = switch_core_session_locate(call_id))) {
 		tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-		
-		if (!strcasecmp(action, "updateMedia")) {
+
+		if (!strcasecmp(action, "videoRefresh")) {
+			switch_core_media_gen_key_frame(tech_pvt->session);
+			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
+		} else if (!strcasecmp(action, "updateMedia")) {
 			const char *sdp = NULL;
 			uint8_t match = 0, p = 0;
 
