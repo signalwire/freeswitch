@@ -34,6 +34,7 @@
 #include "private/switch_core_pvt.h"
 
 static const char *LEVELS[] = {
+	"DISABLE",
 	"CONSOLE",
 	"ALERT",
 	"CRIT",
@@ -301,7 +302,7 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 	if (level > SWITCH_LOG_DEBUG) {
 		level = SWITCH_LOG_DEBUG;
 	}
-	return LEVELS[level];
+	return LEVELS[level + 1];
 }
 
 static int switch_log_to_mask(switch_log_level_t level)
@@ -382,7 +383,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 		}
 
 		if (!strcasecmp(LEVELS[x], str)) {
-			level = (switch_log_level_t) x;
+			level = (switch_log_level_t)(x - 1);
 			break;
 		}
 	}
@@ -523,6 +524,10 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 #endif
 	switch_log_level_t limit_level = runtime.hard_log_level;
 	switch_log_level_t special_level = SWITCH_LOG_UNINIT;
+
+	if (limit_level == SWITCH_LOG_DISABLE) {
+		return;
+	}
 
 	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
 		switch_core_session_t *session = (switch_core_session_t *) userdata;

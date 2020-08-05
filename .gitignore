@@ -142,7 +142,6 @@ Release/
 /libs/libcodec2/unittest/Makefile
 /libs/libcodec2/unittest/Makefile.in
 /libs/mpg123-1.13.2/
-/libs/spandsp/src/cielab_luts.h
 /scripts/fsxs
 /scripts/gentls_cert
 
@@ -260,6 +259,8 @@ libs/libsilk-*/
 libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
 libs/ffmpeg-*/
+libs/sofia-sip*/
+libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
 src/mod/event_handlers/mod_rayo/test/test_iks
