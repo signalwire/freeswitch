@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-# FreeSWITCH features are generally contributed by the community.  If you are a developer and want to add a feature to FreeSWITCH, this can also be a good starting point for discussing it with the FreeSWITCH team prior to submitting your pull request.
+<!--FreeSWITCH features are generally contributed by the community.  If you are a developer and want to add a feature to FreeSWITCH, this can also be a good starting point for discussing it with the FreeSWITCH team prior to submitting your pull request.-->
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
