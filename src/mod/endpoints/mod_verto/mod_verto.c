@@ -3226,6 +3226,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 				ok = (int) attended_transfer(session, b_session);
 				if (!ok) {
 					cJSON_AddItemToObject(obj, "message", cJSON_CreateString("transfer failed"));
+					err = 1;
 				}
 				switch_core_session_rwunlock(b_session);
 			} else {
