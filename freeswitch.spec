@@ -1498,7 +1498,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 ######################################################################################################################
 APPLICATION_MODULES_AC="applications/mod_abstraction applications/mod_avmd applications/mod_blacklist \
 			applications/mod_callcenter  applications/mod_cidlookup \
-			applications/mod_commands applications/mod_conference applications/mod_curl"
+			applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_bfcp"
 APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applications/mod_distributor \
 			applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf \
 			applications/mod_expr "

@@ -1344,6 +1344,19 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
 	  return;
   }
 
+  if (sdp_media_has_bfcp(m)) {
+    if (*r) {
+      r += strspn(r, SPACE TAB);
+      if (!su_casematch(r, "*")) {
+        parsing_error(p, "m= invalid format for BFCP protocol, payload_code can only be an *");
+        return;
+      }
+    } else {
+      parsing_error(p, "m= invalid format for BFCP protocol, payload code * missing");
+      return;
+    }
+  }
+
   /* "normal" format list */
   if (*r) {
     sdp_list_t **fmt = &m->m_format;
@@ -1422,6 +1435,12 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
     m->m_proto = sdp_proto_tcp, m->m_proto_name = "TCP";
   else if (su_casematch(s, "TLS"))
     m->m_proto = sdp_proto_tls, m->m_proto_name = "TLS";
+  else if (su_casematch(s, "UDP/BFCP"))
+    m->m_proto = sdp_proto_udp_bfcp, m->m_proto_name = "UDP/BFCP";
+  else if (su_casematch(s, "TCP/BFCP"))
+    m->m_proto = sdp_proto_tcp_bfcp, m->m_proto_name = "TCP/BFCP";
+  else if (su_casematch(s, "TCP/TLS/BFCP"))
+    m->m_proto = sdp_proto_tcp_tls_bfcp, m->m_proto_name = "TCP/TLS/BFCP";
   else
     m->m_proto = sdp_proto_x, m->m_proto_name = s;
 }
@@ -1430,6 +1449,12 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
 int sdp_media_has_rtp(sdp_media_t const *m)
 {
 	return m && (m->m_proto == sdp_proto_rtp || m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp || m->m_proto == sdp_proto_extended_rtp);
+}
+
+/** Check if media uses BFCP as its transport protocol.  */
+int sdp_media_has_bfcp(sdp_media_t const *m)
+{
+	return m && (m->m_proto == sdp_proto_udp_bfcp || m->m_proto == sdp_proto_tcp_bfcp || m->m_proto == sdp_proto_tcp_tls_bfcp);
 }
 
 #define RTPMAP(pt, encoding, rate, params) \

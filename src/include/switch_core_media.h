@@ -90,6 +90,14 @@ typedef enum {
 	VAD_OUT = (1 << 1)
 } switch_core_media_vflag_t;
 
+
+typedef struct media_attribute_s {
+	int a_size;
+	struct media_attribute_s *a_next;
+	char *a_name;
+	char *a_value;
+} media_attribute_t;
+
 typedef struct switch_core_media_params_s {
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
@@ -311,6 +319,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  uint32_t channels,
 																  uint8_t negotiated);
 
+SWITCH_DECLARE(void) switch_core_media_set_media_attribute(switch_core_session_t *session, media_attribute_t *media_attribute, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_session_t *session);
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str);
 SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type);
@@ -318,7 +327,9 @@ SWITCH_DECLARE(int) switch_core_media_crypto_keysalt_len(switch_rtp_crypto_key_t
 SWITCH_DECLARE(int) switch_core_media_crypto_salt_len(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp, const char *cmd, const char *arg);
 SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session);
-
+SWITCH_DECLARE(media_attribute_t *) switch_core_media_get_media_attribute(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(payload_map_t *) switch_core_media_get_payload_map(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(media_proto_name_t *) switch_core_media_get_media_protocol(switch_core_session_t *session, switch_media_type_t type);
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session,
 																switch_media_type_t mtype,
@@ -388,6 +399,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t 
 SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t *session, const char *fmt, ...);
 
 SWITCH_DECLARE(switch_msrp_session_t *) switch_core_media_get_msrp_session(switch_core_session_t *session);
+
+/*!
+  \brief Retrieve the video_read codec from rtp_engine of current video
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_media_get_video_read_codec(switch_core_session_t *session);
+
+/*!
+  \brief Retrieve the video_write codec from rtp_engine of current video
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_media_get_video_write_codec(switch_core_session_t *session, int flag);
+
+
 SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session, switch_media_type_t type, switch_media_flow_t smode, switch_sdp_type_t sdp_type);
 																		
 SWITCH_END_EXTERN_C

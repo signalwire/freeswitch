@@ -213,10 +213,16 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_REMOTE_VIDEO_IP_VARIABLE "remote_video_ip"
 #define SWITCH_REMOTE_VIDEO_PORT_VARIABLE "remote_video_port"
+#define SWITCH_REMOTE_PRESENTATION_IP_VARIABLE "remote_presentation_ip"
+#define SWITCH_REMOTE_PRESENTATION_PORT_VARIABLE "remote_presentation_port"
 #define SWITCH_LOCAL_VIDEO_IP_VARIABLE "local_video_ip"
 #define SWITCH_LOCAL_VIDEO_PORT_VARIABLE "local_video_port"
+#define SWITCH_LOCAL_PRESENTATION_IP_VARIABLE "local_presentation_ip"
+#define SWITCH_LOCAL_PRESENTATION_PORT_VARIABLE "local_presentation_port"
 #define SWITCH_LOCAL_TEXT_IP_VARIABLE "local_text_ip"
 #define SWITCH_LOCAL_TEXT_PORT_VARIABLE "local_text_port"
+#define SWITCH_LOCAL_APPLICATION_IP_VARIABLE "local_application_ip"
+#define SWITCH_LOCAL_APPLICATION_PORT_VARIABLE "local_application_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
 #define SWITCH_PARK_AFTER_BRIDGE_VARIABLE "park_after_bridge"
 #define SWITCH_PARK_AFTER_EARLY_BRIDGE_VARIABLE "park_after_early_bridge"
@@ -237,7 +243,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
 #define SWITCH_DTMF_LOG_LEN 1000
 #define SWITCH_MAX_TRANS 2000
-#define SWITCH_CORE_SESSION_MAX_PRIVATES 2
+#define SWITCH_CORE_SESSION_MAX_PRIVATES 3
 #define SWITCH_DEFAULT_VIDEO_SIZE 1200
 #define SWITCH_RTCP_AUDIO_INTERVAL_MSEC "1000"
 #define SWITCH_RTCP_VIDEO_INTERVAL_MSEC "1000"
@@ -245,6 +251,13 @@ SWITCH_BEGIN_EXTERN_C
 #define TEXT_UNICODE_LINEFEED {0xe2, 0x80, 0xa8}
 #define MAX_FMTP_LEN 256
 
+/* BFCP */
+/* Channel variable to store local sdp of BFCP media */
+#define SWITCH_BFCP_LOCAL_SDP "bfcp_local_sdp"
+/* channel variable to store local sdp of BFCP media of peer_session */
+#define SWITCH_PEER_BFCP_LOCAL_SDP "peer_bfcp_local_sdp"
+#define SWITCH_PEER_BFCP_USERID "peer_bfcp_userid"
+#define BFCP "bfcp"
 /* Jitter */
 #define JITTER_VARIANCE_THRESHOLD 400.0
 /* IPDV */
@@ -258,7 +271,8 @@ typedef uint8_t switch_byte_t;
 
 typedef enum {
 	SWITCH_PVT_PRIMARY = 0,
-	SWITCH_PVT_SECONDARY
+	SWITCH_PVT_SECONDARY,
+	SWITCH_PVT_TERTIARY
 } switch_pvt_class_t;
 
 
@@ -592,6 +606,7 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_CORE_QUEUE_LEN 100000
 #define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
+#define SWITCH_MAX_VIDEO_MEDIA 2 /*Maximum video media can be handled*/
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
@@ -1618,6 +1633,14 @@ typedef enum {
 	CF_STREAM_CHANGED,
 	CF_ARRANGED_BRIDGE,
 	CF_STATE_REPEAT,
+	/* channel leg contains BFCP media */
+	CF_BFCP,
+	/* channel flag for early media BFCP */
+	CF_EARLY_MEDIA_BFCP,
+	/* Work for signaling that other leg contains BFCP media */
+	CF_PEER_BFCP,
+	/* Stream change due to change in BFCP protocol */
+	CF_BFCP_STREAM_CHANGE,
 	CF_WANT_DTLSv1_2,
 	CF_RFC7329_COMPAT,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
@@ -1834,9 +1857,10 @@ typedef enum {
 typedef enum {
 	SWITCH_MEDIA_TYPE_AUDIO,
 	SWITCH_MEDIA_TYPE_VIDEO,
-	SWITCH_MEDIA_TYPE_TEXT
+	SWITCH_MEDIA_TYPE_TEXT,
+	SWITCH_MEDIA_TYPE_APPLICATION
 } switch_media_type_t;
-#define SWITCH_MEDIA_TYPE_TOTAL 3
+#define SWITCH_MEDIA_TYPE_TOTAL 4
 
 
 /*!
@@ -2661,6 +2685,8 @@ typedef enum {
 	CRYPTO_KEY_PARAM_METHOD_INVALID
 } switch_rtp_crypto_key_param_method_type_t;
 
+typedef char const media_proto_name_t;
+
 typedef struct payload_map_s {
 	switch_media_type_t type;
 	switch_sdp_type_t sdp_type;
@@ -2693,7 +2719,6 @@ typedef struct payload_map_s {
 	int adv_channels;
 
 	struct payload_map_s *next;
-
 } payload_map_t;
 
 typedef enum {

@@ -143,6 +143,20 @@ Release/
 /libs/libcodec2/unittest/Makefile.in
 /libs/mpg123-1.13.2/
 /libs/spandsp/src/cielab_luts.h
+/dll
+/test
+/libs/libbfcp/bfcpmsg/*.o
+/libs/libbfcp/bfcpmsg/*.obj
+/libs/libbfcp/bfcpmsg/libbfcp*
+/libs/libbfcp/bfcpmsg/testcode*
+/libs/libbfcp/bfcpsrvclt/bfcpclt/*.o
+/libs/libbfcp/bfcpsrvclt/bfcpclt/*.obj
+/libs/libbfcp/bfcpsrvclt/bfcpclt/libbfcp*
+/libs/libbfcp/bfcpsrvclt/bfcpclt/bfcp_participant
+/libs/libbfcp/bfcpsrvclt/bfcpsrv/*.o
+/libs/libbfcp/bfcpsrvclt/bfcpsrv/*.obj
+/libs/libbfcp/bfcpsrvclt/bfcpsrv/libbfcp*
+/libs/libbfcp/bfcpsrvclt/bfcpsrv/bfcp_server
 /scripts/fsxs
 /scripts/gentls_cert
 

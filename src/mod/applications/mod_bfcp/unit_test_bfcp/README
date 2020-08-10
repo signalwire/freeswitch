@@ -1,0 +1,81 @@
+			                       FreeSWITCH BFCP INTEGRATION
+			                       ===========================
+
+********************************************************************************************************************************
+* NOTE: We used SIPp to verify the negotiation of BFCP only. There is no media flow involved in the SIPp scenario.             *
+*       SIPp scenario (we used) is attach in folder(SIPp) named uac.xml(legA) and uas.xml(legB) and also with telepresence     *
+* 	unit (Yealink VC120, Polycom HDX 8000). Call is initiated by Polycom or Yealink and screen in being shared by Polycom  *
+*       to Yealink.                                                                                                            *
+********************************************************************************************************************************
+
+
+Contents
+--------
+
+   1.  Steps to be followed
+   2.  Test Environment
+   3.  Running FreeSWITCH with BFCP
+
+
+================================================================================================================================
+
+1. Steps to be followed
+-----------------------
+
+	1. Building libbfcp (/libs/libbfcp)
+        -----------------------------------
+
+		1. Use the following command
+		   > cd libs/libbfcp
+		   > ./configure
+		   > make
+		   > make install
+		2. After the building the libbfcp, copy "libbfcprel.so" which is present in libbfcp/lib file in
+                   usr/lib and run the below command.
+		   > cd usr/lib
+		   > ldconfig
+
+	2. Flags needs to be added in sip-profile (usr/local/freeswitch/conf/sip-profile/internal.xml)
+        ----------------------------------------------------------------------------------------------
+		i.   <param name="send-display-update" value="false"/>
+		ii.  <param name="ignore_display_updates" value="true"/>
+		iii. <param name="caller-id-type" value="none"/>
+		iv.  <param name="pass-callee-id" value="false"/>
+		v.   <param name="accept-blind-reg" value="true"/>
+		vi.  <param name="accept-blind-auth" value="true"/>
+
+	3. Flags needs to be added in vars.xml (usr/local/freeswitch/conf/vars.xml)
+	---------------------------------------------------------------------------
+		i.   <X-PRE-PROCESS cmd="set" data="rtp_pass_codecs_on_stream_change=true"/>
+
+	4. Add the following line in modules.conf
+	-----------------------------------------
+		i.   applications/mod_bfcp
+	
+	5. Add or set the following line in dialplan (usr/local/freeswitch/conf/dialplan/default.xml)
+	---------------------------------------------------------------------------------------------
+		i.   <action application="set" data="rtp_secure_media=false"/>
+
+
+2. Test Environment
+-------------------
+	1. FreeSWITCH Version 1.9.0+git~20190610T114556Z~22418f14de~64bit (git 22418f1 2019-06-10 11:45:56Z 64bit)
+	2. Ubuntu 14.04 LTS
+	3. Telepresence Unit with BFCP enabled. (we used :- Yealink VC120, Polycom HDX 8000, SIPp with pcap support)
+	   (we tested the with codec H264)
+	4. SIPp version: SIPp v3.2-PCAP
+
+
+3. Running FreeSWITCH with BFCP
+-------------------------------
+	1. Configure the FreeSWICTH:
+	   > ./configure
+	   > make
+	   > make install
+	2. Run FreeSWITCH
+	3. Load mod bfcp:
+	   > load mod_bfcp
+	4. Register the users(Endpoints) with FreeSWITCH and make a call(bfcp enabled).
+
+
+

@@ -1,0 +1,24 @@
+
+<configuration name="bfcp.conf" description="bfcp applications">
+  <settings>
+   <!-- Port for bfcp-server (TCP) -->
+   <param name="bfcp-port" value="2344"/>
+
+   <!-- Maximum number of allowed concurrent conferences in a server -->
+   <param name="max-conference-per-server" value="1000"/>
+
+   <!-- Maximum number of floor in a conference -->
+   <param name="max-floor-per-conference" value="10"/>
+
+   <!-- Maximum number of requests a user can make for the same floor -->
+   <param name="max-floor-request-per-floor" value="5"/>
+
+   <!-- Time in seconds the system will wait for a ChairAction: (0 for default number) -->
+   <param name="wait-time-chair-action" value="120"/>
+
+   <!-- transport will be used to start the bfcp-server (0 for TCP/BFCP, 1 for TCP/TLS/BFCP) -->
+   <param name="bfcp-transport-tcp" value="0"/>
+   <!-- To open UDP connection for BFCP Server (0 -> No, 1 -> Yes) -->
+   <param name="bfcp-transport-udp" value="1"/>
+  </settings>
+</configuration>

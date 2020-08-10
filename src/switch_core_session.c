@@ -659,6 +659,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			const char *val;
 			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
 			const char *ep = NULL, *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+			const char *bfcp_local_sdp = switch_channel_get_variable(channel , SWITCH_BFCP_LOCAL_SDP);
 
 			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
@@ -684,6 +685,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, ep);
 			}
 
+			/* set channel flag in peer_channel if current channel has application BFCP in sdp and also
+			store local sdp for BFCP media which will later append to local sdp for FS -> clients of other channel */
+			if (switch_channel_test_flag(channel,CF_BFCP) && bfcp_local_sdp) {
+				switch_channel_set_flag(peer_channel, CF_PEER_BFCP);
+				switch_channel_set_variable(peer_channel, SWITCH_PEER_BFCP_LOCAL_SDP, bfcp_local_sdp);
+			}
 
 			if (switch_channel_test_flag(channel, CF_MSRPS) || switch_channel_test_flag(channel, CF_WANT_MSRPS)) {
 				switch_channel_set_flag(peer_channel, CF_WANT_MSRPS);
@@ -917,6 +924,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 			status = switch_core_media_receive_message(session, message);
 		}
 		if (status == SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_test_flag(session->channel, CF_BFCP)) {
+				switch_endpoint_interface_t *bfcp_endpoint_interface;
+				if ((bfcp_endpoint_interface = switch_loadable_module_get_endpoint_interface(BFCP)) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Module mod_bfcp not loaded\n");
+				}
+
+				if (bfcp_endpoint_interface) {
+					if (!bfcp_endpoint_interface->io_routines->receive_message) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Could not locate receive_message API for bfcp\n");
+					} else {
+						bfcp_endpoint_interface->io_routines->receive_message(session, message);
+					}
+
+				UNPROTECT_INTERFACE(bfcp_endpoint_interface);
+				}
+			}
 			if (session->endpoint_interface->io_routines->receive_message) {
 				status = session->endpoint_interface->io_routines->receive_message(session, message);
 			}
@@ -2167,6 +2190,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_SIMPLIFY] = 0;
 	flags[CF_VIDEO_READY] = 0;
 	flags[CF_VIDEO_DECODED_READ] = 0;
+	flags[CF_BFCP] = 0;
+	flags[CF_EARLY_MEDIA_BFCP] = 0;
+	flags[CF_PEER_BFCP] = 0;
+	flags[CF_BFCP_STREAM_CHANGE] = 0;
 
 	if (!(session = switch_core_session_request_uuid(endpoint_interface, direction, SOF_NO_LIMITS, pool, uuid))) {
 		return NULL;

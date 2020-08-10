@@ -1,0 +1,15 @@
+/dll
+/test
+/bfcpmsg/*.o
+/bfcpmsg/*.obj
+/bfcpmsg/libbfcp*
+/bfcpmsg/testcode*
+/bfcpsrvclt/bfcpclt/*.o
+/bfcpsrvclt/bfcpclt/*.obj
+/bfcpsrvclt/bfcpclt/libbfcp*
+/bfcpsrvclt/bfcpclt/bfcp_participant
+/bfcpsrvclt/bfcpsrv/*.o
+/bfcpsrvclt/bfcpsrv/*.obj
+/bfcpsrvclt/bfcpsrv/libbfcp*
+/bfcpsrvclt/bfcpsrv/bfcp_server
+*~

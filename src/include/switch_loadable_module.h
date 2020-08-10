@@ -292,6 +292,19 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 */
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, char fmtp_array[SWITCH_MAX_CODECS][MAX_FMTP_LEN], int arraylen, char **prefs, int preflen);
 
+
+/*!
+  \brief Retrieve the list of loaded codecs into an array based on another array showing the sorted order
+  \param array the array to populate
+  \param arraylen the max size in elements of the array
+  \param prefs the array of preferred codec names
+  \param preflen the size in elements of the
+  \param video_pt_count the pointer to array containing count of video payload count of each video media.
+  \return the number of elements added to the array
+  \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
+*/
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted2(const switch_codec_implementation_t **array, char fmtp_array[SWITCH_MAX_CODECS][MAX_FMTP_LEN], int arraylen, char **prefs, int preflen, int *video_pt_count);
+
 /*!
   \brief Execute a registered API command
   \param cmd the name of the API command to execute

@@ -533,6 +533,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
 	switch_channel_state_t state = CS_NEW, midstate = CS_DESTROY, endstate;
 	const switch_endpoint_interface_t *endpoint_interface;
+	switch_endpoint_interface_t *bfcp_endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	int silly = 0;
@@ -638,6 +639,22 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 							switch_event_fire(&event);
 						}
 					}
+
+					/* bfcp_endpoint_interface is used to call mod_bfcp API's */
+
+					if ((bfcp_endpoint_interface = switch_loadable_module_get_endpoint_interface(BFCP)) == 0) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Module mod_bfcp not loaded\n");
+					}
+
+					if (bfcp_endpoint_interface) {
+						if (!bfcp_endpoint_interface->state_handler->on_init) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Could not locate init state for bfcp\n");
+						} else {
+							bfcp_endpoint_interface->state_handler->on_init(session);
+						}
+
+					UNPROTECT_INTERFACE(bfcp_endpoint_interface);
+					}
 				}
 				break;
 			case CS_ROUTING:	/* Look for a dialplan and find something to do */
@@ -648,7 +665,25 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 				/* These other states are intended for prolonged durations so we do not signal lock for them */
 			case CS_EXECUTE:	/* Execute an Operation */
-				STATE_MACRO(execute, "EXECUTE");
+			    {
+					if (switch_channel_test_flag(session->channel, CF_BFCP)) {
+						if ((bfcp_endpoint_interface = switch_loadable_module_get_endpoint_interface(BFCP)) == 0) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Module mod_bfcp not loaded\n");
+						}
+
+						if (bfcp_endpoint_interface) {
+							if (!bfcp_endpoint_interface->state_handler->on_execute) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Could not locate execute state for bfcp\n");
+							} else {
+								bfcp_endpoint_interface->state_handler->on_execute(session);
+							}
+
+						UNPROTECT_INTERFACE(bfcp_endpoint_interface);
+						}
+					}
+
+					STATE_MACRO(execute, "EXECUTE");
+				}
 				break;
 			case CS_EXCHANGE_MEDIA:	/* loop all data back to source */
 				STATE_MACRO(exchange_media, "EXCHANGE_MEDIA");
@@ -725,6 +760,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 {
 	switch_channel_state_t state = CS_DESTROY, midstate = CS_DESTROY;
 	const switch_endpoint_interface_t *endpoint_interface;
+	switch_endpoint_interface_t *bfcp_endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	int proceed = 1;
@@ -747,6 +783,21 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	switch_assert(driver_state_handler != NULL);
 
 	STATE_MACRO(destroy, "DESTROY");
+
+	/* bfcp_endpoint_interface stores the object for endpoint interface of mod_bfcp and used to call mod_bfcp API's */
+	if (switch_channel_test_flag(session->channel, CF_BFCP)) {
+		if ((bfcp_endpoint_interface = switch_loadable_module_get_endpoint_interface(BFCP)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Module mod_bfcp not loaded\n");
+		} else	{
+			if (!bfcp_endpoint_interface->state_handler->on_destroy) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Could not locate destroy state for bfcp\n");
+			} else {
+				bfcp_endpoint_interface->state_handler->on_destroy(session);
+			}
+
+		UNPROTECT_INTERFACE(bfcp_endpoint_interface);
+		}
+	}
 
 	switch_channel_clear_device_record(session->channel);
 

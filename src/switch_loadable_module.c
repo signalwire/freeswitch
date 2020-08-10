@@ -2391,12 +2391,27 @@ static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool
 	module->shutting_down = SWITCH_TRUE;
 
 	if (shutdown) {
-		switch_loadable_module_unprocess(module);
 		if (module->switch_module_shutdown) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
 			module->status = module->switch_module_shutdown();
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
+		}
+
+		/* If mod_bfcp's switch_module_shutdown return SWITCH_STATUS_NOUNLOAD, then we will not destroy it's API and Endpoint interface
+		That's why we shifted switch_loadable_module_unprocess down so, that module's shutdown status can 1st analyzed*/
+		if (module->status == SWITCH_STATUS_NOUNLOAD && !strcmp(module->key, "mod_bfcp")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s is in use, cannot unload.\n", module->module_interface->module_name);
+			module->shutting_down = SWITCH_FALSE;
+
+			if (fail_if_busy && module->module_interface->rwlock) {
+				switch_thread_rwlock_unlock(module->module_interface->rwlock);
+			}
+
+			/* returning SWITCH_STATUS_FALSE so that it can be added back in loadable_module_list */
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_loadable_module_unprocess(module);
 		}
 	}
 
@@ -2946,6 +2961,164 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				}
 
 				array[i++] = imp;
+				goto found;
+
+			}
+
+		  found:
+
+			UNPROTECT_INTERFACE(codec_interface);
+
+			if (i > arraylen) {
+				break;
+			}
+
+		}
+
+	next_x:
+
+		continue;
+	}
+
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	switch_loadable_module_sort_codecs(array, i);
+
+	return i;
+}
+
+
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted2(const switch_codec_implementation_t **array, char fmtp_array[SWITCH_MAX_CODECS][MAX_FMTP_LEN], int arraylen, char **prefs, int preflen, int *video_pt_count)
+{
+	int x, i = 0, j = 0, video_count = 0, audio_count = 0;
+	switch_codec_interface_t *codec_interface;
+	const switch_codec_implementation_t *imp;
+
+	switch_mutex_lock(loadable_modules.mutex);
+
+	for (x = 0; x < preflen; x++) {
+		char *name, buf[256], jbuf[256], *modname = NULL, *fmtp = NULL;
+		uint32_t interval = 0, rate = 0, bit = 0, channels = 1;
+
+		switch_copy_string(buf, prefs[x], sizeof(buf));
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit, &channels, &modname, &fmtp);
+
+		for(j = 0; j < x; j++) {
+			char *jname, *jmodname = NULL, *jfmtp = NULL;
+			uint32_t jinterval = 0, jrate = 0, jbit = 0, jchannels = 1;
+			uint32_t ointerval = interval, orate = rate, ochannels = channels;
+
+			if (ointerval == 0) {
+				ointerval = switch_default_ptime(name, 0);
+			}
+
+			if (orate == 0) {
+				orate = switch_default_rate(name, 0);
+			}
+
+			if (ochannels == 0) {
+				ochannels = 1;
+			}
+
+			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit, &jchannels, &jmodname, &jfmtp);
+
+			if (jinterval == 0) {
+				jinterval = switch_default_ptime(jname, 0);
+			}
+
+			if (jrate == 0) {
+				jrate = switch_default_rate(jname, 0);
+			}
+
+			if (jchannels == 0) {
+				jchannels = 1;
+			}
+
+			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate && ochannels == jchannels &&
+				!strcasecmp(switch_str_nil(fmtp), switch_str_nil(jfmtp))) {
+					if (video_count != 0) {
+						int a, b;
+						a = j - audio_count + 1;
+						b = x - audio_count + 1;
+
+						if (!(video_pt_count[0] >= a && video_pt_count[0] < b)) {
+							goto next_x;
+						}
+					} else {
+						goto next_x;
+					}
+			}
+		}
+
+		if ((codec_interface = switch_loadable_module_get_codec_interface(name, modname)) != 0) {
+			/* If no specific codec interval is requested opt for the default above all else because lots of stuff assumes it */
+			for (imp = codec_interface->implementations; imp; imp = imp->next) {
+				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+				uint32_t default_rate = switch_default_rate(imp->iananame, imp->ianacode);
+
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
+
+					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
+						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
+						continue;
+					}
+
+					if (((!rate && crate != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
+						continue;
+					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+
+					if (channels && imp->number_of_channels != channels) {
+						continue;
+					}
+				}
+
+				if (!zstr(fmtp)) {
+					switch_set_string(fmtp_array[i], fmtp);
+				}
+				array[i++] = imp;
+				if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {  /* Updates video count in current codec parsed is of video media */
+					video_count++;
+				} else if (imp->codec_type == SWITCH_CODEC_TYPE_AUDIO) {
+					audio_count++;
+				}
+				goto found;
+
+			}
+
+			/* Either looking for a specific interval or there was no interval specified and there wasn't one at the default ptime available */
+			for (imp = codec_interface->implementations; imp; imp = imp->next) {
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
+
+					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
+						continue;
+					}
+
+					if (rate && (uint32_t) crate != rate) {
+						continue;
+					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+
+					if (channels && imp->number_of_channels != channels) {
+						continue;
+					}
+				}
+
+				array[i++] = imp;
+				if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) { /* Updates video count in current codec parsed is of video media */
+					video_count++;
+				} else if (imp->codec_type == SWITCH_CODEC_TYPE_AUDIO) {
+					audio_count++;
+				}
 				goto found;
 
 			}

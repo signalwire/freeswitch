@@ -175,7 +175,17 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 		if (switch_channel_media_up(channel)) {
-			if (switch_core_session_transcoding(vh->session_a, vh->session_b, SWITCH_MEDIA_TYPE_VIDEO)) {
+			/* Not using session level API for getting read and write codec because we have multiple video media */
+			// switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
+			// switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
+
+			/* For implementing multiple video stream, we are using media specific API to get codec for particular video stream */
+			switch_codec_t *a_codec = switch_core_media_get_video_read_codec(vh->session_a);
+			switch_codec_t *b_codec = switch_core_media_get_video_write_codec(vh->session_b, 1);
+
+			if (!a_codec || !b_codec || !a_codec->implementation || !b_codec->implementation) continue;
+
+if (switch_core_session_transcoding(vh->session_a, vh->session_b, SWITCH_MEDIA_TYPE_VIDEO)) {
 				pass_val = 1;
 			} else {
 				pass_val = 2;
