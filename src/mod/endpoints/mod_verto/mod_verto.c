@@ -3223,8 +3223,8 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			}
 
 			if ((b_session = switch_core_session_locate(replace_call_id))) {
-				err = (int) attended_transfer(session, b_session);
-				if (err) {
+				ok = (int) attended_transfer(session, b_session);
+				if (!ok) {
 					cJSON_AddItemToObject(obj, "message", cJSON_CreateString("transfer failed"));
 				}
 				switch_core_session_rwunlock(b_session);
