@@ -9051,6 +9051,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		//	goto video;
 		//}
 
+		if (!t_engine->cur_payload_map) {
+			goto text_up;
+		}
+
 		if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && t_engine->cur_payload_map->rm_encoding && t_engine->cur_payload_map->remote_sdp_port) {
 			/******************************************************************************************/
 			if (t_engine->rtp_session && is_reinvite) {
