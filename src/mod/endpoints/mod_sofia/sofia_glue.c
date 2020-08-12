@@ -1270,7 +1270,24 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (zstr(tech_pvt->invite_contact)) {
 			const char *contact;
-			if ((contact = switch_channel_get_variable(channel, "sip_contact_user"))) {
+			const char *contactHost;
+			if ((contact = switch_channel_get_variable(channel, "sip_contact_user")) && (contactHost = switch_channel_get_variable(channel, "sip_contact_host"))) {
+                                if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+                                        tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s:%d", contact,
+                                                                                                                                                   contactHost, tech_pvt->profile->tls_sip_port);
+                                } else {
+                                        tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s:%d", contact,
+                                                                                                                                                   contactHost, tech_pvt->profile->extsipport);
+                                }
+                        } else if ((contactHost = switch_channel_get_variable(channel, "sip_contact_host"))) {
+				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+                                        tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:mod_sofia@%s:%d", contactHost,
+                                                                                                                                                   tech_pvt->profile->tls_sip_port);
+                                } else {
+                                        tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:mod_sofia@%s:%d", contactHost,
+                                                                                                                                                   tech_pvt->profile->extsipport);
+                                }
+			} else if ((contact = switch_channel_get_variable(channel, "sip_contact_user"))) {
 				char *ip_addr = tech_pvt->profile->sipip;
 				char *ipv6;
 
