@@ -334,6 +334,8 @@ Build-Depends:
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
  bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.12.12),
  libspandsp3-dev,
+# used to format the private freeswitch apt-repo key properly
+ gnupg,
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
 Standards-Version: 3.9.3
