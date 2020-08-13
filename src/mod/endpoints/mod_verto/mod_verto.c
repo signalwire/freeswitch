@@ -970,10 +970,10 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		} else if (switch_true(jsock->profile->userauth)) {
 			id = switch_core_strdup(jsock->pool, login);
 
-			if ((domain = strchr(id, '@'))) {
+			if (jsock->profile->chop_domain && (domain = strchr(id, '@'))) {
 				*domain++ = '\0';
 			}
-
+			
 		}
 
 		if (jsock->profile->register_domain) {
@@ -5065,7 +5065,7 @@ static switch_status_t parse_config(const char *cf)
 
 			profile->mcast_sub.sock = KS_SOCK_INVALID;
 			profile->mcast_pub.sock = KS_SOCK_INVALID;
-
+			profile->chop_domain = SWITCH_TRUE;
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -5107,6 +5107,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->blind_reg = switch_true(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
 					profile->userauth = switch_core_strdup(profile->pool, val);
+				} else if (!strcasecmp(var, "chop-domain") && !zstr(val)) {
+					profile->chop_domain = switch_true(val);
 				} else if (!strcasecmp(var, "root-password") && !zstr(val)) {
 					profile->root_passwd = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "send-auth-password") && !zstr(val)) {
