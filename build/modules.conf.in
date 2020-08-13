@@ -173,6 +173,7 @@ xml_int/mod_xml_scgi
 ## Out of tree modules - open issues in their respective repositories
 #mod_coreclr|https://github.com/freeswitch/mod_coreclr.git -b master
 #mod_janus|https://github.com/freeswitch/mod_janus.git -b master
+#mod_morse|https://github.com/signalwire/mod_morse.git -b master
 #mod_mosquitto|https://github.com/freeswitch/mod_mosquitto.git -b master
 
 ## Experimental Modules (don't cry if they're broken)
