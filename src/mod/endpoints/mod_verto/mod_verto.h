@@ -241,7 +241,8 @@ struct verto_profile_s {
 	int ssl_ready;
 	int ready;
 	int debug;
-
+	int chop_domain;
+	
 	int in_thread;
 	int blind_reg;
 
