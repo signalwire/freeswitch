@@ -1733,6 +1733,10 @@ static void our_sofia_event_callback(nua_event_t event,
 					switch_channel_set_variable(channel, "sip_call_id", sip->sip_call_id->i_id);
 				}
 
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+				}
+
 				extract_header_vars(profile, sip, session, nh);
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
@@ -7111,8 +7115,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			}
 
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+				 switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+			}
+
 			extract_header_vars(profile, sip, session, nh);
 			extract_vars(profile, sip, session);
+			switch_core_recovery_track(session);
 			switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		}
 

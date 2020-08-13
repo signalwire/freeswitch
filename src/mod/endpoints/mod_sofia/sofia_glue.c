@@ -2235,7 +2235,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	const char *rr;
 	int r = 0;
 	const char *profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
-
+	int swap = switch_channel_var_true(channel, "dlg_req_swap_direction");
 
 	if (zstr(profile_name)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Missing profile\n");
@@ -2275,10 +2275,9 @@ int sofia_recover_callback(switch_core_session_t *session)
 	rr = switch_channel_get_variable(channel, "sip_invite_record_route");
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-		int break_rfc = switch_true(switch_channel_get_variable(channel, "sip_recovery_break_rfc"));
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_req_uri"));
-		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, break_rfc ? "sip_full_to" : "sip_full_from"));
-		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, break_rfc ? "sip_full_from" : "sip_full_to"));
+		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, swap ? "sip_full_to" : "sip_full_from"));
+		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, swap ? "sip_full_from" : "sip_full_to"));
 	} else {
 		const char *contact_params = switch_channel_get_variable(channel, "sip_contact_params");
 		const char *contact_uri = switch_channel_get_variable(channel, "sip_contact_uri");
@@ -2297,11 +2296,11 @@ int sofia_recover_callback(switch_core_session_t *session)
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_from_uri"));
 
 		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_from", SWITCH_FALSE, -1)) {
-			switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, "sip_full_to"));
+			switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, swap ? "sip_full_from" :"sip_full_to"));
 		}
 
 		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_to", SWITCH_FALSE, -1)) {
-			switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_from"));
+			switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, swap ? "sip_full_to" : "sip_full_from"));
 		}
 	}
 
