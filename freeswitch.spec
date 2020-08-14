@@ -4,7 +4,7 @@
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
-#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
+#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru
 #		      and others
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
@@ -959,52 +959,6 @@ Requires:       %{name} = %{version}-%{release}
 %description endpoint-rtc
 Verto protocol support for FreeSWITCH open source telephony platform.
 
-%package freetdm
-Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description freetdm
-FreeTDM
-
-%if %{build_sng_isdn}
-
-%package freetdm-sng-isdn
-Summary:	Sangoma ISDN Module for FreeTDM
-Group:		System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_isdn 
-BuildRequires: wanpipe 
-BuildRequires: libsng_isdn 
-
-%description freetdm-sng-isdn
-Sangoma ISDN Module for freetdm
-
-%endif
-
-%if %{build_sng_ss7}
-
-%package freetdm-sng-ss7
-Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH, Sangoma SS7 Module
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_ss7 
-BuildRequires: wanpipe 
-BuildRequires: libsng_ss7 
-%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
-Requires: openssl098e
-BuildRequires: openssl098e
-%endif
-
-%description freetdm-sng-ss7
-Sangoma SMG-SS7 drivers for FreeTDM
-
-%endif
-
 ######################################################################################################################
 #				FreeSWITCH Event Handler Modules
 ######################################################################################################################
@@ -1567,7 +1521,7 @@ DIRECTORIES_MODULES=""
 #						Endpoints
 #
 ######################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
+ENDPOINTS_MODULES="endpoints/mod_dingaling \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
@@ -2351,32 +2305,6 @@ fi
 %files endpoint-rtc
 %{MODINSTDIR}/mod_rtc.so*
 
-######################################################################################################################
-#
-#						FreeTDM Module for TDM Interaction
-#
-######################################################################################################################
-%files freetdm
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/tones.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/freetdm.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/pika.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/freetdm.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/wanpipe.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/zt.conf
-%{LIBDIR}/libfreetdm.so*
-%{MODINSTDIR}/mod_freetdm.so*
-%{MODINSTDIR}/ftmod_skel*.so*
-%{MODINSTDIR}/ftmod_[a-r,t-z]*.so*
-
-%if %{build_sng_ss7}
-%files freetdm-sng-ss7
-%{MODINSTDIR}/ftmod_sangoma_ss7.so*
-%endif
-
-%if %{build_sng_isdn}
-%files freetdm-sng-isdn
-%{MODINSTDIR}/ftmod_sangoma_isdn.so*
-%endif
 
 ######################################################################################################################
 #
