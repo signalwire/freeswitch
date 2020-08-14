@@ -14,7 +14,8 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: true
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
@@ -28,7 +29,8 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: true
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
@@ -37,7 +39,8 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: true
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - make install || true
       - cd tests/unit
       - ./run-tests.sh
@@ -83,7 +86,8 @@ steps:
       image: signalwire/freeswitch-public-base:stretch
       pull: true
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -113,7 +117,8 @@ steps:
       image: signalwire/freeswitch-public-base:stretch
       pull: true
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - mkdir -p scan-build
       - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
@@ -144,6 +149,6 @@ trigger:
 
 ---
 kind: signature
-hmac: c48137f0dee8c2825711979e2c490367a2467a92866d3dfa11cf340a113dbf53
+hmac: 847aeb3791f682fe44b2e401a7a2b6ebbf06830e67046745459a31b32a7da2f3
 
 ...

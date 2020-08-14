@@ -153,7 +153,7 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: sofia-sip-devel >= 1.12.12
-BuildRequires: spandsp-devel >= 1.99
+BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
