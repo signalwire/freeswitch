@@ -76,7 +76,7 @@ FST_TEST_BEGIN(b64)
     switch_size_t size = switch_b64_decode((const char *)b64_str, decoded_str, sizeof(decoded_str));
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "decoded_str: %s\n", decoded_str);
     fst_check_string_equals(decoded_str, str);
-    fst_check(size == 3);
+    fst_check(size == 4);
 }
 FST_TEST_END()
 
