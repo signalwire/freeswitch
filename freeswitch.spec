@@ -160,11 +160,7 @@ BuildRequires: sqlite-devel
 BuildRequires: libtiff-devel
 BuildRequires: ldns-devel
 BuildRequires: libedit-devel
-BuildRequires: perl
 BuildRequires: yasm
-%if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
-BuildRequires: perl-ExtUtils-Embed
-%endif
 BuildRequires: pkgconfig
 %if 0%{?rhel} < 6 && 0%{?fedora} <= 6
 BuildRequires: termcap
@@ -1184,11 +1180,15 @@ Requires:	%{name} = %{version}-%{release}
 
 %description	lua
 
-%package	perl
-Summary:	Perl support for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:	%{name} = %{version}-%{release}
-Requires:	perl
+%package        perl
+Summary:        Perl support for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       perl
+BuildRequires:  perl-devel
+BuildRequires:  perl-ExtUtils-Embed
+BuildRequires:  gdbm-devel
+BuildRequires:  libdb-devel
 
 %description	perl
 
