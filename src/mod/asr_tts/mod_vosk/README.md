@@ -33,3 +33,5 @@ Run the following sample dialplan:
 ```
 git clone --branch vosk-fix --single-branch https://github.com/alphacep/libks
 ```
+
+You can create more advanced dealplans with ESL and scripts in various languages. See examples in scripts folder.
