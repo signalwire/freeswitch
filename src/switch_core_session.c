@@ -1271,6 +1271,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_queue_t *queue;
 	const char* call_control = 0;
+	const char* telnyx_fax = 0;
 	switch_channel_t* channel = 0;
 
 	switch_assert(session != NULL);
@@ -1279,7 +1280,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	channel = switch_core_session_get_channel(session);
 	if (channel) {
 		call_control = switch_channel_get_variable_dup(channel, "call_control", SWITCH_FALSE, -1);
-		if (call_control && switch_true(call_control)) {
+		telnyx_fax = switch_channel_get_variable_dup(channel, "telnyx_fax", SWITCH_FALSE, -1);
+		if ((call_control && switch_true(call_control)) || (telnyx_fax && switch_true(telnyx_fax))) {
 			switch_channel_event_set_extended_data(channel, *event);
 		}
 	}
