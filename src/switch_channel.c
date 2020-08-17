@@ -2695,14 +2695,17 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_event_header_t *hi;
 	int global_verbose_events = -1;
 	const char* call_control = 0;
+	const char* telnyx_fax = 0;
 
 	switch_mutex_lock(channel->profile_mutex);
 
 	switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &global_verbose_events);
 	
 	call_control = switch_channel_get_variable_dup(channel, "call_control", SWITCH_FALSE, -1);
+	telnyx_fax = switch_channel_get_variable_dup(channel, "telnyx_fax", SWITCH_FALSE, -1);
 
-	if ((call_control && switch_true(call_control)) || global_verbose_events ||
+	if ((call_control && switch_true(call_control)) || 
+		(telnyx_fax && switch_true(telnyx_fax)) || global_verbose_events ||
 		switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
 		switch_event_get_header(event, "presence-data-cols") ||
 		event->event_id == SWITCH_EVENT_CHANNEL_CREATE ||
@@ -2740,6 +2743,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 
 		if ((call_control && switch_true(call_control))) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_control", "true");
+		}
+
+		if ((telnyx_fax && switch_true(telnyx_fax))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_fax", "true");
 		}
 		/* Index Variables */
 
