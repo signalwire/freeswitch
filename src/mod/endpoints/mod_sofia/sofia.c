@@ -10725,6 +10725,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
+	if (sofia_test_media_flag(profile, SCMF_REJECT_IPV6) && sip->sip_payload && sip->sip_payload->pl_data 
+		&& switch_stristr("c=IN IP6", sip->sip_payload->pl_data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reject IPv6 media address!\n");
+		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+		goto fail;
+	}
+
 	if (sip->sip_via) {
 		char tmp[35] = "";
 		const char *ipv6 = strchr(tech_pvt->mparams.remote_ip, ':');
