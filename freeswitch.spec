@@ -158,13 +158,8 @@ BuildRequires: pcre-devel
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
 BuildRequires: libtiff-devel
-BuildRequires: ldns-devel
 BuildRequires: libedit-devel
-BuildRequires: perl
 BuildRequires: yasm
-%if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
-BuildRequires: perl-ExtUtils-Embed
-%endif
 BuildRequires: pkgconfig
 %if 0%{?rhel} < 6 && 0%{?fedora} <= 6
 BuildRequires: termcap
@@ -176,38 +171,17 @@ BuildRequires: db-devel
 %else
 BuildRequires: db4-devel
 %endif
-BuildRequires: python-devel
 BuildRequires: libogg-devel
 BuildRequires: libvorbis-devel
 BuildRequires: libjpeg-devel
 #BuildRequires: mono-devel
-BuildRequires: alsa-lib-devel
 BuildRequires: which
 BuildRequires: zlib-devel
 BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
-BuildRequires: bison
-BuildRequires: net-snmp-devel
-BuildRequires: libmemcached-devel
-BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
-BuildRequires: broadvoice-devel
-BuildRequires: flite-devel
-BuildRequires: ilbc2-devel 
-BuildRequires: g722_1-devel
-BuildRequires: codec2-devel
-BuildRequires: libsilk-devel
 BuildRequires: libyuv-devel >= 0.0.1280
-BuildRequires: lua-devel
-BuildRequires: mongo-c-driver-devel
-BuildRequires: opus-devel
-BuildRequires: soundtouch-devel >= 1.7.1
-%if %{build_py26_esl}
-BuildRequires: python26-devel
-Requires: python26
-%endif
-Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
 Requires: curl
@@ -225,7 +199,6 @@ Requires: db4
 Requires: gdbm
 Requires: zlib
 Requires: libtiff
-Requires: python
 Requires: libtheora
 Requires: libxml2
 Requires: libsndfile
@@ -385,6 +358,7 @@ Engine. Uses ODBC to connect to the DB of your choice.
 Summary:	FreeSWITCH mod_enum
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  ldns-devel
 
 %description application-enum
 Provides FreeSWITCH mod_enum, a ENUM dialplan, with API and Dialplan extensions 
@@ -492,6 +466,7 @@ Provides FreeSWITCH mod_limit, provide application to limit both concurrent and 
 Summary:	FreeSWITCH mod_memcache
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libmemcached-devel
 
 %description application-memcache
 Provides FreeSWITCH mod_memcache, implements an API interface to memcached which
@@ -503,6 +478,7 @@ alleviating database load."
 Summary:	FreeSWITCH mod_mongo
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:  mongo-c-driver-devel
 
 %description application-mongo
 Provides FreeSWITCH mod_mongo, which implements an API interface to mongodb.
@@ -584,6 +560,7 @@ and appearance of the programmable softkeys on Snom phones
 Summary:	FreeSWITCH mod_soundtouch
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  soundtouch-devel >= 1.7.1
 
 %description application-soundtouch
 Provides FreeSWITCH mod_soundtouch, uses the soundtouch library, which can do
@@ -660,6 +637,8 @@ system for backend voicemail systems
 Summary:	FreeSWITCH mod_flite
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       flite >= 2.0.0
+BuildRequires:  flite-devel >= 2.0.0
 
 %description asrtts-flite
 Provides FreeSWITCH mod_flite, a interface to the flite text to speech engine
@@ -668,6 +647,7 @@ Provides FreeSWITCH mod_flite, a interface to the flite text to speech engine
 Summary:	FreeSWITCH mod_pocketsphinx
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  bison
 
 %description asrtts-pocketsphinx
 Provides FreeSWITCH mod_pocketsphinx, a interface to the OpenSource 
@@ -717,6 +697,7 @@ Pass-through AMR WideBand Codec support for FreeSWITCH open source telephony pla
 Summary:        BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  broadvoice-devel
 
 %description codec-bv
 BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source telephony platform
@@ -725,6 +706,7 @@ BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source 
 Summary:        Codec2 Narrow Band Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  codec2-devel
 
 %description codec-codec2
 CODEC2 narrow band codec support for FreeSWITCH open source telephony platform.
@@ -761,6 +743,7 @@ Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:       ilbc2
+BuildRequires:  ilbc2-devel 
 
 
 %description codec-ilbc
@@ -794,6 +777,8 @@ MP4V Video Codec support for FreeSWITCH open source telephony platform
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       opus >= 1.1
+BuildRequires:  opus-devel >= 1.1
 
 %description codec-opus
 OPUS Codec support for FreeSWITCH open source telephony platform
@@ -815,6 +800,7 @@ Sangoma D100 and D500 Codec Card Support
 Summary:        Silk Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libsilk-devel
 
 %description codec-silk
 Silk Codec (from Skype) support for FreeSWITCH open source telephony platform
@@ -823,6 +809,7 @@ Silk Codec (from Skype) support for FreeSWITCH open source telephony platform
 Summary:        Siren Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  g722_1-devel
 
 %description codec-siren
 Siren Codec support for FreeSWITCH open source telephony platform. Using 
@@ -921,6 +908,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:	alsa-lib
 BuildRequires:	alsa-lib-devel
+BuildRequires:	portaudio-devel
 
 %description endpoint-portaudio
 PortAudio endpoint support for FreeSWITCH open source telephony platform.
@@ -966,7 +954,8 @@ Verto protocol support for FreeSWITCH open source telephony platform.
 %package event-cdr-mongodb
 Summary:	MongoDB CDR Logger for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+BuildRequires:  mongo-c-driver-devel
 
 %description event-cdr-mongodb
 MongoDB CDR Logger for FreeSWITCH
@@ -1112,6 +1101,7 @@ a native format sound file is available then FreeSWITCH can use it.
 Summary:	PortAudio Media Steam support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:	portaudio-devel
 
 %description format-portaudio-stream
 Portaudio Streaming interface Audio for FreeSWITCH
@@ -1181,6 +1171,7 @@ Implements TGML Tone Generation for the FreeSWITCH open source telephony platfor
 Summary:	Lua support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:  lua-devel
 
 %description	lua
 
@@ -1189,6 +1180,8 @@ Summary:	Perl support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	perl
+BuildRequires:	perl-devel
+BuildRequires:	perl-ExtUtils-Embed
 
 %description	perl
 
@@ -1196,7 +1189,8 @@ Requires:	perl
 Summary:        Python support for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:	python
+Requires:       python
+BuildRequires:  python-devel
 
 %description    python
 
@@ -1343,6 +1337,8 @@ The Perl ESL module allows for native interaction with FreeSWITCH over the event
 %package	-n python-ESL
 Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 Group:		System Environment/Libraries
+Requires:	python
+BuildRequires:	python-devel
 
 %description	-n python-ESL
 The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
