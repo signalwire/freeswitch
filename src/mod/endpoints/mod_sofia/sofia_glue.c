@@ -133,6 +133,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		}
 	}
 
+	tech_pvt->cid_type = tech_pvt->profile->cid_type;
 	tech_pvt->session = session;
 	tech_pvt->channel = switch_core_session_get_channel(session);
 
