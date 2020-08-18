@@ -25,7 +25,7 @@
 #                 Ken Rice <krice@freeswitch.org>
 #                 Chris Rienzo <crienzo@grasshopper.com>
 #
-# Maintainer(s): Ken Rice <krice@freeswitch.org>
+# Maintainer(s): SignalWire, Inc <support@signalwire.com>
 #
 ######################################################################################################################
 # Module build settings
