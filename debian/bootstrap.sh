@@ -305,7 +305,7 @@ print_source_control () {
 Source: freeswitch
 Section: comm
 Priority: optional
-Maintainer: FreeSWITCH Solutions, LLC <support@freeswitch.com>
+Maintainer: SignalWire, Inc <support@signalwire.com>
 Build-Depends:
 # for debian
  ${debhelper_dep},
