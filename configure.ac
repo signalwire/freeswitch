@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.4-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.5-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [4-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [5-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -714,9 +714,9 @@ PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   ])
 ])
 
-PKG_CHECK_MODULES([SPANDSP], [spandsp >= 1.99],[
+PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
   AM_CONDITIONAL([HAVE_SPANDSP],[true])],[
-    AC_MSG_ERROR([no usable spandsp; please install spandsp devel package or equivalent])
+    AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
 PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.12.12],[

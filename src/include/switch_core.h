@@ -285,6 +285,8 @@ SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
+  \param function user defined module/function/reason identifying this bug
+  \param target user defined identification of the target of the bug
   \param callback a callback for events
   \param user_data arbitrary user data
   \param stop_time absolute time at which the bug is automatically removed (or 0)
