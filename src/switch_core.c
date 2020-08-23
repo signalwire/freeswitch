@@ -500,7 +500,7 @@ static void *SWITCH_THREAD_FUNC switch_core_service_thread(switch_thread_t *thre
 	channel = switch_core_session_get_channel(session);
 
 	switch_channel_set_flag(channel, CF_SERVICE);
-	while (switch_channel_test_flag(channel, CF_SERVICE)) {
+	while (switch_channel_test_flag(channel, CF_SERVICE) && switch_channel_up_nosig(channel)) {
 
 		if (switch_channel_test_flag(channel, CF_SERVICE_AUDIO)) {
 			switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {

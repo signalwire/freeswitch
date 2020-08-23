@@ -1980,7 +1980,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_codec_destroy(&codec);
 	}
 
-	if (timer.samplecount) {
+	if (timer_name) {
 		/* End the audio absorbing thread */
 		switch_core_thread_session_end(session);
 		switch_core_timer_destroy(&timer);
