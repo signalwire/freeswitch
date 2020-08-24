@@ -95,6 +95,7 @@ SWITCH_STANDARD_API(http_cache_prefetch);
 #define DOWNLOAD_NEEDED "download"
 #define DOWNLOAD 1
 #define PREFETCH 2
+#define MAX_FILE_EXTENSION_SIZE 32
 
 typedef struct url_cache url_cache_t;
 
@@ -948,22 +949,32 @@ static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, c
 static void find_extension(const char *url, const char **found_extension, size_t *found_extension_len)
 {
 	const char *ext;
+	const char *start;
 	size_t ext_len = 0;
 
+	if((((start = strchr(url,'?')) != NULL)
+	  ||((start = strchr(url,'#')) != NULL))
+	  &&  start != url) {
+		start--;
+	} else {
+		start = &url[strlen(url) - 1];
+	}
+
 	/* find extension on the end of URL */
-	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
+	for (ext = start; ext != url; ext--) {
 		if (*ext == '/' || *ext == '\\') {
 			break;
 		}
-		if (*ext == '?' || *ext == '#') {
-			ext_len = 0;
-		} else if (*ext == '.') {
+		if (*ext == '.') {
 			/* found it */
 			*found_extension_len = ext_len;
 			*found_extension = ++ext;
 			break;
 		} else {
-			ext_len++;
+			/* Limit the file extension length */
+			if (ext_len < MAX_FILE_EXTENSION_SIZE) {
+				ext_len++;
+			}
 		}
 	}
 }
