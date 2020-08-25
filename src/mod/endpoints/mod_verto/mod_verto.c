@@ -672,8 +672,24 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 
 		for(np = head->node; np; np = np->next) {
 			cJSON *msg = NULL, *params;
-
+			
 			if (!use_jsock || use_jsock == np->jsock) {
+				const char *visibility;
+				//char *tmp;
+				
+				if ((visibility = cJSON_GetObjectCstr(event, "contentVisibility"))) {
+					if (strcasecmp(visibility, "public") &&
+						((use_jsock && use_jsock->id && !strncasecmp(use_jsock->id, "guest", 5)) ||
+						 (np->jsock->id && !strncasecmp(np->jsock->id, "guest", 5)))) {
+
+						continue;
+					}
+				}
+				//tmp = cJSON_Print(event);
+				//printf("%s\n", tmp);
+				//free(tmp);
+
+				
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
 				cJSON_AddItemToObject(params, "subscribedChannel", cJSON_CreateString(head->event_channel));
