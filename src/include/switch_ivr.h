@@ -559,6 +559,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *se
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session);
 
+SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session);								
+
+
 /*!
   \brief Transfer an existing session to another location
   \param session the session to transfer

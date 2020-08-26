@@ -160,7 +160,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
       }
 
       // The inverse mask indicates which of the MVs are outside
-      v_outside_d = _mm_xor_si128(v_inside_d, _mm_set1_epi8(0xff));
+      v_outside_d = _mm_xor_si128(v_inside_d, _mm_set1_epi8((int8_t)0xff));
       // Shift right to keep the sign bit clear, we will use this later
       // to set the cost to the maximum value.
       v_outside_d = _mm_srli_epi32(v_outside_d, 1);

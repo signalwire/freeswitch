@@ -2456,7 +2456,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				/* Set sip_to_tag to local tag for inbound channels. */
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					const char* to_tag = "";
-					to_tag = switch_str_nil(nta_leg_get_tag(tech_pvt->nh->nh_ds->ds_leg));
+					to_tag = switch_str_nil(nta_leg_get_tag(nua_get_dialog_state_leg(tech_pvt->nh)));
 					if(to_tag) {
 						switch_channel_set_variable(channel, "sip_to_tag", to_tag);
 					}
@@ -5251,7 +5251,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 
 	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_to), SIPTAG_TO_STR(full_from), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-	cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
+	cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
 
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 

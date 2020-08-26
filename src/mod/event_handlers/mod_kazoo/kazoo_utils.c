@@ -386,7 +386,6 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
-				vtype = 0;
 				br = 0;
 			}
 
@@ -438,21 +437,18 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_pool(switch_memory_pool_t *pool, 
 	return dup;
 }
 
-SWITCH_DECLARE(char *) kz_event_expand(const char *in)
+SWITCH_DECLARE(char *) kz_expand(const char *in, const char *uuid)
 {
 	switch_event_t *event = NULL;
 	char *ret = NULL;
 	kz_switch_core_base_headers_for_expand(&event);
-	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
-	switch_event_destroy(&event);
-	return ret;
-}
-
-SWITCH_DECLARE(char *) kz_expand(const char *in)
-{
-	switch_event_t *event = NULL;
-	char *ret = NULL;
-	kz_switch_core_base_headers_for_expand(&event);
+	if (uuid != NULL) {
+		switch_core_session_t *nsession = NULL;
+		if ((nsession = switch_core_session_locate(uuid))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(nsession), event);
+			switch_core_session_rwunlock(nsession);
+		}
+	}
 	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
 	switch_event_destroy(&event);
 	return ret;
@@ -463,7 +459,7 @@ SWITCH_DECLARE(char *) kz_expand_pool(switch_memory_pool_t *pool, const char *in
 	char *expanded;
 	char *dup = NULL;
 
-	if(!(expanded = kz_expand(in))) {
+	if(!(expanded = kz_expand(in, NULL))) {
 		return NULL;
 	}
 	dup = switch_core_strdup(pool, expanded);
@@ -584,12 +580,14 @@ void kz_event_decode(switch_event_t *event)
 	switch_event_header_t *hp;
 	int i;
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (hp->idx) {
-			for(i = 0; i < hp->idx; i++) {
-				switch_url_decode(hp->array[i]);
+		if (strncmp(hp->name, "_json_", 6)) {
+			if (hp->idx) {
+				for(i = 0; i < hp->idx; i++) {
+					switch_url_decode(hp->array[i]);
+				}
+			} else {
+				switch_url_decode(hp->value);
 			}
-		} else {
-			switch_url_decode(hp->value);
 		}
 	}
 }

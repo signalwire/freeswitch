@@ -150,6 +150,9 @@ static switch_bool_t switch_amr_unpack_oa(unsigned char *buf, uint8_t *tmp, int 
 	int index;
 	int framesz;
 
+	if (!buf) {
+		return SWITCH_FALSE;
+	}
 	buf++; /* CMR skip */
 	tocs = buf;
 	index = ((tocs[0]>>3) & 0xf);
@@ -243,7 +246,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 	switch_codec_fmtp_t codec_fmtp;
 	amr_codec_settings_t amr_codec_settings = { 0 };
 	int encoding, decoding;
-	int x, i, argc;
+	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
 
@@ -329,25 +332,38 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 		if (context->enc_modes) {
 			/* choose the highest mode (bitrate) for high audio quality */
-			for (i = 7; i > -1; i--) {
+			for (i = SWITCH_AMR_MODES-2; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
 					context->enc_mode = (switch_byte_t) i;
 					break;
 				}
 			}
+
+			/* re-create mode-set */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+			for (i = 0; SWITCH_AMR_MODES-1 > i; ++i) {
+				if (context->enc_modes & (1 << i)) {
+					fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
+				}
+			}
+
+		} else {
+			/* use default mode-set */
+			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_mode);
 		}
 
 		if (globals.adjust_bitrate) {
 			switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE);
 		}
 
+
+
 		if (!globals.volte) {
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0,
-							context->enc_mode);
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
 			/* some UEs reject the call with 488 if mode-change-capability is not 2 */
-			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d; max-red=0; mode-change-capability=2",
-							switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+							switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
@@ -630,6 +646,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 			}
 		}
 	}
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
 #endif
 
 /* connect my internal structure to the blank pointer passed to me */
@@ -655,11 +675,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 20000,	/* number of microseconds per frame */
 										 160,	/* number of samples per frame */
 										 320,	/* number of bytes per frame decompressed */
-#ifndef AMR_PASSTHROUGH
-										 SWITCH_AMR_OUT_MAX_SIZE,	/* number of bytes per frame compressed */
-#else
 										 0,	/* number of bytes per frame compressed */
-#endif
 										 1,	/* number of channels represented */
 										 1,	/* number of frames per network packet */
 										 switch_amr_init,	/* function to initialize a codec handle using this implementation */
@@ -680,11 +696,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 20000,	/* number of microseconds per frame */
 										 160,	/* number of samples per frame */
 										 320,	/* number of bytes per frame decompressed */
-#ifndef AMR_PASSTHROUGH
-										 SWITCH_AMR_OUT_MAX_SIZE,	/* number of bytes per frame compressed */
-#else
 										 0,	/* number of bytes per frame compressed */
-#endif
 										 1,	/* number of channels represented */
 										 1,	/* number of frames per network packet */
 										 switch_amr_init,	/* function to initialize a codec handle using this implementation */

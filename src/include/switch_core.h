@@ -285,6 +285,8 @@ SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
+  \param function user defined module/function/reason identifying this bug
+  \param target user defined identification of the target of the bug
   \param callback a callback for events
   \param user_data arbitrary user data
   \param stop_time absolute time at which the bug is automatically removed (or 0)
@@ -2702,6 +2704,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number);
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit);
 
 /*!
  \brief Add user registration

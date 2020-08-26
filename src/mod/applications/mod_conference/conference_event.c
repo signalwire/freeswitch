@@ -108,7 +108,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action ? action : "N/A", cid);
 
 	if (zstr(action)) {
 		goto end;
@@ -1029,17 +1029,18 @@ switch_status_t chat_send(switch_event_t *message_event)
 			conference_list_pretty(conference, &stream);
 			/* provide help */
 		} else {
-			return SWITCH_STATUS_SUCCESS;
+			goto done;
 		}
 	}
-
-	switch_safe_free(lbuf);
 
 	if (!conference->broadcast_chat_messages) {
 		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL, SWITCH_FALSE);
 	}
 
+done:
+	switch_safe_free(lbuf);
 	switch_safe_free(stream.data);
+
 	switch_thread_rwlock_unlock(conference->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;

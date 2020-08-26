@@ -10021,6 +10021,11 @@ else
     return ret;
   }
 
+  public static uint switch_core_max_audio_channels(uint limit) {
+    uint ret = freeswitchPINVOKE.switch_core_max_audio_channels(limit);
+    return ret;
+  }
+
   public static switch_status_t switch_core_add_registration(string user, string realm, string token, string url, uint expires, string network_ip, string network_port, string network_proto, string metadata) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_add_registration(user, realm, token, url, expires, network_ip, network_port, network_proto, metadata);
     return ret;
@@ -11288,6 +11293,12 @@ else
     return ret;
   }
 
+  public static SWIGTYPE_p_void switch_calloc(uint nmemb, uint size) {
+    global::System.IntPtr cPtr = freeswitchPINVOKE.switch_calloc(nmemb, size);
+    SWIGTYPE_p_void ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_void(cPtr, false);
+    return ret;
+  }
+
   public static string switch_uuid_str(string buf, SWIGTYPE_p_switch_size_t len) {
     string ret = freeswitchPINVOKE.switch_uuid_str(buf, SWIGTYPE_p_switch_size_t.getCPtr(len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -11394,6 +11405,11 @@ else
 
   public static string switch_html_strip(string str) {
     string ret = freeswitchPINVOKE.switch_html_strip(str);
+    return ret;
+  }
+
+  public static uint switch_getpid() {
+    uint ret = freeswitchPINVOKE.switch_getpid();
     return ret;
   }
 
@@ -13084,6 +13100,10 @@ else
     return ret;
   }
 
+  public static void switch_ivr_check_hold(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_ivr_check_hold(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
   public static switch_status_t switch_ivr_session_transfer(SWIGTYPE_p_switch_core_session session, string extension, string dialplan, string context) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_session_transfer(SWIGTYPE_p_switch_core_session.getCPtr(session), extension, dialplan, context);
     return ret;
@@ -14066,6 +14086,12 @@ else
 
   public static void switch_rtp_video_loss(SWIGTYPE_p_switch_rtp rtp_session) {
     freeswitchPINVOKE.switch_rtp_video_loss(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+  }
+
+  public static SWIGTYPE_p_switch_core_session switch_rtp_get_core_session(SWIGTYPE_p_switch_rtp rtp_session) {
+    global::System.IntPtr cPtr = freeswitchPINVOKE.switch_rtp_get_core_session(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+    SWIGTYPE_p_switch_core_session ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
+    return ret;
   }
 
   public static SWIGTYPE_p_cJSON switch_log_node_to_json(switch_log_node_t node, int log_level, switch_log_json_format_t json_format, switch_event chan_vars) {
@@ -19596,6 +19622,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_default_rate___")]
   public static extern uint switch_default_rate(string jarg1, uint jarg2);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_max_audio_channels___")]
+  public static extern uint switch_core_max_audio_channels(uint jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_add_registration___")]
   public static extern int switch_core_add_registration(string jarg1, string jarg2, string jarg3, string jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9);
 
@@ -20520,6 +20549,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_split_user_domain___")]
   public static extern int switch_split_user_domain(string jarg1, ref string jarg2, ref string jarg3);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_calloc___")]
+  public static extern global::System.IntPtr switch_calloc(uint jarg1, uint jarg2);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_uuid_str___")]
   public static extern string switch_uuid_str(string jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
@@ -20723,6 +20755,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_html_strip___")]
   public static extern string switch_html_strip(string jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_getpid___")]
+  public static extern uint switch_getpid();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_profile_node_t_var_set___")]
   public static extern void profile_node_t_var_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
@@ -25338,6 +25373,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_signal_bridge___")]
   public static extern int switch_ivr_signal_bridge(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_check_hold___")]
+  public static extern void switch_ivr_check_hold(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_ivr_session_transfer___")]
   public static extern int switch_ivr_session_transfer(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
@@ -26165,6 +26203,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_video_loss___")]
   public static extern void switch_rtp_video_loss(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_rtp_get_core_session___")]
+  public static extern global::System.IntPtr switch_rtp_get_core_session(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_log_node_t_data_set___")]
   public static extern void switch_log_node_t_data_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
@@ -33350,7 +33391,8 @@ namespace FreeSWITCH.Native {
   SCF_CPF_SOFT_LOOKUP = (1 << 26),
   SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27),
   SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE = (1 << 28),
-  SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29)
+  SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29),
+  SCF_LOG_DISABLE = (1 << 30)
 }
 
 }
@@ -41337,6 +41379,7 @@ public enum switch_log_level_t {
   SWITCH_LOG_CRIT = 2,
   SWITCH_LOG_ALERT = 1,
   SWITCH_LOG_CONSOLE = 0,
+  SWITCH_LOG_DISABLE = -1,
   SWITCH_LOG_INVALID = 64,
   SWITCH_LOG_UNINIT = 1000
 }
@@ -43071,7 +43114,9 @@ namespace FreeSWITCH.Native {
 
 public enum switch_rtp_crypto_key_type_t {
   AEAD_AES_256_GCM_8,
+  AEAD_AES_256_GCM,
   AEAD_AES_128_GCM_8,
+  AEAD_AES_128_GCM,
   AES_CM_256_HMAC_SHA1_80,
   AES_CM_192_HMAC_SHA1_80,
   AES_CM_128_HMAC_SHA1_80,

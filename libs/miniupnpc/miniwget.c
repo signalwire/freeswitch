@@ -49,12 +49,10 @@ miniwget2(const char * url, const char * host,
 	SOCKET s;
 #else
 	int s;
-#endif
 	int fd_flags;
+#endif
 	struct sockaddr_in dest;
 	struct hostent *hp;
-
-	fd_flags = 0;
 
 	*size = 0;
 	hp = gethostbyname(host);

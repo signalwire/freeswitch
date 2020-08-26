@@ -117,7 +117,7 @@ Module: applications/mod_hiredis
 Description: Redis client support
  This module provides a mechanism to use Redis as a datastore.
 Build-Depends: libhiredis-dev
-Depends: libhiredis0.10 | libhiredis0.13
+Depends: libhiredis0.10 | libhiredis0.13 | libhiredis0.14
 
 Module: applications/mod_httapi
 Description: HT-TAPI Hypertext Telephony API

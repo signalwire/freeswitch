@@ -15,7 +15,6 @@ switch_rtp_packet_t rtp_packet;
 switch_frame_flag_t *frame_flags;
 switch_io_flag_t io_flags;
 switch_payload_t read_pt;
-uint datalen;
 
 FST_CORE_BEGIN("./conf")
 {

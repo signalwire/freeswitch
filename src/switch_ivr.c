@@ -989,9 +989,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			timeout_cause = switch_channel_str2cause(cause_str + 1);
 		}
 
-		if ((timeout = atoi(to)) < 0) {
-			timeout = 0;
-		} else {
+		if ((timeout = atoi(to)) >= 0) {
 			expires = switch_epoch_time_now(NULL) + timeout;
 		}
 		switch_channel_set_variable(channel, "park_timeout", NULL);
@@ -1299,7 +1297,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-			switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			switch_status_t ostatus = SWITCH_STATUS_FALSE;
+			if (args->input_callback) {
+				ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			}
 			if (ostatus != SWITCH_STATUS_SUCCESS) {
 				status = ostatus;
 			}
@@ -1414,7 +1415,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	if (digit_timeout && first_timeout) {
 		eff_timeout = first_timeout;
 	} else if (digit_timeout && !first_timeout) {
-		first_timeout = eff_timeout = digit_timeout;
+		eff_timeout = digit_timeout;
 	} else if (first_timeout) {
 		digit_timeout = eff_timeout = first_timeout;
 	}
@@ -2092,6 +2093,26 @@ SWITCH_DECLARE(void) switch_ivr_bg_media(const char *uuid, switch_media_flag_t f
 
 }
 
+SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_flow_t flow;
+
+	if (switch_channel_test_flag(channel, CF_ANSWERED) &&
+		(flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
+		msg.from = __FILE__;
+
+		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
+		switch_core_session_receive_message(session, &msg);
+	}
+
+	if (switch_channel_test_flag(channel, CF_HOLD)) {
+		switch_ivr_unhold(session);
+	}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan,
 															const char *context)
@@ -2107,7 +2128,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	const char *forwardvar = switch_channel_get_variable(channel, forwardvar_name);
 	int forwardval = 70;
 	const char *use_dialplan = dialplan, *use_context = context;
-	switch_media_flow_t flow;
 	
 	if (zstr(forwardvar)) {
 		forwardvar_name = SWITCH_MAX_FORWARDS_VARIABLE; /* fall back to max_forwards variable for setting maximum */
@@ -2121,16 +2141,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(channel, CF_ANSWERED) &&
-		(flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
-		switch_core_session_message_t msg = { 0 };
-
-		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
-		msg.from = __FILE__;
-
-		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
-		switch_core_session_receive_message(session, &msg);
-	}
+	switch_ivr_check_hold(session);
+	
 	
 	max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 	switch_channel_set_variable(channel, forwardvar_name, max_forwards);
