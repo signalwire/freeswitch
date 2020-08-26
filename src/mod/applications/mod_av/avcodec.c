@@ -1314,7 +1314,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
-	context->encoder_ctx->time_base = (AVRational){1, 90};
+	context->encoder_ctx->time_base = (AVRational){1, 30};
 	context->encoder_ctx->max_b_frames = aprofile->ctx.max_b_frames;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = aprofile->ctx.thread_count;
