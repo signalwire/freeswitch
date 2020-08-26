@@ -1972,6 +1972,8 @@ GCC_DIAG_ON(deprecated-declarations)
 			 if (!context->audio_timer) {
 				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Delta of %d detected.  Video timer sync: %" SWITCH_UINT64_T_FMT "/%d %" SWITCH_UINT64_T_FMT "\n", delta, context->audio_st[0].next_pts, context->video_timer.samplecount, new_pts - context->audio_st[0].next_pts);
 			 }
+		 if (new_pts - context->audio_st[0].next_pts <0 && context->audio_st[0].next_pts != 0)
+				 return status;
 			 sample_start = new_pts;
 		 }
 		 
