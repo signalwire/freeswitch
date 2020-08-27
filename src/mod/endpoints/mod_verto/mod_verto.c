@@ -681,8 +681,10 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 					if (strcasecmp(visibility, "public") &&
 						((use_jsock && use_jsock->id && !strncasecmp(use_jsock->id, "guest", 5)) ||
 						 (np->jsock->id && !strncasecmp(np->jsock->id, "guest", 5)))) {
-
-						continue;
+						
+						if (!switch_event_channel_permission_verify(np->jsock->uuid_str, event_channel)) {
+							continue;
+						}
 					}
 				}
 				//tmp = cJSON_Print(event);
