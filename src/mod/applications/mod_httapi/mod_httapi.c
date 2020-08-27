@@ -2813,13 +2813,18 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			}
 		}
 
-		if (zstr(ext) && headers && (ct = switch_event_get_header(headers, "content-type"))) {
+		if (headers && (ct = switch_event_get_header(headers, "content-type"))) {
 			newext = switch_core_mime_type2ext(ct);
 		}
 
-		if (newext) {
+		if (newext && (zstr(ext) || strcmp(ext, newext) != 0)) {
+			/*
+			 * HTTP Request has returned the file with a different extension
+			 * Update the cache_file path and delete the original file
+			 */
 			ext = newext;
-			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
+			unlink(context->cache_file);
+			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file_base, newext);
 		}
 
 
