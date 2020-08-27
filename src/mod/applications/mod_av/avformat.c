@@ -382,7 +382,7 @@ static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputF
 #if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,7,100))
 		av_strlcpy(s->filename, filename, sizeof(s->filename));
 #else
-		s->url = strdup(filename);
+		s->url = av_strdup(filename);
 		switch_assert(s->url);
 #endif
 	}
