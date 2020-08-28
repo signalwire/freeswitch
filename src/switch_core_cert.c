@@ -344,6 +344,8 @@ SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
 	}
 
 	if (switch_file_exists(pem, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(pem);
+
 		return SWITCH_FALSE;
 	}
 
@@ -369,6 +371,8 @@ SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
 		goto rename_pem;
 	}
 
+	switch_safe_free(pem);
+
 	return SWITCH_TRUE;
 
 rename_pem:
@@ -381,7 +385,8 @@ rename_pem:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rename %s: %s\n", pem, strerror(errno));
 	}
 
-	free(old_pem);
+	switch_safe_free(old_pem);
+	switch_safe_free(pem);
 
 	return SWITCH_FALSE;
 }
