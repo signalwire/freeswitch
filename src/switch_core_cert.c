@@ -246,6 +246,7 @@ SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fi
 
 
 static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days);
+static switch_bool_t check_key_length(const char *pem);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 {
@@ -264,7 +265,7 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 			pem = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
 		}
 
-		if (switch_file_exists(pem, NULL) == SWITCH_STATUS_SUCCESS) {
+		if ((switch_file_exists(pem, NULL) == SWITCH_STATUS_SUCCESS) && (check_key_length(pem) == SWITCH_TRUE)) {
 			goto end;
 		}
 	} else {
@@ -276,7 +277,11 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 			rsa = switch_mprintf("%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
 		}
 
-		if (switch_file_exists(pvt, NULL) == SWITCH_STATUS_SUCCESS || switch_file_exists(rsa, NULL) == SWITCH_STATUS_SUCCESS) {
+		if (
+			(switch_file_exists(pvt, NULL) == SWITCH_STATUS_SUCCESS) &&
+			(switch_file_exists(rsa, NULL) == SWITCH_STATUS_SUCCESS) &&
+			(check_key_length(pem) == SWITCH_TRUE)
+		) {
 			goto end;
 		}
 	}
@@ -421,6 +426,30 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	return(1);
  err:
 	return(0);
+}
+
+static switch_bool_t check_key_length(const char *pem)
+{
+	FILE *fp = NULL;
+	EVP_PKEY *pkey = NULL;
+	int bits = 0;
+
+	fp = fopen(pem, "r");
+	if (!fp) {
+		return SWITCH_FALSE;
+	}
+
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+	fclose(fp);
+
+	if (!pkey) {
+		return SWITCH_FALSE;
+	}
+
+	bits = EVP_PKEY_bits(pkey);
+	EVP_PKEY_free(pkey);
+
+	return bits == 4096 ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 /* For Emacs:
