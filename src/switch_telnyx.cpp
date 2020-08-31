@@ -1,19 +1,25 @@
 #include "switch_telnyx.h"
 #include <string>
 #include <vector>
+#include <algorithm>
 
 typedef std::vector<switch_telnyx_on_populate_core_heartbeat_func> heartbeat_callbacks;
 
 static switch_telnyx_event_dispatch_t _event_dispatch;
 static heartbeat_callbacks _heartbeat_callbacks;
+static switch_thread_rwlock_t* _rwlock;
 
-void switch_telnyx_init()
+void switch_telnyx_init(switch_memory_pool_t *pool)
 {
 	memset(&_event_dispatch, 0, sizeof(_event_dispatch));
+	switch_thread_rwlock_create(&_rwlock, pool);
 }
 
 void switch_telnyx_deinit()
 {
+	switch_thread_rwlock_wrlock(_rwlock);
+	_heartbeat_callbacks.clear();
+	switch_thread_rwlock_unlock(_rwlock);
 	memset(&_event_dispatch, 0, sizeof(_event_dispatch));
 }
 
@@ -87,15 +93,19 @@ void switch_telnyx_process_audio_stats(switch_core_session_t* session, switch_rt
 
 void switch_telnyx_on_populate_core_heartbeat(switch_event_t* event)
 {
+	switch_thread_rwlock_rdlock(_rwlock);
 	for (heartbeat_callbacks::iterator iter = _heartbeat_callbacks.begin(); iter != _heartbeat_callbacks.end(); iter++)
 	{
 		(*iter)(event);
 	}
+	switch_thread_rwlock_unlock(_rwlock);
 }
 
 void switch_telnyx_add_core_heartbeat_callback(switch_telnyx_on_populate_core_heartbeat_func cb)
 {
+	switch_thread_rwlock_wrlock(_rwlock);
 	_heartbeat_callbacks.push_back(cb);
+	switch_thread_rwlock_unlock(_rwlock);
 }
 
 void switch_telnyx_publish_json_event(const char* json)
