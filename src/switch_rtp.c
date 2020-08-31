@@ -5939,7 +5939,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					rtp_session->has_ice = 0;
 					break;
 				default:
-					if (rtp_session->rtcp_recv_msg_p->header.version == 2 &&
+					if (rtp_session->rtcp_recv_msg_p && rtp_session->rtcp_recv_msg_p->header.version == 2 &&
 						rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 208) {
 						rtp_session->has_rtcp = 1;
 						rtp_session->has_rtp = 0;
