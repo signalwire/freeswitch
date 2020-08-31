@@ -1368,10 +1368,16 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 	zrtp_session_info_t zrtp_session_info;
 
-	switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+	switch_channel_t *channel = NULL;
 	switch_event_t *fsevent = NULL;
 	const char *type;
 
+	if (switch_core_session_read_lock(rtp_session->session) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to acquire session lock!\n");
+		return;
+	}
+
+	channel = switch_core_session_get_channel(rtp_session->session);
 	type = rtp_type(rtp_session);
 
 	switch (event) {
@@ -1484,6 +1490,8 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	default:
 		break;
 	}
+
+	switch_core_session_rwunlock(rtp_session->session);
 }
 
 static void zrtp_logger(int level, const char *data, int len, int offset)
