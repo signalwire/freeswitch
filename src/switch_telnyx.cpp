@@ -136,3 +136,11 @@ switch_call_cause_t switch_telnyx_recompute_cause_code(switch_channel_t* channel
 	}
 	return cause;
 }
+
+switch_bool_t switch_telnyx_sip_cause_to_q850(int status, switch_call_cause_t* cause)
+{
+	if (_event_dispatch.switch_telnyx_sip_cause_to_q850) {
+		return _event_dispatch.switch_telnyx_sip_cause_to_q850(status, cause);
+	}
+	return SWITCH_FALSE;
+}
