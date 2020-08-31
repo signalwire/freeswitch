@@ -2448,7 +2448,9 @@ void sofia_event_callback(nua_event_t event,
 			switch_core_session_t *session;
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND 
+					&& !switch_channel_var_true(channel, "prom_flag_call_active")) {
+					switch_channel_set_variable(channel, "prom_flag_call_active", "true");
 					prometheus_increment_call_counter();
 				}
 				switch_core_session_rwunlock(session);
@@ -2457,7 +2459,7 @@ void sofia_event_callback(nua_event_t event,
 		break;
 	case nua_i_terminated:
 		if (status >= 400 && status != 401 && status != 407 ) {
-			prometheus_increment_terminated_counter(status);
+			prometheus_increment_sip_terminated_counter(status);
 		}
 		break;
 	case nua_i_invite:			/**< Incoming call INVITE */
@@ -2677,6 +2679,8 @@ void sofia_event_callback(nua_event_t event,
 
 			goto end;
 		}
+
+		prometheus_increment_incoming_new_invite();
 
 		if (sofia_test_pflag(profile, PFLAG_CALLID_AS_UUID)) {
 			session = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL, sip->sip_call_id->i_id);

@@ -27,6 +27,7 @@ public:
 		_module_interface(module_interface),
 		_call_counter(0),
 		_outgoing_invite_counter(0),
+		_increment_new_invite_counter(0),
 		_outgoing_invite_retransmission_counter(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
@@ -43,14 +44,26 @@ public:
 		++_call_counter;
 	}
 
-	void increment_terminated_counter(int status)
+	void increment_sip_terminated_counter(int status)
 	{
 		auto_lock lock(_mutex);
-		terminated_counter::iterator found = _terminated_counter.find(status);
-		if (found != _terminated_counter.end()) {
+		terminated_counter::iterator found = _terminated_sip_counter.find(status);
+		if (found != _terminated_sip_counter.end()) {
 			++found->second;
 		} else {
-			_terminated_counter[status] = 1;
+			_terminated_sip_counter[status] = 1;
+		}
+		
+	}
+
+	void increment_dialplan_terminated_counter(int status)
+	{
+		auto_lock lock(_mutex);
+		terminated_counter::iterator found = _terminated_dialplan_counter.find(status);
+		if (found != _terminated_dialplan_counter.end()) {
+			++found->second;
+		} else {
+			_terminated_dialplan_counter[status] = 1;
 		}
 		
 	}
@@ -72,6 +85,12 @@ public:
 		++_outgoing_invite_counter;
 	}
 
+	void increment_incoming_new_invite()
+	{
+		auto_lock lock(_mutex);
+		++_increment_new_invite_counter;
+	}
+
 	void increment_invite_retransmission()
 	{
 		auto_lock lock(_mutex);
@@ -85,6 +104,10 @@ public:
 		stream->write_function(stream, "# TYPE sofia_connected_calls counter\n");
 		stream->write_function(stream, "sofia_connected_calls %u\n", _call_counter);
 		
+		stream->write_function(stream, "# HELP sofia_new_incoming_invite Sofia outgoing INVITE count\n");
+		stream->write_function(stream, "# TYPE sofia_new_incoming_invite counter\n");
+		stream->write_function(stream, "sofia_new_incoming_invite %u\n", _increment_new_invite_counter);
+
 		stream->write_function(stream, "# HELP sofia_outgoing_invite Sofia outgoing INVITE count\n");
 		stream->write_function(stream, "# TYPE sofia_outgoing_invite counter\n");
 		stream->write_function(stream, "sofia_outgoing_invite %u\n", _outgoing_invite_counter);
@@ -94,13 +117,23 @@ public:
 		stream->write_function(stream, "sofia_outgoing_invite_retransmission %u\n", _outgoing_invite_retransmission_counter);
 		
 		bool write_header = true;
-		for (terminated_counter::iterator iter = _terminated_counter.begin(); iter != _terminated_counter.end(); iter++) {
+		for (terminated_counter::iterator iter = _terminated_sip_counter.begin(); iter != _terminated_sip_counter.end(); iter++) {
 			if (write_header) {
 				stream->write_function(stream, "# HELP sofia_rejected_calls Sofia incoming rejected call counter\n");
 				stream->write_function(stream, "# TYPE sofia_rejected_calls counter\n");
 				write_header = false;
 			}
 			stream->write_function(stream, "sofia_rejected_calls{status=\"%i\"} %u\n", iter->first, iter->second);
+		}
+
+		write_header = true;
+		for (terminated_counter::iterator iter = _terminated_dialplan_counter.begin(); iter != _terminated_dialplan_counter.end(); iter++) {
+			if (write_header) {
+				stream->write_function(stream, "# HELP sofia_dialplan_rejected_calls Sofia incoming dialplan rejected call counter\n");
+				stream->write_function(stream, "# TYPE sofia_dialplan_rejected_calls counter\n");
+				write_header = false;
+			}
+			stream->write_function(stream, "sofia_dialplan_rejected_calls{status=\"%i\"} %u\n", iter->first, iter->second);
 		}
 		
 		write_header = true;
@@ -119,11 +152,13 @@ private:
 	switch_memory_pool_t* _pool;
 	switch_loadable_module_interface_t **_module_interface;
 	switch_mutex_t* _mutex;
-	terminated_counter _terminated_counter;
+	terminated_counter _terminated_sip_counter;
+	terminated_counter _terminated_dialplan_counter;
 	ssize_t _call_counter;
 	ssize_t _outgoing_invite_counter;
+	ssize_t _increment_new_invite_counter;
 	request_counter _request_counter;
-  ssize_t _outgoing_invite_retransmission_counter;
+	ssize_t _outgoing_invite_retransmission_counter;
 };
 
 static prometheus_metrics* instance = 0;
@@ -156,9 +191,14 @@ void prometheus_increment_call_counter()
 	instance->increment_call_counter();
 }
 
-void prometheus_increment_terminated_counter(int status)
+void prometheus_increment_sip_terminated_counter(int status)
 {
-	instance->increment_terminated_counter(status);
+	instance->increment_sip_terminated_counter(status);
+}
+
+void prometheus_increment_dialplan_terminated_counter(int status)
+{
+	instance->increment_dialplan_terminated_counter(status);
 }
 
 void prometheus_increment_request_method(const char* method)
@@ -169,6 +209,11 @@ void prometheus_increment_request_method(const char* method)
 void prometheus_increment_outgoing_invite()
 {
 	instance->increment_outgoing_invite();
+}
+
+void prometheus_increment_incoming_new_invite()
+{
+	instance->increment_incoming_new_invite();
 }
 
 void prometheus_increment_invite_retransmission()
