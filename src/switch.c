@@ -1197,7 +1197,7 @@ int main(int argc, char *argv[])
 
 	switch_file_write(fd, pid_buffer, &pid_len);
 
-	switch_telnyx_init();
+	switch_telnyx_init(pool);
 
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);

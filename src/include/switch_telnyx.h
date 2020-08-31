@@ -32,7 +32,7 @@ typedef struct switch_telnyx_event_dispatch_s {
 	switch_telnyx_recompute_cause_code_func switch_telnyx_recompute_cause_code;
 } switch_telnyx_event_dispatch_t;
 
-SWITCH_DECLARE(void) switch_telnyx_init();
+SWITCH_DECLARE(void) switch_telnyx_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(void) switch_telnyx_deinit();
 SWITCH_DECLARE(int) switch_telnyx_hangup_cause_to_sip(switch_core_session_t *session, switch_call_cause_t cause);
 SWITCH_DECLARE(switch_bool_t) switch_telnyx_sofia_on_init(switch_core_session_t *session);
