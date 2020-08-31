@@ -9,9 +9,11 @@ void prometheus_init(switch_loadable_module_interface_t **module_interface, swit
 void prometheus_destroy();
 
 void prometheus_increment_call_counter();
-void prometheus_increment_terminated_counter(int status);
+void prometheus_increment_sip_terminated_counter(int status);
+void prometheus_increment_dialplan_terminated_counter(int status);
 void prometheus_increment_request_method(const char* method);
 void prometheus_increment_outgoing_invite();
+void prometheus_increment_incoming_new_invite();
 void prometheus_increment_invite_retransmission();
 
 SWITCH_END_EXTERN_C
