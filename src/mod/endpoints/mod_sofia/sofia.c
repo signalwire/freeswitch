@@ -3234,6 +3234,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	int use_rfc_5626 = sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626);
+	int use_sip_replaces = !sofia_test_pflag(profile, PFLAG_DISABLE_SIP_REPLACES);
 	const char *supported = NULL;
 	int sanity, attempts = 0;
 	switch_thread_t *worker_thread;
@@ -3256,7 +3257,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "precondition, 100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
+	supported = switch_core_sprintf(profile->pool, "%s%s%s%spath", use_100rel ? "precondition, 100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "", use_sip_replaces ? "replaces, ": "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if ( (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) && switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -6068,6 +6069,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IGNORE_REASON_HDR_BYE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_REASON_HDR_BYE);
+						}
+					} else if (!strcasecmp(var, "disable-sip-replaces")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_DISABLE_SIP_REPLACES);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_DISABLE_SIP_REPLACES);
 						}
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
