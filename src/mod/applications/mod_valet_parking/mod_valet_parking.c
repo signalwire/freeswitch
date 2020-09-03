@@ -89,7 +89,7 @@ static switch_status_t valet_on_dtmf(switch_core_session_t *session, void *input
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_dtmf_t *exit_key_pvt = (switch_dtmf_t *) switch_channel_get_private(channel, "_orbit_exit_key_");
 
-			if (dtmf->digit == exit_key_pvt->digit) {
+			if (exit_key_pvt && dtmf->digit == exit_key_pvt->digit) {
 				const char *dp;
 				const char *exten;
 				const char *context;
