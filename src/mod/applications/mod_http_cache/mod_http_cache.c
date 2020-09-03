@@ -147,7 +147,7 @@ struct cached_url {
 };
 typedef struct cached_url cached_url_t;
 
-static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename);
+static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename, const char *extension, int validate_url_extension);
 static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool);
 
 /**
@@ -161,7 +161,7 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
-static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session);
+static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_core_session_t *session);
 static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get);
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *url);
 static void process_cache_control_header(cached_url_t *url, char *data);
@@ -243,7 +243,7 @@ struct url_cache {
 };
 static url_cache_t gcache;
 
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool);
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_memory_pool_t *pool);
 static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove_soft(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
@@ -456,7 +456,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			cached_url_t *u = NULL;
 			/* save to cache */
 			url_cache_lock(cache, session);
-			u = cached_url_create(cache, url, filename);
+			u = cached_url_create(cache, url, filename, NULL, 0);
 			u->size = file_info.st_size;
 			u->status = CACHED_URL_AVAILABLE;
 			if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
@@ -711,10 +711,13 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  * @param url The URL
  * @param download If DOWNLOAD, the file will be downloaded if it does not exist in the cache.  If PREFETCH, the file will be downloaded if not in cache and not being downloaded by another thread.
  * @param refresh If true, existing cache entry is invalidated
+ * @param extension use extension instead 
+ * @param validate_url_extension If true, validate extension in url
+ * @param use_mime_ext If true, use extension based on content type
  * @param pool The pool to use for allocating the filename
  * @return The filename or NULL if there is an error
  */
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool)
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_memory_pool_t *pool)
 {
 	switch_time_t download_timeout_ns = cache->download_timeout * 1000 * 1000;
 	char *filename = NULL;
@@ -750,7 +753,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 		/* Set up URL entry and add to map to prevent simultaneous downloads */
 		cache->misses++;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d, error count = %d\n", url, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses, cache->errors);
-		u = cached_url_create(cache, url, NULL);
+		u = cached_url_create(cache, url, NULL, extension, validate_url_extension);
 		if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
 			/* This error should never happen */
 			url_cache_unlock(cache, session);
@@ -761,7 +764,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 
 		/* download the file */
 		url_cache_unlock(cache, session);
-		if (http_get(cache, profile, u, session) == SWITCH_STATUS_SUCCESS) {
+		if (http_get(cache, profile, u, use_mime_ext, session) == SWITCH_STATUS_SUCCESS) {
 			/* Got the file, let the waiters know it is available */
 			url_cache_lock(cache, session);
 			u->status = CACHED_URL_AVAILABLE;
@@ -946,30 +949,47 @@ static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, c
  * @param found_extension
  * @param found_extension_len
  */
-static void find_extension(const char *url, const char **found_extension, size_t *found_extension_len)
+static void find_extension(const char *url, int validate_url_extension, const char **found_extension, size_t *found_extension_len)
 {
 	const char *ext;
-	const char *start;
+	char* buf = 0;
 	size_t ext_len = 0;
-
-	if((((start = strchr(url,'?')) != NULL)
-	  ||((start = strchr(url,'#')) != NULL))
-	  &&  start != url) {
-		start--;
-	} else {
-		start = &url[strlen(url) - 1];
-	}
+	int lookup = 1;
+	switch_file_interface_t *file_interface;
 
 	/* find extension on the end of URL */
-	for (ext = start; ext != url; ext--) {
+	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
 		if (*ext == '/' || *ext == '\\') {
 			break;
 		}
-		if (*ext == '.') {
+		if (*ext == '?' || *ext == '#' || *ext == '&') {
+			ext_len = 0;
+			lookup = 1;
+		} else if (*ext == '.' && lookup) {
 			/* found it */
 			*found_extension_len = ext_len;
-			*found_extension = ++ext;
-			break;
+			*found_extension = ext;
+
+			/* Remove dot */
+			(*found_extension)++;
+
+			if (validate_url_extension) {
+				/* Extract and validate if extension is supported */
+				buf = strndup(*found_extension, *found_extension_len);
+				file_interface = switch_loadable_module_get_file_interface(buf, NULL);
+				free(buf);
+
+				if(file_interface) {
+					UNPROTECT_INTERFACE(file_interface);
+					break;
+				} else {
+					ext_len = 0; // Not supported try to locate it in next param/query in url.
+					lookup = 0;				
+				}
+			} else {
+				// Return first match
+				break;
+			}
 		} else {
 			/* Limit the file extension length */
 			if (ext_len < MAX_FILE_EXTENSION_SIZE) {
@@ -986,7 +1006,7 @@ static void find_extension(const char *url, const char **found_extension, size_t
  * @param extension if set, extension is duplicated here
  * @return the cached URL filename.  Free when done.
  */
-static char *cached_url_filename_create(url_cache_t *cache, const char *url, char **extension)
+static char *cached_url_filename_create(url_cache_t *cache, const char *url, const char *extension, int validate_url_extension, char **output_extension)
 {
 	char *filename;
 	char *dirname;
@@ -996,8 +1016,10 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *url, cha
 	const char *found_extension = NULL;
 	size_t found_extension_len = 0;
 
-	find_extension(url, &found_extension, &found_extension_len);
-
+	if (zstr(extension)) {
+		find_extension(url, validate_url_extension, &found_extension, &found_extension_len);
+	}
+	
 	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -1010,15 +1032,16 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *url, cha
 	if (!zstr(found_extension) && found_extension_len > 0) {
 		char *found_extension_dup = strndup(found_extension, found_extension_len);
 		filename = switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], found_extension_dup);
-		if (extension) {
-			*extension = found_extension_dup;
+		if (output_extension) {
+			*output_extension = found_extension_dup;
 		} else {
 			free(found_extension_dup);
 		}
  	} else {
-		filename = switch_mprintf("%s%s%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2]);
-		if (extension) {
-			*extension = NULL;
+		filename = !zstr(extension) ? switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], extension)
+									: switch_mprintf("%s%s%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2]);
+		if (output_extension) {
+			*output_extension = !zstr(extension) ? strdup(extension) : NULL;
 		}
 	}
 	free(dirname);
@@ -1031,13 +1054,17 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *url, cha
  */
 static void cached_url_set_extension_from_content_type(cached_url_t *url, switch_core_session_t *session)
 {
-	if (!url->extension && url->content_type) {
+	if (url->content_type) {
 		const char *new_extension = switch_core_mime_type2ext(url->content_type);
-		if (new_extension) {
+		if (new_extension && (!url->extension || strcmp(new_extension, url->extension) != 0)) {
 			char *new_filename = switch_mprintf("%s.%s", url->filename, new_extension);
 			if (rename(url->filename, new_filename) != -1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "renamed cached URL to %s\n", new_filename);
 				free(url->filename);
+				if (url->extension) {
+					switch_safe_free(url->extension);
+				}
+
 				url->filename = new_filename;
 				url->extension = strdup(new_extension);
 			} else {
@@ -1053,9 +1080,11 @@ static void cached_url_set_extension_from_content_type(cached_url_t *url, switch
  * @param cache the cache
  * @param url the URL to cache
  * @param filename (optional) pre-defined local filename
+ * @param extension (optional) pre-defined file extension
+ * @param validate_url_extension disable url extension validation
  * @return the cached URL
  */
-static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename)
+static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename, const char *extension, int validate_url_extension)
 {
 	cached_url_t *u = NULL;
 
@@ -1067,9 +1096,13 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, cons
 
 	/* intialize cached URL */
 	if (zstr(filename)) {
-		u->filename = cached_url_filename_create(cache, url, &u->extension);
+		u->filename = cached_url_filename_create(cache, url, extension, validate_url_extension, &u->extension);
 	} else {
-		u->filename = strdup(filename);
+		if (zstr(extension)) {
+			u->filename = strdup(filename);
+		} else {
+			u->filename = switch_mprintf("%s.%s", filename, extension);
+		}
 	}
 	u->url = switch_safe_strdup(url);
 	u->size = 0;
@@ -1106,7 +1139,7 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
  * @param session the (optional) session
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, switch_core_session_t *session)
+static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
@@ -1182,7 +1215,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "URL %s downloaded in %d ms\n", url->url, duration_ms);
 		}
-		if (!url->extension) {
+		if (use_mime_extension || !url->extension) {
 			cached_url_set_extension_from_content_type(url, session);
 		}
 	} else {
@@ -1271,6 +1304,9 @@ SWITCH_STANDARD_API(http_cache_get)
 	char *url;
 	int refresh = SWITCH_FALSE;
 	int download = DOWNLOAD;
+	const char *extension = NULL;
+	int validate_url_extension = SWITCH_TRUE;
+	int use_mime_ext = SWITCH_TRUE;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
@@ -1290,14 +1326,28 @@ SWITCH_STANDARD_API(http_cache_get)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 	if (params) {
+		const char * val = NULL;
+
 		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
 		if (switch_true(switch_event_get_header(params, "prefetch"))) {
 			download = PREFETCH;
 		}
 		refresh = switch_true(switch_event_get_header(params, "refresh"));
+		
+		if ((val = switch_event_get_header(params, "validate-url-extension"))) {
+			validate_url_extension = switch_true(val);
+		}
+		if ((val = switch_event_get_header(params, "use-mime-ext"))) {
+			use_mime_ext = switch_true(val);
+		}
+		if ((val = switch_event_get_header(params, "extension"))) {
+			extension = val;
+			validate_url_extension = SWITCH_FALSE;
+			use_mime_ext = SWITCH_FALSE;
+		}
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, download, refresh, pool);
+	filename = url_cache_get(&gcache, profile, session, url, download, refresh, extension, validate_url_extension, use_mime_ext, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
 
@@ -1329,6 +1379,10 @@ SWITCH_STANDARD_API(http_cache_tryget)
 	char *filename;
 	switch_event_t *params = NULL;
 	char *url;
+	int refresh = SWITCH_FALSE;
+	const char *extension = NULL;
+	int validate_url_extension = SWITCH_TRUE;
+	int use_mime_ext = SWITCH_TRUE;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
@@ -1348,7 +1402,24 @@ SWITCH_STANDARD_API(http_cache_tryget)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 
-	filename = url_cache_get(&gcache, NULL, session, url, 0, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool);
+	if (params) {
+		const char * val = NULL;
+		refresh = switch_true(switch_event_get_header(params, "refresh"));
+		
+		if ((val = switch_event_get_header(params, "validate-url-extension"))) {
+			validate_url_extension = switch_true(val);
+		}
+		if ((val = switch_event_get_header(params, "use-mime-ext"))) {
+			use_mime_ext = switch_true(val);
+		}
+		if ((val = switch_event_get_header(params, "extension"))) {
+			extension = val;
+			validate_url_extension = SWITCH_FALSE;
+			use_mime_ext = SWITCH_FALSE;
+		}
+	}
+
+	filename = url_cache_get(&gcache, NULL, session, url, 0, refresh, extension, validate_url_extension, use_mime_ext, pool);
 	if (filename) {
 		if (!strcmp(DOWNLOAD_NEEDED, filename)) {
 			stream->write_function(stream, "-ERR %s\n", DOWNLOAD_NEEDED);
@@ -1483,7 +1554,7 @@ SWITCH_STANDARD_API(http_cache_remove)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 
-	url_cache_get(&gcache, NULL, session, url, 0, 1, pool);
+	url_cache_get(&gcache, NULL, session, url, 0, 1, NULL, 0, 0, pool);
 	stream->write_function(stream, "+OK\n");
 
 	if (lpool) {
@@ -1729,9 +1800,27 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	int file_flags = SWITCH_FILE_DATA_SHORT | (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? SWITCH_FILE_FLAG_VIDEO : 0);
+	int refresh = SWITCH_FALSE;
+	int validate_url_extension = SWITCH_TRUE;
+	int use_mime_ext = SWITCH_TRUE;
+	const char * extension = NULL;
 
 	if (handle->params) {
+		const char * val = NULL;
+
 		context->profile = url_cache_http_profile_find(&gcache, switch_event_get_header(handle->params, "profile"));
+		refresh = switch_true(switch_event_get_header(handle->params, "refresh"));
+		if ((val = switch_event_get_header(handle->params, "validate-url-extension"))) {
+			validate_url_extension = switch_true(val);
+		}
+		if ((val = switch_event_get_header(handle->params, "use-mime-ext"))) {
+			use_mime_ext = switch_true(val);
+		}
+		if ((val = switch_event_get_header(handle->params, "extension"))) {
+			extension = val;
+			validate_url_extension = SWITCH_FALSE;
+			use_mime_ext = SWITCH_FALSE;
+		}
 	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
@@ -1739,11 +1828,11 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 		file_flags |= SWITCH_FILE_FLAG_WRITE;
 		context->write_url = switch_core_strdup(handle->memory_pool, path);
 		/* allocate local file in cache */
-		context->local_path = cached_url_filename_create(&gcache, context->write_url, NULL);
+		context->local_path = cached_url_filename_create(&gcache, context->write_url, extension, validate_url_extension, NULL);
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
-		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, handle->params ? switch_true(switch_event_get_header(handle->params, "refresh")) : 0, handle->memory_pool);
+		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, refresh, extension, validate_url_extension, use_mime_ext, handle->memory_pool);
 		if (!context->local_path) {
 			return SWITCH_STATUS_FALSE;
 		}
