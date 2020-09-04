@@ -2823,7 +2823,6 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			 * Update the cache_file path and delete the original file
 			 */
 			ext = newext;
-			unlink(context->cache_file);
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file_base, newext);
 		}
 
