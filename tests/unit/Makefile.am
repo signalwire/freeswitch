@@ -7,8 +7,13 @@ noinst_PROGRAMS += switch_core_video switch_core_db switch_vad switch_core_asr
 AM_LDFLAGS += -avoid-version -no-undefined $(SWITCH_AM_LDFLAGS) $(openssl_LIBS)
 AM_LDFLAGS += $(FREESWITCH_LIBS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
+# "make check" will not run these.
+examples = switch_eavesdrop
+
 if HAVE_FVAD
 AM_CFLAGS += -DSWITCH_HAVE_FVAD
 endif
 
 TESTS = $(noinst_PROGRAMS)
+
+bin_PROGRAMS = $(examples)
