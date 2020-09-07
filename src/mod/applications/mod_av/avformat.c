@@ -1686,17 +1686,21 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		disable_write_buffer = 1;
 	}
 
-	if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
+	if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "rtmps") || !strcasecmp(handle->stream_name, "youtube"))) {
+		char *secure = "";
+
 		format = "flv";
 		if ((ext = strrchr((char *)path, '.')) == 0) {
 			ext = ".flv";
 		}
 
+		if (!strcasecmp(handle->stream_name, "rtmps")) secure = "s";
+
 		// meh really silly format for the user / pass libav.....
 		if (handle->mm.auth_username && handle->mm.auth_password) { 
-			switch_snprintf(file, sizeof(file), "rtmp://%s pubUser=%s pubPasswd=%s flashver=FMLE/3.0", path, handle->mm.auth_username, handle->mm.auth_password);
+			switch_snprintf(file, sizeof(file), "rtmp%s://%s pubUser=%s pubPasswd=%s flashver=FMLE/3.0", secure, path, handle->mm.auth_username, handle->mm.auth_password);
 		} else {
-			switch_snprintf(file, sizeof(file), "rtmp://%s", path);
+			switch_snprintf(file, sizeof(file), "rtmp%s://%s", secure, path);
 		}
 
 	} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtsp")) {
@@ -1859,7 +1863,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
-		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube")))) {
+		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "rtmps") || !strcasecmp(handle->stream_name, "youtube")))) {
 
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
@@ -2895,6 +2899,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 
 	supported_formats[i++] = "av";
 	supported_formats[i++] = "rtmp";
+	supported_formats[i++] = "rtmps";
 	supported_formats[i++] = "rtsp";
 	supported_formats[i++] = "mp4";
 	supported_formats[i++] = "m4a";
