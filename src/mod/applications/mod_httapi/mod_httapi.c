@@ -2821,7 +2821,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		if (newext && (zstr(ext) || strcmp(ext, newext) != 0)) {
 			/*
 			 * HTTP Request has returned the file with a different extension
-			 * Update the cache_file path and delete the original file
+			 * Update the cache_file path
 			 */
 			ext = newext;
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file_base, newext);
