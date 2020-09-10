@@ -14042,7 +14042,9 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 SWITCH_DECLARE(void) switch_core_media_init(void)
 {
-	switch_core_gen_certs(DTLS_SRTP_FNAME ".pem");
+	if (switch_core_check_dtls_pem(DTLS_SRTP_FNAME ".pem") != SWITCH_TRUE) {
+		switch_core_gen_certs(DTLS_SRTP_FNAME ".pem");
+	}
 
 	video_globals.cpu_count = switch_core_cpu_count();
 	video_globals.cur_cpu = 0;

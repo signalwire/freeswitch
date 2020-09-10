@@ -2812,6 +2812,7 @@ SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(swi
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
