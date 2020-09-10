@@ -2803,9 +2803,6 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 	if (!context->url_params || !switch_true(switch_event_get_header(context->url_params, "nohead"))) {
-		const char *ct = NULL;
-		const char *newext = NULL;
-
 		if ((status = fetch_cache_data(context, url, &headers, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
 			if (status == SWITCH_STATUS_NOTFOUND) {
 				unreachable = 2;
