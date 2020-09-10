@@ -2781,8 +2781,12 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	time_t now = switch_epoch_time_now(NULL);
 	char *metadata;
+	const char *cache_file_temp;
 	const char *ext = NULL;
 	const char *err_msg = NULL;
+	const char *ct = NULL;
+	const char *newext = NULL;
+
 
 	load_cache_data(context, url);
 
@@ -2852,10 +2856,30 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 
-	if ((status = fetch_cache_data(context, url, &headers, context->cache_file, &err_msg)) != SWITCH_STATUS_SUCCESS) {
+	/*
+	 * Save to a temp file first, then rename
+	 * Just in case the extension changes
+	 */
+	cache_file_temp = switch_core_sprintf(context->pool, "%s.tmp", context->cache_file_base);
+	if ((status = fetch_cache_data(context, url, &headers, cache_file_temp, &err_msg)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error fetching file at URL \"%s\" (%s)\n", url, err_msg ? err_msg : "");
 		goto end;
 	}
+	
+	if (headers && (ct = switch_event_get_header(headers, "content-type"))) {
+		newext = switch_core_mime_type2ext(ct);
+	}
+
+	if (newext && (zstr(ext) || strcmp(ext, newext) != 0)) {
+		/*
+		 * HTTP Request has returned the file with a different extension
+		 * Update the cache_file path for when the rename happens
+		 */
+		ext = newext;
+		context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file_base, newext);
+	}
+
+	rename(cache_file_temp, context->cache_file);
 
 
 	metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s:%s",
