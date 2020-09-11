@@ -195,7 +195,7 @@ int sendnewportmappingrequest(natpmp_t * p, int protocol,
 int readnatpmpresponse(natpmp_t * p, natpmpresp_t * response)
 {
 	unsigned char buf[16];
-	struct sockaddr_in addr;
+	struct sockaddr_in addr = {0};
 	socklen_t addrlen = sizeof(addr);
 	int n;
 	if(!p)

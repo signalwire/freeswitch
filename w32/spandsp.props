@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="spandsp-version.props" Condition=" '$(SpandspVersionImported)' == '' "/>
+    <Import Project="download_spandsp.props" Condition=" '$(downloadSpandspPropsImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <SpandspLibDir>$(SolutionDir)libs\spandsp</SpandspLibDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SpandspLibDir)\src;$(SpandspLibDir)\src\spandsp;$(SpandspLibDir)\src\msvc;$(SpandspLibDir)\src\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

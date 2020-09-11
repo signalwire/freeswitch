@@ -389,7 +389,8 @@ typedef enum {
 	SCF_CPF_SOFT_LOOKUP = (1 << 26),
 	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27),
 	SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE = (1 << 28),
-	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29)
+	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29),
+	SCF_LOG_DISABLE = (1 << 30)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1293,8 +1294,9 @@ typedef enum {
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_CONSOLE = 0,
+	SWITCH_LOG_DISABLE = -1,
 	SWITCH_LOG_INVALID = 64,
-	SWITCH_LOG_UNINIT = 1000,
+	SWITCH_LOG_UNINIT = 1000
 } switch_log_level_t;
 
 
@@ -1894,7 +1896,8 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
-	SMBF_READ_TEXT_STREAM = (1 << 25)
+	SMBF_READ_TEXT_STREAM = (1 << 25),
+	SMBF_FIRST = (1 << 26)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -2048,6 +2051,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CALL_SETUP_RESULT
     SWITCH_EVENT_CALL_DETAIL
     SWITCH_EVENT_DEVICE_STATE
+    SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -2143,6 +2147,7 @@ typedef enum {
 	SWITCH_EVENT_CALL_DETAIL,
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
+	SWITCH_EVENT_SHUTDOWN_REQUESTED,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -2318,6 +2323,7 @@ typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
+typedef struct switch_coredb_handle switch_coredb_handle_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_database_interface_handle switch_database_interface_handle_t;
 
@@ -2636,7 +2642,9 @@ typedef enum {
 
 typedef enum {
 	AEAD_AES_256_GCM_8,
+	AEAD_AES_256_GCM,
 	AEAD_AES_128_GCM_8,
+	AEAD_AES_128_GCM,
 	AES_CM_256_HMAC_SHA1_80,
 	AES_CM_192_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_80,

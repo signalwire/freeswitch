@@ -2,7 +2,7 @@
 
 
 #brief  Call single voicemail and print detection result to the console.
-#author Piotr Gregor <piotrgregor@rsyncme.org>
+#author Piotr Gregor <piotr@dataandsignal.com>
 #date   15 Sept 2016 02:44 PM
 
 
@@ -17,7 +17,7 @@ my $port = "8021";
 my $pass = "ClueCon";
 my $extension_base = "sofia/internal/1000\@192.168.1.60";
 
-my $playback = 'local_stream://moh';
+my $playback = "{loops=-1}tone_stream://%(251,0,1004)";
 my $context = 'default'; 
 my $endpoint;
 my $dest;
@@ -73,7 +73,7 @@ sub test_once {
 
     my $uuid = $con->api('create_uuid')->getBody();
     my ($time_epoch, $time_hires) = Time::HiRes::gettimeofday();
-    printf("Calling with uuid [%s] [%s]...\n", $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)));
+    printf("Calling with uuid [%s] [%s]... [%s]\n", $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $originate_string);
 
     $con->bgapi(sprintf($originate_string, $uuid));
 

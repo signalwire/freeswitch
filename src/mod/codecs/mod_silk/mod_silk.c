@@ -175,6 +175,11 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	}
 
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+	codec_fmtp.actual_samples_per_second = codec->implementation->actual_samples_per_second;
+	codec_fmtp.bits_per_second = codec->implementation->bits_per_second;
+	codec_fmtp.microseconds_per_packet = codec->implementation->microseconds_per_packet;
+	codec_fmtp.stereo = codec->implementation->number_of_channels > 1;
+
 	codec_fmtp.private_info = &silk_codec_settings;
 	switch_silk_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 
@@ -347,7 +352,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 			frame.buflen = sizeof(buf);
 
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame)) {
+				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame) == SWITCH_STATUS_SUCCESS) {
 					SKP_Silk_SDK_search_for_LBRR(frame.data, (const int)frame.datalen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
 
 					if (context->reclen) {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_COMMON_THREADING_H_
-#define VP8_COMMON_THREADING_H_
+#ifndef VPX_VP8_COMMON_THREADING_H_
+#define VPX_VP8_COMMON_THREADING_H_
 
 #include "./vpx_config.h"
 
@@ -205,4 +205,4 @@ static INLINE void vp8_atomic_spin_wait(
 }  // extern "C"
 #endif
 
-#endif  // VP8_COMMON_THREADING_H_
+#endif  // VPX_VP8_COMMON_THREADING_H_

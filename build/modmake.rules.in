@@ -107,6 +107,7 @@ install-modules: all-modules depend_install local_install mod_install
 uninstall-modules: local_uninstall mod_uninstall
 distclean-modules: clean-modules local_distclean
 extraclean-modules: distclean local_extraclean
+print_tests:
 
 Makefile:
 	@if test ! -f $@; then \
@@ -270,4 +271,4 @@ $(switch_srcdir)/src/include/switch_xml.h:
 .PHONY: all clean depend install distclean extraclean \
 	all-modules clean-modules depend-modules install-modules distclean-modules extraclean-modules \
 	local_all local_clean local_depend local_install local_distclean local_extraclean \
-	mod_clean mod_install mod_uninstall depend_install
+	mod_clean mod_install mod_uninstall depend_install print_tests

@@ -147,7 +147,6 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 {
 	pdf_file_context_t *context;
 	char *ext;
-	unsigned int flags = 0;
 	char range_path[1024];
 
 	if ((ext = strrchr((char *)path, '.')) == 0) {
@@ -171,10 +170,6 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_GENERR;
-	}
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
-		flags |= SWITCH_FOPEN_READ;
 	}
 
 	if (ext && !strcmp(ext, "gif")) {

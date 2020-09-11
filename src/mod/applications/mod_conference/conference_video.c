@@ -3866,7 +3866,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 									switch_image_t *mute_img = omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img;
 
 									if (mute_img) {
-										switch_image_t *tmp;
+										switch_image_t *tmp = NULL;
 
 										switch_img_copy(mute_img, &tmp);
 										switch_img_fit(&tmp, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
@@ -4834,7 +4834,7 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 {
 	conference_member_t *imember;
 	int want_refresh = 0;
-	unsigned char buf[SWITCH_RTP_MAX_BUF_LEN] = "";
+	unsigned char buf[sizeof(switch_rtp_packet_t)] = "";
 	switch_frame_t tmp_frame = { 0 };
 
 	if (switch_test_flag(vid_frame, SFF_CNG) || !vid_frame->packet) {

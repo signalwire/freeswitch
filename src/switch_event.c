@@ -223,6 +223,7 @@ static char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
+	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
 
@@ -502,7 +503,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 	subclass->owner = DUP(owner);
 	subclass->name = DUP(subclass_name);
 
-	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
+	status = switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		free(subclass->owner);
+		free(subclass->name);
+		free(subclass);
+	}
 
 end:
 
@@ -571,9 +578,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
 
-		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-			switch_status_t st;
-			switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		for(x = 0; x < (uint32_t)MAX_DISPATCH; x++) {
+			if (EVENT_DISPATCH_QUEUE_THREADS[x]) {
+				switch_status_t st;
+				switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+			}
 		}
 	}
 
@@ -1111,7 +1120,11 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 	redraw:
 		len = 0;
 		for(j = 0; j < header->idx; j++) {
-			len += strlen(header->array[j]) + 2;
+			len += 2;
+			if (!header->array[j]) { 
+				continue;
+			}
+			len += strlen(header->array[j]);
 		}
 
 		if (len) {
@@ -1131,6 +1144,9 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 				if (j > 0) {
 					memcpy(hv, "|:", 2);
 					hv += 2;
+				}
+				if (!header->array[j]) { 
+					continue;
 				}
 				memcpy(hv, header->array[j], strlen(header->array[j]));
 				hv += strlen(header->array[j]);
@@ -2128,7 +2144,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 					EVENT_NODES[n->event_id] = n->next;
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
 				FREE(n->subclass_name);
 				FREE(n->id);
 				FREE(n);
@@ -2168,7 +2184,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node)
 			} else {
 				EVENT_NODES[n->event_id] = n->next;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
 			FREE(n->subclass_name);
 			FREE(n->id);
 			FREE(n);
@@ -2492,7 +2508,6 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
-				vtype = 0;
 				br = 0;
 			}
 
@@ -3067,7 +3082,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 		cJSON_Delete(ecd->json);
 		ecd->json = NULL;
 		destroy_ecd(&ecd);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s\n", event_channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event Channel Queue failure for channel %s, status = %d\n", event_channel, status);
 	} else {
 		ecd = NULL;
 	}

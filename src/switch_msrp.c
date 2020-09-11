@@ -695,7 +695,7 @@ static char *msrp_parse_header(char *start, int skip, const char *end, switch_ms
 static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *p = start;
-	char *q = p;
+	char *q;
 	const char *end = start + len;
 
 	while(p < end) {

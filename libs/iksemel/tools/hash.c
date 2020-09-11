@@ -117,7 +117,7 @@ hash_print (hash *h, char *title_fmt, char *line_fmt)
 	struct item **tags, *t;
 	unsigned int i = 0, pos = 0;
 
-	tags = calloc (sizeof (struct tag *), h->count);
+	tags = calloc (sizeof (struct item *), h->count);
 
 	for (; i < h->size; i ++) {
 		for (t = h->table[i]; t; t = t->next) {

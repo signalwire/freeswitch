@@ -314,6 +314,7 @@ struct switch_runtime {
 	int events_use_dispatch;
 	uint32_t port_alloc_flags;
 	char *event_channel_key_separator;
+	uint32_t max_audio_channels;
 };
 
 extern struct switch_runtime runtime;

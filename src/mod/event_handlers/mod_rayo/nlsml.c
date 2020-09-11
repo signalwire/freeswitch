@@ -356,6 +356,12 @@ enum nlsml_match_type nlsml_parse(const char *nlsml_result, const char *uuid)
 	}
  end:
 
+	while (parser.cur) {
+		struct nlsml_node *node = parser.cur;
+		parser.cur = node->parent;
+		free(node);
+	}
+
 	if ( p ) {
 		iks_parser_delete(p);
 	}

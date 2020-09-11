@@ -62,7 +62,7 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-const char *vlc_args[] = {"-v"};
+const char *vlc_args[] = {"-vvv"};
 //const char *vlc_args[] = {"--network-caching=0"};
 //--sout-mux-caching
 
@@ -274,6 +274,8 @@ static void vlc_media_av_state_callback(const libvlc_event_t * event, void * dat
 		if (!(vcontext = acontext->vcontext)) {
 			return;
 		}
+	} else {
+		return;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
@@ -357,6 +359,8 @@ void vlc_file_play_audio_callback(void *data, const void *samples, unsigned coun
 		if (!(vcontext = acontext->vcontext)) {
 			return;
 		}
+	} else {
+		return;
 	}
 
 	switch_mutex_lock(vcontext->audio_mutex);
@@ -585,15 +589,17 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	int32_t offset = 250;
 	const char *tmp;
     vlc_file_context_t *acontext = handle->private_info;
-	const char * opts[25] = {
-		*vlc_args,
-		switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path)
-	};
+	const char * opts[25] = {0};
 	int argc = 2;
 	vlc_video_context_t *vcontext;
 
+	if (!acontext) {
+		return SWITCH_STATUS_FALSE;
+	}
 
-	vcontext = acontext->vcontext;
+	opts[0] = *vlc_args;
+	opts[1] = switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path);
+
 	pool = acontext->pool;
 
 
@@ -683,10 +689,6 @@ static switch_status_t vlc_file_av_open(switch_file_handle_t *handle, const char
     vlc_file_context_t *acontext = handle->private_info;
 	vlc_video_context_t *vcontext;
 
-	if (acontext) {
-		vcontext = acontext->vcontext;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for reading\n", acontext->path);
 
 	vcontext = switch_core_alloc(acontext->pool, sizeof(vlc_video_context_t));
@@ -766,6 +768,10 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+    if (!context->vlc_handle) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error: cannot initialise VLC handle\n");
+        return SWITCH_STATUS_GENERR;
+    }
 	libvlc_log_set(context->vlc_handle, log_cb, NULL);
 
 	realpath = path;
@@ -967,9 +973,11 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 		if (!(vcontext = acontext->vcontext)) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
 
-	if (vcontext->err) {
+	if (vcontext && vcontext->err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC ended\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1126,6 +1134,8 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		if (!(vcontext = acontext->vcontext)) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (vcontext->err) {
@@ -2247,9 +2257,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
-	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
-
-	switch_assert(tech_pvt && tech_pvt->context);
+	vlc_private_t *tech_pvt;
 
 	if ((tech_pvt = switch_core_session_get_private(session))) {
 
@@ -2263,6 +2271,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 		switch_media_handle_destroy(session);
 	}
+
+	switch_assert(tech_pvt && tech_pvt->context);
 
 	switch_yield(50000);
 
