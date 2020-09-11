@@ -764,6 +764,12 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp)
 	}
 }
 
+char *sofia_glue_create_external_via_custom(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport, const char *ip)
+{
+	return sofia_glue_create_via(session, ip, (sofia_glue_transport_has_tls(transport))
+								 ? profile->tls_sip_port : profile->extsipport, transport);
+}
+
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport)
 {
 	return sofia_glue_create_via(session, profile->extsipip, (sofia_glue_transport_has_tls(transport))
@@ -1155,6 +1161,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
 		const char *invite_req_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_req_uri");
 		const char *invite_domain = switch_channel_get_variable(tech_pvt->channel, "sip_invite_domain");
+		const char *invite_via_host = switch_channel_get_variable(tech_pvt->channel, "sip_invite_via_host");
 
 		const char *use_name, *use_number;
 
@@ -1260,7 +1267,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (!zstr(tech_pvt->mparams.remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->mparams.remote_ip)) {
-			tech_pvt->user_via = sofia_glue_create_external_via(session, tech_pvt->profile, tech_pvt->transport);
+			if (!zstr(invite_via_host)) {
+				tech_pvt->user_via = sofia_glue_create_external_via_custom(session, tech_pvt->profile, tech_pvt->transport, invite_via_host);
+			} else {
+				tech_pvt->user_via = sofia_glue_create_external_via(session, tech_pvt->profile, tech_pvt->transport);
+			}
 		}
 
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_TLS) && sofia_glue_transport_has_tls(tech_pvt->transport)) {
@@ -1274,7 +1285,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				char *ip_addr = tech_pvt->profile->sipip;
 				char *ipv6;
 
-				if ( !zstr(tech_pvt->mparams.remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->mparams.remote_ip ) ) {
+				const char *invite_contact_host;
+				if ((invite_contact_host = switch_channel_get_variable(channel, "sip_invite_contact_host"))) {
+					ip_addr = (char *) invite_contact_host;
+				} else if ( !zstr(tech_pvt->mparams.remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->mparams.remote_ip ) ) {
 					ip_addr = tech_pvt->profile->extsipip;
 				}
 
