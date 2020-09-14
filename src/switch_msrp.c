@@ -267,7 +267,7 @@ static switch_status_t msock_init(char *ip, switch_port_t port, switch_socket_t 
 #ifdef WIN32
 	/* Enable dual-stack listening on Windows */
 	if (switch_sockaddr_get_family(sa) == AF_INET6) {
-		rv = switch_socket_opt_set(*sock, 16384, 0);
+		rv = switch_socket_opt_set(*sock, SWITCH_SO_IPV6_V6ONLY, 0);
 		if (rv) goto sock_fail;
 	}
 #endif

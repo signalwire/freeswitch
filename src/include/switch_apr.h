@@ -990,7 +990,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 #define SWITCH_SO_TCP_NODELAY 512
 #define SWITCH_SO_TCP_KEEPIDLE 520
 #define SWITCH_SO_TCP_KEEPINTVL 530
-
+#define SWITCH_SO_IPV6_V6ONLY 16384 /* Don't accept IPv4 connections on an IPv6 listening socket. */
 
  /**
  * @def SWITCH_INET
