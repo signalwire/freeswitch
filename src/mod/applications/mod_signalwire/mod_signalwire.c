@@ -221,7 +221,7 @@ static ks_status_t load_credentials_from_json(ks_json_t *json)
 {
 	ks_status_t status = KS_STATUS_SUCCESS;
 	ks_json_t *authentication = NULL;
-	const char *authentication_str = NULL;
+	char *authentication_str = NULL;
 	const char *bootstrap = NULL;
 	const char *relay_connector_id = NULL;
 
@@ -1169,7 +1169,7 @@ static void mod_signalwire_state_configure(void)
 			result = ks_json_get_object_item(result, "result");
 			if (!SIGNALWIRE_PROVISIONING_CONFIGURE_RESPONSE_PARSE(ks_handle_pool(cmd), result, &configure_res)) {
 #endif
-				const ks_json_t *configuration = configure_res->configuration;
+				ks_json_t *configuration = configure_res->configuration;
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
 				const char *configuration_profile = ks_json_get_string(configuration, "profile");
 #else
