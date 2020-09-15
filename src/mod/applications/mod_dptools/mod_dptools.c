@@ -53,6 +53,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	char *lbuf;
 	char *target = arg;
 	char delim = ',';
+	int count = 0;
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
@@ -92,13 +93,19 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 			app++;
 		}
 
-		switch_caller_extension_add_application(session, extension, app, data);
+		if (!zstr(app) && !zstr(data)) {
+			switch_caller_extension_add_application(session, extension, app, data);
+			count++;
+		}
 	}
 
-	caller_profile->destination_number = (char *) caller_profile->rdnis;
-	caller_profile->rdnis = SWITCH_BLANK_STRING;
-
-	return extension;
+	if (count) {
+		caller_profile->destination_number = (char *) caller_profile->rdnis;
+		caller_profile->rdnis = SWITCH_BLANK_STRING;
+		return extension;
+	} else {
+		return NULL;
+	}
 }
 
 struct action_binding {
