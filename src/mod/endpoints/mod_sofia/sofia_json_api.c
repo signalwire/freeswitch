@@ -101,6 +101,54 @@ switch_status_t build_sofia_status_json(cJSON * container)
 					}
 				}
 			}
+
+			{
+				size_t in_completed = 0, in_final_failed = 0, in_inv_completed = 0, in_inv_confirmed = 0;
+				size_t in_preliminary = 0, in_proceeding = 0, in_terminated = 0;
+				size_t out_completed = 0, out_delayed = 0, out_inv_calling = 0, out_inv_completed = 0;
+				size_t out_inv_proceeding = 0, out_resolving = 0, out_terminated = 0;
+				cJSON *queues = cJSON_CreateObject();
+				cJSON *inbound = cJSON_CreateObject();
+				cJSON *outbound = cJSON_CreateObject();
+
+				nta_agent_get_stats(nua_get_agent(profile->nua),
+				                    NTATAG_Q_IN_COMPLETED_REF(in_completed),
+				                    NTATAG_Q_IN_FINAL_FAILED_REF(in_final_failed),
+				                    NTATAG_Q_IN_INV_COMPLETED_REF(in_inv_completed),
+				                    NTATAG_Q_IN_INV_CONFIRMED_REF(in_inv_confirmed),
+				                    NTATAG_Q_IN_PRELIMINARY_REF(in_preliminary),
+				                    NTATAG_Q_IN_PROCEEDING_REF(in_proceeding),
+				                    NTATAG_Q_IN_TERMINATED_REF(in_terminated),
+				                    NTATAG_Q_OUT_COMPLETED_REF(out_completed),
+				                    NTATAG_Q_OUT_DELAYED_REF(out_delayed),
+				                    NTATAG_Q_OUT_INV_CALLING_REF(out_inv_calling),
+				                    NTATAG_Q_OUT_INV_COMPLETED_REF(out_inv_completed),
+				                    NTATAG_Q_OUT_INV_PROCEEDING_REF(out_inv_proceeding),
+				                    NTATAG_Q_OUT_RESOLVING_REF(out_resolving),
+				                    NTATAG_Q_OUT_TERMINATED_REF(out_terminated),
+				                    TAG_END(), 14);
+
+
+				cJSON_AddItemToObject(inbound, "completed", cJSON_CreateNumber(in_completed));
+				cJSON_AddItemToObject(inbound, "final_failed", cJSON_CreateNumber(in_final_failed));
+				cJSON_AddItemToObject(inbound, "inv_completed", cJSON_CreateNumber(in_inv_completed));
+				cJSON_AddItemToObject(inbound, "inv_confirmed", cJSON_CreateNumber(in_inv_confirmed));
+				cJSON_AddItemToObject(inbound, "preliminary", cJSON_CreateNumber(in_preliminary));
+				cJSON_AddItemToObject(inbound, "proceeding", cJSON_CreateNumber(in_proceeding));
+				cJSON_AddItemToObject(inbound, "terminated", cJSON_CreateNumber(in_terminated));
+
+				cJSON_AddItemToObject(outbound, "completed", cJSON_CreateNumber(out_completed));
+				cJSON_AddItemToObject(outbound, "delayed", cJSON_CreateNumber(out_delayed));
+				cJSON_AddItemToObject(outbound, "inv_calling", cJSON_CreateNumber(out_inv_calling));
+				cJSON_AddItemToObject(outbound, "inv_completed", cJSON_CreateNumber(out_inv_completed));
+				cJSON_AddItemToObject(outbound, "inv_proceeding", cJSON_CreateNumber(out_inv_proceeding));
+				cJSON_AddItemToObject(outbound, "resolving", cJSON_CreateNumber(out_resolving));
+				cJSON_AddItemToObject(outbound, "terminated", cJSON_CreateNumber(out_terminated));
+
+				cJSON_AddItemToObject(queues, "inbound", inbound);
+				cJSON_AddItemToObject(queues, "outbound", outbound);
+				cJSON_AddItemToObject(jprofile, "queues", queues);
+			}
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
