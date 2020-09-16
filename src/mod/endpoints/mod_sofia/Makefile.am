@@ -5,7 +5,7 @@ MODNAME=mod_sofia
 noinst_LTLIBRARIES = libsofiamod.la
 libsofiamod_la_SOURCES   =  mod_sofia.c sofia.c sofia_json_api.c sofia_glue.c sofia_presence.c sofia_reg.c sofia_media.c sip-dig.c rtp.c mod_sofia.h
 libsofiamod_la_LDFLAGS   = -static
-libsofiamod_la_CFLAGS  = $(AM_CFLAGS) -I. $(SOFIA_SIP_CFLAGS)
+libsofiamod_la_CFLAGS  = $(AM_CFLAGS) -I. $(SOFIA_SIP_CFLAGS) -DSOFIA_SIP_UA_MAJOR_VERSION=@SOFIA_SIP_UA_MAJOR_VERSION@ -DSOFIA_SIP_UA_MINOR_VERSION=@SOFIA_SIP_UA_MINOR_VERSION@
 
 mod_LTLIBRARIES = mod_sofia.la
 mod_sofia_la_SOURCES =
