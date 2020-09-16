@@ -2084,7 +2084,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		
 		memcpy(frame.data, nframe->data, nframe->datalen);
 
-		if (switch_core_session_write_frame(ep->eavesdropper, nframe, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_write_frame(ep->eavesdropper, &frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_FALSE;
 		}
 	}
