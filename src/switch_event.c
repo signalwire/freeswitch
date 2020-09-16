@@ -1052,6 +1052,14 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 				}
 				goto end;
 			} else {
+				if (stack & SWITCH_STACK_PUSH) {
+					int i;
+					for(i = 0; i < header->idx; i++) {
+						if (!strcmp(header->array[i], data)) {
+							goto end;
+						}
+					}
+				}				
 				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 					exists++;
 					stack &= ~(SWITCH_STACK_TOP | SWITCH_STACK_BOTTOM);
