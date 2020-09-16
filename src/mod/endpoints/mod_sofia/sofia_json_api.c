@@ -101,7 +101,7 @@ switch_status_t build_sofia_status_json(cJSON * container)
 					}
 				}
 			}
-
+#if SOFIA_SIP_UA_MAJOR_VERSION > 1 || SOFIA_SIP_UA_MINOR_VERSION >= 14
 			{
 				size_t in_completed = 0, in_final_failed = 0, in_inv_completed = 0, in_inv_confirmed = 0;
 				size_t in_preliminary = 0, in_proceeding = 0, in_terminated = 0;
@@ -149,6 +149,7 @@ switch_status_t build_sofia_status_json(cJSON * container)
 				cJSON_AddItemToObject(queues, "outbound", outbound);
 				cJSON_AddItemToObject(jprofile, "queues", queues);
 			}
+#endif
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
