@@ -724,6 +724,16 @@ PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.12.12],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
 
+SOFIA_VERSION="`$PKG_CONFIG --modversion sofia-sip-ua`"
+SOFIA_MAJOR_VERSION="`echo $SOFIA_VERSION | cut -d. -f1 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+SOFIA_MINOR_VERSION="`echo $SOFIA_VERSION | cut -d. -f2 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+SOFIA_PATCH_VERSION="`echo $SOFIA_VERSION | cut -d. -f3 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+test -n "$SOFIA_PATCH_VERSION" || SOFIA_PATCH_VERSION=0
+AC_SUBST([SOFIA_SIP_UA_VERSION], [$SOFIA_VERSION])
+AC_SUBST([SOFIA_SIP_UA_MAJOR_VERSION], [$SOFIA_MAJOR_VERSION])
+AC_SUBST([SOFIA_SIP_UA_MINOR_VERSION], [$SOFIA_MINOR_VERSION])
+AC_SUBST([SOFIA_SIP_UA_PATCH_VERSION], [$SOFIA_PATCH_VERSION])
+
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
 
