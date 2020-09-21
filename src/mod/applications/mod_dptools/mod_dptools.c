@@ -93,7 +93,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 			app++;
 		}
 
-		if (!zstr(app) && !zstr(data)) {
+		if (!zstr(app)) {
 			switch_caller_extension_add_application(session, extension, app, data);
 			count++;
 		}
