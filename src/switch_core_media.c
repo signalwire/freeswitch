@@ -8420,26 +8420,43 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 		tmp[10] = '\0';
 		engine->ice_out.cands[0][0].foundation = switch_core_session_strdup(session, tmp);
 	}
+	/*rtcp_mux -1: no rtcp/unknown, rtcp_mux 0: probably rtcp over separate port (not sure it is ever set to this), rtcp_mux 1: rtcp muxed over rtp port */
+	if (!engine->ice_out.cands[0][1].foundation) {
+		switch_stun_random_string(tmp, 10, "0123456789");
+		tmp[10] = '\0';
+		engine->ice_out.cands[0][1].foundation = switch_core_session_strdup(session, tmp);
+	}
 
 	engine->ice_out.cands[0][0].transport = "udp";
+	engine->ice_out.cands[0][1].transport = "udp";
 
 	if (!engine->ice_out.cands[0][0].component_id) {
 		engine->ice_out.cands[0][0].component_id = 1;
 		engine->ice_out.cands[0][0].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][0].component_id);
 	}
 
+	if (!engine->ice_out.cands[0][1].component_id) {
+		engine->ice_out.cands[0][1].component_id = 2;
+		engine->ice_out.cands[0][1].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0][1].component_id);
+	}
+
 	if (!zstr(ip)) {
 		engine->ice_out.cands[0][0].con_addr = switch_core_session_strdup(session, ip);
+		engine->ice_out.cands[0][1].con_addr = switch_core_session_strdup(session, ip);
 	}
 
 	if (port) {
 		engine->ice_out.cands[0][0].con_port = port;
+		if (engine->rtcp_mux < 1) engine->ice_out.cands[0][1].con_port = port+1;
+		else engine->ice_out.cands[0][1].con_port = port;
 	}
 
 	engine->ice_out.cands[0][0].generation = "0";
+	engine->ice_out.cands[0][1].generation = "0";
 	//add rport stuff later
 
 	engine->ice_out.cands[0][0].ready = 1;
+	engine->ice_out.cands[0][1].ready = 1;
 
 
 }
@@ -9918,9 +9935,9 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\r\n", a_engine->ssrc);
 
 	if (a_engine->ice_out.cands[0][0].ready) {
-		char tmp1[11] = "";
-		char tmp2[11] = "";
-		char tmp3[11] = "";
+		char tmp1[11];
+		char tmp2[11];
+		char tmp3[11];
 		uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 		uint32_t c2 = c1 - 1;
 
@@ -9952,19 +9969,18 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 						tmp1, ice_out->cands[0][0].transport, c1,
-						ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+						a_engine->local_sdp_ip, a_engine->local_sdp_port
 						);
 
 		if (include_external && !zstr(smh->mparams->extsipip)) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 				tmp3, ice_out->cands[0][0].transport, c1,
-				smh->mparams->extsipip, ice_out->cands[0][0].con_port
+				smh->mparams->extsipip, a_engine->local_sdp_port
 				);
 		}
 
 		if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
-			strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-			&& a_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+			( strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr) || a_engine->local_sdp_port != ice_out->cands[0][0].con_port )) {
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
 							tmp2, ice_out->cands[0][0].transport, c2,
@@ -9973,33 +9989,51 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 							);
 		}
 
-		if (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][0].con_addr) &&
+			strcmp(smh->mparams->extsipip, ice_out->cands[0][0].con_addr)) {
+
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+							tmp2, ice_out->cands[0][0].transport, c2,
+							smh->mparams->extsipip, a_engine->local_sdp_port,
+							a_engine->local_sdp_ip, a_engine->local_sdp_port
+							);
+		}
+
+		if (smh->mparams->rtcp_audio_interval_msec && (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING))) {
 
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-							tmp1, ice_out->cands[0][0].transport, c1,
-							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+							tmp1, ice_out->cands[0][1].transport, c1,
+							a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 							);
 			
 			if (include_external && !zstr(smh->mparams->extsipip)) {
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-					tmp3, ice_out->cands[0][0].transport, c1,
-					smh->mparams->extsipip, ice_out->cands[0][0].con_port
+					tmp3, ice_out->cands[0][1].transport, c1,
+					smh->mparams->extsipip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 					);
 			}
 
-			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
-				strcmp(a_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
-				&& a_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
+			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) &&
+				(strcmp(a_engine->local_sdp_ip, ice_out->cands[0][1].con_addr) || (a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)) != ice_out->cands[0][1].con_port) ) {
 
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
-								tmp2, ice_out->cands[0][0].transport, c2,
-								ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1),
+								tmp2, ice_out->cands[0][1].transport, c2,
+								ice_out->cands[0][1].con_addr, ice_out->cands[0][1].con_port,
+								a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+								);
+			}
+
+			if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][1].con_addr) &&
+				(strcmp(smh->mparams->extsipip, ice_out->cands[0][1].con_addr)) ) {
+
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+								tmp2, ice_out->cands[0][1].transport, c2,
+								smh->mparams->extsipip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1),
 								a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 								);
 			}
 		}
-
 
 
 #ifdef GOOGLE_ICE
@@ -10670,9 +10704,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\r\n", a_engine->ssrc);
 
 		if (a_engine->ice_out.cands[0][0].ready) {
-			char tmp1[11] = "";
-			char tmp2[11] = "";
-			char tmp3[11] = "";
+			char tmp1[11];
+			char tmp2[11];
+			char tmp3[11];
 			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 			//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 			//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
@@ -10698,19 +10732,18 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 							tmp1, ice_out->cands[0][0].transport, c1,
-							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+							a_engine->local_sdp_ip, a_engine->local_sdp_port
 							);
 
 			if (include_external && !zstr(smh->mparams->extsipip)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 					tmp3, ice_out->cands[0][0].transport, c1,
-					smh->mparams->extsipip, ice_out->cands[0][0].con_port
+					smh->mparams->extsipip, a_engine->local_sdp_port
 					);
 			}
 
 			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
-				strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-				&& a_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+				( strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr) || a_engine->local_sdp_port != ice_out->cands[0][0].con_port )) {
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
 								tmp2, ice_out->cands[0][0].transport, c3,
@@ -10719,30 +10752,47 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								);
 			}
 
+			if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][0].con_addr) &&
+				strcmp(smh->mparams->extsipip, ice_out->cands[0][0].con_addr)) {
 
-			if (a_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+								tmp2, ice_out->cands[0][0].transport, c3,
+								smh->mparams->extsipip, a_engine->local_sdp_port,
+								a_engine->local_sdp_ip, a_engine->local_sdp_port
+								);
+			}
+
+
+			if (smh->mparams->rtcp_audio_interval_msec && (a_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))) {
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-								tmp1, ice_out->cands[0][0].transport, c2,
-								ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+								tmp1, ice_out->cands[0][1].transport, c2,
+								a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 								);
 
 				if (include_external && !zstr(smh->mparams->extsipip)) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-						tmp3, ice_out->cands[0][0].transport, c2,
-						smh->mparams->extsipip, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+						tmp3, ice_out->cands[0][1].transport, c2,
+						smh->mparams->extsipip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 						);
 				}
 
-
-
-				if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) &&
-					strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-					&& a_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+				if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) &&
+					(strcmp(a_engine->local_sdp_ip, ice_out->cands[0][1].con_addr) || (a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)) != ice_out->cands[0][1].con_port) ) {
 
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
-									tmp2, ice_out->cands[0][0].transport, c4,
-									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1),
+									tmp2, ice_out->cands[0][1].transport, c4,
+									ice_out->cands[0][1].con_addr, ice_out->cands[0][1].con_port,
+									a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+									);
+				}
+
+				if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][1].con_addr) &&
+					(strcmp(smh->mparams->extsipip, ice_out->cands[0][1].con_addr)) ) {
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+									tmp2, ice_out->cands[0][1].transport, c4,
+									smh->mparams->extsipip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1),
 									a_engine->local_sdp_ip, a_engine->local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 									);
 				}
@@ -11212,9 +11262,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\r\n", v_engine->ssrc);
 
 				if (v_engine->ice_out.cands[0][0].ready) {
-					char tmp1[11] = "";
-					char tmp2[11] = "";
-					char tmp3[11] = "";
+					char tmp1[11];
+					char tmp2[11];
+					char tmp3[11];
 					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 					//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 					//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
@@ -11247,19 +11297,18 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 									tmp1, ice_out->cands[0][0].transport, c1,
-									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+									v_engine->local_sdp_ip, v_engine->local_sdp_port
 									);
 
 					if (include_external && !zstr(smh->mparams->extsipip)) {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 							tmp3, ice_out->cands[0][0].transport, c1,
-							smh->mparams->extsipip, ice_out->cands[0][0].con_port
+							smh->mparams->extsipip, v_engine->local_sdp_port
 							);
 					}
 
 					if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
-						strcmp(v_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-						&& v_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+						( strcmp(v_engine->local_sdp_ip, ice_out->cands[0][0].con_addr) || v_engine->local_sdp_port != ice_out->cands[0][0].con_port )) {
 
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
 										tmp2, ice_out->cands[0][0].transport, c3,
@@ -11268,29 +11317,47 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 										);
 					}
 
+					if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][0].con_addr) &&
+						strcmp(smh->mparams->extsipip, ice_out->cands[0][0].con_addr)) {
 
-					if (v_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+										tmp2, ice_out->cands[0][0].transport, c3,
+										smh->mparams->extsipip, v_engine->local_sdp_port,
+										v_engine->local_sdp_ip, v_engine->local_sdp_port
+										);
+					}
+
+
+					if (smh->mparams->rtcp_video_interval_msec && (v_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))) {
 
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-										tmp1, ice_out->cands[0][0].transport, c2,
-										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+										tmp1, ice_out->cands[0][1].transport, c2,
+										v_engine->local_sdp_ip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 										);
 
-					if (include_external && !zstr(smh->mparams->extsipip)) {
+						if (include_external && !zstr(smh->mparams->extsipip)) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-								tmp3, ice_out->cands[0][0].transport, c2,
-								smh->mparams->extsipip, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+								tmp3, ice_out->cands[0][1].transport, c2,
+								smh->mparams->extsipip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 								);
 						}
 
+						if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) &&
+							(strcmp(v_engine->local_sdp_ip, ice_out->cands[0][1].con_addr) || (v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)) != ice_out->cands[0][1].con_port) ) {
 
-						if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
-							strcmp(v_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
-							&& v_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+											tmp2, ice_out->cands[0][1].transport, c4,
+											ice_out->cands[0][1].con_addr, ice_out->cands[0][1].con_port,
+											v_engine->local_sdp_ip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+											);
+						}
 
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\r\n",
-											tmp2, ice_out->cands[0][0].transport, c4,
-											ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1),
+						if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][1].con_addr) &&
+							(strcmp(smh->mparams->extsipip, ice_out->cands[0][1].con_addr)) ) {
+
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+											tmp2, ice_out->cands[0][1].transport, c4,
+											smh->mparams->extsipip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1),
 											v_engine->local_sdp_ip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 											);
 						}
@@ -11582,8 +11649,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\r\n", t_engine->ssrc);
 
 				if (t_engine->ice_out.cands[0][0].ready) {
-					char tmp1[11] = "";
-					char tmp2[11] = "";
+					char tmp1[11];
+					char tmp2[11];
+					char tmp3[11];
 					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 					//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 					//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
@@ -11595,8 +11663,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 					tmp1[10] = '\0';
 					tmp2[10] = '\0';
+					tmp3[10] = '\0';
 					switch_stun_random_string(tmp1, 10, "0123456789");
 					switch_stun_random_string(tmp2, 10, "0123456789");
+					switch_stun_random_string(tmp3, 10, "0123456789");
 
 					ice_out = &t_engine->ice_out;
 
@@ -11614,12 +11684,18 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 									tmp1, ice_out->cands[0][0].transport, c1,
-									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+									t_engine->local_sdp_ip, t_engine->local_sdp_port
 									);
 
+					if (include_external && !zstr(smh->mparams->extsipip)) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
+							tmp3, ice_out->cands[0][0].transport, c1,
+							smh->mparams->extsipip, t_engine->local_sdp_port
+							);
+					}
+
 					if (!zstr(t_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) &&
-						strcmp(t_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-						&& t_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+						( strcmp(t_engine->local_sdp_ip, ice_out->cands[0][0].con_addr) || t_engine->local_sdp_port != ice_out->cands[0][0].con_port )) {
 
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
 										tmp2, ice_out->cands[0][0].transport, c3,
@@ -11628,26 +11704,51 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 										);
 					}
 
+					if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][0].con_addr) &&
+						strcmp(smh->mparams->extsipip, ice_out->cands[0][0].con_addr)) {
 
-					if (t_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+										tmp2, ice_out->cands[0][0].transport, c3,
+										smh->mparams->extsipip, t_engine->local_sdp_port,
+										t_engine->local_sdp_ip, t_engine->local_sdp_port
+										);
+					}
+
+					if (smh->mparams->rtcp_text_interval_msec && (t_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))) {
 
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
-										tmp1, ice_out->cands[0][0].transport, c2,
-										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (t_engine->rtcp_mux > 0 ? 0 : 1)
+										tmp1, ice_out->cands[0][1].transport, c2,
+										t_engine->local_sdp_ip, t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1)
 										);
 
+						if (include_external && !zstr(smh->mparams->extsipip)) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\r\n",
+								tmp3, ice_out->cands[0][1].transport, c2,
+								smh->mparams->extsipip, t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1)
+								);
+						}
 
 						if (!zstr(t_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) &&
-							strcmp(t_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
-							&& t_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
+							(strcmp(t_engine->local_sdp_ip, ice_out->cands[0][1].con_addr) || (t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1)) != ice_out->cands[0][1].con_port) ) {
 
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\r\n",
-											tmp2, ice_out->cands[0][0].transport, c4,
-											ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (t_engine->rtcp_mux > 0 ? 0 : 1),
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+											tmp2, ice_out->cands[0][1].transport, c4,
+											ice_out->cands[0][1].con_addr, ice_out->cands[0][1].con_port,
+											t_engine->local_sdp_ip, t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1)
+											);
+						}
+
+						if (!include_external && !zstr(smh->mparams->extsipip) && !zstr(ice_out->cands[0][1].con_addr) &&
+							(strcmp(smh->mparams->extsipip, ice_out->cands[0][1].con_addr)) ) {
+
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
+											tmp2, ice_out->cands[0][1].transport, c4,
+											smh->mparams->extsipip, t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1),
 											t_engine->local_sdp_ip, t_engine->local_sdp_port + (t_engine->rtcp_mux > 0 ? 0 : 1)
 											);
 						}
 					}
+
 
 
 
@@ -13740,17 +13841,23 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 	v_engine->ice_out.pwd = NULL;
 	v_engine->ice_out.cands[0][0].foundation = NULL;
 	v_engine->ice_out.cands[0][0].component_id = 0;
+	v_engine->ice_out.cands[0][1].foundation = NULL;
+	v_engine->ice_out.cands[0][1].component_id = 0;
 
 	t_engine->ice_out.ufrag = NULL;
 	t_engine->ice_out.pwd = NULL;
 	t_engine->ice_out.cands[0][0].foundation = NULL;
 	t_engine->ice_out.cands[0][0].component_id = 0;
+	t_engine->ice_out.cands[0][1].foundation = NULL;
+	t_engine->ice_out.cands[0][1].component_id = 0;
 
 
 	a_engine->ice_out.ufrag = NULL;
 	a_engine->ice_out.pwd = NULL;
 	a_engine->ice_out.cands[0][0].foundation = NULL;
 	a_engine->ice_out.cands[0][0].component_id = 0;
+	a_engine->ice_out.cands[0][1].foundation = NULL;
+	a_engine->ice_out.cands[0][1].component_id = 0;
 
 	if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 		gen_ice(smh->session, SWITCH_MEDIA_TYPE_VIDEO, NULL, 0);
