@@ -1751,7 +1751,7 @@ SWITCH_STANDARD_API(rtmp_function)
 				stream->write_function(stream, "+OK\n");
 			} else {
 				rtmp_profile_start(argv[1]);
-				stream->write_function(stream, "-OK (wasn't started, started anyways)\n");
+				stream->write_function(stream, "+OK (wasn't started, started anyways)\n");
 			}
 		} else {
 			goto usage;

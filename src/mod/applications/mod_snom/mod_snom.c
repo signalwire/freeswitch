@@ -96,7 +96,7 @@ SWITCH_STANDARD_API(snom_bind_key_api_function)
 
   err:
 
-	stream->write_function(stream, "-Error %s\n", KEY_BIND_SYNTAX);
+	stream->write_function(stream, "-ERR %s\n", KEY_BIND_SYNTAX);
 
   end:
 
