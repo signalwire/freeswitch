@@ -344,7 +344,7 @@ SWITCH_STANDARD_API(distributor_function)
 		stream->write_function(stream, "%s", ret);
 		free(ret);
 	} else {
-		stream->write_function(stream, "-err");
+		stream->write_function(stream, "-ERR");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -403,7 +403,7 @@ SWITCH_STANDARD_API(distributor_ctl_function)
 	if (argc > 0) {
 		if (!strcasecmp(argv[0], "reload")) {
 			if (load_config(SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "+ok reloaded.\n");
+				stream->write_function(stream, "+OK reloaded.\n");
 				err = NULL;
 			}
 		} else if (!strcasecmp(argv[0], "dump")) {

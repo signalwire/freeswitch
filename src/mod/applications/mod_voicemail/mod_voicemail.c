@@ -5150,7 +5150,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 		profile_rwunlock(profile);
 	}
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -5310,7 +5310,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 
 	}
 	profile_rwunlock(profile);
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -5371,7 +5371,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_password_set_function)
 	switch_safe_free(sql);
 	profile_rwunlock(profile);
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -5503,7 +5503,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
 
 	profile_rwunlock(profile);
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 
 done:
 	switch_core_destroy_memory_pool(&pool);
@@ -5554,7 +5554,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_delete_function)
 	vm_execute_sql(profile, sql, profile->mutex);
 	profile_rwunlock(profile);
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 
 done:
 	switch_core_destroy_memory_pool(&pool);
@@ -5605,7 +5605,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_save_function)
 	vm_execute_sql(profile, sql, profile->mutex);
 	profile_rwunlock(profile);
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -5655,7 +5655,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_undelete_function)
 	vm_execute_sql(profile, sql, profile->mutex);
 	profile_rwunlock(profile);
 
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -5757,7 +5757,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 				authorized = SWITCH_TRUE;
 			}
 			if (authorized) {
-				stream->write_function(stream, "%s", "-OK");
+				stream->write_function(stream, "%s", "+OK");
 			} else {
 				stream->write_function(stream, "%s", "-ERR");
 			}
@@ -5870,7 +5870,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_forward_function)
 
 		profile_rwunlock(profile);
 	}
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 
@@ -6101,7 +6101,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 
 		profile_rwunlock(profile);
 	}
-	stream->write_function(stream, "-OK\n");
+	stream->write_function(stream, "+OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
 

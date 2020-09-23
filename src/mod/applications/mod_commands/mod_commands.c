@@ -3771,7 +3771,7 @@ SWITCH_STANDARD_API(uuid_early_ok_function)
 		switch_channel_set_flag(channel, CF_EARLY_OK);
 		switch_core_session_rwunlock(xsession);
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERR\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3807,7 +3807,7 @@ SWITCH_STANDARD_API(uuid_ring_ready_function)
 	stream->write_function(stream, "-USAGE: %s\n", RING_READY_SYNTAX);
 	goto done;
  error:
-	stream->write_function(stream, "-ERROR\n");
+	stream->write_function(stream, "-ERR\n");
 	goto done;
  done:
 	switch_safe_free(mycmd);
@@ -3824,11 +3824,11 @@ SWITCH_STANDARD_API(uuid_pre_answer_function)
 		if (switch_channel_pre_answer(channel) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK\n");
 		} else {
-			stream->write_function(stream, "-ERROR\n");
+			stream->write_function(stream, "-ERR\n");
 		}
 		switch_core_session_rwunlock(xsession);
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERR\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3846,10 +3846,10 @@ SWITCH_STANDARD_API(uuid_answer_function)
 		if (status == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK\n");
 		} else {
-			stream->write_function(stream, "-ERROR\n");
+			stream->write_function(stream, "-ERR\n");
 		}
 	} else {
-		stream->write_function(stream, "-ERROR\n");
+		stream->write_function(stream, "-ERR\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;

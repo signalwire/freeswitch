@@ -177,7 +177,7 @@ SWITCH_STANDARD_API(mod_mongo_mapreduce_function)
 				/* send command and get result */
 				if (mongoc_client_command_simple(conn, db, &cmd, NULL /* read prefs */, &out, &error)) {
 					char *json_result = bson_as_json(&out, NULL);
-					stream->write_function(stream, "-OK\n%s\n", json_result);
+					stream->write_function(stream, "+OK\n%s\n", json_result);
 					bson_free(json_result);
 				} else {
 					stream->write_function(stream, "-ERR\nmongo_run_command failed!\n");
@@ -268,7 +268,7 @@ SWITCH_STANDARD_API(mod_mongo_find_n_function)
 							bson_free(json_result);
 						}
 						if (!mongoc_cursor_error(cursor, &error)) {
-							stream->write_function(stream, "-OK\n[%s]", zstr((char *)result_stream.data) ? "" :(char *)result_stream.data);
+							stream->write_function(stream, "+OK\n[%s]", zstr((char *)result_stream.data) ? "" :(char *)result_stream.data);
 						} else {
 							stream->write_function(stream, "-ERR\nquery failed: %s", error.message);
 						}
@@ -347,13 +347,13 @@ SWITCH_STANDARD_API(mod_mongo_find_one_function)
 						if (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
 							char *json_result;
 							json_result = bson_as_json(result, NULL);
-							stream->write_function(stream, "-OK\n%s\n", json_result);
+							stream->write_function(stream, "+OK\n%s\n", json_result);
 							bson_free(json_result);
 						} else if (mongoc_cursor_error(cursor, &error)) {
 							stream->write_function(stream, "-ERR\nquery failed: %s\n", error.message);
 						} else {
 							/* empty set */
-							stream->write_function(stream, "-OK\n{}\n");
+							stream->write_function(stream, "+OK\n{}\n");
 						}
 					} else {
 						stream->write_function(stream, "-ERR\nquery failed!\n");

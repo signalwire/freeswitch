@@ -1818,7 +1818,7 @@ SWITCH_STANDARD_API(avmd_api_main) {
 
     if (strcasecmp(command, "stop") == 0) {
         uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
-        stream->write_function(stream, "+ERR, avmd has not yet been started on\n [%s] [%s]\n\n", uuid_dup, switch_channel_get_name(channel));
+        stream->write_function(stream, "-ERR, avmd has not yet been started on\n [%s] [%s]\n\n", uuid_dup, switch_channel_get_name(channel));
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Stop failed - avmd has not yet been started on channel [%s]!\n", switch_channel_get_name(channel));
         goto end;
     }
@@ -1894,9 +1894,9 @@ end:
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO, "AVMD session NOT started\n");
             if (avmd_globals.settings.report_status == 1) {
                 if ((uuid != NULL) && (channel != NULL)) {
-                    stream->write_function(stream, "+ERR\n [%s] [%s] NOT started!\n\n", uuid, switch_channel_get_name(channel));
+                    stream->write_function(stream, "-ERR\n [%s] [%s] NOT started!\n\n", uuid, switch_channel_get_name(channel));
                 } else {
-                    stream->write_function(stream, "+ERR\n AVMD session NOT started!\n\n", switch_channel_get_name(channel));
+                    stream->write_function(stream, "-ERR\n AVMD session NOT started!\n\n", switch_channel_get_name(channel));
                 }
             }
     }

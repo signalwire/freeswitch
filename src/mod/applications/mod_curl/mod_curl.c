@@ -478,7 +478,7 @@ static switch_status_t http_sendfile_test_file_open(http_sendfile_data_t *http_d
 		}
 
 		if((switch_test_flag(http_data, CSO_STREAM) || switch_test_flag(http_data, CSO_NONE)) && http_data->stream)
-			http_data->stream->write_function(http_data->stream, "-Err Unable to open file %s\n", http_data->filename_element);
+			http_data->stream->write_function(http_data->stream, "-ERR Unable to open file %s\n", http_data->filename_element);
 
 		if(switch_test_flag(http_data, CSO_NONE) && !http_data->stream)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "curl_sendfile: Unable to open file %s\n", http_data->filename_element);
