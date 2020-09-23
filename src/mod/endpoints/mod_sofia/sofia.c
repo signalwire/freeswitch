@@ -431,6 +431,7 @@ static void sofia_parse_all_invite_headers(sip_t const *sip, switch_core_session
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_to, "sip_i_to");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_call_id, "sip_i_call_id");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_cseq, "sip_i_cseq");
+	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_identity, "sip_i_identity");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_route, "sip_i_route");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_max_forwards, "sip_i_max_forwards");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_proxy_require, "sip_i_proxy_require");
