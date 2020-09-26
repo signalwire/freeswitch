@@ -4033,7 +4033,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 			caller_id_name = var;
 		}
 	} else if (caller_id_name) {
-		switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, "caller-id-name", caller_id_name);
+		if (!switch_event_get_header(jsock->params, "caller-id-name")) {
+			switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, "caller-id-name", caller_id_name);
+		}
 	}
 
 	if (zstr(caller_id_number)) {
