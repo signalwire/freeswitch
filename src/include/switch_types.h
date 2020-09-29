@@ -1416,6 +1416,7 @@ CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
+CF_REUSE_CALLER_PROFILE - Channel reuse caller profile 
 CF_CONTROLLED		- Channel is under control
 CF_PROXY_MODE		- Channel has no media
 CF_SUSPEND			- Suspend i/o
@@ -1468,6 +1469,7 @@ typedef enum {
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
+	CF_REUSE_CALLER_PROFILE,
 	CF_CONTROLLED,
 	CF_PROXY_MODE,
 	CF_PROXY_OFF,

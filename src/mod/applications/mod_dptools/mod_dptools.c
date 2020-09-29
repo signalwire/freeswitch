@@ -1150,6 +1150,13 @@ SWITCH_STANDARD_APP(break_function)
 	}
 }
 
+SWITCH_STANDARD_APP(reuse_caller_profile_function)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	switch_channel_set_flag(channel, CF_REUSE_CALLER_PROFILE);
+}
+
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_queue_dtmf_string(switch_core_session_get_channel(session), (const char *) data);
@@ -6551,6 +6558,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "reuse_caller_profile", "Reuse the caller profile", "Reuse the caller profile", reuse_caller_profile_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",

@@ -2192,7 +2192,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			extension = "service";
 		}
 
-		new_profile = switch_caller_profile_clone(session, profile);
+
+		if (switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			new_profile = switch_channel_get_caller_profile(channel);
+		} else {
+			new_profile = switch_caller_profile_clone(session, profile);
+		}
 
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, use_dialplan);
 		new_profile->context = switch_core_strdup(new_profile->pool, use_context);
@@ -2238,7 +2243,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			switch_core_session_rwunlock(other_session);
 		}
 
-		switch_channel_set_caller_profile(channel, new_profile);
+		if (!switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			switch_channel_set_caller_profile(channel, new_profile); 	
+		}
 
 		switch_channel_set_state(channel, CS_ROUTING);
 		switch_channel_audio_sync(channel);
