@@ -24,7 +24,6 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
- * Moises Silva <moises.silva@gmail.com> (Multiple endpoints work sponsored by Comrex Corporation)
  * Raymond Chandler <intralanman@freeswitch.org>
  * Jérôme Poulin <jeromepoulin@gmail.com>
  *
@@ -35,10 +34,7 @@
  */
 
 #include "switch.h"
-
-#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 #include "pablio.h"
 
@@ -891,11 +887,11 @@ static PABLIO_Stream *create_audio_stream(switch_core_session_t *session, audio_
 	memset(stream, 0, sizeof(*stream));
 
 	input_parameters.channels = 1;
-	input_parameters.format = SAMPLE_TYPE;
+	input_parameters.format = PA_SAMPLE_S16LE;
 	input_parameters.rate = endpoint->sample_rate;
 
 	output_parameters.channels = 1;
-	output_parameters.format = SAMPLE_TYPE;
+	output_parameters.format = PA_SAMPLE_S16LE;
 	output_parameters.rate = endpoint->sample_rate;
 
 	err = OpenAudioStream(&stream, endpoint->app_name, endpoint->name, &input_parameters, &output_parameters);

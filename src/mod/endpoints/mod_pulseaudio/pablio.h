@@ -45,22 +45,15 @@ extern "C" {
 /*! Maximum number of channels per stream */
 #define MAX_IO_CHANNELS 2
 
-/*! Maximum numer of milliseconds per packet */
-#define MAX_IO_MS 100
-
 /*! Maximum sampling rate (48Khz) */
-#define MAX_SAMPLING_RATE  48000
-#define SAMPLE_TYPE PA_SAMPLE_S16LE
 typedef int16_t SAMPLE;
 
 /* Maximum size of a read */
-#define MAX_IO_BUFFER (((MAX_IO_MS * MAX_SAMPLING_RATE)/1000)*sizeof(int16_t))
 typedef struct {
 	pa_simple *istream;
 	pa_simple *ostream;
 	int bytesPerFrame;
 	int channelCount;
-	char iobuff[MAX_IO_BUFFER];
 } PABLIO_Stream;
 
 /* PulseAudio error */
@@ -69,10 +62,6 @@ typedef int pa_error;
 long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer);
 long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, switch_timer_t *timer);
 
-/************************************************************
- * Opens a PulseAudio stream with default characteristics.
- * Allocates PABLIO_Stream structure.
- */
 pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			const char *appName,
 			const char *channelName,

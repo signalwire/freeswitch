@@ -29,11 +29,8 @@
  */
 
 #include <switch.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
-#include <time.h>
 #include <pulse/timeval.h>
 #include <pulse/simple.h>
 #include "pablio.h"
