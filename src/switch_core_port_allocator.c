@@ -146,9 +146,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int even = switch_test_flag(alloc, SPF_EVEN);
 	int odd = switch_test_flag(alloc, SPF_ODD);
+	struct addrinfo hint = { 0 }, *res = NULL;
 
 	switch_mutex_lock(alloc->mutex);
 	srand((unsigned) ((unsigned) (intptr_t) port_ptr + (unsigned) (intptr_t) switch_thread_self() + switch_micro_time_now()));
+
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_flags = AI_NUMERICHOST;
+
+	if (getaddrinfo(alloc->ip, NULL, &hint, &res)) {
+		goto end;
+	}
 
 	while (alloc->track_used < alloc->track_len) {
 		uint32_t index;
@@ -179,12 +187,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 			}
 
 			if ((alloc->flags & SPF_ROBUST_UDP)) {
-				r = test_port(alloc, AF_INET, SOCK_DGRAM, port);
+				r = test_port(alloc, res->ai_family, SOCK_DGRAM, port);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UDP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
 			}
 
 			if ((alloc->flags & SPF_ROBUST_TCP)) {
-				r = test_port(alloc, AF_INET, SOCK_STREAM, port);
+				r = test_port(alloc, res->ai_family, SOCK_STREAM, port);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TCP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
 			}
 
@@ -201,6 +209,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 
 
   end:
+
+	if (res) {
+		freeaddrinfo(res);
+	}
 
 	switch_mutex_unlock(alloc->mutex);
 
