@@ -1986,6 +1986,16 @@ if test "${enable_address_sanitizer}" = "yes"; then
   APR_ADDTO(LDFLAGS, -fsanitize=address)
 fi
 
+#  Enable fake dlclose
+AC_ARG_ENABLE(fake_dlclose,
+  [AC_HELP_STRING([--enable-fake-dlclose],[Do not unload dynamic libraries])],
+  [enable_fake_dlclose="$enable_fake_dlclose"],
+  [enable_fake_dlclose="no"])
+
+if test "${enable_fake_dlclose}" = "yes"; then
+  APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_FAKE_DLCLOSE)
+fi
+
 AC_ARG_ENABLE(,
   [AC_HELP_STRING([--enable-pool-sanitizer],[build with sanitizer friendly pool behavior])],
   [enable_pool_sanitizer="$enable_pool_sanitizer"],
