@@ -2861,6 +2861,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (oglobals.session) {
 					if (!switch_channel_ready(caller_channel)) {
 						status = SWITCH_STATUS_FALSE;
+						if (local_var_event) switch_event_destroy(&local_var_event);
 						goto done;
 					}
 
