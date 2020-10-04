@@ -91,7 +91,9 @@ SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym
 void switch_dso_destroy(switch_dso_lib_t *lib)
 {
 	if (lib && *lib) {
+#ifndef HAVE_FAKE_DLCLOSE
 		dlclose(*lib);
+#endif
 		*lib = NULL;
 	}
 }
