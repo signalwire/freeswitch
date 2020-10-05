@@ -443,7 +443,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 				if (aname) {
 					if (*vals[x] == '!') {
 						const char *sval = vals[x] + 1;
-						if (strcasecmp(aname, sval)) {
+						if (!strcasecmp(aname, sval)) {
 							goto done;
 						}
 					} else {
