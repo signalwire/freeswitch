@@ -371,6 +371,7 @@ struct switch_file_handle {
 	const char *prefix;
 	int max_samples;
 	switch_event_t *params;
+	switch_event_t *event;
 	uint32_t cur_channels;
 	uint32_t cur_samplerate;
 	char *stream_name;
