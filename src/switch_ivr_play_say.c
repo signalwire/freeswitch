@@ -1603,6 +1603,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_sessio
 			if (fh->params) {
 				switch_event_merge(event, fh->params);
 			}
+			if (fh->event) {
+				switch_event_merge(event, fh->event);
+			}
 			switch_event_fire(&event);
 		}
 
@@ -1993,6 +1996,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_sessio
 			}
 			if (fh->params) {
 				switch_event_merge(event, fh->params);
+			}
+			if (fh->event) {
+				switch_event_merge(event, fh->event);
 			}
 			switch_event_fire(&event);
 		}

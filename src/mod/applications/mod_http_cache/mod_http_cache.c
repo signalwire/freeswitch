@@ -161,7 +161,7 @@ struct http_get_data {
 };
 typedef struct http_get_data http_get_data_t;
 
-static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_core_session_t *session);
+static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_event_t* event, switch_core_session_t *session);
 static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get);
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *url);
 static void process_cache_control_header(cached_url_t *url, char *data);
@@ -240,10 +240,12 @@ struct url_cache {
 	long connect_timeout;
 	/** How long to wait, in seconds, for download of file.  If 0, use default value of 300 seconds */
 	long download_timeout;
+	/** Maximum retries */
+	long max_retry;
 };
 static url_cache_t gcache;
 
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_memory_pool_t *pool);
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_event_t* event, switch_memory_pool_t *pool);
 static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove_soft(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
@@ -717,7 +719,7 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  * @param pool The pool to use for allocating the filename
  * @return The filename or NULL if there is an error
  */
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_memory_pool_t *pool)
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, const char *extension, int validate_url_extension, int use_mime_ext, switch_event_t *event, switch_memory_pool_t *pool)
 {
 	switch_time_t download_timeout_ns = cache->download_timeout * 1000 * 1000;
 	char *filename = NULL;
@@ -764,7 +766,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 
 		/* download the file */
 		url_cache_unlock(cache, session);
-		if (http_get(cache, profile, u, use_mime_ext, session) == SWITCH_STATUS_SUCCESS) {
+		if (http_get(cache, profile, u, use_mime_ext, event, session) == SWITCH_STATUS_SUCCESS) {
 			/* Got the file, let the waiters know it is available */
 			url_cache_lock(cache, session);
 			u->status = CACHED_URL_AVAILABLE;
@@ -1139,7 +1141,7 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
  * @param session the (optional) session
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_core_session_t *session)
+static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cached_url_t *url, int use_mime_extension, switch_event_t* event, switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
@@ -1165,6 +1167,8 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+		int i;
+
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
@@ -1198,7 +1202,16 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
 		}
 		
-		curl_status = switch_curl_easy_perform(curl_handle);
+		for (i = 0; i < cache->max_retry; ++i) {
+			curl_status = switch_curl_easy_perform(curl_handle);
+			if (curl_status == CURLE_OK || curl_status == CURLE_HTTP_RETURNED_ERROR) {
+				break;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d (attempt:%d) trying to fetch %s\n", curl_status, i+1, url->url);
+				switch_sleep(50 * 1000); // 50ms
+			}
+		}
+
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
@@ -1226,6 +1239,12 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 done:
+
+	if (event) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_curl_status", "%d", curl_status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_response_code", "%ld", httpRes);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_file_create_result", "%d", errno);
+	}
 
 	if (headers) {
 		switch_curl_slist_free_all(headers);
@@ -1347,7 +1366,7 @@ SWITCH_STANDARD_API(http_cache_get)
 		}
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, download, refresh, extension, validate_url_extension, use_mime_ext, pool);
+	filename = url_cache_get(&gcache, profile, session, url, download, refresh, extension, validate_url_extension, use_mime_ext, NULL, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
 
@@ -1419,7 +1438,7 @@ SWITCH_STANDARD_API(http_cache_tryget)
 		}
 	}
 
-	filename = url_cache_get(&gcache, NULL, session, url, 0, refresh, extension, validate_url_extension, use_mime_ext, pool);
+	filename = url_cache_get(&gcache, NULL, session, url, 0, refresh, extension, validate_url_extension, use_mime_ext, NULL, pool);
 	if (filename) {
 		if (!strcmp(DOWNLOAD_NEEDED, filename)) {
 			stream->write_function(stream, "-ERR %s\n", DOWNLOAD_NEEDED);
@@ -1554,7 +1573,7 @@ SWITCH_STANDARD_API(http_cache_remove)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 
-	url_cache_get(&gcache, NULL, session, url, 0, 1, NULL, 0, 0, pool);
+	url_cache_get(&gcache, NULL, session, url, 0, 1, NULL, 0, 0, NULL, pool);
 	stream->write_function(stream, "+OK\n");
 
 	if (lpool) {
@@ -1635,6 +1654,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->enable_file_formats = 0;
 	cache->connect_timeout = 300;
 	cache->download_timeout = 300;
+	cache->max_retry = 1;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1682,6 +1702,12 @@ static switch_status_t do_config(url_cache_t *cache)
 				if (int_val > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting download-timeout to %s\n", val);
 					cache->download_timeout = int_val;
+				}
+			} else if (!strcasecmp(var, "max-retry")) {
+				int int_val = atoi(val);
+				if (int_val > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting max-retry to %s\n", val);
+					cache->max_retry = int_val;
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
@@ -1832,7 +1858,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
-		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, refresh, extension, validate_url_extension, use_mime_ext, handle->memory_pool);
+		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, refresh, extension, validate_url_extension, use_mime_ext, handle->event, handle->memory_pool);
 		if (!context->local_path) {
 			return SWITCH_STATUS_FALSE;
 		}

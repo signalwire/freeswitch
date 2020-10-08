@@ -3130,7 +3130,7 @@ SWITCH_STANDARD_APP(playback_function)
 			}
 	}
 
-	
+	switch_event_create_plain(&fh.event, SWITCH_EVENT_CHANNEL_DATA);
 	status = switch_ivr_play_file_detailed(session, &fh, file, &args, &error);
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
@@ -3145,6 +3145,16 @@ SWITCH_STANDARD_APP(playback_function)
 	default:
 		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
 		break;
+	}
+
+	if (fh.event){
+		switch_event_header_t *hp;
+		for (hp = fh.event->headers; hp; hp = hp->next) {
+			char *var = hp->name;
+			char *val = hp->value;
+			switch_channel_set_variable(channel, var, val);
+		}
+		switch_event_destroy(&fh.event);
 	}
 
 }
