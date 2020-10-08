@@ -5634,7 +5634,7 @@ SWITCH_STANDARD_API(coalesce_function)
 	return status;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|uuid_calls|uuid_channels|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -5811,6 +5811,16 @@ SWITCH_STANDARD_API(show_function)
 				if (argv[2] && argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
+			}
+		} else if (!strcasecmp(command, "uuid_calls")) {
+			switch_snprintfv(sql, sizeof(sql), "select uuid from basic_calls where hostname='%q' order by call_created_epoch", switch_core_get_switchname());
+			if (argv[1] && argv[2] && !strcasecmp(argv[1], "as")) {
+				as = argv[2];
+			}
+		} else if (!strcasecmp(command, "uuid_channels")) {
+			switch_snprintfv(sql, sizeof(sql), "select uuid from channels where hostname='%q' order by created_epoch", switch_core_get_switchname());
+			if (argv[1] && argv[2] && !strcasecmp(argv[1], "as")) {
+				as = argv[2];
 			}
 		} else if (!strcasecmp(command, "detailed_calls")) {
 			switch_snprintfv(sql, sizeof(sql), "select * from detailed_calls where hostname='%q' order by created_epoch", switch_core_get_switchname());
