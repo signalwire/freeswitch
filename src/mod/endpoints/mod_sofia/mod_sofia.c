@@ -603,7 +603,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 
 				override_sip_reason_phrase = switch_channel_get_variable(channel, "override_sip_reason_phrase");
-				if (!zstr(override_sip_reason_phrase)) {
+				if (zstr(tech_pvt->respond_phrase) && !zstr(override_sip_reason_phrase)) {
 					phrase = su_strdup(nua_handle_home(tech_pvt->nh), override_sip_reason_phrase);
 				}
 				
