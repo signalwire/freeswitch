@@ -9584,10 +9584,26 @@ static switch_status_t create_info_event(sip_t const *sip,
 									   sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info));
 	}
 
+
+	if (sip->sip_subject) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Subject", 
+									   sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_subject));
+	}
+
+	if (sip->sip_unknown) {
+		msg_unknown_t *msg_ptr = sip->sip_unknown;
+		char           header_name[128];
+
+		while (msg_ptr) {
+			snprintf(header_name, sizeof(header_name), "variable_sip_h_%s", msg_ptr->un_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, msg_ptr->un_value);
+			msg_ptr = msg_ptr->un_next;
+		}
+	}
+
 	if (alert_info) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Alert-Info", sip_header_as_string(nua_handle_home(nh), (void *) alert_info));
 	}
-
 
 	if (sip->sip_payload && sip->sip_payload->pl_data) {
 		switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
