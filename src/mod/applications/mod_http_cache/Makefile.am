@@ -2,7 +2,7 @@ include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_http_cache
 
 noinst_LTLIBRARIES = libhttpcachemod.la
-libhttpcachemod_la_SOURCES  = mod_http_cache.c common.c aws.c azure.c
+libhttpcachemod_la_SOURCES  = mod_http_cache.c common.c aws.c azure.c gcs.c
 
 mod_LTLIBRARIES = mod_http_cache.la
 mod_http_cache_la_SOURCES  = 
