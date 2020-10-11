@@ -36,6 +36,7 @@
 #include <switch_curl.h>
 #include "aws.h"
 #include "azure.h"
+#include "gcs.h"
 
 #include <stdlib.h>
 
@@ -1698,6 +1699,14 @@ static switch_status_t do_config(url_cache_t *cache)
 						profile_xml = switch_xml_child(profile, "default");
 						if (profile_xml) {
 							if (default_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
+								continue;
+							}
+						}
+					}
+					else {
+						profile_xml = switch_xml_child(profile, "gcs");
+						if (profile_xml) {
+							if (gcs_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
 								continue;
 							}
 						}
