@@ -8660,6 +8660,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (!switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
+		switch_event_t *event;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AUDIO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n",
 						  switch_channel_get_name(session->channel),
 						  a_engine->local_sdp_ip,
@@ -8667,6 +8668,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						  a_engine->cur_payload_map->remote_sdp_ip,
 						  a_engine->cur_payload_map->remote_sdp_port, a_engine->cur_payload_map->pt, a_engine->read_impl.microseconds_per_packet / 1000);
 
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_RTP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-IP-Address", a_engine->cur_payload_map->remote_sdp_ip);
+			switch_event_fire(&event);
+		}
 		//XX
 	}
 
@@ -9369,12 +9375,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 			if (!switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
 				if (switch_rtp_ready(v_engine->rtp_session)) {
+					switch_event_t *event;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u\n", switch_channel_get_name(session->channel),
 									  v_engine->local_sdp_ip, v_engine->local_sdp_port, v_engine->cur_payload_map->remote_sdp_ip,
 									  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->pt);
 
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->pt);
+
+					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_RTP) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-IP-Address", v_engine->cur_payload_map->remote_sdp_ip);
+						switch_event_fire(&event);
+					}
 				}
 			}
 

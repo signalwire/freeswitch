@@ -1965,6 +1965,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CUSTOM				- A custom event
     SWITCH_EVENT_CLONE				- A cloned event
     SWITCH_EVENT_CHANNEL_CREATE		- A channel has been created
+    SWITCH_EVENT_CHANNEL_RTP        - A channel RTP has been created
     SWITCH_EVENT_CHANNEL_DESTROY	- A channel has been destroyed
     SWITCH_EVENT_CHANNEL_STATE		- A channel has changed state
     SWITCH_EVENT_CHANNEL_CALLSTATE	- A channel has changed call state
@@ -2060,6 +2061,7 @@ typedef enum {
 	SWITCH_EVENT_CUSTOM,
 	SWITCH_EVENT_CLONE,
 	SWITCH_EVENT_CHANNEL_CREATE,
+	SWITCH_EVENT_CHANNEL_RTP,
 	SWITCH_EVENT_CHANNEL_DESTROY,
 	SWITCH_EVENT_CHANNEL_STATE,
 	SWITCH_EVENT_CHANNEL_CALLSTATE,

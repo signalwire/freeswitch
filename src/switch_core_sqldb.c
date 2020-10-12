@@ -2441,6 +2441,7 @@ static void core_event_handler(switch_event_t *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_CHANNEL_UUID:
 	case SWITCH_EVENT_CHANNEL_CREATE:
+	case SWITCH_EVENT_CHANNEL_RTP:
 	case SWITCH_EVENT_CHANNEL_ANSWER:
 	case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
 	case SWITCH_EVENT_CHANNEL_HOLD:
@@ -2532,6 +2533,8 @@ static void core_event_handler(switch_event_t *event)
 			break;
 		}
 	case SWITCH_EVENT_CHANNEL_CREATE:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						  "--- SWITCH_EVENT_CHANNEL_CREATE: initial_ip_addr = %s\n", switch_event_get_header_nil(event, "caller-network-addr"));
 		new_sql() = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,callstate,dialplan,context,hostname,initial_cid_name,initial_cid_num,initial_ip_addr,initial_dest,initial_dialplan,initial_context) "
 								   "values('%q','%q','%q','%ld','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 								   switch_event_get_header_nil(event, "unique-id"),
@@ -2551,6 +2554,15 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "caller-context")
 								   );
 		break;
+
+	case SWITCH_EVENT_CHANNEL_RTP:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						  "--- SWITCH_EVENT_CHANNEL_RTP: ip_addr = %s\n", switch_event_get_header_nil(event, "rtp-ip-address"));
+		new_sql() = switch_mprintf("update channels set ip_addr='%q' where uuid='%q'",
+								   switch_event_get_header_nil(event, "rtp-ip-address"),
+								   switch_event_get_header_nil(event, "unique-id"));
+		break;
+
 	case SWITCH_EVENT_CHANNEL_ANSWER:
 	case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
 	case SWITCH_EVENT_CODEC:
@@ -3881,6 +3893,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_DESTROY, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_UUID, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_CREATE, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
+		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_RTP, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_ANSWER, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_HOLD, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
