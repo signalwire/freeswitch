@@ -3734,7 +3734,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	DH *dh;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifndef OPENSSL_NO_EC
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 	EC_KEY* ecdh;
+#endif
 #endif
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
@@ -3871,6 +3873,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 
 #ifndef OPENSSL_NO_EC
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 	ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 	if (!ecdh) {
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
@@ -3878,6 +3881,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
 	SSL_set_tmp_ecdh(dtls->ssl, ecdh);
 	EC_KEY_free(ecdh);
+#elif OPENSSL_VERSION_NUMBER < 0x10100000L
+	SSL_set_ecdh_auto(dtls->ssl, 1);
+	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
+#endif
 #endif
 
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
