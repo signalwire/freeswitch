@@ -837,12 +837,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			tech_pvt->mparams.local_sdp_str = NULL;
 			switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+			switch_channel_set_flag(channel, CF_3PCC);
 		} else if (is_3pcc_proxy) {
-
-			if (!(sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY))) {
-				switch_channel_set_flag(channel, CF_3PCC);
-			}
-
 			if (b_sdp && is_proxy && !switch_channel_var_true(channel, "3pcc_always_gen_sdp")) {
 				switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 			} else {

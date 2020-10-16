@@ -1786,7 +1786,7 @@ static void our_sofia_event_callback(nua_event_t event,
 						switch_core_media_proxy_remote_addr(tech_pvt->session, r_sdp);
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 						sofia_clear_flag(tech_pvt, TFLAG_PASS_ACK);
-
+						switch_channel_clear_flag(channel, CF_3PCC_PROXY);
 					}
 
 				}
@@ -3381,6 +3381,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								  NTATAG_TLS_RPORT(0),
 								  NUTAG_RETRY_AFTER_ENABLE(0),
 								  NUTAG_AUTO_INVITE_100(0),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER),
+										 NUTAG_ALWAYS_REGENERATE_OFFER(1)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TAGGED_ON_PRACK),
+										 NUTAG_TAGGED_ON_PRACK(1)),
 								  TAG_IF(!strchr(profile->sipip, ':'),
 										 SOATAG_AF(SOA_AF_IP4_ONLY)),
 								  TAG_IF(strchr(profile->sipip, ':'),
@@ -6187,6 +6191,18 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_SIP_REPLACES);
 						}
+					} else if (!strcasecmp(var, "3pcc-always-regenerate-offer")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER);
+						}
+					} else if (!strcasecmp(var, "tagged-on-prack")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TAGGED_ON_PRACK);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_TAGGED_ON_PRACK);
+						}
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
@@ -7762,6 +7778,40 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		{
 			int send_ack = 1;
 
+			if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&
+				r_sdp && (!is_dup_sdp || sofia_test_flag(tech_pvt, TFLAG_NEW_SDP)) && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+				/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
+				uint8_t match = 0;
+
+				sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
+				switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
+
+				if (tech_pvt->mparams.num_codecs) {
+					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
+				}
+				if (match) {
+					if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
+						goto done;
+					}
+					switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+					switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						goto done;
+					}
+				} else {
+					switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error! %s\n", r_sdp);
+					goto done;
+
+				}
+			}
+
 			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 				const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
 
@@ -7978,6 +8028,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					uint8_t match = 0;
 
 					if (tech_pvt->mparams.num_codecs) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Negotiating SDP media in ready state\n");
 						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
 					}
 
@@ -8097,6 +8148,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					//Moves into CS_INIT so call moves forward into the dialplan
 					if (switch_channel_get_state(channel) == CS_NEW) {
 						switch_channel_set_state(channel, CS_INIT);
+						switch_channel_set_flag(channel, CF_3PCC_PROXY);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Invalid State on handling 3PCC (RE)Invite\n");
+						nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc not enabled, hanging up.\n");
@@ -8108,6 +8163,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		} else if (tech_pvt && sofia_test_flag(tech_pvt, TFLAG_SDP) && !r_sdp) {
 			sofia_set_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing  NOSDP Re-INVITE.\n");
 			if ((switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
 				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
@@ -8169,6 +8225,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			goto done;
 
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Jumping to completed state\n");
 			ss_state = nua_callstate_completed;
 			goto state_process;
 		}
@@ -8402,6 +8459,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				} else {
 					int hold_related = 0;
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking hold in completed state \n");
+
 					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 						hold_related = 2;
 					} else if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) {
@@ -8519,6 +8578,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 					if (tech_pvt->mparams.num_codecs) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Negotiating SDP media in completed state \n");
 						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
 					}
 
@@ -8604,6 +8664,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			uint8_t match = 0;
 
 			sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
+
+			if(switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) && switch_channel_get_callstate(tech_pvt->channel) == CCS_HELD) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ready Jumping to completed state\n");
+				ss_state = nua_callstate_completed;
+				goto state_process;
+			}
+
 			switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 
@@ -8633,6 +8700,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 
 		if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Received SDP in ACK. NOSDP Re-INVITE process completion.\n");
 			sofia_clear_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
@@ -8648,6 +8716,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (sofia_test_flag(tech_pvt, TFLAG_3PCC) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+						switch_channel_clear_flag(channel, CF_3PCC_PROXY);
 					} else {
 						switch_core_session_message_t *msg;
 
@@ -8669,6 +8738,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				int is_ok = 1;
 
 				if (!tech_pvt) goto done;
+
+				if(switch_channel_get_callstate(tech_pvt->channel) == CCS_HELD) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Jumping to completed state\n");
+					ss_state = nua_callstate_completed;
+					goto state_process;
+				}
 
 				if (tech_pvt->mparams.num_codecs) {
 					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
@@ -8758,6 +8833,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (sofia_test_flag(tech_pvt, TFLAG_3PCC) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+						switch_channel_clear_flag(channel, CF_3PCC_PROXY);
 					}
 
 					goto done;
@@ -8786,6 +8862,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								if (sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 									sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+									switch_channel_clear_flag(channel, CF_3PCC_PROXY);
 								} else if (switch_channel_get_state(channel) == CS_HIBERNATE) {
 									sofia_set_flag_locked(tech_pvt, TFLAG_READY);
 									switch_channel_set_state(channel, CS_INIT);
