@@ -221,6 +221,18 @@ int nua_dialog_zap(nua_owner_t *own,
   return 0;
 }
 
+/** Remove remote information. */
+int nua_dialog_remote_zap(nua_owner_t *own,
+		   nua_dialog_state_t *ds)
+{
+  /* Leg */
+  nta_leg_del_rtag(ds->ds_leg);
+  /* Remote tag */
+  su_free(own, (void *)ds->ds_remote_tag), ds->ds_remote_tag = NULL;
+
+  return 0;
+}
+
 /** Remove dialog (if there is no other usages). */
 int nua_dialog_remove(nua_owner_t *own,
 		      nua_dialog_state_t *ds,

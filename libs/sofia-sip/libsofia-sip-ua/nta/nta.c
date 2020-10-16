@@ -4631,6 +4631,15 @@ char const *nta_leg_get_rtag(nta_leg_t const *leg)
     return NULL;
 }
 
+/** Remove remote tag. */
+void nta_leg_del_rtag(nta_leg_t *leg)
+{
+  if (leg && leg->leg_remote) {
+    sip_to_t to0[1]; *to0 = *leg->leg_remote; to0->a_params = NULL;
+    leg->leg_remote = sip_from_dup(leg->leg_home, to0);
+  }
+}
+
 /** Get local request sequence number. */
 uint32_t nta_leg_get_seq(nta_leg_t const *leg)
 {

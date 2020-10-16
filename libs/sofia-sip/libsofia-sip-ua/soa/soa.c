@@ -1459,7 +1459,9 @@ int soa_generate_offer(soa_session_t *ss,
     return su_seterrno(EPROTO), -1;
 
   /* We should avoid actual operation unless always is true */
-  (void)always;  /* We always regenerate offer */
+  if (always) {
+    ss->ss_local->ssd_sdp = NULL;
+  }
 
   /* Calls soa_static_generate_offer() by default. */
   return ss->ss_actions->soa_generate_offer(ss, completed);

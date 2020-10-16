@@ -2804,6 +2804,22 @@ tag_typedef_t nutag_auto_invite_100 = INTTAG_TYPEDEF(auto_invite_100);
  * Reference tag for NUTAG_AUTO_INVITE_100().
  */
 
+/**@def NUTAG_ALWAYS_REGENERATE_OFFER(x)
+ */
+tag_typedef_t nutag_always_regenerate_offer = INTTAG_TYPEDEF(always_regenerate_offer);
+
+/**@def NUTAG_ALWAYS_REGENERATE_OFFER(x)
+ * Reference tag for NUTAG_ALWAYS_REGENERATE_OFFER().
+ */
+
+/**@def NUTAG_TAGGED_ON_PRACK(x)
+ */
+tag_typedef_t nutag_tagged_on_prack = INTTAG_TYPEDEF(tagged_on_prack);
+
+/**@def NUTAG_TAGGED_ON_PRACK(x)
+ * Reference tag for NUTAG_TAGGED_ON_PRACK().
+ */
+
 /**@def NUTAG_DETECT_NETWORK_UPDATES(x)
  *
  * Enable detection of local IP address updates.

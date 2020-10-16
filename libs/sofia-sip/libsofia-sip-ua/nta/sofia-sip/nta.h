@@ -218,6 +218,9 @@ SOFIAPUBFUN char const *nta_leg_rtag(nta_leg_t *leg, char const *tag);
 /** Get remote tag. */
 SOFIAPUBFUN char const *nta_leg_get_rtag(nta_leg_t const *leg);
 
+/** Remove remote tag. */
+SOFIAPUBFUN void nta_leg_del_rtag(nta_leg_t *leg);
+
 /** Get local request sequence number. @NEW_1_12_9 */
 SOFIAPUBFUN uint32_t nta_leg_get_seq(nta_leg_t const *leg);
 
