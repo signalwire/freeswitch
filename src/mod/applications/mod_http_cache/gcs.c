@@ -127,7 +127,8 @@ switch_curl_slist_t *gcs_append_headers(http_profile_t *profile, switch_curl_sli
 	if (profile->expires < now) {
 		gcs_refresh_authorization(profile);
 	}
-	switch_snprintf(header, sizeof(header), "Authorization: %s", profile->gcs_credentials);
+	switch_snprintf(header, sizeof(header), "Authorization: Bearer %s", profile->gcs_credentials);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Credecials Token: %s", profile->gcs_credentials);
 	headers = switch_curl_slist_append(headers, header);
 #endif
 	return headers;
