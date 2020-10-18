@@ -103,6 +103,9 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 	signature_url_encoded = switch_string_replace(assertion, "+", "%2B");
     sprintf(content,"%s%s", "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=", signature_url_encoded);
 	auth = gcs_auth_request(content, profile->region);
+	if (profile->gcs_credentials != NULL) {
+		free(profile->gcs_credentials);
+	}
 	profile->gcs_credentials = auth;
 	exp = time(NULL) + 3540;
 	profile->expires = exp;
