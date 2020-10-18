@@ -285,7 +285,7 @@ char *gcs_auth_request(char *content, char *url) {
 	switch_CURL *curl_handle = NULL;
 	long httpRes = 0;
 	//char response[208];
-	char *response = malloc(208 * sizeof(char));
+	char *response = NULL;
 	switch_curl_slist_t *headers = NULL;
 	char *ct = "Content-Type: application/x-www-form-urlencoded";
     struct http_data http_data;
