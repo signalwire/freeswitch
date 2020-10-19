@@ -4776,8 +4776,8 @@ SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid_copy(switch_channel
 	const char *uuid = NULL;
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!(uuid = switch_channel_get_variable_dup(channel, SWITCH_SIGNAL_BOND_VARIABLE, SWITCH_TRUE, -1))) {
-		uuid = switch_channel_get_variable_dup(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, SWITCH_TRUE, -1);
+	if (!(uuid = switch_channel_get_variable_dup(channel, SWITCH_SIGNAL_BOND_VARIABLE, SWITCH_FALSE, -1))) {
+		uuid = switch_channel_get_variable_dup(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, SWITCH_FALSE, -1);
 	}
 
 	if (uuid) {
