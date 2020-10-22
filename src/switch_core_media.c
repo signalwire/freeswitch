@@ -4136,6 +4136,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0, relay_ok = 0;
+	char con_addr[256];
+	ip_t ip;
 
 	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
 		return SWITCH_STATUS_BREAK;
@@ -4274,7 +4276,28 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
 				}
 
-				if (!ip_possible(smh, fields[4])) {
+				if (switch_inet_pton(AF_INET, fields[4], &ip) || switch_inet_pton(AF_INET6, fields[4], &ip)) {
+					switch_copy_string(con_addr, fields[4], sizeof(con_addr));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "Is an IP address: %s\n", con_addr);
+				} else if (switch_rtp_has_resolve_ice()) {
+					if (switch_resolve_host(fields[4], con_addr, sizeof(con_addr)) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Resolved %s to %s\n", fields[4], con_addr);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO,
+										  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (cannot resolve)\n",
+										  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+										  cid+1, fields[2], fields[7], fields[4], fields[5]);
+						continue;
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO,
+									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not an IP address)\n",
+									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+					continue;
+				}
+
+				if (!ip_possible(smh, con_addr)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
@@ -4292,7 +4315,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].component_id = atoi(fields[1]);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].priority = atol(fields[3]);
-				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, con_addr);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port = (switch_port_t)atoi(fields[5]);
 
 				j = 6;
