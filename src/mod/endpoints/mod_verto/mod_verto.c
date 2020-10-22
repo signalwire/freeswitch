@@ -663,7 +663,7 @@ static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json, switch_bo
 	return status;
 }
 
-static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *event)
+static void write_event(const char *event_channel, const char *super_channel, jsock_t *use_jsock, cJSON *event)
 {
 	jsock_sub_node_head_t *head;
 
@@ -676,13 +676,18 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 			if (!use_jsock || use_jsock == np->jsock) {
 				const char *visibility;
 				//char *tmp;
-				
+
 				if ((visibility = cJSON_GetObjectCstr(event, "contentVisibility"))) {
-					if (strcasecmp(visibility, "public") &&
-						((use_jsock && use_jsock->id && !strncasecmp(use_jsock->id, "guest", 5)) ||
-						 (np->jsock->id && !strncasecmp(np->jsock->id, "guest", 5)))) {
+					if (strcasecmp(visibility, "public") && (np->jsock->id && !strncasecmp(np->jsock->id, "guest", 5))) {
+						int perm = 0;
+
+						perm = switch_event_channel_permission_verify(np->jsock->uuid_str, event_channel);
+
+						if (!perm && super_channel) {
+							perm = switch_event_channel_permission_verify(np->jsock->uuid_str, super_channel);
+						}
 						
-						if (!switch_event_channel_permission_verify(np->jsock->uuid_str, event_channel)) {
+						if (!perm) {
 							continue;
 						}
 					}
@@ -690,7 +695,6 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 				//tmp = cJSON_Print(event);
 				//printf("%s\n", tmp);
 				//free(tmp);
-
 				
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
@@ -744,14 +748,14 @@ static void jsock_send_event(cJSON *event)
 	}
 
 	switch_thread_rwlock_rdlock(verto_globals.event_channel_rwlock);
-	write_event(event_channel, use_jsock, event);
+	write_event(event_channel, NULL, use_jsock, event);
 	if (strchr(event_channel, '.')) {
 		char *main_channel = strdup(event_channel);
 		char *p;
 		switch_assert(main_channel);
 		p = strchr(main_channel, '.');
 		if (p) *p = '\0';
-		write_event(main_channel, use_jsock, event);
+		write_event(main_channel, event_channel, use_jsock, event);
 		free(main_channel);
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
@@ -4331,7 +4335,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	broadcast = cJSON_GetObjectItem(params, "localBroadcast");
 
 	if (broadcast && broadcast->type == cJSON_True) {
-		write_event(event_channel, NULL, jevent);
+		write_event(event_channel, NULL, NULL, jevent);
 	} else {
 		switch_event_channel_broadcast(event_channel, &jevent, modname, verto_globals.event_channel_id);
 	}
