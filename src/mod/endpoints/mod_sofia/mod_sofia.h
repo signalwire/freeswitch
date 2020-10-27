@@ -363,6 +363,7 @@ typedef enum {
 	TFLAG_PASS_ACK,
 	TFLAG_KEEPALIVE,
 	TFLAG_SKIP_EARLY,
+	TFLAG_100_UEPOCH_SET,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
