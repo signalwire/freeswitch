@@ -3220,6 +3220,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								  TPTAG_PONG2PING(1),
 								  NTATAG_TCP_RPORT(0),
 								  NTATAG_TLS_RPORT(0),
+#ifdef NTATAG_TLS_ORQ_CONNECT_TIMEOUT
+								  TAG_IF(profile->tls_orq_connect_timeout, 
+										 NTATAG_TLS_ORQ_CONNECT_TIMEOUT(profile->tls_orq_connect_timeout)), /* Profile based timeout */
+#endif
 								  NUTAG_RETRY_AFTER_ENABLE(0),
 								  NUTAG_AUTO_INVITE_100(0),
 								  TAG_IF(!strchr(profile->sipip, ':'),
@@ -5916,6 +5920,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->timer_t4 = v;
 						} else {
 							profile->timer_t4 = 4000;
+						}
+					} else if (!strcasecmp(var, "tls-orq-connect-timeout") && !zstr(val)) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->tls_orq_connect_timeout = v;
+						} else {
+							profile->tls_orq_connect_timeout = 0;
 						}
 					} else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
 						if (switch_true(val)) {

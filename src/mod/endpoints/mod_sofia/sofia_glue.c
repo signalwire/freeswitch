@@ -1068,6 +1068,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *stir_shaken_attest = NULL;
 	char *identity_to_free = NULL;
 	const char *date = NULL;
+	const char *sip_call_tls_orq_connect_timeout = switch_channel_get_variable(tech_pvt->channel, "sip_call_tls_orq_connect_timeout");
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
@@ -1400,6 +1401,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 										NUTAG_URL(url_str),
 										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 										TAG_IF(!zstr(record_route), SIPTAG_HEADER_STR(record_route)),
+#ifdef NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT
+										/* Per call tls outgoing request connect timeout */
+										TAG_IF(sip_call_tls_orq_connect_timeout, NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT(atoi(sip_call_tls_orq_connect_timeout))),
+#endif
 										SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END()))) {
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
