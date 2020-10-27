@@ -6597,6 +6597,22 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_caller_profile_t *caller_profile = NULL;
 		int has_t38 = 0;
 
+		if (status == 100 && !sofia_test_flag(tech_pvt, TFLAG_100_UEPOCH_SET)) {
+			sofia_set_flag(tech_pvt, TFLAG_100_UEPOCH_SET);
+			switch_channel_set_variable_printf(channel, "sip_100_uepoch", "%" SWITCH_TIME_T_FMT, switch_time_now());
+		}
+
+		if (de && de->data && de->data->e_msg) {
+			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+
+			switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
+			switch_channel_set_variable(channel, "sip_reply_host", network_ip);
+			switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
+
+			switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
+			switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
+		}
+
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
 		if (status < 200) {
@@ -6643,15 +6659,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote Reason: %d\n", tech_pvt->q850_cause);
 		}
-
-		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
-
-		switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
-		switch_channel_set_variable(channel, "sip_reply_host", network_ip);
-		switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
-
-		switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
-		switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
 
 		if ((caller_profile = switch_channel_get_caller_profile(channel)) && !zstr(network_ip) &&
 			(zstr(caller_profile->network_addr) || strcmp(caller_profile->network_addr, network_ip))) {
