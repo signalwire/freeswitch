@@ -761,6 +761,7 @@ struct sofia_profile {
 	uint32_t timer_t1x64;
 	uint32_t timer_t2;
 	uint32_t timer_t4;
+	uint32_t tls_orq_connect_timeout;
 	char *contact_user;
 	char *local_network;
 	uint32_t trans_timeout;
