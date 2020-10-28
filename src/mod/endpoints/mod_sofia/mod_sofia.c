@@ -2740,6 +2740,7 @@ const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"DOWN",
 	"TIMEOUT",
 	NULL
 };
@@ -3653,15 +3654,19 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGED;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGED;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+					stream->write_function(stream, "+OK\n");
+					sofia_reg_release_gateway(gateway_ptr);
+				}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -3680,15 +3685,19 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGISTER;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGISTER;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGISTER;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+			if (gateway_ptr->state != REG_STATE_NOREG) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGISTER;
+				stream->write_function(stream, "+OK\n");
+				sofia_reg_release_gateway(gateway_ptr);
+			}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}

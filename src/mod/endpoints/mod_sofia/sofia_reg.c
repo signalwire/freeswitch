@@ -398,6 +398,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		}
 
 		switch (ostate) {
+		case REG_STATE_DOWN:
 		case REG_STATE_NOREG:
 			if (!gateway_ptr->ping && !gateway_ptr->pinging && gateway_ptr->status != SOFIA_GATEWAY_UP) {
 				gateway_ptr->status = SOFIA_GATEWAY_UP;
@@ -432,7 +433,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
-			gateway_ptr->state = REG_STATE_NOREG;
+			gateway_ptr->state = REG_STATE_DOWN;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			break;
 		case REG_STATE_UNREGED:
