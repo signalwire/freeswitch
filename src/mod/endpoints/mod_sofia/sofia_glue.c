@@ -1065,10 +1065,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
 	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+	const char *sip_call_tls_orq_connect_timeout_str = switch_channel_get_variable(tech_pvt->channel, "sip_call_tls_orq_connect_timeout");
+	uint32_t sip_call_tls_orq_connect_timeout = (sip_call_tls_orq_connect_timeout_str) ? atoi(sip_call_tls_orq_connect_timeout_str) : 0;
 	const char *stir_shaken_attest = NULL;
 	char *identity_to_free = NULL;
 	const char *date = NULL;
-	const char *sip_call_tls_orq_connect_timeout = switch_channel_get_variable(tech_pvt->channel, "sip_call_tls_orq_connect_timeout");
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
@@ -1403,7 +1404,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 										TAG_IF(!zstr(record_route), SIPTAG_HEADER_STR(record_route)),
 #ifdef NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT
 										/* Per call tls outgoing request connect timeout */
-										TAG_IF(sip_call_tls_orq_connect_timeout, NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT(atoi(sip_call_tls_orq_connect_timeout))),
+										TAG_IF(sip_call_tls_orq_connect_timeout_str, NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT(sip_call_tls_orq_connect_timeout)),
 #endif
 										SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END()))) {
 
