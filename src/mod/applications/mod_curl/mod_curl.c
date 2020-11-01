@@ -50,7 +50,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure] [get|head|post|delete|put [data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure|[proxy <http://proxy:port>]] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -125,6 +125,7 @@ struct curl_options_obj {
 	long connect_timeout;
 	long timeout;
 	int insecure;
+	char *proxy;
 };
 typedef struct curl_options_obj curl_options_t;
 
@@ -200,6 +201,10 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 		if (options->timeout) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
+		}
+
+		if (options->proxy) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_PROXY, options->proxy);
 		}
 
 		if (!strncasecmp(url, "https", 5)) {
@@ -865,6 +870,10 @@ SWITCH_STANDARD_APP(curl_app_function)
 				}
 			} else if (!strcasecmp("insecure", argv[i])) {
 				options.insecure = 1;
+			} else if (!strcasecmp("proxy", argv[i])) {
+				if (++i < argc) {
+					options.proxy = argv[i];
+				}
 			}
 		}
 	}
@@ -999,6 +1008,10 @@ SWITCH_STANDARD_API(curl_function)
 				}
 			} else if (!strcasecmp("insecure", argv[i])) {
 				options.insecure = 1;
+			}  else if (!strcasecmp("proxy", argv[i])) {
+				if (++i < argc) {
+					options.proxy = argv[i];
+				}
 			}
 		}
 
