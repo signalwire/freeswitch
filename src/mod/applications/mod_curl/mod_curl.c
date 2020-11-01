@@ -50,7 +50,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]] [get|head|post|delete|put [data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -124,6 +124,7 @@ typedef struct callback_obj callback_t;
 struct curl_options_obj {
 	long connect_timeout;
 	long timeout;
+	int insecure;
 };
 typedef struct curl_options_obj curl_options_t;
 
@@ -200,12 +201,17 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 		if (options->timeout) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
 		}
-	}
 
-	if (!strncasecmp(url, "https", 5)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		if (!strncasecmp(url, "https", 5)) {
+			if (options->insecure) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+			} else {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
+			}
+		}
 	}
 
 	if (append_headers) {
@@ -857,6 +863,8 @@ SWITCH_STANDARD_APP(curl_app_function)
 					if (ah_index == HTTP_MAX_APPEND_HEADERS) continue;
 					append_headers[ah_index++] = argv[i];
 				}
+			} else if (!strcasecmp("insecure", argv[i])) {
+				options.insecure = 1;
 			}
 		}
 	}
@@ -989,6 +997,8 @@ SWITCH_STANDARD_API(curl_function)
 					if (ah_index == HTTP_MAX_APPEND_HEADERS) continue;
 					append_headers[ah_index++] = argv[i];
 				}
+			} else if (!strcasecmp("insecure", argv[i])) {
+				options.insecure = 1;
 			}
 		}
 
