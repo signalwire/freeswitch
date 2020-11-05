@@ -327,6 +327,10 @@ nua_client_request_remove(nua_client_request_t *cr)
 int
 nua_client_request_clean(nua_client_request_t *cr)
 {
+  if (cr->cr_oprq) {
+    nta_outgoing_destroy(cr->cr_oprq), cr->cr_oprq = NULL;
+  }
+
   if (cr->cr_orq) {
     nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
     return nua_client_request_unref(cr);
@@ -379,6 +383,9 @@ nua_client_request_destroy(nua_client_request_t *cr)
 
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL;
+
+  if (cr->cr_oprq)
+    nta_outgoing_destroy(cr->cr_oprq), cr->cr_oprq = NULL;
 
   if (cr->cr_target)
     su_free(nh->nh_home, cr->cr_target);
