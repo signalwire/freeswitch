@@ -572,11 +572,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			} else {
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				const char *phrase;
-				const char *peer_sip_reason_phrase = 0;
 				const char *override_sip_reason_phrase = 0;
 				char *added_headers = NULL;
-				char suffixed_reason_phrase[512];
-
 
 				if (tech_pvt->respond_phrase) {
 					phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
@@ -584,15 +581,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					phrase = sip_status_phrase(sip_cause);
 				} else {
 					phrase = sip_status_phrase(500);
-				}
-
-				if (sip_cause >= 500) {
-					peer_sip_reason_phrase = switch_channel_get_variable(channel, "peer_sip_reason_phrase");
-					if (!zstr(peer_sip_reason_phrase)) {
-						strcpy(suffixed_reason_phrase, phrase);
-						strcat(suffixed_reason_phrase, " TV1");
-						phrase = su_strdup(nua_handle_home(tech_pvt->nh), suffixed_reason_phrase);
-					}
 				}
 
 				override_sip_reason_phrase = switch_channel_get_variable(channel, "override_sip_reason_phrase");
