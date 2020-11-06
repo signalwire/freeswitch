@@ -290,7 +290,11 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 #if defined(HAVE_OPENSSL)
 	switch_aws_s3_profile aws_s3_profile;
 	char* url_dup;
-	char* query_params;
+
+	if (!query_string) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required arg query_string.\n");
+		return headers;
+	}
 
 	// Get bucket and object name from url
 	switch_strdup(url_dup, url);
@@ -312,11 +316,9 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 	aws_s3_profile.verb = verb;
 	aws_s3_profile.expires = profile->expires;
 
-	query_params = aws_s3_authentication_create(&aws_s3_profile);
-    *query_string = query_params;
+	*query_string = aws_s3_authentication_create(&aws_s3_profile);
 
 	switch_safe_free(url_dup);
-
 #endif
 	return headers;
 }
