@@ -2010,6 +2010,10 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 	switch_mutex_lock(CACHE_MUTEX);
 
+	if (key && user_name && !domain_name) {
+		domain_name = switch_core_get_variable("domain");
+	}
+	
 	if (key && user_name && domain_name) {
 		switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
 
