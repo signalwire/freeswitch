@@ -6742,7 +6742,7 @@ SWITCH_STANDARD_API(xml_flush_function)
 		argc = switch_split(mycmd, ' ', argv);
 	}
 
-	if (argc == 3) {
+	if (argc > 1) {
 		r = switch_xml_clear_user_cache(argv[0], argv[1], argv[2]);
 	} else {
 		r = switch_xml_clear_user_cache(NULL, NULL, NULL);

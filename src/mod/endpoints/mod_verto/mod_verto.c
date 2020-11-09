@@ -1118,6 +1118,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				switch_snprintf(message, mlen, "Authentication Failure");
 				jsock->uid = NULL;
 				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
+				switch_xml_clear_user_cache("id", id, domain);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
 				r = SWITCH_TRUE;
