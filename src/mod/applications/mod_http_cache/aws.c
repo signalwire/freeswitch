@@ -291,6 +291,11 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 	switch_aws_s3_profile aws_s3_profile;
 	char* url_dup;
 
+	if (!query_string) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required arg query_string.\n");
+		return headers;
+	}
+
 	// Get bucket and object name from url
 	switch_strdup(url_dup, url);
 	parse_url(url_dup, profile->base_domain, "s3", &aws_s3_profile.bucket, &aws_s3_profile.object);

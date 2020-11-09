@@ -1099,6 +1099,8 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	char *query_string = NULL;
+	char *full_url = NULL;
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1110,7 +1112,14 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 	if (profile && profile->append_headers_ptr) {
-		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, NULL);
+		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, &query_string);
+	}
+
+	if (query_string) {
+		full_url = switch_mprintf("%s?%s", url->url, query_string);
+		free(query_string);
+	} else {
+		switch_strdup(full_url, url->url);
 	}
 
 	curl_handle = switch_curl_easy_init();
@@ -1123,7 +1132,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		if (headers) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		}
-		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
@@ -1178,6 +1187,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 
 done:
 
+	switch_safe_free(full_url);
 	if (headers) {
 		switch_curl_slist_free_all(headers);
 	}
