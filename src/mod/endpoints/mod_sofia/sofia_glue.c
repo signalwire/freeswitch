@@ -1065,8 +1065,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
 	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+#ifdef NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT
 	const char *sip_call_tls_orq_connect_timeout_str = switch_channel_get_variable(tech_pvt->channel, "sip_call_tls_orq_connect_timeout");
 	uint32_t sip_call_tls_orq_connect_timeout = (sip_call_tls_orq_connect_timeout_str) ? atoi(sip_call_tls_orq_connect_timeout_str) : 0;
+#endif
 	const char *stir_shaken_attest = NULL;
 	char *identity_to_free = NULL;
 	const char *date = NULL;
