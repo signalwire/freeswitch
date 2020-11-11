@@ -1761,7 +1761,7 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 			int ok = 0;
 
 			for (j = 0; j < CRYPTO_INVALID; j++) {
-				if (!strcasecmp(fields[i], SUITES[j].name)) {
+				if (!strcasecmp(fields[i], SUITES[j].name) || !strcasecmp(fields[i], SUITES[j].alias)) {
 					smh->crypto_suite_order[k++] = SUITES[j].type;
 					ok++;
 					break;
