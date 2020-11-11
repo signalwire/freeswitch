@@ -1637,8 +1637,9 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 	} else return;
 
 	if ((tmp = switch_channel_get_variable(session->channel, keyvar))) {
-		if ((tmp = switch_channel_get_variable(session->channel, ctypevar))) {
-			engine->crypto_type = switch_core_media_crypto_str2type(tmp);
+		const char *ct;
+		if ((ct = switch_channel_get_variable(session->channel, ctypevar))) {
+			engine->crypto_type = switch_core_media_crypto_str2type(ct);
 		}
 
 		engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_strdup(session, tmp);
