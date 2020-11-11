@@ -1211,7 +1211,6 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, (use_alias ? SUITES[ctype].alias : SUITES[ctype].name), b64_key);
 	}
 
-	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
 	switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Set Local %s crypto Key [%s]\n",
@@ -1895,6 +1894,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
 			switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
 			switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
+			switch_channel_set_variable_printf(session->channel, "rtp_last_audio_local_crypto_key", "%s", engine->ssec[engine->crypto_type].local_crypto_key);
 		} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
 			switch_channel_set_variable(session->channel, "srtp_remote_video_crypto_key", crypto);
 			switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
