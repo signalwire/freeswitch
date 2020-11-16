@@ -3288,11 +3288,12 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 				}
 
 				if ((callflow = switch_xml_child(xml, "callflow")) && (x_extension = switch_xml_child(callflow, "extension"))) {
+					int recovery_skip_announcement_type_applications = switch_channel_var_true(channel, "recovery_skip_announcement_type_applications");
 					for (param = switch_xml_child(x_extension, "application"); param; param = param->next) {
 						const char *var = switch_xml_attr_soft(param, "app_name");
 						const char *val = switch_xml_attr_soft(param, "app_data");
 						/* skip announcement type apps */
-						if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones") && strcasecmp(var, "say")) {
+						if (!recovery_skip_announcement_type_applications || (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones") && strcasecmp(var, "say"))) {
 							switch_caller_extension_add_application(session, extension, var, val);
 						}
 					}
