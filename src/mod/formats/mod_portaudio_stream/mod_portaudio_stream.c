@@ -248,7 +248,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 {
 	portaudio_stream_source_t *source = obj;
 	portaudio_stream_context_t *cp;
-	int samples = 0;
+	int samples;
 	int bused, bytesToWrite;
 
 
@@ -282,7 +282,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				source->ready = 0;
 			} else {
 				while (globals.running && !source->stopped) {
-					samples = 0;
 					switch_mutex_lock(source->device_lock);
 					samples = ReadAudioStream(source->audio_stream, source->databuf,
 								  source->read_codec.implementation->samples_per_packet, 0, &source->timer);

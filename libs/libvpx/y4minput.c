@@ -130,8 +130,8 @@ static int y4m_parse_tags(y4m_input *_y4m, char *_tags) {
   The number of taps is intentionally kept small to reduce computational
    overhead and limit ringing.
 
-  The taps from these filters are scaled so that their sum is 1, and the result
-   is scaled by 128 and rounded to integers to create a filter whose
+  The taps from these filters are scaled so that their sum is 1, and the
+  result is scaled by 128 and rounded to integers to create a filter whose
    intermediate values fit inside 16 bits.
   Coefficients are rounded in such a way as to ensure their sum is still 128,
    which is usually equivalent to normal rounding.
@@ -139,7 +139,6 @@ static int y4m_parse_tags(y4m_input *_y4m, char *_tags) {
   Conversions which require both horizontal and vertical filtering could
    have these steps pipelined, for less memory consumption and better cache
    performance, but we do them separately for simplicity.*/
-
 #define OC_MINI(_a, _b) ((_a) > (_b) ? (_b) : (_a))
 #define OC_MAXI(_a, _b) ((_a) < (_b) ? (_b) : (_a))
 #define OC_CLAMPI(_a, _b, _c) (OC_MAXI(_a, OC_MINI(_b, _c)))
@@ -976,6 +975,8 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->aux_buf_sz =
         _y4m->aux_buf_read_sz + ((_y4m->pic_w + 1) / 2) * _y4m->pic_h;
     _y4m->convert = y4m_convert_411_420jpeg;
+    fprintf(stderr, "Unsupported conversion from yuv 411\n");
+    return -1;
   } else if (strcmp(_y4m->chroma_type, "444") == 0) {
     _y4m->src_c_dec_h = 1;
     _y4m->src_c_dec_v = 1;

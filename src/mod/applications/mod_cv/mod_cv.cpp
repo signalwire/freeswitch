@@ -181,7 +181,6 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
 
     if (!(context->w && context->h)) return;
 
-    w = context->w;
     h = context->h;
 
     if (overlay->fontsz) {
@@ -197,10 +196,6 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
     }
 
     if (!text) text = overlay->text;
-
-    int len = strlen(text);
-
-    if (len < 5) len = 5;
 
     //width = (int) (float)(font_size * .95f * len);
 
@@ -897,7 +892,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             }
 
             shape_w = context->shape[0].w;
-            shape_h = context->shape[0].h;
 
             cx = context->shape[0].cx;
             cy = context->shape[0].cy;
@@ -1095,10 +1089,12 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
             } else if (!strcasecmp(name, "allclear")) {
                 for (int x = context->overlay_count - 1; x >= 0; x--) {
                     png_idx = clear_overlay(context, x);
-                    context->overlay[x]->xo = context->overlay[x]->yo = context->overlay[x]->shape_scale = 0.0f;
-                    context->overlay[x]->zidx = 0;
-                    context->overlay[x]->scale_w = context->overlay[x]->scale_h = 0;
-                    context->overlay[x]->shape_scale = 1;
+					if (context->overlay[x]) {
+						context->overlay[x]->xo = context->overlay[x]->yo = context->overlay[x]->shape_scale = 0.0f;
+						context->overlay[x]->zidx = 0;
+						context->overlay[x]->scale_w = context->overlay[x]->scale_h = 0;
+						context->overlay[x]->shape_scale = 1;
+					}
                 }
             } else if (!strcasecmp(name, "home")) {
                 context->overlay[png_idx]->xo = context->overlay[png_idx]->yo = context->overlay[png_idx]->shape_scale = 0.0f;
@@ -1200,7 +1196,7 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
 {
     cv_context_t *context = (cv_context_t *) user_data;
 
-    switch_channel_t *channel = switch_core_session_get_channel(context->session);
+    switch_channel_t *channel;
 
     switch (type) {
     case SWITCH_ABC_TYPE_INIT:
@@ -1263,7 +1259,7 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
         parse_params(context, 1, argc, argv);
     }
 
-	if (!strcasecmp(argv[0], "patch") || !strcasecmp(argv[1], "patch")) {
+	if ((argv[0] && !strcasecmp(argv[0], "patch")) ||(argv[1] && !strcasecmp(argv[1], "patch"))) {
 		function = "patch:video";
 		flags = SMBF_VIDEO_PATCH;
 	}

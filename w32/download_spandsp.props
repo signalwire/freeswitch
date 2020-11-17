@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup>
+    <downloadSpandspPropsImported>true</downloadSpandspPropsImported>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="SpandspDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/spandsp/archive/master.zip"
+           expectfileordirectory="$(BaseDir)libs\spandsp\configure.ac"
+           outputfolder=""
+           outputfilename="spandsp-$(SpandspVersion).zip"
+           extractto="$(BaseDir)libs\"
+           moveafter="spandsp-$(SpandspVersion)|spandsp"
+      />
+  </Target>
+
+</Project>

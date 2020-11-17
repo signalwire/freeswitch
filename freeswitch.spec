@@ -4,7 +4,7 @@
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
-#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
+#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru
 #		      and others
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
@@ -25,7 +25,7 @@
 #                 Ken Rice <krice@freeswitch.org>
 #                 Chris Rienzo <crienzo@grasshopper.com>
 #
-# Maintainer(s): Ken Rice <krice@freeswitch.org>
+# Maintainer(s): SignalWire, Inc <support@signalwire.com>
 #
 ######################################################################################################################
 # Module build settings
@@ -152,17 +152,14 @@ BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
+BuildRequires: sofia-sip-devel >= 1.12.12
+BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
 BuildRequires: libtiff-devel
-BuildRequires: ldns-devel
 BuildRequires: libedit-devel
-BuildRequires: perl
 BuildRequires: yasm
-%if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
-BuildRequires: perl-ExtUtils-Embed
-%endif
 BuildRequires: pkgconfig
 %if 0%{?rhel} < 6 && 0%{?fedora} <= 6
 BuildRequires: termcap
@@ -174,38 +171,17 @@ BuildRequires: db-devel
 %else
 BuildRequires: db4-devel
 %endif
-BuildRequires: python-devel
 BuildRequires: libogg-devel
 BuildRequires: libvorbis-devel
 BuildRequires: libjpeg-devel
 #BuildRequires: mono-devel
-BuildRequires: alsa-lib-devel
 BuildRequires: which
 BuildRequires: zlib-devel
 BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
-BuildRequires: bison
-BuildRequires: net-snmp-devel
-BuildRequires: libmemcached-devel
-BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
-BuildRequires: broadvoice-devel
-BuildRequires: flite-devel
-BuildRequires: ilbc2-devel 
-BuildRequires: g722_1-devel
-BuildRequires: codec2-devel
-BuildRequires: libsilk-devel
 BuildRequires: libyuv-devel >= 0.0.1280
-BuildRequires: lua-devel
-BuildRequires: mongo-c-driver-devel
-BuildRequires: opus-devel
-BuildRequires: soundtouch-devel >= 1.7.1
-%if %{build_py26_esl}
-BuildRequires: python26-devel
-Requires: python26
-%endif
-Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
 Requires: curl
@@ -223,7 +199,6 @@ Requires: db4
 Requires: gdbm
 Requires: zlib
 Requires: libtiff
-Requires: python
 Requires: libtheora
 Requires: libxml2
 Requires: libsndfile
@@ -383,6 +358,7 @@ Engine. Uses ODBC to connect to the DB of your choice.
 Summary:	FreeSWITCH mod_enum
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  ldns-devel
 
 %description application-enum
 Provides FreeSWITCH mod_enum, a ENUM dialplan, with API and Dialplan extensions 
@@ -490,6 +466,7 @@ Provides FreeSWITCH mod_limit, provide application to limit both concurrent and 
 Summary:	FreeSWITCH mod_memcache
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libmemcached-devel
 
 %description application-memcache
 Provides FreeSWITCH mod_memcache, implements an API interface to memcached which
@@ -501,6 +478,7 @@ alleviating database load."
 Summary:	FreeSWITCH mod_mongo
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:  mongo-c-driver-devel
 
 %description application-mongo
 Provides FreeSWITCH mod_mongo, which implements an API interface to mongodb.
@@ -582,6 +560,7 @@ and appearance of the programmable softkeys on Snom phones
 Summary:	FreeSWITCH mod_soundtouch
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  soundtouch-devel >= 1.7.1
 
 %description application-soundtouch
 Provides FreeSWITCH mod_soundtouch, uses the soundtouch library, which can do
@@ -658,6 +637,8 @@ system for backend voicemail systems
 Summary:	FreeSWITCH mod_flite
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       flite >= 2.0.0
+BuildRequires:  flite-devel >= 2.0.0
 
 %description asrtts-flite
 Provides FreeSWITCH mod_flite, a interface to the flite text to speech engine
@@ -666,6 +647,7 @@ Provides FreeSWITCH mod_flite, a interface to the flite text to speech engine
 Summary:	FreeSWITCH mod_pocketsphinx
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  bison
 
 %description asrtts-pocketsphinx
 Provides FreeSWITCH mod_pocketsphinx, a interface to the OpenSource 
@@ -715,6 +697,7 @@ Pass-through AMR WideBand Codec support for FreeSWITCH open source telephony pla
 Summary:        BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  broadvoice-devel
 
 %description codec-bv
 BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source telephony platform
@@ -723,6 +706,7 @@ BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source 
 Summary:        Codec2 Narrow Band Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  codec2-devel
 
 %description codec-codec2
 CODEC2 narrow band codec support for FreeSWITCH open source telephony platform.
@@ -759,6 +743,7 @@ Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:       ilbc2
+BuildRequires:  ilbc2-devel 
 
 
 %description codec-ilbc
@@ -792,6 +777,8 @@ MP4V Video Codec support for FreeSWITCH open source telephony platform
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       opus >= 1.1
+BuildRequires:  opus-devel >= 1.1
 
 %description codec-opus
 OPUS Codec support for FreeSWITCH open source telephony platform
@@ -813,6 +800,7 @@ Sangoma D100 and D500 Codec Card Support
 Summary:        Silk Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  libsilk-devel
 
 %description codec-silk
 Silk Codec (from Skype) support for FreeSWITCH open source telephony platform
@@ -821,6 +809,7 @@ Silk Codec (from Skype) support for FreeSWITCH open source telephony platform
 Summary:        Siren Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
+BuildRequires:  g722_1-devel
 
 %description codec-siren
 Siren Codec support for FreeSWITCH open source telephony platform. Using 
@@ -919,6 +908,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:	alsa-lib
 BuildRequires:	alsa-lib-devel
+BuildRequires:	portaudio-devel
 
 %description endpoint-portaudio
 PortAudio endpoint support for FreeSWITCH open source telephony platform.
@@ -957,52 +947,6 @@ Requires:       %{name} = %{version}-%{release}
 %description endpoint-rtc
 Verto protocol support for FreeSWITCH open source telephony platform.
 
-%package freetdm
-Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description freetdm
-FreeTDM
-
-%if %{build_sng_isdn}
-
-%package freetdm-sng-isdn
-Summary:	Sangoma ISDN Module for FreeTDM
-Group:		System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_isdn 
-BuildRequires: wanpipe 
-BuildRequires: libsng_isdn 
-
-%description freetdm-sng-isdn
-Sangoma ISDN Module for freetdm
-
-%endif
-
-%if %{build_sng_ss7}
-
-%package freetdm-sng-ss7
-Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH, Sangoma SS7 Module
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-Requires:       %{name}-freetdm = %{version}-%{release}
-Requires: wanpipe 
-Requires: libsng_ss7 
-BuildRequires: wanpipe 
-BuildRequires: libsng_ss7 
-%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
-Requires: openssl098e
-BuildRequires: openssl098e
-%endif
-
-%description freetdm-sng-ss7
-Sangoma SMG-SS7 drivers for FreeTDM
-
-%endif
-
 ######################################################################################################################
 #				FreeSWITCH Event Handler Modules
 ######################################################################################################################
@@ -1010,7 +954,8 @@ Sangoma SMG-SS7 drivers for FreeTDM
 %package event-cdr-mongodb
 Summary:	MongoDB CDR Logger for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+BuildRequires:  mongo-c-driver-devel
 
 %description event-cdr-mongodb
 MongoDB CDR Logger for FreeSWITCH
@@ -1156,6 +1101,7 @@ a native format sound file is available then FreeSWITCH can use it.
 Summary:	PortAudio Media Steam support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:	portaudio-devel
 
 %description format-portaudio-stream
 Portaudio Streaming interface Audio for FreeSWITCH
@@ -1225,6 +1171,7 @@ Implements TGML Tone Generation for the FreeSWITCH open source telephony platfor
 Summary:	Lua support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
+BuildRequires:  lua-devel
 
 %description	lua
 
@@ -1233,6 +1180,8 @@ Summary:	Perl support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	perl
+BuildRequires:	perl-devel
+BuildRequires:	perl-ExtUtils-Embed
 
 %description	perl
 
@@ -1240,7 +1189,8 @@ Requires:	perl
 Summary:        Python support for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:	python
+Requires:       python
+BuildRequires:  python-devel
 
 %description    python
 
@@ -1387,6 +1337,8 @@ The Perl ESL module allows for native interaction with FreeSWITCH over the event
 %package	-n python-ESL
 Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 Group:		System Environment/Libraries
+Requires:	python
+BuildRequires:	python-devel
 
 %description	-n python-ESL
 The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
@@ -1565,7 +1517,7 @@ DIRECTORIES_MODULES=""
 #						Endpoints
 #
 ######################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
+ENDPOINTS_MODULES="endpoints/mod_dingaling \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
@@ -2349,32 +2301,6 @@ fi
 %files endpoint-rtc
 %{MODINSTDIR}/mod_rtc.so*
 
-######################################################################################################################
-#
-#						FreeTDM Module for TDM Interaction
-#
-######################################################################################################################
-%files freetdm
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/tones.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/freetdm.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/pika.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/freetdm.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/wanpipe.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/zt.conf
-%{LIBDIR}/libfreetdm.so*
-%{MODINSTDIR}/mod_freetdm.so*
-%{MODINSTDIR}/ftmod_skel*.so*
-%{MODINSTDIR}/ftmod_[a-r,t-z]*.so*
-
-%if %{build_sng_ss7}
-%files freetdm-sng-ss7
-%{MODINSTDIR}/ftmod_sangoma_ss7.so*
-%endif
-
-%if %{build_sng_isdn}
-%files freetdm-sng-isdn
-%{MODINSTDIR}/ftmod_sangoma_isdn.so*
-%endif
 
 ######################################################################################################################
 #

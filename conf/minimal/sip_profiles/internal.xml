@@ -1,6 +1,8 @@
 <profile name="internal">
   <settings>
     <param name="auth-calls" value="true"/>
+    <!-- Force subscription requests to require authentication -->
+    <param name="auth-subscriptions" value="true"/>
     <param name="apply-nat-acl" value="nat.auto"/>
 
     <param name="debug" value="0"/>

@@ -123,14 +123,18 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	kazoo_globals.event_stream_preallocate = KZ_DEFAULT_STREAM_PRE_ALLOCATE;
 	kazoo_globals.send_msg_batch = 10;
 	kazoo_globals.event_stream_framing = 2;
+	kazoo_globals.event_stream_keepalive = 1;
 	kazoo_globals.event_stream_queue_timeout = 200000;
 	kazoo_globals.node_receiver_queue_timeout = 100000;
 	kazoo_globals.node_sender_queue_timeout = 0;
 	kazoo_globals.port = 0;
-	kazoo_globals.io_fault_tolerance = 10;
+	kazoo_globals.io_fault_tolerance = 3;
+	kazoo_globals.io_fault_tolerance_sleep = 100000; // 100 ms
 	kazoo_globals.json_encoding = ERLANG_TUPLE;
+	kazoo_globals.delay_before_initial_fetch = 10000000;
 
 	kazoo_globals.legacy_events = SWITCH_FALSE;
+	kazoo_globals.expand_headers_on_fetch = SWITCH_TRUE;
 
 	kz_set_tweak(KZ_TWEAK_INTERACTION_ID);
 	kz_set_tweak(KZ_TWEAK_EXPORT_VARS);
@@ -205,9 +209,25 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "event-stream-framing")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-framing: %s\n", val);
 				kazoo_globals.event_stream_framing = atoi(val);
+
+			} else if (!strcmp(var, "event-stream-keep-alive")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set event-stream-keep-alive: %s\n", val);
+				kazoo_globals.event_stream_keepalive = switch_true(val);
+
 			} else if (!strcmp(var, "io-fault-tolerance")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set io-fault-tolerance: %s\n", val);
 				kazoo_globals.io_fault_tolerance = atoi(val);
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-micro")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val);
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-ms")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val) * 1000;
+			} else if (!strcmp(var, "io-fault-tolerance-sleep-sec")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.io_fault_tolerance_sleep = atoi(val) * 1000000;
+
+
 			} else if (!strcmp(var, "node-worker-threads")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set node-worker-threads: %s\n", val);
 				kazoo_globals.node_worker_threads = atoi(val);
@@ -231,6 +251,15 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 			} else if (!strcmp(var, "event-stream-queue-timeout")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
 				kazoo_globals.event_stream_queue_timeout = atoi(val);
+			} else if (!strcmp(var, "delay-before-initial-fetch-micro")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val);
+			} else if (!strcmp(var, "delay-before-initial-fetch-ms")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val) * 1000;
+			} else if (!strcmp(var, "delay-before-initial-fetch-sec")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set %s : %s\n", var, val);
+				kazoo_globals.delay_before_initial_fetch = atoi(val) * 1000000;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unknown config option %s : %s\n", var, val);
 			}
@@ -238,8 +267,8 @@ switch_status_t kazoo_ei_config(switch_xml_t cfg) {
 	}
 
 	if ((child = switch_xml_child(cfg, "tweaks"))) {
-		char *default_tweaks = (char *) switch_xml_attr_soft(param, "default");
-		if (default_tweaks) {
+		char *default_tweaks = (char *) switch_xml_attr_soft(child, "default");
+		if (default_tweaks && !zstr(default_tweaks)) {
 			int i, v = switch_true(default_tweaks) ? 1 : 0;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set tweak default : %s\n", default_tweaks);
 			for (i = 0; i < KZ_TWEAK_MAX; i++) kazoo_globals.tweaks[i] = v;
@@ -516,9 +545,10 @@ switch_status_t kazoo_config_events(kazoo_config_ptr definitions, switch_memory_
 			cur->name = switch_core_strdup(pool, var);
 			kazoo_config_filters(pool, event, &cur->filter);
 			kazoo_config_fields(definitions, pool, event, &cur->fields);
-
+			if (switch_xml_child(event, "logging") != NULL) {
+				kazoo_config_loglevels(pool, event, &cur->logging);
+			}
 		}
-
 	}
 
 	return SWITCH_STATUS_SUCCESS;

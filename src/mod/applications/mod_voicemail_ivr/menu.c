@@ -168,7 +168,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 	size_t msg_count = 0;
 	size_t current_msg = 1;
 	size_t next_msg = current_msg;
-	size_t previous_msg = current_msg;
+	size_t previous_msg;
 	char *cmd = NULL;
 	int retry;
 

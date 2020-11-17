@@ -626,18 +626,12 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
 	int flags;
 #endif
-	char *lname = "";
+	char *lname;
 	char *lsession_uuid = NULL;
 	*audio_queue = NULL;
 
 	lname = zstr(name) ? "" : switch_core_strdup(pool, name);
 	lsession_uuid = zstr(session_uuid) ? NULL : switch_core_strdup(pool, session_uuid);
-
-	if (zstr(name)) {
-		lname = "";
-	} else {
-		lname = switch_core_strdup(pool, name);
-	}
 
 	if ((laudio_queue = (audio_queue_t *) switch_core_alloc(pool, sizeof(audio_queue_t))) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(lsession_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue\n", lname);
@@ -4238,7 +4232,12 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 
 			/* prepare mod_unimrcp's profile for configuration */
 			profile_create(&mod_profile, name, mod_pool);
-			switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
+			if (mod_profile) {
+				switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
+			} else {
+				client = NULL;
+				goto done;
+			}
 
 			/* pull in any default SPEAK params */
 			default_params = switch_xml_child(profile, "synthparams");

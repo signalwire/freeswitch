@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_PORTS_MEM_H_
-#define VPX_PORTS_MEM_H_
+#ifndef VPX_VPX_PORTS_MEM_H_
+#define VPX_VPX_PORTS_MEM_H_
 
 #include "vpx_config.h"
 #include "vpx/vpx_integer.h"
@@ -51,4 +51,4 @@
 #define VPX_WITH_ASAN 0
 #endif  // __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 
-#endif  // VPX_PORTS_MEM_H_
+#endif  // VPX_VPX_PORTS_MEM_H_

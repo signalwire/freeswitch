@@ -38,7 +38,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
-int SLICE_SIZE = SWITCH_DEFAULT_VIDEO_SIZE;
+int SLICE_SIZE = (SWITCH_DEFAULT_VIDEO_SIZE + 100);
 
 #define H264_NALU_BUFFER_SIZE 65536
 #define MAX_NALUS 256
@@ -1100,6 +1100,8 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	int left = nalu->len - (nalu->eat - nalu->start);
 	uint8_t *p = frame->data;
 	uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
+	int n = nalu->len / SLICE_SIZE;
+	int slice_size = nalu->len / (n + 1) + 1 + 2;
 
 	if (nalu->len <= SLICE_SIZE) {
 		memcpy(frame->data, nalu->start, nalu->len);
@@ -1119,7 +1121,7 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (left <= (SLICE_SIZE - 2)) {
+	if (left <= (slice_size - 2)) {
 		p[0] = nri | 28; // FU-A
 		p[1] = 0x40 | nalu_type;
 		memcpy(p+2, nalu->eat, left);
@@ -1139,9 +1141,9 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	p[0] = nri | 28; // FU-A
 	p[1] = start | nalu_type;
 	if (start) nalu->eat++;
-	memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
-	nalu->eat += (SLICE_SIZE - 2);
-	frame->datalen = SLICE_SIZE;
+	memcpy(p+2, nalu->eat, slice_size - 2);
+	nalu->eat += (slice_size - 2);
+	frame->datalen = slice_size;
 	frame->m = 0;
 	return SWITCH_STATUS_MORE_DATA;
 }

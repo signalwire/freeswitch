@@ -285,6 +285,8 @@ SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
+  \param function user defined module/function/reason identifying this bug
+  \param target user defined identification of the target of the bug
   \param callback a callback for events
   \param user_data arbitrary user data
   \param stop_time absolute time at which the bug is automatically removed (or 0)
@@ -1974,6 +1976,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
 SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
 
 /*!
+  \brief Duplicates a file handle using another pool
+  \param oldfh the file handle to duplicate
+  \param newfh pointer to assign new file handle to
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the file handle was duplicated
+*/
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool);
+
+/*!
   \brief Close an open file handle
   \param fh the file handle to close
   \return SWITCH_STATUS_SUCCESS if the file handle was closed
@@ -2810,6 +2822,7 @@ SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(swi
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);

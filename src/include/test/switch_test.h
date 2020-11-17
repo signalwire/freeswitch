@@ -290,7 +290,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, confdir, 0, flags) == SWITCH_STATUS_SUCCESS) { \
+		if (fst_init_core_and_modload(confdir, confdir, 0, flags | SCF_LOG_DISABLE) == SWITCH_STATUS_SUCCESS) { \
 			fst_core = 2; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
@@ -327,7 +327,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, NULL, 1, 0) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
+		if (fst_init_core_and_modload(confdir, NULL, 1, 0 | SCF_LOG_DISABLE) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
 			fst_core = 1; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
@@ -446,6 +446,8 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 #define FST_TEST_BEGIN(name) \
 	FCT_TEST_BGN(name) \
 		if (fst_core) { \
+			switch_log_level_t level = SWITCH_LOG_DEBUG; \
+			switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
 			fst_requires(fst_pool != NULL); \
 			if (fst_core > 1) { \
 				fst_requires(fst_timer_started); \
@@ -456,7 +458,12 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 			fst_requires_module(fst_test_module); \
 		}
 
-#define FST_TEST_END FCT_TEST_END
+#define FST_TEST_END \
+	if (fst_core) { \
+		switch_log_level_t level = SWITCH_LOG_DISABLE; \
+		switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
+	} \
+	FCT_TEST_END
 
 
 /**
@@ -483,6 +490,8 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	FCT_TEST_BGN(name) \
 	{ \
 		if (fst_core) { \
+			switch_log_level_t level = SWITCH_LOG_DEBUG; \
+			switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
 			fst_requires(fst_pool != NULL); \
 			if (fst_core > 1) { \
 				fst_requires(fst_timer_started); \
@@ -540,6 +549,10 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 				fst_session_pool = NULL; \
 			} \
 			switch_core_session_rwunlock(fst_session); \
+			if (fst_core) { \
+				switch_log_level_t level = SWITCH_LOG_DISABLE; \
+				switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
+			} \
 			switch_sleep(1000000); \
 		} \
 	} \
@@ -863,7 +876,7 @@ cJSON *varname = NULL; \
 	int fd = open(file, O_RDONLY); \
 	fst_requires(fd >= 0); \
 	fstat(fd, &s); \
-	buf = malloc(s.st_size + 1); \
+	switch_zmalloc(buf, s.st_size + 1); \
 	fst_requires(buf); \
 	size = read(fd, buf, s.st_size); \
 	fst_requires(size == s.st_size); \

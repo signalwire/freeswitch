@@ -1350,7 +1350,6 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	}
 	*dest++ = '\0';
 
-	profile = skinny_find_profile(profile_name);
 	if (!(profile = skinny_find_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Profile %s\n", profile_name);
 		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
@@ -1427,12 +1426,6 @@ done:
 
 switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-	char *body = switch_event_get_body(event);
-
-	if (!body) {
-		body = "";
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2481,7 +2474,7 @@ static void skinny_user_to_device_event_handler(switch_event_t *event)
 			uint32_t line_instance = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Line-Instance"));
 			uint32_t call_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Call-Id"));
 			uint32_t transaction_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Transaction-Id"));
-			uint32_t data_length = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Data-Length"));
+			uint32_t data_length;
 			uint32_t sequence_flag = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Sequence-Flag"));
 			uint32_t display_priority = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Display-Priority"));
 			uint32_t conference_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Conference-Id"));
