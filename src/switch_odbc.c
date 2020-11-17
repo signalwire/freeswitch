@@ -644,25 +644,25 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 					}
 
 					if (truncated) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql data truncated - %s\n",SqlState);
 						if (StrLen_or_IndPtr && StrLen_or_IndPtr <= 268435456) {
 							ColumnSize = StrLen_or_IndPtr + 1;
 							vals[y] = malloc(ColumnSize);
 							switch_assert(vals[y]);
 							memset(vals[y], 0, ColumnSize);
 							SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQLGetData large column [%lu]\n", (unsigned long)ColumnSize);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql data truncated - %s\n",SqlState);
 							vals[y] = NULL;
 						}
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed\n");
 						vals[y] = NULL;
 					}
 				} else if (rc == SQL_SUCCESS){
 					vals[y] = strdup((char *)val);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed\n");
 					vals[y] = NULL;
 				}
 			} else {
