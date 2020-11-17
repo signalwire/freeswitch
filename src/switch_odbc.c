@@ -645,12 +645,21 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 					if (truncated) {
 						if (StrLen_or_IndPtr && StrLen_or_IndPtr <= 268435456) {
+							int ValLen = strlen((char*)val);
 							ColumnSize = StrLen_or_IndPtr + 1;
 							vals[y] = malloc(ColumnSize);
 							switch_assert(vals[y]);
 							memset(vals[y], 0, ColumnSize);
-							SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQLGetData large column [%lu]\n", (unsigned long)ColumnSize);
+							strcpy(vals[y], (char*)val);
+							rc = SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *)vals[y] + ValLen, ColumnSize - ValLen, NULL);
+							if (rc != SQL_SUCCESS 
+#if (ODBCVER >= 0x0300)
+								&& rc != SQL_NO_DATA
+#endif
+								) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData was truncated and failed to complete.\n");
+								switch_safe_free(vals[y]);
+							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql data truncated - %s\n",SqlState);
 							vals[y] = NULL;
