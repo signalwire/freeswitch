@@ -848,13 +848,16 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_new(switch_sockaddr_t ** sa, con
 
 	new_sa->pool = pool;
 
+#if APR_HAVE_IPV6
 	if (strchr(ip, ':')) {
 		struct sockaddr_in6 sa6 = { 0 };
 
 		family = APR_INET6;
 		inet_pton(family, ip, &(sa6.sin6_addr));
 		memcpy(&new_sa->sa, &sa6, sizeof(struct sockaddr_in6));
-	} else {
+	} else
+#endif
+	{
 		struct sockaddr_in sa4 = { 0 };
 
 		family = APR_INET;
