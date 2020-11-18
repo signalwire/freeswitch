@@ -1011,7 +1011,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			rate = read_impl.actual_samples_per_second;
 			bpf = read_impl.decoded_bytes_per_packet;
 
-			if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+			if (rate && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 				switch_core_session_get_read_impl(session, &imp);
 
 				if (switch_core_codec_init(&codec,
