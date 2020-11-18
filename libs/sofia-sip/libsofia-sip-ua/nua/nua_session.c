@@ -908,7 +908,7 @@ static int nua_invite_client_preliminary(nua_client_request_t *cr,
         if (nh->nh_prefs->nhp_tagged_on_prack) {
           nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = tagged;
         } else {
-          cr->cr_oprq = tagged;
+          nta_outgoing_destroy(tagged);
         }
       }
       else {

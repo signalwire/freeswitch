@@ -163,7 +163,6 @@ struct nua_client_request
   sip_t              *cr_sip;
 
   nta_outgoing_t     *cr_orq;
-  nta_outgoing_t     *cr_oprq;
 
   su_timer_t         *cr_timer;	        /**< Expires or retry timer */
 
