@@ -240,8 +240,10 @@ struct url_cache {
 	long connect_timeout;
 	/** How long to wait, in seconds, for download of file.  If 0, use default value of 300 seconds */
 	long download_timeout;
-	/** Maximum retries */
+	/** Maximum retries attempt **/
 	long max_retry;
+	/** Maximum retries delay in ms **/
+	long retry_delay_ms;
 };
 static url_cache_t gcache;
 
@@ -1208,7 +1210,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 				break;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d (attempt:%d) trying to fetch %s\n", curl_status, i+1, url->url);
-				switch_sleep(50 * 1000); // 50ms
+				switch_sleep(cache->retry_delay_ms * 1000);
 			}
 		}
 
@@ -1655,6 +1657,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->connect_timeout = 300;
 	cache->download_timeout = 300;
 	cache->max_retry = 1;
+	cache->retry_delay_ms = 100;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1708,6 +1711,12 @@ static switch_status_t do_config(url_cache_t *cache)
 				if (int_val > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting max-retry to %s\n", val);
 					cache->max_retry = int_val;
+				}
+			} else if (!strcasecmp(var, "retry-delay-ms")) {
+				int int_val = atoi(val);
+				if (int_val > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting retry-delay-ms to %s\n", val);
+					cache->retry_delay_ms = int_val;
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
