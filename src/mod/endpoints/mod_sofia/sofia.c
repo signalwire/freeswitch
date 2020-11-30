@@ -2282,7 +2282,7 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	nua_handle_unref(nh);
+	if (nh) nua_handle_unref(nh);
 	nua_unref(nua);
 }
 
@@ -2516,7 +2516,7 @@ void sofia_event_callback(nua_event_t event,
 	de = su_alloc(nua_handle_get_home(nh), sizeof(*de));
 	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
-	de->nh = nua_handle_ref(nh);
+	de->nh = nh ? nua_handle_ref(nh) : NULL;
 	de->data = nua_event_data(de->event);
 	de->sip = sip_object(de->data->e_msg);
 	de->profile = profile;
