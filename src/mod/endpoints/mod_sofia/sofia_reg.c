@@ -1933,7 +1933,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 			switch_mutex_lock(profile->flag_mutex);
 			hnh = switch_core_hash_find(profile->reg_nh_hash, key);
-			switch_mutex_unlock(profile->flag_mutex);
 
 			if (!hnh) {
 				if (!(sofia_private = su_alloc(nua_handle_get_home(nh), sizeof(*sofia_private)))) {
@@ -1954,6 +1953,8 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				nua_handle_ref(nh);
 				switch_core_hash_insert(profile->reg_nh_hash, key, nh);
 			}
+
+			switch_mutex_unlock(profile->flag_mutex);
 		}
 
 
