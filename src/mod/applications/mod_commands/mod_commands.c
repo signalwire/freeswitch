@@ -6439,6 +6439,38 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SPEAK_SYNTAX "<uuid> <engine>|<voice>|<text>|[timer_name]"
+SWITCH_STANDARD_API(uuid_speak_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "-USAGE: %s\n", SPEAK_SYNTAX);
+	} else {
+		switch_core_session_t *xsession = NULL;
+		
+		if ((xsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_execute_application(xsession, "speak", argv[1]);
+			switch_core_session_rwunlock(xsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation failed\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define GLOBAL_SETVAR_SYNTAX "<var>=<value> [=<value2>]"
 SWITCH_STANDARD_API(global_setvar_function)
 {
@@ -7587,6 +7619,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_recv_dtmf", "Receive dtmf digits", uuid_recv_dtmf_function, UUID_RECV_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_redirect", "Send a redirect", uuid_redirect, UUID_REDIRECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "Send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_speak", "Speaks to the channel", uuid_speak_function, SPEAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_session_heartbeat", "uuid_session_heartbeat", uuid_session_heartbeat_function, HEARTBEAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar_multi", "Set multiple variables", uuid_setvar_multi_function, SETVAR_MULTI_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "Set a variable", uuid_setvar_function, SETVAR_SYNTAX);
@@ -7792,8 +7825,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_video_bitrate ::console::list_uuid");
 	switch_console_set_complete("add uuid_video_bandwidth ::console::list_uuid");
 	switch_console_set_complete("add uuid_xfer_zombie ::console::list_uuid");
-	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
+	switch_console_set_complete("add uuid_speak ::console::list_uuid");
+	switch_console_set_complete("add version");
 	switch_console_set_complete("add ...");
 	switch_console_set_complete("add file_exists");
 	switch_console_set_complete("add getcputime");
