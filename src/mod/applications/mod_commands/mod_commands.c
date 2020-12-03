@@ -6439,7 +6439,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SPEAK_SYNTAX "<uuid> <engine>|[voice]|<text>[|timer_name]"
+#define SPEAK_SYNTAX "<uuid> <engine>|[voice]|<text>"
 SWITCH_STANDARD_API(uuid_speak_function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
