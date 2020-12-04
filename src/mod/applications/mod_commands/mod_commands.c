@@ -4330,6 +4330,86 @@ SWITCH_STANDARD_API(uuid_xfer_zombie)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SPEAK_SYNTAX "<uuid> [engine|[voice|]]<text>"
+SWITCH_STANDARD_API(uuid_speak_function)
+{
+	char *mycmd = NULL, *argv1[2] = { 0 }, *argv2[3] = { 0 };
+	int argc = 0;
+
+	switch_core_session_t *xsession = NULL;
+	switch_channel_t *xchannel = NULL;
+
+	const char *engine = NULL;
+	const char *voice = NULL;
+	char *text = NULL;
+
+	switch_input_args_t args = { 0 };
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv1, (sizeof(argv1) / sizeof(argv1[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "-USAGE: %s\n", SPEAK_SYNTAX);
+		goto end;
+	}
+
+	argc = switch_separate_string(argv1[1], '|', argv2, sizeof(argv2) / sizeof(argv2[0]));
+
+	if (argc == 0) {
+		stream->write_function(stream, "-ERR Invalid Params!\n");
+		goto end;
+	}
+	if (!(xsession = switch_core_session_locate(argv1[0]))) {
+		stream->write_function(stream, "-ERR No such channel!\n");
+		goto end;
+	}
+
+	xchannel = switch_core_session_get_channel(xsession);
+
+	if (argc == 1) {
+		text = switch_core_session_strdup(xsession, argv1[1]); /* unstripped text */
+	} else if (argc == 2) {
+		engine = argv2[0];
+		text = switch_core_session_strdup(xsession, argv1[1] + (argv2[1] - argv2[0])); /* unstripped text */
+	} else {
+		engine = argv2[0];
+		voice = argv2[1];
+		text = switch_core_session_strdup(xsession, argv1[1] + (argv2[2] - argv2[0])); /* unstripped text */
+	}
+
+	if (!engine) {
+		engine = switch_channel_get_variable(xchannel, "tts_engine");
+	}
+
+	if (!voice) {
+		voice = switch_channel_get_variable(xchannel, "tts_voice");
+	}
+
+	if (!(engine && text)) {
+		if (!engine) {
+				engine = "NULL";
+		}
+		if (!text) {
+				text = "NULL";
+		}
+		switch_core_session_rwunlock(xsession);
+		stream->write_function(stream, "-ERR Invalid Params! [%s][%s]\n", engine, text);
+		goto end;
+	}
+
+	switch_ivr_speak_text(xsession, engine, voice, text, &args);
+
+	switch_core_session_rwunlock(xsession);
+
+	stream->write_function(stream, "+OK Success\n");
+
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VIDEO_REFRESH_SYNTAX "<uuid> [auto|manual]"
 SWITCH_STANDARD_API(uuid_video_refresh_function)
 {
@@ -7596,6 +7676,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "uuid_jitterbuffer", uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_zombie_exec", "Set zombie_exec flag on the specified uuid", uuid_zombie_exec_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_xfer_zombie", "Allow A leg to hangup and continue originating", uuid_xfer_zombie, XFER_ZOMBIE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_speak", "Speak text", uuid_speak_function, SPEAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "Clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "Find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
@@ -7792,8 +7873,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_video_bitrate ::console::list_uuid");
 	switch_console_set_complete("add uuid_video_bandwidth ::console::list_uuid");
 	switch_console_set_complete("add uuid_xfer_zombie ::console::list_uuid");
-	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
+	switch_console_set_complete("add uuid_speak ::console::list_uuid");
+	switch_console_set_complete("add version");
 	switch_console_set_complete("add ...");
 	switch_console_set_complete("add file_exists");
 	switch_console_set_complete("add getcputime");
