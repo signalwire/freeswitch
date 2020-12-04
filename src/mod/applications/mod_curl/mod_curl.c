@@ -228,6 +228,16 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 			switch_safe_free(ct);
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+	} else if (!strcasecmp(method, "patch")) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
+		if (content_type) {
+			char *ct = switch_mprintf("Content-Type: %s", content_type);
+			headers = switch_curl_slist_append(headers, ct);
+			switch_safe_free(ct);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PATCH data: %s\n", data);
 	} else if (!strcasecmp(method, "delete")) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
@@ -830,24 +840,8 @@ SWITCH_STANDARD_APP(curl_app_function)
 				do_json = SWITCH_TRUE;
 			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
-			} else if (!strcasecmp("post", argv[i])) {
-				method = "post";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("delete", argv[i])) {
-				method = "delete";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("put", argv[i])) {
-				method = "put";
+			} else if (!strcasecmp("post", argv[i]) || !strcasecmp("patch", argv[i]) || !strcasecmp("put", argv[i]) || !strcasecmp("delete", argv[i])) {
+				method = argv[i];
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
@@ -958,24 +952,8 @@ SWITCH_STANDARD_API(curl_function)
 				do_json = SWITCH_TRUE;
 			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
-			} else if (!strcasecmp("post", argv[i])) {
-				method = "post";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("delete", argv[i])) {
-				method = "delete";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("put", argv[i])) {
-				method = "put";
+			} else if (!strcasecmp("post", argv[i]) || !strcasecmp("patch", argv[i]) || !strcasecmp("put", argv[i]) || !strcasecmp("delete", argv[i])) {
+				method = argv[i];
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
