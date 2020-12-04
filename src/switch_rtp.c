@@ -7223,8 +7223,13 @@ static void check_timeout(switch_rtp_t *rtp_session)
 		if (rtp_session->session) {
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
-			switch_channel_execute_on(channel, "execute_on_media_timeout");
-			switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+			if (switch_telnyx_sip_on_media_timeout(channel, rtp_session)) {
+				switch_channel_execute_on(channel, "execute_on_media_timeout");
+				switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s Reset rtp media timer\n", rtp_session_name(rtp_session));
+				switch_rtp_reset_media_timer(rtp_session);
+			}
 		}
 	}
 }

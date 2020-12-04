@@ -3051,7 +3051,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 
 
-				switch_channel_hangup(session->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+				if (switch_telnyx_sip_on_media_timeout(session->channel, engine->rtp_session)) {
+					switch_channel_hangup(session->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Reset rtp media timer\n", switch_core_session_get_name(session));
+					switch_rtp_reset_media_timer(engine->rtp_session);
+				}
 			}
 			goto end;
 		}
