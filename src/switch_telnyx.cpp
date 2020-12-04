@@ -144,3 +144,11 @@ switch_bool_t switch_telnyx_sip_cause_to_q850(int status, switch_call_cause_t* c
 	}
 	return SWITCH_FALSE;
 }
+
+switch_bool_t switch_telnyx_sip_on_media_timeout(switch_channel_t* channel, switch_rtp_t* rtp_session)
+{
+	if (_event_dispatch.switch_telnyx_on_media_timeout) {
+		return _event_dispatch.switch_telnyx_on_media_timeout(channel, rtp_session);
+	}
+	return SWITCH_TRUE;
+}
