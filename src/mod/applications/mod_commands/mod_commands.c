@@ -4330,6 +4330,84 @@ SWITCH_STANDARD_API(uuid_xfer_zombie)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_DETECT_SPEECH_SYNTAX "<uuid>|<help> [grammar <grammar uri> <grammar name>]|[nogrammar <grammar name>]|[grammaron <grammar name>]|[grammaroff <grammar name>]|[grammarsalloff <grammar name>]|[init <mod name> [profile name]]|[param <name> <value>]|[<mod_name> <grammar uri> <grammar name>]|parse|resume|stop|start_input_timers"
+SWITCH_STANDARD_API(uuid_detect_speech_function)
+{
+
+	char *mycmd = NULL, *argv[5] = { 0 };
+	int argc = 0;
+
+	switch_core_session_t *xsession = NULL;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		if (!strcasecmp(argv[0], "help")) {
+                	stream->write_function(stream, "  uuid_detect_speech <uuid> grammar http://127.0.0.1/demo.grxml test\n");
+        	        stream->write_function(stream, "  uuid_detect_speech <uuid> nogrammar test\n");
+	                stream->write_function(stream, "  uuid_detect_speech <uuid> grammaron test\n");
+                	stream->write_function(stream, "  uuid_detect_speech <uuid> grammaroff test\n");
+        	        stream->write_function(stream, "  uuid_detect_speech <uuid> grammarsalloff test\n");
+	                stream->write_function(stream, "  uuid_detect_speech <uuid> init unimrcp:ali-asr\n");
+                	stream->write_function(stream, "  uuid_detect_speech <uuid> init unimrcp ali-asr\n");
+        	        stream->write_function(stream, "  uuid_detect_speech <uuid> pause\n");
+	                stream->write_function(stream, "  uuid_detect_speech <uuid> resume\n");
+	                stream->write_function(stream, "  uuid_detect_speech <uuid> stop\n");
+                	stream->write_function(stream, "  uuid_detect_speech <uuid> param sensitivity-level 0.3\n");
+        	        stream->write_function(stream, "  uuid_detect_speech <uuid> param no-input-timeout 10000\n");
+	                stream->write_function(stream, "  uuid_detect_speech <uuid> start_input_timers\n");
+                	stream->write_function(stream, "  \n");
+        	        stream->write_function(stream, "  uuid_detect_speech <uuid> unimrcp:ali-asr {sensitivity-level=0.3,confidence-threshold=0.1,no-input-timeout=10000,recognition-timeout=50000}http://127.0.0.1/demo.grxml test\n");
+	                stream->write_function(stream, "  \n");
+		} else {
+			stream->write_function(stream, "-USAGE: %s\n", UUID_DETECT_SPEECH_SYNTAX);
+		}
+		goto end;
+	}
+
+	if (!(xsession = switch_core_session_locate(argv[0]))) {
+		stream->write_function(stream, "-ERR No such channel!\n");
+		goto end;
+	}
+
+	//uuid_detect_speech 103fde62-7569-457a-82a9-bc9f652687a7 unimrcp:ali-asr {sensitivity-level=0.3,confidence-threshold=0.1,no-input-timeout=10000,recognition-timeout=50000}http://127.0.0.1/demo.grxml test 
+	if (!strcasecmp(argv[1], "grammar") && argc >= 2) {
+		switch_ivr_detect_speech_load_grammar(xsession, argv[2], argv[3]);
+	} else if (!strcasecmp(argv[1], "nogrammar")) {
+		switch_ivr_detect_speech_unload_grammar(xsession, argv[2]);
+	} else if (!strcasecmp(argv[1], "grammaron")) {
+		switch_ivr_detect_speech_enable_grammar(xsession, argv[2]);
+	} else if (!strcasecmp(argv[1], "grammaroff")) {
+		switch_ivr_detect_speech_disable_grammar(xsession, argv[2]);
+	} else if (!strcasecmp(argv[1], "grammarsalloff")) {
+		switch_ivr_detect_speech_disable_all_grammars(xsession);
+	} else if (!strcasecmp(argv[1], "init")) {
+		switch_ivr_detect_speech_init(xsession, argv[2], argv[3], NULL);
+	} else if (!strcasecmp(argv[1], "pause")) {
+		switch_ivr_pause_detect_speech(xsession);
+	} else if (!strcasecmp(argv[1], "resume")) {
+		switch_ivr_resume_detect_speech(xsession);
+	} else if (!strcasecmp(argv[1], "stop")) {
+		switch_ivr_stop_detect_speech(xsession);
+	} else if (!strcasecmp(argv[1], "param")) {
+		switch_ivr_set_param_detect_speech(xsession, argv[2], argv[3]);
+	} else if (!strcasecmp(argv[1], "start_input_timers")) {
+		switch_ivr_detect_speech_start_input_timers(xsession);
+	} else if (argc >= 4) {
+		switch_ivr_detect_speech(xsession, argv[1], argv[2], argv[3], argv[4], NULL);
+	}
+
+	switch_core_session_rwunlock(xsession);
+	stream->write_function(stream, "+OK Success\n");
+
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VIDEO_REFRESH_SYNTAX "<uuid> [auto|manual]"
 SWITCH_STANDARD_API(uuid_video_refresh_function)
 {
@@ -7596,6 +7674,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "uuid_jitterbuffer", uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_zombie_exec", "Set zombie_exec flag on the specified uuid", uuid_zombie_exec_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_xfer_zombie", "Allow A leg to hangup and continue originating", uuid_xfer_zombie, XFER_ZOMBIE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_detect_speech", "Detect speech", uuid_detect_speech_function, UUID_DETECT_SPEECH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "Clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "Find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
@@ -7792,6 +7871,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_video_bitrate ::console::list_uuid");
 	switch_console_set_complete("add uuid_video_bandwidth ::console::list_uuid");
 	switch_console_set_complete("add uuid_xfer_zombie ::console::list_uuid");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid grammar");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid nogrammar");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid grammaron");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid grammaroff");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid grammarsalloff");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid init");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid pause");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid resume");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid stop");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid param");
+	switch_console_set_complete("add uuid_detect_speech ::console::list_uuid start_input_timers");
+	switch_console_set_complete("add uuid_detect_speech help");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");
