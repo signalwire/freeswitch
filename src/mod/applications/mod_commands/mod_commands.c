@@ -4330,6 +4330,45 @@ SWITCH_STANDARD_API(uuid_xfer_zombie)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_EXECUTE_APP_SYNTAX "<uuid> <app_name> [app_data]"
+SWITCH_STANDARD_API(uuid_execute_app_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_EXECUTE_APP_SYNTAX);
+		goto end;
+	} else {
+		switch_core_session_t *xsession = NULL;
+
+		if ((xsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_execute_application(xsession, argv[1], argv[2]);
+			switch_core_session_rwunlock(xsession);
+		} else {
+			stream->write_function(stream, "-ERR No such channel!\n");
+			goto end;
+		}
+		
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VIDEO_REFRESH_SYNTAX "<uuid> [auto|manual]"
 SWITCH_STANDARD_API(uuid_video_refresh_function)
 {
@@ -7596,6 +7635,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "uuid_jitterbuffer", uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_zombie_exec", "Set zombie_exec flag on the specified uuid", uuid_zombie_exec_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_xfer_zombie", "Allow A leg to hangup and continue originating", uuid_xfer_zombie, XFER_ZOMBIE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_execute_app", "execute application", uuid_execute_app_function, UUID_EXECUTE_APP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "Clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "Find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
@@ -7792,6 +7832,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_video_bitrate ::console::list_uuid");
 	switch_console_set_complete("add uuid_video_bandwidth ::console::list_uuid");
 	switch_console_set_complete("add uuid_xfer_zombie ::console::list_uuid");
+	switch_console_set_complete("add uuid_execute_app ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");
