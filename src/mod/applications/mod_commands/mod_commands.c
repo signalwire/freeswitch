@@ -4344,7 +4344,7 @@ SWITCH_STANDARD_API(uuid_detect_speech_function)
 	}
 
 	if (argc < 2) {
-		if (!strcasecmp(argv[0], "help")) {
+		if (argc && !strcasecmp(argv[0], "help")) {
                 	stream->write_function(stream, "  uuid_detect_speech <uuid> grammar http://127.0.0.1/demo.grxml test\n");
         	        stream->write_function(stream, "  uuid_detect_speech <uuid> nogrammar test\n");
 	                stream->write_function(stream, "  uuid_detect_speech <uuid> grammaron test\n");
