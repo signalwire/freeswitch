@@ -3606,16 +3606,40 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	return SWITCH_FALSE;
 }
 
+
 static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 {
-	cJSON *json_ptr;
-
+	cJSON *json_ptr, *var;
+	switch_channel_t *channel;
+	
 	switch_assert(obj);
 	switch_assert(session);
 
+	channel = switch_core_session_get_channel(session);
+		
+	
+	if ((json_ptr = cJSON_GetObjectItem(obj, "audio"))) {
+		if ((var = cJSON_GetObjectItem(json_ptr, "echoCancellation")) && var->type == cJSON_True) {
+			switch_channel_set_variable(channel, "verto_echoCancellation", "true");
+		} else {
+			switch_channel_set_variable(channel, "verto_echoCancellation", "false");
+		}
+
+		if ((var = cJSON_GetObjectItem(json_ptr, "noiseSuppression")) && var->type == cJSON_True) {
+			switch_channel_set_variable(channel, "verto_noiseSuppression", "true");
+		} else {
+			switch_channel_set_variable(channel, "verto_noiseSuppression", "false");
+		}
+
+		if ((var = cJSON_GetObjectItem(json_ptr, "autoGainControl")) && var->type == cJSON_True) {
+			switch_channel_set_variable(channel, "verto_autoGainControl", "true");
+		} else {
+			switch_channel_set_variable(channel, "verto_autoGainControl", "false");
+		}
+	}
+	
 	if ((json_ptr = cJSON_GetObjectItem(obj, "userVariables"))) {
 		cJSON * i;
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		for(i = json_ptr->child; i; i = i->next) {
 			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
