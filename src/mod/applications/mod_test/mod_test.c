@@ -360,9 +360,48 @@ static void test_asr_text_param(switch_asr_handle_t *ah, char *param, const char
 	}
 }
 
+
+
+static switch_status_t test_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+static void test_speech_flush_tts(switch_speech_handle_t *sh)
+{
+}
+
+static void test_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
+{
+}
+
+static void test_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
+{
+}
+
+static void test_speech_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
+{
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_test_load)
 {
 	switch_asr_interface_t *asr_interface;
+	switch_speech_interface_t *speech_interface = NULL;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -379,6 +418,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_test_load)
 	asr_interface->asr_get_results = test_asr_get_results;
 	asr_interface->asr_start_input_timers = test_asr_start_input_timers;
 	asr_interface->asr_text_param = test_asr_text_param;
+
+	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
+	speech_interface->interface_name = "test";
+	speech_interface->speech_open = test_speech_open;
+	speech_interface->speech_close = test_speech_close;
+	speech_interface->speech_feed_tts = test_speech_feed_tts;
+	speech_interface->speech_read_tts = test_speech_read_tts;
+	speech_interface->speech_flush_tts = test_speech_flush_tts;
+	speech_interface->speech_text_param_tts = test_speech_text_param_tts;
+	speech_interface->speech_numeric_param_tts = test_speech_numeric_param_tts;
+	speech_interface->speech_float_param_tts = test_speech_float_param_tts;
 
 	return SWITCH_STATUS_SUCCESS;
 }
