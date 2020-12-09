@@ -127,7 +127,7 @@ static switch_bool_t switch_amrwb_pack_oa(unsigned char *shift_buf, int n)
 	return SWITCH_TRUE;
 }
 
-static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_data_len, int payload_format, char *print_text)
+static switch_bool_t switch_amrwb_info(switch_codec_t *codec, unsigned char *encoded_buf, int encoded_data_len, int payload_format, char *print_text)
 {
 	uint8_t *tocs;
 	int framesz, index, not_last_frame, q, ft;
@@ -144,7 +144,7 @@ static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_d
 		tocs = encoded_buf;
 		index = (tocs[0] >> 3) & 0x0f;
 		if (index > SWITCH_AMRWB_MODES) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid TOC 0x%x\n", index);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid TOC 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
 		framesz = switch_amrwb_frame_sizes[index];
@@ -163,16 +163,18 @@ static switch_bool_t switch_amrwb_info(unsigned char *encoded_buf, int encoded_d
 		ft &= ~(1 << 5); /* Frame Type */
 		index = (shift_tocs[0] >> 3) & 0x0f;
 		if (index > SWITCH_AMRWB_MODES) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (BE): Invalid TOC 0x%x\n", index);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR, "AMRWB decoder (BE): Invalid TOC 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
 		framesz = switch_amrwb_frame_sizes[index];
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): FT: [0x%x] Q: [0x%x] Frame flag: [%d]\n",
-													print_text, payload_format ? "OA":"BE", ft, q, not_last_frame);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): AMRWB encoded voice payload sz: [%d] : | encoded_data_len: [%d]\n",
-													print_text, payload_format ? "OA":"BE", framesz, encoded_data_len);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, 
+			"%s (%s): FT: [0x%x] Q: [0x%x] Frame flag: [%d]\n",
+			print_text, payload_format ? "OA":"BE", ft, q, not_last_frame);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, 
+			"%s (%s): AMRWB encoded voice payload sz: [%d] : | encoded_data_len: [%d]\n", 
+			print_text, payload_format ? "OA":"BE", framesz, encoded_data_len);
 
 	return SWITCH_TRUE;
 }
@@ -359,7 +361,7 @@ static switch_status_t switch_amrwb_encode(switch_codec_t *codec,
 	}
 
 	if (globals.debug) {
-		switch_amrwb_info(shift_buf, *encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB encoder");
+		switch_amrwb_info(codec, shift_buf, *encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB encoder");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -387,7 +389,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	}
 
 	if (globals.debug) {
-		switch_amrwb_info(buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");
+		switch_amrwb_info(codec, buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");
 	}
 
 	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) {
