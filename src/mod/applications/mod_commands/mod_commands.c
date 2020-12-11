@@ -4781,6 +4781,18 @@ SWITCH_STANDARD_API(session_record_function)
 		} else {
 			stream->write_function(stream, "+OK Success\n");
 		}
+	} else if (!strcasecmp(action, "pause")) {
+		if (switch_ivr_record_session_pause(rsession, path, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot pause recording session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
+	} else if (!strcasecmp(action, "resume")) {
+		if (switch_ivr_record_session_pause(rsession, path, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot resume recording session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
 	} else if (!strcasecmp(action, "mask")) {
 		if (switch_ivr_record_session_mask(rsession, path, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Cannot mask recording session!\n");

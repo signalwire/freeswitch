@@ -1869,6 +1869,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_sessi
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_pause(switch_core_session_t *session, const char *file, switch_bool_t on)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, file))) {
+		if (on) {
+			switch_core_media_bug_set_flag(bug, SMBF_PAUSE);
+		} else {
+			switch_core_media_bug_clear_flag(bug, SMBF_PAUSE);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, const char *file)
 {
 	switch_media_bug_t *bug;
