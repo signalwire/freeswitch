@@ -694,7 +694,7 @@ void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const
 	switch_mutex_lock(profile->flag_mutex);
 	if ((hnh = switch_core_hash_find(profile->reg_nh_hash, key))) {
 		switch_core_hash_delete(profile->reg_nh_hash, key);
-		nua_handle_unref(hnh);
+		nua_handle_unref_user(hnh);
 		nua_handle_destroy(hnh);
 	}
 	switch_mutex_unlock(profile->flag_mutex);
@@ -1214,7 +1214,7 @@ void sofia_reg_close_handles(sofia_profile_t *profile)
 		for (hi = switch_core_hash_first_iter( profile->reg_nh_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((nh = (nua_handle_t *) val)) {
-				nua_handle_unref(nh);
+				nua_handle_unref_user(nh);
 				nua_handle_destroy(nh);
 				switch_core_hash_delete(profile->reg_nh_hash, (char *) var);
 				goto top;

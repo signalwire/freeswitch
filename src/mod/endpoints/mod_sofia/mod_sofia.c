@@ -1328,7 +1328,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			de->session = session;
 		}
 
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_FALSE);
 
 
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -5791,7 +5791,7 @@ void general_event_handler(switch_event_t *event)
 					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 			if (call_id && nh) {
-				nua_handle_unref(nh);
+				nua_handle_unref_user(nh);
 			}
 
 		  done:

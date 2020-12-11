@@ -2230,7 +2230,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (de) {
 		pool = de->pool;
 		de->pool = NULL;
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_FALSE);
 	}
 
 	if (pool) {
@@ -2263,7 +2263,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_thread_pool_launch_thread(&td);
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
@@ -2282,8 +2282,15 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	if (nh) nua_handle_unref(nh);
-	nua_unref(nua);
+	if (stack_thread) {
+		/* Safe to unref directly */
+		if (nh) nua_handle_unref(nh);
+		nua_unref(nua);
+	} else {
+		/* This is not a stack thread, need to call via stack (_user) using events */
+		if (nh) nua_handle_unref_user(nh);
+		nua_unref_user(nua);
+	}
 }
 
 
@@ -2320,7 +2327,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-			sofia_process_dispatch_event(&de);
+			sofia_process_dispatch_event(&de, SWITCH_FALSE);
 		} else {
 			break;
 		}
@@ -2374,7 +2381,8 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 	int launch = 0;
 
 	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue) {
-		sofia_process_dispatch_event(&de);
+		/* Calling with SWITCH_TRUE as we are sure this is the stack's thread */
+		sofia_process_dispatch_event(&de, SWITCH_TRUE);
 		return;
 	}
 
@@ -7877,7 +7885,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 								}
-								nua_handle_unref(bnh);
+								nua_handle_unref_user(bnh);
 							}
 							su_home_unref(home);
 							home = NULL;
@@ -9311,7 +9319,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 					switch_core_session_rwunlock(b_session);
 				}
-				nua_handle_unref(bnh);
+				nua_handle_unref_user(bnh);
 			} else {		/* the other channel is on a different box, we have to go find them */
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
@@ -11344,7 +11352,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_core_session_rwunlock(b_session);
 			}
 		}
-		nua_handle_unref(bnh);
+		nua_handle_unref_user(bnh);
 	} else if (sip->sip_replaces && sip->sip_replaces->rp_call_id) {
 		switch_core_session_t *b_session = NULL;
 		if ((b_session = switch_core_session_locate((char*) sip->sip_replaces->rp_call_id))) {

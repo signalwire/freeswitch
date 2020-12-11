@@ -1237,7 +1237,7 @@ uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread);
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
