@@ -17,9 +17,12 @@ switch_core
 switch_core_codec
 switch_core_db
 switch_core_file
+switch_core_session
 switch_core_video
+switch_eavesdrop
 switch_event
 switch_hash
+switch_ivr_async
 switch_ivr_originate
 switch_ivr_play_say
 switch_packetizer
@@ -37,7 +40,9 @@ switch_vpx
 switch_xml
 switch_estimators
 switch_jitter_buffer
+test_sofia
 .deps/
 Makefile
 conf/*/
 conf_playsay/*/
+conf_async/*/

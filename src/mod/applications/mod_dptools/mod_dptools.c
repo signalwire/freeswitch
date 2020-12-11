@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -3315,6 +3315,16 @@ SWITCH_STANDARD_APP(record_session_mask_function)
 SWITCH_STANDARD_APP(record_session_unmask_function)
 {
 	switch_ivr_record_session_mask(session, (char *) data, SWITCH_FALSE);
+}
+
+SWITCH_STANDARD_APP(record_session_pause_function)
+{
+	switch_ivr_record_session_pause(session, (char *) data, SWITCH_TRUE);
+}
+
+SWITCH_STANDARD_APP(record_session_resume_function)
+{
+	switch_ivr_record_session_pause(session, (char *) data, SWITCH_FALSE);
 }
 
 SWITCH_STANDARD_APP(record_session_function)
@@ -6679,7 +6689,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record_session_mask", "Mask audio in recording", SESS_REC_MASK_DESC, record_session_mask_function, "<path>", SAF_MEDIA_TAP);
-	SWITCH_ADD_APP(app_interface, "record_session_unmask", "Resume recording", SESS_REC_UNMASK_DESC, record_session_unmask_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_unmask", "Stop masking audio in recording", SESS_REC_UNMASK_DESC, record_session_unmask_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_pause", "Pause recording", "Temporarily pause writing call recording audio to file", record_session_pause_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_resume", "Resume paused recording", "Resume writing call recording audio to file", record_session_resume_function, "<path>", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
 				   "<path> [<time_limit_secs>] [<silence_thresh>] [<silence_hits>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "preprocess", "pre-process", "pre-process", preprocess_session_function, "", SAF_NONE);
