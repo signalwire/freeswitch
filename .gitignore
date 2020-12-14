@@ -261,6 +261,7 @@ libs/sofia-sip*/
 libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
+src/mod/applications/mod_test/test/test_tts
 src/mod/event_handlers/mod_rayo/test/test_iks
 src/mod/event_handlers/mod_rayo/test/test_nlsml
 src/mod/event_handlers/mod_rayo/test/test_srgs
