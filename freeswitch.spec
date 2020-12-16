@@ -123,9 +123,9 @@ Vendor:       	http://www.freeswitch.org/
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
-Source5:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -1376,9 +1376,9 @@ Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 %prep
 %setup -b0 -q -n %{name}-%{nonparsedversion}
 cp %{SOURCE1} libs/
+cp %{SOURCE2} libs/
 cp %{SOURCE3} libs/
 cp %{SOURCE4} libs/
-cp %{SOURCE5} libs/
 
 #Hotfix for redefined %_sysconfdir
 sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
