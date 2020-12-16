@@ -914,7 +914,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	if (samples < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%s!\n",
 						  opus_strerror(samples), frame_size, plc ? "true" : "false");
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_NOOP;
 	}
 
 	*decoded_data_len = samples * 2 * (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
