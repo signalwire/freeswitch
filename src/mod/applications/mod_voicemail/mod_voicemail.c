@@ -5104,7 +5104,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 	if (argv[4])
 		file_path = argv[4];
 
-	if (!profile_name || !domain || !id || !slot) {
+	if (!profile_name || !domain || !id || slot == -1) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
 		goto done;
 	}
@@ -5112,6 +5112,10 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 	if (!(profile = get_profile(profile_name))) {
 		stream->write_function(stream, "-ERR Profile not found\n");
 		goto done;
+	} if (slot == 0) {
+		sql = switch_mprintf("UPDATE voicemail_prefs SET greeting_path = NULL WHERE username = '%q' AND domain = '%q'", id, domain);
+		vm_execute_sql(profile, sql, profile->mutex);
+		switch_safe_free(sql);
 	} else {
 		char *dir_path = switch_core_sprintf(pool, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 				SWITCH_PATH_SEPARATOR,
