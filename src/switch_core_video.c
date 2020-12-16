@@ -579,7 +579,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 
 	if (*new_img) {
 		new_fmt = (*new_img)->fmt;
-		if ((*new_img)->fmt != SWITCH_IMG_FMT_I420 && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB) return;
+		if ((*new_img)->fmt != SWITCH_IMG_FMT_I420 && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB && (*new_img)->fmt != SWITCH_IMG_FMT_ARGB_LE) return;
 		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_h ) {
 			new_fmt = (*new_img)->fmt;
 			switch_img_free(new_img);
@@ -603,6 +603,12 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 					 img->d_w, img->d_h);
 		} else if (new_fmt == SWITCH_IMG_FMT_ARGB) {
 			I420ToARGB(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				(*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
+				img->d_w, img->d_h);
+		} else if (new_fmt == SWITCH_IMG_FMT_ARGB_LE) {
+				I420ToABGR(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
 				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
 				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
 				(*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
