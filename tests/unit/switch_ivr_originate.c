@@ -763,6 +763,28 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(originate_test_video)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+
+			status = switch_ivr_originate(NULL, &session, &cause, "{null_video_codec=VP8}null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_requires(session);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			channel = switch_core_session_get_channel(session);
+			fst_requires(channel);
+			fst_check(switch_channel_test_flag(channel, CF_VIDEO));
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			fst_check(!switch_channel_ready(channel));
+
+			switch_core_session_rwunlock(session);
+			switch_sleep(1000000);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(enterprise_originate_test_group_confirm_two_handles)
 		{
 			switch_core_session_t *session = NULL;
