@@ -35,13 +35,6 @@
 #include <openssl/sha.h>
 #endif
 
-
-
-#if defined(HAVE_OPENSSL)
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#endif
-
 #if defined(HAVE_OPENSSL)
 /**
  * Calculate HMAC-SHA256 hash of a message
