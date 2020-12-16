@@ -25,6 +25,7 @@
  *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * mod_loopback.c -- Loopback Endpoint Module
@@ -1302,6 +1303,9 @@ struct null_private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_timer_t timer;
+	switch_codec_t video_read_codec;
+	switch_codec_t video_write_codec;
+	switch_timer_t video_timer;
 	switch_caller_profile_t *caller_profile;
 	switch_frame_t read_frame;
 	int16_t *null_buf;
@@ -1312,6 +1316,12 @@ struct null_private_object {
 	int enable_auto_answer;
 	/* auto_answer_delay (0 ms by default) */
 	int auto_answer_delay;
+	char *video_codec_name;
+	switch_frame_t video_read_frame;
+	uint8_t video_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_image_t *img;
+	switch_media_handle_t *media_handle;
+	switch_core_media_params_t mparams;
 };
 
 typedef struct null_private_object null_private_t;
@@ -1324,9 +1334,31 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 													switch_call_cause_t *cancel_cause);
 static switch_status_t null_channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t null_channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t null_channel_kill_channel(switch_core_session_t *session, int sig);
 
+static void set_mparams(null_private_t *tech_pvt)
+{
+	switch_core_media_params_t *mparams = &tech_pvt->mparams;
 
+	mparams->inbound_codec_string = "L16";
+	mparams->outbound_codec_string = "L16";
+	mparams->timer_name = "soft";
+	mparams->extsipip = "10.0.0.1";
+	mparams->extrtpip = "10.0.0.2";
+	mparams->local_network = "127.0.0.1";
+	mparams->sipip = "127.0.0.1";
+	mparams->rtpip = "127.0.0.1";
+	mparams->jb_msec = "60";
+	mparams->rtcp_audio_interval_msec = "5000";
+	mparams->rtcp_video_interval_msec = "5000";
+	mparams->sdp_username = "FreeSWITCH";
+	mparams->cng_pt = 13;
+	mparams->rtp_timeout_sec = 300;
+	mparams->rtp_hold_timeout_sec = 3600;
+	mparams->external_video_source = 1;
+}
 
 static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_session_t *session)
 {
@@ -1363,6 +1395,43 @@ static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_sess
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+
+	if (!zstr(tech_pvt->video_codec_name)) {
+		status = switch_core_codec_init(&tech_pvt->video_read_codec,
+						tech_pvt->video_codec_name,
+						NULL,
+						NULL,
+						90000, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+		if (status != SWITCH_STATUS_SUCCESS || !tech_pvt->video_read_codec.implementation || !switch_core_codec_ready(&tech_pvt->video_read_codec)) {
+			goto end;
+		}
+
+		status = switch_core_codec_init(&tech_pvt->video_write_codec,
+						tech_pvt->video_codec_name,
+						NULL,
+						NULL,
+						90000, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_core_codec_destroy(&tech_pvt->video_read_codec);
+			goto end;
+		}
+
+		switch_channel_set_flag(switch_core_session_get_channel(session), CF_VIDEO);
+		switch_core_session_set_video_read_codec(session, &tech_pvt->read_codec);
+		switch_core_session_set_video_write_codec(session, &tech_pvt->write_codec);
+		switch_core_timer_init(&tech_pvt->video_timer, "soft", 100, 900, switch_core_session_get_pool(session));
+		set_mparams(tech_pvt);
+		switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
+		// switch_core_media_prepare_codecs(session, SWITCH_TRUE);
+		// switch_core_media_check_video_codecs(session);
+		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 0);
+		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 0);
+		// switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, "127.0.0.1", 2000, NULL, 0);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", mparams.local_sdp_str);
+	}
 
 	read_impl = tech_pvt->read_codec.implementation;
 
@@ -1419,7 +1488,19 @@ static switch_status_t null_channel_on_destroy(switch_core_session_t *session)
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+
+		if (switch_core_codec_ready(&tech_pvt->video_read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->video_write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_write_codec);
+		}
+
+		switch_img_free(&tech_pvt->img);
 	}
+
+	switch_media_handle_destroy(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1558,6 +1639,50 @@ static switch_status_t null_channel_write_frame(switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t null_channel_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	*frame = NULL;
+
+	if (!switch_channel_ready(channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_timer_next(&tech_pvt->video_timer);
+
+	tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
+	tech_pvt->video_read_frame.datalen = 0;
+	tech_pvt->video_read_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	tech_pvt->video_read_frame.samples = 0;
+	tech_pvt->video_read_frame.data = tech_pvt->video_data;
+	if (!tech_pvt->img) {
+		tech_pvt->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 0);
+	}
+	tech_pvt->video_read_frame.img = tech_pvt->img;
+	*frame = &tech_pvt->video_read_frame;
+
+	if (*frame) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+}
+static switch_status_t null_channel_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t null_channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
@@ -1638,6 +1763,7 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 
 		if ((tech_pvt = (null_private_t *) switch_core_session_alloc(*new_session, sizeof(null_private_t))) != 0) {
 			const char *rate_ = switch_event_get_header(var_event, "rate");
+			const char *video_codec = switch_event_get_header(var_event, "null_video_codec");
 			int rate = 0;
 
 			if (rate_) {
@@ -1649,8 +1775,11 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			}
 
 			tech_pvt->rate = rate;
-
 			tech_pvt->pre_answer = switch_true(pre_answer);
+
+			if (video_codec) {
+				tech_pvt->video_codec_name = switch_core_session_strdup(*new_session, video_codec);
+			}
 
 			if (!enable_auto_answer) {
 				/* if not set - enabled by default */
@@ -1733,7 +1862,15 @@ static switch_io_routines_t null_channel_io_routines = {
 	/*.write_frame */ null_channel_write_frame,
 	/*.kill_channel */ null_channel_kill_channel,
 	/*.send_dtmf */ null_channel_send_dtmf,
-	/*.receive_message */ null_channel_receive_message
+	/*.receive_message */ null_channel_receive_message,
+	/*.receive_event */ NULL,
+	/*.state_change */ NULL,
+	/*.read_video_frame */ null_channel_read_video_frame,
+	/*.write_video_frame */ null_channel_write_video_frame,
+	/*.read_text_frame */ NULL,
+	/*.write_text_frame */ NULL,
+	/*.state_run*/ NULL,
+	/*.get_jb*/ NULL
 };
 
 switch_status_t load_loopback_configuration(switch_bool_t reload)
