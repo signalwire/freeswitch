@@ -2744,7 +2744,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	att = switch_core_session_alloc(session, sizeof(*att));
 	att->running = -1;
