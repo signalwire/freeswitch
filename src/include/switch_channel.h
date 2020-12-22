@@ -685,6 +685,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 /** @} */
 
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix);
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on_value(switch_channel_t *channel, const char *variable_value);
 SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel, const char *variable_prefix);
 SWITCH_DECLARE(void) switch_channel_process_device_hangup(switch_channel_t *channel);
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel);

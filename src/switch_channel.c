@@ -3759,15 +3759,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel,
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
-static void do_execute_on(switch_channel_t *channel, const char *variable)
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on_value(switch_channel_t *channel, const char *variable_value)
 {
+	switch_status_t status;
 	char *arg = NULL;
 	char *p;
 	int bg = 0;
 	char *app;
 	char *expanded = NULL;
 	
-	app = switch_core_session_strdup(channel->session, variable);
+	app = switch_core_session_strdup(channel->session, variable_value);
 
 	for(p = app; p && *p; p++) {
 		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
@@ -3792,14 +3793,16 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	}
 	
 	if (bg) {
-		switch_core_session_execute_application_async(channel->session, app, arg);
+		status = switch_core_session_execute_application_async(channel->session, app, arg);
 	} else {
-		switch_core_session_execute_application(channel->session, app, arg);
+		status = switch_core_session_execute_application(channel->session, app, arg);
 	}
 
 	if (expanded && expanded != arg) {
 		free(expanded);
 	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
@@ -3821,11 +3824,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *chan
 				int i;
 				for (i = 0; i < hp->idx; i++) {
 					x++;
-					do_execute_on(channel, hp->array[i]);
+					switch_channel_execute_on_value(channel, hp->array[i]);
 				}
 			} else {
 				x++;
-				do_execute_on(channel, val);
+				switch_channel_execute_on_value(channel, val);
 			}
 		}
 	}

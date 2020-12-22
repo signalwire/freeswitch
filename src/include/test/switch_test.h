@@ -522,6 +522,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 			switch_channel_set_variable(fst_channel, "send_silence_when_idle", "-1"); \
 			switch_channel_set_variable(fst_channel, "RECORD_STEREO", "true"); \
 			switch_ivr_record_session(fst_session, (char *)"/tmp/"#name".wav", 0, NULL); \
+			switch_channel_set_variable(fst_channel, "RECORD_STEREO", NULL); \
 			for(;;) {
 
 /**
