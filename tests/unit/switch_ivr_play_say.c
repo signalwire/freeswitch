@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2019, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -32,6 +32,46 @@
 #include <stdlib.h>
 
 #include <test/switch_test.h>
+
+static void on_record_start(switch_event_t *event)
+{
+	char *str = NULL;
+	switch_event_serialize(event, &str, SWITCH_FALSE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", str);
+	switch_safe_free(str);
+	const char *uuid = switch_event_get_header(event, "Unique-ID");
+	if (uuid) {
+		switch_core_session_t *session = switch_core_session_locate(uuid);
+		if (session) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *recording_id = switch_event_get_header_nil(event, "Recording-Variable-ID");
+			if (!strcmp(recording_id, "foo")) {
+				switch_channel_set_variable(channel, "record_start_event_test_pass", "true");
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+}
+
+static void on_record_stop(switch_event_t *event)
+{
+	char *str = NULL;
+	switch_event_serialize(event, &str, SWITCH_FALSE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", str);
+	switch_safe_free(str);
+	const char *uuid = switch_event_get_header(event, "Unique-ID");
+	if (uuid) {
+		switch_core_session_t *session = switch_core_session_locate(uuid);
+		if (session) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *recording_id = switch_event_get_header_nil(event, "Recording-Variable-ID");
+			if (!strcmp(recording_id, "foo")) {
+				switch_channel_set_variable(channel, "record_stop_event_test_pass", "true");
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+}
 
 static switch_status_t partial_play_and_collect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, __attribute__((unused))unsigned int len)
 {
@@ -358,6 +398,79 @@ FST_CORE_BEGIN("./conf_playsay")
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "xxx count = %d\n", count);
 			fst_check(count == 3); // 3 partial results
 			cJSON_Delete(recognition_result);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(record_file_event_vars)
+		{
+			const char *record_filename = switch_core_session_sprintf(fst_session, "%s" SWITCH_PATH_SEPARATOR "record_file_event_vars-tmp-%s.wav", SWITCH_GLOBAL_dirs.temp_dir, switch_core_session_get_uuid(fst_session));
+			switch_event_t *rec_vars = NULL;
+			switch_status_t status;
+			switch_event_create_subclass(&rec_vars, SWITCH_EVENT_CLONE, SWITCH_EVENT_SUBCLASS_ANY);
+			fst_requires(rec_vars);
+			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_START, SWITCH_EVENT_SUBCLASS_ANY, on_record_start, NULL);
+			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_STOP, SWITCH_EVENT_SUBCLASS_ANY, on_record_stop, NULL);
+			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_start", "set record_start_test_pass=true");
+			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_stop", "set record_stop_test_pass=true");
+			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
+			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
+			status = switch_ivr_record_file_event(fst_session, NULL, record_filename, NULL, 4, rec_vars);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
+			switch_sleep(1000 * 1000);
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_event_test_pass"), "Expect RECORD_START event received with Recording-Variable-ID set");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), "Expect RECORD_STOP event received with Recording-Variable-ID set");
+			switch_event_unbind_callback(on_record_start);
+			switch_event_unbind_callback(on_record_stop);
+			switch_event_destroy(&rec_vars);
+			fst_xcheck(switch_file_exists(record_filename, fst_pool) == SWITCH_STATUS_SUCCESS, "Expect recording file to exist");
+			unlink(record_filename);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(record_file_event_chan_vars)
+		{
+			const char *record_filename = switch_core_session_sprintf(fst_session, "%s" SWITCH_PATH_SEPARATOR "record_file_event_chan_vars-tmp-%s.wav", SWITCH_GLOBAL_dirs.temp_dir, switch_core_session_get_uuid(fst_session));
+			switch_event_t *rec_vars = NULL;
+			switch_status_t status;
+			switch_event_create_subclass(&rec_vars, SWITCH_EVENT_CLONE, SWITCH_EVENT_SUBCLASS_ANY);
+			fst_requires(rec_vars);
+			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_START, SWITCH_EVENT_SUBCLASS_ANY, on_record_start, NULL);
+			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_STOP, SWITCH_EVENT_SUBCLASS_ANY, on_record_stop, NULL);
+			switch_channel_set_variable(fst_channel, "execute_on_record_start_1", "set record_start_test_pass=true");
+			switch_channel_set_variable(fst_channel, "execute_on_record_stop_1", "set record_stop_test_pass=true");
+			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
+			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
+			status = switch_ivr_record_file_event(fst_session, NULL, record_filename, NULL, 4, rec_vars);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
+			switch_sleep(1000 * 1000);
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_event_test_pass"), "Expect RECORD_START event received with Recording-Variable-ID set");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), "Expect RECORD_STOP event received with Recording-Variable-ID set");
+			switch_event_unbind_callback(on_record_start);
+			switch_event_unbind_callback(on_record_stop);
+			switch_event_destroy(&rec_vars);
+			fst_xcheck(switch_file_exists(record_filename, fst_pool) == SWITCH_STATUS_SUCCESS, "Expect recording file to exist");
+			unlink(record_filename);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(record_file_event_chan_vars_only)
+		{
+			const char *record_filename = switch_core_session_sprintf(fst_session, "%s" SWITCH_PATH_SEPARATOR "record_file_event_chan_vars-tmp-%s.wav", SWITCH_GLOBAL_dirs.temp_dir, switch_core_session_get_uuid(fst_session));
+			switch_status_t status;
+			switch_channel_set_variable(fst_channel, "execute_on_record_start_1", "set record_start_test_pass=true");
+			switch_channel_set_variable(fst_channel, "execute_on_record_stop_1", "set record_stop_test_pass=true");
+			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
+			status = switch_ivr_record_file_event(fst_session, NULL, record_filename, NULL, 4, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
+			switch_sleep(1000 * 1000);
+			fst_xcheck(switch_file_exists(record_filename, fst_pool) == SWITCH_STATUS_SUCCESS, "Expect recording file to exist");
+			unlink(record_filename);
 		}
 		FST_SESSION_END()
 	}

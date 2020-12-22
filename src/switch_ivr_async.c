@@ -2911,7 +2911,7 @@ static switch_status_t record_helper_destroy(struct record_helper **rh, switch_c
 static const char *get_recording_var(switch_channel_t *channel, switch_event_t *vars, const char *name)
 {
 	const char *val = NULL;
-	if (vars && !(val = switch_event_get_header(vars, name))) {
+	if (!vars || !(val = switch_event_get_header(vars, name))) {
 		val = switch_channel_get_variable(channel, name);
 	}
 	return val;
