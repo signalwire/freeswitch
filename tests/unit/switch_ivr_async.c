@@ -156,6 +156,40 @@ FST_CORE_BEGIN("./conf_async")
 			switch_event_destroy(&rec_vars);
 		}
 		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(session_record_chan_vars)
+		{
+			const char *record_filename = switch_core_session_sprintf(fst_session, "%s%s%s.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(fst_session));
+			switch_status_t status;
+
+			// record READ stream only- should be complete silence which will trigger the initial timeout.
+			// Min seconds set to 2, which will cause the recording to be discarded.
+			// Expect the record_start_test_pass and record_stop_test_pass variables set to true
+			switch_channel_set_variable(fst_channel, "execute_on_record_start", "set record_start_test_pass=true");
+			switch_channel_set_variable(fst_channel, "execute_on_record_stop", "set record_stop_test_pass=true");
+			switch_channel_set_variable(fst_channel, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE, "set record_post_process_test_pass=true");
+			switch_channel_set_variable(fst_channel, "RECORD_READ_ONLY", "true");
+			switch_channel_set_variable(fst_channel, "RECORD_INITIAL_TIMEOUT_MS", "500");
+			switch_channel_set_variable(fst_channel, "RECORD_MIN_SEC", "2");
+
+			status = switch_ivr_record_session_event(fst_session, record_filename, 0, NULL, NULL);
+			fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Expect switch_ivr_record_session() to return SWITCH_STATUS_SUCCESS");
+
+			status = switch_ivr_play_file(fst_session, NULL, "tone_stream://%(400,200,400,450);%(400,2000,400,450)", NULL);
+			fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Expect switch_ivr_play_file() to return SWITCH_STATUS_SUCCESS");
+
+			status = switch_ivr_record_session_pause(fst_session, record_filename, SWITCH_TRUE);
+			fst_xcheck(status != SWITCH_STATUS_SUCCESS, "Expect switch_ivr_record_session_pause(SWITCH_TRUE) not to return SWITCH_STATUS_SUCCESS because the recording has already stopped");
+
+			fst_xcheck(switch_file_exists(record_filename, fst_pool) != SWITCH_STATUS_SUCCESS, "Expect recording file not to exist since it was less than 2 seconds in duration");
+
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
+			fst_xcheck(switch_channel_var_true(fst_channel, "record_post_process_test_pass"), "Expect record_post_process_test_pass channel variable set to true");
+
+			unlink(record_filename);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }

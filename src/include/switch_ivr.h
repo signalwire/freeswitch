@@ -438,7 +438,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(_In_ switch_core_session_t *session,
 													   _In_ switch_file_handle_t *fh,
 													   _In_z_ const char *file, _In_opt_ switch_input_args_t *args, _In_ uint32_t limit);
-
+/*!
+  \brief record a file from the session to a file
+  \param session the session to record from
+  \param fh file handle to use
+  \param file the path to the file
+  \param args arguements to pass for callbacks etc
+  \param limit max limit to record for (0 for infinite)
+  \param vars vars to add to RECORD_START and RECORD_STOP automatically prefixed with Recording-Variable-
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_file_event(_In_ switch_core_session_t *session,
+													   _In_ switch_file_handle_t *fh,
+													   _In_z_ const char *file, _In_opt_ switch_input_args_t *args, _In_ uint32_t limit, switch_event_t *vars);
 
 /*!
   \brief Play a sound and gather digits with the number of retries specified if the user doesn't give digits in the set time
