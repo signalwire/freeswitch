@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 		}
 
 		switch_resample_process(ah->resampler, data, len / 2);
-		if (ah->resampler->to_len > orig_len) {
+		if (ah->resampler->to_len * 2 > orig_len) {
 			if (!ah->dbuf) {
 				void *mem;
 				ah->dbuflen = ah->resampler->to_len * 2;
@@ -266,7 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 			memcpy(data, ah->resampler->to, ah->resampler->to_len * 2);
 		}
 
-		len = ah->resampler->to_len;
+		len = ah->resampler->to_len * 2;
 	}
 
 	return ah->asr_interface->asr_feed(ah, data, len, flags);
