@@ -630,8 +630,8 @@ static const char *usage_str =
 	"  -R, --reconnect                 Reconnect if disconnected\n"
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
 	"  -b, --batchmode                 Batch mode\n"
-	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n"
-	"  -T, --connect-timeout           Timeout for socket connection (in miliseconds)\n"
+	"  -t, --timeout                   Timeout for API commands (in milliseconds)\n"
+	"  -T, --connect-timeout           Timeout for socket connection (in milliseconds)\n"
 	"  -n, --no-color                  Disable color\n\n";
 
 static int usage(char *name){
@@ -1002,10 +1002,13 @@ static const char *basic_gets(int *cnt)
 	for (x = 0; x < (sizeof(command_buf) - 1); x++) {
 		int c = getchar();
 		if (c < 0) {
+			size_t command_buf_len;
 			if (fgets(command_buf, sizeof(command_buf) - 1, stdin) != command_buf) {
 				break;
+			}			
+			if ((command_buf_len = strlen(command_buf)) > 0) {
+				command_buf[command_buf_len - 1] = '\0'; /* remove endline */
 			}
-			command_buf[strlen(command_buf)-1] = '\0'; /* remove endline */
 			break;
 		}
 		command_buf[x] = (char) c;

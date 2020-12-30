@@ -128,6 +128,7 @@ static int load_config(int reloading)
 
 	if (!(lists = switch_xml_child(cfg, "lists"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find any lists!\n");
+		switch_xml_free(xml);
 		return status;
 	}
 

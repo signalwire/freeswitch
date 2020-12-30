@@ -252,14 +252,25 @@ static switch_status_t msock_init(char *ip, switch_port_t port, switch_socket_t 
 	switch_sockaddr_t *sa;
 	switch_status_t rv;
 
-	rv = switch_sockaddr_info_get(&sa, ip, SWITCH_INET, port, 0, pool);
-	if (rv) goto sock_fail;
+	rv = switch_sockaddr_info_get(&sa, ip, SWITCH_UNSPEC, port, 0, pool);
+	if (rv) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot get information about MSRP listen IP address %s\n", ip);
+		goto sock_fail;
+	}
 
 	rv = switch_socket_create(sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
 	if (rv) goto sock_fail;
 
 	rv = switch_socket_opt_set(*sock, SWITCH_SO_REUSEADDR, 1);
 	if (rv) goto sock_fail;
+
+#ifdef WIN32
+	/* Enable dual-stack listening on Windows */
+	if (switch_sockaddr_get_family(sa) == AF_INET6) {
+		rv = switch_socket_opt_set(*sock, SWITCH_SO_IPV6_V6ONLY, 0);
+		if (rv) goto sock_fail;
+	}
+#endif
 
 	rv = switch_socket_bind(*sock, sa);
 	if (rv) goto sock_fail;
@@ -695,7 +706,7 @@ static char *msrp_parse_header(char *start, int skip, const char *end, switch_ms
 static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *p = start;
-	char *q = p;
+	char *q;
 	const char *end = start + len;
 
 	while(p < end) {

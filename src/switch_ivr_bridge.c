@@ -80,7 +80,7 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 			inuse = switch_buffer_inuse(text_buffer);
 
 			if (inuse && (switch_channel_test_flag(channel, CF_TEXT_IDLE) || switch_test_flag(read_frame, SFF_TEXT_LINE_BREAK))) {
-				int bytes = 0;
+				int bytes;
 
 				if (inuse + 4 > text_framesize) {
 					void *tmp = malloc(inuse + 1024);
@@ -114,7 +114,6 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 				*(text_framedata + bytes) = '\r';
 				*(text_framedata + bytes + 1) = '\n';
 				*(text_framedata + bytes + 2) = '\0';
-				bytes += 2;
 
 				frame.data = text_framedata;
 				frame.datalen = strlen((char *)frame.data);
@@ -176,9 +175,6 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 		if (switch_channel_media_up(channel)) {
-			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
-			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
-			
 			if (switch_core_session_transcoding(vh->session_a, vh->session_b, SWITCH_MEDIA_TYPE_VIDEO)) {
 				pass_val = 1;
 			} else {
@@ -196,11 +192,14 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			}
 
 			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				switch_assert(a_codec);
-				switch_assert(b_codec);
+				switch_codec_implementation_t session_a_codec_implementation;
+				switch_codec_implementation_t session_b_codec_implementation;
+
+				switch_core_session_get_video_read_impl(vh->session_a, &session_a_codec_implementation);
+				switch_core_session_get_video_write_impl(vh->session_b, &session_b_codec_implementation);
 
 				if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
-					if (a_codec->implementation->impl_id == b_codec->implementation->impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
+					if (session_a_codec_implementation.impl_id == session_b_codec_implementation.impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
 						if (set_decoded_read) {
 							switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 							set_decoded_read = 0;
@@ -208,7 +207,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 						}
 					}
 				} else {
-					if (a_codec->implementation->impl_id != b_codec->implementation->impl_id ||
+					if (session_a_codec_implementation.impl_id != session_b_codec_implementation.impl_id ||
 						switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
 						switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 						set_decoded_read = 1;
@@ -233,8 +232,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 		}
 
 
-		if (switch_test_flag(read_frame, SFF_CNG) ||
-			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
+		if (read_frame && (switch_test_flag(read_frame, SFF_CNG) ||
+			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED))) {
 			continue;
 		}
 
@@ -421,9 +420,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	inner_bridge = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
 
 	if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && (bridge_answer_timeout = switch_channel_get_variable(chan_a, "bridge_answer_timeout"))) {
-		if ((answer_timeout = atoi(bridge_answer_timeout)) < 0) {
-			answer_timeout = 0;
-		} else {
+		if ((answer_timeout = atoi(bridge_answer_timeout)) >= 0) {
 			answer_limit = switch_epoch_time_now(NULL) + answer_timeout;
 		}
 	}
@@ -670,7 +667,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				} else {
 					switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				}
-				bypass_media_after_bridge = 0;
 				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
 			}
@@ -708,7 +704,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (switch_core_session_dequeue_event(session_a, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (input_callback) {
-				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
+				input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
 
 			if ((event->event_id != SWITCH_EVENT_COMMAND && event->event_id != SWITCH_EVENT_MESSAGE)
@@ -2021,6 +2017,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_channel = switch_core_session_get_channel(originator_session);
 			originatee_channel = switch_core_session_get_channel(originatee_session);
 
+			switch_ivr_check_hold(originator_session);
+			switch_ivr_check_hold(originatee_session);
+	
 
 			if (switch_channel_test_flag(originator_channel, CF_LEG_HOLDING)) {
 				switch_channel_set_flag(originator_channel, CF_HOLD_ON_BRIDGE);

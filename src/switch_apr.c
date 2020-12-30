@@ -814,7 +814,6 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
 	switch_assert(new_sa);
 	new_sa->pool = pool;
-	memset(new_sa, 0, sizeof(*new_sa));
 
 	new_sa->family = family;
 	new_sa->sa.sin.sin_family = family;
@@ -832,6 +831,65 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
 	return apr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_new(switch_sockaddr_t ** sa, const char *ip, switch_port_t port, switch_memory_pool_t *pool)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	apr_sockaddr_t *new_sa;
+	int family;
+
+	if (!sa || !pool || !ip) {
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+
+	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
+	switch_assert(new_sa);
+
+	new_sa->pool = pool;
+
+	if (strchr(ip, ':')) {
+		struct sockaddr_in6 sa6 = { 0 };
+
+		family = APR_INET6;
+		inet_pton(family, ip, &(sa6.sin6_addr));
+		memcpy(&new_sa->sa, &sa6, sizeof(struct sockaddr_in6));
+	} else {
+		struct sockaddr_in sa4 = { 0 };
+
+		family = APR_INET;
+		inet_pton(family, ip, &(sa4.sin_addr));
+		memcpy(&new_sa->sa, &sa4, sizeof(struct sockaddr_in));
+	}
+
+	new_sa->hostname = apr_pstrdup(pool, ip);
+	new_sa->family = family;
+	new_sa->sa.sin.sin_family = family;
+	if (port) {
+		/* XXX IPv6: assumes sin_port and sin6_port at same offset */
+		new_sa->sa.sin.sin_port = htons(port);
+		new_sa->port = port;
+	}
+
+	if (family == APR_INET) {
+		new_sa->salen = sizeof(struct sockaddr_in);
+		new_sa->addr_str_len = 16;
+		new_sa->ipaddr_ptr = &(new_sa->sa.sin.sin_addr);
+		new_sa->ipaddr_len = sizeof(struct in_addr);
+	}
+#if APR_HAVE_IPV6
+	else if (family == APR_INET6) {
+		new_sa->salen = sizeof(struct sockaddr_in6);
+		new_sa->addr_str_len = 46;
+		new_sa->ipaddr_ptr = &(new_sa->sa.sin6.sin6_addr);
+		new_sa->ipaddr_len = sizeof(struct in6_addr);
+	}
+#endif
+
+	*sa = new_sa;
+
+end:
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int32_t opt, int32_t on)

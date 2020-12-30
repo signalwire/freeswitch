@@ -1,6 +1,6 @@
 --- mod_lua_wrap.cpp.old	2015-06-16 12:27:19.024000000 -0500
 +++ mod_lua_wrap.cpp	2015-06-16 12:34:51.540000000 -0500
-@@ -3065,7 +3065,7 @@
+@@ -4242,7 +4242,7 @@ static int _wrap_Stream_read(lua_State* L) {
    }
    
    result = (char *)(arg1)->read(arg2);
@@ -9,7 +9,7 @@
    lua_pushnumber(L, (lua_Number) *arg2); SWIG_arg++;
    return SWIG_arg;
    
-@@ -6855,7 +6855,7 @@
+@@ -8304,7 +8304,7 @@ static int _wrap_new_Session__SWIG_0(lua_State* L) {
    
    SWIG_check_num_args("LUA::Session::Session",0,0)
    result = (LUA::Session *)new LUA::Session();
@@ -18,7 +18,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6882,7 +6882,7 @@
+@@ -8331,7 +8331,7 @@ static int _wrap_new_Session__SWIG_1(lua_State* L) {
    }
    
    result = (LUA::Session *)new LUA::Session(arg1,arg2);
@@ -27,7 +27,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6902,7 +6902,7 @@
+@@ -8351,7 +8351,7 @@ static int _wrap_new_Session__SWIG_2(lua_State* L) {
    if(!SWIG_lua_isnilstring(L,1)) SWIG_fail_arg("LUA::Session::Session",1,"char *");
    arg1 = (char *)lua_tostring(L, 1);
    result = (LUA::Session *)new LUA::Session(arg1);
@@ -36,7 +36,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6926,7 +6926,7 @@
+@@ -8375,7 +8375,7 @@ static int _wrap_new_Session__SWIG_3(lua_State* L) {
    }
    
    result = (LUA::Session *)new LUA::Session(arg1);
@@ -45,7 +45,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -9217,6 +9217,7 @@ static int _wrap_Dbh_test_reactive__SWIG_0(lua_State* L) {
+@@ -9485,6 +9485,7 @@ static int _wrap_Dbh_test_reactive__SWIG_0(lua_State* L) {
    arg2 = (char *)lua_tostring(L, 2);
    arg3 = (char *)lua_tostring(L, 3);
    arg4 = (char *)lua_tostring(L, 4);
@@ -53,7 +53,7 @@
    result = (bool)(arg1)->test_reactive(arg2,arg3,arg4);
    lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
    return SWIG_arg;
-@@ -9404,6 +9405,7 @@ static int _wrap_Dbh_query(lua_State* L) {
+@@ -9672,6 +9673,7 @@ static int _wrap_Dbh_query(lua_State* L) {
        (&arg3)->idx = 3;
      }
    }
@@ -61,7 +61,7 @@
    result = (bool)(arg1)->query(arg2,arg3);
    lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
    return SWIG_arg;
-@@ -9427,7 +9429,7 @@ static int _wrap_Dbh_affected_rows(lua_State* L) {
+@@ -9695,7 +9697,7 @@ static int _wrap_Dbh_affected_rows(lua_State* L) {
    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
      SWIG_fail_ptr("Dbh_affected_rows",1,SWIGTYPE_p_LUA__Dbh);
    }
@@ -70,7 +70,7 @@
    result = (int)(arg1)->affected_rows();
    lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
    return SWIG_arg;
-@@ -9451,7 +9453,7 @@ static int _wrap_Dbh_last_error(lua_State* L) {
+@@ -9719,7 +9721,7 @@ static int _wrap_Dbh_last_error(lua_State* L) {
    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
      SWIG_fail_ptr("Dbh_last_error",1,SWIGTYPE_p_LUA__Dbh);
    }
@@ -79,7 +79,7 @@
    result = (char *)(arg1)->last_error();
    lua_pushstring(L,(const char *)result); SWIG_arg++;
    return SWIG_arg;
-@@ -9474,7 +9476,7 @@ static int _wrap_Dbh_clear_error(lua_State* L) {
+@@ -9742,7 +9744,7 @@ static int _wrap_Dbh_clear_error(lua_State* L) {
    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
      SWIG_fail_ptr("Dbh_clear_error",1,SWIGTYPE_p_LUA__Dbh);
    }
@@ -88,7 +88,7 @@
    (arg1)->clear_error();
    
    return SWIG_arg;
-@@ -9502,6 +9504,7 @@ static int _wrap_Dbh_load_extension(lua_State* L) {
+@@ -9770,6 +9772,7 @@ static int _wrap_Dbh_load_extension(lua_State* L) {
    }
    
    arg2 = (char *)lua_tostring(L, 2);
@@ -96,7 +96,7 @@
    result = (int)(arg1)->load_extension((char const *)arg2);
    lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
    return SWIG_arg;
-@@ -9601,6 +9604,7 @@ static int _wrap_JSON_decode(lua_State* L) {
+@@ -9869,6 +9872,7 @@ static int _wrap_JSON_decode(lua_State* L) {
    }
    
    arg2 = (char *)lua_tostring(L, 2);
@@ -104,15 +104,15 @@
    result = (cJSON *)(arg1)->decode((char const *)arg2);
    {
      SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
-@@ -9634,6 +9638,7 @@ static int _wrap_JSON_encode(lua_State* L) {
+@@ -9902,6 +9906,7 @@ static int _wrap_JSON_encode(lua_State* L) {
      (&arg2)->L = L;
      (&arg2)->idx = 2;
    }
 +  switch_assert(arg1);
-   result = (char *)(arg1)->encode(arg2);
-   lua_pushstring(L,(const char *)result); SWIG_arg++;
+   result = (arg1)->encode(arg2);
+   lua_pushlstring(L,(&result)->data(),(&result)->size()); SWIG_arg++;
    return SWIG_arg;
-@@ -9661,6 +9666,7 @@ static int _wrap_JSON_execute__SWIG_0(lua_State* L) {
+@@ -9929,6 +9934,7 @@ static int _wrap_JSON_execute__SWIG_0(lua_State* L) {
    }
    
    arg2 = (char *)lua_tostring(L, 2);
@@ -120,7 +120,7 @@
    result = (cJSON *)(arg1)->execute((char const *)arg2);
    {
      SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
-@@ -9694,6 +9700,7 @@ static int _wrap_JSON_execute__SWIG_1(lua_State* L) {
+@@ -9962,6 +9968,7 @@ static int _wrap_JSON_execute__SWIG_1(lua_State* L) {
      (&arg2)->L = L;
      (&arg2)->idx = 2;
    }
@@ -128,23 +128,23 @@
    result = (cJSON *)(arg1)->execute(arg2);
    {
      SWIG_arg += LUA::JSON::cJSON2LuaTable(L, result);
-@@ -9778,6 +9785,7 @@ static int _wrap_JSON_execute2__SWIG_0(lua_State* L) {
+@@ -10046,6 +10053,7 @@ static int _wrap_JSON_execute2__SWIG_0(lua_State* L) {
    }
    
    arg2 = (char *)lua_tostring(L, 2);
 +  switch_assert(arg1);
-   result = (char *)(arg1)->execute2((char const *)arg2);
-   lua_pushstring(L,(const char *)result); SWIG_arg++;
+   result = (arg1)->execute2((char const *)arg2);
+   lua_pushlstring(L,(&result)->data(),(&result)->size()); SWIG_arg++;
    return SWIG_arg;
-@@ -9808,6 +9816,7 @@ static int _wrap_JSON_execute2__SWIG_1(lua_State* L) {
+@@ -10076,6 +10084,7 @@ static int _wrap_JSON_execute2__SWIG_1(lua_State* L) {
      (&arg2)->L = L;
      (&arg2)->idx = 2;
    }
 +  switch_assert(arg1);
-   result = (char *)(arg1)->execute2(arg2);
-   lua_pushstring(L,(const char *)result); SWIG_arg++;
+   result = (arg1)->execute2(arg2);
+   lua_pushlstring(L,(&result)->data(),(&result)->size()); SWIG_arg++;
    return SWIG_arg;
-@@ -9888,6 +9897,7 @@ static int _wrap_JSON_encode_empty_table_as_object(lua_State* L) {
+@@ -10156,6 +10165,7 @@ static int _wrap_JSON_encode_empty_table_as_object(lua_State* L) {
    }
    
    arg2 = (lua_toboolean(L, 2)!=0);
@@ -152,7 +152,7 @@
    (arg1)->encode_empty_table_as_object(arg2);
    
    return SWIG_arg;
-@@ -9914,6 +9924,7 @@ static int _wrap_JSON_return_unformatted_json(lua_State* L) {
+@@ -10182,6 +10192,7 @@ static int _wrap_JSON_return_unformatted_json(lua_State* L) {
    }
    
    arg2 = (lua_toboolean(L, 2)!=0);

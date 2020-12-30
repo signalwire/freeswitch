@@ -616,7 +616,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 									if (!zstr(menu->transfer_sound) && !strcmp(app_name, "transfer")) {
-										status = play_and_collect(session, menu, menu->transfer_sound, 0);
+										play_and_collect(session, menu, menu->transfer_sound, 0);
 									}
 
 									switch_core_session_exec(session, application_interface, app_arg);

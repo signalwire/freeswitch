@@ -83,13 +83,17 @@ SWITCH_STANDARD_API(expr_function)
 
 	/* Create function list */
 	err = exprFuncListCreate(&f);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CREATE FUNC LIST\n");
 		goto error;
+	}
 
 	/* Init function list with internal functions */
 	err = exprFuncListInit(f);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INIT FUNC LIST\n");
 		goto error;
+	}
 
 	/* Add custom function */
 	//err = exprFuncListAdd(f, my_func, "myfunc", 1, 1, 1, 1);
@@ -98,29 +102,39 @@ SWITCH_STANDARD_API(expr_function)
 
 	/* Create constant list */
 	err = exprValListCreate(&c);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CREATE CONST LIST\n");
 		goto error;
+	}
 
 	/* Init constant list with internal constants */
 	err = exprValListInit(c);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CREATE INTERNAL CONST LIST\n");
 		goto error;
+	}
 
 	/* Create variable list */
 	err = exprValListCreate(&v);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CREATE VARIABLE LIST\n");
 		goto error;
+	}
 
 	/* Create expression object */
 	err = exprCreate(&e, f, v, c, breaker, NULL);
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EXPR OBJECT\n");
 		goto error;
+	}
 
 	/* Parse expression */
 	err = exprParse(e, (char *) expr);
 
-	if (err != EXPR_ERROR_NOERROR)
+	if (err != EXPR_ERROR_NOERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PARSE EXPR => %s\n", cmd);
 		goto error;
+	}
 
 	/* Enable soft errors */
 	//exprSetSoftErrors(e, 1);
@@ -135,6 +149,7 @@ SWITCH_STANDARD_API(expr_function)
 	} while (err && ec < 3);
 
 	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EXPR VAL\n");
 		goto error;
 	}
 

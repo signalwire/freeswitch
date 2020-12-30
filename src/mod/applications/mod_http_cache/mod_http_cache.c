@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1094,6 +1094,8 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	char *query_string = NULL;
+	char *full_url = NULL;
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1105,17 +1107,35 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 	if (profile && profile->append_headers_ptr) {
-		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, NULL);
+		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, &query_string);
+	}
+
+	if (query_string) {
+		full_url = switch_mprintf("%s?%s", url->url, query_string);
+		free(query_string);
+	} else {
+		switch_strdup(full_url, url->url);
 	}
 
 	curl_handle = switch_curl_easy_init();
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opening %s for URL cache\n", get_data.url->filename);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
+#ifdef WIN32
+	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | O_BINARY)) > -1) {
+#else
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		http_curl_setopts(curl_handle, headers, url->url, cache);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
+#endif
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+		if (headers) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		}
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 	
 		curl_status = switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
@@ -1146,6 +1166,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 
 done:
 
+	switch_safe_free(full_url);
 	if (headers) {
 		switch_curl_slist_free_all(headers);
 	}

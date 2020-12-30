@@ -142,7 +142,6 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/tport_tag.h>
 #include <sofia-sip/sip_extra.h>
-#include "nua_stack.h"
 #include "sofia-sip/msg_parser.h"
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
@@ -405,6 +404,7 @@ struct mod_sofia_globals {
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
+	int abort_on_empty_external_ip;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -532,6 +532,7 @@ struct sofia_gateway {
 	int pinging;
 	sofia_gateway_status_t status;
 	switch_time_t uptime;
+	uint32_t contact_in_ping;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;

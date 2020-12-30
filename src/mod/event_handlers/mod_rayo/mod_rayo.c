@@ -4854,7 +4854,7 @@ static int alias_api(struct rayo_cmd_alias *alias, char *args, switch_stream_han
 	cmd = strdup(alias->cmd);
 	for (i = 1; i < argc; i++) {
 		char *cmd_new;
-		char to_replace[4] = { 0 };
+		char to_replace[12] = { 0 };
 		sprintf(to_replace, "$%i", i);
 		cmd_new = switch_string_replace(cmd, to_replace, argv[i]);
 		free(cmd);

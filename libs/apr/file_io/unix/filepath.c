@@ -133,11 +133,14 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
          * but required since the compiler (at least vc) doesn't like
          * passing the address of a char const* for a char** arg.
          */
-        char *getpath;
+        char *getpath = NULL;
         rv = apr_filepath_get(&getpath, flags, p);
         rootpath = getpath;
         if (rv != APR_SUCCESS)
             return errno;
+
+        if (!getpath)
+            return APR_ENOMEM;
 
         /* XXX: Any kernel subject to goofy, uncanonical results
          * must run the rootpath against the user's given flags.

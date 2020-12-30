@@ -1340,6 +1340,7 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
             /* iterate over params, check if they mean something to us, set */
             idx = 0;
             while (idx < argc) {
+                switch_assert(argv[idx]);
                 status = avmd_parse_cmd_data_one_entry(argv[idx], &settings);
                 if (status != SWITCH_STATUS_SUCCESS) {
                     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,

@@ -974,7 +974,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		session->bugs = bug;
 		added = 1;
 	}
-	
+
+	if (!added && switch_test_flag(bug, SMBF_FIRST)) {
+		bug->next = session->bugs;
+		session->bugs = bug;
+		added = 1;
+	}
+
 	for(bp = session->bugs; bp; bp = bp->next) {
 		if (bp->ready && !switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
 			tap_only = 0;
@@ -1032,7 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_core_session_t *orig_session, switch_core_session_t *new_session,
 																		switch_media_bug_callback_t callback, void * (*user_data_dup_func) (switch_core_session_t *, void *))
 {
-	switch_media_bug_t *new_bug = NULL, *cur = NULL, *bp = NULL, *last = NULL;
+	switch_media_bug_t *new_bug = NULL, *cur = NULL, *bp = NULL, *last = NULL, *old_last_next = NULL, *old_bugs = NULL;
 	int total = 0;
 
 	if (!switch_channel_media_ready(new_session->channel)) {
@@ -1048,19 +1054,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
 
 		if (cur->callback == callback) {
 			if (last) {
+				old_last_next = last->next;
 				last->next = cur->next;
 			} else {
+				old_bugs = orig_session->bugs;
 				orig_session->bugs = cur->next;
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_DEBUG, "Transfering %s from %s to %s\n", cur->target,
 							  switch_core_session_get_name(orig_session), switch_core_session_get_name(new_session));
 
-			switch_core_media_bug_add(new_session, cur->function, cur->target, cur->callback,
-									  user_data_dup_func(new_session, cur->user_data),
-									  cur->stop_time, cur->flags, &new_bug);
-			switch_core_media_bug_destroy(&cur);
-			total++;
+			if ((switch_core_media_bug_add(new_session, cur->function, cur->target, cur->callback,
+										   user_data_dup_func(new_session, cur->user_data),
+										   cur->stop_time, cur->flags, &new_bug) == SWITCH_STATUS_SUCCESS)) {
+				switch_core_media_bug_destroy(&cur);
+				total++;
+			} else {
+				/* Call the dup function again to revert to original session */
+				user_data_dup_func(orig_session, cur->user_data);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_DEBUG, "Adding a bug failed: abort transfering %s from %s to %s\n", cur->target,
+					switch_core_session_get_name(orig_session), switch_core_session_get_name(new_session));
+
+				/* Put the old bug back to the original session's list of bugs */
+				if (last) {
+					last->next = old_last_next;
+				} else {
+					orig_session->bugs = old_bugs;
+				}
+
+				last = cur;
+			}
 		} else {
 			last = cur;
 		}

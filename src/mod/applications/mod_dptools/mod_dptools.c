@@ -1401,6 +1401,12 @@ SWITCH_STANDARD_APP(answer_function)
 		if (switch_stristr("is_conference", arg)) {
 			switch_channel_set_flag(channel, CF_CONFERENCE);
 		}
+		if (switch_stristr("decode_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		}
+		if (switch_stristr("debug_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DEBUG_READ);
+		}
 	}
 
 	switch_channel_answer(channel);
@@ -2744,7 +2750,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	att = switch_core_session_alloc(session, sizeof(*att));
 	att->running = -1;
@@ -3868,7 +3873,7 @@ static void pickup_add_session(switch_core_session_t *session, const char *key)
 		key = dup_key;
 	}
 
-	node = malloc(sizeof(*node));
+	switch_zmalloc(node, sizeof(*node));
 	switch_assert(node);
 	node->key = strdup(key);
 	node->uuid = strdup(switch_core_session_get_uuid(session));

@@ -202,13 +202,16 @@ static void event_handler(switch_event_t *event) {
 	ei_x_encode_version(ebuf);
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Node", event_binding->stream->node->peer_nodename);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	if(event_stream->node->legacy) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 		res = encode_event_old(event, ebuf);
 	} else {
 		res = encode_event_new(event, ebuf);
 	}
+
+	switch_event_del_header(event, "Switch-Nodename");
+	switch_event_del_header(event, "Target-Node");
 
 	if(!res) {
 		ei_x_free(ebuf);
@@ -239,6 +242,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
     const char *ip_addr;
 	void *pop;
 	short event_stream_framing;
+	short event_stream_keepalive;
 	short ok = 1;
 
 	switch_atomic_inc(&kazoo_globals.threads);
@@ -246,6 +250,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 	switch_assert(event_stream != NULL);
 
 	event_stream_framing = event_stream->event_stream_framing;
+	event_stream_keepalive = event_stream->event_stream_keepalive;
 
 	/* figure out what socket we just opened */
 	switch_socket_addr_get(&sa, SWITCH_FALSE, event_stream->acceptor);
@@ -274,6 +279,12 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket as non-blocking\n");
                     }
 
+                    if (event_stream_keepalive) {
+                    	if (switch_socket_opt_set(newsocket, SWITCH_SO_KEEPALIVE, TRUE)) {
+                    		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket keep-alive\n");
+                    	}
+                    }
+
                     if (switch_socket_opt_set(newsocket, SWITCH_SO_TCP_NODELAY, 1)) {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't disable Nagle.\n");
                     }
@@ -294,6 +305,8 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 					switch_get_addr(event_stream->local_ip, sizeof (event_stream->local_ip), sa);
 
 					event_stream->connected = SWITCH_TRUE;
+					event_stream->connected_time = switch_micro_time_now();
+
 					switch_mutex_unlock(event_stream->socket_mutex);
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang event stream %p client %s:%u\n", (void *)event_stream, event_stream->remote_ip, event_stream->remote_port);
@@ -302,7 +315,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 		}
 
 		/* if there was an event waiting in our queue send it to the client */
-		if (switch_queue_pop_timeout(event_stream->queue, &pop, 200000) == SWITCH_STATUS_SUCCESS) {
+		if (ei_queue_pop(event_stream->queue, &pop, event_stream->queue_timeout) == SWITCH_STATUS_SUCCESS) {
 			ei_x_buff *ebuf = (ei_x_buff *) pop;
 
 			if (event_stream->socket) {
@@ -391,7 +404,7 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	/* from the memory pool, allocate the event stream structure */
 	if (!(event_stream = switch_core_alloc(pool, sizeof (*event_stream)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory: I may have Alzheimers but at least I dont have Alzheimers.\n");
-		return NULL;
+		goto cleanup;
 	}
 
 	/* prepare the event stream */
@@ -401,34 +414,32 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	event_stream->connected = SWITCH_FALSE;
 	event_stream->node = ei_node;
 	event_stream->event_stream_framing = ei_node->event_stream_framing;
+	event_stream->event_stream_keepalive = ei_node->event_stream_keepalive;
+	event_stream->queue_timeout = ei_node->event_stream_queue_timeout;
 	memcpy(&event_stream->pid, from, sizeof(erlang_pid));
 	switch_queue_create(&event_stream->queue, MAX_QUEUE_LEN, pool);
 
 	/* create a socket for accepting the event stream client */
     if (!(event_stream->acceptor = create_socket(pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Like car accidents, most hardware problems are due to driver error.\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
     }
 
 	if (switch_socket_opt_set(event_stream->acceptor, SWITCH_SO_NONBLOCK, TRUE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Hey, it compiles!\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	/* create a pollset so we can efficiently check for new client connections */
 	if (switch_pollset_create(&event_stream->pollset, 1000, pool, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "My software never has bugs. It just develops random features.\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	switch_socket_create_pollfd(&event_stream->pollfd, event_stream->acceptor, SWITCH_POLLIN | SWITCH_POLLERR, NULL, pool);
 	if (switch_pollset_add(event_stream->pollset, event_stream->pollfd) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "If you saw a heat wave, would you wave back?\n");
-		/* TODO: clean up */
-        return NULL;
+		goto cleanup;
 	}
 
 	switch_mutex_init(&event_stream->socket_mutex, SWITCH_MUTEX_DEFAULT, pool);
@@ -453,6 +464,26 @@ ei_event_stream_t *new_event_stream(ei_node_t *ei_node, const erlang_pid *from) 
 	switch_thread_create(&thread, thd_attr, event_stream_loop, event_stream, event_stream->pool);
 
 	return event_stream;
+
+cleanup:
+
+	if (event_stream) {
+		/* remove the acceptor pollset */
+		if (event_stream->pollset) {
+			switch_pollset_remove(event_stream->pollset, event_stream->pollfd);
+		}
+
+		/* close any open sockets */
+		if (event_stream->acceptor) {
+			close_socket(&event_stream->acceptor);
+		}
+	}
+
+	/* clean up the memory */
+	switch_core_destroy_memory_pool(&pool);
+
+    return NULL;
+
 }
 
 unsigned long get_stream_port(const ei_event_stream_t *event_stream) {

@@ -207,7 +207,6 @@ serialize_test (char *buf, int len)
 	unsigned long time;
 	iks *x;
 	iksparser *prs;
-	char *xml;
 	int err;
 
 	prs = iks_dom_new (&x);
@@ -228,7 +227,7 @@ serialize_test (char *buf, int len)
 
 	t_reset ();
 
-	xml = iks_string (iks_stack (x), x);
+	iks_string (iks_stack (x), x);
 
 	time = t_elapsed ();
 

@@ -1046,7 +1046,6 @@ srtp_err_status_t srtp_stream_init_keys(srtp_stream_ctx_t *srtp,
             }
         } else {
             /* Reuse main KDF. */
-            rtp_xtn_hdr_keylen = rtp_keylen;
             rtp_xtn_hdr_base_key_len = rtp_base_key_len;
             rtp_xtn_hdr_salt_len = rtp_salt_len;
             xtn_hdr_kdf = &kdf;
@@ -2601,7 +2600,7 @@ srtp_err_status_t srtp_unprotect_mki(srtp_ctx_t *ctx,
             return status;
 
         /* now compute auth function over packet */
-        status = srtp_auth_update(session_keys->rtp_auth, (uint8_t *)auth_start,
+        srtp_auth_update(session_keys->rtp_auth, (uint8_t *)auth_start,
                                   *pkt_octet_len - tag_len - mki_size);
 
         /* run auth func over ROC, then write tmp tag */
