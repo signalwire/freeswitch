@@ -41,7 +41,6 @@ struct http_data {
 	int err;
 };
 
-// Maybe use switch_mprintf for token & payload
 #if defined(HAVE_OPENSSL)
 char *encoded_token(const char *token_uri, const char *client_email, const char *private_key_id, int *token_length) {
 	time_t now = time(NULL);
@@ -50,7 +49,7 @@ char *encoded_token(const char *token_uri, const char *client_email, const char 
 	int payload_length = 1 + snprintf(NULL, 0, "{\"iat\":\"%ld\",\"exp\":\"%ld\",\"iss\":\"%s\",\"aud\":\"%s\",\"scope\":\"https://www.googleapis.com/auth/devstorage.full_control https://www.googleapis.com/auth/devstorage.read_only https://www.googleapis.com/auth/devstorage.read_write\"}", now, then, client_email,token_uri);
 	char token[tlength];
 	char payload[payload_length];
-	int encoded_tlength = tlength * 4 / 3 + (tlength % 3 ? 1 : 0); // Maybe make function
+	int encoded_tlength = tlength * 4 / 3 + (tlength % 3 ? 1 : 0); 
 	int encoded_playload_length = payload_length * 4 / 3 + (payload_length % 3 ? 1 : 0);
 	char *tokenb64 = malloc(encoded_tlength * sizeof(char));
 	char *payloadb64 = malloc(encoded_playload_length* sizeof(char));
@@ -109,7 +108,7 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 	profile->gcs_credentials = auth;
 	exp = time(NULL) + 3540;
 	profile->expires = exp;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Credecials Expries Unix Time: %ld", exp);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Credentials Expries Unix Time: %ld", exp);
 	free(assertion);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -123,10 +122,9 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 
 switch_curl_slist_t *gcs_append_headers(http_profile_t *profile, switch_curl_slist_t *headers, const char *verb,unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
 {
-	char header[1024]; // I think we can get away with a smaller number like 256 or even 224
+	char header[1024]; 
 #if defined(HAVE_OPENSSL)
 	switch_time_t now = time(NULL);
-	//gcs_refresh_authorization(http_profile_t *profile);
 	if (profile->expires < now) {
 		gcs_refresh_authorization(profile);
 	}
@@ -181,7 +179,6 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 		size = switch_file_get_size(fd);
 		if (size) {
 			contents = malloc(size);
-			//contents = switch_core_sprintf(pool, "%" SWITCH_SIZE_T_FMT, size);
 			switch_file_read(fd, (void *) contents, &size);
 		} else {
 			return SWITCH_STATUS_FALSE;
@@ -269,7 +266,6 @@ static size_t gcs_auth_callback(void *ptr, size_t size, size_t nmemb, void *data
 		return 0;
 	}
 
-	printf("ptr: \n%s\n", (char *) ptr);
 	http_data->stream.write_function(&http_data->stream, "%.*s", realsize, ptr);
 	return realsize;
 }
