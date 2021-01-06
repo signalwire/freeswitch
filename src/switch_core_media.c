@@ -207,7 +207,7 @@ typedef struct switch_rtp_engine_s {
 	void *engine_user_data;
 	int8_t engine_function_running;
 	switch_frame_buffer_t *write_fb;
-	int supportSavp; /** Keep track of the SDP offer having SAVP or not. **/
+	int supportSavp; /* Keep track of the SDP offer having SAVP or not. */
 } switch_rtp_engine_t;
 
 #define MAX_REJ_STREAMS 10
