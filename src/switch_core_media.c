@@ -9916,13 +9916,26 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95) {
-		int i;
-		for (i = 0; i < smh->num_rates; i++) {
-			if (smh->dtmf_ianacodes[i]) {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->dtmf_ianacodes[i]);
+		if (sdp_type == SDP_TYPE_RESPONSE) {
+			switch_rtp_engine_t *a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+			if (a_engine) {
+				payload_map_t *pmap;
+				for (pmap = a_engine->payload_map; pmap; pmap = pmap->next) {
+					if (!strncasecmp(pmap->iananame, "telephone-event", 15)) {
+						switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", pmap->pt);
+					}
+				}
 			}
-			if (smh->cng_ianacodes[i] && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->cng_ianacodes[i]);
+		} else {
+			int i;
+
+			for (i = 0; i < smh->num_rates; i++) {
+				if (smh->dtmf_ianacodes[i]) {
+					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->dtmf_ianacodes[i]);
+				}
+				if (smh->cng_ianacodes[i] && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
+					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->cng_ianacodes[i]);
+				}
 			}
 		}
 	}
@@ -10005,14 +10018,27 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 
 	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
-
-		for (i = 0; i < smh->num_rates; i++) {
-			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n",
-								smh->dtmf_ianacodes[i], smh->rates[i]);
-			} else {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-15\r\n",
-								smh->dtmf_ianacodes[i], smh->rates[i], smh->dtmf_ianacodes[i]);
+		if (smh->mparams->dtmf_type == DTMF_2833 && sdp_type == SDP_TYPE_RESPONSE) {
+			switch_rtp_engine_t *a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+			if (a_engine) {
+				payload_map_t *pmap;
+				for (pmap = a_engine->payload_map; pmap; pmap = pmap->next) {
+					if (!strncasecmp(pmap->iananame, "telephone-event", 15)) {
+						switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n",
+							pmap->pt, pmap->rate);
+					}
+				}
+			}
+		} else {
+			for (i = 0; i < smh->num_rates; i++) {
+				if (switch_channel_test_flag(session->channel, CF_AVPF)) {
+					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n",
+						smh->dtmf_ianacodes[i], smh->rates[i]);
+				}
+				else {
+					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-15\r\n",
+						smh->dtmf_ianacodes[i], smh->rates[i], smh->dtmf_ianacodes[i]);
+				}
 			}
 		}
 	}
