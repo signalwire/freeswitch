@@ -104,7 +104,10 @@ static void process_mp(switch_core_session_t *session, switch_stream_handle_t *s
 	if ((dval = strchr(dname, ':'))) {
 		*dval++ = '\0';
 		if (*dval == '~') {
-			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(dval), dval + 1);
+			char *body;
+			if ((body = strstr(dval, "\r\n\r\n"))) {
+				stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(body + 4) + 1, dval + 1);
+			}
 		} else {
 			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, dname, strlen(dval) + 1, dval);
 		}
