@@ -2685,6 +2685,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *muted_sound = NULL;
 	char *mute_detect_sound = NULL;
 	char *unmuted_sound = NULL;
+	char *muted_tts = NULL;
+	char *mute_detect_tts = NULL;
+	char *unmuted_tts = NULL;
 	char *locked_sound = NULL;
 	char *is_locked_sound = NULL;
 	char *is_unlocked_sound = NULL;
@@ -2943,6 +2946,12 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				mute_detect_sound = val;
 			} else if (!strcasecmp(var, "unmuted-sound") && !zstr(val)) {
 				unmuted_sound = val;
+			} else if (!strcasecmp(var, "muted-tts") && !zstr(val)) {
+				muted_tts = val;
+			} else if (!strcasecmp(var, "mute-detect-tts") && !zstr(val)) {
+				mute_detect_tts = val;
+			} else if (!strcasecmp(var, "unmuted-tts") && !zstr(val)) {
+				unmuted_tts = val;
 			} else if (!strcasecmp(var, "locked-sound") && !zstr(val)) {
 				locked_sound = val;
 			} else if (!strcasecmp(var, "is-locked-sound") && !zstr(val)) {
@@ -3434,6 +3443,22 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(unmuted_sound)) {
 		conference->unmuted_sound = switch_core_strdup(conference->pool, unmuted_sound);
+	}
+
+	if (!zstr(muted_tts)) {
+		conference->muted_tts = switch_core_strdup(conference->pool, muted_tts);
+	}
+
+	if (zstr(mute_detect_tts)) {
+		if (!zstr(muted_tts)) {
+			conference->mute_detect_tts = switch_core_strdup(conference->pool, muted_tts);
+		}
+	} else {
+		conference->mute_detect_tts = switch_core_strdup(conference->pool, mute_detect_tts);
+	}
+
+	if (!zstr(unmuted_tts)) {
+		conference->unmuted_tts = switch_core_strdup(conference->pool, unmuted_tts);
 	}
 
 	if (!zstr(kicked_sound)) {
