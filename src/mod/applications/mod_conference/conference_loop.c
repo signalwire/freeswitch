@@ -1153,7 +1153,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 						if (conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT) && !conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 
-							if (!zstr(member->conference->mute_detect_sound)) {
+							if (!zstr(member->conference->mute_detect_sound) || !zstr(member->conference->mute_detect_tts)) {
 								conference_utils_member_set_flag(member, MFLAG_INDICATE_MUTE_DETECT);
 							}
 
@@ -1569,10 +1569,10 @@ void conference_loop_output(conference_member_t *member)
 		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_MUTE)) {
 			if (!zstr(member->conference->muted_sound)) {
 				conference_member_play_file(member, member->conference->muted_sound, 0, SWITCH_TRUE);
-			} else {
+			} else if (!zstr(member->conference->muted_tts)) {
 				char msg[512];
 
-				switch_snprintf(msg, sizeof(msg), "Muted");
+				switch_snprintf(msg, sizeof(msg), member->conference->muted_tts);
 				conference_member_say(member, msg, 0);
 			}
 			conference_utils_member_clear_flag(member, MFLAG_INDICATE_MUTE);
@@ -1581,10 +1581,10 @@ void conference_loop_output(conference_member_t *member)
 		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_MUTE_DETECT)) {
 			if (!zstr(member->conference->mute_detect_sound)) {
 				conference_member_play_file(member, member->conference->mute_detect_sound, 0, SWITCH_TRUE);
-			} else {
+			} else if (!zstr(member->conference->mute_detect_tts)) {
 				char msg[512];
 
-				switch_snprintf(msg, sizeof(msg), "Currently Muted");
+				switch_snprintf(msg, sizeof(msg), member->conference->mute_detect_tts);
 				conference_member_say(member, msg, 0);
 			}
 			conference_utils_member_clear_flag(member, MFLAG_INDICATE_MUTE_DETECT);
@@ -1593,10 +1593,10 @@ void conference_loop_output(conference_member_t *member)
 		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_UNMUTE)) {
 			if (!zstr(member->conference->unmuted_sound)) {
 				conference_member_play_file(member, member->conference->unmuted_sound, 0, SWITCH_TRUE);
-			} else {
+			} else if (!zstr(member->conference->unmuted_tts)) {
 				char msg[512];
 
-				switch_snprintf(msg, sizeof(msg), "Un-Muted");
+				switch_snprintf(msg, sizeof(msg), member->conference->unmuted_tts);
 				conference_member_say(member, msg, 0);
 			}
 			conference_utils_member_clear_flag(member, MFLAG_INDICATE_UNMUTE);

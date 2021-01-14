@@ -612,6 +612,9 @@ typedef struct conference_obj {
 	char *muted_sound;
 	char *mute_detect_sound;
 	char *unmuted_sound;
+	char *muted_tts;
+	char *mute_detect_tts;
+	char *unmuted_tts;
 	char *deaf_sound;
 	char *undeaf_sound;
 	char *blind_sound;
