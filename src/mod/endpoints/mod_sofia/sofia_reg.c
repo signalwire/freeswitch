@@ -3409,6 +3409,7 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, key);
+			switch_core_destroy_memory_pool(&(gp->pool));
 		}
 	}
 

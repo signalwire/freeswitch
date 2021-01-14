@@ -3854,7 +3854,7 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 	for (subscription_tag = switch_xml_child(gw_subs_tag, "subscription"); subscription_tag; subscription_tag = subscription_tag->next) {
 		sofia_gateway_subscription_t *gw_sub;
 
-		if ((gw_sub = switch_core_alloc(profile->pool, sizeof(*gw_sub)))) {
+		if ((gw_sub = switch_core_alloc(gateway->pool, sizeof(*gw_sub)))) {
 			char *expire_seconds = "3600", *retry_seconds = "30", *content_type = "NO_CONTENT_TYPE";
 			uint32_t username_in_request = 0;
 			char *event = (char *) switch_xml_attr_soft(subscription_tag, "event");
@@ -3907,6 +3907,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 {
 	switch_xml_t gateway_tag, param = NULL, x_params, gw_subs_tag;
 	sofia_gateway_t *gp;
+	switch_memory_pool_t *pool;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
 		char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
@@ -3934,7 +3936,12 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 		free(pkey);
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
-		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
+		/* Setup the pool */
+		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+			goto skip;
+		}
+
+		if ((gateway = switch_core_alloc(pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
 			uint32_t ping_freq = 0, extension_in_contact = 0, contact_in_ping = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
@@ -3965,7 +3972,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			switch_uuid_format(gateway->uuid_str, &uuid);
 
 			gateway->register_transport = SOFIA_TRANSPORT_UDP;
-			gateway->pool = profile->pool;
+			gateway->pool = pool;
 			gateway->profile = profile;
 			gateway->name = switch_core_strdup(gateway->pool, name);
 			gateway->freq = 0;
