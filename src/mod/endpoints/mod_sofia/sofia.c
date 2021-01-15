@@ -11315,6 +11315,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			}
 		}
 
+		if (sip->sip_identity && sip->sip_identity->id_value) {
+			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
+		}
+
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {
 			if (!strncasecmp(un->un_name, "Accept-Language", 15)) {
