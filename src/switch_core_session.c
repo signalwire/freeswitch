@@ -2849,6 +2849,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	int scope = 0;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *app_uuid = uuid_str;
+	switch_bool_t expand_variables = !switch_true(switch_channel_get_variable(session->channel, "app_disable_expand_variables"));
 
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
@@ -2866,10 +2867,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	app = application_interface->interface_name;
 
 	if (arg) {
-		expanded = switch_channel_expand_variables(session->channel, arg);
+		if (expand_variables) {
+			expanded = switch_channel_expand_variables(session->channel, arg);
+		} else {
+			expanded = (char *)arg;
+		}
 	}
 
-	if (expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
+	if (expand_variables && expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
 		char *p, *dup;
 		switch_event_t *ovars = NULL;
 
