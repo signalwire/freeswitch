@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
   \brief Read a frame from the bug
   \param bug the bug to read from
   \param frame the frame to write the data to
-  \return the amount of data
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame, switch_bool_t fill);
 
