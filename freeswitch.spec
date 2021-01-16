@@ -1638,6 +1638,7 @@ cd libs/esl
 %{__mkdir} -p %{buildroot}%{prefix}/log
 %{__mkdir} -p %{buildroot}%{logfiledir}
 %{__mkdir} -p %{buildroot}%{runtimedir}
+%{__mkdir} -p %{buildroot}%{_localstatedir}/cache/freeswitch
 
 #install the esl stuff
 cd libs/esl
@@ -2066,6 +2067,7 @@ fi
 %{MODINSTDIR}/mod_httapi.so*
 
 %files application-http-cache
+%dir %attr(0750, freeswitch, daemon) %{_localstatedir}/cache/freeswitch
 %{MODINSTDIR}/mod_http_cache.so*
 
 %files application-lcr
