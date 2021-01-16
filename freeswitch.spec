@@ -37,7 +37,7 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_opusfile 0
+%define build_opusfile 0
 %define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
@@ -46,7 +46,7 @@
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
-%{?with_mod_opusfile:%define build_mod_opusfile 1 }
+%{?with_opusfile:%define build_opusfile 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
 
 %define nonparsedversion 1.7.0
@@ -1094,15 +1094,15 @@ BuildRequires:	lame-devel
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
 
-%if %{build_mod_opusfile}
-%package format-mod-opusfile
+%if %{build_opusfile}
+%package format-opusfile
 Summary:	Plays Opus encoded files
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	opusfile >= 0.5
 BuildRequires:	opusfile-devel >= 0.5
 
-%description format-mod-opusfile
+%description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
 %endif
 
@@ -1506,7 +1506,7 @@ FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_po
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
 %endif
-%if %{build_mod_opusfile}
+%if %{build_opusfile}
 FORMATS_MODULES+=" formats/mod_opusfile"
 %endif
 
