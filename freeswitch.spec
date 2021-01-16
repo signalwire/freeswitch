@@ -122,12 +122,10 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-Source2:	http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
-Source5:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -138,79 +136,43 @@ Prefix:        	%{prefix}
 ######################################################################################################################
 
 %if 0%{?suse_version} > 100
-#BuildRequires: openldap2-devel
 BuildRequires: lzo-devel
-%else
-#BuildRequires: openldap-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
-BuildRequires: bzip2
-BuildRequires: curl-devel
+BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
-BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
-BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: sofia-sip-devel >= 1.12.12
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
-BuildRequires: sqlite-devel
+BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
 BuildRequires: libedit-devel
 BuildRequires: yasm
 BuildRequires: pkgconfig
-%if 0%{?rhel} < 6 && 0%{?fedora} <= 6
-BuildRequires: termcap
-%endif
 BuildRequires: unixODBC-devel
-BuildRequires: gdbm-devel
-%if 0%{?suse_version} > 100
-BuildRequires: db-devel
-%else
-BuildRequires: db4-devel
-%endif
-BuildRequires: libogg-devel
-BuildRequires: libvorbis-devel
 BuildRequires: libjpeg-devel
-#BuildRequires: mono-devel
 BuildRequires: which
 BuildRequires: zlib-devel
-BuildRequires: e2fsprogs-devel
-BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
 BuildRequires: libsndfile-devel
-BuildRequires: libyuv-devel >= 0.0.1280
-Requires: libogg
-Requires: libvorbis
-Requires: curl
-Requires: ncurses
+Requires: curl >= 7.19
 Requires: pcre
 Requires: speex
-Requires: sqlite
+Requires: sqlite >= 3.6.20
 Requires: libtiff
 Requires: libedit
 Requires: openssl >= 1.0.1e
 Requires: unixODBC
 Requires: libjpeg
-#Requires: openldap
-Requires: db4
-Requires: gdbm
 Requires: zlib
-Requires: libtiff
-Requires: libtheora
 Requires: libxml2
 Requires: libsndfile
 
-%if %{?suse_version:1}0
-%if 0%{?suse_version} > 910
-#BuildRequires: autogen
-%endif
-%endif
-
 %if 0%{?suse_version} > 800
-#PreReq:       /usr/sbin/useradd /usr/sbin/groupadd
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
@@ -999,7 +961,7 @@ JSON and XML Logger for the FreeSWITCH open source telephony platform
 %package kazoo
 Summary:	Kazoo Module for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 Requires:	erlang
 BuildRequires:	erlang
 
@@ -1009,7 +971,7 @@ Kazoo Module for FreeSWITCH.
 %package event-multicast
 Summary:	Multicast Event System for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 
 %description event-multicast
 Multicast Event System for FreeSWITCH.
@@ -1301,7 +1263,7 @@ platform.
 %package xml-cdr
 Summary:        Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 
 %description xml-cdr
 Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
@@ -1309,7 +1271,7 @@ Provides XML CDR interface for the FreeSWITCH Open Source telephone platform.
 %package xml-curl
 Summary:        Provides XML Curl interface for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 
 %description xml-curl
 Provides XML Curl interface for the FreeSWITCH Open Source telephone platform.
@@ -1417,8 +1379,6 @@ cp %{SOURCE1} libs/
 cp %{SOURCE2} libs/
 cp %{SOURCE3} libs/
 cp %{SOURCE4} libs/
-cp %{SOURCE5} libs/
-cp %{SOURCE6} libs/
 
 #Hotfix for redefined %_sysconfdir
 sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
