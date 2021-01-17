@@ -63,7 +63,7 @@ FST_TEARDOWN_END()
 		fst_requires(switch_rtp_ready(rtp_session));
 		switch_rtp_activate_rtcp(rtp_session, 5, rx_port + 1, 0);
 		switch_rtp_set_default_payload(rtp_session, TEST_PT);
-		fst_xcheck(switch_rtp_get_default_payload(rtp_session) == TEST_PT, "get Payload Type")
+		fst_xcheck(switch_rtp_get_default_payload(rtp_session) == TEST_PT, "get Payload Type");
 		switch_rtp_set_ssrc(rtp_session, 0xabcd);
 		switch_rtp_set_remote_ssrc(rtp_session, 0xcdef);
 		fst_xcheck(switch_rtp_get_ssrc(rtp_session) == 0xabcd, "get SSRC");
@@ -105,9 +105,9 @@ FST_TEARDOWN_END()
 		session = switch_rtp_get_core_session(rtp_session);
 		fst_requires(session);
 		status = switch_rtp_activate_jitter_buffer(rtp_session, 1, 10, 80, 8000);
-		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "switch_rtp_activate_jitter_buffer()")
+		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "switch_rtp_activate_jitter_buffer()");
 		status = switch_rtp_debug_jitter_buffer(rtp_session, "debug");
-		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "switch_rtp_debug_jitter_buffer()")
+		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "switch_rtp_debug_jitter_buffer()");
 		fst_requires(switch_rtp_get_jitter_buffer(rtp_session));
 		status = switch_rtp_pause_jitter_buffer(rtp_session, SWITCH_TRUE);
 		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "switch_rtp_pause_jitter_buffer()");
