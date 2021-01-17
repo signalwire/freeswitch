@@ -203,13 +203,13 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  * Check a test /w error message
  */
 #define fst_xcheck(expr, error_msg) \
-	fct_xchk(expr, "%s", error_msg);
+	(fct_xchk(expr, "%s", error_msg))
 
 /**
  * Fail a test
  */
 #define fst_fail(error_msg) \
-	fct_xchk(0, "%s", error_msg);
+	(fct_xchk(0, "%s", error_msg))
 
 /**
  * Check duration relative to test start, last marked time, or last check.
@@ -236,7 +236,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		(actual), \
 		(expected), \
 		(precision) \
-	);
+	)
 
 /**
  * Check if double-precision number is in range
@@ -248,7 +248,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		(actual), \
 		(expected), \
 		(precision) \
-	);
+	)
 
 /**
  * Run test without loading FS core
