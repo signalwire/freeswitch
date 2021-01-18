@@ -1206,7 +1206,10 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		
 		for (i = 0; i < cache->max_retry; ++i) {
 			curl_status = switch_curl_easy_perform(curl_handle);
-			if (curl_status == CURLE_OK || curl_status == CURLE_HTTP_RETURNED_ERROR) {
+			if (curl_status == CURLE_OK 
+				|| curl_status == CURLE_HTTP_RETURNED_ERROR
+				|| curl_status == CURLE_OPERATION_TIMEDOUT) {
+				// Dont retry to errors or timeout operation
 				break;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d (attempt:%d) trying to fetch %s\n", curl_status, i+1, url->url);
