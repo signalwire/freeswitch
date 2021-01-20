@@ -799,7 +799,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *url = NULL;
 	char *method = NULL;
-	char *postdata = NULL;
+	char *postdata = "";
 	char *content_type = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
@@ -920,7 +920,7 @@ SWITCH_STANDARD_API(curl_function)
 	char *mydata = NULL;
 	char *url = NULL;
 	char *method = NULL;
-	char *postdata = NULL;
+	char *postdata = "";
 	char *content_type = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
