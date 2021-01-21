@@ -2464,8 +2464,6 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					char *expanded = NULL;
 					char *expanded_vname = NULL;
 
-					SWITCH_STANDARD_STREAM(stream);
-
 					if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 						expanded_vname = NULL;
 					} else {
@@ -2482,6 +2480,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						func_val = NULL;
 						sub_val = "<API execute Permission Denied>";
 					} else {
+						SWITCH_STANDARD_STREAM(stream);
 						if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 							func_val = stream.data;
 							sub_val = func_val;
