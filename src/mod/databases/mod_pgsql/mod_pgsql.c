@@ -515,6 +515,7 @@ error:
 	err_str = pgsql_handle_get_error(handle);
 
 	if (zstr(err_str)) {
+		switch_safe_free(err_str);
 		if (!er) {
 			err_str = strdup((char *)"SQL ERROR!");
 		} else {
