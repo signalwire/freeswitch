@@ -129,6 +129,8 @@ static char *my_dup(const char *s)
 #define FREE(ptr) switch_safe_free(ptr)
 #endif
 
+static void free_header(switch_event_header_t **header);
+
 /* make sure this is synced with the switch_event_types_t enum in switch_types.h
    also never put any new ones before EVENT_ALL
 */
@@ -891,27 +893,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 			if (hp == event->last_header || !hp->next) {
 				event->last_header = lp;
 			}
-			FREE(hp->name);
-
-			if (hp->idx) {
-				int i = 0;
-
-				for (i = 0; i < hp->idx; i++) {
-					FREE(hp->array[i]);
-				}
-				FREE(hp->array);
-			}
-
-			FREE(hp->value);
-
-			memset(hp, 0, sizeof(*hp));
-#ifdef SWITCH_EVENT_RECYCLE
-			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != SWITCH_STATUS_SUCCESS) {
-				FREE(hp);
-			}
-#else
-			FREE(hp);
-#endif
+			free_header(&hp);
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			lp = hp;
@@ -942,6 +924,37 @@ static switch_event_header_t *new_header(const char *header_name)
 
 		return header;
 
+}
+
+static void free_header(switch_event_header_t **header)
+{
+	assert(header);
+
+	if (*header) {
+		if ((*header)->idx) {
+			if (!(*header)->array) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INDEX WITH NO ARRAY ?? [%s][%s]\n", (*header)->name, (*header)->value);
+			} else {
+				int i = 0;
+
+				for (i = 0; i < (*header)->idx; i++) {
+					FREE((*header)->array[i]);
+				}
+				FREE((*header)->array);
+			}
+		}
+
+		FREE((*header)->name);
+		FREE((*header)->value);
+
+#ifdef SWITCH_EVENT_RECYCLE
+		if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, *header) != SWITCH_STATUS_SUCCESS) {
+			FREE(*header);
+		}
+#else
+		FREE(*header);
+#endif
+	}
 }
 
 SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *var, const char *val)
@@ -1012,10 +1025,11 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 	}
 
 	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
+		switch_event_header_t *tmp_header = NULL;
 
 		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
 
-			header = new_header(header_name);
+			tmp_header = header = new_header(header_name);
 
 			if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 				switch_event_del_header(event, header_name);
@@ -1049,6 +1063,8 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 
 						goto redraw;
 					}
+				} else if (tmp_header) {
+					free_header(&tmp_header);
 				}
 				goto end;
 			} else {
@@ -1266,33 +1282,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 		for (hp = ep->headers; hp;) {
 			this = hp;
 			hp = hp->next;
-
-			if (this->idx) {
-				if (!this->array) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INDEX WITH NO ARRAY WTF?? [%s][%s]\n", this->name, this->value);
-				} else {
-					int i = 0;
-
-					for (i = 0; i < this->idx; i++) {
-						FREE(this->array[i]);
-					}
-					FREE(this->array);
-				}
-			}
-
-			FREE(this->name);
-			FREE(this->value);
-
-
-#ifdef SWITCH_EVENT_RECYCLE
-			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != SWITCH_STATUS_SUCCESS) {
-				FREE(this);
-			}
-#else
-			FREE(this);
-#endif
-
-
+			free_header(&this);
 		}
 		FREE(ep->body);
 		FREE(ep->subclass_name);
