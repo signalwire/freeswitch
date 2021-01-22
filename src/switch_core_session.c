@@ -1026,8 +1026,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
 		msg->message_id = indication;
 		msg->from = __FILE__;
 		switch_set_flag(msg, SCSMF_DYNAMIC);
-		switch_core_session_queue_message(session, msg);
-		return SWITCH_STATUS_SUCCESS;
+
+		if (switch_core_session_queue_message(session, msg) == SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		free(msg);
 	}
 
 	return SWITCH_STATUS_FALSE;
