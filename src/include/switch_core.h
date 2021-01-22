@@ -1429,6 +1429,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
 
 /*!
+  \brief Insert data into a hash with an auto-generated key based on the data pointer
+  \param hash the hash to add data to
+  \param data unique pointer to add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_pointer(switch_hash_t *hash, const void *data);
+
+/*!
   \brief Insert data into a hash and set flags so the value is automatically freed on delete
   \param hash the hash to add data to
   \param key the name of the key to add the data to

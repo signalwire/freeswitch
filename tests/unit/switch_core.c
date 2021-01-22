@@ -314,6 +314,37 @@ FST_CORE_BEGIN("./conf")
 			free(item);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_pointer)
+		{
+			int i, sum = 0;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			for (i = 0; i < 10; i++) {
+				int *num = malloc(sizeof(int));
+				*num = i;
+				fst_check_int_equals(switch_core_hash_insert_pointer(hash, (void*)num), SWITCH_STATUS_SUCCESS);
+			}
+
+			i = 0;
+			for (hi = switch_core_hash_first(hash); hi; hi = switch_core_hash_next(&hi)) {
+				void *hash_val;
+				switch_core_hash_this(hi, NULL, NULL, &hash_val);
+				sum += *(int*)hash_val;
+				free(hash_val);
+				i++;
+			}
+
+			fst_check_int_equals(i, 10);
+			fst_check_int_equals(sum, 45);
+
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
