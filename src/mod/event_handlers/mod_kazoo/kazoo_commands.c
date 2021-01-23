@@ -353,14 +353,20 @@ SWITCH_STANDARD_API(kz_http_put)
 	/* libcurl requires FILE* */
  	file_to_put = fopen(filename, "rb");
 	if (!file_to_put) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fopen() error: %s\n", strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fopen(%s) error: %s\n", filename, strerror(errno));
+		if (stream->param_event) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-File-Error", "file_not_found");
+		}
 		stream->write_function(stream, "-ERR error opening file\n");
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
 	if (fstat(fileno(file_to_put), &file_info) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat(%s) error: %s\n", filename, strerror(errno));
+		if (stream->param_event) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-File-Error", "file_not_found");
+		}
 		stream->write_function(stream, "-ERR fstat error\n");
 		goto done;
 	}
@@ -394,15 +400,19 @@ SWITCH_STANDARD_API(kz_http_put)
 
 	if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
-		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Output", "%s saved to %s", filename, url);
-		stream->write_function(stream, "+OK %s saved to %s", filename, url);
+		if (stream->param_event) {
+			switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Output", "%s saved to %s", filename, url);
+		}
+		stream->write_function(stream, "+OK %s saved to %s\n", filename, url);
 		delete_file = 1;
 	} else {
 		error = switch_mprintf("Received HTTP error %ld trying to save %s to %s", httpRes, filename, url);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", error);
-		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Error", "%s", error);
-		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-HTTP-Error", "%ld", httpRes);
-		stream->write_function(stream, "-ERR %s", error);
+		if (stream->param_event) {
+			switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Error", "%s", error);
+			switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-HTTP-Error", "%ld", httpRes);
+		}
+		stream->write_function(stream, "-ERR %s\n", error);
 		status = SWITCH_STATUS_GENERR;
 	}
 
@@ -440,12 +450,12 @@ SWITCH_STANDARD_API(kz_expand_api)
 	char *uuid = NULL, *mycmd;
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR invalid input");
+		stream->write_function(stream, "-ERR invalid input\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!(mycmd = strdup(cmd))) {
-		stream->write_function(stream, "-ERR no memory");
+		stream->write_function(stream, "-ERR no memory\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -454,7 +464,7 @@ SWITCH_STANDARD_API(kz_expand_api)
 		if ((input = strchr(uuid, ' ')) != NULL) {
 			*input++ = '\0';
 		} else {
-			stream->write_function(stream, "-ERR invalid argument");
+			stream->write_function(stream, "-ERR invalid argument\n");
 			switch_safe_free(mycmd);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -463,7 +473,7 @@ SWITCH_STANDARD_API(kz_expand_api)
 	}
 
 	p = kz_expand(input, uuid);
-	stream->write_function(stream, "+OK %s", p);
+	stream->write_function(stream, "+OK %s\n", p);
 	if (p != input) {
 		switch_safe_free(p);
 	}
@@ -480,12 +490,12 @@ SWITCH_STANDARD_API(kz_eval_api)
 
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR invalid input");
+		stream->write_function(stream, "-ERR invalid input\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!(mycmd = strdup(cmd))) {
-		stream->write_function(stream, "-ERR no memory");
+		stream->write_function(stream, "-ERR no memory\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -496,17 +506,17 @@ SWITCH_STANDARD_API(kz_eval_api)
 			if ((nsession = switch_core_session_locate(uuid)) != NULL) {
 				channel = switch_core_session_get_channel(nsession);
 			} else {
-				stream->write_function(stream, "-ERR invalid session");
+				stream->write_function(stream, "-ERR invalid session\n");
 				switch_safe_free(mycmd);
 				return SWITCH_STATUS_GENERR;
 			}
 		} else {
-			stream->write_function(stream, "-ERR invalid argument");
+			stream->write_function(stream, "-ERR invalid argument\n");
 			switch_safe_free(mycmd);
 			return SWITCH_STATUS_GENERR;
 		}
 	} else if (session == NULL) {
-		stream->write_function(stream, "-ERR invalid argument");
+		stream->write_function(stream, "-ERR invalid argument\n");
 		switch_safe_free(mycmd);
 		return SWITCH_STATUS_GENERR;
 	} else {
@@ -515,7 +525,7 @@ SWITCH_STANDARD_API(kz_eval_api)
 	}
 
 	p = switch_channel_expand_variables_check(channel, input, NULL, NULL, 0);
-	stream->write_function(stream, "+OK %s", p);
+	stream->write_function(stream, "+OK %s\n", p);
 	if (p != input) {
 		switch_safe_free(p);
 	}
@@ -585,7 +595,7 @@ SWITCH_STANDARD_API(kz_module_available_fun)
 	int argc = 0;
 
 	if (!cmd) {
-		stream->write_function(stream, "-ERR missing arguments");
+		stream->write_function(stream, "-ERR missing arguments\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -593,22 +603,22 @@ SWITCH_STANDARD_API(kz_module_available_fun)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		if (argc == 1) {
 			if (switch_loadable_module_available(argv[0]) ) {
-				stream->write_function(stream, "-OK module %s is available in %s", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
+				stream->write_function(stream, "+OK module %s is available in %s\n", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
 			} else {
-				stream->write_function(stream, "-ERR module %s is not available in %s", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
+				stream->write_function(stream, "-ERR module %s is not available in %s\n", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
 			}
 		} else if (argc == 2) {
 			if (switch_loadable_module_available_in_dir(argv[0], argv[1]) ) {
-				stream->write_function(stream, "-OK module %s is available in %s", argv[0], argv[1]);
+				stream->write_function(stream, "+OK module %s is available in %s\n", argv[0], argv[1]);
 			} else {
-				stream->write_function(stream, "-ERR module %s is not available in %s", argv[0], argv[1]);
+				stream->write_function(stream, "-ERR module %s is not available in %s\n", argv[0], argv[1]);
 			}
 		} else {
-			stream->write_function(stream, "-ERR invalid arguments");
+			stream->write_function(stream, "-ERR invalid arguments\n");
 			return SWITCH_STATUS_GENERR;
 		}
 	} else {
-		stream->write_function(stream, "-ERR memory");
+		stream->write_function(stream, "-ERR memory\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
