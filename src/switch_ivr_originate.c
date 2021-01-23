@@ -507,6 +507,35 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 	}
 
 	for (i = 0; i < len; i++) {
+		if (oglobals->originate_status[i].peer_channel && switch_channel_test_flag(oglobals->originate_status[i].peer_channel, CF_SESSION_SWAP)) {
+			const char *key = switch_channel_get_variable(oglobals->originate_status[i].peer_channel, "channel_swap_uuid");
+			switch_core_session_t *swap_session, *old_session;
+
+			if ((swap_session = switch_core_session_locate(key))) {
+				switch_channel_clear_flag(oglobals->originate_status[i].peer_channel, CF_SESSION_SWAP);
+				switch_channel_hangup(oglobals->originate_status[i].peer_channel, SWITCH_CAUSE_SWAPPED);
+
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(oglobals->originate_status[i].peer_channel), SWITCH_LOG_DEBUG, "Swapping %s for %s\n",
+								  switch_core_session_get_name(swap_session), switch_channel_get_name(oglobals->originate_status[i].peer_channel));
+
+				old_session = oglobals->originate_status[i].peer_session;
+				oglobals->originate_status[i].peer_session = swap_session;
+				oglobals->originate_status[i].peer_channel = switch_core_session_get_channel(oglobals->originate_status[i].peer_session);
+				oglobals->originate_status[i].caller_profile = switch_channel_get_caller_profile(oglobals->originate_status[i].peer_channel);
+				switch_channel_set_flag(oglobals->originate_status[i].peer_channel, CF_ORIGINATING);
+				switch_channel_answer(oglobals->originate_status[i].peer_channel);
+
+				switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "swapped_uuid", switch_core_session_get_uuid(old_session));
+				switch_channel_execute_on(oglobals->originate_status[i].peer_channel, "execute_on_session_swap");
+				switch_channel_api_on(oglobals->originate_status[i].peer_channel, "api_on_session_swap");
+
+				switch_core_session_rwunlock(old_session);
+				break;
+			}
+		}
+	}
+
+	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
 
 		if (oglobals->originate_status[i].tagged && oglobals->originate_status[i].peer_session) {
