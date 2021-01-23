@@ -330,6 +330,21 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *d
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod);
 
 /*!
+  \brief Check if a module is available in dir
+  \param name the module name
+  \param dir the directory for checking
+  \return the status
+*/
+SWITCH_DECLARE(int) switch_loadable_module_available_in_dir(const char *name, const char *dir);
+
+/*!
+  \brief Check if a module is available in global dirs
+  \param name the module name
+  \return the status
+*/
+SWITCH_DECLARE(int) switch_loadable_module_available(const char *name);
+
+/*!
 \brief Protect module from beeing unloaded
 \param mod the module name
 \return the status

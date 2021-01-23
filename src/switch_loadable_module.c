@@ -1807,6 +1807,36 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	return SWITCH_STATUS_SUCCESS;
 
 }
+
+typedef struct {
+	const char * name;
+	int found;
+} module_available_callback_param_t, *module_available_callback_param_ptr;
+
+static int module_available_callback(void *pArg, const char *name)
+{
+	module_available_callback_param_ptr param = (module_available_callback_param_ptr) pArg;
+	if (param->found) return 0;
+	if(!strcasecmp(param->name, name)) {
+		param->found = 1;
+	}
+	return 0;
+}
+
+SWITCH_DECLARE(int) switch_loadable_module_available_in_dir(const char *name, const char *dir)
+{
+	module_available_callback_param_t param;
+	param.found = 0;
+	param.name = name;
+	switch_loadable_module_enumerate_available(dir, module_available_callback, &param);
+	return param.found;
+}
+
+SWITCH_DECLARE(int) switch_loadable_module_available(const char *name)
+{
+	return switch_loadable_module_available_in_dir(name, SWITCH_GLOBAL_dirs.mod_dir);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(const char *dir, const char *fname, switch_bool_t runtime, const char **err)
 {
 	return switch_loadable_module_load_module_ex(dir, fname, runtime, SWITCH_FALSE, err, SWITCH_LOADABLE_MODULE_TYPE_COMMON, NULL);
@@ -1819,6 +1849,8 @@ static switch_status_t switch_loadable_module_load_module_ex(const char *dir, co
 	char *file, *dot;
 	switch_loadable_module_t *new_module = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *name = fname;
+	char name_buffer[30];
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -1828,7 +1860,17 @@ static switch_status_t switch_loadable_module_load_module_ex(const char *dir, co
 
 	*err = "";
 
-	if ((file = switch_core_strdup(loadable_modules.pool, fname)) == 0) {
+	if (switch_true(switch_core_get_variable("redirect-mod-load-to-com-module"))) {
+		if (!strncmp("mod_", name, 4) && strncmp("mod_com_", name, 8)) {
+			sprintf(name_buffer, "mod_com_%s", name+4);
+			if (switch_loadable_module_available_in_dir(name_buffer, dir)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redirecting module load from %s to %s\n", name , name_buffer);
+				name = name_buffer;
+			}
+		}
+	}
+
+	if ((file = switch_core_strdup(loadable_modules.pool, name)) == 0) {
 		*err = "allocation error";
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1967,6 +2009,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const
 	const char *fname;
 	const char *fname_ext;
 	char *fname_base;
+	switch_memory_pool_t *pool = NULL;
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -1974,8 +2017,12 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const
 	const char *ext = ".so";
 #endif
 
-	if ((status = switch_dir_open(&dir, dir_path, loadable_modules.pool)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	};
+
+	if ((status = switch_dir_open(&dir, dir_path, pool)) != SWITCH_STATUS_SUCCESS) {
+		goto cleanup;
 	}
 
 	while((fname = switch_dir_next_file(dir, buffer, sizeof(buffer)))) {
@@ -1994,6 +2041,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const
 
   end:
 	switch_dir_close(dir);
+  cleanup:
+	switch_core_destroy_memory_pool(&pool);
 	return status;
 }
 
