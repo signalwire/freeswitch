@@ -68,6 +68,75 @@
 #define NOOP_LONG_DESC "no operation. serves as a control point"
 #define NOOP_SYNTAX "[<noop-id>]"
 
+#define RESTORE_CID_SHORT_DESC "restore caller id"
+#define RESTORE_CID_LONG_DESC "restores caller id"
+#define RESTORE_CID_SYNTAX ""
+
+SWITCH_STANDARD_DIALPLAN(kz_inline_dialplan_hunt)
+{
+	switch_caller_extension_t *extension = NULL;
+	char *argv[128] = { 0 };
+	int argc;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int x = 0;
+	char *lbuf;
+	char *target = arg;
+	char delim = ',';
+	int count = 0;
+
+	if (!caller_profile) {
+		caller_profile = switch_channel_get_caller_profile(channel);
+	}
+
+	if ((extension = switch_caller_extension_new(session, "inline", "inline")) == 0) {
+		abort();
+	}
+
+	if (zstr(target)) {
+		target = caller_profile->destination_number;
+	}
+
+
+	if (zstr(target)) {
+		return NULL;
+	} else {
+		lbuf = switch_core_session_strdup(session, target);
+	}
+
+	if (*lbuf == 'm' && *(lbuf + 1) == ':' && *(lbuf + 3) == ':') {
+		delim = *(lbuf + 2);
+		lbuf += 4;
+	}
+
+	argc = switch_separate_string(lbuf, delim, argv, (sizeof(argv) / sizeof(argv[0])));
+
+	for (x = 0; x < argc; x++) {
+		char *app = argv[x];
+		char *data = strchr(app, ':');
+
+		if (data) {
+			*data++ = '\0';
+		}
+
+		while (*app == ' ') {
+			app++;
+		}
+
+		if (!zstr(app) && !zstr(data)) {
+			switch_caller_extension_add_application(session, extension, app, data);
+			count++;
+		}
+	}
+
+	if (count) {
+		caller_profile->destination_number = (char *) caller_profile->rdnis;
+		caller_profile->rdnis = SWITCH_BLANK_STRING;
+		return extension;
+	} else {
+		return NULL;
+	}
+}
+
 static void base_set (switch_core_session_t *session, const char *data, int urldecode, switch_stack_t stack)
 {
 	char *var, *val = NULL;
@@ -200,7 +269,7 @@ void kz_multiset(switch_core_session_t *session, const char* data, int urldecode
 {
 	char delim = ' ';
 	char *arg = (char *) data;
-	switch_event_t *event;
+	switch_event_t *event = NULL;
 
 	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
 		arg += 2;
@@ -216,13 +285,17 @@ void kz_multiset(switch_core_session_t *session, const char* data, int urldecode
 			arg = switch_core_session_strdup(session, arg);
 			argc = switch_split(arg, delim, array);
 
-			for(i = 0; i < argc; i++) {
-				base_set(session, array[i], urldecode, SWITCH_STACK_BOTTOM);
+			if (argc > 0) {
+
+				for(i = 0; i < argc; i++) {
+					base_set(session, array[i], urldecode, SWITCH_STACK_BOTTOM);
+				}
+
+				if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_fire(&event);
+				}
 			}
-		}
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "multiset with empty args\n");
@@ -419,6 +492,7 @@ SWITCH_STANDARD_APP(kz_endless_playback_function)
 	const char *file = data;
 
 	while (switch_channel_ready(channel)) {
+
 		status = switch_ivr_play_file(session, NULL, file, NULL);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -443,18 +517,66 @@ SWITCH_STANDARD_APP(kz_endless_playback_function)
 
 }
 
+// copied from mod_dptools with allow SWITCH_STATUS_BREAK
+SWITCH_STANDARD_APP(kz_endless_playback_app_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *path = data;
+	char *app = "playback";
+	char *mypath, *p;
+
+	mypath = strdup(data);
+	switch_assert(mypath);
+
+	if ((p = strchr(mypath, ':')) && *(p + 1) == ':') {
+		app = mypath;
+		*p++ = '\0';
+		*p++ = '\0';
+		path = p;
+	}
+
+	while (switch_channel_ready(channel)) {
+
+		status = switch_core_session_execute_application(session, app, path);
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+	}
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
+		break;
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK_INTERRUPTED");
+		break;
+	case SWITCH_STATUS_NOTFOUND:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		break;
+	}
+
+	switch_safe_free(mypath);
+
+}
+
 SWITCH_STANDARD_APP(kz_moh_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t fh = { 0 };
 	const char *var_samples = switch_channel_get_variable_dup(channel, "moh_playback_samples", SWITCH_FALSE, -1);
-	unsigned int samples =  0;
+	int64_t samples =  0;
 	char * my_data = NULL;
+	char * resolve = NULL;
 
 	if (var_samples) {
-		fh.samples = samples = atoi(var_samples);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "SETTING SAMPLES %d\n", samples);
+		fh.samples = samples = atol(var_samples);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SETTING SAMPLES %" SWITCH_INT64_T_FMT "\n", samples);
 	}
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
@@ -464,42 +586,39 @@ SWITCH_STANDARD_APP(kz_moh_function)
 	 */
 	if (!strncmp(data, "http_cache://", 13) && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		char * resolve = switch_mprintf("${http_get({prefetch=true}%s)}", data+13);
+		resolve = switch_mprintf("${http_get({prefetch=true}%s)}", data+13);
 		my_data = switch_channel_expand_variables_check(channel, resolve, NULL, NULL, 0);
 	} else {
 		my_data = strdup(data);
 	}
 
 	status = switch_ivr_play_file(session, &fh, my_data, NULL);
-//	status = switch_ivr_play_file(session, &fh, data, NULL);
 
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
 	switch (status) {
 	case SWITCH_STATUS_SUCCESS:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH PLAYED SUCCESS\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MOH PLAYED SUCCESS\n");
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MOH FILE PLAYED");
 		switch_channel_set_variable(channel, "moh_playback_samples", "0");
 		break;
 	case SWITCH_STATUS_BREAK:
+		samples = fh.samples > fh.sample_count ? fh.pos : 0;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH PLAYED BREAK\n");
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MOH FILE PLAYED");
-		if ((var_samples = switch_channel_get_variable_dup(channel, "playback_samples", SWITCH_FALSE, -1)) != NULL) {
-			samples += atoi(var_samples);
-			if (samples >= fh.samples) {
-				samples = 0;
-			}
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "SETTING MOH SAMPLES %d\n", samples);
-			switch_channel_set_variable_printf(channel, "moh_playback_samples", "%d", samples);
-		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SETTING MOH SAMPLES %" SWITCH_INT64_T_FMT "\n", samples);
+		switch_channel_set_variable_printf(channel, "moh_playback_samples", "%" SWITCH_INT64_T_FMT, samples);
 		break;
 	case SWITCH_STATUS_NOTFOUND:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH PLAYED NOT FOUND\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MOH PLAYED NOT FOUND\n");
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MOH FILE NOT FOUND");
 		break;
 	default:
+		samples = fh.samples > fh.sample_count ? fh.pos : 0;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MOH PLAYED DEFAULT\n");
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MOH PLAYBACK ERROR");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "MOH FILE PLAYED");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SETTING MOH SAMPLES %" SWITCH_INT64_T_FMT "\n", samples);
+		switch_channel_set_variable_printf(channel, "moh_playback_samples", "%" SWITCH_INT64_T_FMT, samples);
 		break;
 	}
 
@@ -509,6 +628,9 @@ SWITCH_STANDARD_APP(kz_moh_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH sample_count %" SWITCH_SIZE_T_FMT "\n", fh.sample_count);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "MOH samples %d\n", fh.samples);
 
+	if (resolve && resolve != my_data) {
+		switch_safe_free(resolve);
+	}
 	switch_safe_free(my_data);
 }
 
@@ -959,6 +1081,8 @@ SWITCH_STANDARD_APP(kz_att_xfer_function)
 
 void add_kz_dptools(switch_loadable_module_interface_t **module_interface) {
 	switch_application_interface_t *app_interface = NULL;
+	switch_dialplan_interface_t *dp_interface = NULL;
+
 	SWITCH_ADD_APP(app_interface, "kz_set", SET_SHORT_DESC, SET_LONG_DESC, set_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_set_encoded", SET_SHORT_DESC, SET_LONG_DESC, set_encoded_function, SET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_multiset", MULTISET_SHORT_DESC, MULTISET_LONG_DESC, multiset_function, MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
@@ -971,10 +1095,14 @@ void add_kz_dptools(switch_loadable_module_interface_t **module_interface) {
 	SWITCH_ADD_APP(app_interface, "kz_uuid_multiset", UUID_MULTISET_SHORT_DESC, UUID_MULTISET_LONG_DESC, uuid_multiset_function, UUID_MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_uuid_multiset_encoded", UUID_MULTISET_SHORT_DESC, UUID_MULTISET_LONG_DESC, uuid_multiset_encoded_function, UUID_MULTISET_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_endless_playback", KZ_ENDLESS_PLAYBACK_SHORT_DESC, KZ_ENDLESS_PLAYBACK_LONG_DESC, kz_endless_playback_function, KZ_ENDLESS_PLAYBACK_SYNTAX, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "kz_restore_caller_id", NOOP_SHORT_DESC, NOOP_LONG_DESC, kz_restore_caller_id_function, NOOP_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "kz_endless_playback_app", KZ_ENDLESS_PLAYBACK_SHORT_DESC, KZ_ENDLESS_PLAYBACK_LONG_DESC, kz_endless_playback_app_function, KZ_ENDLESS_PLAYBACK_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "kz_restore_caller_id", RESTORE_CID_SHORT_DESC, RESTORE_CID_LONG_DESC, kz_restore_caller_id_function, RESTORE_CID_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "noop", NOOP_SHORT_DESC, NOOP_LONG_DESC, noop_function, NOOP_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "kz_bridge", "Bridge Audio", "Bridge the audio between two sessions", kz_audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
 	SWITCH_ADD_APP(app_interface, "kz_bridge_uuid", "Bridge Audio", "Bridge the audio between two sessions", kz_audio_bridge_uuid_function, "<channel_url>", SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
 	SWITCH_ADD_APP(app_interface, "kz_att_xfer", "Attended Transfer", "Attended Transfer", kz_att_xfer_function, "<channel_url>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "kz_moh", "Kazoo MOH Playback", "Kazoo MOH Playback", kz_moh_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "kz_moh", "Kazoo MOH Playback", "Kazoo MOH Playback", kz_moh_function, "kz_moh::file", SAF_NONE);
+
+	SWITCH_ADD_DIALPLAN(dp_interface, "kinline", kz_inline_dialplan_hunt);
+
 }

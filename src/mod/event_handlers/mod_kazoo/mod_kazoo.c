@@ -34,8 +34,6 @@
 
 kz_globals_t kazoo_globals = {0};
 
-
-
 SWITCH_MODULE_DEFINITION(mod_kazoo, mod_kazoo_load, mod_kazoo_shutdown, mod_kazoo_runtime);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load)
@@ -82,6 +80,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load)
 	/* add our cdr */
 	kz_cdr_start();
 
+	/* add prompts */
+	kz_prompts_init(module_interface);
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -90,6 +91,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	int sanity = 0;
 
 	remove_cli_api();
+
+	kz_prompts_destroy();
 
 	kz_cdr_stop();
 

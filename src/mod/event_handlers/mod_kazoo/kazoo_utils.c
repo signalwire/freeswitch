@@ -34,6 +34,286 @@
  */
 #include "mod_kazoo.h"
 
+typedef struct kz_core_channel_flag {
+	switch_channel_flag_t flag;
+	char* name;
+} kz_core_channel_flag_t, *kz_core_channel_flag_p;
+
+static kz_core_channel_flag_t KZ_CHANNEL_FLAGS[] = {
+	{CF_ANSWERED, "ANSWERED"},
+	{CF_OUTBOUND, "OUTBOUND"},
+	{CF_EARLY_MEDIA, "EARLY_MEDIA"},
+	{CF_BRIDGE_ORIGINATOR, "BRIDGE_ORIGINATOR"},
+	{CF_UUID_BRIDGE_ORIGINATOR, "UUID_BRIDGE_ORIGINATOR"},
+	{CF_TRANSFER, "TRANSFER"},
+	{CF_ACCEPT_CNG, "ACCEPT_CNG"},
+	{CF_REDIRECT, "REDIRECT"},
+	{CF_BRIDGED, "BRIDGED"},
+	{CF_HOLD, "HOLD"},
+	{CF_HOLD_BLEG, "HOLD_BLEG"},
+	{CF_SERVICE, "SERVICE"},
+	{CF_TAGGED, "TAGGED"},
+	{CF_WINNER, "WINNER"},
+	{CF_CONTROLLED, "CONTROLLED"},
+	{CF_PROXY_MODE, "PROXY_MODE"},
+	{CF_PROXY_OFF, "PROXY_OFF"},
+	{CF_SUSPEND, "SUSPEND"},
+	{CF_EVENT_PARSE, "EVENT_PARSE"},
+	{CF_GEN_RINGBACK, "GEN_RINGBACK"},
+	{CF_RING_READY, "RING_READY"},
+	{CF_BREAK, "BREAK"},
+	{CF_BROADCAST, "BROADCAST"},
+	{CF_UNICAST, "UNICAST"},
+	{CF_VIDEO, "VIDEO"},
+	{CF_EVENT_LOCK, "EVENT_LOCK"},
+	{CF_EVENT_LOCK_PRI, "EVENT_LOCK_PRI"},
+	{CF_RESET, "RESET"},
+	{CF_ORIGINATING, "ORIGINATING"},
+	{CF_STOP_BROADCAST, "STOP_BROADCAST"},
+	{CF_PROXY_MEDIA, "PROXY_MEDIA"},
+	{CF_INNER_BRIDGE, "INNER_BRIDGE"},
+	{CF_REQ_MEDIA, "REQ_MEDIA"},
+	{CF_VERBOSE_EVENTS, "VERBOSE_EVENTS"},
+	{CF_PAUSE_BUGS, "PAUSE_BUGS"},
+	{CF_DIVERT_EVENTS, "DIVERT_EVENTS"},
+	{CF_BLOCK_STATE, "BLOCK_STATE"},
+	{CF_FS_RTP, "FS_RTP"},
+	{CF_REPORTING, "REPORTING"},
+	{CF_PARK, "PARK"},
+	{CF_TIMESTAMP_SET, "TIMESTAMP_SET"},
+	{CF_ORIGINATOR, "ORIGINATOR"},
+	{CF_XFER_ZOMBIE, "XFER_ZOMBIE"},
+	{CF_MEDIA_ACK, "MEDIA_ACK"},
+	{CF_THREAD_SLEEPING, "THREAD_SLEEPING"},
+	{CF_DISABLE_RINGBACK, "DISABLE_RINGBACK"},
+	{CF_NOT_READY, "NOT_READY"},
+	{CF_SIGNAL_BRIDGE_TTL, "SIGNAL_BRIDGE_TTL"},
+	{CF_MEDIA_BRIDGE_TTL, "MEDIA_BRIDGE_TTL"},
+	{CF_BYPASS_MEDIA_AFTER_BRIDGE, "BYPASS_MEDIA_AFTER_BRIDGE"},
+	{CF_LEG_HOLDING, "LEG_HOLDING"},
+	{CF_BROADCAST_DROP_MEDIA, "BROADCAST_DROP_MEDIA"},
+	{CF_EARLY_HANGUP, "EARLY_HANGUP"},
+	{CF_MEDIA_SET, "MEDIA_SET"},
+	{CF_CONSUME_ON_ORIGINATE, "CONSUME_ON_ORIGINATE"},
+	{CF_PASSTHRU_PTIME_MISMATCH, "PASSTHRU_PTIME_MISMATCH"},
+	{CF_BRIDGE_NOWRITE, "BRIDGE_NOWRITE"},
+	{CF_RECOVERED, "RECOVERED"},
+	{CF_JITTERBUFFER, "JITTERBUFFER"},
+	{CF_JITTERBUFFER_PLC, "JITTERBUFFER_PLC"},
+	{CF_DIALPLAN, "DIALPLAN"},
+	{CF_BLEG, "BLEG"},
+	{CF_BLOCK_BROADCAST_UNTIL_MEDIA, "BLOCK_BROADCAST_UNTIL_MEDIA"},
+	{CF_CNG_PLC, "CNG_PLC"},
+	{CF_ATTENDED_TRANSFER, "ATTENDED_TRANSFER"},
+	{CF_LAZY_ATTENDED_TRANSFER, "LAZY_ATTENDED_TRANSFER"},
+	{CF_SIGNAL_DATA, "SIGNAL_DATA"},
+	{CF_SIMPLIFY, "SIMPLIFY"},
+	{CF_ZOMBIE_EXEC, "ZOMBIE_EXEC"},
+	{CF_INTERCEPT, "INTERCEPT"},
+	{CF_INTERCEPTED, "INTERCEPTED"},
+	{CF_VIDEO_REFRESH_REQ, "VIDEO_REFRESH_REQ"},
+	{CF_MANUAL_VID_REFRESH, "MANUAL_VID_REFRESH"},
+	{CF_MANUAL_MEDIA_PARAMS, "MANUAL_MEDIA_PARAMS"},
+	{CF_SERVICE_AUDIO, "SERVICE_AUDIO"},
+	{CF_SERVICE_VIDEO, "SERVICE_VIDEO"},
+	{CF_ZRTP_PASSTHRU_REQ, "ZRTP_PASSTHRU_REQ"},
+	{CF_ZRTP_PASSTHRU, "ZRTP_PASSTHRU"},
+	{CF_ZRTP_HASH, "ZRTP_HASH"},
+	{CF_CHANNEL_SWAP, "CHANNEL_SWAP"},
+	{CF_DEVICE_LEG, "DEVICE_LEG"},
+	{CF_FINAL_DEVICE_LEG, "FINAL_DEVICE_LEG"},
+	{CF_PICKUP, "PICKUP"},
+	{CF_CONFIRM_BLIND_TRANSFER, "CONFIRM_BLIND_TRANSFER"},
+	{CF_NO_PRESENCE, "NO_PRESENCE"},
+	{CF_CONFERENCE, "CONFERENCE"},
+	{CF_CONFERENCE_ADV, "CONFERENCE_ADV"},
+	{CF_RECOVERING, "RECOVERING"},
+	{CF_RECOVERING_BRIDGE, "RECOVERING_BRIDGE"},
+	{CF_TRACKED, "TRACKED"},
+	{CF_TRACKABLE, "TRACKABLE"},
+	{CF_NO_CDR, "NO_CDR"},
+	{CF_EARLY_OK, "EARLY_OK"},
+	{CF_MEDIA_TRANS, "MEDIA_TRANS"},
+	{CF_HOLD_ON_BRIDGE, "HOLD_ON_BRIDGE"},
+	{CF_SECURE, "SECURE"},
+	{CF_LIBERAL_DTMF, "LIBERAL_DTMF"},
+	{CF_SLA_BARGE, "SLA_BARGE"},
+	{CF_SLA_BARGING, "SLA_BARGING"},
+	{CF_PROTO_HOLD, "PROTO_HOLD"}, //TFLAG_SIP_HOLD
+	{CF_HOLD_LOCK, "HOLD_LOCK"},
+	{CF_VIDEO_POSSIBLE, "VIDEO_POSSIBLE"},//TFLAG_VIDEO
+	{CF_NOTIMER_DURING_BRIDGE, "NOTIMER_DURING_BRIDGE"},
+	{CF_PASS_RFC2833, "PASS_RFC2833"},
+	{CF_T38_PASSTHRU, "T38_PASSTHRU"},
+	{CF_DROP_DTMF, "DROP_DTMF"},
+	{CF_REINVITE, "REINVITE"},
+	{CF_NOSDP_REINVITE, "NOSDP_REINVITE"},
+	{CF_AUTOFLUSH_DURING_BRIDGE, "AUTOFLUSH_DURING_BRIDGE"},
+	{CF_RTP_NOTIMER_DURING_BRIDGE, "RTP_NOTIMER_DURING_BRIDGE"},
+	{CF_AVPF, "AVPF"},
+	{CF_AVPF_MOZ, "AVPF_MOZ"},
+	{CF_ICE, "ICE"},
+	{CF_DTLS, "DTLS"},
+	{CF_VERBOSE_SDP, "VERBOSE_SDP"},
+	{CF_DTLS_OK, "DTLS_OK"},
+	{CF_3PCC, "3PCC"},
+	{CF_VIDEO_PASSIVE, "VIDEO_PASSIVE"},
+	{CF_NOVIDEO, "NOVIDEO"},
+	{CF_VIDEO_BITRATE_UNMANAGABLE, "VIDEO_BITRATE_UNMANAGABLE"},
+	{CF_VIDEO_ECHO, "VIDEO_ECHO"},
+	{CF_VIDEO_BLANK, "VIDEO_BLANK"},
+	{CF_VIDEO_WRITING, "VIDEO_WRITING"},
+	{CF_SLA_INTERCEPT, "SLA_INTERCEPT"},
+	{CF_VIDEO_BREAK, "VIDEO_BREAK"},
+	{CF_AUDIO_PAUSE_READ, "AUDIO_PAUSE_READ"},
+	{CF_AUDIO_PAUSE_WRITE, "AUDIO_PAUSE_WRITE"},
+	{CF_VIDEO_PAUSE_READ, "VIDEO_PAUSE_READ"},
+	{CF_VIDEO_PAUSE_WRITE, "VIDEO_PAUSE_WRITE"},
+	{CF_BYPASS_MEDIA_AFTER_HOLD, "BYPASS_MEDIA_AFTER_HOLD"},
+	{CF_HANGUP_HELD, "HANGUP_HELD"},
+	{CF_CONFERENCE_RESET_MEDIA, "CONFERENCE_RESET_MEDIA"},
+	{CF_VIDEO_DECODED_READ, "VIDEO_DECODED_READ"},
+	{CF_VIDEO_DEBUG_READ, "VIDEO_DEBUG_READ"},
+	{CF_VIDEO_DEBUG_WRITE, "VIDEO_DEBUG_WRITE"},
+	{CF_VIDEO_ONLY, "VIDEO_ONLY"},
+	{CF_VIDEO_READY, "VIDEO_READY"},
+	{CF_VIDEO_MIRROR_INPUT, "VIDEO_MIRROR_INPUT"},
+	{CF_VIDEO_READ_FILE_ATTACHED, "VIDEO_READ_FILE_ATTACHED"},
+	{CF_VIDEO_WRITE_FILE_ATTACHED, "VIDEO_WRITE_FILE_ATTACHED"},
+	{CF_3P_MEDIA_REQUESTED, "3P_MEDIA_REQUESTED"},
+	{CF_3P_NOMEDIA_REQUESTED, "3P_NOMEDIA_REQUESTED"},
+	{CF_3P_NOMEDIA_REQUESTED_BLEG, "3P_NOMEDIA_REQUESTED_BLEG"},
+	{CF_IMAGE_SDP, "IMAGE_SDP"},
+	{CF_VIDEO_SDP_RECVD, "VIDEO_SDP_RECVD"},
+	{CF_TEXT_SDP_RECVD, "TEXT_SDP_RECVD"},
+	{CF_HAS_TEXT, "HAS_TEXT"},
+	{CF_TEXT_POSSIBLE, "TEXT_POSSIBLE"},
+	{CF_TEXT_PASSIVE, "TEXT_PASSIVE"},
+	{CF_TEXT_ECHO, "TEXT_ECHO"},
+	{CF_TEXT_ACTIVE, "TEXT_ACTIVE"},
+	{CF_TEXT_IDLE, "TEXT_IDLE"},
+	{CF_TEXT_LINE_BASED, "TEXT_LINE_BASED"},
+	{CF_QUEUE_TEXT_EVENTS, "QUEUE_TEXT_EVENTS"},
+	{CF_FIRE_TEXT_EVENTS, "FIRE_TEXT_EVENTS"},
+	{CF_MSRP, "MSRP"},
+	{CF_MSRPS, "MSRPS"},
+	{CF_WANT_MSRP, "WANT_MSRP"},
+	{CF_WANT_MSRPS, "WANT_MSRPS"},
+	{CF_RTT, "RTT"},
+	{CF_WANT_RTT, "WANT_RTT"},
+	{CF_AUDIO, "AUDIO"},
+	{CF_AWAITING_STREAM_CHANGE, "AWAITING_STREAM_CHANGE"},
+	{CF_PROCESSING_STREAM_CHANGE, "PROCESSING_STREAM_CHANGE"},
+	{CF_STREAM_CHANGED, "STREAM_CHANGED"},
+	{CF_ARRANGED_BRIDGE, "ARRANGED_BRIDGE"},
+	{CF_STATE_REPEAT, "STATE_REPEAT"},
+	{CF_WANT_DTLSv1_2, "WANT_DTLSv1_2"},
+	{CF_RED, "RED"},
+	{CF_RFC7329_COMPAT, "RFC7329_COMPAT"},
+	{CF_REATTACHED, "REATTACHED"},
+	{CF_VIDEO_READ_TAPPED, "VIDEO_READ_TAPPED"},
+	{CF_VIDEO_WRITE_TAPPED, "VIDEO_WRITE_TAPPED"},
+	{CF_SESSION_SWAP, "SESSION_SWAP"},
+	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
+	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
+	{CF_FLAG_MAX, NULL}
+};
+
+#define SWITCH_SIG_MAX 5
+
+typedef struct kz_core_signal {
+	switch_signal_t signal;
+	char* name;
+} kz_core_signal_t, *kz_core_signal_p;
+
+static kz_core_signal_t KZ_SIGNALS[] = {
+	{SWITCH_SIG_NONE, "NONE"},
+	{SWITCH_SIG_KILL, "KILL"},
+	{SWITCH_SIG_XFER, "XFER"},
+	{SWITCH_SIG_BREAK, "BREAK"},
+	{SWITCH_SIG_MAX, NULL}
+};
+
+SWITCH_DECLARE(char*) kz_signal2str(switch_signal_t signal)
+{
+	int i = 0;
+	while(KZ_SIGNALS[i].signal != SWITCH_SIG_MAX) {
+		if (KZ_SIGNALS[i].signal == signal) {
+			return KZ_SIGNALS[i].name;
+		}
+		i++;
+	}
+	return NULL;
+}
+
+
+SWITCH_DECLARE(switch_channel_flag_t) kz_str2flag(char *name)
+{
+	int i = 0;
+	while(KZ_CHANNEL_FLAGS[i].flag < CF_FLAG_MAX) {
+		if (!strcmp(KZ_CHANNEL_FLAGS[i].name, name)) {
+			return KZ_CHANNEL_FLAGS[i].flag;
+		}
+		i++;
+	}
+	return CF_FLAG_MAX;
+}
+
+SWITCH_DECLARE(char*) kz_flag2str(switch_channel_flag_t flag)
+{
+	int i = 0;
+	while(KZ_CHANNEL_FLAGS[i].flag != CF_FLAG_MAX) {
+		if (KZ_CHANNEL_FLAGS[i].flag == flag) {
+			return KZ_CHANNEL_FLAGS[i].name;
+		}
+		i++;
+	}
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) kz_set_channel_flag(switch_channel_t* channel, char* flag_name)
+{
+	switch_channel_flag_t flag = kz_str2flag(flag_name);
+	if (flag == CF_FLAG_MAX) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_channel_set_flag(channel, flag);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) kz_clear_channel_flag(switch_channel_t* channel, char* flag_name)
+{
+	switch_channel_flag_t flag = kz_str2flag(flag_name);
+	if (flag == CF_FLAG_MAX) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_channel_clear_flag(channel, flag);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(char*) kz_channel_get_flags_string(switch_channel_t* channel)
+{
+	switch_stream_handle_t stream = { 0 };
+	char *r;
+	int i = 0;
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	for (i = 0; i < CF_FLAG_MAX; i++) {
+		if (switch_channel_test_flag(channel, KZ_CHANNEL_FLAGS[i].flag)) {
+			stream.write_function(&stream, "%s|", KZ_CHANNEL_FLAGS[i].name);
+		}
+	}
+
+	r = (char *) stream.data;
+
+	if (end_of(r) == '|') {
+		end_of(r) = '\0';
+	}
+
+	return r;
+}
+
 #define kz_resize(l) {\
 char *dp;\
 olen += (len + l + block);\
@@ -114,7 +394,6 @@ SWITCH_DECLARE(switch_status_t) kz_expand_api_execute(const char *cmd, const cha
 
 	return status;
 }
-
 
 SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur)
 {
@@ -361,13 +640,12 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 					} else {
 						stream.param_event = event;
 						if (kz_expand_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-							func_val = stream.data;
+							func_val = strdup(stream.data);
 							sub_val = func_val;
-						} else {
-							free(stream.data);
 						}
 					}
 
+					switch_safe_free(stream.data);
 					switch_safe_free(expanded);
 					switch_safe_free(expanded_vname);
 				}
@@ -686,6 +964,49 @@ switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res)
 	status = switch_json_api_execute(req, NULL, res);
 	cJSON_Delete(req);
 	return status;
+}
+
+SWITCH_DECLARE(const char *) kz_get_variable_from_event_or_channel_dup(switch_event_t *event, switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx)
+{
+	const char *v = NULL, *r = NULL, *vdup = NULL;
+	switch_event_t *ep;
+	switch_assert(channel != NULL);
+
+	if (zstr(varname)) {
+		return NULL;
+	}
+
+	for (ep = event; ep; ep = ep->next) {
+		if ((v = switch_event_get_header_idx(ep, varname, idx))) {
+			break;
+		}
+	}
+
+	if (!v) {
+		return switch_channel_get_variable_dup(channel, varname, dup, idx);
+	}
+
+	if (dup && v != vdup) {
+		if (v) {
+			r = switch_core_session_strdup(switch_channel_get_session(channel), v);
+		}
+	} else {
+		r = v;
+	}
+
+	return r;
+}
+
+SWITCH_DECLARE(const char *) kz_get_variable_from_event_or_channel(switch_event_t *event, switch_channel_t *channel, const char *varname)
+{
+	return kz_get_variable_from_event_or_channel_dup(event, channel, varname, SWITCH_FALSE, -1);
+}
+
+SWITCH_DECLARE(switch_apr_status) kz_core_pool_cleanup_null(void *data)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CLEANUP CHILD DOING NOTHING\n");
+	/* do nothing cleanup routine */
+    return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:

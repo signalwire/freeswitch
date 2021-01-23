@@ -1,5 +1,44 @@
 #include "mod_kazoo.h"
 
+SWITCH_DECLARE(switch_status_t) kz_switch_loadable_module_enumerate_available(const char *dir_path, switch_modulename_callback_func_t callback, void *user_data)
+{
+	switch_dir_t *dir = NULL;
+	switch_status_t status;
+	char buffer[256];
+	const char *fname;
+	const char *fname_ext;
+	char *fname_base;
+	switch_memory_pool_t *pool = NULL;
+	const char *ext = ".so";
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	};
+
+	if ((status = switch_dir_open(&dir, dir_path, pool)) != SWITCH_STATUS_SUCCESS) {
+		goto end1;
+	}
+
+	while((fname = switch_dir_next_file(dir, buffer, sizeof(buffer)))) {
+		if ((fname_ext = strrchr(fname, '.'))) {
+			if (!strcmp(fname_ext, ext)) {
+				if (!(fname_base = switch_mprintf("%.*s", (int)(fname_ext-fname), fname))) {
+					status = SWITCH_STATUS_GENERR;
+					goto end;
+				}
+				callback(user_data, fname_base);
+				switch_safe_free(fname_base)
+			}
+		}
+	}
+
+  end:
+	switch_dir_close(dir);
+  end1:
+	switch_core_perform_destroy_memory_pool_now(&pool, __FILE__, __SWITCH_FUNC__, __LINE__);
+	return status;
+}
+
 static int kz_nodes_module_names_array_callback(void *pArg, const char *module_name)
 {
 	cJSON *json = (cJSON *) pArg;
@@ -27,7 +66,7 @@ void kz_nodes_collect_modules(cJSON *container)
 	cJSON *modules = cJSON_CreateObject();
 	cJSON *loaded = cJSON_CreateArray();
 	cJSON *available = cJSON_CreateArray();
-	switch_loadable_module_enumerate_available(SWITCH_GLOBAL_dirs.mod_dir, kz_nodes_module_names_array_callback, available);
+	kz_switch_loadable_module_enumerate_available(SWITCH_GLOBAL_dirs.mod_dir, kz_nodes_module_names_array_callback, available);
 	switch_loadable_module_enumerate_loaded(kz_nodes_module_names_array_callback, loaded);
 	cJSON_AddItemToObject(modules, "available", available);
 	cJSON_AddItemToObject(modules, "loaded", loaded);

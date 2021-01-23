@@ -390,6 +390,63 @@ static switch_status_t kz_report_callflow(switch_core_session_t *session, switch
 
 }
 
+static switch_status_t kz_report_caller_id(switch_core_session_t *session, switch_event_t *cdr_event)
+{
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
+	switch_caller_profile_t *profile;
+	switch_caller_profile_t *origination_profile;
+
+	channel = switch_core_session_get_channel(session);
+	caller_profile = switch_channel_get_caller_profile(channel);
+	origination_profile = switch_channel_get_origination_caller_profile(channel);
+
+
+	while (caller_profile) {
+
+		if (atoi(caller_profile->profile_index) == 1) {
+			break;
+		}
+
+		caller_profile = caller_profile->next;
+	}
+
+	if (!caller_profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caller profile not found when determining callerid\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	profile = caller_profile;
+	if (caller_profile->originator_caller_profile) {
+		caller_profile = caller_profile->originator_caller_profile;
+	}
+
+	if (origination_profile) {
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Caller-ID-Number", origination_profile->caller_id_number);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Caller-ID-Name", origination_profile->caller_id_name);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Caller-ID-Original-Number", origination_profile->orig_caller_id_number);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Caller-ID-Original-Name", origination_profile->orig_caller_id_name);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Callee-ID-Number", origination_profile->callee_id_number);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Callee-ID-Name", origination_profile->callee_id_name);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Origination-Destination-Number", origination_profile->destination_number);
+	}
+
+	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Destination-Number", caller_profile->destination_number);
+	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Callee-ID-Number", caller_profile->callee_id_number);
+	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Callee-ID-Name", caller_profile->callee_id_name);
+
+//	if (origination_profile) {
+//		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Caller-ID-Number", origination_profile->caller_id_number);
+//		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Caller-ID-Name", origination_profile->caller_id_name);
+//	} else {
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Caller-ID-Number", profile->caller_id_number);
+		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM, "KZ-Caller-ID-Name", profile->caller_id_name);
+//	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 
 #define ORIGINATED_LEGS_VARIABLE "originated_legs"
 #define ORIGINATED_LEGS_ITEM_DELIM ';'
@@ -399,38 +456,33 @@ static switch_status_t kz_report_callflow(switch_core_session_t *session, switch
 
 static switch_status_t kz_report_originated_legs(switch_core_session_t *session, switch_event_t *cdr_event)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	cJSON *j_originated = cJSON_CreateArray();
-	const char *originated_legs_var = NULL, *originate_causes_var = NULL;
+	switch_channel_t* channel = switch_core_session_get_channel(session);
+	cJSON* j_originated = cJSON_CreateArray();
+	const char* originated_legs_var = NULL;
 	int idx = 0;
 
 	while(1) {
-		char *argv_leg[10] = { 0 }, *argv_cause[10] = { 0 };
-		char *originated_legs, *originate_causes;
+		char* argv_leg[10] = { 0 };
+		char* originated_legs;
 		cJSON *j_originated_leg;
 		originated_legs_var = switch_channel_get_variable_dup(channel, ORIGINATED_LEGS_VARIABLE, SWITCH_FALSE, idx);
-		originate_causes_var = switch_channel_get_variable_dup(channel, ORIGINATE_CAUSES_VARIABLE, SWITCH_FALSE, idx);
 
-		if (zstr(originated_legs_var) || zstr(originate_causes_var)) {
+		if (zstr(originated_legs_var)) {
 			break;
 		}
 
 		originated_legs = strdup(originated_legs_var);
-		originate_causes = strdup(originate_causes_var);
 
 		switch_separate_string(originated_legs, ORIGINATED_LEGS_ITEM_DELIM, argv_leg, (sizeof(argv_leg) / sizeof(argv_leg[0])));
-		switch_separate_string(originate_causes, ORIGINATE_CAUSES_ITEM_DELIM, argv_cause, (sizeof(argv_cause) / sizeof(argv_cause[0])));
 
 		j_originated_leg = cJSON_CreateObject();
 		cJSON_AddItemToObject(j_originated_leg, "Call-ID", cJSON_CreateString(argv_leg[0]));
 		cJSON_AddItemToObject(j_originated_leg, "Caller-ID-Name", cJSON_CreateString(argv_leg[1]));
 		cJSON_AddItemToObject(j_originated_leg, "Caller-ID-Number", cJSON_CreateString(argv_leg[2]));
-		cJSON_AddItemToObject(j_originated_leg, "Result", cJSON_CreateString(argv_cause[1]));
 
 		cJSON_AddItemToArray(j_originated, j_originated_leg);
 
 		switch_safe_free(originated_legs);
-		switch_safe_free(originate_causes);
 
 		idx++;
 	}
@@ -438,6 +490,45 @@ static switch_status_t kz_report_originated_legs(switch_core_session_t *session,
 	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_originated_legs", cJSON_PrintUnformatted(j_originated));
 
 	cJSON_Delete(j_originated);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t kz_report_originate_causes(switch_core_session_t *session, switch_event_t *cdr_event)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	cJSON *j_causes = cJSON_CreateArray();
+	const char* originate_causes_var = NULL;
+	int idx = 0;
+
+	while(1) {
+		char* argv_cause[10] = { 0 };
+		char* originate_causes;
+		cJSON *j_cause;
+		originate_causes_var = switch_channel_get_variable_dup(channel, ORIGINATE_CAUSES_VARIABLE, SWITCH_FALSE, idx);
+
+		if (zstr(originate_causes_var)) {
+			break;
+		}
+
+		originate_causes = strdup(originate_causes_var);
+
+		switch_separate_string(originate_causes, ORIGINATE_CAUSES_ITEM_DELIM, argv_cause, (sizeof(argv_cause) / sizeof(argv_cause[0])));
+
+		j_cause = cJSON_CreateObject();
+		cJSON_AddItemToObject(j_cause, "Call-ID", cJSON_CreateString(argv_cause[0]));
+		cJSON_AddItemToObject(j_cause, "Result", cJSON_CreateString(argv_cause[1]));
+
+		cJSON_AddItemToArray(j_causes, j_cause);
+
+		switch_safe_free(originate_causes);
+
+		idx++;
+	}
+
+	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_originate_causes", cJSON_PrintUnformatted(j_causes));
+
+	cJSON_Delete(j_causes);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -544,8 +635,10 @@ static switch_status_t kz_report(switch_core_session_t *session, switch_event_t 
 	kz_report_channel_stats(session, cdr_event);
 	kz_report_channel_flaws(session, cdr_event);
 	kz_report_originated_legs(session, cdr_event);
+	kz_report_originate_causes(session, cdr_event);
 	kz_report_transfer_history(session, cdr_event, SWITCH_TRANSFER_HISTORY_VARIABLE);
 	kz_report_transfer_history(session, cdr_event, SWITCH_TRANSFER_SOURCE_VARIABLE);
+	kz_report_caller_id(session, cdr_event);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -554,6 +647,10 @@ static switch_status_t kz_cdr_on_reporting(switch_core_session_t *session)
 {
 	switch_event_t *cdr_event = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_channel_test_flag(channel, CF_NO_CDR)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (switch_event_create_subclass(&cdr_event, SWITCH_EVENT_CUSTOM, MY_EVENT_JSON_CDR) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "error creating event for report data!\n");

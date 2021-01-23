@@ -1,6 +1,7 @@
 #pragma once
 
 #include <switch.h>
+#include "kz_core_memory.h"
 
 #ifdef __cplusplus
 #define KZ_BEGIN_EXTERN_C       extern "C" {
@@ -47,5 +48,16 @@ char * kz_expand_vars_pool(char *xml_str, switch_memory_pool_t *pool);
 switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res);
 
 SWITCH_DECLARE(switch_status_t) kz_expand_json_to_event(cJSON *json, switch_event_t *event, char * prefix);
+
+SWITCH_DECLARE(const char *) kz_get_variable_from_event_or_channel_dup(switch_event_t *event, switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx);
+SWITCH_DECLARE(const char *) kz_get_variable_from_event_or_channel(switch_event_t *event, switch_channel_t *channel, const char *varname);
+
+SWITCH_DECLARE(switch_status_t) kz_set_channel_flag(switch_channel_t* channel, char* flag_name);
+SWITCH_DECLARE(switch_status_t) kz_clear_channel_flag(switch_channel_t* channel, char* flag_name);
+SWITCH_DECLARE(char*) kz_channel_get_flags_string(switch_channel_t* channel);
+
+SWITCH_DECLARE(switch_apr_status) kz_core_pool_cleanup_null(void *data);
+
+SWITCH_DECLARE(char*) kz_signal2str(switch_signal_t signal);
 
 KZ_END_EXTERN_C

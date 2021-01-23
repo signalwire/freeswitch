@@ -333,6 +333,10 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 		return NULL;
 	}
 
+	if (switch_socket_opt_set(socket, SWITCH_SO_NONBLOCK, 1)) {
+		return NULL;
+	}
+
 	if (switch_socket_bind(socket, sa)) {
 		return NULL;
 	}

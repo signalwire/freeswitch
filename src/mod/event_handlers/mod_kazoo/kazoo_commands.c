@@ -33,6 +33,7 @@
 #include "mod_kazoo.h"
 #include <curl/curl.h>
 #include <switch_curl.h>
+#include <switch_loadable_module.h>
 
 #define UUID_SET_DESC "Set a variable"
 #define UUID_SET_SYNTAX "<uuid> <var> [value]"
@@ -67,6 +68,10 @@ SWITCH_STANDARD_API(kz_first_of)
 	}
 
 	mycmd_dup = mycmd = strdup(cmd);
+	if(!mycmd_dup) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error creating arg dup\n");
+		return SWITCH_STATUS_GENERR;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "FIRST-OF %s\n", mycmd);
 	if (!zstr(mycmd) && *mycmd == '^' && *(mycmd+1) == '^') {
 		mycmd += 2;
@@ -86,7 +91,7 @@ SWITCH_STANDARD_API(kz_first_of)
 			if (channel) {
 				const char *var = switch_channel_get_variable_dup(channel, item, SWITCH_FALSE, -1);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item);
-				if (var) {
+				if (!zstr(var)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item, var);
 					stream->write_function(stream, var);
 					break;
@@ -94,18 +99,20 @@ SWITCH_STANDARD_API(kz_first_of)
 				if (!strncmp(item, "variable_", 9)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item+9);
 					var = switch_channel_get_variable_dup(channel, item+9, SWITCH_FALSE, -1);
-					if (var) {
+					if (!zstr(var)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item+9, var);
 						stream->write_function(stream, var);
 						break;
 					}
 				}
 			}
-			header = switch_event_get_header_ptr(stream->param_event, item);
-			if(header) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING %s : %s\n", item, header->value);
-				stream->write_function(stream, header->value);
-				break;
+			if (stream->param_event) {
+				header = switch_event_get_header_ptr(stream->param_event, item);
+				if(header && header->value) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING %s : %s\n", item, header->value);
+					stream->write_function(stream, header->value);
+					break;
+				}
 			}
 		}
 	}
@@ -519,6 +526,7 @@ SWITCH_STANDARD_API(kz_eval_api)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 #define KZ_CONTACT_DESC "returns kazoo contact"
 #define KZ_CONTACT_SYNTAX "endpoint@account"
 
@@ -555,19 +563,55 @@ SWITCH_STANDARD_API(kz_contact_fun)
 	}
 	*/
 
-	if (switch_xml_locate("directory", "location", "id", cmd, &xml_root, &xml_node, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "%s", reply);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	var = switch_xml_attr(xml_node, "value");
-	if (!zstr(var)) {
-		reply = var;
+	if (switch_xml_locate("directory", "location", "id", cmd, &xml_root, &xml_node, params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		var = switch_xml_attr(xml_node, "value");
+		if (!zstr(var)) {
+			reply = var;
+		}
 	}
 
 	stream->write_function(stream, "%s", reply);
-
 	switch_xml_free(xml_root);
+	switch_event_destroy(&params);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define KZ_MODULE_DESC "checks if module is available"
+#define KZ_MODULE_SYNTAX "module [dir]"
+SWITCH_STANDARD_API(kz_module_available_fun)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+
+	if (!cmd) {
+		stream->write_function(stream, "-ERR missing arguments");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argc == 1) {
+			if (switch_loadable_module_available(argv[0]) ) {
+				stream->write_function(stream, "-OK module %s is available in %s", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
+			} else {
+				stream->write_function(stream, "-ERR module %s is not available in %s", argv[0], SWITCH_GLOBAL_dirs.mod_dir);
+			}
+		} else if (argc == 2) {
+			if (switch_loadable_module_available_in_dir(argv[0], argv[1]) ) {
+				stream->write_function(stream, "-OK module %s is available in %s", argv[0], argv[1]);
+			} else {
+				stream->write_function(stream, "-ERR module %s is not available in %s", argv[0], argv[1]);
+			}
+		} else {
+			stream->write_function(stream, "-ERR invalid arguments");
+			return SWITCH_STATUS_GENERR;
+		}
+	} else {
+		stream->write_function(stream, "-ERR memory");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -586,5 +630,6 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	SWITCH_ADD_API(api_interface, "kz_expand", KZ_FIRST_OF_DESC, kz_expand_api, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_eval", KZ_FIRST_OF_DESC, kz_eval_api, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_contact", KZ_CONTACT_DESC, kz_contact_fun, KZ_CONTACT_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_module_available", KZ_MODULE_DESC, kz_module_available_fun, KZ_MODULE_SYNTAX);
 }
 

@@ -110,6 +110,15 @@ static void destroy_node_handler(ei_node_t *ei_node) {
 
 	switch_clear_flag(ei_node, LFLAG_RUNNING);
 
+	//  let ecallmgr know we're out
+	close_socketfd(&ei_node->nodefd);
+
+	remove_xml_clients(ei_node);
+
+	switch_mutex_lock(ei_node->event_streams_mutex);
+	remove_event_streams(&ei_node->event_streams);
+	switch_mutex_unlock(ei_node->event_streams_mutex);
+
 	/* wait for pending bgapi requests to complete */
 	while ((pending = switch_atomic_read(&ei_node->pending_bgapi))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for %d pending bgapi requests to complete\n", pending);
@@ -121,12 +130,6 @@ static void destroy_node_handler(ei_node_t *ei_node) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for %d receive handlers to complete\n", pending);
 		switch_yield(500000);
 	}
-
-	switch_mutex_lock(ei_node->event_streams_mutex);
-	remove_event_streams(&ei_node->event_streams);
-	switch_mutex_unlock(ei_node->event_streams_mutex);
-
-	remove_xml_clients(ei_node);
 
 	while (switch_queue_trypop(ei_node->received_msgs, &pop) == SWITCH_STATUS_SUCCESS) {
 		ei_received_msg_t *received_msg = (ei_received_msg_t *) pop;
@@ -141,8 +144,6 @@ static void destroy_node_handler(ei_node_t *ei_node) {
 		ei_x_free(&send_msg->buf);
 		switch_safe_free(send_msg);
 	}
-
-	close_socketfd(&ei_node->nodefd);
 
 	switch_mutex_destroy(ei_node->event_streams_mutex);
 
